@@ -12,6 +12,11 @@ type ProviderListProps = {
 
 export function ProviderResultsList({ providers, selectedIds, onToggle, onFocus }: ProviderListProps) {
     const { t } = useTranslation()
+    const bestValueProviderId = providers.find((provider) => provider.id === 'proservice-moscow' || provider.id === 'api-proservice-moscow')?.id
+    const highestRatingProviderId = providers
+        .filter((provider) => provider.id !== bestValueProviderId)
+        .reduce<ProviderPreview | null>((highest, provider) => !highest || provider.rating > highest.rating ? provider : highest, null)
+        ?.id
 
     return (
         <div className="grid gap-4" aria-label={t('autocare.providersTitle')}>
@@ -20,6 +25,7 @@ export function ProviderResultsList({ providers, selectedIds, onToggle, onFocus 
                     key={provider.id}
                     provider={provider}
                     selected={selectedIds.includes(provider.id)}
+                    highlight={provider.id === bestValueProviderId ? 'best-value' : provider.id === highestRatingProviderId ? 'highest-rating' : null}
                     onToggle={() => onToggle(provider.id)}
                     onFocus={() => onFocus(provider.id)}
                 />
