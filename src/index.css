@@ -325,10 +325,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: url('/images/autocare/patterns/autocare-service-pattern.svg');
-    background-position: center top;
-    background-repeat: repeat;
-    background-size: 42rem auto;
     font-synthesis: none;
     font-optical-sizing: auto;
     font-kerning: normal;
@@ -357,18 +353,13 @@
     }
 }
 
-.dark body {
-    background-image:
-        linear-gradient(rgb(10 29 57 / 0.7), rgb(10 29 57 / 0.7)),
-        url('/images/autocare/patterns/autocare-service-pattern.svg');
-}
-
 .autocare-app-surface {
     background-color: var(--background);
     background-image: url('/images/autocare/patterns/autocare-service-pattern.svg');
-    background-position: center top;
-    background-repeat: repeat;
-    background-size: 36rem auto;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
 }
 
 .dark .autocare-app-surface {
