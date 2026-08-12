@@ -10,6 +10,7 @@ import {
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BrandLogo } from '@/shared/ui/brand-logo'
+import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
 
 export function DesktopPublicHeader() {
     const { t } = useTranslation()
@@ -46,6 +47,7 @@ export function DesktopPublicHeader() {
                     >
                         <MapPin className="size-[19px]" />Москва<ChevronDown className="size-4" />
                     </Link>
+                    <LanguageSwitcher compact />
                     <Link to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
                         <Heart className="size-7 stroke-[1.7]" />
                     </Link>

@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { SeoHead } from '@/shared/ui/seo-head'
 import { AppHeader } from '@/widgets/app-header'
 import { BottomNav } from '@/widgets/bottom-nav'
 import { Footer } from '@/widgets/footer'
@@ -33,6 +34,7 @@ export function PublicLayout() {
 
     return (
         <div className="mobile-bottom-safe flex min-h-screen flex-col bg-background md:pb-0">
+            <SeoHead />
             <DesktopPublicHeader />
             <div className="md:hidden">
                 {isWorkspaceRoute && user ? <WorkspaceMobileHeader role={workspaceRole} /> : <AppHeader />}

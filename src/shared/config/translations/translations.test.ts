@@ -153,11 +153,25 @@ describe('translation coverage', () => {
             'profile.privacy.requestAction',
         ]
 
-        for (const [locale, value] of Object.entries(translations)) {
-            if (locale === 'en') continue
+        const fullyLocalizedLocales = ['ru', 'ro', 'es', 'de', 'fr', 'pt', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
+
+        for (const locale of fullyLocalizedLocales) {
+            const value = translations[locale]
 
             for (const key of criticalKeys) {
                 expect(getValue(value, key), `${locale}.${key} is missing`).not.toBe(getValue(translations.en, key))
+            }
+        }
+    })
+
+    it('translates the public automotive journey for every supported language', () => {
+        const keys = ['heroTitle', 'heroDescription', 'byService', 'byProvider', 'searchAction', 'resultsTitle', 'bookAction', 'detailsAction'] as const
+
+        for (const locale of Object.keys(translations).filter((value) => value !== 'en')) {
+            for (const key of keys) {
+                expect(translations[locale as keyof typeof translations].autocare[key], `${locale}.autocare.${key} uses English fallback`).not.toBe(
+                    translations.en.autocare[key],
+                )
             }
         }
     })

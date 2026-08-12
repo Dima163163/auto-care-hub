@@ -1027,7 +1027,7 @@ export function getOpenApiDocument() {
                         role: { type: 'string', enum: ['client', 'owner', 'admin', 'super_admin'] },
                         status: { type: 'string', enum: ['active', 'blocked'] },
                         avatarUrl: { type: ['string', 'null'] },
-                        locale: { type: ['string', 'null'], enum: ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi', null] },
+                        locale: { type: ['string', 'null'], enum: ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi', null] },
                         provider: { type: 'string', enum: ['email', 'google', 'yandex'] },
                         emailVerifiedAt: { type: ['string', 'null'], format: 'date-time' },
                         emailNotifications: { type: 'boolean' },

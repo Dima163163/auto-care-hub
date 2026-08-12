@@ -1,8 +1,18 @@
 import type { SupportedLocale } from '@/shared/config/i18n'
 
 import { enTranslations } from './en'
+import { withAutoCareTranslations } from './autocare-popular'
 import { ruTranslations } from './ru'
 import { roTranslations } from './ro'
+import {
+    csTranslations,
+    elTranslations,
+    itTranslations,
+    nlTranslations,
+    plTranslations,
+    svTranslations,
+    ukTranslations,
+} from './european'
 import {
     arTranslations,
     deTranslations,
@@ -20,16 +30,23 @@ export type TranslationSchema = typeof enTranslations
 
 export const translations = {
     en: enTranslations,
-    ru: ruTranslations,
-    ro: roTranslations,
-    es: esTranslations,
-    de: deTranslations,
-    fr: frTranslations,
-    pt: ptTranslations,
-    zh: zhTranslations,
-    ja: jaTranslations,
-    ko: koTranslations,
-    ar: arTranslations,
-    tr: trTranslations,
-    hi: hiTranslations,
+    ru: withAutoCareTranslations('ru', ruTranslations),
+    ro: withAutoCareTranslations('ro', roTranslations),
+    es: withAutoCareTranslations('es', esTranslations),
+    de: withAutoCareTranslations('de', deTranslations),
+    fr: withAutoCareTranslations('fr', frTranslations),
+    pt: withAutoCareTranslations('pt', ptTranslations),
+    it: itTranslations,
+    pl: plTranslations,
+    nl: nlTranslations,
+    uk: ukTranslations,
+    cs: csTranslations,
+    el: elTranslations,
+    sv: svTranslations,
+    zh: withAutoCareTranslations('zh', zhTranslations),
+    ja: withAutoCareTranslations('ja', jaTranslations),
+    ko: withAutoCareTranslations('ko', koTranslations),
+    ar: withAutoCareTranslations('ar', arTranslations),
+    tr: withAutoCareTranslations('tr', trTranslations),
+    hi: withAutoCareTranslations('hi', hiTranslations),
 } satisfies Record<SupportedLocale, TranslationSchema>
