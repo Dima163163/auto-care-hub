@@ -16,7 +16,7 @@ export function ProviderPreviewSection() {
     const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: 'ru-moscow', radius: 10 })
 
     return (
-        <section className="bg-background py-[22px]">
+        <section className="py-[22px]">
             <div className="relative mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)]">
                 <div className="flex items-end justify-between gap-6">
                     <div>
