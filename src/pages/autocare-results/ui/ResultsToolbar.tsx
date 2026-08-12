@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react'
 import { CarFront, Check, MapPin, Search, ShieldCheck, X } from 'lucide-react'
+import { useState } from 'react'
 
 import { useTranslation } from '@/shared/lib/useTranslation'
+
+import { ResultsQuickFilters } from './ResultsQuickFilters'
 
 type ResultsToolbarProps = {
     selectedCount: number
@@ -16,12 +19,23 @@ type ResultsToolbarProps = {
     onResetFilters: () => void
     activeFilters: readonly ActiveFilter[]
     onRemoveFilter: (key: ActiveFilter['key']) => void
+    quickFilters: {
+        isAvailableToday: boolean
+        isNearbyActive: boolean
+        isPriceActive: boolean
+        isRatingActive: boolean
+        onToggleAvailableToday: () => void
+        onToggleNearby: () => void
+        onTogglePrice: () => void
+        onToggleRating: () => void
+    }
 }
 
 export type ActiveFilter = { key: 'serviceId' | 'brandId' | 'radiusKm' | 'minRating' | 'minPrice' | 'maxPrice' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'; label: string }
 
-export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, brandLabel, filterPanel, onClear, onStartSearch, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter }: ResultsToolbarProps) {
+export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, brandLabel, filterPanel, onClear, onStartSearch, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
         <section className="bg-hero-overlay text-primary-foreground">
@@ -33,7 +47,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                     <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90"><Search className="size-4" />{t('autocare.startSearch')}</button>
                 </div>
                 <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
-                <div className="mt-4">{filterPanel}</div>
+                {isFiltersOpen && <div className="mt-4">{filterPanel}</div>}
                 <AppliedFilters filters={activeFilters} onClear={onResetFilters} onRemove={onRemoveFilter} />
             </div>
         </section>
@@ -49,6 +63,9 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                     {selectedCount > 0 && <button type="button" onClick={onClear} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary"><Check className="size-4" />{t('autocare.compareSelected', { count: selectedCount })}</button>}
                     <label><span className="sr-only">{t('autocare.sortLabel')}</span><select value={sort} onChange={(event) => onSortChange(event.target.value as ResultsToolbarProps['sort'])} className="h-10 rounded-[var(--radius-control)] border border-border bg-card py-0 pl-3 pr-9 text-xs font-bold text-foreground outline-none focus:border-primary"><option value="recommended">{t('autocare.recommendedSort')}</option><option value="price_asc">{t('autocare.priceSort')}</option><option value="rating_desc">{t('autocare.ratingSort')}</option><option value="distance_asc">{t('autocare.distanceSort')}</option></select></label>
                 </div>
+            </div>
+            <div className="mt-5 border-t border-border pt-4">
+                <ResultsQuickFilters activeCount={Math.max(0, activeFilters.length - 1)} {...quickFilters} onToggleFilters={() => setIsFiltersOpen((value) => !value)} />
             </div>
         </div>
     </div>

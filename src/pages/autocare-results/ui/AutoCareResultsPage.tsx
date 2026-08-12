@@ -116,6 +116,16 @@ export function AutoCareResultsPage() {
                         sort={filters.sort}
                         onSortChange={(sort) => updateFilters({ sort })}
                         onResetFilters={resetFilters}
+                        quickFilters={{
+                            isAvailableToday: filters.availableToday,
+                            isNearbyActive: filters.radiusKm === 10,
+                            isPriceActive: filters.sort === 'price_asc',
+                            isRatingActive: filters.minRating === '4.5',
+                            onToggleAvailableToday: () => updateFilters({ availableToday: !filters.availableToday }),
+                            onToggleNearby: () => updateFilters({ radiusKm: filters.radiusKm === 10 ? 25 : 10 }),
+                            onTogglePrice: () => updateFilters({ sort: filters.sort === 'price_asc' ? 'recommended' : 'price_asc' }),
+                            onToggleRating: () => updateFilters({ minRating: filters.minRating === '4.5' ? '' : '4.5' }),
+                        }}
                     />
                 </div>
 
