@@ -39,7 +39,7 @@ export function PublicLayout() {
             </div>
             <div className={isWorkspaceRoute ? 'flex min-h-0 flex-1' : 'flex min-h-0 flex-1 flex-col'}>
                 {isWorkspaceRoute && <WorkspaceSidebar role={workspaceRole} />}
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                     <main className="min-h-0 flex-1"><Outlet /></main>
                     {isWorkspaceRoute && <WorkspaceFooter />}
                     {!isWorkspaceRoute && <Footer />}

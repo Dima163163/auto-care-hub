@@ -189,12 +189,10 @@ use the same typed resources for markets, service definitions, discovery, and
 provider profiles, so `VITE_API_MODE=mock` and `VITE_API_MODE=real` share the
 same screen-level data flow.
 
-The results screen now keeps the public flex shell and footer stable while the
-provider column owns its scroll viewport. `VirtualProviderList` grows the
-loaded window as the user nears the bottom and mounts only an overscanned
-visible slice; the map fills the matching desktop grid height. This is a
-client-side window over the current discovery response and is ready to switch
-to cursor-backed API pages when real discovery pagination is enabled.
+The results screen keeps the public flex shell and footer in normal document
+flow. Provider results now use ordinary client pagination (12 cards per page)
+until cursor-backed discovery pagination is wired to the screen; cards are
+rendered in normal flow with no artificial virtual spacer rows.
 
 ## Identity and legacy naming boundary
 
