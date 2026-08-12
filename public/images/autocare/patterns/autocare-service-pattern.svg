@@ -34,12 +34,6 @@
         <circle cx="93" cy="211" r="2" opacity=".45"/>
       </g>
     </pattern>
-    <linearGradient id="fade" x1="60" y1="30" x2="900" y2="695" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#5AA2FF" stop-opacity=".24"/>
-      <stop offset=".55" stop-color="#5AA2FF" stop-opacity=".1"/>
-      <stop offset="1" stop-color="#5AA2FF" stop-opacity=".2"/>
-    </linearGradient>
   </defs>
   <rect width="960" height="720" fill="url(#servicePattern)"/>
-  <rect width="960" height="720" fill="url(#fade)"/>
 </svg>
