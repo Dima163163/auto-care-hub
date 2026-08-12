@@ -42,7 +42,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
                 <div className="grid gap-2 rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 md:grid-cols-[1.05fr_1.2fr_0.8fr_auto] md:items-end md:p-4">
                     <SearchSummary icon={<Search className="size-4" />} label={t('autocare.serviceLabel')} value={serviceLabel} />
-                    <SearchSummary icon={<MapPin className="size-4" />} label={t('autocare.locationLabel')} value="Москва, ул. Льва Толстого, 16 · 10 км" />
+                    <SearchSummary icon={<MapPin className="size-4" />} label={t('autocare.locationLabel')} value="Москва · 10 км" />
                     <SearchSummary icon={<CarFront className="size-4" />} label={t('autocare.vehicleLabel')} value={brandLabel === t('autocare.anyBrand') ? 'BMW X5, 2021' : brandLabel} />
                     <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90"><Search className="size-4" />{t('autocare.startSearch')}</button>
                 </div>
