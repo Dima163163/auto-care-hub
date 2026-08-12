@@ -39,7 +39,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
     }
 
     return (
-        <label className={`relative inline-flex h-[45px] items-center rounded-[9px] border border-current/20 text-current ${compact ? 'w-[88px]' : 'w-[138px]'}`}>
+        <label className={`relative inline-flex h-[45px] items-center rounded-[9px] border border-current/20 text-current ${compact ? 'w-[106px]' : 'w-[156px]'}`}>
             <Languages className="pointer-events-none ml-3 size-[17px] shrink-0 opacity-85" />
             <select
                 aria-label={t('common.language')}

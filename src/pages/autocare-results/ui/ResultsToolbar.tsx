@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CarFront, Check, ChevronDown, MapPin, Search, ShieldCheck, X } from 'lucide-react'
+import { CarFront, Check, MapPin, Search, ShieldCheck, X } from 'lucide-react'
 
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -47,7 +47,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                 </div>
                 <div className="flex items-center gap-2">
                     {selectedCount > 0 && <button type="button" onClick={onClear} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary"><Check className="size-4" />{t('autocare.compareSelected', { count: selectedCount })}</button>}
-                    <label className="relative"><span className="sr-only">{t('autocare.sortLabel')}</span><select value={sort} onChange={(event) => onSortChange(event.target.value as ResultsToolbarProps['sort'])} className="h-10 appearance-none rounded-[var(--radius-control)] border border-border bg-card py-0 pl-3 pr-9 text-xs font-bold text-foreground outline-none focus:border-primary"><option value="recommended">{t('autocare.recommendedSort')}</option><option value="price_asc">{t('autocare.priceSort')}</option><option value="rating_desc">{t('autocare.ratingSort')}</option><option value="distance_asc">{t('autocare.distanceSort')}</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /></label>
+                    <label><span className="sr-only">{t('autocare.sortLabel')}</span><select value={sort} onChange={(event) => onSortChange(event.target.value as ResultsToolbarProps['sort'])} className="h-10 rounded-[var(--radius-control)] border border-border bg-card py-0 pl-3 pr-9 text-xs font-bold text-foreground outline-none focus:border-primary"><option value="recommended">{t('autocare.recommendedSort')}</option><option value="price_asc">{t('autocare.priceSort')}</option><option value="rating_desc">{t('autocare.ratingSort')}</option><option value="distance_asc">{t('autocare.distanceSort')}</option></select></label>
                 </div>
             </div>
         </div>
