@@ -14,7 +14,7 @@ global_gates:
 phases:
   phase_0_documentation:
     order: 0
-    status: in_review
+    status: complete
     depends_on: []
     outputs:
       - architecture
@@ -24,12 +24,12 @@ phases:
       - architecture_yaml
       - proposed_adrs
     exit_gate:
-      - User reviews documentation diff.
-      - New Git remote is not changed without explicit approval.
+      - Documentation/product direction has been reviewed.
+      - `dev` is the integration branch; `main` remains production-only.
 
   phase_1_product_contract:
     order: 1
-    status: pending
+    status: in_progress
     depends_on:
       - phase_0_documentation
     inputs_required:
@@ -49,7 +49,7 @@ phases:
 
   phase_2_design_and_mocks:
     order: 2
-    status: pending
+    status: in_progress
     depends_on:
       - phase_1_product_contract
     outputs:
@@ -65,7 +65,7 @@ phases:
 
   phase_3_domain_foundation:
     order: 3
-    status: pending
+    status: in_progress
     depends_on:
       - phase_1_product_contract
       - phase_2_design_and_mocks
@@ -87,7 +87,7 @@ phases:
 
   phase_4_search_comparison_profiles:
     order: 4
-    status: pending
+    status: in_progress
     depends_on:
       - phase_3_domain_foundation
     journeys:

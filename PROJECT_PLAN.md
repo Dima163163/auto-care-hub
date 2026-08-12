@@ -1,12 +1,13 @@
 # AutoCare Hub — Project Plan
 
-> Status: working roadmap for review
+> Status: working implementation roadmap
 >
 > Updated: 2026-08-12
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
-> Git flow: `main` is production; active implementation branch is `dev`
+> Git flow: `main` is production; active implementation branch is `dev`; all
+> reviewed implementation commits are pushed only to `dev`
 
 ## 1. Purpose of this plan
 
@@ -95,6 +96,33 @@ irreversible product choices.
 
 ## 4. Current repository audit
 
+### 4.0 Implementation snapshot — 2026-08-12
+
+The repository is no longer at the planning-only stage. The following is the
+current, reviewed implementation state and is the source for the next slices of
+work.
+
+| Area | Current state | Next required work |
+| --- | --- | --- |
+| Public shell | AutoCare SVG logo, responsive header, locale selector, shared footer and SEO metadata foundation are implemented. | Verify long locale labels and finish public legal/help copy with AutoCare terminology. |
+| Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
+| Discovery `/services` | Interactive dark map, automotive SVG markers, full filter contract, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Connect all filters, ranking and comparison to real persisted data; keep map/list to one API query. |
+| Provider profile `/services/:id` | Public data API and an initial profile page exist. | Bring the screen to the approved provider-profile composition and connect real availability, inquiry and favorite actions. |
+| Service request `/services/:id/request` | Two-sided confirmation copy, request form and photo-selection intent exist. | Persist requests and attachments, show provider responses/quotes, and support booking conversion. |
+| Client cabinet | Legacy booking dashboard remains available but contains legacy payment/cabinet assumptions. | Replace with AutoCare requests, bookings, vehicles, favorites, messages and bonuses. |
+| Provider/admin workspaces | Reusable role guards and operational screens exist, but their information architecture is still legacy cabinet-based. | Replace page by page after the customer journeys and new domain contracts are stable. |
+| Backend | `/api/v1` discovery/provider profile and initial AutoCare entities, migrations, mock seed data and brand filters are implemented. | Complete provider memberships, schedules, real geospatial search, request/message persistence and authorization tests. |
+| Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
+
+Current page delivery order:
+
+1. provider profile and service request;
+2. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
+3. provider workspace: onboarding, locations, offerings, inbox, calendar and
+   team;
+4. admin/super-admin workspaces;
+5. real-API hardening, pilot and mobile-readiness gate.
+
 ### 4.1 Reuse as platform foundation
 
 - [x] React 19, TypeScript, Vite, React Router, Redux Toolkit/RTK Query.
@@ -112,17 +140,24 @@ irreversible product choices.
 
 ### 4.2 Replace or redesign
 
-- [ ] `Cabinet` domain -> `ServiceProvider` + `ServiceLocation`.
-- [ ] Provider-owned free-text `Service` -> platform `ServiceDefinition` plus
-  provider `ServiceOffering`.
+- [~] `Cabinet` domain -> `ServiceProvider` + `ServiceLocation`: first
+  automotive entities/API are present; legacy ownership and workspaces remain.
+- [~] Provider-owned free-text `Service` -> platform `ServiceDefinition` plus
+  provider `ServiceOffering`: catalog foundations and discovery fixtures exist;
+  moderation and provider editing are pending.
 - [ ] Hourly cabinet price -> automotive price types and explicit inclusions.
 - [ ] Cabinet owner role assumptions -> provider memberships and location roles.
-- [ ] Cabinet search -> vehicle-aware geospatial offering search.
-- [ ] Cabinet details -> service-location public profile.
-- [ ] Existing booking snapshot -> immutable offer/quote snapshot.
+- [~] Cabinet search -> vehicle-aware geospatial offering search: browser/API
+  discovery contract, filters and brand specializations are implemented; real
+  geospatial indexes and schedule availability are pending.
+- [~] Cabinet details -> service-location public profile: `/services/:id`
+  exists and is being aligned with the approved screen; legacy details remain.
+- [ ] Existing booking snapshot -> immutable AutoCare offer/quote snapshot.
 - [ ] Existing cabinet uploads -> provider, location, inquiry, and message media.
 - [ ] Existing generic favorites -> favorite providers/locations/offerings.
-- [ ] Legacy mock data, translations, route names, tests, and assets.
+- [~] Legacy mock data, translations, route names, tests, and assets: public
+  AutoCare routes and data exist, but protected/provider/admin routes are still
+  being migrated.
 
 ### 4.3 Quarantine and later remove
 
@@ -250,13 +285,13 @@ target behavior.
 - [x] Initialize a new empty Git repository on `main` with no configured remote.
 - [x] Ignore real `.env.*` files while keeping `.env.example` templates
   eligible for the initial commit.
-- [ ] User reviews this documentation diff.
-- [ ] Audit the exact initial-import file list for secrets, generated artifacts,
-  and obsolete AutoCare Hub-only assets.
-- [ ] Create the local initial-import commit after user approval.
-- [ ] Receive the new Git repository URL.
-- [ ] Verify the empty/new remote before adding `origin`.
-- [ ] Add `origin` and push only after explicit user approval.
+- [x] User reviewed the documentation/product direction and authorized design
+  implementation.
+- [x] New repository initialized with an isolated history and `origin` set to
+  `git@github.com:Dima163163/auto-care-hub.git`.
+- [x] Establish `dev` as the integration branch; commits are pushed there only.
+- [ ] Keep `main` protected as the production branch; merge/push only after
+  explicit approval of the reviewed `dev` commit range.
 
 Exit gate:
 
@@ -306,8 +341,11 @@ Required design work:
 - [x] Establish AutoCare Hub identity, typography, palette, spacing, elevation,
   icons, maps, automotive imagery and data-density rules.
 - [x] Define desktop, tablet and mobile responsive grids.
-- [~] Mock the homepage and search/compare journey with real AutoCare content;
-  provider profile, booking, and customer dashboard remain next.
+- [x] Implement and approve the desktop homepage and search/compare journey
+  with real AutoCare content. The desktop homepage should not be visually
+  redesigned without a new request.
+- [~] Bring provider profile, service request and client dashboard to the
+  approved AutoCare visual system; initial implementations exist.
 - [ ] Add missing customer mocks: comparison table, vehicle garage,
   inquiry/chat, attachment viewer, quote acceptance, bonuses and reviews.
 - [ ] Add missing provider mocks: onboarding, location/offer editor, calendar,
@@ -390,11 +428,14 @@ Goal: deliver the core marketplace value in the browser.
 - [ ] Define deterministic recommended-sort inputs and prevent paid plan status
   from silently changing organic ranking.
 - [ ] Implement comparison for equivalent `ServiceDefinition` results only.
-- [x] Implement provider/location profiles, galleries, hours, contacts,
-  offerings, amenities, verified reviews and policies.
+- [~] Implement provider/location profiles, galleries, hours, contacts,
+  offerings, amenities, verified reviews and policies. The data API and base
+  screen exist; current work is matching the approved profile composition and
+  replacing mock-only interactions.
 - [ ] Add favorites.
 - [~] Add the service request wizard with photo intent, direct-provider payment
-  copy, and explicit customer/provider confirmation boundary.
+  copy, and explicit customer/provider confirmation boundary. The UI is in
+  place; durable persistence, quote response and conversion are pending.
 - [ ] Validate accessibility, mobile web behavior and performance budgets.
 
 Exit gate:
