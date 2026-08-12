@@ -51,7 +51,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                     <SearchSummary icon={<LocateFixed className="size-4" />} label={t('autocare.searchPointLabel')} value={t('autocare.currentLocation')} />
                     <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
                     <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
-                    <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 lg:col-span-6 2xl:col-span-1"><Search className="size-4" />{t('autocare.startSearch')}</button>
+                    <button type="button" onClick={onStartSearch} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-control)] bg-primary px-3.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90 lg:col-span-2 lg:col-start-5 lg:justify-self-end 2xl:col-span-1 2xl:col-start-auto"><Search className="size-3.5" />{t('autocare.startSearch')}</button>
                 </div>
                 <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
                 <div className="mt-4 border-t border-primary-foreground/15 pt-4">
