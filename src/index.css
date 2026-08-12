@@ -382,6 +382,16 @@ body {
     min-width: 320px;
 }
 
+.autocare-toolbar-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+.autocare-toolbar-select::-ms-expand {
+    display: none;
+}
+
 :where(h1, h2, h3, h4, h5, h6)[class*="tracking-"] {
     letter-spacing: 0;
 }
