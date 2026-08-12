@@ -190,7 +190,7 @@ provider profiles, so `VITE_API_MODE=mock` and `VITE_API_MODE=real` share the
 same screen-level data flow.
 
 The results screen keeps the public flex shell and footer in normal document
-flow. Provider results now use ordinary client pagination (12 cards per page)
+flow. Provider results now use ordinary client pagination (8 cards per page)
 until cursor-backed discovery pagination is wired to the screen; cards are
 rendered in normal flow with no artificial virtual spacer rows.
 Provider previews and discovery responses also carry `brandSpecializations`

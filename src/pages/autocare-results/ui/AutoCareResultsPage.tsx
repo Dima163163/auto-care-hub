@@ -12,7 +12,7 @@ import { ResultsToolbar } from './ResultsToolbar'
 import { ProviderResultsList } from './ProviderResultsList'
 import { ResultsPagination } from './ResultsPagination'
 
-const RESULTS_PAGE_SIZE = 12
+const RESULTS_PAGE_SIZE = 8
 
 export function AutoCareResultsPage() {
     const { t } = useTranslation()
@@ -75,14 +75,15 @@ export function AutoCareResultsPage() {
     const totalPages = Math.max(1, Math.ceil(providers.length / RESULTS_PAGE_SIZE))
     const currentPage = Math.min(page, totalPages)
     const pagedProviders = providers.slice((currentPage - 1) * RESULTS_PAGE_SIZE, currentPage * RESULTS_PAGE_SIZE)
+    const pageSelectedProviders = selectedProviders.filter((provider) => pagedProviders.some((item) => item.id === provider.id))
     const changePage = (nextPage: number) => {
         setPage(nextPage)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     return (
-        <main className="min-h-full bg-background">
-            <div className="mx-auto flex min-h-full max-w-[var(--layout-operational-max)] flex-col px-[var(--layout-gutter)] py-6 sm:py-10">
+        <main className="bg-background">
+            <div className="mx-auto flex max-w-[var(--layout-operational-max)] flex-col px-[var(--layout-gutter)] py-6 sm:py-10">
                 <div className="shrink-0">
                     <ResultsToolbar
                         selectedCount={selectedIds.length}
@@ -118,11 +119,11 @@ export function AutoCareResultsPage() {
                         <ComparisonTray providers={selectedProviders} onRemove={toggleProvider} onCompare={compareSelected} />
                     </section>
 
-                    <div id="comparison-map" className="min-h-0 lg:h-full">
+                    <div id="comparison-map" className="min-h-0 lg:h-[min(70vh,720px)] lg:self-start">
                         <AutoCareMapPreview
-                            providers={providers}
-                            selectedProviders={selectedProviders}
-                            focusedProviderId={activeFocusedProviderId}
+                            providers={pagedProviders}
+                            selectedProviders={pageSelectedProviders}
+                            focusedProviderId={pagedProviders.some((provider) => provider.id === activeFocusedProviderId) ? activeFocusedProviderId : null}
                             onFocusProvider={setFocusedProviderId}
                             onRemove={toggleProvider}
                         />

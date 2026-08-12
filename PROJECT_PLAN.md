@@ -383,9 +383,9 @@ Goal: deliver the core marketplace value in the browser.
   matching specialists plus every multibrand provider in both mock and Fastify
   discovery responses.
 - [x] Ensure list/map results share one server query and stable pagination.
-- [x] Keep the results page reliable with ordinary provider pagination so the
-  result cards stay in normal document flow and the shared footer remains
-  reachable after every result page.
+- [x] Keep the results page reliable with ordinary provider pagination (8 cards
+  per page) so result cards stay in normal document flow, the map is bounded
+  to the current page, and the shared footer remains reachable.
 - [ ] Add explicit labels for `FIXED`, `FROM`, `RANGE` and `QUOTE_REQUIRED`.
 - [ ] Define deterministic recommended-sort inputs and prevent paid plan status
   from silently changing organic ranking.
