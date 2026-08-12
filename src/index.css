@@ -325,6 +325,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: url('/images/autocare/patterns/autocare-service-pattern.svg');
+    background-position: center top;
+    background-repeat: repeat;
+    background-size: 42rem auto;
     font-synthesis: none;
     font-optical-sizing: auto;
     font-kerning: normal;
@@ -351,6 +355,12 @@
     font-kerning: normal;
     font-feature-settings: "cv11" 1, "ss01" 1;
     }
+}
+
+.dark body {
+    background-image:
+        linear-gradient(rgb(10 29 57 / 0.7), rgb(10 29 57 / 0.7)),
+        url('/images/autocare/patterns/autocare-service-pattern.svg');
 }
 
 * {
