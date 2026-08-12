@@ -725,6 +725,7 @@ export const ruTranslations = {
         servicePlaceholder: 'Выберите услугу, например, Замена тормозных колодок',
         locationLabel: 'Где вы находитесь?',
         locationPlaceholder: 'Город, адрес или определить местоположение',
+        currentLocation: 'Рядом с вами',
         radiusLabel: 'Радиус поиска',
         radiusValue: '10 км',
         searchAction: 'Найти сервисы',

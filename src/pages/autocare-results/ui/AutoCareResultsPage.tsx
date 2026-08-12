@@ -108,9 +108,11 @@ export function AutoCareResultsPage() {
                         providerCount={providers.length}
                         serviceLabel={serviceLabel}
                         brandLabel={brandLabel}
+                        radiusKm={filters.radiusKm}
                         filterPanel={<AutoCareResultsFilters variant="dark" filters={filters} onChange={updateFilters} onReset={resetFilters} />}
                         onClear={() => setSelectedIds([])}
                         onStartSearch={startSearch}
+                        onRadiusChange={(radiusKm) => updateFilters({ radiusKm })}
                         activeFilters={activeFilters}
                         onRemoveFilter={removeFilter}
                         sort={filters.sort}

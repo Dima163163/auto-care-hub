@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CarFront, Check, MapPin, Search, ShieldCheck, X } from 'lucide-react'
+import { CarFront, Check, ChevronDown, LocateFixed, Search, ShieldCheck, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -11,9 +11,11 @@ type ResultsToolbarProps = {
     providerCount: number
     serviceLabel: string
     brandLabel: string
+    radiusKm: number
     filterPanel: ReactNode
     onClear: () => void
     onStartSearch: () => void
+    onRadiusChange: (radiusKm: number) => void
     sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     onSortChange: (sort: ResultsToolbarProps['sort']) => void
     onResetFilters: () => void
@@ -33,17 +35,18 @@ type ResultsToolbarProps = {
 
 export type ActiveFilter = { key: 'serviceId' | 'brandId' | 'radiusKm' | 'minRating' | 'minPrice' | 'maxPrice' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'; label: string }
 
-export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, brandLabel, filterPanel, onClear, onStartSearch, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
+export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, brandLabel, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
         <section className="bg-hero-overlay text-primary-foreground">
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
-                <div className="grid gap-2 rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 md:grid-cols-[1.05fr_1.2fr_0.8fr_auto] md:items-end md:p-4">
+                <div className="grid gap-2 rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 md:grid-cols-[1.05fr_1.1fr_0.72fr_0.5fr_auto] md:items-end md:p-4">
                     <SearchSummary icon={<Search className="size-4" />} label={t('autocare.serviceLabel')} value={serviceLabel} />
-                    <SearchSummary icon={<MapPin className="size-4" />} label={t('autocare.locationLabel')} value="Москва · 10 км" />
+                    <SearchSummary icon={<LocateFixed className="size-4" />} label={t('autocare.locationLabel')} value={t('autocare.currentLocation')} />
                     <SearchSummary icon={<CarFront className="size-4" />} label={t('autocare.vehicleLabel')} value={brandLabel === t('autocare.anyBrand') ? 'BMW X5, 2021' : brandLabel} />
+                    <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
                     <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90"><Search className="size-4" />{t('autocare.startSearch')}</button>
                 </div>
                 <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
@@ -69,6 +72,12 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
             </div>
         </div>
     </div>
+}
+
+function RadiusSelect({ radiusKm, onChange }: { radiusKm: number; onChange: (radiusKm: number) => void }) {
+    const { t } = useTranslation()
+
+    return <label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.radiusLabel')}</span><select value={radiusKm} onChange={(event) => onChange(Number(event.target.value))} className="h-5 w-full appearance-none bg-transparent pr-4 text-sm font-black text-primary-foreground outline-none [&>option]:bg-hero-overlay [&>option]:text-primary-foreground"><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option></select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/70" /></label>
 }
 
 function AppliedFilters({ filters, onClear, onRemove }: { filters: readonly ActiveFilter[]; onClear: () => void; onRemove: (key: ActiveFilter['key']) => void }) {

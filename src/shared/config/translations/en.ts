@@ -721,6 +721,7 @@ export const enTranslations = {
         servicePlaceholder: 'Choose a service, for example oil change',
         locationLabel: 'Where are you?',
         locationPlaceholder: 'City, address, or use my location',
+        currentLocation: 'Near you',
         radiusLabel: 'Search radius',
         radiusValue: '10 km',
         searchAction: 'Find services',
