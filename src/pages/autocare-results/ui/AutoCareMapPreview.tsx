@@ -10,9 +10,11 @@ import { RESULTS_MAP_CONFIG } from '@/shared/config/map'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import './autocare-results-map.css'
+import { getServiceMarkerIcon } from './serviceMarkerIcons'
 
 type AutoCareMapPreviewProps = {
     providers: readonly ProviderPreview[]
+    serviceId: string
     selectedProviders: readonly ProviderPreview[]
     focusedProviderId: string | null
     onFocusProvider: (id: string | null) => void
@@ -30,12 +32,12 @@ function formatPrice(provider: ProviderPreview) {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(provider.price)
 }
 
-function markerMarkup(provider: ProviderPreview, focused: boolean, fromLabel: string) {
+function markerMarkup(provider: ProviderPreview, serviceId: string, focused: boolean, fromLabel: string) {
     const tone = provider.verified ? 'success' : 'primary'
-    return `<div class="results-map-price-marker results-map-price-marker--${tone}${focused ? ' is-focused' : ''}"><span class="results-map-price-marker__pin" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 8.5h10M8.5 8.5v5m7-5v5M6 13.5h12l1.5 2.5H4.5L6 13.5Zm1.5 2.5v2m9-2v2M5 11.5h14" /></svg></span><span class="results-map-price-marker__copy"><strong>${fromLabel} ${formatPrice(provider)}</strong><span>★ ${provider.rating.toFixed(1)}</span></span></div>`
+    return `<div class="results-map-price-marker results-map-price-marker--${tone}${focused ? ' is-focused' : ''}"><span class="results-map-price-marker__pin" aria-hidden="true">${getServiceMarkerIcon(serviceId)}</span><span class="results-map-price-marker__copy"><strong>${fromLabel} ${formatPrice(provider)}</strong><span>★ ${provider.rating.toFixed(1)}</span></span></div>`
 }
 
-export function AutoCareMapPreview({ providers, selectedProviders, focusedProviderId, onFocusProvider, onRemove }: AutoCareMapPreviewProps) {
+export function AutoCareMapPreview({ providers, serviceId, selectedProviders, focusedProviderId, onFocusProvider, onRemove }: AutoCareMapPreviewProps) {
     const { t } = useTranslation()
     const mapContainerRef = useRef<HTMLDivElement | null>(null)
     const mapRef = useRef<L.Map | null>(null)
@@ -86,7 +88,7 @@ export function AutoCareMapPreview({ providers, selectedProviders, focusedProvid
             const marker = L.marker(position, {
                 icon: L.divIcon({
                     className: 'results-map-marker-host',
-                    html: markerMarkup(provider, isFocused, t('autocare.fromPrice', { price: '' }).replace(/\s+$/, '')),
+                    html: markerMarkup(provider, serviceId, isFocused, t('autocare.fromPrice', { price: '' }).replace(/\s+$/, '')),
                     iconSize: [144, 52],
                     iconAnchor: [72, 52],
                 }),
@@ -96,7 +98,7 @@ export function AutoCareMapPreview({ providers, selectedProviders, focusedProvid
             marker.on('click', () => onFocusProvider(provider.id))
             marker.addTo(markerLayer)
         })
-    }, [focusedProviderId, onFocusProvider, positions, providers, t])
+    }, [focusedProviderId, onFocusProvider, positions, providers, serviceId, t])
 
     const locate = () => {
         if (!navigator.geolocation || !mapRef.current) {

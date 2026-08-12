@@ -144,6 +144,7 @@ export function AutoCareResultsPage() {
                     <div id="comparison-map" className="min-h-0 lg:h-[min(70vh,720px)] lg:self-start">
                         <AutoCareMapPreview
                             providers={pagedProviders}
+                            serviceId={filters.serviceId}
                             selectedProviders={selectedProviders}
                             focusedProviderId={pagedProviders.some((provider) => provider.id === activeFocusedProviderId) ? activeFocusedProviderId : null}
                             onFocusProvider={setFocusedProviderId}
