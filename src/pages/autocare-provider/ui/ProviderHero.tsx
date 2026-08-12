@@ -62,14 +62,25 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
 
 function ProviderPhotoPreview({ provider }: ProviderHeroProps) {
     const { t } = useTranslation()
+    const galleryImages = [
+        provider.image,
+        '/images/autocare/providers/generated/service-oil-change.png',
+        '/images/autocare/providers/generated/service-diagnostics.png',
+        '/images/autocare/providers/generated/service-detailing.png',
+    ]
 
     return (
-        <div className="relative min-h-48 overflow-hidden rounded-[var(--radius-panel)] border border-primary-foreground/20 bg-primary-foreground/10 shadow-2xl shadow-black/20">
-            <AutoCareImage src={provider.image} alt="" loading="eager" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-hero-overlay/90 via-transparent to-transparent" aria-hidden="true" />
-            <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-3 text-xs font-black">
-                <span className="rounded-[var(--radius-control)] bg-hero-overlay/85 px-3 py-2">{t('autocare.providerServices')}</span>
-                <span className="rounded-[var(--radius-control)] bg-hero-overlay/85 px-3 py-2">{t('autocare.reviews', { count: provider.reviewCount })}</span>
+        <div className="grid min-h-52 grid-cols-[minmax(0,1fr)_5.5rem] gap-1 overflow-hidden rounded-[var(--radius-panel)] border border-primary-foreground/20 bg-primary-foreground/10 p-1 shadow-2xl shadow-black/20">
+            <div className="relative overflow-hidden rounded-[calc(var(--radius-panel)-0.25rem)]">
+                <AutoCareImage src={galleryImages[0]} alt="" loading="eager" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-hero-overlay/90 via-transparent to-transparent" aria-hidden="true" />
+                <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 text-[11px] font-black">
+                    <span className="rounded-[var(--radius-control)] bg-hero-overlay/85 px-2.5 py-1.5">{t('autocare.providerServices')}</span>
+                    <span className="rounded-[var(--radius-control)] bg-hero-overlay/85 px-2.5 py-1.5">{t('autocare.reviews', { count: provider.reviewCount })}</span>
+                </div>
+            </div>
+            <div className="grid grid-rows-3 gap-1">
+                {galleryImages.slice(1).map((image, index) => <div key={image} className="overflow-hidden rounded-[var(--radius-card)] border border-primary-foreground/15"><AutoCareImage src={image} alt="" loading={index === 0 ? 'eager' : 'lazy'} className="h-full w-full object-cover" /></div>)}
             </div>
         </div>
     )

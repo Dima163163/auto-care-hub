@@ -14,7 +14,7 @@ export function ProviderOfferings({ provider, selectedServiceId, onSelect }: Pro
     const { t, locale } = useTranslation()
 
     return (
-        <section className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm">
+        <section id="services" className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-5 sm:px-6">
                 <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{t('autocare.providerProfile')}</p><h2 className="mt-1 text-2xl font-black tracking-tight text-foreground">{t('autocare.providerServices')}</h2></div>
                 <span className="text-xs font-semibold text-muted-foreground">{provider.offerings.length} {t('autocare.providerServices').toLowerCase()}</span>
