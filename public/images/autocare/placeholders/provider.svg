@@ -1,0 +1,14 @@
+<svg width="640" height="420" viewBox="0 0 640 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Automotive service placeholder</title>
+  <desc id="desc">A blue automotive service placeholder illustration</desc>
+  <rect width="640" height="420" rx="28" fill="#EAF2FF"/>
+  <path d="M0 314C98 274 179 274 276 318C381 366 472 354 640 282V420H0V314Z" fill="#D6E7FF"/>
+  <rect x="128" y="188" width="384" height="92" rx="34" fill="#1976F3"/>
+  <path d="M170 188L216 132H424L470 188" stroke="#0C2F62" stroke-width="18" stroke-linejoin="round"/>
+  <circle cx="208" cy="288" r="30" fill="#0C2F62"/>
+  <circle cx="432" cy="288" r="30" fill="#0C2F62"/>
+  <circle cx="208" cy="288" r="11" fill="#EAF2FF"/>
+  <circle cx="432" cy="288" r="11" fill="#EAF2FF"/>
+  <path d="M273 221H367" stroke="white" stroke-width="14" stroke-linecap="round"/>
+  <path d="M300 103H340" stroke="#1976F3" stroke-width="16" stroke-linecap="round"/>
+</svg>

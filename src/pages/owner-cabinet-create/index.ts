@@ -1,0 +1,1 @@
+export { OwnerCabinetCreatePage } from './ui/OwnerCabinetCreatePage'

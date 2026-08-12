@@ -1,0 +1,5 @@
+export { mockBookings } from './bookings'
+export { mockCabinets } from './cabinets'
+export { mockReviews } from './reviews'
+export { mockServices } from './services'
+export { mockUsers } from './users'

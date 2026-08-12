@@ -1,0 +1,250 @@
+schema_version: 1
+document:
+  name: AutoCare Hub phase dependency map
+  status: proposed
+  updated: 2026-08-12
+  detailed_plan: ../../PROJECT_PLAN.md
+
+global_gates:
+  user_reviews_before_push: true
+  design_requires_three_confirmations: true
+  native_requires_stable_web: true
+  destructive_legacy_cleanup_requires_replacement_and_tests: true
+
+phases:
+  phase_0_documentation:
+    order: 0
+    status: in_review
+    depends_on: []
+    outputs:
+      - architecture
+      - project_plan
+      - migration_audit
+      - open_decisions
+      - architecture_yaml
+      - proposed_adrs
+    exit_gate:
+      - User reviews documentation diff.
+      - New Git remote is not changed without explicit approval.
+
+  phase_1_product_contract:
+    order: 1
+    status: pending
+    depends_on:
+      - phase_0_documentation
+    inputs_required:
+      - launch_market
+      - launch_currency
+      - launch_languages
+      - legacy_data_decision
+      - service_catalog_v1
+      - booking_policy
+      - verification_policy
+      - repair_payment_scope
+    outputs:
+      - approved_adrs
+      - service_comparison_schemas
+      - state_machines
+      - policy_acceptance_criteria
+
+  phase_2_design_and_mocks:
+    order: 2
+    status: pending
+    depends_on:
+      - phase_1_product_contract
+    outputs:
+      - design_tokens
+      - component_state_contracts
+      - desktop_tablet_mobile_mocks
+      - customer_provider_admin_super_admin_page_inventory
+      - proposal_images
+    exit_gate:
+      - Design change approval.
+      - Concrete visual scope approval.
+      - Final implementation approval.
+
+  phase_3_domain_foundation:
+    order: 3
+    status: pending
+    depends_on:
+      - phase_1_product_contract
+      - phase_2_design_and_mocks
+    modules:
+      - providers
+      - locations
+      - memberships
+      - catalog
+      - vehicles
+      - offerings
+      - schedules
+      - geospatial_search
+    outputs:
+      - typeorm_migrations
+      - api_v1_contract
+      - openapi
+      - realistic_seed_data
+      - negative_authorization_tests
+
+  phase_4_search_comparison_profiles:
+    order: 4
+    status: pending
+    depends_on:
+      - phase_3_domain_foundation
+    journeys:
+      - service_first_search
+      - list_map_sync
+      - compatible_offer_comparison
+      - provider_location_profile
+      - favorites
+
+  phase_5_booking_reviews:
+    order: 5
+    status: pending
+    depends_on:
+      - phase_4_search_comparison_profiles
+    journeys:
+      - instant_booking
+      - request_confirmation
+      - reschedule_cancel
+      - completion
+      - verified_review
+    hard_gates:
+      - idempotency
+      - concurrency
+      - timezone
+      - immutable_snapshots
+
+  phase_6_messaging_quotes:
+    order: 6
+    status: pending
+    depends_on:
+      - phase_3_domain_foundation
+      - phase_4_search_comparison_profiles
+      - phase_5_booking_reviews
+    journeys:
+      - service_inquiry
+      - private_photo_upload
+      - durable_messages
+      - quote_versions
+      - quote_acceptance_to_booking
+    hard_gates:
+      - participant_authorization
+      - private_media_access
+      - retention_policy
+      - send_accept_idempotency
+
+  phase_7_provider_admin:
+    order: 7
+    status: pending
+    depends_on:
+      - phase_3_domain_foundation
+      - phase_5_booking_reviews
+      - phase_6_messaging_quotes
+    journeys:
+      - provider_onboarding
+      - multi_location_management
+      - staff_permissions
+      - provider_inbox_calendar
+      - catalog_and_content_moderation
+      - provider_value_analytics
+
+  phase_8_bonuses:
+    order: 8
+    status: pending
+    depends_on:
+      - phase_5_booking_reviews
+      - phase_7_provider_admin
+    hard_gates:
+      - immutable_ledger
+      - no_double_spend
+      - provider_scope
+      - cancellation_reversal_policy
+
+  phase_9_stable_web:
+    order: 9
+    status: pending
+    depends_on:
+      - phase_4_search_comparison_profiles
+      - phase_5_booking_reviews
+      - phase_6_messaging_quotes
+      - phase_7_provider_admin
+      - phase_8_bonuses
+    hard_gates:
+      - real_api_e2e
+      - pilot_slos
+      - accessibility
+      - responsive_browser_matrix
+      - privacy_export_delete_retention
+      - security_review
+      - backups_restore
+      - api_compatibility
+      - public_seo_decision
+
+  phase_10_provider_subscriptions:
+    order: 10
+    status: pending_after_free_phase_validation
+    depends_on:
+      - phase_9_stable_web
+    inputs_required:
+      - plan_feature_matrix
+      - plan_periods
+      - permanent_free_plan_decision
+      - founding_partner_policy
+      - billing_country_legal_entity
+      - billing_provider_research
+      - grace_downgrade_policy
+      - promo_rules
+    journeys:
+      - paid_subscription
+      - super_admin_manual_grant
+      - promo_code_redemption
+      - billing_reconciliation
+      - non_destructive_downgrade
+
+  phase_11_mobile_readiness:
+    order: 11
+    status: pending
+    depends_on:
+      - phase_9_stable_web
+    hard_gates:
+      - stable_api_v1
+      - generated_client_contract
+      - cursor_pagination
+      - mobile_auth_threat_model
+      - bearer_private_media
+      - push_deep_link_contract
+      - demonstrated_native_product_value
+
+  phase_12_native_apps:
+    order: 12
+    status: pending
+    depends_on:
+      - phase_11_mobile_readiness
+    target: customer_ios_and_android
+    stack: expo_react_native_typescript
+    journeys:
+      - search_map_compare
+      - provider_profile
+      - vehicle_garage
+      - inquiry_message_photo_quote
+      - booking_notifications
+      - bonus_balance_history
+      - profile_security
+
+critical_path:
+  - phase_0_documentation
+  - phase_1_product_contract
+  - phase_2_design_and_mocks
+  - phase_3_domain_foundation
+  - phase_4_search_comparison_profiles
+  - phase_5_booking_reviews
+  - phase_6_messaging_quotes
+  - phase_7_provider_admin
+  - phase_8_bonuses
+  - phase_9_stable_web
+  - phase_11_mobile_readiness
+  - phase_12_native_apps
+
+parallel_after_stable_web:
+  - phase_10_provider_subscriptions
+  - phase_11_mobile_readiness

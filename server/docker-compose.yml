@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: autocarehub-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: autocarehub
+      POSTGRES_PASSWORD: autocarehub
+      POSTGRES_DB: autocarehub
+    volumes:
+      - autocarehub-postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: autocarehub-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - autocarehub-redis-data:/data
+
+volumes:
+  autocarehub-postgres-data:
+  autocarehub-redis-data:

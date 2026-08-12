@@ -1,0 +1,60 @@
+.autocarehub-leaflet .leaflet-container {
+    height: 100%;
+    min-height: 420px;
+    background: #e8eef5;
+    font-family: inherit;
+}
+
+@media (min-width: 768px) {
+    .autocarehub-leaflet .leaflet-container {
+        min-height: 560px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .autocarehub-leaflet .leaflet-container {
+        min-height: 720px;
+    }
+}
+
+.autocarehub-leaflet .leaflet-control-attribution {
+    margin: 0 8px 8px 0;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: rgb(78 92 115 / 0.78);
+    font-size: 9px;
+    line-height: 1.2;
+}
+
+.autocarehub-leaflet .leaflet-control-attribution a {
+    color: inherit;
+}
+
+.autocarehub-leaflet .leaflet-tooltip.price-label {
+    border: 1px solid #dfe5ef;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.96);
+    box-shadow: 0 8px 18px rgb(17 28 54 / 0.14);
+    color: #111936;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 8px 9px;
+}
+
+.autocarehub-leaflet .leaflet-tooltip.price-label.selected {
+    border-color: #0863ff;
+    background: #0863ff;
+    color: white;
+}
+
+.autocarehub-leaflet .leaflet-tooltip.price-label::before {
+    border-top-color: #dfe5ef;
+}
+
+.autocarehub-leaflet .leaflet-tooltip.price-label.selected::before {
+    border-top-color: #0863ff;
+}

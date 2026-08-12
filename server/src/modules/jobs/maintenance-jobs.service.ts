@@ -1,0 +1,644 @@
+import { Between, In, ObjectLiteral, Repository, type FindOptionsWhere } from 'typeorm'
+
+import { AppDataSource } from '../../database/data-source.js'
+import { BookingEntity, BookingStatus } from '../../entities/booking/booking.entity.js'
+import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
+import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
+import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
+import { SecurityEventEntity } from '../../entities/security-event/security-event.entity.js'
+import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
+import {
+    StripeWebhookEventEntity,
+    StripeWebhookEventStatus,
+} from '../../entities/booking/stripe-webhook-event.entity.js'
+import {
+    SystemIncidentSeverity,
+    SystemIncidentType,
+} from '../../entities/system-incident/system-incident.entity.js'
+import { recordSystemIncidentSafely } from '../admin/system-incidents.service.js'
+import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
+import {
+    AccountDeletionRequestEntity,
+    AccountDeletionRequestStatus,
+} from '../../entities/account-deletion-request/account-deletion-request.entity.js'
+import { NotificationEntity } from '../../entities/notification/notification.entity.js'
+import { env } from '../../config/env.js'
+import { cleanupOrphanedCabinetImages } from '../cabinets/cabinet-image-storage.js'
+import { addDays, zonedDateTimeToInstant } from '../../shared/date-time/cabinet-timezone.js'
+import { enqueueOutboxEvent, processOutboxBatch } from '../outbox/outbox.service.js'
+import {
+    reconcileStripePayments,
+    type PaymentReconciliationResult,
+} from '../payments/payment-reconciliation.service.js'
+import {
+    reconcileStripePaymentRefunds,
+    type PaymentRefundReconciliationResult,
+} from '../payments/payment-refund-reconciliation.service.js'
+import {
+    backfillMissingPaymentInvoices,
+    type PaymentInvoiceBackfillResult,
+} from '../payments/payment-invoice-backfill.service.js'
+import {
+    reconcileUnmatchedStripeWebhooks,
+    type StripeWebhookReconciliationResult,
+} from '../payments/stripe-webhook-reconciliation.service.js'
+import type { Mailer } from '../../shared/mail/mailer.js'
+import type { MaintenanceLease } from './maintenance-lease.service.js'
+import { metrics } from '../../shared/observability/metrics.js'
+import { getNotificationRetentionCutoff } from '../notifications/notification-retention.js'
+import { getRevokedSessionRetentionCutoff } from '../auth/session-retention.js'
+import {
+    getPrivacyRedactedSecurityEventMetadata,
+    getSecurityEventPrivacyCutoff,
+} from '../admin/security-event-retention-policy.js'
+import { boundMaintenanceSummaryCount } from './maintenance-summary-policy.js'
+import {
+    assertMaintenanceReferenceCount,
+    MAX_MAINTENANCE_REMINDER_CANDIDATES,
+} from './maintenance-batch-policy.js'
+import {
+    getBookingReminderDateRangeDays,
+    getBookingReminderWindowMs,
+} from './booking-reminder-policy.js'
+import { getMaintenanceDeleteBatchSize } from './maintenance-cleanup-policy.js'
+import { getStripeUnmatchedWebhookExpiryCutoff } from '../payments/stripe-webhook-retention.js'
+import { getAccountDeletionRetentionCutoff } from '../users/account-deletion-retention.js'
+import { getOutboxHealthSummary } from '../outbox/outbox-health.service.js'
+import { getMaintenanceBacklogAgeMs } from './maintenance-backlog-policy.js'
+import {
+    runMaintenancePhaseWithFailurePolicy,
+    type MaintenancePhase,
+    type MaintenancePhaseFailure,
+} from './maintenance-phase.js'
+
+export type MaintenanceCycleResult = {
+    remindersScheduled: number
+    outbox: {
+        claimed: number
+        completed: number
+        failed: number
+        abandoned: number
+        deadLetter: number
+        secretsRedacted: number
+    }
+    authCleanup: {
+        tokens: number
+        sessions: number
+        oauthLinkRequests: number
+        accountDeletionRequests: number
+    }
+    auditCleanup: {
+        auditLogs: number
+        securityEvents: number
+    }
+    notificationCleanup: {
+        notifications: number
+    }
+    orphanImageCleanup: {
+        failed: number
+        scanned: number
+        removed: number
+    }
+    stripeWebhook: {
+        unmatchedExpired: number
+        replay: StripeWebhookReconciliationResult
+    }
+    payments: PaymentReconciliationResult
+    paymentRefunds: PaymentRefundReconciliationResult
+    paymentInvoiceBackfill: PaymentInvoiceBackfillResult
+    phaseFailures: MaintenancePhaseFailure[]
+}
+
+export function summarizeMaintenanceCycle(result: MaintenanceCycleResult) {
+    const count = boundMaintenanceSummaryCount
+    return {
+        remindersScheduled: count(result.remindersScheduled),
+        outbox: Object.fromEntries(Object.entries(result.outbox).map(([key, value]) => [key, count(value)])),
+        authCleanup: Object.fromEntries(Object.entries(result.authCleanup).map(([key, value]) => [key, count(value)])),
+        auditCleanup: Object.fromEntries(Object.entries(result.auditCleanup).map(([key, value]) => [key, count(value)])),
+        notificationCleanup: Object.fromEntries(Object.entries(result.notificationCleanup).map(([key, value]) => [key, count(value)])),
+        orphanImageCleanup: Object.fromEntries(Object.entries(result.orphanImageCleanup).map(([key, value]) => [key, count(value)])),
+        stripeWebhook: {
+            unmatchedExpired: count(result.stripeWebhook.unmatchedExpired),
+            replay: Object.fromEntries(
+                Object.entries(result.stripeWebhook.replay).map(([key, value]) => [key, count(value)]),
+            ),
+        },
+        payments: Object.fromEntries(Object.entries(result.payments).map(([key, value]) => [key, count(value)])),
+        paymentRefunds: Object.fromEntries(
+            Object.entries(result.paymentRefunds).map(([key, value]) => [key, count(value)]),
+        ),
+        paymentInvoiceBackfill: Object.fromEntries(
+            Object.entries(result.paymentInvoiceBackfill).map(([key, value]) => [key, count(value)]),
+        ),
+    }
+}
+
+type ExpiringRecord = ObjectLiteral & {
+    id: string
+    expiresAt: Date
+}
+
+export function selectExpiredRecordIds(
+    rows: Array<{ id: string }>,
+    batchSize: number,
+) {
+    if (!Number.isInteger(batchSize) || batchSize < 1) {
+        throw new Error('Auth cleanup batch size must be a positive integer.')
+    }
+
+    return rows.slice(0, batchSize).map((row) => row.id)
+}
+
+export async function deleteExpiredEntityBatch<T extends ExpiringRecord>(
+    repository: Repository<T>,
+    now: Date,
+    batchSize: number,
+) {
+    const expiresAtColumn = repository.metadata.findColumnWithPropertyName('expiresAt')
+    if (!expiresAtColumn) {
+        throw new Error(`Entity ${repository.metadata.name} must define an expiresAt column.`)
+    }
+    const expiresAtSql = `record."${expiresAtColumn.databaseName.replaceAll('"', '""')}"`
+
+    const rows = await repository
+        .createQueryBuilder('record')
+        .select('record.id', 'id')
+        .where(`${expiresAtSql} < :now`, { now })
+        .orderBy(expiresAtSql, 'ASC')
+        .take(batchSize)
+        .getRawMany<{ id: string }>()
+
+    if (rows.length === 0) return 0
+
+    const result = await repository.delete(
+        { id: In(selectExpiredRecordIds(rows, batchSize)) } as FindOptionsWhere<T>,
+    )
+    return result.affected ?? 0
+}
+
+export async function deleteRevokedSessionBatch(now: Date, batchSize: number) {
+    const repository = AppDataSource.getRepository(UserSessionEntity)
+    const cutoff = getRevokedSessionRetentionCutoff(now)
+    const rows = await repository
+        .createQueryBuilder('session')
+        .select('session.id', 'id')
+        .where('session.revokedAt IS NOT NULL')
+        .andWhere('session.revokedAt < :cutoff', { cutoff })
+        .orderBy('session.revokedAt', 'ASC')
+        .take(batchSize)
+        .getRawMany<{ id: string }>()
+
+    if (rows.length === 0) return 0
+    const result = await repository.delete({ id: In(selectExpiredRecordIds(rows, batchSize)) })
+    return result.affected ?? 0
+}
+
+export async function scheduleBookingReminders(
+    now = new Date(),
+    assertLease?: MaintenanceLease['assertHeld'],
+) {
+    const utcDate = now.toISOString().slice(0, 10)
+    const reminderWindowMs = getBookingReminderWindowMs(env.bookingReminderHours)
+    const bookings = await AppDataSource.getRepository(BookingEntity).find({
+        where: {
+            date: Between(
+                addDays(utcDate, -1),
+                addDays(utcDate, getBookingReminderDateRangeDays(env.bookingReminderHours)),
+            ),
+            status: In([BookingStatus.Pending, BookingStatus.Confirmed]),
+        },
+        relations: { cabinet: true },
+        take: MAX_MAINTENANCE_REMINDER_CANDIDATES,
+        order: { date: 'ASC', startTime: 'ASC', createdAt: 'ASC' },
+    })
+    let scheduled = 0
+
+    for (const booking of bookings) {
+        assertLease?.()
+        const startsAt = zonedDateTimeToInstant(
+            booking.date,
+            booking.startTime,
+            booking.cabinet.timezone,
+        )
+        const remainingMs = startsAt.getTime() - now.getTime()
+        if (remainingMs <= 0 || remainingMs > reminderWindowMs) continue
+
+        await enqueueOutboxEvent({
+            type: 'booking.reminder',
+            idempotencyKey: `booking-reminder:${booking.id}:${booking.date}:${booking.startTime.slice(0, 5)}`,
+            payload: {
+                bookingId: booking.id,
+                cabinetTitle: booking.cabinet.title,
+                date: booking.date,
+                startTime: booking.startTime.slice(0, 5),
+                userId: booking.clientId,
+            },
+        })
+        scheduled += 1
+    }
+
+    metrics.setGauge('maintenance_reminders_last_scheduled', scheduled)
+    metrics.increment('maintenance_reminders_scheduled_total', scheduled)
+
+    return scheduled
+}
+
+export async function cleanupExpiredAuthData(now = new Date()) {
+    metrics.setGauge('maintenance_cleanup_batch_size', env.authCleanupBatchSize, { resource: 'auth' })
+
+    const [tokens, expiredSessions, revokedSessions, oauthLinkRequests, accountDeletionRequests] = await Promise.all([
+        deleteExpiredEntityBatch(
+            AppDataSource.getRepository(SecurityTokenEntity),
+            now,
+            env.authCleanupBatchSize,
+        ),
+        deleteExpiredEntityBatch(
+            AppDataSource.getRepository(UserSessionEntity),
+            now,
+            env.authCleanupBatchSize,
+        ),
+        deleteRevokedSessionBatch(now, env.authCleanupBatchSize),
+        deleteExpiredEntityBatch(
+            AppDataSource.getRepository(OAuthLinkRequestEntity),
+            now,
+            env.authCleanupBatchSize,
+        ),
+        deleteExpiredAccountDeletionRequestBatch(now, env.authCleanupBatchSize),
+    ])
+    const sessions = expiredSessions + revokedSessions
+    const result = { tokens, sessions, oauthLinkRequests, accountDeletionRequests }
+    metrics.setGauge('maintenance_cleanup_last_deleted', result.tokens, { resource: 'security_tokens' })
+    metrics.setGauge('maintenance_cleanup_last_deleted', result.sessions, { resource: 'user_sessions' })
+    metrics.increment('maintenance_cleanup_deleted_total', result.tokens, { resource: 'security_tokens' })
+    metrics.increment('maintenance_cleanup_deleted_total', result.sessions, { resource: 'user_sessions' })
+    metrics.setGauge('maintenance_cleanup_last_deleted', result.oauthLinkRequests, { resource: 'oauth_link_requests' })
+    metrics.increment('maintenance_cleanup_deleted_total', result.oauthLinkRequests, { resource: 'oauth_link_requests' })
+    metrics.setGauge('maintenance_cleanup_last_deleted', result.accountDeletionRequests, { resource: 'account_deletion_requests' })
+    metrics.increment('maintenance_cleanup_deleted_total', result.accountDeletionRequests, { resource: 'account_deletion_requests' })
+
+    return result
+}
+
+export async function deleteExpiredAccountDeletionRequestBatch(now: Date, batchSize: number) {
+    const repository = AppDataSource.getRepository(AccountDeletionRequestEntity)
+    const rows = await repository
+        .createQueryBuilder('request')
+        .select('request.id', 'id')
+        .where('request.status IN (:...statuses)', {
+            statuses: [AccountDeletionRequestStatus.Cancelled, AccountDeletionRequestStatus.Completed],
+        })
+        .andWhere('request.requestedAt < :cutoff', {
+            cutoff: getAccountDeletionRetentionCutoff(now),
+        })
+        .orderBy('request.requestedAt', 'ASC')
+        .take(batchSize)
+        .getRawMany<{ id: string }>()
+
+    if (rows.length === 0) return 0
+
+    const result = await repository.delete({ id: In(selectExpiredRecordIds(rows, batchSize)) })
+    return result.affected ?? 0
+}
+
+export async function redactExpiredOutboxSecrets(now = new Date()) {
+    const rows = await AppDataSource.query(`
+        WITH candidates AS (
+            SELECT event."id"
+            FROM "outbox_events" event
+            WHERE event."type" = 'email.send'
+              AND event."status" IN ('failed', 'dead_letter')
+              AND (event."payload" ? 'token' OR event."payload" ? 'encryptedToken')
+              AND (
+                  event."status" = 'dead_letter'
+                  OR (
+                      event."payload"->>'expiresAt' IS NOT NULL
+                      AND event."payload"->>'expiresAt' <= $1
+                  )
+              )
+            ORDER BY event."createdAt" ASC
+            LIMIT $2
+            FOR UPDATE SKIP LOCKED
+        )
+        UPDATE "outbox_events" event
+        SET "payload" = event."payload" - 'token' - 'encryptedToken'
+        FROM candidates
+        WHERE event."id" = candidates."id"
+        RETURNING event."id"
+    `, [now.toISOString(), getMaintenanceDeleteBatchSize()]) as Array<{ id: string }>
+
+    const redacted = rows.length
+    metrics.setGauge('maintenance_outbox_secrets_redacted_last', redacted)
+    metrics.increment('maintenance_outbox_secrets_redacted_total', redacted)
+    return redacted
+}
+
+const activeOutboxStatuses = [
+    OutboxEventStatus.Pending,
+    OutboxEventStatus.Processing,
+    OutboxEventStatus.Failed,
+]
+
+export async function measureMaintenanceOutboxBacklog(now = Date.now()) {
+    const repository = AppDataSource.getRepository(OutboxEventEntity)
+    const [active, deadLetter, oldest] = await Promise.all([
+        repository.count({ where: { status: In(activeOutboxStatuses) } }),
+        repository.countBy({ status: OutboxEventStatus.DeadLetter }),
+        repository
+            .createQueryBuilder('event')
+            .select('event.createdAt', 'createdAt')
+            .where('event.status IN (:...statuses)', { statuses: activeOutboxStatuses })
+            .orderBy('event.createdAt', 'ASC')
+            .getRawOne<{ createdAt: Date | string } | undefined>(),
+    ])
+    const summary = getOutboxHealthSummary({
+        pending: active,
+        deadLetter,
+        oldestCreatedAt: oldest?.createdAt,
+    }, now)
+
+    metrics.setGauge('maintenance_outbox_active', summary.pending)
+    metrics.setGauge('maintenance_outbox_dead_letter', summary.deadLetter)
+    metrics.setGauge(
+        'maintenance_outbox_oldest_age_ms',
+        getMaintenanceBacklogAgeMs(oldest?.createdAt, now),
+    )
+    return summary
+}
+
+export async function escalateExpiredUnmatchedStripeWebhooks(now = new Date()) {
+    const rows = await AppDataSource.getRepository(StripeWebhookEventEntity)
+        .createQueryBuilder('event')
+        .where('event.status = :status', { status: StripeWebhookEventStatus.Unmatched })
+        .andWhere('event.createdAt < :cutoff', {
+            cutoff: getStripeUnmatchedWebhookExpiryCutoff(now),
+        })
+        .orderBy('event.createdAt', 'ASC')
+        .take(getMaintenanceDeleteBatchSize())
+        .getMany()
+
+    for (const event of rows) {
+        await recordSystemIncidentSafely({
+            type: SystemIncidentType.PaymentWebhook,
+            severity: SystemIncidentSeverity.Critical,
+            title: `Stripe unmatched webhook expired: ${event.stripeEventId.slice(0, 160)}`,
+            metadata: {
+                stripeEventId: event.stripeEventId,
+                stripeEventType: event.eventType,
+                status: event.status,
+                createdAt: event.createdAt.toISOString(),
+            },
+        })
+    }
+
+    metrics.setGauge('maintenance_unmatched_webhooks_expired_last', rows.length)
+    metrics.increment('maintenance_unmatched_webhooks_expired_total', rows.length)
+    return { unmatchedExpired: rows.length }
+}
+
+export async function reconcileStripeWebhookEvents(
+    now = new Date(),
+    assertLease?: () => void,
+) {
+    const replay = await reconcileUnmatchedStripeWebhooks(assertLease)
+    const expired = await escalateExpiredUnmatchedStripeWebhooks(now)
+    return { ...expired, replay }
+}
+
+export async function cleanupExpiredAuditLogs(now = new Date()) {
+    const retentionBefore = new Date(
+        now.getTime() - env.auditLogRetentionDays * 24 * 60 * 60 * 1000,
+    )
+    const privacyBefore = getSecurityEventPrivacyCutoff(now, env.securityEventIpRetentionDays)
+    const result = await AppDataSource.transaction(async (manager) => {
+        await manager.query(`SELECT set_config('app.audit_retention_cleanup', 'on', true)`)
+        await manager.query(`SELECT set_config('app.security_event_retention_cleanup', 'on', true)`)
+        await manager.query(`SELECT set_config('app.security_event_privacy_cleanup', 'on', true)`)
+        const repository = manager.getRepository(AuditLogEntity)
+        const rows = await repository
+            .createQueryBuilder('audit')
+            .select('audit.id', 'id')
+            .where('audit.createdAt < :retentionBefore', { retentionBefore })
+            .orderBy('audit.createdAt', 'ASC')
+            .take(getMaintenanceDeleteBatchSize())
+            .getRawMany<{ id: string }>()
+        const auditResult = rows.length === 0
+            ? { affected: 0 }
+            : await repository.delete({ id: In(rows.map((row) => row.id)) })
+        const securityEventRepository = manager.getRepository(SecurityEventEntity)
+        const privacyRows = await securityEventRepository
+            .createQueryBuilder('securityEvent')
+            .select('securityEvent.id', 'id')
+            .where('securityEvent.createdAt < :privacyBefore', { privacyBefore })
+            .andWhere('securityEvent.createdAt >= :retentionBefore', { retentionBefore })
+            .andWhere(`(
+                securityEvent.ipAddress IS NOT NULL
+                OR securityEvent.userAgent IS NOT NULL
+                OR securityEvent.metadata ? :ipAddressMetadataKey
+            )`, { ipAddressMetadataKey: 'ipAddress' })
+            .orderBy('securityEvent.createdAt', 'ASC')
+            .take(getMaintenanceDeleteBatchSize())
+            .getRawMany<{ id: string }>()
+        if (privacyRows.length > 0) {
+            await securityEventRepository.update(
+                { id: In(privacyRows.map((row) => row.id)) },
+                {
+                    ipAddress: null,
+                    userAgent: null,
+                    metadata: getPrivacyRedactedSecurityEventMetadata(now),
+                },
+            )
+        }
+        const securityEventRows = await securityEventRepository
+            .createQueryBuilder('securityEvent')
+            .select('securityEvent.id', 'id')
+            .where('securityEvent.createdAt < :retentionBefore', { retentionBefore })
+            .orderBy('securityEvent.createdAt', 'ASC')
+            .take(getMaintenanceDeleteBatchSize())
+            .getRawMany<{ id: string }>()
+        const securityEventResult = securityEventRows.length === 0
+            ? { affected: 0 }
+            : await securityEventRepository.delete({ id: In(securityEventRows.map((row) => row.id)) })
+
+        return {
+            auditLogs: auditResult.affected ?? 0,
+            securityEvents: securityEventResult.affected ?? 0,
+            securityEventsRedacted: privacyRows.length,
+        }
+    })
+
+    const auditLogs = result.auditLogs
+    const securityEvents = result.securityEvents
+    metrics.setGauge('maintenance_cleanup_last_deleted', auditLogs, { resource: 'audit_logs' })
+    metrics.increment('maintenance_cleanup_deleted_total', auditLogs, { resource: 'audit_logs' })
+    metrics.setGauge('maintenance_cleanup_last_deleted', securityEvents, { resource: 'security_events' })
+    metrics.increment('maintenance_cleanup_deleted_total', securityEvents, { resource: 'security_events' })
+    metrics.setGauge('maintenance_security_event_privacy_redactions_last', result.securityEventsRedacted)
+    metrics.increment('maintenance_security_event_privacy_redactions_total', result.securityEventsRedacted)
+
+    return { auditLogs, securityEvents }
+}
+
+export async function cleanupExpiredNotifications(now = new Date()) {
+    const repository = AppDataSource.getRepository(NotificationEntity)
+    const rows = await repository
+        .createQueryBuilder('notification')
+        .select('notification.id', 'id')
+        .where('notification.createdAt < :retentionBefore', {
+            retentionBefore: getNotificationRetentionCutoff(now, env.notificationRetentionDays),
+        })
+        .orderBy('notification.createdAt', 'ASC')
+        .take(getMaintenanceDeleteBatchSize())
+        .getRawMany<{ id: string }>()
+    const result = rows.length === 0
+        ? { affected: 0 }
+        : await repository.delete({ id: In(rows.map((row) => row.id)) })
+    const notifications = result.affected ?? 0
+    metrics.setGauge('maintenance_cleanup_last_deleted', notifications, { resource: 'notifications' })
+    metrics.increment('maintenance_cleanup_deleted_total', notifications, { resource: 'notifications' })
+    return { notifications }
+}
+
+export async function cleanupOrphanedCabinetImageFiles(now = new Date()) {
+    const cabinets = await AppDataSource.getRepository(CabinetEntity).find({
+        select: { photos: true },
+    })
+    const referencedPhotoUrls = cabinets.flatMap((cabinet) => cabinet.photos ?? [])
+    assertMaintenanceReferenceCount(referencedPhotoUrls.length)
+
+    const result = await cleanupOrphanedCabinetImages({
+        referencedPhotoUrls,
+        now,
+        gracePeriodMs: env.cabinetUploadOrphanGraceHours * 60 * 60 * 1000,
+    })
+
+    metrics.setGauge('maintenance_orphan_images_scanned', result.scanned)
+    metrics.setGauge('maintenance_orphan_images_removed', result.removed)
+    metrics.setGauge('maintenance_orphan_images_failed', result.failed)
+    metrics.increment('maintenance_orphan_image_cleanup_total', result.removed, { outcome: 'removed' })
+    metrics.increment('maintenance_orphan_image_cleanup_total', result.failed, { outcome: 'failed' })
+
+    return result
+}
+
+export async function runMaintenanceCycle(
+    now = new Date(),
+    mailer?: Mailer,
+    lease?: MaintenanceLease,
+): Promise<MaintenanceCycleResult> {
+    const startedAt = Date.now()
+    metrics.increment('maintenance_cycles_started_total')
+
+    try {
+        const phaseFailures: MaintenancePhaseFailure[] = []
+        const runPhase = async <T>(
+            phase: MaintenancePhase,
+            task: () => Promise<T>,
+            fallback: T,
+        ): Promise<T> => {
+            const outcome = await runMaintenancePhaseWithFailurePolicy({
+                phase,
+                task,
+                assertLease: lease?.assertHeld,
+                timeoutMs: env.backgroundJobPhaseTimeoutMs,
+            })
+            if (outcome.ok) return outcome.value
+            phaseFailures.push(outcome.failure)
+            return fallback
+        }
+        const remindersScheduled = await runPhase(
+            'reminders',
+            () => scheduleBookingReminders(now, lease?.assertHeld),
+            0,
+        )
+        const outbox = await runPhase('outbox', async () => {
+                await measureMaintenanceOutboxBacklog(now.getTime())
+                const result = await processOutboxBatch(mailer, lease?.assertHeld)
+                const secretsRedacted = await redactExpiredOutboxSecrets(now)
+                await measureMaintenanceOutboxBacklog(now.getTime())
+                return { ...result, secretsRedacted }
+            },
+            { claimed: 0, completed: 0, failed: 0, abandoned: 0, deadLetter: 0, secretsRedacted: 0 },
+        )
+        const authCleanup = await runPhase('auth_cleanup', () => cleanupExpiredAuthData(now), {
+            tokens: 0,
+            sessions: 0,
+            oauthLinkRequests: 0,
+            accountDeletionRequests: 0,
+        })
+        const auditCleanup = await runPhase('audit_cleanup', () => cleanupExpiredAuditLogs(now), {
+            auditLogs: 0,
+            securityEvents: 0,
+        })
+        const notificationCleanup = await runPhase(
+            'notification_cleanup',
+            () => cleanupExpiredNotifications(now),
+            { notifications: 0 },
+        )
+        const orphanImageCleanup = await runPhase(
+            'orphan_image_cleanup',
+            () => cleanupOrphanedCabinetImageFiles(now),
+            { failed: 0, scanned: 0, removed: 0 },
+        )
+        const stripeWebhook = await runPhase(
+            'stripe_webhook',
+            () => reconcileStripeWebhookEvents(now, lease?.assertHeld),
+            {
+                unmatchedExpired: 0,
+                replay: {
+                    checked: 0,
+                    applied: 0,
+                    unsupported: 0,
+                    retryable: 0,
+                    failed: 0,
+                    skipped: 0,
+                },
+            },
+        )
+        const payments = await runPhase(
+            'payment_reconciliation',
+            () => reconcileStripePayments(lease?.assertHeld),
+            { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 },
+        )
+        const paymentRefunds = await runPhase(
+            'payment_refund_reconciliation',
+            () => reconcileStripePaymentRefunds(lease?.assertHeld),
+            { checked: 0, repaired: 0, skipped: 0, errors: 0 },
+        )
+        const paymentInvoiceBackfill = await runPhase(
+            'payment_invoice_backfill',
+            () => backfillMissingPaymentInvoices(lease?.assertHeld),
+            { checked: 0, created: 0, skipped: 0, errors: 0 },
+        )
+
+        const outcome = phaseFailures.length > 0 ? 'partial' : 'success'
+        metrics.increment('maintenance_cycles_completed_total', 1, { outcome })
+        metrics.setGauge(
+            phaseFailures.length > 0
+                ? 'maintenance_last_partial_at_ms'
+                : 'maintenance_last_success_at_ms',
+            Date.now(),
+        )
+
+        return {
+            remindersScheduled,
+            outbox,
+            authCleanup,
+            auditCleanup,
+            notificationCleanup,
+            orphanImageCleanup,
+            stripeWebhook,
+            payments,
+            paymentRefunds,
+            paymentInvoiceBackfill,
+            phaseFailures,
+        }
+    } catch (error) {
+        metrics.increment('maintenance_cycles_completed_total', 1, { outcome: 'failed' })
+        metrics.setGauge('maintenance_last_failure_at_ms', Date.now())
+        throw error
+    } finally {
+        metrics.observe('maintenance_cycle_duration_ms', Date.now() - startedAt)
+    }
+}

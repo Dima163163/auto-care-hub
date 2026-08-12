@@ -1,0 +1,390 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autocarehub-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  security:
+    name: Dependency and secret scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dependency review
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Audit frontend production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Audit backend production dependencies
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: server
+
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  frontend:
+    name: Frontend lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check API contract
+        run: npm run check:api-contract
+
+      - name: Check frontend API runtime boundaries
+        run: npm run check:api-runtime-boundaries
+
+      - name: Check OpenAPI shape
+        run: npm run check:openapi-shape
+
+      - name: Check OpenAPI structure
+        run: npm run check:openapi-structure
+
+      - name: Check design token contract
+        run: npm run check:design-tokens
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Check PWA update contract
+        run: npm run check:pwa-update
+
+      - name: Check bundle splitting
+        run: npm run check:bundle-splitting
+
+      - name: Check performance budget
+        run: npm run check:performance
+
+  backend:
+    name: Backend build, migrations, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: autocarehub_test
+          POSTGRES_USER: autocarehub
+          POSTGRES_PASSWORD: autocarehub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U autocarehub -d autocarehub_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      DATABASE_USER: autocarehub
+      DATABASE_PASSWORD: autocarehub
+      DATABASE_NAME: autocarehub_test
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      JWT_SECRET: ci-jwt-secret
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      FRONTEND_ORIGIN: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173
+      MAIL_MODE: logger
+      STRIPE_SECRET_KEY: sk_test_mock
+      STRIPE_WEBHOOK_SECRET: whsec_mock
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Check integration prerequisites
+        run: node ../scripts/check-integration-prerequisites.mjs
+        working-directory: server
+
+      - name: Backend quality gates
+        run: npm run quality:backend
+
+      - name: Record migration inventory
+        run: |
+          inventory="$(npm run check:migration-inventory --silent)"
+          echo "$inventory"
+          {
+            echo "### Migration inventory"
+            echo "- $inventory"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run migration smoke test
+        run: npm run migration:smoke
+        working-directory: server
+        env:
+          NODE_ENV: development
+
+      - name: Run PostgreSQL integration and concurrency profile
+        run: npm run test:integration
+        working-directory: server
+
+      - name: Test
+        run: npm test
+        working-directory: server
+
+      - name: Publish backend diagnostics
+        if: always()
+        working-directory: server
+        run: |
+          {
+            echo "### Backend diagnostics"
+            echo "- Node: $(node --version)"
+            echo "- Migration files: $(find src/database/migrations -maxdepth 1 -type f -name '*.ts' | wc -l | tr -d ' ')"
+            echo "- Quality command: npm run quality:backend"
+            echo "- Integration command: npm run test:integration"
+            echo "- Integration test services: PostgreSQL and Redis"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  browser-e2e:
+    name: Browser E2E smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Chromium
+        run: npm run check:e2e:browser
+
+      - name: Run browser E2E smoke
+        run: npm run test:e2e
+
+      - name: Run production PWA preview smoke
+        run: npm run test:e2e:pwa
+
+  real-full-stack:
+    name: Real full-stack preview smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: autocarehub_real_e2e
+          POSTGRES_USER: autocarehub
+          POSTGRES_PASSWORD: autocarehub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U autocarehub -d autocarehub_real_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: development
+      RUNTIME_MODE: api
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      DATABASE_USER: autocarehub
+      DATABASE_PASSWORD: autocarehub
+      DATABASE_NAME: autocarehub_real_e2e
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      JWT_SECRET: ci-real-e2e-jwt-secret
+      JWT_ACCESS_SECRET: ci-real-e2e-access-secret
+      JWT_REFRESH_SECRET: ci-real-e2e-refresh-secret
+      FRONTEND_ORIGIN: http://127.0.0.1:5174
+      CORS_ORIGINS: http://127.0.0.1:5174
+      MAIL_MODE: logger
+      STRIPE_SECRET_KEY: sk_test_mock
+      STRIPE_WEBHOOK_SECRET: whsec_mock
+      VITE_API_MODE: real
+      VITE_API_BASE_URL: http://127.0.0.1:4000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Build frontend preview artifact
+        run: npm run build
+
+      - name: Build backend
+        run: npm run build
+        working-directory: server
+
+      - name: Check integration prerequisites
+        run: node ../scripts/check-integration-prerequisites.mjs
+        working-directory: server
+
+      - name: Apply migrations twice
+        run: npm run migration:smoke
+        working-directory: server
+
+      - name: Record migration inventory
+        run: |
+          inventory="$(npm run check:migration-inventory --silent)"
+          echo "$inventory"
+          {
+            echo "### Migration inventory"
+            echo "- $inventory"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start API
+        run: |
+          npm run start:server > "$RUNNER_TEMP/autocare-hub-api.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/autocare-hub-api.pid"
+        working-directory: server
+
+      - name: Wait for API readiness
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4000/health/ready > /tmp/autocarehub-ready.json; then
+              cat /tmp/autocarehub-ready.json
+              exit 0
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/autocare-hub-api.log"
+          exit 1
+
+      - name: Reset and seed demo data
+        run: npm run demo:reset && npm run demo:seed
+        working-directory: server
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify Chromium
+        run: npm run check:e2e:browser
+
+      - name: Run real-mode preview smoke
+        run: npx playwright test -c playwright.real.config.ts
+        env:
+          REAL_E2E_PREVIEW: true
+
+      - name: Publish full-stack diagnostics
+        if: always()
+        run: |
+          {
+            echo "### Real full-stack diagnostics"
+            echo "- Frontend artifact: Vite preview"
+            echo "- API mode: real, MSW disabled"
+            echo "- Database: PostgreSQL 16 with migrations applied twice"
+            echo "- Cache: Redis 7"
+            echo "- API log:"
+            cat "$RUNNER_TEMP/autocare-hub-api.log" || true
+          } >> "$GITHUB_STEP_SUMMARY"

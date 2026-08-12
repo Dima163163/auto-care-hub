@@ -1,0 +1,22 @@
+.cabinet-detail-map {
+    height: 100%;
+    min-height: 0;
+    background: #edf3f6;
+    font-family: inherit;
+}
+
+.cabinet-detail-map .leaflet-control-attribution {
+    margin: 0 4px 4px 0;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: rgb(78 92 115 / 0.78);
+    font-size: 9px;
+    line-height: 1.2;
+}
+
+.cabinet-detail-map .leaflet-control-attribution a {
+    color: inherit;
+}

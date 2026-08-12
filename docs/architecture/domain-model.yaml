@@ -1,0 +1,627 @@
+schema_version: 1
+document:
+  name: AutoCare Hub target domain model
+  status: proposed
+  updated: 2026-08-12
+  source_of_truth:
+    - ../../ARCHITECTURE.md
+    - ../../PROJECT_PLAN.md
+  purpose: >-
+    Compact machine-readable navigation map for implementation planning. This
+    file is not an ORM schema or permission grant by itself.
+
+platform:
+  style: modular_monolith
+  backend: fastify_typescript
+  database: postgresql_typeorm
+  web: react_vite
+  mobile: expo_react_native_after_readiness_gate
+  durable_source_of_truth: postgresql
+  api_prefix_for_new_domain: /api/v1
+
+global_rules:
+  - Business rules live in the backend.
+  - Web and mobile use the same versioned API contracts.
+  - Provider resource access requires membership and permission checks.
+  - Money uses integer minor units and ISO 4217 currency.
+  - Events use UTC instants; schedules also preserve location timezone.
+  - Booking and sent quote data preserve immutable historical snapshots.
+  - Customer repair payments, provider subscriptions, and bonuses are separate contexts.
+  - Paid plans do not silently change organic ranking.
+  - Messages and customer attachments are private by default.
+
+contexts:
+  identity_access:
+    status: reuse_and_extend
+    owns:
+      - User
+      - ProviderMembership
+      - ProviderInvitation
+      - UserSession
+      - SecurityToken
+    depends_on: []
+    security_boundary: authenticated_user_and_resource_scope
+
+  catalog:
+    status: new
+    implementation_status: first_schema_slice_added
+    owns:
+      - ServiceCategory
+      - ServiceDefinition
+      - ComparisonAttributeDefinition
+      - CatalogChangeRequest
+    depends_on:
+      - identity_access
+    security_boundary: platform_admin_write_public_read
+
+  provider_network:
+    status: new
+    implementation_status: first_schema_slice_added
+    owns:
+      - ServiceProvider
+      - ServiceLocation
+      - ProviderVerification
+      - LocationSchedule
+      - ScheduleException
+      - BlockedPeriod
+    depends_on:
+      - identity_access
+    security_boundary: provider_membership_and_location_scope
+
+  vehicles:
+    status: new
+    owns:
+      - Vehicle
+    depends_on:
+      - identity_access
+    security_boundary: vehicle_owner_only
+
+  offerings:
+    status: new
+    implementation_status: first_schema_slice_added
+    owns:
+      - ServiceOffering
+      - OfferingVehicleRule
+    depends_on:
+      - catalog
+      - provider_network
+      - vehicles
+    security_boundary: provider_offering_permission
+
+  discovery:
+    status: new
+    owns:
+      - SearchProjection
+      - ComparisonProjection
+    depends_on:
+      - catalog
+      - provider_network
+      - offerings
+      - reviews
+    security_boundary: public_projection_only
+
+  bookings:
+    status: replace_legacy
+    implementation_status: service_request_primitives_added
+    owns:
+      - Booking
+      - BookingStatusHistory
+      - BookingRescheduleRequest
+    depends_on:
+      - identity_access
+      - provider_network
+      - offerings
+      - vehicles
+      - inquiries_quotes
+    security_boundary: client_owner_or_provider_membership
+
+  messaging:
+    status: new
+    implementation_status: first_schema_slice_added
+    owns:
+      - Conversation
+      - ConversationParticipant
+      - Message
+      - MessageAttachment
+    depends_on:
+      - identity_access
+      - provider_network
+      - private_media
+    security_boundary: active_conversation_participant
+
+  inquiries_quotes:
+    status: new
+    owns:
+      - ServiceInquiry
+      - Quote
+      - QuoteItem
+    depends_on:
+      - catalog
+      - provider_network
+      - vehicles
+      - messaging
+    security_boundary: inquiry_client_or_provider_member
+
+  reviews:
+    status: adapt_legacy
+    owns:
+      - Review
+      - ReviewReport
+      - RatingAggregate
+    depends_on:
+      - bookings
+      - provider_network
+      - catalog
+    security_boundary: verified_booking_and_moderation_policy
+
+  bonuses:
+    status: new
+    owns:
+      - BonusProgram
+      - BonusAccount
+      - BonusTransaction
+    depends_on:
+      - identity_access
+      - provider_network
+      - bookings
+    security_boundary: provider_scoped_ledger
+
+  subscriptions:
+    status: later_after_free_phase
+    owns:
+      - SubscriptionPlan
+      - PlanPrice
+      - ProviderSubscription
+      - EntitlementGrant
+      - SubscriptionPromoCode
+      - PromoRedemption
+      - BillingEvent
+    depends_on:
+      - identity_access
+      - provider_network
+      - audit_operations
+    security_boundary: provider_billing_read_and_super_admin_governance
+
+  private_media:
+    status: generalize_legacy_uploads
+    owns:
+      - MediaObject
+      - MediaVariant
+      - MediaAccessGrant
+    depends_on:
+      - identity_access
+    security_boundary: resource_authorized_private_access
+
+  notifications:
+    status: reuse_and_extend
+    owns:
+      - Notification
+      - NotificationPreference
+      - OutboxEvent
+    depends_on:
+      - identity_access
+    security_boundary: notification_owner_only
+
+  audit_operations:
+    status: reuse_and_extend
+    owns:
+      - AuditLog
+      - SecurityEvent
+      - SystemIncident
+      - SecurityMitigation
+    depends_on:
+      - identity_access
+    security_boundary: admin_or_super_admin_by_policy
+
+entities:
+  User:
+    context: identity_access
+    key: id
+    important_fields:
+      - name
+      - email
+      - phone
+      - status
+      - global_role
+      - locale
+    invariants:
+      - Email is normalized and unique.
+      - The legacy owner role is transitional only.
+
+  ProviderMembership:
+    context: identity_access
+    key: id
+    relations:
+      provider_id: ServiceProvider
+      user_id: User
+    important_fields:
+      - status
+      - role_label
+      - permissions
+      - location_scope
+    invariants:
+      - Active provider and user pair is unique according to invitation policy.
+      - Resource ownership is resolved from the database.
+
+  ServiceProvider:
+    context: provider_network
+    key: id
+    important_fields:
+      - legal_name
+      - display_name
+      - description
+      - status
+      - verification_state
+    states:
+      - DRAFT
+      - PENDING_REVIEW
+      - ACTIVE
+      - CHANGES_REQUESTED
+      - SUSPENDED
+      - REJECTED
+
+  ServiceLocation:
+    context: provider_network
+    key: id
+    relations:
+      provider_id: ServiceProvider
+    important_fields:
+      - name
+      - address
+      - geography_point
+      - timezone
+      - public_contacts
+      - facilities
+      - status
+    invariants:
+      - Active searchable locations require valid coordinates and timezone.
+      - Public aggregate rating is a projection, not editable source data.
+
+  ServiceCategory:
+    context: catalog
+    key: id
+    important_fields:
+      - stable_code
+      - localized_labels
+      - sort_order
+      - status
+
+  ServiceDefinition:
+    context: catalog
+    key: id
+    relations:
+      category_id: ServiceCategory
+    important_fields:
+      - stable_code
+      - localized_labels
+      - comparison_schema_version
+      - allowed_price_types
+      - allowed_booking_modes
+      - status
+    invariants:
+      - Providers cannot edit canonical definitions.
+      - Comparison attribute keys and units are platform controlled.
+
+  ServiceOffering:
+    context: offerings
+    key: id
+    relations:
+      location_id: ServiceLocation
+      service_definition_id: ServiceDefinition
+    important_fields:
+      - status
+      - booking_mode
+      - price_type
+      - price_min_minor
+      - price_max_minor
+      - currency
+      - duration
+      - comparison_values
+      - inclusions
+      - exclusions
+      - warranty
+      - version
+    enums:
+      price_type:
+        - FIXED
+        - FROM
+        - RANGE
+        - QUOTE_REQUIRED
+      booking_mode:
+        - INSTANT
+        - REQUEST_CONFIRMATION
+        - INQUIRY_QUOTE
+    invariants:
+      - FIXED has one exact amount.
+      - RANGE has ordered minimum and maximum.
+      - QUOTE_REQUIRED is not presented as an exact comparable total.
+      - Values conform to the service comparison schema version.
+
+  Vehicle:
+    context: vehicles
+    key: id
+    relations:
+      owner_id: User
+    important_fields:
+      - make
+      - model
+      - year
+      - variant
+      - engine
+      - fuel_type
+      - vin_optional
+      - registration_optional
+    privacy:
+      - VIN and registration are excluded from public projections and logs.
+
+  Booking:
+    context: bookings
+    key: id
+    relations:
+      client_id: User
+      provider_id: ServiceProvider
+      location_id: ServiceLocation
+      offering_id: ServiceOffering
+      vehicle_id: Vehicle
+      accepted_quote_id: Quote
+    states:
+      - REQUESTED
+      - CONFIRMED
+      - IN_PROGRESS
+      - COMPLETED
+      - DECLINED
+      - CANCELLED
+      - NO_SHOW
+    snapshots:
+      - service_snapshot
+      - price_snapshot
+      - provider_snapshot
+      - vehicle_snapshot
+      - timezone_snapshot
+      - policy_snapshot
+    invariants:
+      - Creation is idempotent.
+      - Capacity conflicts are prevented transactionally.
+      - Transitions are allowlisted by state and actor.
+
+  ServiceInquiry:
+    context: inquiries_quotes
+    key: id
+    relations:
+      client_id: User
+      provider_id: ServiceProvider
+      location_id: ServiceLocation
+      service_definition_id: ServiceDefinition
+      vehicle_id: Vehicle
+      conversation_id: Conversation
+    states:
+      - OPEN
+      - WAITING_PROVIDER
+      - WAITING_CUSTOMER
+      - QUOTED
+      - BOOKED
+      - CLOSED
+      - REPORTED
+
+  Conversation:
+    context: messaging
+    key: id
+    relations:
+      inquiry_id: ServiceInquiry
+    invariants:
+      - One primary conversation belongs to one inquiry.
+      - Participation is not inferred from knowing the identifier.
+
+  Message:
+    context: messaging
+    key: id
+    relations:
+      conversation_id: Conversation
+      sender_id: User
+    important_fields:
+      - client_idempotency_key
+      - kind
+      - sanitized_text
+      - sequence_cursor
+      - created_at
+      - edited_at
+      - tombstoned_at
+    invariants:
+      - Ordering is stable and cursor based.
+      - Normal deletion preserves a tombstone subject to retention policy.
+
+  MessageAttachment:
+    context: messaging
+    key: id
+    relations:
+      message_id: Message
+      media_object_id: MediaObject
+      uploader_id: User
+    privacy:
+      - Private authorized access only.
+      - Raw client filenames are not public.
+
+  Quote:
+    context: inquiries_quotes
+    key: id
+    relations:
+      inquiry_id: ServiceInquiry
+      provider_id: ServiceProvider
+      location_id: ServiceLocation
+    important_fields:
+      - version
+      - status
+      - currency
+      - price_type
+      - price_min_minor
+      - price_max_minor
+      - total_minor
+      - inclusions
+      - exclusions
+      - warranty
+      - duration
+      - expires_at
+    states:
+      - DRAFT
+      - SENT
+      - ACCEPTED
+      - DECLINED
+      - EXPIRED
+      - REVOKED
+    invariants:
+      - Only the latest valid sent version can be accepted.
+      - Sent versions are immutable snapshots.
+      - Acceptance is idempotent and linked transactionally to booking.
+
+  Review:
+    context: reviews
+    key: id
+    relations:
+      booking_id: Booking
+      client_id: User
+      provider_id: ServiceProvider
+      location_id: ServiceLocation
+      service_definition_id: ServiceDefinition
+    invariants:
+      - One active review per eligible completed booking.
+      - Public aggregates derive from approved review policy.
+
+  BonusProgram:
+    context: bonuses
+    key: id
+    relations:
+      provider_id: ServiceProvider
+    important_fields:
+      - status
+      - unit_type
+      - earn_rules
+      - redeem_rules
+      - expiry_rules
+      - policy_version
+
+  BonusAccount:
+    context: bonuses
+    key: id
+    relations:
+      provider_id: ServiceProvider
+      client_id: User
+    invariants:
+      - Provider and client pair is unique.
+      - Cached balance is rebuildable from the ledger.
+
+  BonusTransaction:
+    context: bonuses
+    key: id
+    relations:
+      bonus_account_id: BonusAccount
+      booking_id: Booking
+      source_transaction_id: BonusTransaction
+    transaction_types:
+      - EARN
+      - REDEEM
+      - REVERSAL
+      - EXPIRE
+      - ADJUSTMENT
+    invariants:
+      - Entries are immutable.
+      - Writes are idempotent and transactional.
+      - Balance cannot be double spent or used across providers.
+
+  SubscriptionPlan:
+    context: subscriptions
+    key: id
+    important_fields:
+      - stable_code
+      - status
+      - entitlement_template
+
+  PlanPrice:
+    context: subscriptions
+    key: id
+    relations:
+      plan_id: SubscriptionPlan
+    important_fields:
+      - currency
+      - amount_minor
+      - period_months
+      - effective_from
+      - effective_until
+
+  ProviderSubscription:
+    context: subscriptions
+    key: id
+    relations:
+      provider_id: ServiceProvider
+      plan_price_id: PlanPrice
+    states:
+      - PENDING
+      - TRIALING
+      - ACTIVE
+      - PAST_DUE
+      - GRACE
+      - CANCELLED
+      - EXPIRED
+    invariants:
+      - Billing state is reconciled from persisted provider events.
+      - Expiry or downgrade does not delete provider data.
+
+  EntitlementGrant:
+    context: subscriptions
+    key: id
+    relations:
+      provider_id: ServiceProvider
+      created_by: User
+    sources:
+      - FREE_BASELINE
+      - SUBSCRIPTION
+      - SUPER_ADMIN_GRANT
+      - FOUNDING_PARTNER
+      - SUPPORT_ADJUSTMENT
+    invariants:
+      - Every manual grant has reason, actor, validity and audit correlation.
+      - Billing cancellation does not erase an independent valid manual grant.
+
+  SubscriptionPromoCode:
+    context: subscriptions
+    key: id
+    important_fields:
+      - normalized_code
+      - status
+      - valid_from
+      - valid_until
+      - discount_type
+      - discount_value
+      - currency_optional
+      - eligible_plans
+      - eligible_periods
+      - redemption_limits
+    discount_types:
+      - PERCENT
+      - FIXED
+
+  PromoRedemption:
+    context: subscriptions
+    key: id
+    relations:
+      promo_code_id: SubscriptionPromoCode
+      provider_id: ServiceProvider
+      subscription_id: ProviderSubscription
+    invariants:
+      - Redemption is atomic and idempotent.
+      - Applied discount rules are stored as an immutable snapshot.
+
+separate_money_domains:
+  repair_payment:
+    initial_status: out_of_scope
+    payer: client
+    payee: service_provider_directly
+    platform_commission: false
+  provider_subscription:
+    initial_status: later_after_free_phase
+    payer: service_provider
+    payee: AutoCare Hub
+  customer_bonus:
+    initial_status: planned_after_core_booking
+    owner_of_liability: service_provider
+    withdrawable_cash: false
+    transferable_between_providers: false

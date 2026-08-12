@@ -1,0 +1,56 @@
+schema_version: 1
+document:
+  name: AutoCare Hub discovery and service-request API slice
+  status: proposed
+  source_of_truth:
+    - ../../docs/API_CONTRACT.md
+    - ../../docs/design/autocare-interaction-state-contract.md
+
+resources:
+  markets:
+    read: public
+    route: /api/v1/markets
+    fields: [countryCode, cityCode, currencyCode, timezone, supportedLocales]
+  service_definitions:
+    read: public
+    route: /api/v1/service-definitions
+    fields: [id, categoryId, labels, priceType, comparisonAttributes, active]
+  provider_discovery:
+    read: public
+    route: /api/v1/discovery/providers
+    filters: [serviceId, marketId, radiusKm, vehicleId, sort, cursor]
+    projection: [provider, location, offer, rating, reviewCount, distance, nextSlot, bonusSummary]
+  provider_profile:
+    read: public
+    route: /api/v1/providers/{providerId}
+    includes: [verification, locations, offers, amenities, reviewSummary, coverImageUrl, galleryImageUrls]
+  service_request:
+    create: authenticated_client
+    route: /api/v1/service-requests
+    fields: [providerId, locationId, serviceDefinitionId, vehicleId, preferredTime, note]
+    transitions: [draft, open, awaiting_reply, estimate_shared, accepted, declined, closed]
+  service_request_attachment:
+    create: request_participant
+    route: /api/v1/service-requests/{requestId}/attachments
+    policy: private_processed_media
+    acceptedTypes: [image/jpeg, image/png, image/webp]
+  message:
+    read: request_participant
+    create: request_participant
+    route: /api/v1/service-requests/{requestId}/messages
+    fields: [body, attachmentIds]
+  confirmation:
+    client: request_client
+    provider: provider_membership
+    routes:
+      client: /api/v1/service-requests/{requestId}/confirmations/client
+      provider: /api/v1/service-requests/{requestId}/confirmations/provider
+    invariant: booking_activates_only_after_both_confirmations
+
+security_invariants:
+  - locale_currency_and_market_never_grant_authorization
+  - attachments_are_private_to_request_participants
+  - repair_payment_is_direct_to_provider_in_mvp
+  - provider_subscription_is_separate_from_customer_service_request
+  - all_mutating_requests_support_csrf_and_idempotency_where_retried
+  - generated_provider_images_are_optional_and_missing_assets_resolve_to_a_placeholder

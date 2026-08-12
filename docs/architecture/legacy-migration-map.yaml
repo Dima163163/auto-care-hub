@@ -1,0 +1,269 @@
+schema_version: 1
+document:
+  name: Legacy cabinet booking to AutoCare Hub migration map
+  status: proposed
+  updated: 2026-08-12
+  audit: ../MIGRATION_AUDIT.md
+
+strategy:
+  mode: replace_vertical_slices_then_delete
+  recommended_database: fresh_autocare_database_if_no_legacy_data_required
+  deletion_workspace_boundary: /Users/a1/Desktop/my-projects/AutoCareHub
+  deletion_rules:
+    - Resolve exact paths before deletion.
+    - Do not delete as an exploratory action.
+    - Replacement and tests must exist first.
+    - Record data and rollback consequences.
+    - User reviews the local diff before push.
+
+reuse:
+  - current_area: server/src/modules/auth
+    target_owner: identity_access
+    action: preserve_and_extend
+    notes: Add AutoCare resource authorization without weakening current sessions.
+
+  - current_area: server/src/modules/oauth
+    target_owner: identity_access
+    action: preserve_and_extend
+    notes: Mobile PKCE is a later addition.
+
+  - current_area: server/src/entities/user-session
+    target_owner: identity_access
+    action: preserve
+
+  - current_area: server/src/entities/security-token
+    target_owner: identity_access
+    action: preserve
+
+  - current_area: server/src/modules/outbox
+    target_owner: notifications
+    action: preserve_and_extend
+
+  - current_area: server/src/modules/notifications
+    target_owner: notifications
+    action: preserve_and_extend
+
+  - current_area: server/src/shared/mail
+    target_owner: notifications
+    action: preserve
+
+  - current_area: server/src/shared/redis
+    target_owner: platform_runtime
+    action: preserve
+
+  - current_area: server/src/shared/observability
+    target_owner: audit_operations
+    action: preserve_and_extend
+
+  - current_area: server/src/modules/admin
+    target_owner: audit_operations
+    action: preserve_platform_controls_and_replace_domain_queries
+
+  - current_area: server/src/entities/audit-log
+    target_owner: audit_operations
+    action: preserve_and_extend_actions
+
+  - current_area: server/src/entities/security-event
+    target_owner: audit_operations
+    action: preserve
+
+  - current_area: server/src/modules/bookings
+    target_owner: bookings
+    action: reuse_idempotency_schedule_transition_patterns_only
+    prerequisite: new_autocare_booking_contract
+
+  - current_area: server/src/modules/cabinets image processing
+    target_owner: private_media
+    action: generalize_validation_and_reencoding_patterns
+    prerequisite: public_private_storage_contract
+
+  - current_area: src/shared/api
+    target_owner: frontend_platform
+    action: preserve_and_add_api_v1_contract
+
+  - current_area: src/shared/ui
+    target_owner: frontend_design_system
+    action: audit_then_reuse_approved_components
+
+  - current_area: src/app/mocks
+    target_owner: frontend_contract_testing
+    action: preserve_harness_replace_domain_fixtures
+
+replace:
+  - current_area: server/src/entities/cabinet
+    target_entities:
+      - ServiceProvider
+      - ServiceLocation
+      - LocationSchedule
+      - ScheduleException
+      - BlockedPeriod
+    migration_mode: new_tables_not_mechanical_rename
+    deletion_gate:
+      - provider_location_api_complete
+      - search_and_booking_no_longer_depend_on_cabinet
+      - real_api_e2e_green
+
+  - current_area: server/src/modules/cabinets
+    target_modules:
+      - providers
+      - locations
+      - schedules
+      - search
+      - private_media
+    migration_mode: vertical_replacement
+
+  - current_area: server/src/entities/service
+    target_entities:
+      - ServiceCategory
+      - ServiceDefinition
+      - ServiceOffering
+      - OfferingVehicleRule
+    migration_mode: new_normalized_catalog
+    deletion_gate:
+      - catalog_admin_complete
+      - provider_offering_editor_complete
+      - comparison_contract_complete
+
+  - current_area: server/src/modules/services
+    target_modules:
+      - catalog
+      - offerings
+    migration_mode: vertical_replacement
+
+  - current_area: server/src/entities/booking/booking.entity.ts
+    target_entities:
+      - Booking
+      - BookingStatusHistory
+      - BookingRescheduleRequest
+    migration_mode: new_snapshot_and_state_contract
+    deletion_gate:
+      - instant_and_request_booking_complete
+      - quote_acceptance_complete
+      - overlap_idempotency_tests_green
+
+  - current_area: server/src/entities/favorite-cabinet
+    target_entities:
+      - FavoriteProviderOrLocationOrOffering
+    migration_mode: product_decision_then_replace
+
+  - current_area: server/src/modules/reviews
+    target_modules:
+      - reviews
+    migration_mode: adapt_to_provider_location_service_definition
+
+  - current_area: src/entities/cabinet
+    target_entities:
+      - provider
+      - service_location
+      - service_offering
+    migration_mode: new_frontend_slices
+
+  - current_area: src/pages/cabinets
+    target_pages:
+      - search_results
+    migration_mode: replace_after_approved_design
+
+  - current_area: src/pages/cabinet-details
+    target_pages:
+      - service_location_details
+    migration_mode: replace_after_approved_design
+
+  - current_area: src/pages/owner-cabinets
+    target_pages:
+      - provider_locations
+    migration_mode: replace_after_membership_api
+
+  - current_area: src/pages/owner-services
+    target_pages:
+      - provider_offerings
+    migration_mode: replace_after_catalog_offering_api
+
+  - current_area: src/widgets/cabinet-map
+    target_widgets:
+      - offering_results_map
+    migration_mode: reuse_leaflet_shell_replace_contract
+
+quarantine_then_delete:
+  - current_area: server/src/modules/commission
+    reason: legacy_customer_booking_commission_conflicts_with_subscription_model
+    may_reuse:
+      - none
+    deletion_gate:
+      - repair_payment_scope_approved
+      - new_autocare_booking_has_no_dependency
+      - migrations_and_tests_green
+
+  - current_area: server/src/modules/payments
+    reason: legacy_booking_payments_and_stripe_connect_are_not_provider_subscriptions
+    may_reuse_patterns:
+      - webhook_signature_verification
+      - unique_event_persistence
+      - idempotency
+      - retry
+      - reconciliation
+      - provider_timeout
+      - audit_and_incident_handling
+    do_not_reuse_entities:
+      - BookingPayment
+      - BookingPaymentAttempt
+      - BookingPaymentRefund
+      - BookingPaymentDispute
+      - BookingPaymentInvoice
+    deletion_gate:
+      - no_autocare_route_depends_on_booking_payment
+      - provider_subscription_module_has_separate_contract_or_is_not_yet_active
+      - financial_retention_consequences_reviewed
+
+  - current_area: server/src/entities/booking booking-payment family
+    reason: legacy_financial_context
+    deletion_gate:
+      - exact_database_strategy_approved
+      - unknown_production_database_protected
+      - rollback_and_retention_documented
+
+  - current_area: stripe_connect_fields_on_user
+    reason: provider_payout_identity_is_not_subscription_customer_identity
+    deletion_gate:
+      - legacy_payment_routes_removed
+      - migration_verified
+
+  - current_area: src/entities/payment and legacy payment UI
+    reason: first_autocare_release_does_not_assume_repair_checkout
+    deletion_gate:
+      - booking_dashboard_replaced
+      - no_route_imports_remain
+
+documentation_follow_up:
+  current_source_of_truth:
+    - AGENTS.md
+    - PROJECT_CONTEXT.md
+    - ARCHITECTURE.md
+    - PROJECT_PLAN.md
+    - SECURITY_CONTEXT.md
+    - docs/MIGRATION_AUDIT.md
+    - docs/adr
+    - docs/architecture
+    - docs/product/OPEN_DECISIONS.md
+  revalidate_with_runtime_slice:
+    - docs/API_CONTRACT.md
+    - docs/CUSTOMER_HANDOFF.md
+    - docs/PRODUCTION_READINESS.md
+    - docs/RELEASE_CHECKLIST.md
+    - docs/DATA_RETENTION.md
+    - docs/FINANCIAL_DATA_RETENTION.md
+    - docs/MAP_PROVIDER.md
+    - docs/PROVIDER_CONFIGURATION.md
+    - docs/design
+    - server/README.md
+    - .env.example
+    - server/.env.example
+
+repository_transition:
+  current_remote: none
+  archived_legacy_remote: not recorded in the active repository
+  archived_legacy_git_metadata: /Users/a1/Desktop/my-projects/AutoCareHub/.legacy-git/legacy-booking.git-2026-08-12
+  target_remote: tbd_from_user
+  current_branch: main
+  current_commit_count: 0
+  remote_change_allowed_now: false
+  push_allowed_now: false
