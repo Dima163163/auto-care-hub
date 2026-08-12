@@ -363,6 +363,20 @@
         url('/images/autocare/patterns/autocare-service-pattern.svg');
 }
 
+.autocare-app-surface {
+    background-color: var(--background);
+    background-image: url('/images/autocare/patterns/autocare-service-pattern.svg');
+    background-position: center top;
+    background-repeat: repeat;
+    background-size: 36rem auto;
+}
+
+.dark .autocare-app-surface {
+    background-image:
+        linear-gradient(rgb(10 29 57 / 0.56), rgb(10 29 57 / 0.56)),
+        url('/images/autocare/patterns/autocare-service-pattern.svg');
+}
+
 * {
     box-sizing: border-box;
 }

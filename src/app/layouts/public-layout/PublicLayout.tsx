@@ -33,7 +33,7 @@ export function PublicLayout() {
             : 'client'
 
     return (
-        <div className="mobile-bottom-safe flex min-h-screen flex-col bg-background md:pb-0">
+        <div className="autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col md:pb-0">
             <SeoHead />
             <DesktopPublicHeader />
             <div className="md:hidden">
