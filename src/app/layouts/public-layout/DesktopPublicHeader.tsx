@@ -18,7 +18,6 @@ export function DesktopPublicHeader() {
     const links = [
         { label: t('navigation.services'), to: ROUTES.serviceDiscovery },
         { label: t('navigation.myBookings'), to: ROUTES.profileBookings },
-        { label: t('navigation.favorites'), to: ROUTES.favorites },
         { label: t('navigation.owners'), to: ROUTES.owners },
         { label: t('navigation.about'), to: ROUTES.about },
     ]
@@ -29,7 +28,7 @@ export function DesktopPublicHeader() {
                 <Link to={ROUTES.home} className="shrink-0" aria-label={t('navigation.home')}>
                     <BrandLogo size="lg" />
                 </Link>
-                <nav className="ml-auto hidden h-full items-center gap-[clamp(1.5rem,3vw,3.1rem)] whitespace-nowrap text-sm font-semibold lg:flex">
+                <nav className="ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold lg:flex">
                     {links.map((link) => (
                         <NavLink
                             key={link.to}
@@ -40,12 +39,14 @@ export function DesktopPublicHeader() {
                         </NavLink>
                     ))}
                 </nav>
-                <div className="ml-auto flex items-center gap-5">
+                <div className="ml-auto flex items-center gap-3 xl:gap-4">
                     <Link
                         to={ROUTES.serviceDiscovery}
-                        className="flex h-[45px] items-center gap-2 rounded-[9px] border border-primary-foreground/20 px-4 text-sm font-semibold"
+                        className="flex h-10 items-center gap-1.5 rounded-[9px] border border-primary-foreground/20 px-2.5 text-xs font-semibold xl:px-3"
                     >
-                        <MapPin className="size-[19px]" />Москва<ChevronDown className="size-4" />
+                        <MapPin className="size-4" />
+                        <span className="hidden xl:inline">Москва</span>
+                        <ChevronDown className="size-3.5" />
                     </Link>
                     <LanguageSwitcher compact />
                     <Link to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
