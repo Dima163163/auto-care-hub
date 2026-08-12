@@ -12,6 +12,7 @@ export {
     type ProviderReview,
 } from './model/autocareMockData'
 export { automotiveVehicleBrands, getVehicleBrandLabel, type AutomotiveVehicleBrandId } from './model/vehicleBrands'
+export { getVehicleModels } from './model/vehicleModels'
 export {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,

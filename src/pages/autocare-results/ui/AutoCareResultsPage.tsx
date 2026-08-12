@@ -71,6 +71,8 @@ export function AutoCareResultsPage() {
         hasBonus: false,
         inclusion: '',
         brandId: '',
+        vehicleModel: '',
+        vehicleYear: '',
     })
     const removeFilter = (key: ActiveFilter['key']) => updateFilters({ [key]: key === 'radiusKm' ? 25 : key === 'availableToday' || key === 'verifiedOnly' || key === 'warrantyOnly' || key === 'hasBonus' ? false : '' } as Partial<AutoCareResultFilters>)
     const startSearch = () => document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -107,12 +109,15 @@ export function AutoCareResultsPage() {
                         selectedCount={selectedIds.length}
                         providerCount={providers.length}
                         serviceLabel={serviceLabel}
-                        brandLabel={brandLabel}
+                        brandId={filters.brandId}
+                        vehicleModel={filters.vehicleModel}
+                        vehicleYear={filters.vehicleYear}
                         radiusKm={filters.radiusKm}
                         filterPanel={<AutoCareResultsFilters variant="dark" filters={filters} onChange={updateFilters} onReset={resetFilters} />}
                         onClear={() => setSelectedIds([])}
                         onStartSearch={startSearch}
                         onRadiusChange={(radiusKm) => updateFilters({ radiusKm })}
+                        onVehicleChange={(vehicle) => updateFilters(vehicle)}
                         activeFilters={activeFilters}
                         onRemoveFilter={removeFilter}
                         sort={filters.sort}

@@ -16,6 +16,8 @@ export type AutoCareResultFilters = {
     hasBonus: boolean
     inclusion: string
     brandId: string
+    vehicleModel: string
+    vehicleYear: string
 }
 
 const SORTS = new Set<AutoCareResultSort>(['recommended', 'price_asc', 'rating_desc', 'distance_asc'])
@@ -47,14 +49,16 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
         hasBonus: params.get('hasBonus') === 'true',
         inclusion: params.get('inclusion') ?? '',
         brandId: params.get('brand') ?? '',
+        vehicleModel: params.get('vehicleModel') ?? '',
+        vehicleYear: positiveNumber(params.get('vehicleYear'), '', new Date().getFullYear()),
     }
 }
 
-export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId'>>
+export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId' | 'vehicleModel' | 'vehicleYear'>>
 
 export function writeAutoCareResultFilters(params: URLSearchParams, patch: AutoCareResultFilterPatch) {
     const next = new URLSearchParams(params)
-    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId']
+    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId', 'vehicleModel', 'vehicleYear']
 
     keys.forEach((key) => {
         const value = patch[key]

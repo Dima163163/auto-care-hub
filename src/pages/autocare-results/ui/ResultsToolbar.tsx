@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { CarFront, Check, ChevronDown, LocateFixed, Search, ShieldCheck, X } from 'lucide-react'
+import { Check, ChevronDown, LocateFixed, Search, ShieldCheck, X } from 'lucide-react'
 import { useState } from 'react'
 
+import { automotiveVehicleBrands, getVehicleBrandLabel, getVehicleModels } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { ResultsQuickFilters } from './ResultsQuickFilters'
@@ -10,12 +11,15 @@ type ResultsToolbarProps = {
     selectedCount: number
     providerCount: number
     serviceLabel: string
-    brandLabel: string
+    brandId: string
+    vehicleModel: string
+    vehicleYear: string
     radiusKm: number
     filterPanel: ReactNode
     onClear: () => void
     onStartSearch: () => void
     onRadiusChange: (radiusKm: number) => void
+    onVehicleChange: (vehicle: { brandId: string; vehicleModel: string; vehicleYear: string }) => void
     sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     onSortChange: (sort: ResultsToolbarProps['sort']) => void
     onResetFilters: () => void
@@ -35,19 +39,19 @@ type ResultsToolbarProps = {
 
 export type ActiveFilter = { key: 'serviceId' | 'brandId' | 'radiusKm' | 'minRating' | 'minPrice' | 'maxPrice' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'; label: string }
 
-export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, brandLabel, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
+export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
         <section className="bg-hero-overlay text-primary-foreground">
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
-                <div className="grid gap-2 rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 md:grid-cols-[1.05fr_1.1fr_0.72fr_0.5fr_auto] md:items-end md:p-4">
+                <div className="grid gap-2 rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 lg:grid-cols-[1.05fr_0.94fr_0.72fr_0.72fr_0.5fr_auto] lg:items-end lg:p-4">
                     <SearchSummary icon={<Search className="size-4" />} label={t('autocare.serviceLabel')} value={serviceLabel} />
-                    <SearchSummary icon={<LocateFixed className="size-4" />} label={t('autocare.locationLabel')} value={t('autocare.currentLocation')} />
-                    <SearchSummary icon={<CarFront className="size-4" />} label={t('autocare.vehicleLabel')} value={brandLabel === t('autocare.anyBrand') ? 'BMW X5, 2021' : brandLabel} />
+                    <SearchSummary icon={<LocateFixed className="size-4" />} label={t('autocare.searchPointLabel')} value={t('autocare.currentLocation')} />
+                    <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
                     <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
-                    <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90"><Search className="size-4" />{t('autocare.startSearch')}</button>
+                    <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 lg:col-span-6 2xl:col-span-1"><Search className="size-4" />{t('autocare.startSearch')}</button>
                 </div>
                 <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
                 <div className="mt-4 border-t border-primary-foreground/15 pt-4">
@@ -63,7 +67,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                 <div>
                     <p className="text-sm font-semibold text-muted-foreground">{t('autocare.resultsEyebrow')}</p>
                     <h1 className="autocare-results-heading mt-1 text-2xl font-black text-foreground sm:text-3xl">{t('autocare.resultsTitle')}</h1>
-                    <p className="mt-2 text-sm font-medium text-muted-foreground">{serviceLabel} <span className="px-1 text-border">·</span> {t('autocare.resultCount', { count: providerCount })} <span className="px-1 text-border">·</span> {brandLabel}</p>
+                    <p className="mt-2 text-sm font-medium text-muted-foreground">{serviceLabel} <span className="px-1 text-border">·</span> {t('autocare.resultCount', { count: providerCount })} <span className="px-1 text-border">·</span> {vehicleModel || vehicleYear ? [vehicleModel, vehicleYear].filter(Boolean).join(', ') : t('autocare.anyBrand')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {selectedCount > 0 && <button type="button" onClick={onClear} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary"><Check className="size-4" />{t('autocare.compareSelected', { count: selectedCount })}</button>}
@@ -72,6 +76,15 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
             </div>
         </div>
     </div>
+}
+
+function VehicleSelects({ brandId, vehicleModel, vehicleYear, onChange }: { brandId: string; vehicleModel: string; vehicleYear: string; onChange: (vehicle: { brandId: string; vehicleModel: string; vehicleYear: string }) => void }) {
+    const { t, locale } = useTranslation()
+    const models = getVehicleModels(brandId)
+    const years = Array.from({ length: 22 }, (_, index) => String(new Date().getFullYear() - index))
+    const selectClass = 'h-5 w-full appearance-none bg-transparent pr-4 text-sm font-black text-primary-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-hero-overlay [&>option]:text-primary-foreground'
+
+    return <><label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.vehicleMakeLabel')}</span><select value={brandId} onChange={(event) => onChange({ brandId: event.target.value, vehicleModel: '', vehicleYear: '' })} className={selectClass}><option value="">{t('autocare.anyBrand')}</option>{automotiveVehicleBrands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/70" /></label><label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.vehicleModelLabel')}</span><select value={vehicleModel} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel: event.target.value, vehicleYear })} className={selectClass}><option value="">{t('autocare.anyModel')}</option>{models.map((model) => <option key={model} value={model}>{model}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/70" /></label><label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.vehicleYearLabel')}</span><select value={vehicleYear} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel, vehicleYear: event.target.value })} className={selectClass}><option value="">{t('autocare.anyYear')}</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/70" /></label></>
 }
 
 function RadiusSelect({ radiusKm, onChange }: { radiusKm: number; onChange: (radiusKm: number) => void }) {
