@@ -4,6 +4,7 @@ export {
     getProviderProfile,
     providerProfiles,
     providerPreviews,
+    type AutomotivePriceType,
     type AutomotiveService,
     type ProviderOffering,
     type ProviderProfile,

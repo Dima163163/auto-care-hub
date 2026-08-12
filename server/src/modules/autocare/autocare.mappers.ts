@@ -39,6 +39,7 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
         inclusions: entity.inclusions,
         warrantyText: entity.warrantyText,
         active: entity.active,
+        priceType: definition?.priceType,
     }
 }
 
@@ -69,12 +70,13 @@ export function toDiscoveryResponse(input: {
     provider: AutomotiveProviderEntity
     location: AutomotiveServiceLocationEntity
     offer: AutomotiveServiceOfferingEntity
+    definition?: AutomotiveServiceDefinitionEntity
     distanceKm: number
     nextSlot?: string | null
 }): AutoCareProviderResultResponse {
     return {
         provider: toProviderResponse(input.provider, input.location),
-        offer: toOfferResponse(input.offer),
+        offer: toOfferResponse(input.offer, input.definition),
         distanceKm: input.distanceKm,
         nextSlot: input.nextSlot ?? null,
     }

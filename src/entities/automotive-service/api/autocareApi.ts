@@ -35,6 +35,7 @@ export type AutoCareApiOffer = {
     inclusions: string[]
     warrantyText: string | null
     active: boolean
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
 }
 
 export type AutoCareApiProvider = {
@@ -82,6 +83,15 @@ export type AutoCareDiscoveryQuery = {
     radiusKm?: number
     sort?: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     limit?: number
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
+    availableToday?: boolean
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+    verifiedOnly?: boolean
+    warrantyOnly?: boolean
+    hasBonus?: boolean
+    inclusion?: string
 }
 
 export const autoCareApi = baseApi.injectEndpoints({

@@ -6,7 +6,7 @@
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
-> Current branch: `main` in a new empty Git repository without a remote
+> Git flow: `main` is production; active implementation branch is `dev`
 
 ## 1. Purpose of this plan
 
@@ -31,8 +31,9 @@ The delivery order is:
    understood and billing rules are approved;
 6. start iOS and Android only after the mobile-readiness gate passes.
 
-No push, merge, remote change, or production deployment happens before the user
-reviews the local diff/commit and explicitly approves that action.
+All implementation pushes target `dev` or a feature branch. No push, merge or
+deployment to production `main` happens before the user reviews the local
+diff/commit and explicitly approves that action.
 
 ## 2. Confirmed product decisions
 
@@ -373,8 +374,10 @@ Exit gate:
 Goal: deliver the core marketplace value in the browser.
 
 - [~] Implement service-first search and vehicle/location inputs.
-- [ ] Implement radius, category, price type, price, rating, distance,
-  availability, warranty and inclusion filters.
+- [~] Implement radius, category, price type, price, rating, distance,
+  availability, warranty, bonus and inclusion filters. The browser mock and
+  Fastify API now share the full filter contract; availability is wired in the
+  mock and remains pending real schedule/slot persistence on the backend.
 - [x] Ensure list/map results share one server query and stable pagination.
 - [ ] Add explicit labels for `FIXED`, `FROM`, `RANGE` and `QUOTE_REQUIRED`.
 - [ ] Define deterministic recommended-sort inputs and prevent paid plan status

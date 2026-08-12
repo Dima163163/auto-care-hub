@@ -7,25 +7,25 @@ changing the project.
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for
-automotive service businesses and locations. The current task is the first
-approved design and mock vertical slice. Replacing the inherited Git metadata
-was approved and is complete. No remote addition, commit, push, merge, or
-deployment is authorized until the user reviews the local diff.
+automotive service businesses and locations. The current task is the approved
+AutoCare web vertical slice. Replacing the inherited Git metadata was approved
+and is complete. `main` is production and must never receive a push or merge
+without explicit user approval. Normal work is performed on `dev` or a feature
+branch created from `dev`.
 
 Git state:
 
 ```text
-new repository branch: design/autocare-foundation
-commits: none
-remotes: none
+active branch: dev
+production branch: main
+remote: origin (GitHub AutoCare Hub repository)
 ```
 
 The inherited legacy `.git` directory was removed from the active project and
 moved to the recoverable archive
 `/Users/a1/Desktop/my-projects/AutoCareHub/.legacy-git/legacy-booking.git-2026-08-12`.
-The new repository has no `origin`, so it cannot accidentally push to
-AutoCare Hub. Do not add a remote until the user provides the new URL and explicitly
-approves the reviewed local changes.
+Push implementation work to `origin/dev`; only merge or push to `main` after
+the user explicitly approves the reviewed commit.
 
 Machine-readable planning maps live under `docs/architecture`: domain model,
 phase dependencies, and legacy migration/reuse/deletion gates.

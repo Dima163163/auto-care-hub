@@ -1,0 +1,41 @@
+.autocarehub-results-leaflet .leaflet-container {
+    height: 100%;
+    min-height: 620px;
+    background: var(--muted);
+    font-family: inherit;
+}
+
+.autocarehub-results-leaflet .leaflet-control-attribution {
+    margin: 0 8px 8px 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--muted-foreground);
+    font-size: 10px;
+}
+
+.autocarehub-results-leaflet .leaflet-tooltip.results-price-label {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--card);
+    box-shadow: 0 8px 18px rgb(17 28 54 / 0.14);
+    color: var(--foreground);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 8px 9px;
+}
+
+.autocarehub-results-leaflet .leaflet-tooltip.results-price-label.selected {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.autocarehub-results-leaflet .leaflet-tooltip.results-price-label::before {
+    border-top-color: var(--border);
+}
+
+.autocarehub-results-leaflet .leaflet-tooltip.results-price-label.selected::before {
+    border-top-color: var(--primary);
+}

@@ -4,6 +4,10 @@ export type AutomotiveService = {
     labels: Record<string, string>
 }
 
+import { generatedProviderPreviews } from './autocareGeneratedProviders'
+
+export type AutomotivePriceType = 'fixed' | 'from' | 'range' | 'quote_required'
+
 export type ProviderPreview = {
     id: string
     name: string
@@ -16,6 +20,13 @@ export type ProviderPreview = {
     image?: string | null
     bonus?: string
     verified: boolean
+    mapPosition?: [number, number]
+    serviceIds?: readonly string[]
+    servicePrices?: Partial<Record<string, number>>
+    address?: string
+    priceType?: AutomotivePriceType
+    inclusions?: readonly string[]
+    warrantyMonths?: number | null
 }
 
 export const DEFAULT_PROVIDER_IMAGE = '/images/autocare/placeholders/provider.svg'
@@ -63,23 +74,25 @@ export const automotiveServices: readonly AutomotiveService[] = [
     { id: 'maintenance', icon: '⚙', labels: { en: 'Maintenance', ru: 'Техобслуживание', es: 'Mantenimiento', ro: 'Întreținere' } },
 ]
 
-export const providerPreviews: readonly ProviderPreview[] = [
+const featuredProviderPreviews: readonly ProviderPreview[] = [
     {
         id: 'proservice-moscow', name: 'ProService', rating: 4.7, reviewCount: 256,
         distance: '2.1 km', price: 2900, currency: 'RUB', nextSlot: 'Today, 14:30',
-        image: '/images/autocare/providers/proservice.webp', bonus: '5% back', verified: true,
+        image: '/images/autocare/providers/proservice.webp', bonus: '5% back', verified: true, mapPosition: [55.758, 37.594],
     },
     {
         id: 'autolux-moscow', name: 'AutoLux', rating: 4.9, reviewCount: 412,
         distance: '3.4 km', price: 3200, currency: 'RUB', nextSlot: 'Today, 15:00',
-        image: '/images/autocare/providers/detailing.webp', verified: true,
+        image: '/images/autocare/providers/detailing.webp', verified: true, mapPosition: [55.741, 37.603],
     },
     {
         id: 'formula-moscow', name: 'Formula Motion', rating: 4.6, reviewCount: 189,
         distance: '4.2 km', price: 2800, currency: 'RUB', nextSlot: 'Today, 16:00',
-        image: '/images/autocare/providers/bodyshop.webp', bonus: 'Free check', verified: false,
+        image: '/images/autocare/providers/bodyshop.webp', bonus: 'Free check', verified: false, mapPosition: [55.749, 37.626],
     },
 ] as const
+
+export const providerPreviews: readonly ProviderPreview[] = [...featuredProviderPreviews, ...generatedProviderPreviews]
 
 const defaultOfferings: readonly ProviderOffering[] = [
     { serviceId: 'oil-change', priceLabel: 'от 2 900 ₽', duration: '45–60 мин', availability: 'Сегодня', includes: ['Масло и фильтр', 'Проверка уровней', 'Сброс сервисного интервала'] },

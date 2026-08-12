@@ -93,7 +93,7 @@ const autoCareDefinitions = automotiveServices.map((service) => ({
     active: true,
 }))
 
-function toAutoCareOffer(providerId: string, serviceId: string, price: number) {
+function toAutoCareOffer(providerId: string, serviceId: string, price: number, priceType: 'fixed' | 'from' | 'range' | 'quote_required' = 'from') {
     const service = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
     return {
         id: `offer-${providerId}-${service?.slug ?? serviceId}`,
@@ -101,12 +101,13 @@ function toAutoCareOffer(providerId: string, serviceId: string, price: number) {
         serviceSlug: service?.slug ?? serviceId,
         serviceLabels: service?.labels ?? {},
         priceFromMinor: price * 100,
-        priceToMinor: null,
+        priceToMinor: priceType === 'range' ? Math.round(price * 1.2 * 100) : null,
         currencyCode: 'RUB',
         durationMinutes: 60,
         inclusions: ['Предварительная оценка', 'Фотоотчёт по запросу'],
         warrantyText: 'Гарантия на работы по условиям сервиса',
         active: true,
+        priceType,
     }
 }
 
@@ -129,9 +130,11 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
             marketId: autoCareMarket.id,
             address: provider.id === 'proservice-moscow' ? 'Москва, ул. Льва Толстого, 18' : 'Москва, Комсомольский пр-т, 45',
             hours: 'Пн–Вс: 08:00–21:00',
-            latitude: 55.75,
-            longitude: 37.61,
+            latitude: provider.mapPosition?.[0] ?? 55.75,
+            longitude: provider.mapPosition?.[1] ?? 37.61,
         },
+        serviceIds: provider.serviceIds ?? automotiveServices.map((service) => service.id),
+        servicePrices: provider.servicePrices ?? { [automotiveServices[0]?.id ?? 'oil-change']: provider.price },
     }
 }
 
@@ -1573,13 +1576,31 @@ export const handlers = [
         const serviceId = url.searchParams.get('serviceId') ?? 'oil-change'
         const radiusKm = Number(url.searchParams.get('radiusKm') ?? 25)
         const sort = url.searchParams.get('sort') ?? 'recommended'
+        const minPrice = Number(url.searchParams.get('minPrice') ?? 0)
+        const maxPrice = Number(url.searchParams.get('maxPrice') ?? Number.POSITIVE_INFINITY)
+        const minRating = Number(url.searchParams.get('minRating') ?? 0)
+        const availableToday = url.searchParams.get('availableToday') === 'true'
+        const priceType = url.searchParams.get('priceType')
+        const verifiedOnly = url.searchParams.get('verifiedOnly') === 'true'
+        const warrantyOnly = url.searchParams.get('warrantyOnly') === 'true'
+        const hasBonus = url.searchParams.get('hasBonus') === 'true'
+        const inclusion = url.searchParams.get('inclusion')
         const definition = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
         const items = autoCareProviders.map((provider, index) => ({
             provider,
-            offer: toAutoCareOffer(provider.id, definition?.slug ?? serviceId, providerPreviews[index]?.price ?? 0),
+            offer: toAutoCareOffer(provider.id, definition?.slug ?? serviceId, provider.servicePrices?.[definition?.slug ?? serviceId] ?? providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType ?? definition?.priceType),
             distanceKm: providerPreviews[index]?.distance ? Number.parseFloat(providerPreviews[index]!.distance) : index + 1,
             nextSlot: providerPreviews[index]?.nextSlot ?? null,
-        })).filter((item) => item.distanceKm <= radiusKm)
+        })).filter((item) => {
+            const hasService = item.provider.serviceIds?.includes(definition?.slug ?? serviceId) ?? true
+            const price = item.offer.priceFromMinor / 100
+            const available = item.nextSlot?.toLowerCase().includes('today') ?? false
+            const source = providerPreviews.find((preview) => `api-${preview.id}` === item.provider.id)
+            const matchesInclusion = !inclusion || (source?.inclusions ?? []).some((value) => value.toLowerCase().includes(inclusion))
+            const matchesWarranty = !warrantyOnly || (source?.warrantyMonths ?? 0) > 0
+            const matchesPriceType = !priceType || source?.priceType === priceType
+            return hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion
+        })
 
         if (sort === 'price_asc') items.sort((left, right) => left.offer.priceFromMinor - right.offer.priceFromMinor)
         if (sort === 'rating_desc') items.sort((left, right) => right.provider.rating - left.provider.rating)
@@ -1594,7 +1615,7 @@ export const handlers = [
 
         const source = providerPreviews.find((item) => item.id === provider.id.replace('api-', ''))
         const offers = source
-            ? [toAutoCareOffer(provider.id, 'oil-change', source.price), toAutoCareOffer(provider.id, 'diagnostics', 1200)]
+            ? automotiveServices.map((service) => toAutoCareOffer(provider.id, service.id, source.servicePrices?.[service.id] ?? source.price, source.priceType ?? 'from'))
             : []
 
         return HttpResponse.json({ ...provider, offers })

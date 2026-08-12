@@ -60,6 +60,7 @@ export type AutoCareOfferResponse = {
     inclusions: string[]
     warrantyText: string | null
     active: boolean
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
 }
 
 export type AutoCareProviderResultResponse = {
@@ -72,6 +73,24 @@ export type AutoCareProviderResultResponse = {
 export type AutoCareDiscoveryResponse = {
     items: AutoCareProviderResultResponse[]
     nextCursor: string | null
+}
+
+export type AutoCareDiscoveryQuery = {
+    serviceId?: string
+    marketId?: string
+    radiusKm: number
+    sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
+    cursor?: string
+    limit: number
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+    availableToday?: boolean
+    verifiedOnly?: boolean
+    warrantyOnly?: boolean
+    hasBonus?: boolean
+    inclusion?: string
 }
 
 export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {

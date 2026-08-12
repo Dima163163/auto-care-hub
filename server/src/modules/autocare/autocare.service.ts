@@ -11,7 +11,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryResponse, AutoCareProviderProfileResponse } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse } from './autocare.types.js'
 
 const FALLBACK_IMAGE = '/images/autocare/placeholders/provider.svg'
 
@@ -55,14 +55,7 @@ export async function getAutoCareServiceDefinitions() {
     return (await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })).map(toServiceDefinitionResponse)
 }
 
-export async function getAutoCareDiscovery(input: {
-    serviceId?: string
-    marketId?: string
-    radiusKm: number
-    sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
-    cursor?: string
-    limit: number
-}): Promise<AutoCareDiscoveryResponse> {
+export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {
     const limit = getCursorLimit(input.limit)
     const cursor = input.cursor ? decodeCursor(input.cursor, ['providerId']) : null
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
@@ -86,7 +79,15 @@ export async function getAutoCareDiscovery(input: {
         const offer = offerByLocation.get(location.id)
         if (!provider || !offer) return []
         const distanceKm = getDistanceKm(location.latitude, location.longitude)
-        return distanceKm <= input.radiusKm ? [{ provider, location, offer, distanceKm }] : []
+        const price = offer.priceFromMinor / 100
+        const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
+        const matchesRating = input.minRating === undefined || Number(provider.rating) >= input.minRating
+        const matchesType = input.priceType === undefined || definition.priceType === input.priceType
+        const matchesVerified = !input.verifiedOnly || provider.verified
+        const matchesWarranty = !input.warrantyOnly || Boolean(offer.warrantyText)
+        const matchesBonus = !input.hasBonus || Boolean(provider.bonusSummary)
+        const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
+        return distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion ? [{ provider, location, offer, distanceKm, definition }] : []
     })
     const sorted = rows.sort((left, right) => {
         if (input.sort === 'price_asc') return left.offer.priceFromMinor - right.offer.priceFromMinor

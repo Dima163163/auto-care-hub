@@ -194,18 +194,30 @@ than runtime tests.
 
 ## Git workflow
 
-- One feature branch per task, created from current `main`.
-- Preserve unrelated user changes.
-- Stage explicit files; never use `git add .`.
-- The user reviews the local diff/commit before push.
-- The newly initialized repository has no `origin`. Do not add one until the new
-  AutoCare Hub repository URL is supplied and explicitly approved.
-- Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
+`main` is the production branch. No direct push, merge, or deployment to
+`main` happens without explicit user approval.
 
-Current new-repository branch:
+All implementation work goes through `dev` and short-lived feature branches:
 
 ```text
-main
+main  <- production, approval required
+  ^
+dev   <- integration branch, normal development push target
+  ^
+feature/<short-task-name>
+```
+
+- Keep `dev` based on the latest `main` and push completed work to `origin/dev`.
+- Create `feature/*` branches from `dev` for isolated tasks; merge them into
+  `dev` after checks pass.
+- Preserve unrelated user changes and stage explicit files; never use `git add .`.
+- Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
+
+Current repository branches:
+
+```text
+main  (production)
+dev   (active development)
 ```
 
 The inherited Git metadata is not active. A recoverable copy is stored

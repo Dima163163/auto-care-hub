@@ -26,6 +26,12 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         image: item.provider.coverImageUrl,
         bonus: item.provider.bonusSummary ?? undefined,
         verified: item.provider.verified,
+        priceType: item.offer.priceType ?? (item.offer.priceToMinor === null ? 'from' : 'range'),
+        inclusions: item.offer.inclusions,
+        warrantyMonths: item.offer.warrantyText ? 12 : null,
+        mapPosition: item.provider.location.latitude !== null && item.provider.location.longitude !== null
+            ? [item.provider.location.latitude, item.provider.location.longitude]
+            : undefined,
     }
 }
 
@@ -60,5 +66,8 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         amenities: ['Photo assessment', 'Service updates', 'Direct payment to provider'],
         offerings: profile.offers.map(mapOffer),
         reviews: [],
+        mapPosition: profile.location.latitude !== null && profile.location.longitude !== null
+            ? [profile.location.latitude, profile.location.longitude]
+            : undefined,
     }
 }
