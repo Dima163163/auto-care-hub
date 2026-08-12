@@ -1,8 +1,13 @@
 .autocarehub-results-leaflet .leaflet-container {
     height: 100%;
-    min-height: 620px;
+    min-height: 420px;
     background: var(--muted);
     font-family: inherit;
+}
+
+.autocare-results-heading {
+    font-family: Inter, Arial, sans-serif;
+    letter-spacing: -0.035em;
 }
 
 .autocarehub-results-leaflet .leaflet-control-attribution {

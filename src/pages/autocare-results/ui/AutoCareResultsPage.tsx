@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
-import { mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { getAutoCareResultFilters, writeAutoCareResultFilters, type AutoCareResultFilters } from '../lib/autocareResultFilters'
@@ -9,13 +9,14 @@ import { AutoCareMapPreview } from './AutoCareMapPreview'
 import { AutoCareResultsFilters } from './AutoCareResultsFilters'
 import { ComparisonTray } from './ComparisonTray'
 import { ResultsToolbar } from './ResultsToolbar'
+import type { ActiveFilter } from './ResultsToolbar'
 import { ProviderResultsList } from './ProviderResultsList'
 import { ResultsPagination } from './ResultsPagination'
 
 const RESULTS_PAGE_SIZE = 8
 
 export function AutoCareResultsPage() {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
     const [searchParams, setSearchParams] = useSearchParams()
     const filters = useMemo(() => getAutoCareResultFilters(searchParams), [searchParams])
     const { data, isLoading, isError } = useGetAutoCareDiscoveryQuery({
@@ -71,11 +72,28 @@ export function AutoCareResultsPage() {
         inclusion: '',
         brandId: '',
     })
+    const removeFilter = (key: ActiveFilter['key']) => updateFilters({ [key]: key === 'radiusKm' ? 25 : key === 'availableToday' || key === 'verifiedOnly' || key === 'warrantyOnly' || key === 'hasBonus' ? false : '' } as Partial<AutoCareResultFilters>)
+    const startSearch = () => document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     const compareSelected = () => document.getElementById('comparison-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     const totalPages = Math.max(1, Math.ceil(providers.length / RESULTS_PAGE_SIZE))
     const currentPage = Math.min(page, totalPages)
     const pagedProviders = providers.slice((currentPage - 1) * RESULTS_PAGE_SIZE, currentPage * RESULTS_PAGE_SIZE)
-    const pageSelectedProviders = selectedProviders.filter((provider) => pagedProviders.some((item) => item.id === provider.id))
+    const serviceLabel = getServiceLabel(automotiveServices.find((service) => service.id === filters.serviceId) ?? automotiveServices[0]!, locale)
+    const brandLabel = filters.brandId ? getVehicleBrandLabel(automotiveVehicleBrands.find((brand) => brand.id === filters.brandId) ?? automotiveVehicleBrands[0]!, locale) : t('autocare.anyBrand')
+    const activeFilters = useMemo<readonly ActiveFilter[]>(() => [
+        { key: 'serviceId', label: serviceLabel },
+        filters.brandId ? { key: 'brandId', label: brandLabel } : null,
+        filters.radiusKm !== 25 ? { key: 'radiusKm', label: `${filters.radiusKm} km` } : null,
+        filters.minRating ? { key: 'minRating', label: `${filters.minRating}+ ★` } : null,
+        filters.minPrice ? { key: 'minPrice', label: `от ${filters.minPrice}` } : null,
+        filters.maxPrice ? { key: 'maxPrice', label: `до ${filters.maxPrice}` } : null,
+        filters.priceType ? { key: 'priceType', label: filters.priceType } : null,
+        filters.availableToday ? { key: 'availableToday', label: t('autocare.availableTodayLabel') } : null,
+        filters.verifiedOnly ? { key: 'verifiedOnly', label: t('autocare.verifiedFilter') } : null,
+        filters.warrantyOnly ? { key: 'warrantyOnly', label: t('autocare.warrantyFilter') } : null,
+        filters.hasBonus ? { key: 'hasBonus', label: t('autocare.bonusFilter') } : null,
+        filters.inclusion ? { key: 'inclusion', label: filters.inclusion } : null,
+    ].filter((filter): filter is ActiveFilter => Boolean(filter)), [brandLabel, filters, serviceLabel, t])
     const changePage = (nextPage: number) => {
         setPage(nextPage)
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -87,17 +105,21 @@ export function AutoCareResultsPage() {
                 <div className="shrink-0">
                     <ResultsToolbar
                         selectedCount={selectedIds.length}
+                        providerCount={providers.length}
+                        serviceLabel={serviceLabel}
+                        brandLabel={brandLabel}
+                        filterPanel={<AutoCareResultsFilters variant="dark" filters={filters} onChange={updateFilters} onReset={resetFilters} />}
                         onClear={() => setSelectedIds([])}
+                        onStartSearch={startSearch}
+                        activeFilters={activeFilters}
+                        onRemoveFilter={removeFilter}
                         sort={filters.sort}
                         onSortChange={(sort) => updateFilters({ sort })}
                         onResetFilters={resetFilters}
                     />
-                    <div className="mt-4">
-                        <AutoCareResultsFilters filters={filters} onChange={updateFilters} onReset={resetFilters} />
-                    </div>
                 </div>
 
-                <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+                <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
                     <section className="flex flex-col gap-4">
                         <div className="flex shrink-0 items-center justify-between gap-3">
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
@@ -122,14 +144,26 @@ export function AutoCareResultsPage() {
                     <div id="comparison-map" className="min-h-0 lg:h-[min(70vh,720px)] lg:self-start">
                         <AutoCareMapPreview
                             providers={pagedProviders}
-                            selectedProviders={pageSelectedProviders}
+                            selectedProviders={selectedProviders}
                             focusedProviderId={pagedProviders.some((provider) => provider.id === activeFocusedProviderId) ? activeFocusedProviderId : null}
                             onFocusProvider={setFocusedProviderId}
                             onRemove={toggleProvider}
                         />
                     </div>
                 </div>
+                <TrustStrip />
             </div>
         </main>
     )
+}
+
+function TrustStrip() {
+    const { t } = useTranslation()
+    const items = [
+        ['✓', t('autocare.verifiedTrust'), t('autocare.trustVerifiedText')],
+        ['▱', t('autocare.trustStandardTitle'), t('autocare.trustStandardText')],
+        ['☆', t('autocare.realReviewsTrust'), t('autocare.trustReviewsText')],
+        ['▣', t('autocare.trustPaymentTitle'), t('autocare.trustPaymentText')],
+    ]
+    return <section className="mt-8 grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">{items.map(([icon, title, text]) => <div key={title} className="flex gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-black text-primary">{icon}</span><div><p className="text-xs font-black text-foreground">{title}</p><p className="mt-1 text-[11px] font-medium leading-4 text-muted-foreground">{text}</p></div></div>)}</section>
 }
