@@ -51,6 +51,8 @@ export type AutoCareApiProvider = {
     bonusSummary: string | null
     coverImageUrl: string
     galleryImageUrls: string[]
+    brandSpecializations: string[]
+    isMultibrand: boolean
     location: {
         id: string
         marketId: string
@@ -92,6 +94,7 @@ export type AutoCareDiscoveryQuery = {
     warrantyOnly?: boolean
     hasBonus?: boolean
     inclusion?: string
+    brandId?: string
 }
 
 export const autoCareApi = baseApi.injectEndpoints({

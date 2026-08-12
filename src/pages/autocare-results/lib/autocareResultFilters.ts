@@ -15,6 +15,7 @@ export type AutoCareResultFilters = {
     warrantyOnly: boolean
     hasBonus: boolean
     inclusion: string
+    brandId: string
 }
 
 const SORTS = new Set<AutoCareResultSort>(['recommended', 'price_asc', 'rating_desc', 'distance_asc'])
@@ -45,19 +46,20 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
         warrantyOnly: params.get('warrantyOnly') === 'true',
         hasBonus: params.get('hasBonus') === 'true',
         inclusion: params.get('inclusion') ?? '',
+        brandId: params.get('brand') ?? '',
     }
 }
 
-export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'>>
+export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId'>>
 
 export function writeAutoCareResultFilters(params: URLSearchParams, patch: AutoCareResultFilterPatch) {
     const next = new URLSearchParams(params)
-    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion']
+    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId']
 
     keys.forEach((key) => {
         const value = patch[key]
         if (value === undefined) return
-        const urlKey = key === 'serviceId' ? 'service' : key === 'marketId' ? 'market' : key === 'radiusKm' ? 'radius' : key
+        const urlKey = key === 'serviceId' ? 'service' : key === 'marketId' ? 'market' : key === 'radiusKm' ? 'radius' : key === 'brandId' ? 'brand' : key
         if (typeof value === 'boolean') {
             if (value) next.set(urlKey, 'true')
             else next.delete(urlKey)

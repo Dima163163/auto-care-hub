@@ -62,6 +62,8 @@ export function toProviderResponse(
         galleryImageUrls: provider.galleryImageUrls.length > 0
             ? provider.galleryImageUrls
             : ['/images/autocare/placeholders/provider.svg'],
+        brandSpecializations: provider.brandSpecializations,
+        isMultibrand: provider.isMultibrand,
         location: toLocationResponse(location),
     }
 }

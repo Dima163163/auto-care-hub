@@ -62,6 +62,8 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'text', nullable: true }) bonusSummary!: string | null
     @Column({ type: 'text', nullable: true }) coverImageUrl!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) galleryImageUrls!: string[]
+    @Column('text', { array: true, default: () => "'{}'" }) brandSpecializations!: string[]
+    @Column({ type: 'boolean', default: false }) isMultibrand!: boolean
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 

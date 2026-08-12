@@ -816,6 +816,8 @@ export const enTranslations = {
         filtersDescription: 'Refine the results by service, price, quality and visit conditions.',
         activeFilters: '{{count}} active',
         serviceFilterLabel: 'Service',
+        brandFilterLabel: 'Car brand',
+        anyBrand: 'Any brand',
         allServicesFilter: 'All services',
         anyRating: 'Any rating',
         priceTypeLabel: 'Price format',

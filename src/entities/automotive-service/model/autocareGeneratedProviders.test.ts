@@ -8,6 +8,8 @@ describe('generated AutoCare provider fixtures', () => {
         expect(new Set(generatedProviderPreviews.map((provider) => provider.id)).size).toBe(100)
         expect(generatedProviderPreviews.every((provider) => provider.image?.includes('/generated/'))).toBe(true)
         expect(generatedProviderPreviews.every((provider) => provider.serviceIds?.length === 8)).toBe(true)
+        expect(generatedProviderPreviews.some((provider) => provider.isMultibrand)).toBe(true)
+        expect(generatedProviderPreviews.some((provider) => provider.brandSpecializations.includes('bmw'))).toBe(true)
     })
 
     it('spreads prices, ratings, availability and map positions for filter checks', () => {

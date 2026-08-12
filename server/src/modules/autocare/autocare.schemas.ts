@@ -16,6 +16,7 @@ export const autoCareDiscoveryQuerySchema = z.object({
     warrantyOnly: z.coerce.boolean().optional(),
     hasBonus: z.coerce.boolean().optional(),
     inclusion: z.string().trim().min(1).max(80).optional(),
+    brandId: z.string().trim().min(1).max(80).optional(),
 }).superRefine((value, context) => {
     if (value.minPrice !== undefined && value.maxPrice !== undefined && value.minPrice > value.maxPrice) {
         context.addIssue({ code: 'custom', path: ['minPrice'], message: 'minPrice must not exceed maxPrice' })

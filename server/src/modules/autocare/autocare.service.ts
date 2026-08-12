@@ -87,7 +87,8 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const matchesWarranty = !input.warrantyOnly || Boolean(offer.warrantyText)
         const matchesBonus = !input.hasBonus || Boolean(provider.bonusSummary)
         const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
-        return distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion ? [{ provider, location, offer, distanceKm, definition }] : []
+        const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
+        return distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition }] : []
     })
     const sorted = rows.sort((left, right) => {
         if (input.sort === 'price_asc') return left.offer.priceFromMinor - right.offer.priceFromMinor

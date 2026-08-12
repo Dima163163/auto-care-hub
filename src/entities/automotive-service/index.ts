@@ -11,6 +11,7 @@ export {
     type ProviderPreview,
     type ProviderReview,
 } from './model/autocareMockData'
+export { automotiveVehicleBrands, getVehicleBrandLabel, type AutomotiveVehicleBrandId } from './model/vehicleBrands'
 export {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
@@ -28,3 +29,4 @@ export type {
     AutoCareDiscoveryQuery,
 } from './api/autocareApi'
 export { mapAutoCareDiscoveryItem, mapAutoCareProviderProfile } from './lib/autocareApiMappers'
+export { supportsVehicleBrand } from './lib/brandSpecialization'

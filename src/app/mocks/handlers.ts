@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { User } from '@/entities/user'
 import type { Notification } from '@/entities/notification/model/types'
-import { automotiveServices, providerPreviews } from '@/entities/automotive-service'
+import { automotiveServices, providerPreviews, supportsVehicleBrand } from '@/entities/automotive-service'
 
 import {
     mockBookings,
@@ -123,6 +123,8 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         rating: provider.rating,
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonus ?? null,
+        brandSpecializations: [...provider.brandSpecializations],
+        isMultibrand: provider.isMultibrand,
         coverImageUrl: provider.image ?? '/images/autocare/placeholders/provider.svg',
         galleryImageUrls: provider.image ? [provider.image] : ['/images/autocare/placeholders/provider.svg'],
         location: {
@@ -1585,6 +1587,7 @@ export const handlers = [
         const warrantyOnly = url.searchParams.get('warrantyOnly') === 'true'
         const hasBonus = url.searchParams.get('hasBonus') === 'true'
         const inclusion = url.searchParams.get('inclusion')
+        const brandId = url.searchParams.get('brandId') ?? ''
         const definition = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
         const items = autoCareProviders.map((provider, index) => ({
             provider,
@@ -1597,9 +1600,10 @@ export const handlers = [
             const available = item.nextSlot?.toLowerCase().includes('today') ?? false
             const source = providerPreviews.find((preview) => `api-${preview.id}` === item.provider.id)
             const matchesInclusion = !inclusion || (source?.inclusions ?? []).some((value) => value.toLowerCase().includes(inclusion))
+            const matchesBrand = !source || supportsVehicleBrand(source, brandId)
             const matchesWarranty = !warrantyOnly || (source?.warrantyMonths ?? 0) > 0
             const matchesPriceType = !priceType || source?.priceType === priceType
-            return hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion
+            return hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
         })
 
         if (sort === 'price_asc') items.sort((left, right) => left.offer.priceFromMinor - right.offer.priceFromMinor)

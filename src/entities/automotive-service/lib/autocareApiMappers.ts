@@ -29,6 +29,8 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         priceType: item.offer.priceType ?? (item.offer.priceToMinor === null ? 'from' : 'range'),
         inclusions: item.offer.inclusions,
         warrantyMonths: item.offer.warrantyText ? 12 : null,
+        brandSpecializations: item.provider.brandSpecializations,
+        isMultibrand: item.provider.isMultibrand,
         mapPosition: item.provider.location.latitude !== null && item.provider.location.longitude !== null
             ? [item.provider.location.latitude, item.provider.location.longitude]
             : undefined,
@@ -58,6 +60,8 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         image: profile.coverImageUrl,
         bonus: profile.bonusSummary ?? undefined,
         verified: profile.verified,
+        brandSpecializations: profile.brandSpecializations,
+        isMultibrand: profile.isMultibrand,
         address: profile.location.address,
         hours: profile.location.hours,
         yearsActive: profile.yearsActive,

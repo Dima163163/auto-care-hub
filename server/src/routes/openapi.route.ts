@@ -160,6 +160,7 @@ export function getOpenApiDocument() {
                         { name: 'warrantyOnly', in: 'query', required: false, schema: { type: 'boolean' } },
                         { name: 'hasBonus', in: 'query', required: false, schema: { type: 'boolean' } },
                         { name: 'inclusion', in: 'query', required: false, schema: { type: 'string' } },
+                        { name: 'brandId', in: 'query', required: false, schema: { type: 'string' } },
                         ...cursorParameters,
                     ],
                     responses: { '200': { description: 'Stable, comparable AutoCare provider results.' } },

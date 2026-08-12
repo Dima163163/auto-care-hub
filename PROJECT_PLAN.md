@@ -378,6 +378,10 @@ Goal: deliver the core marketplace value in the browser.
   availability, warranty, bonus and inclusion filters. The browser mock and
   Fastify API now share the full filter contract; availability is wired in the
   mock and remains pending real schedule/slot persistence on the backend.
+- [x] Add vehicle-brand-aware discovery: providers declare their primary brand
+  specializations or mark themselves as multibrand; selecting a brand returns
+  matching specialists plus every multibrand provider in both mock and Fastify
+  discovery responses.
 - [x] Ensure list/map results share one server query and stable pagination.
 - [x] Keep the results page reliable with ordinary provider pagination so the
   result cards stay in normal document flow and the shared footer remains

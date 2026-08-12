@@ -820,6 +820,8 @@ export const ruTranslations = {
         filtersDescription: 'Уточните результаты по услуге, цене, качеству и условиям визита.',
         activeFilters: 'Активно: {{count}}',
         serviceFilterLabel: 'Услуга',
+        brandFilterLabel: 'Марка автомобиля',
+        anyBrand: 'Любая марка',
         allServicesFilter: 'Все услуги',
         anyRating: 'Любой рейтинг',
         priceTypeLabel: 'Формат цены',

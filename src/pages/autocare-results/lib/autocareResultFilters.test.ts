@@ -4,9 +4,9 @@ import { getAutoCareResultFilters, writeAutoCareResultFilters } from './autocare
 
 describe('AutoCare result filters', () => {
     it('restores all supported filters from a shareable URL', () => {
-        const filters = getAutoCareResultFilters(new URLSearchParams('service=body-paint&market=ru-moscow&radius=50&sort=rating_desc&minPrice=2000&maxPrice=15000&minRating=4.7&priceType=quote_required&availableToday=true&verifiedOnly=true&warrantyOnly=true&hasBonus=true&inclusion=photo'))
+        const filters = getAutoCareResultFilters(new URLSearchParams('service=body-paint&market=ru-moscow&radius=50&sort=rating_desc&minPrice=2000&maxPrice=15000&minRating=4.7&priceType=quote_required&availableToday=true&verifiedOnly=true&warrantyOnly=true&hasBonus=true&inclusion=photo&brand=bmw'))
 
-        expect(filters).toEqual({ serviceId: 'body-paint', marketId: 'ru-moscow', radiusKm: 50, sort: 'rating_desc', minPrice: '2000', maxPrice: '15000', minRating: '4.7', priceType: 'quote_required', availableToday: true, verifiedOnly: true, warrantyOnly: true, hasBonus: true, inclusion: 'photo' })
+        expect(filters).toEqual({ serviceId: 'body-paint', marketId: 'ru-moscow', radiusKm: 50, sort: 'rating_desc', minPrice: '2000', maxPrice: '15000', minRating: '4.7', priceType: 'quote_required', availableToday: true, verifiedOnly: true, warrantyOnly: true, hasBonus: true, inclusion: 'photo', brandId: 'bmw' })
     })
 
     it('rejects invalid numeric and enum values', () => {
@@ -20,12 +20,13 @@ describe('AutoCare result filters', () => {
     })
 
     it('writes filter changes without losing the original search context', () => {
-        const next = writeAutoCareResultFilters(new URLSearchParams('service=oil-change&market=ru-moscow'), { radiusKm: 50, minRating: '4.5', verifiedOnly: true })
+        const next = writeAutoCareResultFilters(new URLSearchParams('service=oil-change&market=ru-moscow'), { radiusKm: 50, minRating: '4.5', verifiedOnly: true, brandId: 'toyota' })
 
         expect(next.toString()).toContain('service=oil-change')
         expect(next.toString()).toContain('market=ru-moscow')
         expect(next.get('radius')).toBe('50')
         expect(next.get('minRating')).toBe('4.5')
         expect(next.get('verifiedOnly')).toBe('true')
+        expect(next.get('brand')).toBe('toyota')
     })
 })

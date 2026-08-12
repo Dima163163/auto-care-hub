@@ -36,6 +36,8 @@ export type AutoCareProviderResponse = {
     bonusSummary: string | null
     coverImageUrl: string
     galleryImageUrls: string[]
+    brandSpecializations: string[]
+    isMultibrand: boolean
     location: AutoCareLocationResponse
 }
 
@@ -91,6 +93,7 @@ export type AutoCareDiscoveryQuery = {
     warrantyOnly?: boolean
     hasBonus?: boolean
     inclusion?: string
+    brandId?: string
 }
 
 export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {

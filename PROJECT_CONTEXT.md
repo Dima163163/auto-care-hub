@@ -193,6 +193,9 @@ The results screen keeps the public flex shell and footer in normal document
 flow. Provider results now use ordinary client pagination (12 cards per page)
 until cursor-backed discovery pagination is wired to the screen; cards are
 rendered in normal flow with no artificial virtual spacer rows.
+Provider previews and discovery responses also carry `brandSpecializations`
+and `isMultibrand`; the brand filter uses stable vehicle-brand codes and keeps
+universal multibrand providers in every selected-brand result.
 
 ## Identity and legacy naming boundary
 

@@ -32,6 +32,7 @@ export function AutoCareResultsPage() {
         warrantyOnly: filters.warrantyOnly,
         hasBonus: filters.hasBonus,
         inclusion: filters.inclusion || undefined,
+        brandId: filters.brandId || undefined,
     })
     const providers = useMemo(() => data?.items.map(mapAutoCareDiscoveryItem) ?? [], [data])
     const [selectedIds, setSelectedIds] = useState<readonly string[]>([])
@@ -68,6 +69,7 @@ export function AutoCareResultsPage() {
         warrantyOnly: false,
         hasBonus: false,
         inclusion: '',
+        brandId: '',
     })
     const compareSelected = () => document.getElementById('comparison-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     const totalPages = Math.max(1, Math.ceil(providers.length / RESULTS_PAGE_SIZE))

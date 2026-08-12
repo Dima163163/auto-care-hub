@@ -1,4 +1,5 @@
 import type { AutomotivePriceType, ProviderPreview } from './autocareMockData'
+import { automotiveVehicleBrands } from './vehicleBrands'
 
 const SERVICE_IDS = ['oil-change', 'tire-service', 'diagnostics', 'brakes', 'detailing', 'body-paint', 'air-conditioning', 'maintenance'] as const
 
@@ -30,6 +31,14 @@ const INCLUSION_SETS = [
     ['Гарантия на работы', 'Фотоотчёт по запросу'],
     ['Диагностика перед работой', 'Сброс сервисного интервала'],
 ] as const
+const VEHICLE_BRAND_IDS = automotiveVehicleBrands.map((brand) => brand.id)
+
+function getBrandSpecializations(index: number) {
+    if (index % 5 === 0) return VEHICLE_BRAND_IDS
+    const first = (index * 3) % VEHICLE_BRAND_IDS.length
+    const count = index % 3 === 0 ? 2 : 1
+    return Array.from({ length: count }, (_, offset) => VEHICLE_BRAND_IDS[(first + offset) % VEHICLE_BRAND_IDS.length]!)
+}
 
 function createServicePrices(index: number) {
     return Object.fromEntries(SERVICE_IDS.map((serviceId, serviceIndex) => [
@@ -63,6 +72,8 @@ function createProvider(index: number): ProviderPreview {
         priceType: PRICE_TYPES[index % PRICE_TYPES.length],
         inclusions: INCLUSION_SETS[index % INCLUSION_SETS.length],
         warrantyMonths: index % 9 === 0 ? null : 6 + (index % 3) * 6,
+        brandSpecializations: getBrandSpecializations(index),
+        isMultibrand: index % 5 === 0,
     }
 }
 

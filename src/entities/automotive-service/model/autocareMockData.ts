@@ -27,6 +27,8 @@ export type ProviderPreview = {
     priceType?: AutomotivePriceType
     inclusions?: readonly string[]
     warrantyMonths?: number | null
+    brandSpecializations: readonly string[]
+    isMultibrand: boolean
 }
 
 export const DEFAULT_PROVIDER_IMAGE = '/images/autocare/placeholders/provider.svg'
@@ -79,16 +81,19 @@ const featuredProviderPreviews: readonly ProviderPreview[] = [
         id: 'proservice-moscow', name: 'ProService', rating: 4.7, reviewCount: 256,
         distance: '2.1 km', price: 2900, currency: 'RUB', nextSlot: 'Today, 14:30',
         image: '/images/autocare/providers/proservice.webp', bonus: '5% back', verified: true, mapPosition: [55.758, 37.594],
+        brandSpecializations: ['bmw', 'mercedes-benz', 'audi'], isMultibrand: false,
     },
     {
         id: 'autolux-moscow', name: 'AutoLux', rating: 4.9, reviewCount: 412,
         distance: '3.4 km', price: 3200, currency: 'RUB', nextSlot: 'Today, 15:00',
         image: '/images/autocare/providers/detailing.webp', verified: true, mapPosition: [55.741, 37.603],
+        brandSpecializations: ['toyota', 'volkswagen', 'skoda'], isMultibrand: false,
     },
     {
         id: 'formula-moscow', name: 'Formula Motion', rating: 4.6, reviewCount: 189,
         distance: '4.2 km', price: 2800, currency: 'RUB', nextSlot: 'Today, 16:00',
         image: '/images/autocare/providers/bodyshop.webp', bonus: 'Free check', verified: false, mapPosition: [55.749, 37.626],
+        brandSpecializations: [], isMultibrand: true,
     },
 ] as const
 

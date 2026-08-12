@@ -15,6 +15,8 @@ const provider = {
     bonusSummary: '5% back',
     coverImageUrl: '/images/autocare/providers/proservice.webp',
     galleryImageUrls: ['/images/autocare/providers/proservice.webp'],
+    brandSpecializations: ['bmw'],
+    isMultibrand: false,
     location: { id: 'location-1', marketId: 'market-1', address: 'Moscow', hours: '08:00–21:00', latitude: 55.7, longitude: 37.6 },
 }
 
