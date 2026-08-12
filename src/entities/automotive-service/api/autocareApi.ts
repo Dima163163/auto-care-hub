@@ -49,7 +49,7 @@ export type AutoCareApiProvider = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
-    coverImageUrl: string
+    coverImageUrl: string | null
     galleryImageUrls: string[]
     brandSpecializations: string[]
     isMultibrand: boolean

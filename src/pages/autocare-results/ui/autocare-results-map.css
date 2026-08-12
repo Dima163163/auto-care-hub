@@ -1,12 +1,16 @@
 .autocarehub-results-leaflet .leaflet-container {
     height: 100%;
     min-height: 420px;
-    background: var(--muted);
+    background:
+        radial-gradient(circle at 58% 44%, rgb(53 145 255 / 0.58), transparent 38%),
+        linear-gradient(135deg, #073c7b 0%, #0a4f9a 52%, #063b78 100%);
     font-family: inherit;
 }
 
 .autocarehub-results-leaflet .leaflet-tile-pane {
-    filter: sepia(0.14) hue-rotate(168deg) saturate(1.35) brightness(1.14) contrast(0.96);
+    filter: sepia(0.24) hue-rotate(168deg) saturate(2.3) brightness(1.64) contrast(0.78);
+    mix-blend-mode: screen;
+    opacity: 0.6;
 }
 
 .autocare-results-heading {

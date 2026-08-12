@@ -125,8 +125,8 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         bonusSummary: provider.bonus ?? null,
         brandSpecializations: [...provider.brandSpecializations],
         isMultibrand: provider.isMultibrand,
-        coverImageUrl: provider.image ?? '/images/autocare/placeholders/provider.svg',
-        galleryImageUrls: provider.image ? [provider.image] : ['/images/autocare/placeholders/provider.svg'],
+        coverImageUrl: provider.image ?? null,
+        galleryImageUrls: provider.image ? [provider.image] : [],
         location: {
             id: `location-${provider.id}`,
             marketId: autoCareMarket.id,

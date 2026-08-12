@@ -92,7 +92,7 @@ const featuredProviderPreviews: readonly ProviderPreview[] = [
     {
         id: 'formula-moscow', name: 'Formula Motion', rating: 4.6, reviewCount: 189,
         distance: '4.2 km', price: 2800, currency: 'RUB', nextSlot: 'Today, 16:00',
-        image: '/images/autocare/providers/bodyshop.webp', bonus: 'Free check', verified: false, mapPosition: [55.749, 37.626],
+        image: null, bonus: 'Free check', verified: false, mapPosition: [55.749, 37.626],
         brandSpecializations: [], isMultibrand: true,
     },
 ] as const

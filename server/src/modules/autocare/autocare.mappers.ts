@@ -58,7 +58,7 @@ export function toProviderResponse(
         rating: Number(provider.rating),
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonusSummary,
-        coverImageUrl: provider.coverImageUrl ?? '/images/autocare/placeholders/provider.svg',
+        coverImageUrl: provider.coverImageUrl,
         galleryImageUrls: provider.galleryImageUrls.length > 0
             ? provider.galleryImageUrls
             : ['/images/autocare/placeholders/provider.svg'],

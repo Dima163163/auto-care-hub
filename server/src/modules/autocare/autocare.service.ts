@@ -13,8 +13,6 @@ import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cu
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse } from './autocare.types.js'
 
-const FALLBACK_IMAGE = '/images/autocare/placeholders/provider.svg'
-
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
@@ -112,7 +110,7 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
     const definitionById = new Map(definitions.map((definition) => [definition.id, definition]))
     return {
         ...toProviderResponse(provider, location),
-        coverImageUrl: provider.coverImageUrl ?? FALLBACK_IMAGE,
+        coverImageUrl: provider.coverImageUrl,
         offers: offers.map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
     }
 }
