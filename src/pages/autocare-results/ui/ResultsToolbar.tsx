@@ -47,6 +47,9 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                     <button type="button" onClick={onStartSearch} className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90"><Search className="size-4" />{t('autocare.startSearch')}</button>
                 </div>
                 <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
+                <div className="mt-4 border-t border-primary-foreground/15 pt-4">
+                    <ResultsQuickFilters dark activeCount={Math.max(0, activeFilters.length - 1)} {...quickFilters} onToggleFilters={() => setIsFiltersOpen((value) => !value)} />
+                </div>
                 {isFiltersOpen && <div className="mt-4">{filterPanel}</div>}
                 <AppliedFilters filters={activeFilters} onClear={onResetFilters} onRemove={onRemoveFilter} />
             </div>
@@ -63,9 +66,6 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
                     {selectedCount > 0 && <button type="button" onClick={onClear} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary"><Check className="size-4" />{t('autocare.compareSelected', { count: selectedCount })}</button>}
                     <label><span className="sr-only">{t('autocare.sortLabel')}</span><select value={sort} onChange={(event) => onSortChange(event.target.value as ResultsToolbarProps['sort'])} className="h-10 rounded-[var(--radius-control)] border border-border bg-card py-0 pl-3 pr-9 text-xs font-bold text-foreground outline-none focus:border-primary"><option value="recommended">{t('autocare.recommendedSort')}</option><option value="price_asc">{t('autocare.priceSort')}</option><option value="rating_desc">{t('autocare.ratingSort')}</option><option value="distance_asc">{t('autocare.distanceSort')}</option></select></label>
                 </div>
-            </div>
-            <div className="mt-5 border-t border-border pt-4">
-                <ResultsQuickFilters activeCount={Math.max(0, activeFilters.length - 1)} {...quickFilters} onToggleFilters={() => setIsFiltersOpen((value) => !value)} />
             </div>
         </div>
     </div>
