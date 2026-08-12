@@ -5,6 +5,10 @@
     font-family: inherit;
 }
 
+.autocarehub-results-leaflet .leaflet-tile-pane {
+    filter: sepia(0.14) hue-rotate(168deg) saturate(1.35) brightness(1.14) contrast(0.96);
+}
+
 .autocare-results-heading {
     font-family: Inter, Arial, sans-serif;
     letter-spacing: -0.035em;
@@ -15,32 +19,91 @@
     border: 0;
     background: transparent;
     box-shadow: none;
-    color: var(--muted-foreground);
+    color: rgb(219 234 254 / 0.62);
     font-size: 10px;
 }
 
-.autocarehub-results-leaflet .leaflet-tooltip.results-price-label {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-control);
-    background: var(--card);
-    box-shadow: 0 8px 18px rgb(17 28 54 / 0.14);
-    color: var(--foreground);
-    font-size: 12px;
-    font-weight: 800;
+.autocarehub-results-leaflet .leaflet-control-attribution a {
+    color: rgb(147 197 253 / 0.8);
+}
+
+.autocarehub-results-leaflet .results-map-marker-host {
+    border: 0;
+    background: transparent;
+}
+
+.autocarehub-results-leaflet .results-map-price-marker {
+    display: inline-flex;
+    min-width: 126px;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgb(147 197 253 / 0.3);
+    border-radius: 12px;
+    background: rgb(7 27 53 / 0.92);
+    box-shadow: 0 10px 24px rgb(0 5 18 / 0.45), inset 0 1px rgb(255 255 255 / 0.08);
+    color: #eff6ff;
+    cursor: pointer;
+    padding: 6px 10px 6px 6px;
+    transform: translateY(-1px);
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.autocarehub-results-leaflet .results-map-price-marker:hover,
+.autocarehub-results-leaflet .results-map-price-marker.is-focused {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.22), 0 12px 28px rgb(0 5 18 / 0.55), inset 0 1px rgb(255 255 255 / 0.12);
+    transform: translateY(-3px) scale(1.04);
+}
+
+.autocarehub-results-leaflet .results-map-price-marker__pin {
+    display: inline-flex;
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgb(255 255 255 / 0.92);
+    border-radius: 50% 50% 50% 8px;
+    color: white;
+    transform: rotate(-45deg);
+}
+
+.autocarehub-results-leaflet .results-map-price-marker__pin svg {
+    width: 16px;
+    height: 16px;
+    transform: rotate(45deg);
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.autocarehub-results-leaflet .results-map-price-marker--success .results-map-price-marker__pin {
+    background: #10b981;
+    box-shadow: 0 0 14px rgb(16 185 129 / 0.48);
+}
+
+.autocarehub-results-leaflet .results-map-price-marker--primary .results-map-price-marker__pin,
+.autocarehub-results-leaflet .results-map-price-marker.is-focused .results-map-price-marker__pin {
+    background: #087cf5;
+    box-shadow: 0 0 14px rgb(37 99 235 / 0.55);
+}
+
+.autocarehub-results-leaflet .results-map-price-marker__copy {
+    display: grid;
+    gap: 3px;
     line-height: 1;
-    padding: 8px 9px;
+    white-space: nowrap;
 }
 
-.autocarehub-results-leaflet .leaflet-tooltip.results-price-label.selected {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: var(--primary-foreground);
+.autocarehub-results-leaflet .results-map-price-marker__copy strong {
+    font-size: 11px;
+    font-weight: 900;
 }
 
-.autocarehub-results-leaflet .leaflet-tooltip.results-price-label::before {
-    border-top-color: var(--border);
-}
-
-.autocarehub-results-leaflet .leaflet-tooltip.results-price-label.selected::before {
-    border-top-color: var(--primary);
+.autocarehub-results-leaflet .results-map-price-marker__copy span {
+    color: #fbd36a;
+    font-size: 11px;
+    font-weight: 800;
 }
