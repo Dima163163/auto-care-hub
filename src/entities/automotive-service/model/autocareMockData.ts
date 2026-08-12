@@ -52,6 +52,7 @@ export type ProviderReview = {
     date: string
     text: string
     serviceId: string
+    photos?: readonly string[]
 }
 
 export type ProviderProfile = ProviderPreview & {
@@ -115,7 +116,7 @@ export const providerProfiles: readonly ProviderProfile[] = providerPreviews.map
     amenities: ['Комната ожидания', 'Wi‑Fi', 'Оплата картой', 'Фотоотчёт по запросу'],
     offerings: defaultOfferings,
     reviews: [
-        { id: `${provider.id}-review-1`, author: 'Алексей С.', rating: 5, date: '2 дня назад', text: 'Сделали быстро, заранее объяснили стоимость. Фотоотчёт пришёл в чате.', serviceId: 'oil-change' },
+        { id: `${provider.id}-review-1`, author: 'Алексей С.', rating: 5, date: '2 дня назад', text: 'Сделали быстро, заранее объяснили стоимость. Фотоотчёт пришёл в чате.', serviceId: 'oil-change', photos: ['/images/autocare/providers/generated/service-body-paint.png'] },
         { id: `${provider.id}-review-2`, author: 'Мария К.', rating: 4, date: '1 неделю назад', text: 'Удобная запись и внимательный мастер. Цена совпала с предварительной оценкой.', serviceId: 'diagnostics' },
     ],
 }))

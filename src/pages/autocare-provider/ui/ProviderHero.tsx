@@ -16,13 +16,9 @@ import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
 
-type ProviderHeroProps = { provider: ProviderProfile }
+import { ProviderGallery } from './ProviderGallery'
 
-const galleryImages = [
-    '/images/autocare/providers/generated/service-oil-change.png',
-    '/images/autocare/providers/generated/service-diagnostics.png',
-    '/images/autocare/providers/generated/service-detailing.png',
-]
+type ProviderHeroProps = { provider: ProviderProfile }
 
 export function ProviderHero({ provider }: ProviderHeroProps) {
     const { t } = useTranslation()
@@ -59,15 +55,6 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
 
 function ProviderMark({ provider }: ProviderHeroProps) {
     return <div className="flex size-18 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-card p-2 text-center text-base font-black tracking-tight text-foreground shadow-lg"><span className="leading-4">{provider.name.slice(0, 3).toUpperCase()}<br /><span className="text-primary">AUTO</span></span></div>
-}
-
-function ProviderGallery({ provider }: ProviderHeroProps) {
-    const { t } = useTranslation()
-
-    return <div className="grid h-56 grid-cols-[minmax(0,1fr)_6rem] gap-1.5 rounded-[var(--radius-panel)] border border-primary-foreground/35 bg-primary-foreground/10 p-1.5 shadow-2xl shadow-black/25 sm:h-64">
-        <div className="relative overflow-hidden rounded-[calc(var(--radius-panel)-0.25rem)]"><AutoCareImage src={provider.image} alt="" loading="eager" className="h-full w-full object-cover" /><div className="absolute inset-x-2 bottom-2 rounded-[var(--radius-control)] bg-hero-overlay/85 px-2.5 py-1.5 text-[11px] font-black">{t('autocare.providerServices')}</div></div>
-        <div className="grid grid-rows-3 gap-1.5">{galleryImages.map((image) => <div key={image} className="overflow-hidden rounded-[var(--radius-card)]"><AutoCareImage src={image} alt="" className="h-full w-full object-cover" /></div>)}</div>
-    </div>
 }
 
 function HeroFact({ icon, label }: { icon: ReactNode; label: string }) {

@@ -70,8 +70,8 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         amenities: ['Photo assessment', 'Service updates', 'Direct payment to provider'],
         offerings: profile.offers.map(mapOffer),
         reviews: [
-            { id: `${profile.id}-review-1`, author: 'Alex M.', rating: 5, date: '2 days ago', text: 'Clear estimate, fast work, and the final price matched the agreed scope.', serviceId: profile.offers[0]?.serviceSlug ?? '' },
-            { id: `${profile.id}-review-2`, author: 'Maria S.', rating: 5, date: '1 week ago', text: 'Convenient appointment time and detailed updates while the car was in service.', serviceId: profile.offers[0]?.serviceSlug ?? '' },
+            { id: `${profile.id}-review-1`, author: 'Alex M.', rating: 5, date: '2 days ago', text: 'Clear estimate, fast work, and the final price matched the agreed scope.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-body-paint.png'] },
+            { id: `${profile.id}-review-2`, author: 'Maria S.', rating: 5, date: '1 week ago', text: 'Convenient appointment time and detailed updates while the car was in service.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-tire-service.png'] },
             { id: `${profile.id}-review-3`, author: 'Igor P.', rating: 4, date: '2 weeks ago', text: 'The specialist explained the options before starting the repair.', serviceId: profile.offers[0]?.serviceSlug ?? '' },
         ],
         mapPosition: profile.location.latitude !== null && profile.location.longitude !== null

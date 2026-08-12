@@ -6,6 +6,7 @@ import { mapAutoCareProviderProfile, useGetAutoCareProviderProfileQuery } from '
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { ProviderHero } from './ProviderHero'
+import { ProviderLocationMap } from './ProviderLocationMap'
 import { ProviderOfferings } from './ProviderOfferings'
 import { ProviderRequestPanel } from './ProviderRequestPanel'
 import { ProviderReviews } from './ProviderReviews'
@@ -33,5 +34,5 @@ function ProviderAbout({ provider }: { provider: NonNullable<ReturnType<typeof m
 
 function ProviderLocation({ provider }: { provider: NonNullable<ReturnType<typeof mapAutoCareProviderProfile>> }) {
     const { t } = useTranslation()
-    return <section id="location" className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><div className="grid gap-4 p-5 sm:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] sm:p-6"><div><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerFindUs')}</h2><div className="mt-4 grid gap-3 text-sm font-semibold text-muted-foreground"><p className="flex items-start gap-2"><MapPinned className="mt-0.5 size-4 shrink-0 text-primary" />{provider.address}</p><p className="flex items-start gap-2"><Clock3 className="mt-0.5 size-4 shrink-0 text-primary" />{provider.hours}</p><p className="flex items-start gap-2"><Phone className="mt-0.5 size-4 shrink-0 text-primary" />+7 (495) 645-35-35</p></div></div><div className="relative min-h-36 overflow-hidden rounded-[var(--radius-card)] bg-hero-overlay"><div className="absolute inset-0 bg-[url('/images/autocare/hero-map-generated.webp')] bg-cover bg-center opacity-55" /><div className="relative flex h-full items-center justify-center"><span className="rounded-[var(--radius-control)] bg-card px-3 py-2 text-xs font-black text-primary shadow-sm">{t('autocare.viewOnMap')}</span></div></div></div></section>
+    return <section id="location" className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><div className="grid gap-4 p-5 sm:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] sm:p-6"><div><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerFindUs')}</h2><div className="mt-4 grid gap-3 text-sm font-semibold text-muted-foreground"><p className="flex items-start gap-2"><MapPinned className="mt-0.5 size-4 shrink-0 text-primary" />{provider.address}</p><p className="flex items-start gap-2"><Clock3 className="mt-0.5 size-4 shrink-0 text-primary" />{provider.hours}</p><p className="flex items-start gap-2"><Phone className="mt-0.5 size-4 shrink-0 text-primary" />+7 (495) 645-35-35</p></div></div><ProviderLocationMap provider={provider} /></div></section>
 }
