@@ -379,6 +379,9 @@ Goal: deliver the core marketplace value in the browser.
   Fastify API now share the full filter contract; availability is wired in the
   mock and remains pending real schedule/slot persistence on the backend.
 - [x] Ensure list/map results share one server query and stable pagination.
+- [x] Keep the results page viewport bounded: provider infinite loading and
+  windowed virtualization run inside the results column scroll container so a
+  large catalog cannot push the shared footer below an unbounded document.
 - [ ] Add explicit labels for `FIXED`, `FROM`, `RANGE` and `QUOTE_REQUIRED`.
 - [ ] Define deterministic recommended-sort inputs and prevent paid plan status
   from silently changing organic ranking.
