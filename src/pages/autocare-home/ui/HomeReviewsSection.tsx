@@ -1,12 +1,8 @@
 import { Bell, Check, Clock3, Search, Star } from 'lucide-react'
+import { useMemo } from 'react'
 
+import { useGetFeaturedAutoCareReviewsQuery, type AutoCareApiReview } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
-
-const reviews = [
-    { avatar: '/images/autocare/avatars/alexey.webp', name: 'Алексей С.', car: 'BMW X5', text: 'Отличный сервис! Нашёл ближайший автосервис с хорошим рейтингом и ценой за пару кликов. Записался онлайн, всё сделали быстро и качественно.', time: '2 дня назад' },
-    { avatar: '/images/autocare/avatars/maria.webp', name: 'Мария К.', car: 'Toyota RAV4', text: 'Очень удобно сравнивать цены и время записи. Сэкономила время и деньги. Теперь только через AutoCare Hub ищу автосервисы.', time: '1 неделю назад' },
-    { avatar: '/images/autocare/avatars/igor.webp', name: 'Игорь П.', car: 'Skoda Octavia', text: 'Пользуюсь сервисом постоянно. Всегда можно найти проверенный сервис рядом с работой или домом. Рекомендую!', time: '2 недели назад' },
-] as const
 
 export function HomeReviewsSection() {
     return (
@@ -19,9 +15,17 @@ export function HomeReviewsSection() {
 
 function ReviewsCard() {
     const { t } = useTranslation()
-    return (
-        <section className="rounded-[10px] border border-border bg-card p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><span className="text-xs font-semibold text-primary">{t('autocare.allReviews')}</span></div><div className="mt-5 grid gap-3 md:grid-cols-3">{reviews.map((review) => <article key={review.name} className="rounded-[8px] border border-border p-4"><div className="flex items-center gap-3"><img src={review.avatar} alt="" className="size-11 rounded-full object-cover" /><div><h3 className="text-sm font-black">{review.name}</h3><p className="text-xs text-muted-foreground">{review.car}</p></div></div><div className="mt-3 flex">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className="size-3.5 fill-rating-fill text-rating-fill" />)}</div><p className="mt-3 text-[0.7rem] leading-[1.55] text-muted-foreground">{review.text}</p><p className="mt-4 text-[0.68rem] text-muted-foreground/75">{review.time}</p></article>)}</div></section>
-    )
+    const { data: reviews = [], isLoading, isError } = useGetFeaturedAutoCareReviewsQuery(6)
+    const reviewItems = useMemo(() => reviews.slice(0, 3), [reviews])
+
+    return <section className="rounded-[10px] border border-border bg-card p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><span className="text-xs font-semibold text-primary">{t('autocare.allReviews')}</span></div>{isLoading ? <p className="mt-5 text-sm text-muted-foreground">{t('common.loading')}</p> : isError ? <p className="mt-5 text-sm text-muted-foreground">{t('common.failedToLoad')}</p> : <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3">{reviewItems.map((review) => <ReviewCard key={review.id} review={review} />)}</div>}</section>
+}
+
+function ReviewCard({ review }: { review: AutoCareApiReview }) {
+    const { locale } = useTranslation()
+    const publicationDate = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(review.createdAt))
+    const initials = review.authorName.split(/\s+/).map((part) => part[0]).filter(Boolean).slice(0, 2).join('')
+    return <article className="flex h-full flex-col rounded-[8px] border border-border p-4"><div className="flex items-center gap-3">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-11 rounded-full object-cover" /> : <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-black text-primary">{initials}</span>}<div><h3 className="text-sm font-black">{review.authorName}</h3><p className="text-xs text-muted-foreground">{review.vehicleLabel}</p></div></div><div className="mt-3 flex">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className={`size-3.5 ${index < review.rating ? 'fill-rating-fill text-rating-fill' : 'text-muted-foreground/30'}`} />)}</div><p className="mt-3 flex-1 text-[0.7rem] leading-[1.55] text-muted-foreground">{review.text}</p><p className="mt-4 text-[0.68rem] text-muted-foreground/75">{publicationDate}</p></article>
 }
 
 function MobileAppCard() {

@@ -5,6 +5,8 @@ import {
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
+    AutomotiveReviewEntity,
+    AutomotiveReviewStatus,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
@@ -60,6 +62,25 @@ export async function getAutoCareMarkets() {
 
 export async function getAutoCareServiceDefinitions() {
     return (await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })).map(toServiceDefinitionResponse)
+}
+
+export async function getFeaturedAutoCareReviews(limit: number) {
+    const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
+        where: { status: AutomotiveReviewStatus.Approved },
+        order: { createdAt: 'DESC' },
+        take: limit,
+    })
+
+    return reviews.map((review) => ({
+        id: review.id,
+        providerId: review.providerId,
+        authorName: review.authorName,
+        vehicleLabel: review.vehicleLabel,
+        rating: review.rating,
+        text: review.text,
+        avatarUrl: review.avatarUrl,
+        createdAt: review.createdAt.toISOString(),
+    }))
 }
 
 export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {

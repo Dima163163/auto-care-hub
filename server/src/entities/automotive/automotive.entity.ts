@@ -20,6 +20,12 @@ export enum AutomotivePriceType {
     QuoteRequired = 'quote_required',
 }
 
+export enum AutomotiveReviewStatus {
+    Approved = 'approved',
+    Pending = 'pending',
+    Rejected = 'rejected',
+}
+
 @Entity('autocare_markets')
 @Index(['countryCode', 'cityCode'], { unique: true })
 export class AutomotiveMarketEntity {
@@ -96,4 +102,18 @@ export class AutomotiveServiceOfferingEntity {
     @Column({ type: 'jsonb', default: () => "'[]'" }) inclusions!: string[]
     @Column({ type: 'text', nullable: true }) warrantyText!: string | null
     @Column({ type: 'boolean', default: true }) active!: boolean
+}
+
+@Entity('autocare_reviews')
+@Index(['providerId', 'status', 'createdAt'])
+export class AutomotiveReviewEntity {
+    @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'uuid' }) providerId!: string
+    @Column({ type: 'text' }) authorName!: string
+    @Column({ type: 'text' }) vehicleLabel!: string
+    @Column({ type: 'integer' }) rating!: number
+    @Column({ type: 'text' }) text!: string
+    @Column({ type: 'text', nullable: true }) avatarUrl!: string | null
+    @Column({ type: 'enum', enum: AutomotiveReviewStatus, enumName: 'autocare_review_status', default: AutomotiveReviewStatus.Approved }) status!: AutomotiveReviewStatus
+    @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }

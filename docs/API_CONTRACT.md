@@ -183,6 +183,7 @@ mock and real modes.
 | --- | --- | --- | --- |
 | GET | `/api/v1/markets` | public | Country, city, currency, timezone, and available UI locales. |
 | GET | `/api/v1/service-definitions` | public | Moderated major/minor service catalog with comparison schema. |
+| GET | `/api/v1/reviews/featured` | public | Approved homepage reviews with rating, vehicle, avatar and publication date; optional `limit` up to 12. |
 | GET | `/api/v1/discovery/providers` | public | Service/location/radius/vehicle filters, sort, cursor, map projection. |
 | GET | `/api/v1/providers/:providerId` | public | Provider profile, locations, trust status, offerings, bonuses, review summary, `coverImageUrl`, and `galleryImageUrls`. |
 | GET | `/api/v1/providers/:providerId/offers` | public | Price type, range/from price, duration, inclusions, warranty, availability preview. |

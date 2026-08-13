@@ -343,6 +343,7 @@ export const baseApi = createApi({
         'AutoCareMarket',
         'AutoCareServiceDefinition',
         'AutoCareProvider',
+        'AutoCareReview',
         'AutoCareServiceRequest',
     ],
     endpoints: () => ({}),

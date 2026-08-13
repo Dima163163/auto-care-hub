@@ -98,6 +98,13 @@ const autoCareDefinitions = automotiveServices.map((service) => ({
     active: true,
 }))
 
+const mockFeaturedAutoCareReviews = [
+    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', createdAt: '2026-08-12T10:00:00.000Z' },
+    { id: 'featured-review-2', providerId: 'api-autolux-moscow', authorName: 'Мария К.', vehicleLabel: 'Toyota RAV4', rating: 4, text: 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', avatarUrl: '/images/autocare/avatars/maria.webp', createdAt: '2026-08-05T10:00:00.000Z' },
+    { id: 'featured-review-3', providerId: 'api-formula-moscow', authorName: 'Игорь П.', vehicleLabel: 'Skoda Octavia', rating: 3, text: 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', avatarUrl: '/images/autocare/avatars/igor.webp', createdAt: '2026-07-29T10:00:00.000Z' },
+    { id: 'featured-review-4', providerId: 'api-proservice-moscow', authorName: 'Ольга Н.', vehicleLabel: 'Volkswagen Tiguan', rating: 2, text: 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', avatarUrl: null, createdAt: '2026-07-21T10:00:00.000Z' },
+] as const
+
 function toAutoCareOffer(providerId: string, serviceId: string, price: number, priceType: 'fixed' | 'from' | 'range' | 'quote_required' = 'from') {
     const service = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
     return {
@@ -1965,6 +1972,11 @@ export const handlers = [
 
     http.get('/api/cabinets/all', () => {
         return HttpResponse.json(mockCabinets)
+    }),
+
+    http.get('/api/v1/reviews/featured', ({ request }) => {
+        const limit = Number(new URL(request.url).searchParams.get('limit') ?? 6)
+        return HttpResponse.json(mockFeaturedAutoCareReviews.slice(0, Number.isFinite(limit) ? limit : 6))
     }),
 
     http.get('/api/cabinets/:id', ({ params }) => {

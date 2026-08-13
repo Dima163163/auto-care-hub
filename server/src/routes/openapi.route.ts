@@ -142,6 +142,9 @@ export function getOpenApiDocument() {
             '/v1/service-definitions': {
                 get: { operationId: 'listAutoCareServiceDefinitions', security: [], responses: { '200': { description: 'Active standardized automotive services.' } } },
             },
+            '/v1/reviews/featured': {
+                get: { operationId: 'listFeaturedAutoCareReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 12, default: 6 } }], responses: { '200': { description: 'Approved reviews for the public AutoCare Hub homepage.' } } },
+            },
             '/v1/discovery/providers': {
                 get: {
                     operationId: 'discoverAutoCareProviders',

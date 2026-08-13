@@ -24,6 +24,11 @@ resources:
     read: public
     route: /api/v1/providers/{providerId}
     includes: [verification, locations, offers, amenities, reviewSummary, coverImageUrl, galleryImageUrls]
+  featured_reviews:
+    read: public
+    route: /api/v1/reviews/featured
+    query: [limit]
+    projection: [providerId, authorName, vehicleLabel, rating, text, avatarUrl, createdAt]
   service_request:
     create: authenticated_client
     route: /api/v1/service-requests

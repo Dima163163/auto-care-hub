@@ -1,4 +1,5 @@
 import { baseApi } from '@/shared/api/baseApi'
+import { z } from 'zod'
 
 export type AutoCareApiMarket = {
     id: string
@@ -79,6 +80,28 @@ export type AutoCareApiDiscoveryResponse = {
 export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
+
+export type AutoCareApiReview = {
+    id: string
+    providerId: string
+    authorName: string
+    vehicleLabel: string
+    rating: number
+    text: string
+    avatarUrl: string | null
+    createdAt: string
+}
+
+const featuredReviewSchema = z.object({
+    id: z.string(),
+    providerId: z.string(),
+    authorName: z.string(),
+    vehicleLabel: z.string(),
+    rating: z.number().int().min(1).max(5),
+    text: z.string(),
+    avatarUrl: z.string().nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+}) satisfies z.ZodType<AutoCareApiReview>
 
 export type AutoCareAvailability = { date: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string }> }
 
@@ -174,6 +197,11 @@ export const autoCareApi = baseApi.injectEndpoints({
         getAutoCareServiceDefinitions: build.query<AutoCareApiServiceDefinition[], void>({
             query: () => '/v1/service-definitions',
             providesTags: [{ type: 'AutoCareServiceDefinition', id: 'LIST' }],
+        }),
+        getFeaturedAutoCareReviews: build.query<AutoCareApiReview[], number | void>({
+            query: (limit = 6) => ({ url: '/v1/reviews/featured', params: { limit } }),
+            transformResponse: (value: unknown) => z.array(featuredReviewSchema).parse(value),
+            providesTags: [{ type: 'AutoCareReview', id: 'FEATURED' }],
         }),
         getAutoCareDiscovery: build.query<AutoCareApiDiscoveryResponse, AutoCareDiscoveryQuery | void>({
             query: (params) => ({ url: '/v1/discovery/providers', params: params ?? undefined }),
@@ -273,6 +301,7 @@ export const {
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useGetFeaturedAutoCareReviewsQuery,
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,

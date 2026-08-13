@@ -4,8 +4,8 @@ import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
 import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
 import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
-import { autoCareAvailabilityQuerySchema, autoCareDiscoveryQuerySchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceRequestParamsSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, ownerAutoCareProviderSchema } from './autocare.schemas.js'
-import { createOwnerAutoCareProvider, getAutoCareDiscovery, getAutoCareMarkets, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions, getOwnerAutoCareProviders } from './autocare.service.js'
+import { autoCareAvailabilityQuerySchema, autoCareDiscoveryQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceRequestParamsSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, ownerAutoCareProviderSchema } from './autocare.schemas.js'
+import { createOwnerAutoCareProvider, getAutoCareDiscovery, getAutoCareMarkets, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions, getFeaturedAutoCareReviews, getOwnerAutoCareProviders } from './autocare.service.js'
 import { acceptAutoCareServiceQuote, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceQuote, createAutoCareServiceRequest, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequests } from './autocare-request.service.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -14,6 +14,7 @@ const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequest
 export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/markets', async () => getAutoCareMarkets())
     app.get('/v1/service-definitions', async () => getAutoCareServiceDefinitions())
+    app.get('/v1/reviews/featured', async (request) => getFeaturedAutoCareReviews(validateQuery(autoCareFeaturedReviewsQuerySchema, request.query).limit))
     app.get('/v1/discovery/providers', async (request) => getAutoCareDiscovery(validateQuery(autoCareDiscoveryQuerySchema, request.query)))
     app.get('/v1/providers/:providerId', async (request) => getAutoCareProviderProfile(validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.get('/v1/providers/:providerId/availability', async (request) => {

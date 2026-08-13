@@ -3,6 +3,8 @@ import {
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
+    AutomotiveReviewEntity,
+    AutomotiveReviewStatus,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
@@ -26,6 +28,7 @@ async function seedAutoCareMockData() {
             const providerRepository = manager.getRepository(AutomotiveProviderEntity)
             const locationRepository = manager.getRepository(AutomotiveServiceLocationEntity)
             const offeringRepository = manager.getRepository(AutomotiveServiceOfferingEntity)
+            const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
 
             const existingMarket = await marketRepository.findOneBy({ countryCode: AUTOMOTIVE_MOCK_MARKET.countryCode, cityCode: AUTOMOTIVE_MOCK_MARKET.cityCode })
             const market = await marketRepository.save(marketRepository.create({ ...existingMarket, ...AUTOMOTIVE_MOCK_MARKET }))
@@ -89,6 +92,27 @@ async function seedAutoCareMockData() {
                         inclusions: ['Предварительная оценка', 'Фотоотчёт по запросу'],
                         warrantyText: 'Гарантия на работы по условиям сервиса',
                         active: true,
+                    }))
+                }
+
+                const reviewFixtures = [
+                    ['Алексей С.', 'BMW X5', 5, 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', '/images/autocare/avatars/alexey.webp'],
+                    ['Мария К.', 'Toyota RAV4', 4, 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', '/images/autocare/avatars/maria.webp'],
+                    ['Игорь П.', 'Skoda Octavia', 3, 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', '/images/autocare/avatars/igor.webp'],
+                    ['Ольга Н.', 'Volkswagen Tiguan', 2, 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', null],
+                ] as const
+
+                for (const [authorName, vehicleLabel, rating, text, avatarUrl] of reviewFixtures) {
+                    const existingReview = await reviewRepository.findOneBy({ providerId: provider.id, authorName, vehicleLabel })
+                    await reviewRepository.save(reviewRepository.create({
+                        ...existingReview,
+                        providerId: provider.id,
+                        authorName,
+                        vehicleLabel,
+                        rating,
+                        text,
+                        avatarUrl,
+                        status: AutomotiveReviewStatus.Approved,
                     }))
                 }
             }

@@ -102,6 +102,17 @@ export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {
     offers: AutoCareOfferResponse[]
 }
 
+export type AutoCareReviewResponse = {
+    id: string
+    providerId: string
+    authorName: string
+    vehicleLabel: string
+    rating: number
+    text: string
+    avatarUrl: string | null
+    createdAt: string
+}
+
 export type AutoCareAvailabilitySlotResponse = {
     startTime: string
     endTime: string

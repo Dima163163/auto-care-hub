@@ -77,6 +77,9 @@ diff/commit and explicitly approves that action.
   generated automotive pattern assets: the dark WebP for dark mode and the
   light WebP for light mode, switched by the existing theme provider and
   persisted theme preference. Header and footer expose the same theme control.
+- [x] Homepage testimonials use the public `/api/v1/reviews/featured` contract
+  (and its browser mock equivalent), with approved seed reviews spanning ratings
+  5–2 and publication dates anchored to the bottom of equal-height cards.
 - [x] Dark-mode color audit completed: separate midnight background, card,
   popover, secondary and muted surface levels; readable cool-white text;
   blue action controls; and distinct accessible status colors are defined in

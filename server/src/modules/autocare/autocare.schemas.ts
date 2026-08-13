@@ -31,6 +31,10 @@ export const autoCareProviderOffersQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
 })
 
+export const autoCareFeaturedReviewsQuerySchema = z.object({
+    limit: z.coerce.number().int().positive().max(12).default(6),
+})
+
 export const autoCareAvailabilityQuerySchema = z.object({
     locationId: z.string().uuid(),
     offeringId: z.string().uuid(),
