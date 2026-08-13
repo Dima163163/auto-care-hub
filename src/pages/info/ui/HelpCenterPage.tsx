@@ -198,7 +198,7 @@ export function HelpCenterPage() {
 
     return (
         <main className="relative z-0 min-h-full bg-background text-foreground">
-            <section className="relative overflow-visible border-b bg-background">
+            <section className="relative overflow-visible border-b border-primary-foreground/10 bg-hero-overlay text-primary-foreground">
                 <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1fr_1fr]">
                     <div className="relative z-10 px-5 py-12 md:px-12 md:py-16 lg:px-24 lg:py-8">
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
@@ -207,7 +207,7 @@ export function HelpCenterPage() {
                         <h1 className="mt-3 max-w-xl text-4xl font-black leading-tight tracking-tight md:text-5xl" aria-live="polite">
                             {audienceGuide.title}
                         </h1>
-                        <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted-foreground md:text-lg" aria-live="polite">
+                        <p className="mt-4 max-w-xl text-base font-medium leading-7 text-primary-foreground/70 md:text-lg" aria-live="polite">
                             {audienceGuide.description}
                         </p>
 
@@ -215,21 +215,21 @@ export function HelpCenterPage() {
                             <label htmlFor="help-search" className="sr-only">
                                 {t('info.help.searchPlaceholder')}
                             </label>
-                            <div className="flex min-h-14 items-center gap-3 rounded-lg border bg-background px-4 shadow-sm ring-1 ring-primary/10">
-                                <Search className="size-5 shrink-0 text-foreground" aria-hidden="true" />
+                            <div className="flex min-h-14 items-center gap-3 rounded-lg border border-primary-foreground/20 bg-primary-foreground/[0.08] px-4 shadow-sm ring-1 ring-primary-foreground/10 backdrop-blur-sm">
+                                <Search className="size-5 shrink-0 text-primary" aria-hidden="true" />
                                 <input
                                     id="help-search"
                                     type="search"
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
                                     placeholder={t('info.help.searchPlaceholder')}
-                                    className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-muted-foreground"
+                                    className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-primary-foreground outline-none placeholder:text-primary-foreground/55"
                                 />
                                 {search && (
                                     <button
                                         type="button"
                                         onClick={() => setSearch('')}
-                                        className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                        className="flex size-8 shrink-0 items-center justify-center rounded-md text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
                                         aria-label={t('info.help.clearSearch')}
                                         title={t('info.help.clearSearch')}
                                     >
@@ -249,12 +249,12 @@ export function HelpCenterPage() {
                             height="1024"
                             loading="eager"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/10 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/10 to-transparent" />
                     </div>
                 </div>
 
                 <div className="relative z-20 mx-auto -mb-7 max-w-6xl px-5 md:px-12 lg:-mb-8 lg:px-0">
-                    <div className="grid overflow-hidden rounded-lg border bg-background shadow-sm md:grid-cols-3" role="tablist" aria-label={t('info.help.audienceLabel')}>
+                    <div className="grid overflow-hidden rounded-lg border bg-background text-foreground shadow-sm md:grid-cols-3" role="tablist" aria-label={t('info.help.audienceLabel')}>
                         {audiences.map(({ id, icon: Icon, title, description }) => (
                             <button
                                 key={id}
@@ -264,8 +264,8 @@ export function HelpCenterPage() {
                                 aria-controls="help-audience-content"
                                 onClick={() => updateHelpContext({ audience: id, category: 'all' })}
                                 className={activeAudience === id
-                                    ? 'flex min-h-16 items-center gap-3 rounded-lg border border-primary bg-background px-4 py-3 text-left ring-1 ring-inset ring-primary transition-colors md:rounded-none md:first:rounded-l-lg md:last:rounded-r-lg md:border-b-0 md:border-r md:last:border-r-0'
-                                    : 'flex min-h-16 items-center gap-3 border-b px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg last:border-b-0 hover:bg-muted/60 md:first:rounded-l-lg md:first:rounded-t-none md:last:rounded-r-lg md:last:rounded-b-none md:border-b-0 md:border-r md:last:border-r-0'}
+                                    ? 'flex min-h-16 items-center gap-3 rounded-lg border border-primary bg-background px-4 py-3 text-left text-foreground ring-1 ring-inset ring-primary transition-colors md:rounded-none md:first:rounded-l-lg md:last:rounded-r-lg md:border-b-0 md:border-r md:last:border-r-0'
+                                    : 'flex min-h-16 items-center gap-3 border-b px-4 py-3 text-left text-foreground transition-colors first:rounded-t-lg last:rounded-b-lg last:border-b-0 hover:bg-muted/60 md:first:rounded-l-lg md:first:rounded-t-none md:last:rounded-r-lg md:last:rounded-b-none md:border-b-0 md:border-r md:last:border-r-0'}
                             >
                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
                                     <Icon className="size-4" aria-hidden="true" />
@@ -277,7 +277,7 @@ export function HelpCenterPage() {
                             </button>
                         ))}
                     </div>
-                    <div id="help-audience-content" className="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card px-4 py-3 shadow-sm" role="status">
+                    <div id="help-audience-content" className="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card px-4 py-3 text-foreground shadow-sm" role="status">
                         <div className="min-w-0">
                             <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">{selectedAudience.title}</p>
                             <p className="mt-1 text-sm font-medium text-muted-foreground">{audienceGuide.sectionDescription}</p>
