@@ -1014,6 +1014,13 @@ export const ruTranslations = {
         clientFooterConvenientText: 'Выбирайте время в пару кликов',
         clientFooterDirect: 'Понятные условия',
         clientFooterDirectText: 'Цена и гарантия видны до подтверждения',
+        favoritesEyebrow: 'Ваш список',
+        favoritesTitle: 'Избранные сервисы',
+        favoritesDescription: 'Сохраняйте проверенные автосервисы и возвращайтесь к сравнению в нужный момент.',
+        favoritesEmptyTitle: 'В избранном пока пусто',
+        favoritesEmptyDescription: 'Нажмите сердечко на карточке сервиса, чтобы сохранить его здесь.',
+        favoritesBrowse: 'Найти автосервис',
+        favoritesRemove: 'Убрать из избранного',
     },
     landing: {
         eyebrow: 'Агрегатор автосервисов',

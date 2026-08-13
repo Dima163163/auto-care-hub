@@ -1010,6 +1010,13 @@ export const enTranslations = {
         clientFooterConvenientText: 'Choose a time in a few clicks',
         clientFooterDirect: 'Clear terms',
         clientFooterDirectText: 'Price and warranty are visible before confirmation',
+        favoritesEyebrow: 'Your shortlist',
+        favoritesTitle: 'Favorite services',
+        favoritesDescription: 'Keep trusted automotive services close and compare them again whenever you need.',
+        favoritesEmptyTitle: 'Your shortlist is empty',
+        favoritesEmptyDescription: 'Tap the heart on a service card to save a provider here.',
+        favoritesBrowse: 'Find a service',
+        favoritesRemove: 'Remove from favorites',
     },
     landing: {
         eyebrow: 'Automotive service marketplace',

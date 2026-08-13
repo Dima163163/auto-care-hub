@@ -1,8 +1,8 @@
 import { BadgeCheck, Check, Clock3, Heart, LocateFixed, MessageCircle, ShieldCheck, Star } from 'lucide-react'
 import { Link } from 'react-router'
-import { useState } from 'react'
 
 import type { ProviderPreview } from '@/entities/automotive-service'
+import { useAutoCareFavorites } from '@/features/automotive-favorites'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
@@ -17,7 +17,8 @@ type ProviderResultCardProps = {
 
 export function ProviderResultCard({ provider, selected, highlight, onToggle, onFocus }: ProviderResultCardProps) {
     const { t } = useTranslation()
-    const [favorite, setFavorite] = useState(false)
+    const { isFavorite, toggle } = useAutoCareFavorites()
+    const favorite = isFavorite(provider.id)
     const price = new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(provider.price)
     const isBestValue = highlight === 'best-value'
     const isHighestRating = highlight === 'highest-rating'
@@ -39,7 +40,7 @@ export function ProviderResultCard({ provider, selected, highlight, onToggle, on
             </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-xs font-semibold text-muted-foreground"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-status-success-foreground" />{originalParts ? t('autocare.originalParts') : t('autocare.partsIncluded')}</span><span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-status-success-foreground" />{hasWarranty ? t('autocare.warrantyMonths', { count: warrantyMonths ?? 12 }) : t('autocare.qualityGuarantee')}</span><button type="button" onClick={onFocus} className="inline-flex items-center gap-1.5 text-primary hover:underline"><LocateFixed className="size-3.5" />{t('autocare.bookingToday')}</button></div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3"><span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground"><Clock3 className="size-4 text-primary" />{provider.nextSlot}</span><div className="flex gap-2"><Link to={`${routePaths.serviceProviderDetails(provider.id)}#request`} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-xs font-black text-foreground hover:border-primary hover:text-primary"><MessageCircle className="size-3.5" />{t('autocare.messageAction')}</Link><Link to={routePaths.serviceRequest(provider.id, provider.serviceIds?.[0])} className="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground hover:bg-primary/90">{t('autocare.bookAction')}</Link><button type="button" onClick={() => setFavorite((value) => !value)} aria-pressed={favorite} aria-label={t('autocare.addFavorite')} className={`flex size-9 items-center justify-center rounded-[var(--radius-control)] border ${favorite ? 'border-status-danger-foreground bg-status-danger-surface text-status-danger-foreground' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`}><Heart className={`size-4 ${favorite ? 'fill-current' : ''}`} /></button></div></div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3"><span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground"><Clock3 className="size-4 text-primary" />{provider.nextSlot}</span><div className="flex gap-2"><Link to={`${routePaths.serviceProviderDetails(provider.id)}#request`} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-xs font-black text-foreground hover:border-primary hover:text-primary"><MessageCircle className="size-3.5" />{t('autocare.messageAction')}</Link><Link to={routePaths.serviceRequest(provider.id, provider.serviceIds?.[0])} className="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground hover:bg-primary/90">{t('autocare.bookAction')}</Link><button type="button" onClick={() => toggle(provider.id)} aria-pressed={favorite} aria-label={t('autocare.addFavorite')} className={`flex size-9 items-center justify-center rounded-[var(--radius-control)] border ${favorite ? 'border-status-danger-foreground bg-status-danger-surface text-status-danger-foreground' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`}><Heart className={`size-4 ${favorite ? 'fill-current' : ''}`} /></button></div></div>
     </article>
 }
 
