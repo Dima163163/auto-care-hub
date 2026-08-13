@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/shared/lib/theme-provider'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { useTheme } from '@/shared/lib/useTheme'
 import { PwaLifecycle } from '@/features/pwa-lifecycle'
+import { ScrollToTopButton } from '@/shared/ui/scroll-to-top'
 
 function AppContent() {
     const { theme } = useTheme()
@@ -16,6 +17,7 @@ function AppContent() {
             <AccountLocaleSync />
             <AppRouter/>
             <PwaLifecycle />
+            <ScrollToTopButton />
             <Toaster richColors position="top-right" theme={theme}/>
         </I18nProvider>
     )

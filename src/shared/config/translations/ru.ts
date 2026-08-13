@@ -37,6 +37,7 @@ export const ruTranslations = {
         notProvided: 'Не указано',
         tryAgainLater: 'Попробуйте еще раз позже.',
         retry: 'Повторить',
+        backToTop: 'Вернуться наверх',
     },
     routeError: {
         title: 'Страница недоступна',

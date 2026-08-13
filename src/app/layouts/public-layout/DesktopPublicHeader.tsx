@@ -19,7 +19,7 @@ export function DesktopPublicHeader() {
     ]
 
     return (
-        <header className="relative z-50 hidden h-[84px] shrink-0 border-b border-primary-foreground/10 bg-hero-overlay text-primary-foreground md:block">
+        <header className="sticky top-0 z-50 hidden h-[84px] shrink-0 border-b border-primary-foreground/10 bg-hero-overlay/95 text-primary-foreground backdrop-blur-md md:block">
             <div className="mx-auto flex h-full max-w-[1416px] items-center px-[clamp(1.5rem,3.2vw,3.5rem)]">
                 <Link to={ROUTES.home} className="shrink-0" aria-label={t('navigation.home')}>
                     <BrandLogo size="lg" />

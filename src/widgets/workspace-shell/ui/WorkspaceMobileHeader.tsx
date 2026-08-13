@@ -25,7 +25,7 @@ export function WorkspaceMobileHeader({ role }: WorkspaceMobileHeaderProps) {
     const { data: user, isLoading, isError } = useGetMeQuery()
 
     return (
-        <header className="flex h-16 items-center justify-between gap-3 border-b bg-background px-4 md:hidden">
+        <header className="sticky top-0 z-50 flex h-16 items-center justify-between gap-3 border-b bg-background/95 px-4 backdrop-blur-md md:hidden">
             <Link to={ROUTES.home} className="flex shrink-0 items-center" aria-label="AutoCare Hub">
                 <BrandLogo size="md" />
             </Link>

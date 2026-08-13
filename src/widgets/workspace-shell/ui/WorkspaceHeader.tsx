@@ -44,7 +44,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
     ]
 
     return (
-        <header className="hidden h-[72px] items-center gap-3 border-b bg-background px-3 md:flex lg:gap-7 lg:px-8">
+        <header className="sticky top-0 z-50 hidden h-[72px] items-center gap-3 border-b bg-background/95 px-3 backdrop-blur-md md:flex lg:gap-7 lg:px-8">
             <Logo />
 
             <nav aria-label={t('navigation.mainNavigation')} className="hidden h-full items-center gap-5 lg:flex">

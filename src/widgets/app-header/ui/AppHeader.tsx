@@ -45,7 +45,7 @@ export function AppHeader() {
     ]
 
     return (
-        <header className="relative z-50 border-b bg-background/95 backdrop-blur-md">
+        <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-md">
             <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 lg:px-8">
                 <Link to={ROUTES.home} className="flex shrink-0 items-center" aria-label="AutoCare Hub">
                     <BrandLogo size="sm" />

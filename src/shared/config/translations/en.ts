@@ -33,6 +33,7 @@ export const enTranslations = {
         notProvided: 'Not provided',
         tryAgainLater: 'Please try again later.',
         retry: 'Retry',
+        backToTop: 'Back to top',
     },
     routeError: {
         title: 'Page unavailable',
