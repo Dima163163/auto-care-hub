@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import {
     ArrowRight,
     Building2,
@@ -22,6 +22,26 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 
 type AudienceId = 'guest' | 'client' | 'owner'
 type FaqCategory = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'account' | 'safety' | 'travel'
+type TopicId = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'vehicle'
+
+const audienceFaqCategories: Record<AudienceId, readonly FaqCategory[]> = {
+    guest: ['search', 'pricing', 'reviews', 'safety', 'travel'],
+    client: ['search', 'booking', 'pricing', 'messages', 'reviews', 'account', 'safety', 'travel'],
+    owner: ['pricing', 'messages', 'reviews', 'account', 'safety'],
+}
+
+function isAudienceId(value: string | null): value is AudienceId {
+    return value === 'guest' || value === 'client' || value === 'owner'
+}
+
+function isFaqCategory(value: string | null): value is FaqCategory {
+    return faqCategoryKeys.some(({ id }) => id === value)
+}
+
+function helpTopicPath(audience: AudienceId, category: FaqCategory) {
+    const params = new URLSearchParams({ audience, category })
+    return `${ROUTES.help}?${params.toString()}`
+}
 
 const faqCategoryKeys: Array<{ id: FaqCategory; labelKey: TranslationKey }> = [
     { id: 'search', labelKey: 'info.help.faqCategorySearch' },
@@ -52,9 +72,26 @@ const faqEntries: Array<{ category: FaqCategory; questionKey: TranslationKey; an
 
 export function HelpCenterPage() {
     const { t } = useTranslation()
+    const [searchParams, setSearchParams] = useSearchParams()
     const [search, setSearch] = useState('')
-    const [activeAudience, setActiveAudience] = useState<AudienceId>('guest')
     const normalizedSearch = search.trim().toLocaleLowerCase()
+    const audienceParam = searchParams.get('audience')
+    const activeAudience: AudienceId = audienceParam && isAudienceId(audienceParam) ? audienceParam : 'guest'
+    const categoryParam = searchParams.get('category')
+    const requestedFaqCategory: FaqCategory | null = categoryParam && isFaqCategory(categoryParam) ? categoryParam : null
+    const activeFaqCategory: FaqCategory | 'all' = requestedFaqCategory && audienceFaqCategories[activeAudience].includes(requestedFaqCategory)
+        ? requestedFaqCategory
+        : 'all'
+
+    const updateHelpContext = (changes: { audience?: AudienceId; category?: FaqCategory | 'all' }) => {
+        setSearchParams((current) => {
+            const next = new URLSearchParams(current)
+            if (changes.audience) next.set('audience', changes.audience)
+            if (changes.category === 'all') next.delete('category')
+            if (changes.category && changes.category !== 'all') next.set('category', changes.category)
+            return next
+        }, { replace: true })
+    }
 
     const audiences = [
         {
@@ -77,61 +114,88 @@ export function HelpCenterPage() {
         },
     ]
 
-    const topicCards = [
+    const topicCards: Array<{
+        id: TopicId
+        icon: typeof Search
+        title: string
+        description: string
+        count: string
+        audiences: readonly AudienceId[]
+        to: string
+    }> = [
         {
+            id: 'search',
             icon: Search,
             title: t('info.help.topicFindSpaceTitle'),
             description: t('info.help.topicFindSpaceDescription'),
             count: t('info.help.topicFindSpaceCount'),
+            audiences: ['guest', 'client'],
             to: ROUTES.serviceDiscovery,
         },
         {
+            id: 'booking',
             icon: CalendarDays,
             title: t('info.help.topicBookingTitle'),
             description: t('info.help.topicBookingDescription'),
             count: t('info.help.topicBookingCount'),
+            audiences: ['guest', 'client'],
             to: ROUTES.serviceDiscovery,
         },
         {
+            id: 'pricing',
             icon: WalletCards,
             title: t('info.help.topicCancellationTitle'),
             description: t('info.help.topicCancellationDescription'),
             count: t('info.help.topicCancellationCount'),
-            to: ROUTES.help,
+            audiences: ['guest', 'client', 'owner'],
+            to: helpTopicPath(activeAudience, 'pricing'),
         },
         {
+            id: 'messages',
             icon: MessageCircle,
             title: t('info.help.topicManageTitle'),
             description: t('info.help.topicManageDescription'),
             count: t('info.help.topicManageCount'),
-            to: ROUTES.help,
+            audiences: ['client', 'owner'],
+            to: helpTopicPath(activeAudience, 'messages'),
         },
         {
+            id: 'reviews',
             icon: Star,
             title: t('info.help.topicAccountTitle'),
             description: t('info.help.topicAccountDescription'),
             count: t('info.help.topicAccountCount'),
-            to: ROUTES.profile,
+            audiences: ['guest', 'client', 'owner'],
+            to: helpTopicPath(activeAudience, 'reviews'),
         },
         {
+            id: 'vehicle',
             icon: CarFront,
             title: t('info.help.topicVehicleTitle'),
             description: t('info.help.topicVehicleDescription'),
             count: t('info.help.topicVehicleCount'),
+            audiences: ['client'],
             to: ROUTES.profile,
         },
     ]
 
-    const [activeFaqCategory, setActiveFaqCategory] = useState<FaqCategory | 'all'>('all')
-
-    const filteredTopics = topicCards.filter(({ title, description }) =>
-        !normalizedSearch || [title, description].join(' ').toLocaleLowerCase().includes(normalizedSearch),
+    const filteredTopics = topicCards.filter(({ title, description, audiences }) =>
+        audiences.includes(activeAudience) &&
+        (!normalizedSearch || [title, description].join(' ').toLocaleLowerCase().includes(normalizedSearch)),
     )
     const filteredFaqs = faqEntries.filter(({ category, questionKey, answerKey }) =>
+        audienceFaqCategories[activeAudience].includes(category) &&
         (activeFaqCategory === 'all' || category === activeFaqCategory) &&
         (!normalizedSearch || [t(questionKey), t(answerKey)].join(' ').toLocaleLowerCase().includes(normalizedSearch)),
     )
     const hasResults = filteredTopics.length > 0 || filteredFaqs.length > 0
+
+    const selectedAudience = audiences.find(({ id }) => id === activeAudience) ?? audiences[0]
+    const audienceGuide = activeAudience === 'owner'
+        ? { title: t('info.help.ownerTitle'), description: t('info.help.ownerDescription'), action: t('info.help.ownerAction'), to: ROUTES.ownerDashboard }
+        : activeAudience === 'client'
+            ? { title: t('info.help.clientTitle'), description: t('info.help.clientDescription'), action: t('info.help.clientAction'), to: ROUTES.profileBookings }
+            : { title: t('info.help.audienceGuestTitle'), description: t('info.help.audienceGuestDescription'), action: t('info.openCatalog'), to: ROUTES.serviceDiscovery }
 
     return (
         <main className="relative z-0 min-h-full bg-background text-foreground">
@@ -198,7 +262,8 @@ export function HelpCenterPage() {
                                 type="button"
                                 role="tab"
                                 aria-selected={activeAudience === id}
-                                onClick={() => setActiveAudience(id)}
+                                aria-controls="help-audience-content"
+                                onClick={() => updateHelpContext({ audience: id, category: 'all' })}
                                 className={activeAudience === id
                                     ? 'flex min-h-16 items-center gap-3 rounded-lg border border-primary bg-background px-4 py-3 text-left ring-1 ring-inset ring-primary transition-colors md:rounded-none md:first:rounded-l-lg md:last:rounded-r-lg md:border-b-0 md:border-r md:last:border-r-0'
                                     : 'flex min-h-16 items-center gap-3 border-b px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg last:border-b-0 hover:bg-muted/60 md:first:rounded-l-lg md:first:rounded-t-none md:last:rounded-r-lg md:last:rounded-b-none md:border-b-0 md:border-r md:last:border-r-0'}
@@ -213,6 +278,16 @@ export function HelpCenterPage() {
                             </button>
                         ))}
                     </div>
+                    <div id="help-audience-content" className="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card px-4 py-3 shadow-sm" role="status">
+                        <div className="min-w-0">
+                            <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">{selectedAudience.title}</p>
+                            <p className="mt-1 text-sm font-medium text-muted-foreground">{audienceGuide.description}</p>
+                        </div>
+                        <Link to={audienceGuide.to} className="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-black text-primary-foreground transition-colors hover:bg-primary/90">
+                            {audienceGuide.action}
+                            <ArrowRight className="size-3.5" aria-hidden="true" />
+                        </Link>
+                    </div>
                 </div>
             </section>
 
@@ -221,9 +296,9 @@ export function HelpCenterPage() {
                     <h2 className="text-xl font-black tracking-tight">{t('info.help.topicBrowseTitle')}</h2>
                     {filteredTopics.length > 0 ? (
                         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                            {filteredTopics.map(({ icon: Icon, title, description, count, to }) => (
+                            {filteredTopics.map(({ id, icon: Icon, title, description, count, to }) => (
                                 <Link
-                                    key={title}
+                                    key={id}
                                     to={to}
                                     className="group flex min-h-44 flex-col rounded-lg border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-primary/[0.02]"
                                 >
@@ -248,18 +323,18 @@ export function HelpCenterPage() {
                                 type="button"
                                 role="tab"
                                 aria-selected={activeFaqCategory === 'all'}
-                                onClick={() => setActiveFaqCategory('all')}
+                                onClick={() => updateHelpContext({ category: 'all' })}
                                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${activeFaqCategory === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:border-primary/50'}`}
                             >
                                 {t('info.help.faqCategoryAll')}
                             </button>
-                            {faqCategoryKeys.map(({ id, labelKey }) => (
+                            {faqCategoryKeys.filter(({ id }) => audienceFaqCategories[activeAudience].includes(id)).map(({ id, labelKey }) => (
                                 <button
                                     key={id}
                                     type="button"
                                     role="tab"
                                     aria-selected={activeFaqCategory === id}
-                                    onClick={() => setActiveFaqCategory(id)}
+                                    onClick={() => updateHelpContext({ category: id })}
                                     className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${activeFaqCategory === id ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:border-primary/50'}`}
                                 >
                                     {t(labelKey)}
