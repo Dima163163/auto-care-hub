@@ -2,7 +2,7 @@ import { Bell, ChevronDown, Plus } from 'lucide-react'
 import { Link, NavLink } from 'react-router'
 import { useState } from 'react'
 
-import { CurrentUserBadge, useGetMeQuery } from '@/features/auth'
+import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -126,14 +126,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         <span className="hidden xl:inline">{t('autocare.ownerProvidersCreate')}</span>
                     </Link>
                 )}
-                {isLoading ? (
-                    <CurrentUserBadge isLoading />
-                ) : (
-                    <div className="flex items-center gap-2">
-                        <CurrentUserBadge user={isError ? undefined : user} isError={isError} compactAtTablet />
-                        <ChevronDown className="hidden size-4 text-muted-foreground xl:block" aria-hidden="true" />
-                    </div>
-                )}
+                {isLoading ? <CurrentUserBadge isLoading /> : user ? <CurrentUserMenu user={user} /> : <CurrentUserBadge isError={isError} />}
             </div>
         </header>
     )

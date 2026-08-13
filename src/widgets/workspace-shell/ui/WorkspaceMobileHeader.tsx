@@ -1,7 +1,7 @@
 import { Bell, CarFront } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { CurrentUserBadge, useGetMeQuery } from '@/features/auth'
+import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -52,11 +52,7 @@ export function WorkspaceMobileHeader({ role }: WorkspaceMobileHeaderProps) {
                 >
                     <Bell className="size-4" />
                 </Link>
-                {isLoading ? (
-                    <CurrentUserBadge isLoading />
-                ) : (
-                    <CurrentUserBadge user={isError ? undefined : user} isError={isError} compactAtTablet compactMobile />
-                )}
+                {isLoading ? <CurrentUserBadge isLoading /> : user ? <CurrentUserMenu user={user} /> : <CurrentUserBadge isError={isError} compactMobile />}
             </div>
         </header>
     )

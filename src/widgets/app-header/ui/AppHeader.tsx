@@ -3,8 +3,7 @@ import { ChevronDown, Menu, X } from 'lucide-react'
 import { Link, NavLink } from 'react-router'
 
 import {
-    getAccountLinkTranslationKey,
-    getDefaultRouteByRole,
+    CurrentUserMenu,
     useGetMeQuery,
 } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
@@ -53,6 +52,7 @@ export function AppHeader() {
                 </Link>
 
                 <div className="relative flex items-center gap-2" ref={menuRef}>
+                    {user && <CurrentUserMenu user={user} />}
                     <ThemeSwitcher />
                     <button
                         type="button"
@@ -73,16 +73,6 @@ export function AppHeader() {
                                 <LanguageSwitcher />
                             </div>
                             <nav className="grid gap-1 pt-2" aria-label={t('navigation.mainNavigation')}>
-                                {user && (
-                                    <NavLink
-                                        to={getDefaultRouteByRole(user.role)}
-                                        title={t(getAccountLinkTranslationKey(user.role))}
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className={({ isActive }) => `rounded-md px-3 py-3 text-sm font-semibold transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
-                                    >
-                                        {t(getAccountLinkTranslationKey(user.role))}
-                                    </NavLink>
-                                )}
                                 {[...primaryLinks, ...secondaryLinks].map((link, index) => (
                                     <NavLink
                                         key={link.to}

@@ -26,6 +26,7 @@ export {
     } from './api/authApi'
 
 export { CurrentUserBadge } from './ui/current-user-badge/CurrentUserBadge'
+export { CurrentUserMenu } from './ui/current-user-menu/CurrentUserMenu'
 export { AuthHeaderActions } from './ui/auth-header-actions/AuthHeaderActions'
 export { LogoutButton } from './ui/logout-button/LogoutButton'
 export { RequireAuth } from './ui/require-auth/RequireAuth'

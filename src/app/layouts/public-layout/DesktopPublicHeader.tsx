@@ -1,12 +1,7 @@
 import { ChevronDown, Heart, MapPin, UserRound } from 'lucide-react'
 import { Link, NavLink } from 'react-router'
 
-import {
-    CurrentUserBadge,
-    getAccountLinkTranslationKey,
-    getDefaultRouteByRole,
-    useGetMeQuery,
-} from '@/features/auth'
+import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BrandLogo } from '@/shared/ui/brand-logo'
@@ -61,12 +56,7 @@ export function DesktopPublicHeader() {
                             <UserRound className="size-[19px]" />{t('auth.signIn')}
                         </Link>
                     ) : null}
-                    {!isLoading && user ? (
-                        <Link to={getDefaultRouteByRole(user.role)}>
-                            <CurrentUserBadge user={user} compactAtTablet />
-                            <span className="sr-only">{t(getAccountLinkTranslationKey(user.role))}</span>
-                        </Link>
-                    ) : null}
+                    {!isLoading && user ? <CurrentUserMenu user={user} variant="dark" /> : null}
                 </div>
             </div>
         </header>
