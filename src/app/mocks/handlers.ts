@@ -188,6 +188,20 @@ function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
 }
 
+function pushMockAutoCareNotification(input: { userId: string; requestId: string; title: string; message: string; role: 'client' | 'owner' }) {
+    mockNotifications.unshift({
+        id: `notification-autocare-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        category: 'booking',
+        title: input.title,
+        message: input.message,
+        link: input.role === 'owner' ? `/owner/bookings?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
+        metadata: { serviceRequestId: input.requestId, domain: 'autocare' },
+        readAt: null,
+        createdAt: new Date().toISOString(),
+        userId: input.userId,
+    } as Notification & { userId: string })
+}
+
 function getMockOAuthIdentities(user: User) {
     const existing = mockOAuthIdentitiesByUser.get(user.id)
 
@@ -1730,6 +1744,7 @@ export const handlers = [
             updatedAt: now,
         }
         mockAutoCareServiceRequests.unshift(result)
+        pushMockAutoCareNotification({ userId: user.id, requestId: result.id, role: 'client', title: 'Заявка отправлена', message: 'Заявка передана автосервису и появится в переписке.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = result
         return HttpResponse.json(response, { status: 201 })
     }),
@@ -1770,6 +1785,7 @@ export const handlers = [
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
         const message = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text' as const, body: body.body.trim(), createdAt: new Date().toISOString() }
         mockAutoCareMessages.set(item.id, [...(mockAutoCareMessages.get(item.id) ?? []), message])
+        pushMockAutoCareNotification({ userId: user.id === item.clientId ? 'user-owner-1' : item.clientId, requestId: item.id, role: user.id === item.clientId ? 'owner' : 'client', title: 'Новое сообщение по заявке', message: 'В переписке по услуге появилось новое сообщение.' })
         return HttpResponse.json(message, { status: 201 })
     }),
 
@@ -1805,6 +1821,7 @@ export const handlers = [
         item.status = 'accepted'
         item.clientConfirmedAt = new Date().toISOString()
         item.updatedAt = new Date().toISOString()
+        pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент принял смету', message: 'Клиент подтвердил предварительную стоимость услуги.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
@@ -1818,6 +1835,7 @@ export const handlers = [
         item.status = 'declined'
         item.clientConfirmedAt = new Date().toISOString()
         item.updatedAt = new Date().toISOString()
+        pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент отклонил смету', message: 'Клиент попросил не продолжать по этой смете.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
@@ -1838,6 +1856,7 @@ export const handlers = [
         item.providerConfirmedAt ??= new Date().toISOString()
         item.status = 'accepted'
         item.updatedAt = new Date().toISOString()
+        pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Сервис подтвердил заявку', message: 'Сервис подтвердил заявку и готов перейти к следующему шагу.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
@@ -1856,6 +1875,7 @@ export const handlers = [
         item.quote = { amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now }
         item.status = 'estimate_shared'
         item.updatedAt = now
+        pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Сервис прислал предварительную смету', message: 'Проверьте предварительную стоимость услуги.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),

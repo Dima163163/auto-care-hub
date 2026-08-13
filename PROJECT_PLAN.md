@@ -122,11 +122,11 @@ work.
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Finish backend parity for every filter (availability, price type, inclusion, bonus, warranty, sort and radius), persisted ranking and one-query map/list loading. |
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
-| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI and idempotent creation. | Add real availability/scheduling and notifications before pilot. |
+| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation and outbox-backed event notifications. | Add real availability/scheduling and reminder delivery before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Connect request/message APIs, persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, inbox, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
-| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment and quote routes are implemented with migrations and mock handlers. | Add real schedule/availability, geospatial indexes, notifications, provider memberships and authorization/integration tests. |
+| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment, quote and idempotent request routes are implemented with migrations and mock handlers; request events enqueue notifications through the outbox. | Add real schedule/availability, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
 
@@ -140,7 +140,7 @@ cache, deep-link fallback and release smoke tests still need completion.
 Current page delivery order:
 
 1. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
-2. provider profile and request follow-up: availability and notification hardening;
+2. provider profile and request follow-up: availability and reminder hardening;
 3. provider workspace: onboarding, locations, offerings, inbox, calendar and
   team;
 4. admin/super-admin workspaces;
@@ -173,6 +173,8 @@ and follow-up contract are now delivered:
    validation state instead of only a local form result.
 5. [x] Cover validation and authorization boundaries with backend schema/unit
    tests; frontend build, lint and mock handlers cover the UI contract.
+6. [x] Notify the client and provider through the existing transactional outbox
+   when a request, message, estimate or confirmation changes the workflow.
 
 Real schedules, notifications, bonuses and
 subscriptions are the following slices and should not be mixed into this
@@ -553,7 +555,8 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
 - [ ] Implement explicit state transitions and actor permissions.
 - [ ] Implement cancel/reschedule/no-show policies.
 - [ ] Update customer bookings dashboard and provider calendar/work queue.
-- [ ] Connect notifications and transactional outbox events.
+- [~] Connect AutoCare request notifications to the transactional outbox; booking
+  reminders and localized service-request email/push templates remain open.
 - [ ] Implement verified review eligibility, rating aggregation and the trust
   snapshot inputs described in the “Trust score, quality badges and organic
   visibility” policy.

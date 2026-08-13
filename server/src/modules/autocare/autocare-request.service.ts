@@ -14,9 +14,11 @@ import {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
+import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import type {
     AutoCareServiceRequestResponse,
     AutoCareServiceRequestConversationResponse,
@@ -69,6 +71,24 @@ function requestIdempotencyConflict(): never {
         code: ERROR_CODES.Conflict,
         message: 'Idempotency key was already used for another service request.',
     })
+}
+
+async function notifyAutoCareParticipant(input: {
+    userId: string
+    requestId: string
+    event: string
+    title: string
+    message: string
+    role: 'client' | 'owner'
+}) {
+    await enqueueNotificationSafely({
+        userId: input.userId,
+        category: NotificationCategory.Booking,
+        title: input.title,
+        message: input.message,
+        link: input.role === 'owner' ? `/owner/bookings?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
+        metadata: { serviceRequestId: input.requestId, event: input.event, domain: 'autocare' },
+    }, `notification:autocare:${input.requestId}:${input.event}:${input.userId}`)
 }
 
 function requestResponse(
@@ -140,12 +160,24 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
 
 export async function createAutoCareServiceMessage(user: UserEntity, requestId: string, input: CreateAutoCareServiceMessageInput) {
     const request = await getParticipantRequest(user, requestId)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
         requestId: request.id,
         senderId: user.id,
         kind: ServiceMessageKind.Text,
         body: input.body,
     }))
+    const recipientId = user.id === request.clientId ? provider?.ownerId : request.clientId
+    if (recipientId) {
+        await notifyAutoCareParticipant({
+            userId: recipientId,
+            requestId,
+            event: `message-${message.id}`,
+            role: recipientId === provider?.ownerId ? 'owner' : 'client',
+            title: 'Новое сообщение по заявке',
+            message: 'В переписке по услуге появилось новое сообщение.',
+        })
+    }
     return { id: message.id, senderId: message.senderId, kind: message.kind, body: message.body, createdAt: message.createdAt.toISOString() }
 }
 
@@ -182,6 +214,14 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
     request.estimateSnapshot = { amountMinor: input.amountMinor, currencyCode: input.currencyCode, note: input.note ?? null, createdAt: new Date().toISOString() }
     request.status = ServiceRequestStatus.EstimateShared
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    await notifyAutoCareParticipant({
+        userId: request.clientId,
+        requestId,
+        event: 'estimate-shared',
+        role: 'client',
+        title: 'Сервис прислал предварительную смету',
+        message: `Проверьте предварительную стоимость услуги: ${(input.amountMinor / 100).toFixed(2)} ${input.currencyCode}.`,
+    })
     return hydrateRequest(request)
 }
 
@@ -193,6 +233,17 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
     request.status = accepted ? ServiceRequestStatus.Accepted : ServiceRequestStatus.Declined
     request.clientConfirmedAt = new Date()
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    if (provider?.ownerId) {
+        await notifyAutoCareParticipant({
+            userId: provider.ownerId,
+            requestId,
+            event: accepted ? 'estimate-accepted' : 'estimate-declined',
+            role: 'owner',
+            title: accepted ? 'Клиент принял смету' : 'Клиент отклонил смету',
+            message: accepted ? 'Клиент подтвердил предварительную стоимость услуги.' : 'Клиент попросил не продолжать по этой смете.',
+        })
+    }
     return hydrateRequest(request)
 }
 
@@ -276,6 +327,24 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
         if (existing) requestIdempotencyConflict()
         throw error
     }
+    if (provider.ownerId) {
+        await notifyAutoCareParticipant({
+            userId: provider.ownerId,
+            requestId: savedRequest.id,
+            event: 'created-owner',
+            role: 'owner',
+            title: 'Новая заявка на услугу',
+            message: `Клиент отправил заявку на услугу «${definition.labels.ru ?? definition.slug}».`,
+        })
+    }
+    await notifyAutoCareParticipant({
+        userId: user.id,
+        requestId: savedRequest.id,
+        event: 'created-client',
+        role: 'client',
+        title: 'Заявка отправлена',
+        message: 'Заявка передана автосервису. Следующий ответ появится в переписке по услуге.',
+    })
     return requestResponse(savedRequest, provider, location, definition, offering)
 }
 
@@ -306,6 +375,10 @@ export async function confirmAutoCareServiceRequest(user: UserEntity, requestId:
     if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed].includes(request.status)) conflict('This service request can no longer be confirmed.')
     request.clientConfirmedAt ??= new Date()
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    if (provider?.ownerId) {
+        await notifyAutoCareParticipant({ userId: provider.ownerId, requestId, event: 'confirmed-client', role: 'owner', title: 'Клиент подтвердил заявку', message: 'Клиент подтвердил детали заявки на услугу.' })
+    }
     return hydrateRequest(request)
 }
 
@@ -318,5 +391,6 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
     request.providerConfirmedAt ??= new Date()
     request.status = ServiceRequestStatus.Accepted
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'confirmed-owner', role: 'client', title: 'Сервис подтвердил заявку', message: 'Сервис подтвердил заявку и готов перейти к следующему шагу.' })
     return hydrateRequest(request)
 }
