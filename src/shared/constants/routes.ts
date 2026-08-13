@@ -36,6 +36,7 @@ export const ROUTES = {
     pricing: '/pricing',
 
     ownerDashboard: '/owner/dashboard',
+    ownerAutoCareProviders: '/owner/autocare-providers',
     ownerCabinets: '/owner/cabinets',
     ownerCabinetCreate: '/owner/cabinets/create',
     ownerCabinetEdit: '/owner/cabinets/:id/edit',

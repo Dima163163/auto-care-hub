@@ -30,3 +30,22 @@ export const autoCareProviderParamsSchema = z.object({
 export const autoCareProviderOffersQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
 })
+
+const automotiveAmenityIds = ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment', 'electric_charging', 'pickup_delivery'] as const
+
+export const ownerAutoCareProviderSchema = z.object({
+    name: z.string().trim().min(2).max(160),
+    description: z.string().trim().max(5_000).nullable().optional(),
+    marketId: z.string().uuid(),
+    address: z.string().trim().min(2).max(240),
+    hours: z.string().trim().min(2).max(120),
+    yearsActive: z.coerce.number().int().min(0).max(150),
+    staffCount: z.coerce.number().int().min(0).max(10_000),
+    isMultibrand: z.boolean(),
+    brandSpecializations: z.array(z.string().trim().min(1).max(80)).max(30),
+    amenityIds: z.array(z.enum(automotiveAmenityIds)).max(automotiveAmenityIds.length),
+}).superRefine((value, context) => {
+    if (!value.isMultibrand && value.brandSpecializations.length === 0) {
+        context.addIssue({ code: 'custom', path: ['brandSpecializations'], message: 'Choose at least one brand or enable multibrand service.' })
+    }
+})

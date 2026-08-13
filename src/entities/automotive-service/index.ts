@@ -14,10 +14,20 @@ export {
 export { automotiveVehicleBrands, getVehicleBrandLabel, type AutomotiveVehicleBrandId } from './model/vehicleBrands'
 export { getVehicleModels } from './model/vehicleModels'
 export {
+    automotiveAmenities,
+    defaultAutomotiveAmenityIds,
+    getAutomotiveAmenityLabel,
+    type AutomotiveAmenity,
+    type AutomotiveAmenityId,
+} from './model/automotiveAmenities'
+export { AutomotiveAmenityIcon } from './ui/AutomotiveAmenityIcon'
+export {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
+    useGetOwnerAutoCareProvidersQuery,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useCreateOwnerAutoCareProviderMutation,
 } from './api/autocareApi'
 export type {
     AutoCareApiDiscoveryItem,
@@ -28,6 +38,7 @@ export type {
     AutoCareApiProviderProfile,
     AutoCareApiServiceDefinition,
     AutoCareDiscoveryQuery,
+    CreateOwnerAutoCareProviderInput,
 } from './api/autocareApi'
 export { mapAutoCareDiscoveryItem, mapAutoCareProviderProfile } from './lib/autocareApiMappers'
 export { supportsVehicleBrand } from './lib/brandSpecialization'

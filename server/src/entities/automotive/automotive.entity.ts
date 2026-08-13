@@ -49,8 +49,10 @@ export class AutomotiveServiceDefinitionEntity {
 
 @Entity('autocare_providers')
 @Index(['status', 'createdAt'])
+@Index('IDX_autocare_provider_owner', ['ownerId', 'createdAt'])
 export class AutomotiveProviderEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'uuid', nullable: true }) ownerId!: string | null
     @Column({ type: 'text' }) name!: string
     @Column({ type: 'text', nullable: true }) description!: string | null
     @Column({ type: 'enum', enum: AutomotiveProviderStatus, enumName: 'autocare_provider_status', default: AutomotiveProviderStatus.Draft }) status!: AutomotiveProviderStatus
@@ -62,6 +64,7 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'text', nullable: true }) bonusSummary!: string | null
     @Column({ type: 'text', nullable: true }) coverImageUrl!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) galleryImageUrls!: string[]
+    @Column('text', { array: true, default: () => "'{}'" }) amenityIds!: string[]
     @Column('text', { array: true, default: () => "'{}'" }) brandSpecializations!: string[]
     @Column({ type: 'boolean', default: false }) isMultibrand!: boolean
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date

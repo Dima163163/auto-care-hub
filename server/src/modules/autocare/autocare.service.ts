@@ -1,3 +1,5 @@
+import { In } from 'typeorm'
+
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveMarketEntity,
@@ -7,15 +9,22 @@ import {
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
 } from '../../entities/index.js'
+import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, OwnerAutoCareProviderInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
+    }
+}
+
+function assertOwner(user: UserEntity) {
+    if (user.role !== UserRole.Owner) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only owners can manage automotive service profiles.' })
     }
 }
 
@@ -120,4 +129,50 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
     if (!serviceId) return profile.offers
     const definition = await findServiceDefinition(serviceId)
     return definition ? profile.offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
+}
+
+export async function getOwnerAutoCareProviders(owner: UserEntity) {
+    assertOwner(owner)
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { ownerId: owner.id }, order: { createdAt: 'DESC' } })
+    if (providers.length === 0) return []
+
+    const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
+    const locations = await locationRepository.findBy({ providerId: In(providers.map((provider) => provider.id)) })
+    const locationByProviderId = new Map(locations.map((location) => [location.providerId, location]))
+
+    return providers.flatMap((provider) => {
+        const location = locationByProviderId.get(provider.id)
+        return location ? [toProviderResponse(provider, location)] : []
+    })
+}
+
+export async function createOwnerAutoCareProvider(owner: UserEntity, input: OwnerAutoCareProviderInput) {
+    assertOwner(owner)
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: input.marketId })
+    if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+
+    return AppDataSource.transaction(async (manager) => {
+        const provider = await manager.getRepository(AutomotiveProviderEntity).save(manager.getRepository(AutomotiveProviderEntity).create({
+            ownerId: owner.id,
+            name: input.name,
+            description: input.description ?? null,
+            status: AutomotiveProviderStatus.Draft,
+            verified: false,
+            yearsActive: input.yearsActive,
+            staffCount: input.staffCount,
+            amenityIds: [...new Set(input.amenityIds)],
+            brandSpecializations: [...new Set(input.brandSpecializations)],
+            isMultibrand: input.isMultibrand,
+        }))
+        const location = await manager.getRepository(AutomotiveServiceLocationEntity).save(manager.getRepository(AutomotiveServiceLocationEntity).create({
+            providerId: provider.id,
+            marketId: market.id,
+            address: input.address,
+            hours: input.hours,
+            latitude: null,
+            longitude: null,
+        }))
+
+        return toProviderResponse(provider, location)
+    })
 }

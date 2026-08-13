@@ -2,7 +2,12 @@ import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { User } from '@/entities/user'
 import type { Notification } from '@/entities/notification/model/types'
-import { automotiveServices, providerPreviews, supportsVehicleBrand } from '@/entities/automotive-service'
+import {
+    automotiveServices,
+    providerPreviews,
+    supportsVehicleBrand,
+    type AutoCareApiProvider,
+} from '@/entities/automotive-service'
 
 import {
     mockBookings,
@@ -127,6 +132,7 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         isMultibrand: provider.isMultibrand,
         coverImageUrl: provider.image ?? null,
         galleryImageUrls: provider.image ? [provider.image] : [],
+        amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
         location: {
             id: `location-${provider.id}`,
             marketId: autoCareMarket.id,
@@ -141,6 +147,11 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
 }
 
 const autoCareProviders = providerPreviews.map(toAutoCareProvider)
+type OwnerAutoCareProviderMock = AutoCareApiProvider & {
+    serviceIds: string[]
+    servicePrices: Record<string, number>
+}
+const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = []
 
 function getMockOAuthIdentities(user: User) {
     const existing = mockOAuthIdentitiesByUser.get(user.id)
@@ -1614,7 +1625,7 @@ export const handlers = [
     }),
 
     http.get('/api/v1/providers/:providerId', ({ params }) => {
-        const provider = autoCareProviders.find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
+        const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
 
         const source = providerPreviews.find((item) => item.id === provider.id.replace('api-', ''))
@@ -1623,6 +1634,71 @@ export const handlers = [
             : []
 
         return HttpResponse.json({ ...provider, offers })
+    }),
+
+    http.get('/api/owner/autocare-providers', () => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+
+        return HttpResponse.json(ownerAutoCareProviders)
+    }),
+
+    http.post('/api/owner/autocare-providers', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+
+        const body = await request.json() as {
+            name?: string
+            description?: string
+            marketId?: string
+            address?: string
+            hours?: string
+            yearsActive?: number
+            staffCount?: number
+            isMultibrand?: boolean
+            brandSpecializations?: string[]
+            amenityIds?: string[]
+        }
+
+        if (!body.name?.trim() || !body.marketId || !body.address?.trim() || !body.hours?.trim()) {
+            return HttpResponse.json({ message: 'Invalid service profile.' }, { status: 400 })
+        }
+
+        const id = `owner-provider-${Date.now()}`
+        const provider = {
+            id,
+            name: body.name.trim(),
+            description: body.description?.trim() || null,
+            status: 'draft' as const,
+            verified: false,
+            yearsActive: Math.max(0, Number(body.yearsActive) || 0),
+            staffCount: Math.max(0, Number(body.staffCount) || 0),
+            rating: 0,
+            reviewCount: 0,
+            bonusSummary: null,
+            brandSpecializations: body.isMultibrand ? [] : [...new Set(body.brandSpecializations ?? [])],
+            isMultibrand: Boolean(body.isMultibrand),
+            coverImageUrl: null,
+            galleryImageUrls: [],
+            amenityIds: [...new Set(body.amenityIds ?? [])],
+            location: {
+                id: `location-${id}`,
+                marketId: body.marketId,
+                address: body.address.trim(),
+                hours: body.hours.trim(),
+                latitude: null,
+                longitude: null,
+            },
+            serviceIds: [],
+            servicePrices: {},
+        }
+
+        ownerAutoCareProviders.unshift(provider)
+        return HttpResponse.json(provider, { status: 201 })
     }),
 
     http.get('/api/cabinets/all', () => {

@@ -5,6 +5,7 @@ export type AutomotiveService = {
 }
 
 import { generatedProviderPreviews } from './autocareGeneratedProviders'
+import type { AutomotiveAmenityId } from './automotiveAmenities'
 
 export type AutomotivePriceType = 'fixed' | 'from' | 'range' | 'quote_required'
 
@@ -61,7 +62,7 @@ export type ProviderProfile = ProviderPreview & {
     yearsActive: number
     staffCount: number
     about: string
-    amenities: readonly string[]
+    amenities: readonly AutomotiveAmenityId[]
     offerings: readonly ProviderOffering[]
     reviews: readonly ProviderReview[]
 }
@@ -113,7 +114,7 @@ export const providerProfiles: readonly ProviderProfile[] = providerPreviews.map
     yearsActive: provider.id === 'proservice-moscow' ? 8 : 5,
     staffCount: provider.id === 'proservice-moscow' ? 24 : 12,
     about: 'Проверенный сервис с понятными ценами, фотоотчётом и гарантией на выполненные работы.',
-    amenities: ['Комната ожидания', 'Wi‑Fi', 'Оплата картой', 'Фотоотчёт по запросу'],
+    amenities: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
     offerings: defaultOfferings,
     reviews: [
         { id: `${provider.id}-review-1`, author: 'Алексей С.', rating: 5, date: '2 дня назад', text: 'Сделали быстро, заранее объяснили стоимость. Фотоотчёт пришёл в чате.', serviceId: 'oil-change', photos: ['/images/autocare/providers/generated/service-body-paint.png'] },

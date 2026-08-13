@@ -36,6 +36,7 @@ export type AutoCareProviderResponse = {
     bonusSummary: string | null
     coverImageUrl: string | null
     galleryImageUrls: string[]
+    amenityIds: string[]
     brandSpecializations: string[]
     isMultibrand: boolean
     location: AutoCareLocationResponse
@@ -98,4 +99,17 @@ export type AutoCareDiscoveryQuery = {
 
 export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {
     offers: AutoCareOfferResponse[]
+}
+
+export type OwnerAutoCareProviderInput = {
+    name: string
+    description?: string | null
+    marketId: string
+    address: string
+    hours: string
+    yearsActive: number
+    staffCount: number
+    isMultibrand: boolean
+    brandSpecializations: string[]
+    amenityIds: string[]
 }

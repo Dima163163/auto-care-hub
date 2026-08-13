@@ -1,4 +1,6 @@
 import type { ProviderOffering, ProviderPreview, ProviderProfile } from '../model/autocareMockData'
+import { automotiveAmenities } from '../model/automotiveAmenities'
+import type { AutomotiveAmenityId } from '../model/automotiveAmenities'
 import type { AutoCareApiDiscoveryItem, AutoCareApiOffer, AutoCareApiProviderProfile } from '../api/autocareApi'
 
 function formatDistance(distanceKm: number) {
@@ -67,7 +69,7 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         yearsActive: profile.yearsActive,
         staffCount: profile.staffCount,
         about: profile.description ?? 'A verified automotive service provider with transparent offers and service support.',
-        amenities: ['Photo assessment', 'Service updates', 'Direct payment to provider'],
+        amenities: profile.amenityIds.filter((amenityId): amenityId is AutomotiveAmenityId => automotiveAmenities.some((amenity) => amenity.id === amenityId)),
         offerings: profile.offers.map(mapOffer),
         reviews: [
             { id: `${profile.id}-review-1`, author: 'Alex M.', rating: 5, date: '2 days ago', text: 'Clear estimate, fast work, and the final price matched the agreed scope.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-body-paint.png'] },

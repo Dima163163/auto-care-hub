@@ -1,8 +1,8 @@
-import { CarFront, Clock3, MapPinned, Phone, Wifi } from 'lucide-react'
+import { Clock3, MapPinned, Phone } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 
-import { mapAutoCareProviderProfile, useGetAutoCareProviderProfileQuery } from '@/entities/automotive-service'
+import { AutomotiveAmenityIcon, automotiveAmenities, getAutomotiveAmenityLabel, mapAutoCareProviderProfile, useGetAutoCareProviderProfileQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { ProviderHero } from './ProviderHero'
@@ -27,9 +27,9 @@ export function AutoCareProviderPage() {
 }
 
 function ProviderAbout({ provider }: { provider: NonNullable<ReturnType<typeof mapAutoCareProviderProfile>> }) {
-    const { t } = useTranslation()
-    const amenities = [t('autocare.providerAmenityPhoto'), t('autocare.providerAmenityUpdates'), t('autocare.providerAmenityPayment')]
-    return <section id="about" className="grid gap-4 sm:grid-cols-2"><article className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerAbout')}</h2>{provider.verified && <span className="rounded-[var(--radius-control)] bg-status-success-surface px-2.5 py-1 text-xs font-bold text-status-success-foreground">{t('autocare.trustedBadge')}</span>}</div><p className="mt-4 text-sm font-medium leading-6 text-muted-foreground">{provider.about}</p><ul className="mt-4 grid gap-2 text-xs font-semibold text-status-success-foreground"><li>✓ {t('autocare.providerWarranty')}</li><li>✓ {t('autocare.providerDirectPayment')}</li><li>✓ {t('autocare.providerRequestDescription')}</li></ul></article><article className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerAmenities')}</h2><div className="mt-4 grid grid-cols-2 gap-2">{amenities.map((amenity, index) => <div key={amenity} className="flex min-h-14 items-center gap-2 rounded-[var(--radius-card)] bg-secondary p-3 text-xs font-bold text-secondary-foreground"><span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-card text-primary">{index % 2 === 0 ? <CarFront className="size-3.5" /> : <Wifi className="size-3.5" />}</span>{amenity}</div>)}</div></article></section>
+    const { t, locale } = useTranslation()
+    const amenities = provider.amenities.map((amenityId) => automotiveAmenities.find((amenity) => amenity.id === amenityId)).filter((amenity) => amenity !== undefined)
+    return <section id="about" className="grid gap-4 sm:grid-cols-2"><article className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerAbout')}</h2>{provider.verified && <span className="rounded-[var(--radius-control)] bg-status-success-surface px-2.5 py-1 text-xs font-bold text-status-success-foreground">{t('autocare.trustedBadge')}</span>}</div><p className="mt-4 text-sm font-medium leading-6 text-muted-foreground">{provider.about}</p><ul className="mt-4 grid gap-2 text-xs font-semibold text-status-success-foreground"><li>✓ {t('autocare.providerWarranty')}</li><li>✓ {t('autocare.providerDirectPayment')}</li><li>✓ {t('autocare.providerRequestDescription')}</li></ul></article><article className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerAmenities')}</h2><div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3">{amenities.map((amenity) => <div key={amenity.id} className="flex min-h-9 items-start gap-2 text-[11px] font-bold leading-4 text-secondary-foreground"><span className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><AutomotiveAmenityIcon amenityId={amenity.id} className="size-4" /></span>{getAutomotiveAmenityLabel(amenity, locale)}</div>)}</div></article></section>
 }
 
 function ProviderLocation({ provider }: { provider: NonNullable<ReturnType<typeof mapAutoCareProviderProfile>> }) {

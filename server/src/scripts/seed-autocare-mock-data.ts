@@ -58,6 +58,7 @@ async function seedAutoCareMockData() {
                     bonusSummary: input.bonusSummary ?? null,
                     coverImageUrl: input.imageUrl ? resolveMockAssetUrl(input.imageUrl) : null,
                     galleryImageUrls: (input.galleryImageUrls ?? []).map((image) => resolveMockAssetUrl(image)).filter((image) => image !== AUTOCARE_MOCK_FALLBACK_IMAGE),
+                    amenityIds: input.amenityIds,
                     brandSpecializations: input.brandSpecializations,
                     isMultibrand: input.isMultibrand,
                 }))
