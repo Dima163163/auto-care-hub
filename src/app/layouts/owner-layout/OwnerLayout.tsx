@@ -11,7 +11,7 @@ export function OwnerLayout() {
     const { data: user } = useGetMeQuery()
 
     return (
-        <div className="mobile-bottom-safe min-h-screen bg-background flex flex-col md:pb-0">
+        <div className="autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col md:pb-0">
             <WorkspaceHeader role="owner" showCreateProvider />
             <div className="flex min-h-[calc(100vh-72px)] flex-1">
                 <WorkspaceSidebar role="owner" />

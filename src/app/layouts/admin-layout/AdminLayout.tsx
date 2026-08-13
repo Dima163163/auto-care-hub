@@ -5,7 +5,7 @@ import { WorkspaceFooter, WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSideb
 
 export function AdminLayout() {
     return (
-        <div className="min-h-screen bg-background">
+        <div className="autocare-app-surface min-h-screen">
             <WorkspaceHeader role="admin" />
             <div className="mobile-admin-bottom-safe flex min-h-[calc(100vh-72px)] md:pb-0">
                 <WorkspaceSidebar role="admin" />

@@ -19,7 +19,7 @@ function RouteFallback() {
     const { t } = useTranslation()
 
     return (
-        <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
+        <main className="autocare-app-surface min-h-screen px-4 py-8 lg:px-8">
             <section className="mx-auto max-w-6xl">
                 <StateCard description={t('common.loadingPage')} />
             </section>

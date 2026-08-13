@@ -10,7 +10,7 @@ export function AuthLayout() {
     const { t } = useTranslation()
 
     return (
-        <div className="min-h-screen bg-muted/30 px-4 py-6 lg:px-8 lg:py-8">
+        <div className="autocare-app-surface min-h-screen bg-muted/30 px-4 py-6 lg:px-8 lg:py-8">
             <div className="fixed right-4 top-4 z-20">
                 <ThemeSwitcher />
             </div>

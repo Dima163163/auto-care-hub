@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-13 (repository audit after commit `4e5b286`)
+> Updated: 2026-08-13 (theme background implementation in progress)
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -73,6 +73,9 @@ diff/commit and explicitly approves that action.
   button is not a security control.
 - [x] The five supplied screens are the approved design baseline; improvements
   may be proposed during design work.
+- [x] The shared application surface uses generated automotive pattern assets:
+  the dark WebP for dark mode and the light WebP for light mode, switched by
+  the existing theme provider and persisted theme preference.
 - [x] Design implementation is explicitly authorized in the current thread;
   logo alternatives are proposed for owner selection.
 - [x] Booking/service confirmation is two-sided: provider confirms the work or

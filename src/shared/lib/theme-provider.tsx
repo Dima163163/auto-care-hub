@@ -7,6 +7,7 @@ import {
 
 import {
     applyTheme,
+    getInitialTheme,
     THEME_STORAGE_KEY,
     type Theme,
 } from '@/shared/lib/theme'
@@ -16,7 +17,14 @@ import {
 } from '@/shared/lib/theme-context'
 
 function readInitialTheme(): Theme {
-    return 'light'
+    if (typeof window === 'undefined') {
+        return 'light'
+    }
+
+    return getInitialTheme(
+        window.localStorage.getItem(THEME_STORAGE_KEY),
+        window.matchMedia('(prefers-color-scheme: dark)').matches,
+    )
 }
 
 type ThemeProviderProps = {

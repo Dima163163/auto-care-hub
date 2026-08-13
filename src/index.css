@@ -120,6 +120,7 @@
     --motion-duration-hero: 1200ms;
     --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
     --background: oklch(0.985 0.008 245);
+    --autocare-pattern-image: url('/images/autocare/patterns/autocare-theme-pattern-light.webp');
     --foreground: oklch(0.15 0.02 260);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.15 0.02 260);
@@ -186,6 +187,7 @@
 
 .dark {
     --background: oklch(0.11 0.025 245);
+    --autocare-pattern-image: url('/images/autocare/patterns/autocare-theme-pattern-dark.webp');
     --foreground: oklch(0.95 0.01 260);
     --card: oklch(0.15 0.025 245);
     --card-foreground: oklch(0.95 0.01 260);
@@ -355,17 +357,11 @@
 
 .autocare-app-surface {
     background-color: var(--background);
-    background-image: url('/images/autocare/patterns/autocare-service-pattern.svg');
-    background-position: center;
+    background-image: var(--autocare-pattern-image);
+    background-position: center top;
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-size: cover;
-}
-
-.dark .autocare-app-surface {
-    background-image:
-        linear-gradient(rgb(10 29 57 / 0.56), rgb(10 29 57 / 0.56)),
-        url('/images/autocare/patterns/autocare-service-pattern.svg');
 }
 
 * {
