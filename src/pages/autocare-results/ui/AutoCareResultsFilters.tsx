@@ -1,6 +1,5 @@
-import { Filter, RotateCcw } from 'lucide-react'
+import { Filter, RotateCcw, ChevronDown } from 'lucide-react'
 
-import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel } from '@/entities/automotive-service'
 import type { AutomotivePriceType } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -16,18 +15,132 @@ type AutoCareResultsFiltersProps = {
 const priceTypes: readonly AutomotivePriceType[] = ['fixed', 'from', 'range', 'quote_required']
 const inclusionOptions = ['parts', 'materials', 'photo', 'diagnostics', 'warranty'] as const
 
+/** Additional filters only. Service, location and vehicle are controlled by the primary search form above. */
 export function AutoCareResultsFilters({ filters, onChange, onReset, variant = 'light' }: AutoCareResultsFiltersProps) {
-    const { t, locale } = useTranslation()
+    const { t } = useTranslation()
     const isDark = variant === 'dark'
-    const panelClass = isDark ? 'border-primary-foreground/15 bg-primary-foreground/[0.06] text-primary-foreground' : 'border-border bg-card text-foreground'
+    const panelClass = isDark
+        ? 'border-primary-foreground/15 bg-primary-foreground/[0.06] text-primary-foreground'
+        : 'border-border bg-card text-foreground'
     const labelClass = isDark ? 'text-primary-foreground' : 'text-foreground'
-    const fieldClass = isDark ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground [&>option]:bg-hero-overlay [&>option]:text-primary-foreground' : 'border-border bg-background text-foreground'
-    const inputClass = isDark ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground placeholder:text-primary-foreground/45' : 'border-border bg-background text-foreground'
+    const fieldClass = isDark
+        ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground [&>option]:bg-hero-overlay [&>option]:text-primary-foreground'
+        : 'border-border bg-background text-foreground'
+    const inputClass = isDark
+        ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground placeholder:text-primary-foreground/45'
+        : 'border-border bg-background text-foreground'
     const mutedClass = isDark ? 'text-primary-foreground/60' : 'text-muted-foreground'
-    const activeCount = [filters.minPrice, filters.maxPrice, filters.minRating, filters.priceType, filters.availableToday, filters.verifiedOnly, filters.warrantyOnly, filters.hasBonus, filters.inclusion, filters.brandId].filter(Boolean).length
+    const activeCount = [
+        filters.minPrice,
+        filters.maxPrice,
+        filters.minRating,
+        filters.priceType,
+        filters.availableToday,
+        filters.verifiedOnly,
+        filters.warrantyOnly,
+        filters.hasBonus,
+        filters.inclusion,
+    ].filter(Boolean).length
     const update = <K extends keyof AutoCareResultFilters>(key: K, value: AutoCareResultFilters[K]) => onChange({ [key]: value })
 
-    return <section className={`rounded-[var(--radius-panel)] border p-4 shadow-sm sm:p-5 ${panelClass}`} aria-label={t('autocare.filtersTitle')}><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter className="size-4 text-primary" /><div><h2 className={`text-sm font-black ${labelClass}`}>{t('autocare.filtersTitle')}</h2><p className={`mt-0.5 text-xs font-medium ${mutedClass}`}>{t('autocare.filtersDescription')}</p></div></div><div className="flex items-center gap-3"><span className={`text-xs font-bold ${mutedClass}`}>{t('autocare.activeFilters', { count: activeCount })}</span><button type="button" onClick={onReset} className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"><RotateCcw className="size-3.5" />{t('autocare.resetFilters')}</button></div></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.serviceFilterLabel')}<select value={filters.serviceId} onChange={(event) => update('serviceId', event.target.value)} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${fieldClass}`}>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</select></label><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.brandFilterLabel')}<select value={filters.brandId} onChange={(event) => update('brandId', event.target.value)} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${fieldClass}`}><option value="">{t('autocare.anyBrand')}</option>{automotiveVehicleBrands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</select></label><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.minRatingLabel')}<select value={filters.minRating} onChange={(event) => update('minRating', event.target.value)} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${fieldClass}`}><option value="">{t('autocare.anyRating')}</option><option value="4">4.0+</option><option value="4.5">4.5+</option><option value="4.7">4.7+</option><option value="4.9">4.9+</option></select></label><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.priceTypeLabel')}<select value={filters.priceType} onChange={(event) => update('priceType', event.target.value as AutoCareResultFilters['priceType'])} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${fieldClass}` }><option value="">{t('autocare.anyPriceType')}</option>{priceTypes.map((type) => <option key={type} value={type}>{t(`autocare.priceType.${type}`)}</option>)}</select></label></div><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.minPriceLabel')}<input type="number" min="0" step="100" value={filters.minPrice} onChange={(event) => update('minPrice', event.target.value)} placeholder="0" className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${inputClass}`} /></label><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.maxPriceLabel')}<input type="number" min="0" step="100" value={filters.maxPrice} onChange={(event) => update('maxPrice', event.target.value)} placeholder={t('autocare.noPriceLimit')} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${inputClass}`} /></label><label className={`grid gap-1.5 text-xs font-bold ${labelClass}`}>{t('autocare.inclusionLabel')}<select value={filters.inclusion} onChange={(event) => update('inclusion', event.target.value)} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium ${fieldClass}`}><option value="">{t('autocare.anyInclusion')}</option>{inclusionOptions.map((option) => <option key={option} value={option}>{t(`autocare.inclusion.${option}`)}</option>)}</select></label><div className="flex items-end"><button type="button" onClick={() => update('hasBonus', !filters.hasBonus)} aria-pressed={filters.hasBonus} className={`inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-control)] border px-3 text-xs font-bold ${filters.hasBonus ? 'border-primary bg-primary text-primary-foreground' : isDark ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground hover:border-primary' : 'border-border bg-background text-foreground hover:border-primary'}`}>{t('autocare.bonusFilter')}</button></div></div><div className={`mt-3 flex flex-wrap gap-2 border-t pt-3 ${isDark ? 'border-primary-foreground/15' : 'border-border'}`}><ToggleFilter active={filters.availableToday} onClick={() => update('availableToday', !filters.availableToday)} label={t('autocare.availableTodayLabel')} variant={variant} /><ToggleFilter active={filters.verifiedOnly} onClick={() => update('verifiedOnly', !filters.verifiedOnly)} label={t('autocare.verifiedFilter')} variant={variant} /><ToggleFilter active={filters.warrantyOnly} onClick={() => update('warrantyOnly', !filters.warrantyOnly)} label={t('autocare.warrantyFilter')} variant={variant} /></div></section>
+    return (
+        <section className={`rounded-[var(--radius-panel)] border p-4 shadow-sm sm:p-5 ${panelClass}`} aria-label={t('autocare.filtersTitle')}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                    <Filter className="size-4 text-primary" />
+                    <div>
+                        <h2 className={`text-sm font-black ${labelClass}`}>{t('autocare.filtersTitle')}</h2>
+                        <p className={`mt-0.5 text-xs font-medium ${mutedClass}`}>{t('autocare.filtersDescription')}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className={`text-xs font-bold ${mutedClass}`}>{t('autocare.activeFilters', { count: activeCount })}</span>
+                    <button type="button" onClick={onReset} className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
+                        <RotateCcw className="size-3.5" />
+                        {t('autocare.resetFilters')}
+                    </button>
+                </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <FilterSelect
+                    label={t('autocare.minRatingLabel')}
+                    value={filters.minRating}
+                    onChange={(value) => update('minRating', value)}
+                    className={fieldClass}
+                    options={[
+                        ['', t('autocare.anyRating')],
+                        ['4', '4.0+'],
+                        ['4.5', '4.5+'],
+                        ['4.7', '4.7+'],
+                        ['4.9', '4.9+'],
+                    ]}
+                />
+                <FilterSelect
+                    label={t('autocare.priceTypeLabel')}
+                    value={filters.priceType}
+                    onChange={(value) => update('priceType', value as AutoCareResultFilters['priceType'])}
+                    className={fieldClass}
+                    options={[
+                        ['', t('autocare.anyPriceType')],
+                        ...priceTypes.map((type) => [type, t(`autocare.priceType.${type}`)] as [string, string]),
+                    ]}
+                />
+                <FilterInput label={t('autocare.minPriceLabel')} value={filters.minPrice} onChange={(value) => update('minPrice', value)} placeholder="0" className={inputClass} />
+                <FilterInput label={t('autocare.maxPriceLabel')} value={filters.maxPrice} onChange={(value) => update('maxPrice', value)} placeholder={t('autocare.noPriceLimit')} className={inputClass} />
+            </div>
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <FilterSelect
+                    label={t('autocare.inclusionLabel')}
+                    value={filters.inclusion}
+                    onChange={(value) => update('inclusion', value)}
+                    className={fieldClass}
+                    options={[
+                        ['', t('autocare.anyInclusion')],
+                        ...inclusionOptions.map((option) => [option, t(`autocare.inclusion.${option}`)] as [string, string]),
+                    ]}
+                />
+                <div className="flex items-end">
+                    <button
+                        type="button"
+                        onClick={() => update('hasBonus', !filters.hasBonus)}
+                        aria-pressed={filters.hasBonus}
+                        className={`inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-control)] border px-3 text-xs font-bold ${filters.hasBonus ? 'border-primary bg-primary text-primary-foreground' : isDark ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground hover:border-primary' : 'border-border bg-background text-foreground hover:border-primary'}`}
+                    >
+                        {t('autocare.bonusFilter')}
+                    </button>
+                </div>
+                <ToggleFilter active={filters.availableToday} onClick={() => update('availableToday', !filters.availableToday)} label={t('autocare.availableTodayLabel')} variant={variant} />
+                <ToggleFilter active={filters.verifiedOnly} onClick={() => update('verifiedOnly', !filters.verifiedOnly)} label={t('autocare.verifiedFilter')} variant={variant} />
+            </div>
+
+            <div className={`mt-3 flex flex-wrap gap-2 border-t pt-3 ${isDark ? 'border-primary-foreground/15' : 'border-border'}`}>
+                <ToggleFilter active={filters.warrantyOnly} onClick={() => update('warrantyOnly', !filters.warrantyOnly)} label={t('autocare.warrantyFilter')} variant={variant} />
+            </div>
+        </section>
+    )
+}
+
+function FilterSelect({ label, value, onChange, options, className }: { label: string; value: string; onChange: (value: string) => void; options: readonly [string, string][]; className: string }) {
+    return (
+        <label className="relative grid gap-1.5 text-xs font-bold">
+            <span>{label}</span>
+            <select value={value} onChange={(event) => onChange(event.target.value)} className={`h-10 appearance-none rounded-[var(--radius-control)] border px-3 pr-9 text-sm font-medium outline-none focus:border-primary ${className}`}>
+                {options.map(([option, optionLabel]) => <option key={option} value={option}>{optionLabel}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-current opacity-70" />
+        </label>
+    )
+}
+
+function FilterInput({ label, value, onChange, placeholder, className }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; className: string }) {
+    return (
+        <label className="grid gap-1.5 text-xs font-bold">
+            <span>{label}</span>
+            <input type="number" min="0" step="100" value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium outline-none focus:border-primary ${className}`} />
+        </label>
+    )
 }
 
 function ToggleFilter({ active, onClick, label, variant }: { active: boolean; onClick: () => void; label: string; variant: 'light' | 'dark' }) {

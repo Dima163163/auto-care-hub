@@ -981,7 +981,7 @@ export const enTranslations = {
         availableTodayLabel: 'Available today',
         resetFilters: 'Reset filters',
         filtersTitle: 'All filters',
-        filtersDescription: 'Refine the results by service, price, quality and visit conditions.',
+        filtersDescription: 'Refine price, quality and visit conditions. Service and vehicle are set above.',
         activeFilters: '{{count}} active',
         serviceFilterLabel: 'Service',
         brandFilterLabel: 'Car brand',

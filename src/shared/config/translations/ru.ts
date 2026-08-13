@@ -985,7 +985,7 @@ export const ruTranslations = {
         availableTodayLabel: 'Есть запись сегодня',
         resetFilters: 'Сбросить фильтры',
         filtersTitle: 'Все фильтры',
-        filtersDescription: 'Уточните результаты по услуге, цене, качеству и условиям визита.',
+        filtersDescription: 'Уточните цену, качество и условия визита. Услуга и автомобиль заданы выше.',
         activeFilters: 'Активно: {{count}}',
         serviceFilterLabel: 'Услуга',
         brandFilterLabel: 'Марка автомобиля',
