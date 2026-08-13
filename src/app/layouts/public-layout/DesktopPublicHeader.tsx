@@ -12,7 +12,7 @@ export function DesktopPublicHeader() {
     const { data: user, isLoading, isError } = useGetMeQuery()
     const links = [
         { label: t('navigation.services'), to: ROUTES.serviceDiscovery },
-        { label: t('navigation.myBookings'), to: ROUTES.profileBookings },
+        { label: t('landing.footerHelpCenter'), to: ROUTES.help },
         { label: t('navigation.owners'), to: ROUTES.owners },
         { label: t('navigation.about'), to: ROUTES.about },
     ]

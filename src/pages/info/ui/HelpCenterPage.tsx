@@ -4,18 +4,51 @@ import {
     ArrowRight,
     Building2,
     CalendarDays,
+    CarFront,
     ChevronDown,
     Headphones,
+    MessageCircle,
     Search,
     ShieldCheck,
+    Star,
     UserRound,
+    WalletCards,
     X,
 } from 'lucide-react'
 
 import { ROUTES } from '@/shared/constants/routes'
+import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type AudienceId = 'guest' | 'client' | 'owner'
+type FaqCategory = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'account' | 'safety' | 'travel'
+
+const faqCategoryKeys: Array<{ id: FaqCategory; labelKey: TranslationKey }> = [
+    { id: 'search', labelKey: 'info.help.faqCategorySearch' },
+    { id: 'booking', labelKey: 'info.help.faqCategoryBooking' },
+    { id: 'pricing', labelKey: 'info.help.faqCategoryPricing' },
+    { id: 'messages', labelKey: 'info.help.faqCategoryMessages' },
+    { id: 'reviews', labelKey: 'info.help.faqCategoryReviews' },
+    { id: 'account', labelKey: 'info.help.faqCategoryAccount' },
+    { id: 'safety', labelKey: 'info.help.faqCategorySafety' },
+    { id: 'travel', labelKey: 'info.help.faqCategoryTravel' },
+]
+
+const faqEntries: Array<{ category: FaqCategory; questionKey: TranslationKey; answerKey: TranslationKey }> = [
+    { category: 'search', questionKey: 'info.help.faq1Question', answerKey: 'info.help.faq1Answer' },
+    { category: 'search', questionKey: 'info.help.faq2Question', answerKey: 'info.help.faq2Answer' },
+    { category: 'search', questionKey: 'info.help.faq3Question', answerKey: 'info.help.faq3Answer' },
+    { category: 'booking', questionKey: 'info.help.faq4Question', answerKey: 'info.help.faq4Answer' },
+    { category: 'booking', questionKey: 'info.help.faq5Question', answerKey: 'info.help.faq5Answer' },
+    { category: 'messages', questionKey: 'info.help.faq6Question', answerKey: 'info.help.faq6Answer' },
+    { category: 'reviews', questionKey: 'info.help.faq7Question', answerKey: 'info.help.faq7Answer' },
+    { category: 'safety', questionKey: 'info.help.faq8Question', answerKey: 'info.help.faq8Answer' },
+    ...Array.from({ length: 24 }, (_, index) => ({
+        category: faqCategoryKeys[index < 3 ? 0 : index < 6 ? 1 : index < 9 ? 2 : index < 12 ? 3 : index < 15 ? 4 : index < 18 ? 5 : index < 21 ? 6 : 7].id,
+        questionKey: `info.help.faq${index + 9}Question` as TranslationKey,
+        answerKey: `info.help.faq${index + 9}Answer` as TranslationKey,
+    })),
+]
 
 export function HelpCenterPage() {
     const { t } = useTranslation()
@@ -50,54 +83,53 @@ export function HelpCenterPage() {
             title: t('info.help.topicFindSpaceTitle'),
             description: t('info.help.topicFindSpaceDescription'),
             count: t('info.help.topicFindSpaceCount'),
-            to: ROUTES.cabinets,
+            to: ROUTES.serviceDiscovery,
         },
         {
             icon: CalendarDays,
             title: t('info.help.topicBookingTitle'),
             description: t('info.help.topicBookingDescription'),
             count: t('info.help.topicBookingCount'),
-            to: ROUTES.features,
+            to: ROUTES.serviceDiscovery,
         },
         {
-            icon: X,
+            icon: WalletCards,
             title: t('info.help.topicCancellationTitle'),
             description: t('info.help.topicCancellationDescription'),
             count: t('info.help.topicCancellationCount'),
-            to: ROUTES.rules,
+            to: ROUTES.help,
         },
         {
-            icon: Building2,
+            icon: MessageCircle,
             title: t('info.help.topicManageTitle'),
             description: t('info.help.topicManageDescription'),
             count: t('info.help.topicManageCount'),
-            to: ROUTES.owners,
+            to: ROUTES.help,
         },
         {
-            icon: ShieldCheck,
+            icon: Star,
             title: t('info.help.topicAccountTitle'),
             description: t('info.help.topicAccountDescription'),
             count: t('info.help.topicAccountCount'),
             to: ROUTES.profile,
         },
+        {
+            icon: CarFront,
+            title: t('info.help.topicVehicleTitle'),
+            description: t('info.help.topicVehicleDescription'),
+            count: t('info.help.topicVehicleCount'),
+            to: ROUTES.profile,
+        },
     ]
 
-    const faqs = [
-        ['info.help.faq1Question', 'info.help.faq1Answer'],
-        ['info.help.faq2Question', 'info.help.faq2Answer'],
-        ['info.help.faq3Question', 'info.help.faq3Answer'],
-        ['info.help.faq4Question', 'info.help.faq4Answer'],
-        ['info.help.faq5Question', 'info.help.faq5Answer'],
-        ['info.help.faq6Question', 'info.help.faq6Answer'],
-        ['info.help.faq7Question', 'info.help.faq7Answer'],
-        ['info.help.faq8Question', 'info.help.faq8Answer'],
-    ] as const
+    const [activeFaqCategory, setActiveFaqCategory] = useState<FaqCategory | 'all'>('all')
 
     const filteredTopics = topicCards.filter(({ title, description }) =>
         !normalizedSearch || [title, description].join(' ').toLocaleLowerCase().includes(normalizedSearch),
     )
-    const filteredFaqs = faqs.filter(([questionKey, answerKey]) =>
-        !normalizedSearch || [t(questionKey), t(answerKey)].join(' ').toLocaleLowerCase().includes(normalizedSearch),
+    const filteredFaqs = faqEntries.filter(({ category, questionKey, answerKey }) =>
+        (activeFaqCategory === 'all' || category === activeFaqCategory) &&
+        (!normalizedSearch || [t(questionKey), t(answerKey)].join(' ').toLocaleLowerCase().includes(normalizedSearch)),
     )
     const hasResults = filteredTopics.length > 0 || filteredFaqs.length > 0
 
@@ -208,9 +240,32 @@ export function HelpCenterPage() {
 
                     <div className="mt-9">
                         <h2 className="text-xl font-black tracking-tight">{t('info.help.faqTitle')}</h2>
+                        <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t('info.help.faqCategoryLabel')}>
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={activeFaqCategory === 'all'}
+                                onClick={() => setActiveFaqCategory('all')}
+                                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${activeFaqCategory === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:border-primary/50'}`}
+                            >
+                                {t('info.help.faqCategoryAll')}
+                            </button>
+                            {faqCategoryKeys.map(({ id, labelKey }) => (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={activeFaqCategory === id}
+                                    onClick={() => setActiveFaqCategory(id)}
+                                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${activeFaqCategory === id ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:border-primary/50'}`}
+                                >
+                                    {t(labelKey)}
+                                </button>
+                            ))}
+                        </div>
                         {filteredFaqs.length > 0 ? (
                             <div className="mt-4 grid gap-x-5 gap-y-2 md:grid-cols-2">
-                                {filteredFaqs.map(([questionKey, answerKey]) => (
+                                {filteredFaqs.map(({ questionKey, answerKey }) => (
                                     <details key={questionKey} className="group rounded-lg border bg-card px-4">
                                         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-semibold marker:hidden">
                                             {t(questionKey)}
