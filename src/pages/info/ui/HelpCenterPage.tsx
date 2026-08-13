@@ -102,7 +102,7 @@ export function HelpCenterPage() {
     const hasResults = filteredTopics.length > 0 || filteredFaqs.length > 0
 
     return (
-        <main className="min-h-screen bg-background text-foreground">
+        <main className="relative z-0 min-h-full bg-background text-foreground">
             <section className="relative overflow-visible border-b bg-background">
                 <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1fr_1fr]">
                     <div className="relative z-10 px-5 py-12 md:px-12 md:py-16 lg:px-24 lg:py-8">

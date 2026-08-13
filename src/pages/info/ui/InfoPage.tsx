@@ -79,7 +79,7 @@ function InfoPage({ content }: { content: InfoContent }) {
     const Icon = content.icon
 
     return (
-        <main className="min-h-screen bg-background px-5 py-10 text-foreground md:px-12">
+        <main className="relative z-0 min-h-full bg-background px-5 py-10 text-foreground md:px-12">
             <section className="mx-auto max-w-5xl">
                 <div className="grid gap-8 lg:grid-cols-[0.8fr_1fr]">
                     <div>
@@ -185,7 +185,7 @@ export function HelpPage() {
     const hasResults = filteredTracks.length > 0 || filteredFaqs.length > 0
 
     return (
-        <main className="min-h-screen bg-background text-foreground">
+        <main className="relative z-0 min-h-full bg-background text-foreground">
             <section className="border-b bg-primary/5 px-5 py-12 md:px-12 md:py-16">
                 <div className="mx-auto max-w-6xl">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">

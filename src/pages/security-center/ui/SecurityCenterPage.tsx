@@ -257,7 +257,7 @@ export function SecurityCenterPage() {
 
     if (currentUser && !canView) {
         return (
-            <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
+            <main className="relative z-0 min-h-full bg-background px-4 py-8 lg:px-8">
                 <section className="mx-auto max-w-7xl">
                     <StateCard variant="permission-denied" title={t('securityCenter.permissionTitle')} description={t('securityCenter.permissionDescription')} />
                 </section>
@@ -266,7 +266,7 @@ export function SecurityCenterPage() {
     }
 
     return (
-        <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
+            <main className="relative z-0 min-h-full bg-background px-4 py-8 lg:px-8">
             <section className="mx-auto max-w-7xl">
                 <PageHeader
                     eyebrow={t('workspace.admin')}
