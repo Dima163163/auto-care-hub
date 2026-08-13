@@ -26,7 +26,7 @@ function UserAvatar({ user, size = 'size-full' }: { user: User; size?: string })
     const showImage = Boolean(user.avatarUrl) && !hasImageError
 
     return showImage ? (
-        <img src={user.avatarUrl!} alt="" onError={() => setHasImageError(true)} className={cn(size, 'rounded-full object-cover')} />
+        <img src={user.avatarUrl!} alt="" onError={() => setHasImageError(true)} className={cn(size, 'block rounded-full object-cover align-middle')} />
     ) : (
         <span className={cn('flex items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground', size)}>
             {user.name.slice(0, 1).toUpperCase()}
@@ -86,7 +86,7 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
             <button
                 type="button"
                 className={cn(
-                    'flex size-10 items-center justify-center rounded-full border p-0.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
+                    'flex size-10 shrink-0 items-center justify-center rounded-full border p-0.5 leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
                     isDark
                         ? 'border-primary-foreground/30 bg-primary-foreground/10 hover:bg-primary-foreground/20'
                         : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5',
