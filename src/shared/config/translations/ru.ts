@@ -775,6 +775,8 @@ export const ruTranslations = {
         clientServiceRequestsOpen: 'Открыть переписку',
         clientServiceRequestsConversation: 'Переписка',
         clientServiceRequestsQuote: 'Предварительная смета',
+        clientServiceRequestsAcceptQuote: 'Принять смету',
+        clientServiceRequestsDeclineQuote: 'Отклонить',
         clientServiceRequestsNoMessages: 'Сообщений пока нет.',
         clientServiceRequestsMessagePlaceholder: 'Напишите автосервису',
         clientServiceRequestsSendMessage: 'Отправить сообщение',
