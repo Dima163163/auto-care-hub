@@ -169,6 +169,7 @@ type MockAutoCareServiceRequest = {
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
+    quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string } | null
     status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'closed'
     clientId: string
     clientConfirmedAt: string | null
@@ -178,6 +179,8 @@ type MockAutoCareServiceRequest = {
 }
 
 const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = []
+const mockAutoCareMessages = new Map<string, Array<{ id: string; senderId: string; kind: 'text'; body: string; createdAt: string }>>()
+const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
 
 function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
@@ -1703,6 +1706,7 @@ export const handlers = [
             vehicleSnapshot: body.vehicleSnapshot ?? null,
             contactSnapshot: body.contactSnapshot,
             note: body.note ?? null,
+            quote: null,
             status: 'awaiting_reply',
             clientId: user.id,
             clientConfirmedAt: now,
@@ -1732,6 +1736,38 @@ export const handlers = [
         if (!allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const { clientId: _clientId, ...response } = item
         return HttpResponse.json(response)
+    }),
+
+    http.get('/api/v1/service-requests/:requestId/conversation', ({ params }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const { clientId: _clientId, ...response } = item
+        return HttpResponse.json({ request: response, messages: mockAutoCareMessages.get(item.id) ?? [], attachments: mockAutoCareAttachments.get(item.id) ?? [] })
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/messages', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || !item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json() as { body?: string }
+        if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
+        const message = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text' as const, body: body.body.trim(), createdAt: new Date().toISOString() }
+        mockAutoCareMessages.set(item.id, [...(mockAutoCareMessages.get(item.id) ?? []), message])
+        return HttpResponse.json(message, { status: 201 })
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/attachments', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || !item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
+        if (!body.fileName || !body.contentType || !body.size || !body.contentBase64) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
+        const attachment = { id: `mock-attachment-${Date.now()}`, uploadedById: user.id, contentType: body.contentType, bytes: body.size, status: 'ready' as const, url: `/api/v1/service-requests/${item.id}/attachments/mock`, createdAt: new Date().toISOString(), contentBase64: body.contentBase64 }
+        mockAutoCareAttachments.set(item.id, [...(mockAutoCareAttachments.get(item.id) ?? []), attachment])
+        const { contentBase64: _contentBase64, ...response } = attachment
+        return HttpResponse.json(response, { status: 201 })
     }),
 
     http.post('/api/v1/service-requests/:requestId/confirm', ({ params }) => {

@@ -35,6 +35,11 @@ export const autoCareServiceRequestParamsSchema = z.object({
     requestId: z.string().uuid(),
 })
 
+export const autoCareServiceAttachmentParamsSchema = z.object({
+    requestId: z.string().uuid(),
+    attachmentId: z.string().uuid(),
+})
+
 const requestVehicleSnapshotSchema = z.object({
     make: z.string().trim().min(1).max(80),
     model: z.string().trim().min(1).max(80),
@@ -55,6 +60,23 @@ export const createAutoCareServiceRequestSchema = z.object({
     preferredAt: z.string().datetime({ offset: true }),
     vehicleSnapshot: requestVehicleSnapshotSchema.nullable().optional(),
     contactSnapshot: requestContactSnapshotSchema,
+    note: z.string().trim().max(4_000).nullable().optional(),
+})
+
+export const createAutoCareServiceMessageSchema = z.object({
+    body: z.string().trim().min(1).max(4_000),
+})
+
+export const createAutoCareServiceAttachmentSchema = z.object({
+    fileName: z.string().trim().min(1).max(255),
+    contentType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+    size: z.number().int().positive().max(10 * 1024 * 1024),
+    contentBase64: z.string().min(1).max(14 * 1024 * 1024),
+})
+
+export const createAutoCareServiceQuoteSchema = z.object({
+    amountMinor: z.number().int().positive().max(10_000_000_00),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
     note: z.string().trim().max(4_000).nullable().optional(),
 })
 

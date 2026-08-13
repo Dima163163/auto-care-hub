@@ -122,11 +122,11 @@ work.
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Finish backend parity for every filter (availability, price type, inclusion, bonus, warranty, sort and radius), persisted ranking and one-query map/list loading. |
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
-| Service request `/services/:id/request` | First durable slice is implemented: authenticated creation validates provider/location/offer, stores vehicle/contact/time/note snapshots, provides client/provider-scoped reads and explicit confirmation transitions; the form uses the mutation and reports its request id. | Add provider quote/status responses, message threads, attachment storage and real availability. |
+| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments and a connected follow-up UI. | Add real availability/scheduling, notifications and idempotency before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Connect request/message APIs, persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, inbox, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
-| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, owner provider list/create, request lifecycle routes, AutoCare entities, migrations and mock seed data are implemented. | Add message/attachment/quote contracts, real schedule/availability, geospatial indexes, provider memberships and authorization/integration tests. |
+| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment and quote routes are implemented with migrations and mock handlers. | Add real schedule/availability, geospatial indexes, notifications, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
 
@@ -139,8 +139,8 @@ cache, deep-link fallback and release smoke tests still need completion.
 
 Current page delivery order:
 
-1. provider profile and request follow-up: quotes, messages, attachments and availability;
-2. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
+1. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
+2. provider profile and request follow-up: availability and notification hardening;
 3. provider workspace: onboarding, locations, offerings, inbox, calendar and
   team;
 4. admin/super-admin workspaces;
@@ -161,7 +161,7 @@ Delivery order for the remaining client-facing work:
 
 The audit confirms that UI mocks and mock handlers must not be counted as
 production workflow completion. The approved service-request vertical slice
-is now delivered:
+and follow-up contract are now delivered:
 
 1. [x] Add authenticated client request creation with server-side ownership and
    provider/location/offer validation.
@@ -174,9 +174,9 @@ is now delivered:
 5. [x] Cover validation and authorization boundaries with backend schema/unit
    tests; frontend build, lint and mock handlers cover the UI contract.
 
-Duplicate-submission idempotency, messages, photo attachments, quotes,
-schedules, bonuses and subscriptions are the following slices and should not
-be mixed into this first request contract.
+Duplicate-submission idempotency, real schedules, notifications, bonuses and
+subscriptions are the following slices and should not be mixed into this
+request contract.
 
 ### 4.1 Reuse as platform foundation
 
@@ -500,8 +500,8 @@ Goal: deliver the core marketplace value in the browser.
   replacing mock-only interactions.
 - [ ] Add favorites.
 - [x] Add the service request wizard with photo intent, direct-provider payment
-  copy, durable request persistence and explicit customer/provider confirmation
-  boundary. Quote response, conversion and upload storage are pending.
+  copy, durable request persistence, conversation, image attachments, provider
+  quote and explicit customer/provider confirmation boundary.
 - [ ] Validate accessibility, mobile web behavior and performance budgets.
 
 Exit gate:

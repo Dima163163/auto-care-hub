@@ -101,7 +101,16 @@ export type AutoCareServiceRequest = {
     providerConfirmedAt: string | null
     createdAt: string
     updatedAt: string
+    quote: AutoCareServiceQuote | null
 }
+
+export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string }
+export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system'; body: string | null; createdAt: string }
+export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
+export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[] }
+export type CreateAutoCareServiceMessageInput = { requestId: string; body: string }
+export type CreateAutoCareServiceAttachmentInput = { requestId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
+export type CreateAutoCareServiceQuoteInput = { requestId: string; amountMinor: number; currencyCode: string; note?: string | null }
 
 export type CreateAutoCareServiceRequestInput = {
     providerId: string
@@ -205,8 +214,28 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: (requestId) => `/v1/service-requests/${requestId}`,
             providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
         }),
+        getAutoCareServiceConversation: build.query<AutoCareServiceConversation, string>({
+            query: (requestId) => `/v1/service-requests/${requestId}/conversation`,
+            providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
+        createAutoCareServiceMessage: build.mutation<AutoCareServiceMessage, CreateAutoCareServiceMessageInput>({
+            query: ({ requestId, body }) => ({ url: `/v1/service-requests/${requestId}/messages`, method: 'POST', body: { body } }),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
+        createAutoCareServiceAttachment: build.mutation<AutoCareServiceAttachment, CreateAutoCareServiceAttachmentInput>({
+            query: ({ requestId, ...body }) => ({ url: `/v1/service-requests/${requestId}/attachments`, method: 'POST', body }),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
         confirmAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
             query: (requestId) => ({ url: `/v1/service-requests/${requestId}/confirm`, method: 'POST' }),
+            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
+        acceptAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, string>({
+            query: (requestId) => ({ url: `/v1/service-requests/${requestId}/quote/accept`, method: 'POST' }),
+            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
+        declineAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, string>({
+            query: (requestId) => ({ url: `/v1/service-requests/${requestId}/quote/decline`, method: 'POST' }),
             invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
         getOwnerAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({
@@ -218,6 +247,10 @@ export const autoCareApi = baseApi.injectEndpoints({
         confirmOwnerAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
             query: (requestId) => ({ url: `/owner/service-requests/${requestId}/confirm`, method: 'POST' }),
             invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
+        }),
+        createAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, CreateAutoCareServiceQuoteInput>({
+            query: ({ requestId, ...body }) => ({ url: `/owner/service-requests/${requestId}/quote`, method: 'POST', body }),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
         }),
     }),
 })
@@ -232,7 +265,13 @@ export const {
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,
     useGetAutoCareServiceRequestQuery,
+    useGetAutoCareServiceConversationQuery,
+    useCreateAutoCareServiceMessageMutation,
+    useCreateAutoCareServiceAttachmentMutation,
     useConfirmAutoCareServiceRequestMutation,
+    useAcceptAutoCareServiceQuoteMutation,
+    useDeclineAutoCareServiceQuoteMutation,
     useGetOwnerAutoCareServiceRequestsQuery,
     useConfirmOwnerAutoCareServiceRequestMutation,
+    useCreateAutoCareServiceQuoteMutation,
 } = autoCareApi

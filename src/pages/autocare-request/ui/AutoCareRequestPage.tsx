@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, MessageCircle } from 'lucide-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
-import { mapAutoCareProviderProfile, useCreateAutoCareServiceRequestMutation, useGetAutoCareProviderProfileQuery } from '@/entities/automotive-service'
+import { mapAutoCareProviderProfile, useCreateAutoCareServiceMessageMutation, useGetAutoCareServiceConversationQuery, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useGetAutoCareProviderProfileQuery } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -54,7 +54,7 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <RequestSuccess providerId={provider.id} requestId={submittedRequestId} /> : <RequestForm onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
+                    <div>{submittedRequestId ? <RequestFollowUp providerId={provider.id} requestId={submittedRequestId} /> : <RequestForm onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
                     <RequestOrderSummary provider={provider} offering={offering} />
                 </div>
             </div>
@@ -62,8 +62,36 @@ export function AutoCareRequestPage() {
     )
 }
 
-function RequestSuccess({ providerId, requestId }: { providerId: string; requestId: string }) {
+function RequestFollowUp({ providerId, requestId }: { providerId: string; requestId: string }) {
     const { t } = useTranslation()
+    const { data } = useGetAutoCareServiceConversationQuery(requestId)
+    const [sendMessage, { isLoading: isSending }] = useCreateAutoCareServiceMessageMutation()
+    const [uploadAttachment] = useCreateAutoCareServiceAttachmentMutation()
+    const [message, setMessage] = useState('')
+    const [uploading, setUploading] = useState(false)
+    const submitMessage = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!message.trim()) return
+        await sendMessage({ requestId, body: message }).unwrap()
+        setMessage('')
+    }
+    const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+        setUploading(true)
+        const contentBase64 = await readFileAsBase64(file)
+        await uploadAttachment({ requestId, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64 }).unwrap()
+        setUploading(false)
+        event.target.value = ''
+    }
+    return <section className="grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-status-success-surface text-status-success-foreground"><CheckCircle2 className="size-5" /></span><div><h2 className="text-xl font-black text-foreground">{t('autocare.requestSubmittedTitle')}</h2><p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{t('autocare.requestSubmittedDescription')}</p><Link to={routePaths.serviceProviderDetails(providerId)} className="mt-2 inline-flex text-xs font-black text-primary">{t('autocare.requestBackToProfile')}</Link></div></div><div className="border-t border-border pt-4"><div className="flex items-center gap-2 text-sm font-black text-foreground"><MessageCircle className="size-4 text-primary" />Переписка по заявке</div><div className="mt-3 grid gap-2">{data?.messages.map((item) => <p key={item.id} className="rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-sm text-foreground">{item.body}</p>) ?? <p className="text-xs text-muted-foreground">Сообщений пока нет.</p>}</div><form className="mt-3 flex gap-2" onSubmit={(event) => void submitMessage(event)}><input value={message} onChange={(event) => setMessage(event.target.value)} className="h-10 min-w-0 flex-1 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40" placeholder="Напишите сервису" /><button disabled={isSending} className="inline-flex h-10 items-center rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground">Отправить</button></form><label className="mt-2 inline-flex h-10 cursor-pointer items-center justify-center rounded-[var(--radius-control)] border border-dashed border-border text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary">{uploading ? 'Загрузка…' : 'Добавить фото повреждения'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void upload(event)} className="sr-only" /></label></div></section>
+}
 
-    return <section className="rounded-[var(--radius-panel)] border border-status-success-border bg-status-success-surface p-6"><CheckCircle2 className="size-8 text-status-success-foreground" /><h2 className="mt-3 text-2xl font-black text-status-success-foreground">{t('autocare.requestSubmittedTitle')}</h2><p className="mt-2 text-sm font-medium leading-6 text-status-success-foreground/80">{t('autocare.requestSubmittedDescription')}</p><p className="mt-3 text-xs font-bold text-status-success-foreground/80">Заявка № {requestId}</p><Link to={routePaths.serviceProviderDetails(providerId)} className="mt-5 inline-flex h-10 items-center rounded-[var(--radius-control)] bg-primary px-4 text-sm font-bold text-primary-foreground">{t('autocare.requestBackToProfile')}</Link></section>
+function readFileAsBase64(file: File) {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(file)
+    })
 }

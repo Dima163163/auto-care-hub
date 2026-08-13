@@ -7,6 +7,10 @@ import {
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
+    ServiceAttachmentEntity,
+    ServiceAttachmentStatus,
+    ServiceMessageEntity,
+    ServiceMessageKind,
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
@@ -15,6 +19,10 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import type {
     AutoCareServiceRequestResponse,
+    AutoCareServiceRequestConversationResponse,
+    CreateAutoCareServiceAttachmentInput,
+    CreateAutoCareServiceMessageInput,
+    CreateAutoCareServiceQuoteInput,
     CreateAutoCareServiceRequestInput,
 } from './autocare.types.js'
 
@@ -61,12 +69,114 @@ function requestResponse(
         vehicleSnapshot: request.vehicleSnapshot as AutoCareServiceRequestResponse['vehicleSnapshot'],
         contactSnapshot: request.contactSnapshot as AutoCareServiceRequestResponse['contactSnapshot'],
         note: request.note,
+        quote: request.estimateSnapshot && typeof request.estimateSnapshot.amountMinor === 'number'
+            ? {
+                amountMinor: request.estimateSnapshot.amountMinor,
+                currencyCode: String(request.estimateSnapshot.currencyCode ?? 'RUB'),
+                note: typeof request.estimateSnapshot.note === 'string' ? request.estimateSnapshot.note : null,
+                createdAt: String(request.estimateSnapshot.createdAt ?? request.updatedAt.toISOString()),
+            }
+            : null,
         status: request.status,
         clientConfirmedAt: request.clientConfirmedAt?.toISOString() ?? null,
         providerConfirmedAt: request.providerConfirmedAt?.toISOString() ?? null,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
     }
+}
+
+async function getParticipantRequest(user: UserEntity, requestId: string) {
+    const request = await getRequest(requestId)
+    await assertParticipant(user, request)
+    return request
+}
+
+export async function getAutoCareServiceRequestConversation(user: UserEntity, requestId: string): Promise<AutoCareServiceRequestConversationResponse> {
+    const request = await getParticipantRequest(user, requestId)
+    const [response, messages, attachments] = await Promise.all([
+        hydrateRequest(request),
+        AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
+    ])
+    return {
+        request: response,
+        messages: messages.map((message) => ({ id: message.id, senderId: message.senderId, kind: message.kind, body: message.body, createdAt: message.createdAt.toISOString() })),
+        attachments: attachments.map((attachment) => ({
+            id: attachment.id,
+            uploadedById: attachment.uploadedById,
+            contentType: attachment.contentType,
+            bytes: attachment.bytes,
+            status: attachment.status,
+            url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`,
+            createdAt: attachment.createdAt.toISOString(),
+        })),
+    }
+}
+
+export async function createAutoCareServiceMessage(user: UserEntity, requestId: string, input: CreateAutoCareServiceMessageInput) {
+    const request = await getParticipantRequest(user, requestId)
+    const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
+        requestId: request.id,
+        senderId: user.id,
+        kind: ServiceMessageKind.Text,
+        body: input.body,
+    }))
+    return { id: message.id, senderId: message.senderId, kind: message.kind, body: message.body, createdAt: message.createdAt.toISOString() }
+}
+
+export async function createAutoCareServiceAttachment(user: UserEntity, requestId: string, input: CreateAutoCareServiceAttachmentInput) {
+    const request = await getParticipantRequest(user, requestId)
+    const content = Buffer.from(input.contentBase64, 'base64')
+    if (content.length !== input.size) conflict('Attachment content does not match its declared size.')
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).save(AppDataSource.getRepository(ServiceAttachmentEntity).create({
+        requestId: request.id,
+        uploadedById: user.id,
+        objectKey: `autocare-requests/${request.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, '-')}`,
+        contentType: input.contentType,
+        bytes: content.length,
+        content,
+        checksum: null,
+        status: ServiceAttachmentStatus.Ready,
+    }))
+    return { id: attachment.id, uploadedById: attachment.uploadedById, contentType: attachment.contentType, bytes: attachment.bytes, status: attachment.status, url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`, createdAt: attachment.createdAt.toISOString() }
+}
+
+export async function getAutoCareServiceAttachment(user: UserEntity, requestId: string, attachmentId: string) {
+    await getParticipantRequest(user, requestId)
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId }, select: { id: true, contentType: true, content: true } })
+    if (!attachment?.content) notFound('Service attachment not found.')
+    return attachment
+}
+
+export async function createAutoCareServiceQuote(user: UserEntity, requestId: string, input: CreateAutoCareServiceQuoteInput) {
+    ownerOnly(user)
+    const request = await getRequest(requestId)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    if (!provider || provider.ownerId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+    if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed, ServiceRequestStatus.Accepted].includes(request.status)) conflict('This service request cannot receive a new estimate.')
+    request.estimateSnapshot = { amountMinor: input.amountMinor, currencyCode: input.currencyCode, note: input.note ?? null, createdAt: new Date().toISOString() }
+    request.status = ServiceRequestStatus.EstimateShared
+    await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    return hydrateRequest(request)
+}
+
+async function resolveClientQuoteDecision(user: UserEntity, requestId: string, accepted: boolean) {
+    clientOnly(user)
+    const request = await getRequest(requestId)
+    if (request.clientId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service request.' })
+    if (request.status !== ServiceRequestStatus.EstimateShared || !request.estimateSnapshot) conflict('There is no pending estimate for this service request.')
+    request.status = accepted ? ServiceRequestStatus.Accepted : ServiceRequestStatus.Declined
+    request.clientConfirmedAt = new Date()
+    await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    return hydrateRequest(request)
+}
+
+export function acceptAutoCareServiceQuote(user: UserEntity, requestId: string) {
+    return resolveClientQuoteDecision(user, requestId, true)
+}
+
+export function declineAutoCareServiceQuote(user: UserEntity, requestId: string) {
+    return resolveClientQuoteDecision(user, requestId, false)
 }
 
 async function hydrateRequest(request: ServiceRequestEntity) {

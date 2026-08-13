@@ -143,9 +143,58 @@ export type AutoCareServiceRequestResponse = {
     vehicleSnapshot: AutoCareRequestSnapshot | null
     contactSnapshot: AutoCareRequestSnapshot | null
     note: string | null
+    quote: AutoCareServiceQuoteResponse | null
     status: ServiceRequestStatus
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null
     createdAt: string
     updatedAt: string
+}
+
+export type AutoCareServiceQuoteResponse = {
+    amountMinor: number
+    currencyCode: string
+    note: string | null
+    createdAt: string
+}
+
+export type AutoCareServiceMessageResponse = {
+    id: string
+    senderId: string
+    kind: 'text' | 'system'
+    body: string | null
+    createdAt: string
+}
+
+export type AutoCareServiceAttachmentResponse = {
+    id: string
+    uploadedById: string
+    contentType: string
+    bytes: number
+    status: 'pending' | 'ready' | 'rejected'
+    url: string
+    createdAt: string
+}
+
+export type AutoCareServiceRequestConversationResponse = {
+    request: AutoCareServiceRequestResponse
+    messages: AutoCareServiceMessageResponse[]
+    attachments: AutoCareServiceAttachmentResponse[]
+}
+
+export type CreateAutoCareServiceMessageInput = {
+    body: string
+}
+
+export type CreateAutoCareServiceAttachmentInput = {
+    fileName: string
+    contentType: 'image/jpeg' | 'image/png' | 'image/webp'
+    size: number
+    contentBase64: string
+}
+
+export type CreateAutoCareServiceQuoteInput = {
+    amountMinor: number
+    currencyCode: string
+    note?: string | null
 }

@@ -185,6 +185,24 @@ export function getOpenApiDocument() {
             '/v1/service-requests/{requestId}': {
                 get: { operationId: 'getAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Service request visible to its client or provider owner.' } } },
             },
+            '/v1/service-requests/{requestId}/conversation': {
+                get: { operationId: 'getAutoCareServiceConversation', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Messages and attachments for a service request.' } } },
+            },
+            '/v1/service-requests/{requestId}/quote/accept': {
+                post: { operationId: 'acceptAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client accepts provider estimate.' } } },
+            },
+            '/v1/service-requests/{requestId}/quote/decline': {
+                post: { operationId: 'declineAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client declines provider estimate.' } } },
+            },
+            '/v1/service-requests/{requestId}/messages': {
+                post: { operationId: 'createAutoCareServiceMessage', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } } } } } }, responses: { '201': { description: 'Created service message.' } } },
+            },
+            '/v1/service-requests/{requestId}/attachments': {
+                post: { operationId: 'createAutoCareServiceAttachment', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '201': { description: 'Stored service attachment.' } } },
+            },
+            '/v1/service-requests/{requestId}/attachments/{attachmentId}': {
+                get: { operationId: 'getAutoCareServiceAttachment', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Private service attachment bytes.' } } },
+            },
             '/v1/service-requests/{requestId}/confirm': {
                 post: { operationId: 'confirmAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client confirmation transition.' } } },
             },
@@ -193,6 +211,9 @@ export function getOpenApiDocument() {
             },
             '/owner/service-requests/{requestId}/confirm': {
                 post: { operationId: 'confirmOwnerAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider confirmation transition.' } } },
+            },
+            '/owner/service-requests/{requestId}/quote': {
+                post: { operationId: 'createAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider preliminary estimate.' } } },
             },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },

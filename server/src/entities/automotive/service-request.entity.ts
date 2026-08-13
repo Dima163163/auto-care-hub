@@ -33,6 +33,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'jsonb', nullable: true }) contactSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
     @Column({ type: 'text', nullable: true }) note!: string | null
+    @Column({ type: 'jsonb', nullable: true }) estimateSnapshot!: Record<string, unknown> | null
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) providerConfirmedAt!: Date | null
@@ -73,6 +74,7 @@ export class ServiceAttachmentEntity {
     @Column({ type: 'text' }) objectKey!: string
     @Column({ type: 'text' }) contentType!: string
     @Column({ type: 'integer' }) bytes!: number
+    @Column({ type: 'bytea', nullable: true, select: false }) content!: Buffer | null
     @Column({ type: 'text', nullable: true }) checksum!: string | null
     @Column({ type: 'enum', enum: ServiceAttachmentStatus, enumName: 'autocare_service_attachment_status', default: ServiceAttachmentStatus.Pending }) status!: ServiceAttachmentStatus
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
