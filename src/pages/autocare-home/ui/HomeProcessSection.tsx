@@ -17,7 +17,7 @@ export function HomeProcessSection() {
             <h2 className="text-[1.35rem] font-black">{t('autocare.howItWorks')}</h2>
             <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
                 {steps.map((step, index) => (
-                    <article key={step.titleKey} className="flex gap-4">
+                    <article key={step.titleKey} className="flex min-h-[132px] gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm">
                         <step.icon className="mt-1 size-8 shrink-0 text-primary" />
                         <div>
                             <p className="text-xl font-black leading-none">{index + 1}</p>
