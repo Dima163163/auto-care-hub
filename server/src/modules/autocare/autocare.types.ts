@@ -34,8 +34,11 @@ export type AutoCareProviderResponse = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
-    coverImageUrl: string
+    coverImageUrl: string | null
     galleryImageUrls: string[]
+    amenityIds: string[]
+    brandSpecializations: string[]
+    isMultibrand: boolean
     location: AutoCareLocationResponse
 }
 
@@ -60,6 +63,7 @@ export type AutoCareOfferResponse = {
     inclusions: string[]
     warrantyText: string | null
     active: boolean
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
 }
 
 export type AutoCareProviderResultResponse = {
@@ -74,6 +78,38 @@ export type AutoCareDiscoveryResponse = {
     nextCursor: string | null
 }
 
+export type AutoCareDiscoveryQuery = {
+    serviceId?: string
+    marketId?: string
+    radiusKm: number
+    sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
+    cursor?: string
+    limit: number
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+    availableToday?: boolean
+    verifiedOnly?: boolean
+    warrantyOnly?: boolean
+    hasBonus?: boolean
+    inclusion?: string
+    brandId?: string
+}
+
 export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {
     offers: AutoCareOfferResponse[]
+}
+
+export type OwnerAutoCareProviderInput = {
+    name: string
+    description?: string | null
+    marketId: string
+    address: string
+    hours: string
+    yearsActive: number
+    staffCount: number
+    isMultibrand: boolean
+    brandSpecializations: string[]
+    amenityIds: string[]
 }

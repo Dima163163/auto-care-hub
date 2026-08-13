@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
 
-import { validateParams, validateQuery } from '../../shared/validation/validate.js'
-import { autoCareDiscoveryQuerySchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema } from './autocare.schemas.js'
-import { getAutoCareDiscovery, getAutoCareMarkets, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions } from './autocare.service.js'
+import { requireVerifiedEmail } from '../auth/require-auth.js'
+import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
+import { autoCareDiscoveryQuerySchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, ownerAutoCareProviderSchema } from './autocare.schemas.js'
+import { createOwnerAutoCareProvider, getAutoCareDiscovery, getAutoCareMarkets, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions, getOwnerAutoCareProviders } from './autocare.service.js'
 
 export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/markets', async () => getAutoCareMarkets())
@@ -14,4 +15,6 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const query = validateQuery(autoCareProviderOffersQuerySchema, request.query)
         return getAutoCareProviderOffers(params.providerId, query.serviceId)
     })
+    app.get('/owner/autocare-providers', async (request) => getOwnerAutoCareProviders(await requireVerifiedEmail(request)))
+    app.post('/owner/autocare-providers', async (request) => createOwnerAutoCareProvider(await requireVerifiedEmail(request), validateBody(ownerAutoCareProviderSchema, request.body)))
 }

@@ -4,6 +4,7 @@ import {
     Bell,
     BookOpen,
     Building2,
+    CarFront,
     ChevronLeft,
     ChevronRight,
     ClipboardList,
@@ -65,6 +66,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
         {
             labelKey: 'workspace.manage',
             items: [
+                { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
                 { labelKey: 'navigation.ownerCabinets', to: ROUTES.ownerCabinets, icon: Building2 },
                 { labelKey: 'navigation.ownerBookings', to: ROUTES.ownerBookings, icon: BookOpen },
                 { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },

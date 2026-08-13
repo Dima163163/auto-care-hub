@@ -26,16 +26,16 @@ export function ProfileBookingSection({
         <section className="space-y-4">
             <div>
                 <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-semibold tracking-tight">
+                    <h2 className="text-2xl font-black tracking-tight text-foreground">
                         {title}
                     </h2>
 
-                    <span className="rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    <span className="rounded-[var(--radius-control)] bg-primary/10 px-3 py-1 text-xs font-black text-primary">
                         {bookingsCount}
                     </span>
                 </div>
 
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-sm font-medium text-muted-foreground">
                     {description}
                 </p>
             </div>

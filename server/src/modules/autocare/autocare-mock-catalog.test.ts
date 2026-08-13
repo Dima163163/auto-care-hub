@@ -8,9 +8,10 @@ import {
 } from './autocare-mock-catalog.js'
 
 describe('AutoCare mock catalog assets', () => {
-    it('keeps generated image references on every seeded provider', () => {
+    it('keeps generated image references where a provider added photos', () => {
         expect(AUTOMOTIVE_MOCK_PROVIDERS).toHaveLength(3)
-        expect(AUTOMOTIVE_MOCK_PROVIDERS.every((provider) => provider.imageUrl?.endsWith('.webp'))).toBe(true)
+        expect(AUTOMOTIVE_MOCK_PROVIDERS.filter((provider) => provider.imageUrl).every((provider) => provider.imageUrl?.endsWith('.webp'))).toBe(true)
+        expect(AUTOMOTIVE_MOCK_PROVIDERS.some((provider) => !provider.imageUrl)).toBe(true)
         expect(AUTOMOTIVE_MOCK_SERVICES.length).toBeGreaterThanOrEqual(6)
     })
 

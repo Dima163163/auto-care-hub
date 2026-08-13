@@ -1,3 +1,5 @@
+import { In } from 'typeorm'
+
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveMarketEntity,
@@ -7,17 +9,22 @@ import {
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
 } from '../../entities/index.js'
+import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryResponse, AutoCareProviderProfileResponse } from './autocare.types.js'
-
-const FALLBACK_IMAGE = '/images/autocare/placeholders/provider.svg'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, OwnerAutoCareProviderInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
+    }
+}
+
+function assertOwner(user: UserEntity) {
+    if (user.role !== UserRole.Owner) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only owners can manage automotive service profiles.' })
     }
 }
 
@@ -55,14 +62,7 @@ export async function getAutoCareServiceDefinitions() {
     return (await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })).map(toServiceDefinitionResponse)
 }
 
-export async function getAutoCareDiscovery(input: {
-    serviceId?: string
-    marketId?: string
-    radiusKm: number
-    sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
-    cursor?: string
-    limit: number
-}): Promise<AutoCareDiscoveryResponse> {
+export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {
     const limit = getCursorLimit(input.limit)
     const cursor = input.cursor ? decodeCursor(input.cursor, ['providerId']) : null
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
@@ -86,7 +86,16 @@ export async function getAutoCareDiscovery(input: {
         const offer = offerByLocation.get(location.id)
         if (!provider || !offer) return []
         const distanceKm = getDistanceKm(location.latitude, location.longitude)
-        return distanceKm <= input.radiusKm ? [{ provider, location, offer, distanceKm }] : []
+        const price = offer.priceFromMinor / 100
+        const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
+        const matchesRating = input.minRating === undefined || Number(provider.rating) >= input.minRating
+        const matchesType = input.priceType === undefined || definition.priceType === input.priceType
+        const matchesVerified = !input.verifiedOnly || provider.verified
+        const matchesWarranty = !input.warrantyOnly || Boolean(offer.warrantyText)
+        const matchesBonus = !input.hasBonus || Boolean(provider.bonusSummary)
+        const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
+        const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
+        return distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition }] : []
     })
     const sorted = rows.sort((left, right) => {
         if (input.sort === 'price_asc') return left.offer.priceFromMinor - right.offer.priceFromMinor
@@ -110,7 +119,7 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
     const definitionById = new Map(definitions.map((definition) => [definition.id, definition]))
     return {
         ...toProviderResponse(provider, location),
-        coverImageUrl: provider.coverImageUrl ?? FALLBACK_IMAGE,
+        coverImageUrl: provider.coverImageUrl,
         offers: offers.map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
     }
 }
@@ -120,4 +129,50 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
     if (!serviceId) return profile.offers
     const definition = await findServiceDefinition(serviceId)
     return definition ? profile.offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
+}
+
+export async function getOwnerAutoCareProviders(owner: UserEntity) {
+    assertOwner(owner)
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { ownerId: owner.id }, order: { createdAt: 'DESC' } })
+    if (providers.length === 0) return []
+
+    const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
+    const locations = await locationRepository.findBy({ providerId: In(providers.map((provider) => provider.id)) })
+    const locationByProviderId = new Map(locations.map((location) => [location.providerId, location]))
+
+    return providers.flatMap((provider) => {
+        const location = locationByProviderId.get(provider.id)
+        return location ? [toProviderResponse(provider, location)] : []
+    })
+}
+
+export async function createOwnerAutoCareProvider(owner: UserEntity, input: OwnerAutoCareProviderInput) {
+    assertOwner(owner)
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: input.marketId })
+    if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+
+    return AppDataSource.transaction(async (manager) => {
+        const provider = await manager.getRepository(AutomotiveProviderEntity).save(manager.getRepository(AutomotiveProviderEntity).create({
+            ownerId: owner.id,
+            name: input.name,
+            description: input.description ?? null,
+            status: AutomotiveProviderStatus.Draft,
+            verified: false,
+            yearsActive: input.yearsActive,
+            staffCount: input.staffCount,
+            amenityIds: [...new Set(input.amenityIds)],
+            brandSpecializations: [...new Set(input.brandSpecializations)],
+            isMultibrand: input.isMultibrand,
+        }))
+        const location = await manager.getRepository(AutomotiveServiceLocationEntity).save(manager.getRepository(AutomotiveServiceLocationEntity).create({
+            providerId: provider.id,
+            marketId: market.id,
+            address: input.address,
+            hours: input.hours,
+            latitude: null,
+            longitude: null,
+        }))
+
+        return toProviderResponse(provider, location)
+    })
 }

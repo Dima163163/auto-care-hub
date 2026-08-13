@@ -4,6 +4,15 @@ import { enTranslations } from './en.js'
 import { ruTranslations } from './ru.js'
 import { roTranslations } from './ro.js'
 import {
+    csTranslations,
+    elTranslations,
+    itTranslations,
+    nlTranslations,
+    plTranslations,
+    svTranslations,
+    ukTranslations,
+} from './european.js'
+import {
     arTranslations,
     deTranslations,
     esTranslations,
@@ -26,6 +35,13 @@ export const translations = {
     de: deTranslations,
     fr: frTranslations,
     pt: ptTranslations,
+    it: itTranslations,
+    pl: plTranslations,
+    nl: nlTranslations,
+    uk: ukTranslations,
+    cs: csTranslations,
+    el: elTranslations,
+    sv: svTranslations,
     zh: zhTranslations,
     ja: jaTranslations,
     ko: koTranslations,

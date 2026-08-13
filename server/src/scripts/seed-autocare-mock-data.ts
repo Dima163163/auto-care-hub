@@ -56,8 +56,11 @@ async function seedAutoCareMockData() {
                     rating: input.rating,
                     reviewCount: input.reviewCount,
                     bonusSummary: input.bonusSummary ?? null,
-                    coverImageUrl: resolveMockAssetUrl(input.imageUrl),
+                    coverImageUrl: input.imageUrl ? resolveMockAssetUrl(input.imageUrl) : null,
                     galleryImageUrls: (input.galleryImageUrls ?? []).map((image) => resolveMockAssetUrl(image)).filter((image) => image !== AUTOCARE_MOCK_FALLBACK_IMAGE),
+                    amenityIds: input.amenityIds,
+                    brandSpecializations: input.brandSpecializations,
+                    isMultibrand: input.isMultibrand,
                 }))
 
                 const existingLocation = await locationRepository.findOneBy({ providerId: provider.id, marketId: market.id })

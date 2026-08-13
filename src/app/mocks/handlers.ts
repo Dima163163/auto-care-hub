@@ -2,7 +2,12 @@ import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { User } from '@/entities/user'
 import type { Notification } from '@/entities/notification/model/types'
-import { automotiveServices, providerPreviews } from '@/entities/automotive-service'
+import {
+    automotiveServices,
+    providerPreviews,
+    supportsVehicleBrand,
+    type AutoCareApiProvider,
+} from '@/entities/automotive-service'
 
 import {
     mockBookings,
@@ -93,7 +98,7 @@ const autoCareDefinitions = automotiveServices.map((service) => ({
     active: true,
 }))
 
-function toAutoCareOffer(providerId: string, serviceId: string, price: number) {
+function toAutoCareOffer(providerId: string, serviceId: string, price: number, priceType: 'fixed' | 'from' | 'range' | 'quote_required' = 'from') {
     const service = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
     return {
         id: `offer-${providerId}-${service?.slug ?? serviceId}`,
@@ -101,12 +106,13 @@ function toAutoCareOffer(providerId: string, serviceId: string, price: number) {
         serviceSlug: service?.slug ?? serviceId,
         serviceLabels: service?.labels ?? {},
         priceFromMinor: price * 100,
-        priceToMinor: null,
+        priceToMinor: priceType === 'range' ? Math.round(price * 1.2 * 100) : null,
         currencyCode: 'RUB',
         durationMinutes: 60,
         inclusions: ['Предварительная оценка', 'Фотоотчёт по запросу'],
         warrantyText: 'Гарантия на работы по условиям сервиса',
         active: true,
+        priceType,
     }
 }
 
@@ -122,20 +128,30 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         rating: provider.rating,
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonus ?? null,
-        coverImageUrl: provider.image ?? '/images/autocare/placeholders/provider.svg',
-        galleryImageUrls: provider.image ? [provider.image] : ['/images/autocare/placeholders/provider.svg'],
+        brandSpecializations: [...provider.brandSpecializations],
+        isMultibrand: provider.isMultibrand,
+        coverImageUrl: provider.image ?? null,
+        galleryImageUrls: provider.image ? [provider.image] : [],
+        amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
         location: {
             id: `location-${provider.id}`,
             marketId: autoCareMarket.id,
             address: provider.id === 'proservice-moscow' ? 'Москва, ул. Льва Толстого, 18' : 'Москва, Комсомольский пр-т, 45',
             hours: 'Пн–Вс: 08:00–21:00',
-            latitude: 55.75,
-            longitude: 37.61,
+            latitude: provider.mapPosition?.[0] ?? 55.75,
+            longitude: provider.mapPosition?.[1] ?? 37.61,
         },
+        serviceIds: provider.serviceIds ?? automotiveServices.map((service) => service.id),
+        servicePrices: provider.servicePrices ?? { [automotiveServices[0]?.id ?? 'oil-change']: provider.price },
     }
 }
 
 const autoCareProviders = providerPreviews.map(toAutoCareProvider)
+type OwnerAutoCareProviderMock = AutoCareApiProvider & {
+    serviceIds: string[]
+    servicePrices: Record<string, number>
+}
+const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = []
 
 function getMockOAuthIdentities(user: User) {
     const existing = mockOAuthIdentitiesByUser.get(user.id)
@@ -1573,13 +1589,33 @@ export const handlers = [
         const serviceId = url.searchParams.get('serviceId') ?? 'oil-change'
         const radiusKm = Number(url.searchParams.get('radiusKm') ?? 25)
         const sort = url.searchParams.get('sort') ?? 'recommended'
+        const minPrice = Number(url.searchParams.get('minPrice') ?? 0)
+        const maxPrice = Number(url.searchParams.get('maxPrice') ?? Number.POSITIVE_INFINITY)
+        const minRating = Number(url.searchParams.get('minRating') ?? 0)
+        const availableToday = url.searchParams.get('availableToday') === 'true'
+        const priceType = url.searchParams.get('priceType')
+        const verifiedOnly = url.searchParams.get('verifiedOnly') === 'true'
+        const warrantyOnly = url.searchParams.get('warrantyOnly') === 'true'
+        const hasBonus = url.searchParams.get('hasBonus') === 'true'
+        const inclusion = url.searchParams.get('inclusion')
+        const brandId = url.searchParams.get('brandId') ?? ''
         const definition = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
         const items = autoCareProviders.map((provider, index) => ({
             provider,
-            offer: toAutoCareOffer(provider.id, definition?.slug ?? serviceId, providerPreviews[index]?.price ?? 0),
+            offer: toAutoCareOffer(provider.id, definition?.slug ?? serviceId, provider.servicePrices?.[definition?.slug ?? serviceId] ?? providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType ?? definition?.priceType),
             distanceKm: providerPreviews[index]?.distance ? Number.parseFloat(providerPreviews[index]!.distance) : index + 1,
             nextSlot: providerPreviews[index]?.nextSlot ?? null,
-        })).filter((item) => item.distanceKm <= radiusKm)
+        })).filter((item) => {
+            const hasService = item.provider.serviceIds?.includes(definition?.slug ?? serviceId) ?? true
+            const price = item.offer.priceFromMinor / 100
+            const available = item.nextSlot?.toLowerCase().includes('today') ?? false
+            const source = providerPreviews.find((preview) => `api-${preview.id}` === item.provider.id)
+            const matchesInclusion = !inclusion || (source?.inclusions ?? []).some((value) => value.toLowerCase().includes(inclusion))
+            const matchesBrand = !source || supportsVehicleBrand(source, brandId)
+            const matchesWarranty = !warrantyOnly || (source?.warrantyMonths ?? 0) > 0
+            const matchesPriceType = !priceType || source?.priceType === priceType
+            return hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
+        })
 
         if (sort === 'price_asc') items.sort((left, right) => left.offer.priceFromMinor - right.offer.priceFromMinor)
         if (sort === 'rating_desc') items.sort((left, right) => right.provider.rating - left.provider.rating)
@@ -1589,15 +1625,80 @@ export const handlers = [
     }),
 
     http.get('/api/v1/providers/:providerId', ({ params }) => {
-        const provider = autoCareProviders.find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
+        const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
 
         const source = providerPreviews.find((item) => item.id === provider.id.replace('api-', ''))
         const offers = source
-            ? [toAutoCareOffer(provider.id, 'oil-change', source.price), toAutoCareOffer(provider.id, 'diagnostics', 1200)]
+            ? automotiveServices.map((service) => toAutoCareOffer(provider.id, service.id, source.servicePrices?.[service.id] ?? source.price, source.priceType ?? 'from'))
             : []
 
         return HttpResponse.json({ ...provider, offers })
+    }),
+
+    http.get('/api/owner/autocare-providers', () => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+
+        return HttpResponse.json(ownerAutoCareProviders)
+    }),
+
+    http.post('/api/owner/autocare-providers', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+
+        const body = await request.json() as {
+            name?: string
+            description?: string
+            marketId?: string
+            address?: string
+            hours?: string
+            yearsActive?: number
+            staffCount?: number
+            isMultibrand?: boolean
+            brandSpecializations?: string[]
+            amenityIds?: string[]
+        }
+
+        if (!body.name?.trim() || !body.marketId || !body.address?.trim() || !body.hours?.trim()) {
+            return HttpResponse.json({ message: 'Invalid service profile.' }, { status: 400 })
+        }
+
+        const id = `owner-provider-${Date.now()}`
+        const provider = {
+            id,
+            name: body.name.trim(),
+            description: body.description?.trim() || null,
+            status: 'draft' as const,
+            verified: false,
+            yearsActive: Math.max(0, Number(body.yearsActive) || 0),
+            staffCount: Math.max(0, Number(body.staffCount) || 0),
+            rating: 0,
+            reviewCount: 0,
+            bonusSummary: null,
+            brandSpecializations: body.isMultibrand ? [] : [...new Set(body.brandSpecializations ?? [])],
+            isMultibrand: Boolean(body.isMultibrand),
+            coverImageUrl: null,
+            galleryImageUrls: [],
+            amenityIds: [...new Set(body.amenityIds ?? [])],
+            location: {
+                id: `location-${id}`,
+                marketId: body.marketId,
+                address: body.address.trim(),
+                hours: body.hours.trim(),
+                latitude: null,
+                longitude: null,
+            },
+            serviceIds: [],
+            servicePrices: {},
+        }
+
+        ownerAutoCareProviders.unshift(provider)
+        return HttpResponse.json(provider, { status: 201 })
     }),
 
     http.get('/api/cabinets/all', () => {

@@ -245,6 +245,21 @@
     --severity-info-foreground: #93c5fd;
 }
 
+@layer base {
+    select:not([multiple]) {
+        appearance: none;
+        background-image:
+            linear-gradient(45deg, transparent 50%, currentColor 50%),
+            linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position:
+            calc(100% - 1.05rem) calc(50% - 0.125rem),
+            calc(100% - 0.75rem) calc(50% - 0.125rem);
+        background-repeat: no-repeat;
+        background-size: 0.4rem 0.4rem;
+        padding-right: 2.75rem !important;
+    }
+}
+
 @layer utilities {
     .autocare-hero-grid {
         background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
@@ -338,6 +353,21 @@
     }
 }
 
+.autocare-app-surface {
+    background-color: var(--background);
+    background-image: url('/images/autocare/patterns/autocare-service-pattern.svg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+.dark .autocare-app-surface {
+    background-image:
+        linear-gradient(rgb(10 29 57 / 0.56), rgb(10 29 57 / 0.56)),
+        url('/images/autocare/patterns/autocare-service-pattern.svg');
+}
+
 * {
     box-sizing: border-box;
 }
@@ -350,6 +380,16 @@ html {
 body {
     margin: 0;
     min-width: 320px;
+}
+
+.autocare-toolbar-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+.autocare-toolbar-select::-ms-expand {
+    display: none;
 }
 
 :where(h1, h2, h3, h4, h5, h6)[class*="tracking-"] {

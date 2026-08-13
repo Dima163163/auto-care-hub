@@ -1,8 +1,8 @@
 # AutoCare Hub — Architecture
 
-> Status: target architecture for review; the first AutoCare design/mock slice
-> is implemented on `design/autocare-foundation`, while backend replacement and
-> legacy deletion remain gated by user review
+> Status: target architecture with the first public discovery/profile slices
+> implemented on `dev`; backend replacement and legacy deletion remain gated by
+> replacement coverage and review
 >
 > Updated: 2026-08-12
 >

@@ -35,6 +35,7 @@ export type AutoCareApiOffer = {
     inclusions: string[]
     warrantyText: string | null
     active: boolean
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
 }
 
 export type AutoCareApiProvider = {
@@ -48,8 +49,11 @@ export type AutoCareApiProvider = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
-    coverImageUrl: string
+    coverImageUrl: string | null
     galleryImageUrls: string[]
+    amenityIds: string[]
+    brandSpecializations: string[]
+    isMultibrand: boolean
     location: {
         id: string
         marketId: string
@@ -76,12 +80,35 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
 
+export type CreateOwnerAutoCareProviderInput = {
+    name: string
+    description?: string
+    marketId: string
+    address: string
+    hours: string
+    yearsActive: number
+    staffCount: number
+    isMultibrand: boolean
+    brandSpecializations: string[]
+    amenityIds: string[]
+}
+
 export type AutoCareDiscoveryQuery = {
     serviceId?: string
     marketId?: string
     radiusKm?: number
     sort?: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     limit?: number
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
+    availableToday?: boolean
+    priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+    verifiedOnly?: boolean
+    warrantyOnly?: boolean
+    hasBonus?: boolean
+    inclusion?: string
+    brandId?: string
 }
 
 export const autoCareApi = baseApi.injectEndpoints({
@@ -107,12 +134,29 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: (providerId) => `/v1/providers/${providerId}`,
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: providerId }],
         }),
+        getOwnerAutoCareProviders: build.query<AutoCareApiProvider[], void>({
+            query: () => '/owner/autocare-providers',
+            providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
+        }),
+        createOwnerAutoCareProvider: build.mutation<AutoCareApiProvider, CreateOwnerAutoCareProviderInput>({
+            query: (body) => ({
+                url: '/owner/autocare-providers',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: [
+                { type: 'AutoCareProvider', id: 'OWNER_LIST' },
+                { type: 'AutoCareProvider', id: 'LIST' },
+            ],
+        }),
     }),
 })
 
 export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
+    useGetOwnerAutoCareProvidersQuery,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useCreateOwnerAutoCareProviderMutation,
 } = autoCareApi

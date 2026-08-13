@@ -35,7 +35,7 @@ export enum UserProvider {
 )
 @Check(
     'CHK_users_locale_supported',
-    '"locale" IS NULL OR "locale" IN (\'en\', \'ru\', \'ro\', \'es\', \'de\', \'fr\', \'pt\', \'zh\', \'ja\', \'ko\', \'ar\', \'tr\', \'hi\')',
+    '"locale" IS NULL OR "locale" IN (\'en\', \'ru\', \'ro\', \'es\', \'de\', \'fr\', \'pt\', \'it\', \'pl\', \'nl\', \'uk\', \'cs\', \'el\', \'sv\', \'zh\', \'ja\', \'ko\', \'ar\', \'tr\', \'hi\')',
 )
 export class UserEntity {
     @PrimaryGeneratedColumn('uuid')
