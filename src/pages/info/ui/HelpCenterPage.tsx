@@ -200,7 +200,7 @@ export function HelpCenterPage() {
                                 aria-selected={activeAudience === id}
                                 onClick={() => setActiveAudience(id)}
                                 className={activeAudience === id
-                                    ? 'flex min-h-16 items-center gap-3 border-b border-primary bg-background px-4 py-3 text-left ring-1 ring-inset ring-primary transition-colors first:rounded-t-lg last:rounded-b-lg last:border-b-0 md:first:rounded-l-lg md:first:rounded-t-none md:last:rounded-r-lg md:last:rounded-b-none md:border-b-0 md:border-r md:last:border-r-0'
+                                    ? 'flex min-h-16 items-center gap-3 rounded-lg border border-primary bg-background px-4 py-3 text-left ring-1 ring-inset ring-primary transition-colors md:rounded-none md:first:rounded-l-lg md:last:rounded-r-lg md:border-b-0 md:border-r md:last:border-r-0'
                                     : 'flex min-h-16 items-center gap-3 border-b px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg last:border-b-0 hover:bg-muted/60 md:first:rounded-l-lg md:first:rounded-t-none md:last:rounded-r-lg md:last:rounded-b-none md:border-b-0 md:border-r md:last:border-r-0'}
                             >
                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
