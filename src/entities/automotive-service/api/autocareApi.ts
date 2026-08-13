@@ -129,6 +129,7 @@ export type CreateAutoCareServiceRequestInput = {
         phone: string
     }
     note?: string | null
+    idempotencyKey?: string
 }
 
 export type CreateOwnerAutoCareProviderInput = {
@@ -201,7 +202,12 @@ export const autoCareApi = baseApi.injectEndpoints({
             ],
         }),
         createAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, CreateAutoCareServiceRequestInput>({
-            query: (body) => ({ url: '/v1/service-requests', method: 'POST', body }),
+            query: ({ idempotencyKey, ...body }) => ({
+                url: '/v1/service-requests',
+                method: 'POST',
+                headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+                body,
+            }),
             invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
         getMyAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({

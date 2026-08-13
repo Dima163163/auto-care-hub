@@ -170,6 +170,8 @@ type MockAutoCareServiceRequest = {
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
     quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string } | null
+    idempotencyKey: string | null
+    idempotencyFingerprint: string
     status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'closed'
     clientId: string
     clientConfirmedAt: string | null
@@ -1682,6 +1684,17 @@ export const handlers = [
             contactSnapshot?: Record<string, string | number | null>
             note?: string | null
         }
+        const idempotencyKey = request.headers.get('Idempotency-Key')
+        const fingerprint = JSON.stringify({ providerId: body.providerId, locationId: body.locationId, offeringId: body.offeringId, preferredAt: body.preferredAt, vehicleSnapshot: body.vehicleSnapshot ?? null, contactSnapshot: body.contactSnapshot, note: body.note ?? null })
+        if (idempotencyKey) {
+            if (!/^[a-zA-Z0-9_-]{8,128}$/.test(idempotencyKey)) return HttpResponse.json({ message: 'Invalid Idempotency-Key.' }, { status: 400 })
+            const existing = mockAutoCareServiceRequests.find((item) => item.clientId === user.id && item.idempotencyKey === idempotencyKey)
+            if (existing) {
+                if (existing.idempotencyFingerprint !== fingerprint) return HttpResponse.json({ message: 'Idempotency key was already used for another service request.' }, { status: 409 })
+                const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = existing
+                return HttpResponse.json(response)
+            }
+        }
         const provider = autoCareProviders.find((item) => item.id === body.providerId || item.id.replace('api-', '') === body.providerId)
         const source = provider ? providerPreviews.find((item) => item.id === provider.id.replace('api-', '')) : undefined
         const service = automotiveServices.find((item) => body.offeringId?.endsWith(`-${item.id}`)) ?? automotiveServices[0]
@@ -1707,6 +1720,8 @@ export const handlers = [
             contactSnapshot: body.contactSnapshot,
             note: body.note ?? null,
             quote: null,
+            idempotencyKey,
+            idempotencyFingerprint: fingerprint,
             status: 'awaiting_reply',
             clientId: user.id,
             clientConfirmedAt: now,
@@ -1715,14 +1730,14 @@ export const handlers = [
             updatedAt: now,
         }
         mockAutoCareServiceRequests.unshift(result)
-        const { clientId: _clientId, ...response } = result
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = result
         return HttpResponse.json(response, { status: 201 })
     }),
 
     http.get('/api/v1/service-requests/my', () => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        const items = mockAutoCareServiceRequests.filter((item) => item.clientId === user.id).map(({ clientId: _clientId, ...item }) => item)
+        const items = mockAutoCareServiceRequests.filter((item) => item.clientId === user.id).map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
         return HttpResponse.json(items)
     }),
 
@@ -1734,7 +1749,7 @@ export const handlers = [
         const provider = autoCareProviders.find((candidate) => candidate.id === item.providerId)
         const allowed = item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)
         if (!allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
 
@@ -1743,7 +1758,7 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json({ request: response, messages: mockAutoCareMessages.get(item.id) ?? [], attachments: mockAutoCareAttachments.get(item.id) ?? [] })
     }),
 
@@ -1777,7 +1792,7 @@ export const handlers = [
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         item.clientConfirmedAt ??= new Date().toISOString()
         item.updatedAt = new Date().toISOString()
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
 
@@ -1790,7 +1805,7 @@ export const handlers = [
         item.status = 'accepted'
         item.clientConfirmedAt = new Date().toISOString()
         item.updatedAt = new Date().toISOString()
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
 
@@ -1803,7 +1818,7 @@ export const handlers = [
         item.status = 'declined'
         item.clientConfirmedAt = new Date().toISOString()
         item.updatedAt = new Date().toISOString()
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
 
@@ -1811,7 +1826,7 @@ export const handlers = [
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (user.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view service requests.' }, { status: 403 })
-        const items = mockAutoCareServiceRequests.filter((item) => autoCareProviders.some((provider) => provider.id === item.providerId)).map(({ clientId: _clientId, ...item }) => item)
+        const items = mockAutoCareServiceRequests.filter((item) => autoCareProviders.some((provider) => provider.id === item.providerId)).map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
         return HttpResponse.json(items)
     }),
 
@@ -1823,7 +1838,7 @@ export const handlers = [
         item.providerConfirmedAt ??= new Date().toISOString()
         item.status = 'accepted'
         item.updatedAt = new Date().toISOString()
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
 
@@ -1841,7 +1856,7 @@ export const handlers = [
         item.quote = { amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now }
         item.status = 'estimate_shared'
         item.updatedAt = now
-        const { clientId: _clientId, ...response } = item
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),
 

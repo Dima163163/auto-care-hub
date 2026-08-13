@@ -15,6 +15,7 @@ export function AutoCareRequestPage() {
     const [searchParams] = useSearchParams()
     const { t } = useTranslation()
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
+    const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
     const [createRequest, { isLoading: isSubmitting, error: submitError }] = useCreateAutoCareServiceRequestMutation()
     const provider = data ? mapAutoCareProviderProfile(data) : undefined
@@ -29,6 +30,8 @@ export function AutoCareRequestPage() {
     }
 
     const handleSubmit = async (payload: RequestFormPayload) => {
+        const requestKey = idempotencyKey ?? crypto.randomUUID()
+        if (!idempotencyKey) setIdempotencyKey(requestKey)
         const result = await createRequest({
             providerId: data.id,
             locationId: data.location.id,
@@ -37,8 +40,10 @@ export function AutoCareRequestPage() {
             vehicleSnapshot: payload.vehicleSnapshot,
             contactSnapshot: payload.contactSnapshot,
             note: payload.note,
+            idempotencyKey: requestKey,
         }).unwrap()
         setSubmittedRequestId(result.id)
+        setIdempotencyKey(null)
     }
 
     return (

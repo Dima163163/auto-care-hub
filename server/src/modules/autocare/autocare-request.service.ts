@@ -1,4 +1,4 @@
-import { In } from 'typeorm'
+import { In, type QueryFailedError } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -44,6 +44,31 @@ function notFound(message: string): never {
 
 function conflict(message: string): never {
     throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message })
+}
+
+function isRequestIdempotencyUniqueError(error: unknown) {
+    const driverError = (error as QueryFailedError | undefined)?.driverError as
+        | { code?: unknown; constraint?: unknown }
+        | undefined
+    return driverError?.code === '23505' && driverError.constraint === 'IDX_autocare_service_requests_client_idempotency_key'
+}
+
+function isSameAutoCareServiceRequest(request: ServiceRequestEntity, input: CreateAutoCareServiceRequestInput) {
+    return request.providerId === input.providerId &&
+        request.locationId === input.locationId &&
+        request.offeringId === input.offeringId &&
+        request.preferredAt?.toISOString() === new Date(input.preferredAt).toISOString() &&
+        JSON.stringify(request.vehicleSnapshot) === JSON.stringify(input.vehicleSnapshot ?? null) &&
+        JSON.stringify(request.contactSnapshot) === JSON.stringify(input.contactSnapshot) &&
+        request.note === (input.note ?? null)
+}
+
+function requestIdempotencyConflict(): never {
+    throw new AppError({
+        statusCode: 409,
+        code: ERROR_CODES.Conflict,
+        message: 'Idempotency key was already used for another service request.',
+    })
 }
 
 function requestResponse(
@@ -209,6 +234,14 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
+    const requestRepository = AppDataSource.getRepository(ServiceRequestEntity)
+    if (input.idempotencyKey) {
+        const existing = await requestRepository.findOneBy({ clientId: user.id, idempotencyKey: input.idempotencyKey })
+        if (existing) {
+            if (!isSameAutoCareServiceRequest(existing, input)) requestIdempotencyConflict()
+            return hydrateRequest(existing)
+        }
+    }
     const provider = await providerRepository.findOneBy({ id: input.providerId, status: AutomotiveProviderStatus.Active })
     if (!provider) notFound('Automotive provider not found.')
     const location = await locationRepository.findOneBy({ id: input.locationId, providerId: provider.id })
@@ -218,7 +251,7 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     const definition = await definitionRepository.findOneBy({ id: offering.definitionId, active: true })
     if (!definition) notFound('Automotive service definition not found.')
 
-    const request = await AppDataSource.getRepository(ServiceRequestEntity).save(AppDataSource.getRepository(ServiceRequestEntity).create({
+    const request = requestRepository.create({
         clientId: user.id,
         providerId: provider.id,
         locationId: location.id,
@@ -228,11 +261,22 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
         contactSnapshot: input.contactSnapshot,
         preferredAt: new Date(input.preferredAt),
         note: input.note ?? null,
+        idempotencyKey: input.idempotencyKey ?? null,
         status: ServiceRequestStatus.AwaitingReply,
         clientConfirmedAt: new Date(),
         providerConfirmedAt: null,
-    }))
-    return requestResponse(request, provider, location, definition, offering)
+    })
+    let savedRequest: ServiceRequestEntity
+    try {
+        savedRequest = await requestRepository.save(request)
+    } catch (error) {
+        if (!input.idempotencyKey || !isRequestIdempotencyUniqueError(error)) throw error
+        const existing = await requestRepository.findOneBy({ clientId: user.id, idempotencyKey: input.idempotencyKey })
+        if (existing && isSameAutoCareServiceRequest(existing, input)) return hydrateRequest(existing)
+        if (existing) requestIdempotencyConflict()
+        throw error
+    }
+    return requestResponse(savedRequest, provider, location, definition, offering)
 }
 
 export async function getMyAutoCareServiceRequests(user: UserEntity) {

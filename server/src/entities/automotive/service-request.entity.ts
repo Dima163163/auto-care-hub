@@ -21,6 +21,7 @@ export enum ServiceRequestStatus {
 @Entity('autocare_service_requests')
 @Index(['clientId', 'createdAt'])
 @Index(['providerId', 'status', 'createdAt'])
+@Index('IDX_autocare_service_requests_client_idempotency_key', ['clientId', 'idempotencyKey'], { unique: true })
 @Check('CHK_autocare_service_requests_note', '"note" IS NULL OR char_length("note") <= 4000')
 export class ServiceRequestEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
@@ -33,6 +34,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'jsonb', nullable: true }) contactSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
     @Column({ type: 'text', nullable: true }) note!: string | null
+    @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'jsonb', nullable: true }) estimateSnapshot!: Record<string, unknown> | null
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null

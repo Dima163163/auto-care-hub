@@ -175,6 +175,7 @@ export function getOpenApiDocument() {
             '/v1/service-requests': {
                 post: {
                     operationId: 'createAutoCareServiceRequest',
+                    parameters: [{ name: 'Idempotency-Key', in: 'header', required: false, schema: { type: 'string', minLength: 8, maxLength: 128, pattern: '^[a-zA-Z0-9_-]+$' } }],
                     requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/AutoCareServiceRequestCreate' } } } },
                     responses: { '201': { description: 'Created client service request.' } },
                 },

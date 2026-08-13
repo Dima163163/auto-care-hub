@@ -125,6 +125,7 @@ export type CreateAutoCareServiceRequestInput = {
     vehicleSnapshot?: AutoCareRequestSnapshot | null
     contactSnapshot: AutoCareRequestSnapshot
     note?: string | null
+    idempotencyKey?: string
 }
 
 export type AutoCareServiceRequestResponse = {
