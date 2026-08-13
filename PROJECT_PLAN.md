@@ -490,6 +490,7 @@ Goal: build the new automotive domain beside reusable platform services.
   - service categories and definitions;
   - providers, locations and memberships;
   - [x] client-owned vehicle garage with dependent make/model selection and VIN metadata;
+  - [x] versioned public vehicle catalog shared by mocks and the Fastify API, with 30+ makes, 100+ models, production ranges and fuel/engine metadata; native select arrows are globally disabled and replaced with one custom indicator;
   - provider vehicle compatibility rules;
   - service offerings and vehicle rules;
   - schedules and location exceptions.
@@ -510,6 +511,7 @@ Exit gate:
 Goal: deliver the core marketplace value in the browser.
 
 - [~] Implement service-first search and vehicle/location inputs.
+- [x] Use the versioned vehicle catalog for profile and results selectors instead of the former ten-brand fixture. Keep the normalized catalog in the backend and expose it through `GET /api/v1/vehicle-catalog`; schedule a production importer/refresh from the official vPIC dataset before launch.
 - [~] Implement radius, category, price type, price, rating, distance,
   availability, warranty, bonus and inclusion filters. The browser mock and
   Fastify API now share the full filter contract; availability is wired in the

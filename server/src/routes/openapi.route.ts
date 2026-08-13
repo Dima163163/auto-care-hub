@@ -142,6 +142,9 @@ export function getOpenApiDocument() {
             '/v1/service-definitions': {
                 get: { operationId: 'listAutoCareServiceDefinitions', security: [], responses: { '200': { description: 'Active standardized automotive services.' } } },
             },
+            '/v1/vehicle-catalog': {
+                get: { operationId: 'listVehicleCatalog', security: [], parameters: [{ name: 'brandId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Versioned vehicle makes, models, years and engine options.' } } },
+            },
             '/v1/reviews/featured': {
                 get: { operationId: 'listFeaturedAutoCareReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 12, default: 6 } }], responses: { '200': { description: 'Approved reviews for the public AutoCare Hub homepage.' } } },
             },
@@ -1165,7 +1168,7 @@ export function getOpenApiDocument() {
                         brandId: { type: 'string', minLength: 1, maxLength: 60 },
                         model: { type: 'string', minLength: 1, maxLength: 120 },
                         year: { type: 'integer', minimum: 1950, maximum: 2100 },
-                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other'] },
+                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other'] },
                         engineDisplacement: { type: ['number', 'null'], minimum: 0, maximum: 20 },
                         horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
                         color: { type: 'string', minLength: 1, maxLength: 40 },
@@ -1179,7 +1182,7 @@ export function getOpenApiDocument() {
                         brandId: { type: 'string', minLength: 1, maxLength: 60 },
                         model: { type: 'string', minLength: 1, maxLength: 120 },
                         year: { type: 'integer', minimum: 1950, maximum: 2100 },
-                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other'] },
+                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other'] },
                         engineDisplacement: { type: ['number', 'null'], minimum: 0, maximum: 20 },
                         horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
                         color: { type: 'string', minLength: 1, maxLength: 40 },

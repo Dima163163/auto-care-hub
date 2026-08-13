@@ -124,7 +124,7 @@ function FilterSelect({ label, value, onChange, options, className }: { label: s
     return (
         <label className="relative grid gap-1.5 text-xs font-bold">
             <span>{label}</span>
-            <select value={value} onChange={(event) => onChange(event.target.value)} className={`h-10 appearance-none rounded-[var(--radius-control)] border px-3 pr-9 text-sm font-medium outline-none focus:border-primary ${className}`}>
+            <select value={value} onChange={(event) => onChange(event.target.value)} className={`select-with-icon h-10 appearance-none rounded-[var(--radius-control)] border px-3 pr-9 text-sm font-medium outline-none focus:border-primary ${className}`}>
                 {options.map(([option, optionLabel]) => <option key={option} value={option}>{optionLabel}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-current opacity-70" />

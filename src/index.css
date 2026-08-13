@@ -257,16 +257,26 @@
 
 @layer base {
     select:not([multiple]) {
+        -webkit-appearance: none;
         appearance: none;
-        background-image:
-            linear-gradient(45deg, transparent 50%, currentColor 50%),
-            linear-gradient(135deg, currentColor 50%, transparent 50%);
-        background-position:
-            calc(100% - 1.05rem) calc(50% - 0.125rem),
-            calc(100% - 0.75rem) calc(50% - 0.125rem);
+        background-color: transparent;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23566b82' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
         background-repeat: no-repeat;
-        background-size: 0.4rem 0.4rem;
+        background-size: 0.875rem;
         padding-right: 2.75rem !important;
+    }
+
+    select.select-with-icon {
+        background-image: none;
+    }
+
+    .dark select:not([multiple]):not(.select-with-icon) {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23b5c6dc' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
+    .dark select.select-with-icon {
+        background-image: none;
     }
 }
 

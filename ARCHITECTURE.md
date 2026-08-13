@@ -691,6 +691,7 @@ Clients do not branch on translated message text.
 ```text
 GET    /api/v1/catalog/categories
 GET    /api/v1/catalog/services
+GET    /api/v1/vehicle-catalog?brandId={brandId}
 
 GET    /api/v1/search/offerings
 GET    /api/v1/providers/:providerId

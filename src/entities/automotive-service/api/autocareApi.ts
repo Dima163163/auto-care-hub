@@ -93,6 +93,27 @@ export type AutoCareApiReview = {
     createdAt: string
 }
 
+export type AutoCareVehicleEngine = {
+    id: string
+    fuelType: 'petrol' | 'diesel' | 'hybrid' | 'electric' | 'lpg' | 'hydrogen' | 'other'
+    displacementL: number | null
+    horsepower: number | null
+}
+
+export type AutoCareVehicleModel = {
+    id: string
+    label: string
+    yearsFrom: number
+    yearsTo: number
+    engines: AutoCareVehicleEngine[]
+}
+
+export type AutoCareVehicleBrand = {
+    id: string
+    labels: Record<string, string>
+    models: AutoCareVehicleModel[]
+}
+
 const featuredReviewSchema = z.object({
     id: z.string(),
     providerId: z.string(),
@@ -199,6 +220,10 @@ export const autoCareApi = baseApi.injectEndpoints({
         getAutoCareServiceDefinitions: build.query<AutoCareApiServiceDefinition[], void>({
             query: () => '/v1/service-definitions',
             providesTags: [{ type: 'AutoCareServiceDefinition', id: 'LIST' }],
+        }),
+        getVehicleCatalog: build.query<AutoCareVehicleBrand[], string | void>({
+            query: (brandId) => ({ url: '/v1/vehicle-catalog', params: brandId ? { brandId } : undefined }),
+            providesTags: [{ type: 'AutoCareVehicleCatalog', id: 'LIST' }],
         }),
         getFeaturedAutoCareReviews: build.query<AutoCareApiReview[], number | void>({
             query: (limit = 6) => ({ url: '/v1/reviews/featured', params: { limit } }),
@@ -307,6 +332,7 @@ export const {
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,

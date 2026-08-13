@@ -15,6 +15,12 @@ resources:
     read: public
     route: /api/v1/service-definitions
     fields: [id, categoryId, labels, priceType, comparisonAttributes, active]
+  vehicle_catalog:
+    read: public
+    route: /api/v1/vehicle-catalog
+    query: [brandId]
+    fields: [id, labels, models, yearsFrom, yearsTo, engines]
+    source: normalized MVP catalog aligned with the official NHTSA vPIC schema; production importer pending
   provider_discovery:
     read: public
     route: /api/v1/discovery/providers

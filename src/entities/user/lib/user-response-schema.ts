@@ -124,7 +124,7 @@ export const clientVehicleSchema = z.object({
     brandId: z.string(),
     model: z.string(),
     year: z.number().int(),
-    fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other']),
+    fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other']),
     engineDisplacement: z.number().nullable(),
     horsepower: z.number().int().nullable(),
     color: z.string(),

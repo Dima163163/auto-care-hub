@@ -13,6 +13,7 @@ export {
 } from './model/autocareMockData'
 export { automotiveVehicleBrands, getVehicleBrandLabel, type AutomotiveVehicleBrandId } from './model/vehicleBrands'
 export { getVehicleModels } from './model/vehicleModels'
+export { getVehicleBrand, vehicleCatalog, vehicleFuelTypes, type VehicleBrandOption, type VehicleEngineOption, type VehicleFuelType, type VehicleModelOption } from './model/vehicleCatalog'
 export {
     automotiveAmenities,
     defaultAutomotiveAmenityIds,
@@ -30,6 +31,7 @@ export {
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
@@ -55,6 +57,9 @@ export type {
     AutoCareApiReview,
     AutoCareAvailability,
     AutoCareApiServiceDefinition,
+    AutoCareVehicleBrand,
+    AutoCareVehicleEngine,
+    AutoCareVehicleModel,
     AutoCareDiscoveryQuery,
     CreateOwnerAutoCareProviderInput,
     AutoCareServiceRequest,

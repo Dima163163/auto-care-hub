@@ -5,6 +5,7 @@ import { getVehicleImage, type ClientVehicle, type CreateClientVehicleInput } fr
 import type { Notification } from '@/entities/notification/model/types'
 import {
     automotiveServices,
+    vehicleCatalog,
     providerPreviews,
     supportsVehicleBrand,
     type AutoCareApiProvider,
@@ -1667,6 +1668,11 @@ export const handlers = [
     http.get('/api/v1/markets', () => HttpResponse.json([autoCareMarket])),
 
     http.get('/api/v1/service-definitions', () => HttpResponse.json(autoCareDefinitions)),
+
+    http.get('/api/v1/vehicle-catalog', ({ request }) => {
+        const brandId = new URL(request.url).searchParams.get('brandId')
+        return HttpResponse.json(brandId ? vehicleCatalog.filter((brand) => brand.id === brandId) : vehicleCatalog)
+    }),
 
     http.get('/api/v1/discovery/providers', ({ request }) => {
         const url = new URL(request.url)

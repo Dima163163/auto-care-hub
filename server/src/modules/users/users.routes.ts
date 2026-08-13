@@ -70,7 +70,7 @@ const clientVehicleInputSchema = z.object({
     brandId: z.string().trim().min(1).max(60),
     model: z.string().trim().min(1).max(120),
     year: z.number().int().min(1950).max(2100),
-    fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other']),
+    fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other']),
     engineDisplacement: z.number().min(0).max(20).nullable(),
     horsepower: z.number().int().min(0).max(3000).nullable(),
     color: z.string().trim().min(1).max(40),

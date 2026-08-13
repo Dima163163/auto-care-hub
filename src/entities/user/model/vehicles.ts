@@ -1,7 +1,8 @@
-import type { AutomotiveVehicleBrandId } from '@/entities/automotive-service'
+import type { AutomotiveVehicleBrandId, VehicleFuelType } from '@/entities/automotive-service'
+import { vehicleFuelTypes } from '@/entities/automotive-service'
 
-export const vehicleFuelTypes = ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other'] as const
-export type VehicleFuelType = typeof vehicleFuelTypes[number]
+export { vehicleFuelTypes }
+export type { VehicleFuelType }
 
 export type ClientVehicle = {
     id: string
