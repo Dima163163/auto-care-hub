@@ -1,5 +1,6 @@
-import { CalendarDays, Camera, CheckCircle2, ChevronDown, Clock3, LockKeyhole, Send, ShieldCheck } from 'lucide-react'
+import { CalendarDays, Camera, CheckCircle2, ChevronDown, Clock3, LockKeyhole, Phone, Send, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { automotiveServices, getServiceLabel } from '@/entities/automotive-service'
@@ -12,7 +13,7 @@ type ProviderRequestPanelProps = { provider: ProviderProfile; offering: Provider
 const bookingTimes = ['14:30', '15:00', '15:30', '16:00', '16:30']
 
 export function ProviderRequestPanel({ provider, offering }: ProviderRequestPanelProps) {
-    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5"><BookingPanel provider={provider} offering={offering} /><EstimatePanel /><TrustPanel /></aside>
+    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5"><BookingPanel provider={provider} offering={offering} /><EstimatePanel /><TrustPanel /><SupportPanel /></aside>
 }
 
 function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {
@@ -47,7 +48,16 @@ function EstimatePanel() {
 
 function TrustPanel() {
     const { t } = useTranslation()
-    return <section className="grid gap-3 rounded-[var(--radius-panel)] border border-border bg-card p-4 text-xs font-semibold text-muted-foreground shadow-sm"><span className="flex items-start gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />{t('autocare.providerWarranty')}</span><span className="flex items-start gap-2"><LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" />{t('autocare.requestDataSecure')}</span></section>
+    return <section className="grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><TrustItem icon={<ShieldCheck className="size-5" />} title={t('autocare.providerWarrantyTitle')} description={t('autocare.providerWarrantyDescription')} /><TrustItem icon={<LockKeyhole className="size-5" />} title={t('autocare.providerSecureBooking')} description={t('autocare.providerSecureBookingDescription')} /></section>
+}
+
+function SupportPanel() {
+    const { t } = useTranslation()
+    return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary"><Phone className="size-4" /></span><div><h2 className="text-xs font-black text-foreground">{t('autocare.providerSupportTitle')}</h2><a href="tel:+74956453535" className="mt-1.5 inline-flex text-xs font-bold text-primary">+7 (495) 645-35-35</a><p className="mt-1 text-[10px] font-medium text-muted-foreground">{t('autocare.providerSupportHours')}</p></div></div></section>
+}
+
+function TrustItem({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
+    return <div className="flex items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary">{icon}</span><p className="text-xs font-bold leading-4"><span className="block text-foreground">{title}</span><span className="block text-[10px] font-semibold text-muted-foreground">{description}</span></p></div>
 }
 
 function SuccessState() { const { t } = useTranslation(); return <div className="mt-5 rounded-[var(--radius-card)] bg-status-success-surface p-4 text-sm font-semibold text-status-success-foreground"><CheckCircle2 className="mb-2 size-6" />{t('autocare.providerRequestSent')}</div> }
