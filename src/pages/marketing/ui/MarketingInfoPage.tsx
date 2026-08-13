@@ -17,6 +17,9 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
+import { OwnersGrowthSections } from './OwnersGrowthSections'
+import { OwnersHero } from './OwnersHero'
+
 type MarketingItem = {
     icon: typeof CalendarCheck2
     titleKey: TranslationKey
@@ -246,7 +249,7 @@ export function FeaturesPage() {
 }
 
 export function OwnersPage() {
-    return <MarketingInfoPage content={pageContent.owners} />
+    return <main className="bg-background"><OwnersHero /><OwnersGrowthSections /></main>
 }
 
 export function AboutPage() {

@@ -108,7 +108,8 @@ work.
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, full filter contract, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Connect all filters, ranking and comparison to real persisted data; keep map/list to one API query. |
 | Provider profile `/services/:id` | Public data API and an initial profile page exist. | Bring the screen to the approved provider-profile composition and connect real availability, inquiry and favorite actions. |
-| Service request `/services/:id/request` | Two-sided confirmation copy, request form and photo-selection intent exist. | Persist requests and attachments, show provider responses/quotes, and support booking conversion. |
+| Service request `/services/:id/request` | Approved request composition is implemented: steps, selected service/provider, visit-time picker, vehicle/contact form, attachment intent and direct-payment summary. | Persist requests and attachments, show provider responses/quotes, and support booking conversion. |
+| Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration, provider creation and real owner metrics. |
 | Client cabinet | Legacy booking dashboard remains available but contains legacy payment/cabinet assumptions. | Replace with AutoCare requests, bookings, vehicles, favorites, messages and bonuses. |
 | Provider/admin workspaces | Reusable role guards and operational screens exist, but their information architecture is still legacy cabinet-based. | Replace page by page after the customer journeys and new domain contracts are stable. |
 | Backend | `/api/v1` discovery/provider profile and initial AutoCare entities, migrations, mock seed data and brand filters are implemented. | Complete provider memberships, schedules, real geospatial search, request/message persistence and authorization tests. |
@@ -344,8 +345,10 @@ Required design work:
 - [x] Implement and approve the desktop homepage and search/compare journey
   with real AutoCare content. The desktop homepage should not be visually
   redesigned without a new request.
-- [~] Bring provider profile, service request and client dashboard to the
-  approved AutoCare visual system; initial implementations exist.
+- [~] Bring provider profile and client dashboard to the approved AutoCare
+  visual system; initial implementations exist.
+- [x] Implement the approved service-request screen and the approved
+  owner-acquisition landing page.
 - [ ] Add missing customer mocks: comparison table, vehicle garage,
   inquiry/chat, attachment viewer, quote acceptance, bonuses and reviews.
 - [ ] Add missing provider mocks: onboarding, location/offer editor, calendar,
