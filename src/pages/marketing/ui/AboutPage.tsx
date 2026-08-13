@@ -84,7 +84,7 @@ export function AboutPage() {
                 <SectionHeading eyebrow={t('marketing.about.trustEyebrow')} title={t('marketing.about.trustTitle')} description={t('marketing.about.trustDescription')} />
                 <div className="mt-8 grid gap-4 lg:grid-cols-3">
                     {trustSignals.map(({ icon: Icon, titleKey, textKey }) => (
-                        <article key={titleKey} className="rounded-[var(--radius-panel)] border border-primary/15 bg-primary/[0.04] p-6">
+                        <article key={titleKey} className="rounded-[var(--radius-panel)] border border-border bg-card p-6 shadow-sm">
                             <span className="flex size-11 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Icon className="size-5" /></span>
                             <h2 className="mt-5 text-lg font-black">{t(titleKey)}</h2>
                             <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">{t(textKey)}</p>
