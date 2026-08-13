@@ -194,7 +194,7 @@ function pushMockAutoCareNotification(input: { userId: string; requestId: string
         category: 'booking',
         title: input.title,
         message: input.message,
-        link: input.role === 'owner' ? `/owner/bookings?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
+        link: input.role === 'owner' ? `/owner/autocare-requests?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
         metadata: { serviceRequestId: input.requestId, domain: 'autocare' },
         readAt: null,
         createdAt: new Date().toISOString(),

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Clock3, MessageCircle, Send, Wrench } from 'lucide-react'
+import { useSearchParams } from 'react-router'
 
 import {
     useConfirmOwnerAutoCareServiceRequestMutation,
@@ -16,8 +17,9 @@ import { RetryButton } from '@/shared/ui/query-refresh-error'
 
 export function OwnerAutoCareRequestsPage() {
     const { t } = useTranslation()
+    const [searchParams] = useSearchParams()
     const { data: requests = [], isLoading, isError, error, refetch } = useGetOwnerAutoCareServiceRequestsQuery()
-    const [selectedId, setSelectedId] = useState<string | null>(null)
+    const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('request'))
 
     const effectiveSelectedId = selectedId && requests.some((item) => item.id === selectedId) ? selectedId : requests[0]?.id ?? null
     const selected = requests.find((item) => item.id === effectiveSelectedId) ?? null

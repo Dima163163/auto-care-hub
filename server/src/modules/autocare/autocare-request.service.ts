@@ -87,7 +87,7 @@ async function notifyAutoCareParticipant(input: {
         category: NotificationCategory.Booking,
         title: input.title,
         message: input.message,
-        link: input.role === 'owner' ? `/owner/bookings?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
+        link: input.role === 'owner' ? `/owner/autocare-requests?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
         metadata: { serviceRequestId: input.requestId, event: input.event, domain: 'autocare' },
     }, `notification:autocare:${input.requestId}:${input.event}:${input.userId}`)
 }
