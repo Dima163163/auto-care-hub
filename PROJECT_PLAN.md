@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-13
+> Updated: 2026-08-13 (repository audit after commit `a461d5a`)
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -45,9 +45,11 @@ diff/commit and explicitly approves that action.
   stable and the shared API is ready.
 - [x] Customers compare equivalent offers by price, rating, reviews, distance,
   included work, warranty, and availability.
-- [ ] The marketplace needs a transparent trust layer: reliable providers can
+- [~] The marketplace needs a transparent trust layer: reliable providers can
   earn a quality badge and additional organic visibility, while clients get
-  enough verified signals to avoid repeatedly poor or dishonest services.
+  enough verified signals to avoid repeatedly poor or dishonest services. The
+  product copy, badge fields and help guidance exist; scoring, moderation
+  evidence, ranking boost and suspension rules are still pending.
 - [x] Providers can communicate with customers about a specific service.
 - [x] Customers can attach photos of damage or the vehicle to an inquiry.
 - [x] Providers can respond with a detailed estimate/quote.
@@ -62,7 +64,7 @@ diff/commit and explicitly approves that action.
 - [x] Interface locale is independent from service location; Russian, Spanish,
   Romanian and English are the first maintained packs with an extensible
   world-locale model.
-- [ ] Deployment capabilities are selected by one environment profile,
+- [~] Deployment capabilities are selected by one environment profile,
   `VITE_DEPLOYMENT_MARKET` (`ru`, `global`, and future market profiles). The
   profile controls which authentication providers and market-specific UI
   actions are shown: for example, `ru` hides Google sign-in while `global`
@@ -101,12 +103,14 @@ irreversible product choices.
   data. If legacy data must be preserved, a separate backfill plan is required.
 - The existing React/Vite and Fastify/TypeScript stack remains the baseline.
   Rewriting to Next.js/FastAPI is not justified by the current requirements.
-- Russian is a launch language; country, first city, currency, legal entity,
-  and additional launch languages remain open.
+- Russian, Spanish, Romanian and English are the maintained launch language
+  packs; the country set is Russia, Spain and Moldova/Transnistria. The exact
+  first million-plus pilot city, legal entity, exchange-rate provider and
+  launch currency policy still need an operational decision.
 
 ## 4. Current repository audit
 
-### 4.0 Implementation snapshot — 2026-08-12
+### 4.0 Implementation snapshot — 2026-08-13
 
 The repository is no longer at the planning-only stage. The following is the
 current, reviewed implementation state and is the source for the next slices of
@@ -114,38 +118,38 @@ work.
 
 | Area | Current state | Next required work |
 | --- | --- | --- |
-| Public shell | AutoCare SVG logo, responsive header, locale selector, shared footer and SEO metadata foundation are implemented. Footer navigation now avoids duplicate owner/client links and exposes pricing, partners and help routes. | Verify long locale labels and finish public legal/help copy with AutoCare terminology. |
+| Public shell | AutoCare SVG logo, responsive header, locale selector, shared footer, SEO foundation, role-aware Help Center, themed registration and non-duplicated footer navigation are implemented. | Replace remaining generic information/legal copy with finalized policy content; test every footer route at all maintained locales. |
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
-| Discovery `/services` | Interactive dark map, automotive SVG markers, full filter contract, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Connect all filters, ranking and comparison to real persisted data; keep map/list to one API query. |
-| Provider profile `/services/:id` | Public data API and an initial profile page exist. | Bring the screen to the approved provider-profile composition and connect real availability, inquiry and favorite actions. |
-| Service request `/services/:id/request` | Approved request composition is implemented: steps, selected service/provider, visit-time picker, vehicle/contact form, attachment intent and direct-payment summary. | Persist requests and attachments, show provider responses/quotes, and support booking conversion. |
-| Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect provider creation and real owner metrics. |
-| Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Persist vehicles, conversations, photo quotes and provider bonuses; remove remaining legacy booking/payment copy. |
-| Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Replace location/booking APIs with provider memberships, offerings, inbox, calendar, subscriptions and moderation contracts. |
-| Backend | `/api/v1` discovery/provider profile and initial AutoCare entities, migrations, mock seed data and brand filters are implemented. | Complete provider memberships, schedules, real geospatial search, request/message persistence and authorization tests. |
-| Deployment configuration | `.env.example` documents a market capability profile for regional auth/UI differences. | Add validated frontend config, backend capability negotiation and deployment-specific smoke tests before enabling each profile. |
+| Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Finish backend parity for every filter (availability, price type, inclusion, bonus, warranty, sort and radius), persisted ranking and one-query map/list loading. |
+| Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
+| Service request `/services/:id/request` | Approved request composition is implemented: steps, selected service/provider, visit-time picker, vehicle/contact form, attachment intent and direct-payment summary. | First persist the request and two-sided confirmation; then add provider quote/status responses, message threads and attachment storage. |
+| Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
+| Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Connect request/message APIs, persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
+| Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, inbox, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
+| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, owner provider list/create, AutoCare entities, migrations and mock seed data are implemented. | Add request lifecycle routes, message/attachment/quote contracts, real schedule/availability, geospatial indexes, provider memberships and authorization/integration tests. |
+| Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
 
-The remaining public pages now use the AutoCare visual shell and terminology;
-the responsive pass covers stacked hero/card layouts and compact mobile header
-behavior. PWA install prompting is now available where the browser supports it;
-offline shell, public discovery cache and safe update prompts remain covered by
-the existing service-worker contract.
+The remaining public pages use the AutoCare visual shell, but Blog, Partners,
+Contacts, Rules and Privacy still use a shared generic information composition;
+their final policy/content pass is not complete. The responsive pass covers
+the main stacked layouts, but full 360/390/768/1024 visual QA is still open.
+PWA install prompting and the service-worker contract exist; offline discovery
+cache, deep-link fallback and release smoke tests still need completion.
 
 Current page delivery order:
 
-1. provider profile and service request;
-2. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
-3. provider workspace: onboarding, locations, offerings, inbox, calendar and
+1. service request vertical slice: persistence and two-sided confirmation;
+2. provider profile and request follow-up: quotes, messages, attachments and availability;
+3. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
+4. provider workspace: onboarding, locations, offerings, inbox, calendar and
    team;
-4. admin/super-admin workspaces;
-5. real-API hardening, pilot and mobile-readiness gate.
+5. admin/super-admin workspaces;
+6. real-API hardening, pilot and mobile-readiness gate.
 
 Delivery order for the remaining client-facing work:
 
-1. finish public information, pricing, favorites and account-entry pages with
-   AutoCare terminology and shared footer/header; role-aware Help Center and
-   the themed registration flow are implemented;
+1. finalize public information/legal copy and run footer/header route QA;
 2. run a responsive pass at mobile (360/390), tablet (768/1024) and desktop
    widths, including long translated labels, maps, galleries and forms;
 3. close the PWA release slice: install prompt, offline shell and cached public
@@ -153,6 +157,26 @@ Delivery order for the remaining client-facing work:
    smoke tests;
 4. only after these gates, start native iOS/Android implementation from the
    versioned API and shared domain contracts.
+
+### 4.0.1 Audit findings and next approved slice
+
+The audit confirms that UI mocks and mock handlers must not be counted as
+production workflow completion. The next slice proposed for approval is a
+bounded service-request vertical slice:
+
+1. Add authenticated client request creation with server-side ownership and
+   provider/location/offer validation.
+2. Persist the selected offer, vehicle/contact snapshot, preferred time and
+   customer note using the existing AutoCare request entity.
+3. Add client/provider-scoped request reads and explicit client/provider
+   confirmation transitions; keep repair payment direct to the provider.
+4. Connect `/services/:id/request` to the mutation and show a real success or
+   validation state instead of only a local form result.
+5. Cover validation, authorization, duplicate submission and transition rules
+   with backend and frontend tests.
+
+Messages, photo attachments, quotes, schedules, bonuses and subscriptions are
+the following slices and should not be mixed into this first request contract.
 
 ### 4.1 Reuse as platform foundation
 
