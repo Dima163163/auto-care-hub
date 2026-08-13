@@ -12,7 +12,7 @@ export function AdminLayout() {
                 <div className="flex min-w-0 flex-1 flex-col">
                     <WorkspaceMobileHeader role="admin" />
 
-                    <Outlet />
+                    <div className="autocare-page-content"><Outlet /></div>
                     <WorkspaceFooter />
                 </div>
             </div>

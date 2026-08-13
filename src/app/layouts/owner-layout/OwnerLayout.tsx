@@ -27,7 +27,7 @@ export function OwnerLayout() {
                         </div>
                     )}
 
-                    <Outlet />
+                    <div className="autocare-page-content"><Outlet /></div>
                     <WorkspaceFooter />
                 </div>
             </div>

@@ -1,5 +1,3 @@
-import { Moon, Sun } from 'lucide-react'
-
 import { useTheme } from '@/shared/lib/useTheme'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -19,27 +17,17 @@ export function ThemeSwitcher() {
             aria-checked={isDark}
             aria-label={label}
             title={label}
-            className="relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border border-border bg-muted p-0.5 shadow-inner transition-colors duration-300 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-primary/80"
+            className="group relative inline-flex h-10 w-[4.75rem] shrink-0 cursor-pointer items-center rounded-full border border-border/80 bg-muted/80 p-1 shadow-inner transition-colors duration-300 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:border-primary/40 dark:bg-primary/20"
         >
-            <Sun
-                className="absolute left-1.5 size-3.5 text-primary"
-                aria-hidden="true"
-            />
-            <Moon
-                className="absolute right-1.5 size-3.5 text-primary-foreground"
-                aria-hidden="true"
-            />
+            <img src="/images/autocare/theme/sun.svg" alt="" className="absolute left-2 size-5 transition-opacity group-hover:scale-105" aria-hidden="true" />
+            <img src="/images/autocare/theme/moon.svg" alt="" className="absolute right-2 size-5 transition-opacity group-hover:scale-105" aria-hidden="true" />
             <span
-                className={`relative z-10 flex size-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ease-out ${
-                    isDark ? 'translate-x-6' : 'translate-x-0'
+                className={`relative z-10 flex size-8 items-center justify-center rounded-full bg-card shadow-md ring-1 ring-border/60 transition-transform duration-300 ease-out ${
+                    isDark ? 'translate-x-9' : 'translate-x-0'
                 }`}
                 aria-hidden="true"
             >
-                {isDark ? (
-                    <Moon className="size-3.5 text-primary" />
-                ) : (
-                    <Sun className="size-3.5 text-primary" />
-                )}
+                <img src={isDark ? '/images/autocare/theme/moon.svg' : '/images/autocare/theme/sun.svg'} alt="" className="size-5" />
             </span>
         </button>
     )

@@ -364,6 +364,12 @@
     background-size: cover;
 }
 
+/* Keep the generated automotive texture visible around workspace cards and pages. */
+.autocare-page-content > main.bg-background,
+.autocare-page-content > .bg-background {
+    background-color: transparent;
+}
+
 * {
     box-sizing: border-box;
 }

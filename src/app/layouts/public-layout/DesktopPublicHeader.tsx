@@ -6,6 +6,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BrandLogo } from '@/shared/ui/brand-logo'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
+import { ThemeSwitcher } from '@/widgets/theme-switcher'
 
 export function DesktopPublicHeader() {
     const { t } = useTranslation()
@@ -44,6 +45,7 @@ export function DesktopPublicHeader() {
                         <ChevronDown className="size-3.5" />
                     </Link>
                     <LanguageSwitcher compact />
+                    <ThemeSwitcher />
                     {!isLoading && !user && (
                         <Link to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
                             <Heart className="size-7 stroke-[1.7]" />
