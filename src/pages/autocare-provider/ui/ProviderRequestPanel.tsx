@@ -7,6 +7,7 @@ import { automotiveServices, getServiceLabel } from '@/entities/automotive-servi
 import type { ProviderOffering, ProviderProfile } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { ServiceWrenchIcon } from '@/shared/ui/icons/service-wrench-icon'
 
 type ProviderRequestPanelProps = { provider: ProviderProfile; offering: ProviderOffering }
 
@@ -31,7 +32,7 @@ function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {
 }
 
 function BookingService({ label, value, price }: { label: string; value: string; price: string }) {
-    return <div><p className="text-xs font-black text-foreground">{label}</p><div className="mt-2 flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-secondary text-lg text-primary">◉</span><p className="min-w-0 text-xs font-bold leading-5 text-muted-foreground"><span className="block text-foreground">{value}</span>{price}</p></div></div>
+    return <div><p className="text-xs font-black text-foreground">{label}</p><div className="mt-2 flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary"><ServiceWrenchIcon className="size-5" /></span><p className="min-w-0 text-xs font-bold leading-5 text-muted-foreground"><span className="block text-foreground">{value}</span>{price}</p></div></div>
 }
 
 function BookingVehicle() {
