@@ -370,6 +370,13 @@
     background-color: transparent;
 }
 
+.autocare-info-pattern {
+    background-image: var(--autocare-pattern-image);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
 * {
     box-sizing: border-box;
 }

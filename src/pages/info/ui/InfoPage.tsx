@@ -81,7 +81,7 @@ function InfoPage({ content }: { content: InfoContent }) {
     return (
         <main className="relative isolate overflow-hidden bg-background text-foreground">
             <section className="relative overflow-hidden bg-hero-overlay text-primary-foreground">
-                <div className="absolute inset-0 bg-[url('/images/autocare/patterns/autocare-service-pattern.svg')] bg-[length:420px_420px] opacity-15" />
+                <div className="autocare-info-pattern absolute inset-0 opacity-15" />
                 <div className="relative mx-auto grid max-w-[var(--layout-public-max)] gap-8 px-[var(--layout-gutter)] py-14 sm:py-18 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
                     <div className="max-w-3xl">
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
