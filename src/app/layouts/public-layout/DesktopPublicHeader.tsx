@@ -44,9 +44,11 @@ export function DesktopPublicHeader() {
                         <ChevronDown className="size-3.5" />
                     </Link>
                     <LanguageSwitcher compact />
-                    <Link to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
-                        <Heart className="size-7 stroke-[1.7]" />
-                    </Link>
+                    {!isLoading && !user && (
+                        <Link to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
+                            <Heart className="size-7 stroke-[1.7]" />
+                        </Link>
+                    )}
                     {isLoading ? <CurrentUserBadge isLoading /> : null}
                     {!isLoading && (isError || !user) ? (
                         <Link
