@@ -1,4 +1,4 @@
-import { Download, WifiOff, X } from 'lucide-react'
+import { Download, Smartphone, WifiOff, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
@@ -16,8 +16,25 @@ export function PwaLifecycle() {
     const [isUpdateBlocked, setIsUpdateBlocked] = useState(false)
     const [isUpdating, setIsUpdating] = useState(false)
     const [updateFailed, setUpdateFailed] = useState(false)
+    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+    const [isInstalling, setIsInstalling] = useState(false)
     const reloadTimerRef = useRef<number | null>(null)
     const { dirtyForms, pendingMutations } = useOperationSafety()
+
+    useEffect(() => {
+        const handleInstallPrompt = (event: Event) => {
+            event.preventDefault()
+            setInstallPrompt(event as BeforeInstallPromptEvent)
+        }
+        window.addEventListener('beforeinstallprompt', handleInstallPrompt)
+        return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt)
+    }, [])
+
+    useEffect(() => {
+        const handleInstalled = () => setInstallPrompt(null)
+        window.addEventListener('appinstalled', handleInstalled)
+        return () => window.removeEventListener('appinstalled', handleInstalled)
+    }, [])
 
     const clearReloadTimer = useCallback(() => {
         if (reloadTimerRef.current !== null) {
@@ -64,7 +81,19 @@ export function PwaLifecycle() {
         }
     }
 
-    if (isOnline && !needRefresh && !offlineReady) {
+    const handleInstall = async () => {
+        if (!installPrompt) return
+        setIsInstalling(true)
+        try {
+            await installPrompt.prompt()
+            await installPrompt.userChoice
+            setInstallPrompt(null)
+        } finally {
+            setIsInstalling(false)
+        }
+    }
+
+    if (isOnline && !needRefresh && !offlineReady && !installPrompt) {
         return null
     }
 
@@ -131,6 +160,22 @@ export function PwaLifecycle() {
                             onClick={() => setOfflineReady(false)}
                             aria-label={t('common.close')}
                         >
+                            <X className="size-4" aria-hidden="true" />
+                        </Button>
+                    </div>
+                )}
+
+                {isOnline && installPrompt && !needRefresh && (
+                    <div role="status" className="flex items-center gap-3 rounded-lg border border-primary/20 bg-card px-4 py-3 text-card-foreground shadow-lg">
+                        <Smartphone className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold">{t('pwa.installTitle')}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{t('pwa.installDescription')}</p>
+                        </div>
+                        <Button type="button" size="sm" onClick={handleInstall} loading={isInstalling}>
+                            {t('pwa.installAction')}
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => setInstallPrompt(null)} aria-label={t('common.close')}>
                             <X className="size-4" aria-hidden="true" />
                         </Button>
                     </div>

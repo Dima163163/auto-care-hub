@@ -126,6 +126,12 @@ work.
 | Deployment configuration | `.env.example` documents a market capability profile for regional auth/UI differences. | Add validated frontend config, backend capability negotiation and deployment-specific smoke tests before enabling each profile. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
 
+The remaining public pages now use the AutoCare visual shell and terminology;
+the responsive pass covers stacked hero/card layouts and compact mobile header
+behavior. PWA install prompting is now available where the browser supports it;
+offline shell, public discovery cache and safe update prompts remain covered by
+the existing service-worker contract.
+
 Current page delivery order:
 
 1. provider profile and service request;
@@ -134,6 +140,18 @@ Current page delivery order:
    team;
 4. admin/super-admin workspaces;
 5. real-API hardening, pilot and mobile-readiness gate.
+
+Delivery order for the remaining client-facing work:
+
+1. finish public information, pricing, favorites, help, registration and
+   account-entry pages with AutoCare terminology and shared footer/header;
+2. run a responsive pass at mobile (360/390), tablet (768/1024) and desktop
+   widths, including long translated labels, maps, galleries and forms;
+3. close the PWA release slice: install prompt, offline shell and cached public
+   discovery, safe update prompt, manifest/icons, deep-link fallback and PWA
+   smoke tests;
+4. only after these gates, start native iOS/Android implementation from the
+   versioned API and shared domain contracts.
 
 ### 4.1 Reuse as platform foundation
 

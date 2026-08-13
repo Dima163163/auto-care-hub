@@ -41,7 +41,7 @@ export function PricingPage() {
                         ))}
                     </ul>
 
-                    <Link to={ROUTES.ownerDashboard} className={buttonVariants({ className: 'mt-8' })}>
+                    <Link to={ROUTES.register} className={buttonVariants({ className: 'mt-8' })}>
                         {t('autocare.pricingOwnerAction')}
                     </Link>
                 </div>

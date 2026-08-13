@@ -48,7 +48,7 @@ const pageContent: Record<'features' | 'owners' | 'about', MarketingPageContent>
         titleKey: 'marketing.features.title',
         descriptionKey: 'marketing.features.description',
         primaryActionKey: 'marketing.features.primaryAction',
-        primaryTo: ROUTES.cabinets,
+        primaryTo: ROUTES.serviceDiscovery,
         secondaryActionKey: 'marketing.features.secondaryAction',
         secondaryTo: ROUTES.owners,
         highlights: [
@@ -122,7 +122,7 @@ const pageContent: Record<'features' | 'owners' | 'about', MarketingPageContent>
         titleKey: 'marketing.about.title',
         descriptionKey: 'marketing.about.description',
         primaryActionKey: 'marketing.about.primaryAction',
-        primaryTo: ROUTES.cabinets,
+        primaryTo: ROUTES.serviceDiscovery,
         secondaryActionKey: 'marketing.about.secondaryAction',
         secondaryTo: ROUTES.features,
         highlights: [
@@ -160,17 +160,17 @@ function MarketingInfoPage({ content }: { content: MarketingPageContent }) {
     const { t } = useTranslation()
 
     return (
-        <main className="bg-background px-5 py-10 text-foreground md:px-12 md:py-12">
-            <section className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+        <main className="bg-background px-[var(--layout-gutter)] py-10 text-foreground sm:py-12">
+            <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12">
                 <div className="flex flex-col justify-center">
                     <span className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-border bg-primary/5 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
                         <Sparkles className="size-4" />
                         {t(content.eyebrowKey)}
                     </span>
-                    <h1 className="max-w-[640px] text-[44px] font-black leading-[1.08] tracking-[-0.02em]">
+                    <h1 className="max-w-[640px] text-4xl font-black leading-[1.08] tracking-[-0.02em] sm:text-[44px]">
                         {t(content.titleKey)}
                     </h1>
-                    <p className="mt-6 max-w-[620px] text-lg font-medium leading-8 text-muted-foreground">
+                    <p className="mt-5 max-w-[620px] text-base font-medium leading-7 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-8">
                         {t(content.descriptionKey)}
                     </p>
                     <div className="mt-9 flex flex-wrap gap-4">
@@ -210,7 +210,7 @@ function MarketingInfoPage({ content }: { content: MarketingPageContent }) {
                 </div>
             </section>
 
-            <section className="mt-12 grid gap-5 lg:grid-cols-[1fr_0.85fr]">
+            <section className="mx-auto mt-10 grid max-w-[var(--layout-public-max)] gap-5 sm:mt-12 lg:grid-cols-[1fr_0.85fr]">
                 <div className="rounded-lg border border-border bg-card p-7">
                     <h2 className="text-2xl font-black tracking-tight">{t('marketing.howItWorks')}</h2>
                     <div className="mt-6 grid gap-4 md:grid-cols-4">
@@ -230,7 +230,7 @@ function MarketingInfoPage({ content }: { content: MarketingPageContent }) {
                         <Grid2X2 className="size-8" />
                         <h2 className="text-2xl font-black tracking-tight">{t('marketing.inNumbers')}</h2>
                     </div>
-                    <div className="mt-7 grid grid-cols-3 gap-4">
+                    <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-4">
                         {content.stats.map((stat) => (
                             <div key={stat.labelKey}>
                                 <p className="text-3xl font-black tracking-tight">{t(stat.valueKey)}</p>
