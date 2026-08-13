@@ -12,7 +12,7 @@ export function OwnerLayout() {
 
     return (
         <div className="mobile-bottom-safe min-h-screen bg-background flex flex-col md:pb-0">
-            <WorkspaceHeader role="owner" showCreateCabinet />
+            <WorkspaceHeader role="owner" showCreateProvider />
             <div className="flex min-h-[calc(100vh-72px)] flex-1">
                 <WorkspaceSidebar role="owner" />
                 <div className="flex min-w-0 flex-1 flex-col">

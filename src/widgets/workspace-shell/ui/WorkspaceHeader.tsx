@@ -28,10 +28,10 @@ function Logo() {
 
 type WorkspaceHeaderProps = {
     role: WorkspaceRole
-    showCreateCabinet?: boolean
+    showCreateProvider?: boolean
 }
 
-export function WorkspaceHeader({ role, showCreateCabinet = false }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceHeaderProps) {
     const { t } = useTranslation()
     const { data: user, isLoading, isError } = useGetMeQuery()
     const [isMoreOpen, setIsMoreOpen] = useState(false)
@@ -116,14 +116,14 @@ export function WorkspaceHeader({ role, showCreateCabinet = false }: WorkspaceHe
                 >
                     <Bell className="size-4" />
                 </Link>
-                {showCreateCabinet && (
+                {showCreateProvider && (
                     <Link
-                        to={ROUTES.ownerCabinetCreate}
+                        to={ROUTES.ownerAutoCareProviders}
                         className="hidden h-10 items-center gap-2 rounded-md bg-primary px-3 text-xs font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 md:flex xl:px-4"
-                        aria-label={t('cabinet.form.createTitle')}
+                        aria-label={t('autocare.ownerProvidersCreate')}
                     >
                         <Plus className="size-4" />
-                        <span className="hidden xl:inline">{t('cabinet.form.createTitle')}</span>
+                        <span className="hidden xl:inline">{t('autocare.ownerProvidersCreate')}</span>
                     </Link>
                 )}
                 {isLoading ? (

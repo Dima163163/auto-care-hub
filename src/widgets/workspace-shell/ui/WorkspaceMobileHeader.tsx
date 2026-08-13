@@ -1,4 +1,4 @@
-import { Bell, Building2 } from 'lucide-react'
+import { Bell, CarFront } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { CurrentUserBadge, useGetMeQuery } from '@/features/auth'
@@ -33,12 +33,12 @@ export function WorkspaceMobileHeader({ role }: WorkspaceMobileHeaderProps) {
             <div className="flex min-w-0 items-center gap-2">
                 {role === 'owner' && (
                     <Link
-                        to={ROUTES.ownerCabinets}
+                        to={ROUTES.ownerAutoCareProviders}
                         className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-primary"
-                        aria-label={t('ownerDashboard.mobileMySpaces')}
-                        title={t('ownerDashboard.mobileMySpaces')}
+                        aria-label={t('autocare.ownerProvidersTitle')}
+                        title={t('autocare.ownerProvidersTitle')}
                     >
-                        <Building2 className="size-4" aria-hidden="true" />
+                        <CarFront className="size-4" aria-hidden="true" />
                     </Link>
                 )}
                 <ThemeSwitcher />
