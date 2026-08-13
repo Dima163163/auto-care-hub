@@ -14,6 +14,7 @@ import {
 import { Link } from 'react-router'
 
 import { ROUTES } from '@/shared/constants/routes'
+import { isProviderPricingVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
@@ -180,12 +181,14 @@ function MarketingInfoPage({ content }: { content: MarketingPageContent }) {
                         >
                             {t(content.primaryActionKey)}
                         </Link>
-                        <Link
-                            to={content.secondaryTo}
-                            className="rounded-md border-2 border-primary px-8 py-4 text-base font-bold text-primary hover:bg-primary/5"
-                        >
-                            {t(content.secondaryActionKey)}
-                        </Link>
+                        {(content.secondaryTo !== ROUTES.pricing || isProviderPricingVisible) && (
+                            <Link
+                                to={content.secondaryTo}
+                                className="rounded-md border-2 border-primary px-8 py-4 text-base font-bold text-primary hover:bg-primary/5"
+                            >
+                                {t(content.secondaryActionKey)}
+                            </Link>
+                        )}
                     </div>
                 </div>
 

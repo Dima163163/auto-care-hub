@@ -7,6 +7,7 @@ import {
     useGetMeQuery,
 } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { isProviderPricingVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { BrandLogo } from '@/shared/ui/brand-logo'
@@ -34,7 +35,7 @@ export function AppHeader() {
     const primaryLinks = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
         { to: ROUTES.owners, label: t('navigation.owners') },
-        { to: ROUTES.pricing, label: t('navigation.pricing') },
+        ...(isProviderPricingVisible ? [{ to: ROUTES.pricing, label: t('navigation.pricing') }] : []),
         { to: ROUTES.help, label: t('landing.footerHelpCenter') },
     ]
     const secondaryLinks = [

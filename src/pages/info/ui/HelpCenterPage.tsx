@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 
 import { ROUTES } from '@/shared/constants/routes'
+import { isProviderPricingVisible } from '@/shared/config/features'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -144,7 +145,7 @@ export function HelpCenterPage() {
             { id: 'owner-requests', icon: CalendarDays, title: t('ownerDashboard.upcomingBookings'), description: t('ownerDashboard.upcomingBookingsDescription'), count: t('info.help.topicBookingCount'), to: ROUTES.ownerBookings },
             { id: 'owner-clients', icon: UsersRound, title: t('ownerDashboard.clientListTitle'), description: t('ownerDashboard.clientListDescription'), count: t('info.help.topicAccountCount'), to: ROUTES.ownerClients },
             { id: 'messages', icon: MessageCircle, title: t('ownerDashboard.growth.messagesTitle'), description: t('ownerDashboard.growth.messagesText'), count: t('info.help.topicManageCount'), to: ROUTES.ownerBookings },
-            { id: 'owner-growth', icon: WalletCards, title: t('ownerDashboard.growth.subscriptionTitle'), description: t('ownerDashboard.growth.subscriptionText'), count: t('info.help.topicCancellationCount'), to: ROUTES.pricing },
+            ...(isProviderPricingVisible ? [{ id: 'owner-growth' as const, icon: WalletCards, title: t('ownerDashboard.growth.subscriptionTitle'), description: t('ownerDashboard.growth.subscriptionText'), count: t('info.help.topicCancellationCount'), to: ROUTES.pricing }] : []),
         ]
         : [
             { id: 'search', icon: Search, title: t('info.help.topicFindSpaceTitle'), description: t('info.help.topicFindSpaceDescription'), count: t('info.help.topicFindSpaceCount'), to: ROUTES.serviceDiscovery },

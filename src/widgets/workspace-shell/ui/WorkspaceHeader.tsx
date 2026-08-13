@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { isProviderPricingVisible } from '@/shared/config/features'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BrandLogo } from '@/shared/ui/brand-logo'
@@ -39,7 +40,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
     const links = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
         { to: ROUTES.owners, label: t('navigation.owners') },
-        { to: ROUTES.pricing, label: t('navigation.pricing') },
+        ...(isProviderPricingVisible ? [{ to: ROUTES.pricing, label: t('navigation.pricing') }] : []),
         { to: ROUTES.help, label: t('landing.footerHelpCenter') },
     ]
 
