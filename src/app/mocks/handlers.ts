@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import type { User } from '@/entities/user'
+import { getVehicleImage, type ClientVehicle, type CreateClientVehicleInput } from '@/entities/user/model/vehicles'
 import type { Notification } from '@/entities/notification/model/types'
 import {
     automotiveServices,
@@ -74,6 +75,31 @@ function invalidMockBodyResponse() {
 
 const mockFavoritesByUser = new Map<string, string[]>()
 const mockOAuthIdentitiesByUser = new Map<string, Set<'google' | 'yandex'>>()
+const mockVehiclesByUser = new Map<string, ClientVehicle[]>([
+    ['user-client-1', [{
+        id: 'mock-vehicle-1',
+        brandId: 'bmw',
+        model: 'X5',
+        year: 2021,
+        fuelType: 'petrol',
+        engineDisplacement: 3,
+        horsepower: 249,
+        color: 'black',
+        vin: 'WBA1234567890ABCD',
+        imageUrl: getVehicleImage('bmw', 'X5'),
+        isPrimary: true,
+        createdAt: '2026-05-24T10:00:00.000Z',
+    }]],
+])
+
+function getMockVehicles(userId: string) {
+    const vehicles = mockVehiclesByUser.get(userId)
+    if (vehicles) return vehicles
+
+    const next: ClientVehicle[] = []
+    mockVehiclesByUser.set(userId, next)
+    return next
+}
 
 const autoCareMarket = {
     id: 'market-moscow',
@@ -3228,6 +3254,60 @@ export const handlers = [
         return HttpResponse.json(user)
     }),
 
+    http.get('/api/users/me/vehicles', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client') return HttpResponse.json({ message: 'Only clients can manage vehicles.' }, { status: 403 })
+        return HttpResponse.json(getMockVehicles(user.id))
+    }),
+
+    http.post('/api/users/me/vehicles', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client') return HttpResponse.json({ message: 'Only clients can manage vehicles.' }, { status: 403 })
+
+        const body = await request.json() as CreateClientVehicleInput
+        const vehicles = getMockVehicles(user.id)
+        if (vehicles.length >= 20) return HttpResponse.json({ message: 'A client can save up to 20 vehicles.' }, { status: 409 })
+
+        const vehicle: ClientVehicle = {
+            ...body,
+            id: `mock-vehicle-${Date.now()}`,
+            imageUrl: getVehicleImage(body.brandId, body.model),
+            isPrimary: vehicles.length === 0,
+            createdAt: new Date().toISOString(),
+        }
+        vehicles.push(vehicle)
+        return HttpResponse.json(vehicle, { status: 201 })
+    }),
+
+    http.patch('/api/users/me/vehicles/:id', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client') return HttpResponse.json({ message: 'Only clients can manage vehicles.' }, { status: 403 })
+
+        const vehicle = getMockVehicles(user.id).find((item) => item.id === String(params.id))
+        if (!vehicle) return HttpResponse.json({ message: 'Vehicle not found.' }, { status: 404 })
+
+        const patch = await request.json() as Partial<CreateClientVehicleInput>
+        Object.assign(vehicle, patch)
+        if (patch.brandId || patch.model) vehicle.imageUrl = getVehicleImage(patch.brandId ?? vehicle.brandId, patch.model ?? vehicle.model)
+        return HttpResponse.json(vehicle)
+    }),
+
+    http.delete('/api/users/me/vehicles/:id', ({ params }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client') return HttpResponse.json({ message: 'Only clients can manage vehicles.' }, { status: 403 })
+
+        const vehicles = getMockVehicles(user.id)
+        const index = vehicles.findIndex((item) => item.id === String(params.id))
+        if (index < 0) return HttpResponse.json({ message: 'Vehicle not found.' }, { status: 404 })
+        vehicles.splice(index, 1)
+        if (vehicles.length > 0 && !vehicles.some((item) => item.isPrimary)) vehicles[0]!.isPrimary = true
+        return HttpResponse.json({ success: true })
+    }),
+
     http.get('/api/users/me/export', () => {
         const user = mockUsers.find((item) => item.id === mockSession.currentUserId)
 
@@ -3243,6 +3323,7 @@ export const handlers = [
             bookings: [],
             notifications: [],
             cabinets: [],
+            vehicles: getMockVehicles(user.id),
             integrity: {
                 algorithm: 'sha256',
                 checksum: 'mock-export-checksum',

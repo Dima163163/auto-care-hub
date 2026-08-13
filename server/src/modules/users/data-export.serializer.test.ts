@@ -38,6 +38,7 @@ describe('serializeUserDataExport', () => {
             bookings: [],
             notifications: [],
             cabinets: [],
+            vehicles: [],
         }, '2026-01-02T00:00:00.000Z')
 
         expect(result.generatedAt).toBe('2026-01-02T00:00:00.000Z')
@@ -48,6 +49,7 @@ describe('serializeUserDataExport', () => {
             bookings: false,
             notifications: false,
             cabinets: false,
+            vehicles: false,
         })
         expect(result.user).not.toHaveProperty('passwordHash')
     })

@@ -49,6 +49,7 @@ const CSRF_PROTECTED_PATHS = new Set([
     '/v1/service-requests',
     '/client/experiment-events',
     '/users/me/deletion-request',
+    '/users/me/vehicles',
 ])
 
 let csrfTokenRequest: Promise<string | null> | null = null
@@ -105,11 +106,16 @@ function needsCsrfToken(args: string | FetchArgs) {
         args.url.startsWith('/auth/oauth/') && args.url.endsWith('/start')
     const isServiceRequestTransition =
         args.url.startsWith('/v1/service-requests/') || args.url.startsWith('/owner/service-requests/')
+    const isVehicleMutation =
+        args.url === '/users/me/vehicles' || args.url.startsWith('/users/me/vehicles/')
 
-    return (
-        args.method?.toUpperCase() === 'POST' &&
-        (CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition)
+    const method = args.method?.toUpperCase() ?? ''
+    const isVehicleWrite = isVehicleMutation && ['POST', 'PATCH', 'DELETE'].includes(method)
+    const isExistingProtectedPost = method === 'POST' && (
+        CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition
     )
+
+    return isVehicleWrite || isExistingProtectedPost
 }
 
 function createRequestHeaders(headersInit: FetchArgs['headers']) {
@@ -326,6 +332,7 @@ export const baseApi = createApi({
         'Service',
         'Booking',
         'User',
+        'UserVehicle',
         'Review',
         'UserSessions',
         'AuditLogs',

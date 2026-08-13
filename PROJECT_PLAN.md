@@ -145,7 +145,7 @@ work.
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
 | Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications and API-backed availability slots. | Add timezone-aware schedules, reminder delivery and overlap constraints before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
-| Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
+| Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; the AutoCare request inbox now supports scoped requests, conversations, confirmations and preliminary estimates; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
 | Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
@@ -160,7 +160,7 @@ cache, deep-link fallback and release smoke tests still need completion.
 
 Current page delivery order:
 
-1. client cabinet: requests/bookings, vehicles, favorites, messages and bonuses;
+1. client cabinet: requests/bookings, multi-vehicle garage, favorites, messages and bonuses;
 2. provider profile and request follow-up: timezone-aware availability and reminder hardening;
 3. provider workspace: onboarding, locations, offerings, inbox, calendar and
   team;
@@ -486,10 +486,11 @@ Goal: build the new automotive domain beside reusable platform services.
   service definitions, providers, locations and service offerings.
 - [x] Add isolated service-request, message and private-attachment persistence
   with request status and two-sided confirmation timestamps.
-- [ ] Extend the new TypeORM domain with:
+- [~] Extend the new TypeORM domain with:
   - service categories and definitions;
   - providers, locations and memberships;
-  - vehicles;
+  - [x] client-owned vehicle garage with dependent make/model selection and VIN metadata;
+  - provider vehicle compatibility rules;
   - service offerings and vehicle rules;
   - schedules and location exceptions.
 - [ ] Add PostGIS or an approved geospatial alternative with proper indexes.

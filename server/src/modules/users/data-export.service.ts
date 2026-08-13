@@ -3,6 +3,7 @@ import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
 import { NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { UserEntity, UserRole } from '../../entities/user/user.entity.js'
+import { ClientVehicleEntity } from '../../entities/user/client-vehicle.entity.js'
 import { AppDataSource } from '../../database/data-source.js'
 import {
     MAX_EXPORT_RECORDS,
@@ -10,7 +11,7 @@ import {
 } from './data-export.serializer.js'
 
 export async function getUserDataExport(user: UserEntity) {
-    const [favorites, bookings, notifications, cabinets] = await Promise.all([
+    const [favorites, bookings, notifications, cabinets, vehicles] = await Promise.all([
         AppDataSource.getRepository(FavoriteCabinetEntity).find({
             where: { userId: user.id },
             order: { createdAt: 'ASC' },
@@ -33,6 +34,13 @@ export async function getUserDataExport(user: UserEntity) {
                 take: MAX_EXPORT_RECORDS + 1,
             })
             : Promise.resolve([] as CabinetEntity[]),
+        user.role === UserRole.Client
+            ? AppDataSource.getRepository(ClientVehicleEntity).find({
+                where: { userId: user.id },
+                order: { createdAt: 'ASC' },
+                take: MAX_EXPORT_RECORDS + 1,
+            })
+            : Promise.resolve([] as ClientVehicleEntity[]),
     ])
 
     return serializeUserDataExport(user, {
@@ -40,5 +48,6 @@ export async function getUserDataExport(user: UserEntity) {
         bookings,
         notifications,
         cabinets,
+        vehicles,
     })
 }

@@ -74,4 +74,50 @@ describe('private user routes integration', () => {
         expect(meResponse.status).toBe(200)
         expect(meResponse.body.user.locale).toBe('de')
     })
+
+    it('creates, updates, lists and deletes a client vehicle', async () => {
+        const vehicleInput = {
+            brandId: 'toyota',
+            model: 'RAV4',
+            year: 2022,
+            fuelType: 'hybrid',
+            engineDisplacement: 2.5,
+            horsepower: 218,
+            color: 'white',
+            vin: 'JTM1234567890ABCD',
+        }
+
+        const createResponse = await request(app.server)
+            .post('/users/me/vehicles')
+            .set('Authorization', `Bearer ${accessToken}`)
+            .send(vehicleInput)
+
+        expect(createResponse.status).toBe(200)
+        expect(createResponse.body).toMatchObject({
+            ...vehicleInput,
+            isPrimary: true,
+        })
+        expect(createResponse.body.imageUrl).toContain('/images/autocare/vehicles/')
+
+        const vehicleId = createResponse.body.id as string
+        const listResponse = await request(app.server)
+            .get('/users/me/vehicles')
+            .set('Authorization', `Bearer ${accessToken}`)
+        expect(listResponse.status).toBe(200)
+        expect(listResponse.body).toHaveLength(1)
+
+        const updateResponse = await request(app.server)
+            .patch(`/users/me/vehicles/${vehicleId}`)
+            .set('Authorization', `Bearer ${accessToken}`)
+            .send({ horsepower: 222 })
+        expect(updateResponse.status).toBe(200)
+        expect(updateResponse.body.horsepower).toBe(222)
+        expect(updateResponse.body.vin).toBe(vehicleInput.vin)
+
+        const deleteResponse = await request(app.server)
+            .delete(`/users/me/vehicles/${vehicleId}`)
+            .set('Authorization', `Bearer ${accessToken}`)
+        expect(deleteResponse.status).toBe(200)
+        expect(deleteResponse.body).toEqual({ success: true })
+    })
 })

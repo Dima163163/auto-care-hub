@@ -2052,6 +2052,9 @@ export const enTranslations = {
         description: 'View your account details and booking workspace information.',
         clientDescription: 'AutoCare Hub is always free for clients. You pay the selected automotive service directly for completed work.',
         clientFreeBadge: 'Always free for clients',
+        vehicles: {
+            title: 'My vehicles', description: 'Save your vehicles once to speed up service requests and help providers select compatible parts.', add: 'Add vehicle', empty: 'Add your first vehicle to keep service details ready.', brand: 'Make', model: 'Model', fuelLabel: 'Fuel type', year: 'Year', color: 'Color', engine: 'Engine volume, l', power: 'Power, hp', vin: 'VIN (optional)', vinPlaceholder: '17 characters if available', primary: 'Primary', saved: 'Vehicle saved.', deleted: 'Vehicle removed.', saveError: 'Could not save vehicle.', fuel: { petrol: 'Petrol', diesel: 'Diesel', hybrid: 'Hybrid', electric: 'Electric', lpg: 'LPG', other: 'Other' }, colors: { black: 'Black', white: 'White', silver: 'Silver', gray: 'Gray', blue: 'Blue', red: 'Red', green: 'Green', other: 'Other' },
+        },
         tabs: {
             general: 'General',
             security: 'Security',

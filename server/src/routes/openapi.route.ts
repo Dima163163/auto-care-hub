@@ -557,6 +557,50 @@ export function getOpenApiDocument() {
                     },
                 },
             },
+            '/users/me/vehicles': {
+                get: {
+                    operationId: 'listMyVehicles',
+                    responses: {
+                        '200': {
+                            description: 'Saved vehicles owned by the authenticated client.',
+                            content: { 'application/json': { schema: { type: 'array', maxItems: 20, items: { $ref: '#/components/schemas/ClientVehicle' } } } },
+                        },
+                    },
+                },
+                post: {
+                    operationId: 'createMyVehicle',
+                    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehicleInput' } } } },
+                    responses: {
+                        '200': {
+                            description: 'Created saved vehicle.',
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehicle' } } },
+                        },
+                    },
+                },
+            },
+            '/users/me/vehicles/{id}': {
+                patch: {
+                    operationId: 'updateMyVehicle',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehiclePatch' } } } },
+                    responses: {
+                        '200': {
+                            description: 'Updated saved vehicle.',
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehicle' } } },
+                        },
+                    },
+                },
+                delete: {
+                    operationId: 'deleteMyVehicle',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    responses: {
+                        '200': {
+                            description: 'Vehicle removed.',
+                            content: { 'application/json': { schema: { type: 'object', required: ['success'], properties: { success: { const: true } } } } },
+                        },
+                    },
+                },
+            },
         },
         components: {
             securitySchemes: {
@@ -1055,7 +1099,7 @@ export function getOpenApiDocument() {
                 },
                 UserDataExport: {
                     type: 'object',
-                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets'],
+                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets', 'vehicles'],
                     properties: {
                         schemaVersion: { type: 'integer', enum: [1] },
                         generatedAt: { type: 'string', format: 'date-time' },
@@ -1068,12 +1112,13 @@ export function getOpenApiDocument() {
                         },
                         truncated: {
                             type: 'object',
-                            required: ['favorites', 'bookings', 'notifications', 'cabinets'],
+                            required: ['favorites', 'bookings', 'notifications', 'cabinets', 'vehicles'],
                             properties: {
                                 favorites: { type: 'boolean' },
                                 bookings: { type: 'boolean' },
                                 notifications: { type: 'boolean' },
                                 cabinets: { type: 'boolean' },
+                                vehicles: { type: 'boolean' },
                             },
                         },
                         user: { $ref: '#/components/schemas/PublicUser' },
@@ -1081,6 +1126,7 @@ export function getOpenApiDocument() {
                         bookings: { type: 'array', items: { type: 'object' } },
                         notifications: { type: 'array', items: { type: 'object' } },
                         cabinets: { type: 'array', items: { type: 'object' } },
+                        vehicles: { type: 'array', items: { $ref: '#/components/schemas/ClientVehicle' } },
                     },
                 },
                 PublicUser: {
@@ -1110,6 +1156,45 @@ export function getOpenApiDocument() {
                         reason: { type: 'string', maxLength: 500 },
                     },
                     additionalProperties: false,
+                },
+                ClientVehicleInput: {
+                    type: 'object',
+                    required: ['brandId', 'model', 'year', 'fuelType', 'engineDisplacement', 'horsepower', 'color', 'vin'],
+                    additionalProperties: false,
+                    properties: {
+                        brandId: { type: 'string', minLength: 1, maxLength: 60 },
+                        model: { type: 'string', minLength: 1, maxLength: 120 },
+                        year: { type: 'integer', minimum: 1950, maximum: 2100 },
+                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other'] },
+                        engineDisplacement: { type: ['number', 'null'], minimum: 0, maximum: 20 },
+                        horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
+                        color: { type: 'string', minLength: 1, maxLength: 40 },
+                        vin: { type: ['string', 'null'], pattern: '^[A-HJ-NPR-Z0-9]{17}$' },
+                    },
+                },
+                ClientVehiclePatch: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                        brandId: { type: 'string', minLength: 1, maxLength: 60 },
+                        model: { type: 'string', minLength: 1, maxLength: 120 },
+                        year: { type: 'integer', minimum: 1950, maximum: 2100 },
+                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other'] },
+                        engineDisplacement: { type: ['number', 'null'], minimum: 0, maximum: 20 },
+                        horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
+                        color: { type: 'string', minLength: 1, maxLength: 40 },
+                        vin: { type: ['string', 'null'], pattern: '^[A-HJ-NPR-Z0-9]{17}$' },
+                    },
+                },
+                ClientVehicle: {
+                    allOf: [{ $ref: '#/components/schemas/ClientVehicleInput' }],
+                    required: ['id', 'imageUrl', 'isPrimary', 'createdAt'],
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        imageUrl: { type: 'string' },
+                        isPrimary: { type: 'boolean' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                    },
                 },
                 AccountDeletionRequest: {
                     type: 'object',

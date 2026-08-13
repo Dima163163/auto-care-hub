@@ -16,6 +16,12 @@ import {
     removeFavoriteCabinet,
     syncFavoriteCabinets,
 } from './favorites.service.js'
+import {
+    createClientVehicle,
+    deleteClientVehicle,
+    listClientVehicles,
+    updateClientVehicle,
+} from './client-vehicles.service.js'
 import type { OwnerClient } from './users.types.js'
 import type { PublicUser } from '../auth/public-user.js'
 import {
@@ -58,6 +64,29 @@ const accountDeletionRateLimit = createRateLimitPreHandler({
 
 const accountDeletionRequestSchema = z.object({
     reason: z.string().trim().max(500).optional(),
+})
+
+const clientVehicleInputSchema = z.object({
+    brandId: z.string().trim().min(1).max(60),
+    model: z.string().trim().min(1).max(120),
+    year: z.number().int().min(1950).max(2100),
+    fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'other']),
+    engineDisplacement: z.number().min(0).max(20).nullable(),
+    horsepower: z.number().int().min(0).max(3000).nullable(),
+    color: z.string().trim().min(1).max(40),
+    vin: z.string().trim().toUpperCase().regex(/^[A-HJ-NPR-Z0-9]{17}$/).nullable(),
+})
+
+const clientVehiclePatchSchema = clientVehicleInputSchema.partial()
+const clientVehicleParamsSchema = z.object({
+    id: z.string().uuid(),
+})
+
+const clientVehicleRateLimit = createRateLimitPreHandler({
+    maxRequests: 60,
+    scope: 'user:vehicles',
+    windowMs: 60 * 1000,
+    keyResolvers: [getAuthenticatedUserRateLimitIdentifier],
 })
 
 export function getPrivateUserResponseHeaders() {
@@ -107,6 +136,30 @@ export async function usersRoutes(app: FastifyInstance) {
         return reply.headers(getPrivateUserResponseHeaders()).send(
             await cancelAccountDeletion(user, request),
         )
+    })
+
+    app.get('/users/me/vehicles', async (request, reply) => {
+        const user = await requireAuth(request)
+        return reply.headers(getPrivateUserResponseHeaders()).send(await listClientVehicles(user))
+    })
+
+    app.post('/users/me/vehicles', { preHandler: clientVehicleRateLimit }, async (request, reply) => {
+        const user = await requireAuth(request)
+        const body = validateBody(clientVehicleInputSchema, request.body)
+        return reply.headers(getPrivateUserResponseHeaders()).send(await createClientVehicle(user, body))
+    })
+
+    app.patch<{ Params: { id: string } }>('/users/me/vehicles/:id', { preHandler: clientVehicleRateLimit }, async (request, reply) => {
+        const user = await requireAuth(request)
+        const params = validateParams(clientVehicleParamsSchema, request.params)
+        const body = validateBody(clientVehiclePatchSchema, request.body)
+        return reply.headers(getPrivateUserResponseHeaders()).send(await updateClientVehicle(user, params.id, body))
+    })
+
+    app.delete<{ Params: { id: string } }>('/users/me/vehicles/:id', { preHandler: clientVehicleRateLimit }, async (request, reply) => {
+        const user = await requireAuth(request)
+        const params = validateParams(clientVehicleParamsSchema, request.params)
+        return reply.headers(getPrivateUserResponseHeaders()).send(await deleteClientVehicle(user, params.id))
     })
 
     app.get('/users/me/favorites', async (request) => {

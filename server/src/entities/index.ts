@@ -4,6 +4,7 @@ import { ReviewEntity } from './review/review.entity.js'
 import { SecurityTokenEntity } from './security-token/security-token.entity.js'
 import { ServiceEntity } from './service/service.entity.js'
 import { UserEntity } from './user/user.entity.js'
+import { ClientVehicleEntity } from './user/client-vehicle.entity.js'
 import { UserSessionEntity } from './user-session/user-session.entity.js'
 import { AuditLogEntity } from './audit-log/audit-log.entity.js'
 import { NotificationEntity } from './notification/notification.entity.js'
@@ -44,6 +45,7 @@ import {
 
 export const entities = [
     UserEntity,
+    ClientVehicleEntity,
     CabinetEntity,
     ServiceEntity,
     BookingEntity,
@@ -90,6 +92,7 @@ export { ReviewEntity } from './review/review.entity.js'
 export { SecurityTokenEntity } from './security-token/security-token.entity.js'
 export { ServiceEntity } from './service/service.entity.js'
 export { UserEntity } from './user/user.entity.js'
+export { ClientVehicleEntity } from './user/client-vehicle.entity.js'
 export { UserSessionEntity } from './user-session/user-session.entity.js'
 export { AuditLogEntity, AuditAction } from './audit-log/audit-log.entity.js'
 export { NotificationEntity, NotificationCategory } from './notification/notification.entity.js'

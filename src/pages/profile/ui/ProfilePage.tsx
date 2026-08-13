@@ -17,6 +17,7 @@ import { ProfileNavigation } from '@/widgets/profile-navigation/ui/ProfileNaviga
 import { ProfilePreferences } from './ProfilePreferences'
 import { OAuthConnectionsCard } from './OAuthConnectionsCard'
 import { ProfilePrivacy } from './ProfilePrivacy'
+import { ClientVehiclesSection } from './ClientVehiclesSection'
 
 export function ProfilePage() {
     const { t } = useTranslation()
@@ -95,6 +96,7 @@ export function ProfilePage() {
                         {activeTab === 'general' && (
                             <div className="grid gap-6">
                                 <GeneralInfoSection user={user} />
+                                {user.role === 'client' && <ClientVehiclesSection />}
                                 <ProfilePreferences user={user} />
                                 <ProfilePrivacy />
                                 {user.role === 'owner' && <StripeConnectCard />}
