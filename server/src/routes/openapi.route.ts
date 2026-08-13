@@ -169,6 +169,9 @@ export function getOpenApiDocument() {
             '/v1/providers/{providerId}': {
                 get: { operationId: 'getAutoCareProviderProfile', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Public provider profile with offers and image fallbacks.' } } },
             },
+            '/v1/providers/{providerId}/availability': {
+                get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.' } } },
+            },
             '/v1/providers/{providerId}/offers': {
                 get: { operationId: 'listAutoCareProviderOffers', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Active provider offers for comparison and request entry.' } } },
             },

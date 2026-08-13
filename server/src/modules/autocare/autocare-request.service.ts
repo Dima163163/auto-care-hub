@@ -1,4 +1,4 @@
-import { In, type QueryFailedError } from 'typeorm'
+import { Between, In, type QueryFailedError } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -20,6 +20,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import type {
+    AutoCareAvailabilitySlotResponse,
     AutoCareServiceRequestResponse,
     AutoCareServiceRequestConversationResponse,
     CreateAutoCareServiceAttachmentInput,
@@ -366,6 +367,49 @@ export async function getAutoCareServiceRequest(user: UserEntity, requestId: str
     const request = await getRequest(requestId)
     await assertParticipant(user, request)
     return hydrateRequest(request)
+}
+
+function parseServiceHours(hours: string) {
+    const match = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(hours)
+    if (!match) return { openMinutes: 8 * 60, closeMinutes: 21 * 60 }
+    return {
+        openMinutes: Number(match[1]) * 60 + Number(match[2]),
+        closeMinutes: Number(match[3]) * 60 + Number(match[4]),
+    }
+}
+
+function formatClock(totalMinutes: number) {
+    return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`
+}
+
+export async function getAutoCareAvailability(providerId: string, locationId: string, offeringId: string, date: string) {
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, status: AutomotiveProviderStatus.Active })
+    const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: locationId, providerId })
+    const offering = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: offeringId, locationId, active: true })
+    if (!provider || !location || !offering) notFound('Automotive availability references missing service data.')
+
+    const { openMinutes, closeMinutes } = parseServiceHours(location.hours)
+    const dayStart = new Date(`${date}T00:00:00.000Z`)
+    const dayEnd = new Date(`${date}T23:59:59.999Z`)
+    if (Number.isNaN(dayStart.getTime()) || Number.isNaN(dayEnd.getTime())) notFound('Availability date is invalid.')
+    const activeRequests = await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { providerId, locationId, preferredAt: Between(dayStart, dayEnd) } })
+    const requests = activeRequests.filter((request) => ![ServiceRequestStatus.Declined, ServiceRequestStatus.Closed].includes(request.status))
+    const requestOfferings = await Promise.all(requests.map((request) => request.offeringId
+        ? AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: request.offeringId })
+        : null))
+    const slots: AutoCareAvailabilitySlotResponse[] = []
+    for (let start = openMinutes; start + offering.durationMinutes <= closeMinutes; start += 30) {
+        const end = start + offering.durationMinutes
+        const occupied = requests.some((request, index) => {
+            const preferred = request.preferredAt
+            if (!preferred || preferred.toISOString().slice(0, 10) !== date) return false
+            const requestStart = preferred.getUTCHours() * 60 + preferred.getUTCMinutes()
+            const requestDuration = requestOfferings[index]?.durationMinutes ?? 60
+            return start < requestStart + requestDuration && end > requestStart
+        })
+        if (!occupied) slots.push({ startTime: formatClock(start), endTime: formatClock(end) })
+    }
+    return { date, durationMinutes: offering.durationMinutes, slots }
 }
 
 export async function confirmAutoCareServiceRequest(user: UserEntity, requestId: string) {

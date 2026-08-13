@@ -80,6 +80,8 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
 
+export type AutoCareAvailability = { date: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string }> }
+
 export type AutoCareServiceRequest = {
     id: string
     providerId: string
@@ -186,6 +188,9 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: (providerId) => `/v1/providers/${providerId}`,
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: providerId }],
         }),
+        getAutoCareAvailability: build.query<AutoCareAvailability, { providerId: string; locationId: string; offeringId: string; date: string }>({
+            query: ({ providerId, ...params }) => ({ url: `/v1/providers/${providerId}/availability`, params }),
+        }),
         getOwnerAutoCareProviders: build.query<AutoCareApiProvider[], void>({
             query: () => '/owner/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
@@ -266,6 +271,7 @@ export const {
     useGetAutoCareMarketsQuery,
     useGetOwnerAutoCareProvidersQuery,
     useGetAutoCareProviderProfileQuery,
+    useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,

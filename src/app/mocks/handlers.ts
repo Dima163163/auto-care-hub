@@ -1685,6 +1685,20 @@ export const handlers = [
         return HttpResponse.json({ ...provider, offers })
     }),
 
+    http.get('/api/v1/providers/:providerId/availability', ({ params, request }) => {
+        const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
+        const url = new URL(request.url)
+        const date = url.searchParams.get('date')
+        const locationId = url.searchParams.get('locationId')
+        const offeringId = url.searchParams.get('offeringId')
+        const source = provider ? providerPreviews.find((item) => item.id === provider.id.replace('api-', '')) : undefined
+        if (!provider || !date || !locationId || !offeringId) return HttpResponse.json({ message: 'Invalid availability request.' }, { status: 400 })
+        const durationMinutes = 60
+        const reserved = mockAutoCareServiceRequests.filter((item) => item.providerId === provider.id && item.locationId === locationId && item.preferredAt?.slice(0, 10) === date && item.status !== 'declined' && item.status !== 'closed').map((item) => item.preferredAt?.slice(11, 16))
+        const slots = Array.from({ length: 20 }, (_, index) => 8 * 60 + index * 30).map((start) => ({ startTime: `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`, endTime: `${String(Math.floor((start + durationMinutes) / 60)).padStart(2, '0')}:${String((start + durationMinutes) % 60).padStart(2, '0')}` })).filter((slot) => !reserved.includes(slot.startTime))
+        return HttpResponse.json({ date, durationMinutes, slots, source: source?.name ?? null })
+    }),
+
     http.post('/api/v1/service-requests', async ({ request }) => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })

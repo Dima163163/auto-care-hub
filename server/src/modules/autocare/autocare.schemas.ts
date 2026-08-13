@@ -31,6 +31,12 @@ export const autoCareProviderOffersQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
 })
 
+export const autoCareAvailabilityQuerySchema = z.object({
+    locationId: z.string().uuid(),
+    offeringId: z.string().uuid(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+})
+
 export const autoCareServiceRequestParamsSchema = z.object({
     requestId: z.string().uuid(),
 })

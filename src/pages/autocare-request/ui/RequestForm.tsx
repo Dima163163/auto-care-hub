@@ -1,9 +1,13 @@
 import { CalendarDays, Camera, Check, Clock3, Send } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
+import { useGetAutoCareAvailabilityQuery, type AutoCareAvailability } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type RequestFormProps = {
+    providerId: string
+    locationId: string
+    offeringId: string
     onSubmit: (payload: RequestFormPayload) => void
     isSubmitting?: boolean
     errorMessage?: string
@@ -18,21 +22,24 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-const appointmentTimes = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00']
-
-export function RequestForm({ onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [selectedDate, setSelectedDate] = useState('today')
     const [customDate, setCustomDate] = useState('')
     const [selectedTime, setSelectedTime] = useState('10:00')
     const [contactSnapshot, setContactSnapshot] = useState({ name: '', phone: '', email: '' })
     const [note, setNote] = useState('')
+    const availabilityDate = customDate || toDateInputValue(getFutureDate(Math.max(appointmentDates.indexOf(selectedDate), 0)))
+    const { data: availability, isError: isAvailabilityError, isFetching: isAvailabilityLoading } = useGetAutoCareAvailabilityQuery({ providerId, locationId, offeringId, date: availabilityDate })
+    const availableTimes = availability?.slots.map((slot) => slot.startTime) ?? []
+    const effectiveSelectedTime = availableTimes.includes(selectedTime) ? selectedTime : availableTimes[0] ?? ''
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
+        if (!effectiveSelectedTime) return
         const dayIndex = appointmentDates.indexOf(selectedDate)
         const date = customDate ? new Date(`${customDate}T12:00:00`) : getFutureDate(Math.max(dayIndex, 0))
-        const [hours, minutes] = selectedTime.split(':').map(Number)
+        const [hours, minutes] = effectiveSelectedTime.split(':').map(Number)
         date.setHours(hours, minutes, 0, 0)
         onSubmit({
             preferredAt: date.toISOString(),
@@ -44,12 +51,13 @@ export function RequestForm({ onSubmit, isSubmitting = false, errorMessage }: Re
 
     return (
         <form onSubmit={handleSubmit} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
-            <AppointmentPicker locale={locale} selectedDate={selectedDate} customDate={customDate} selectedTime={selectedTime} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { setCustomDate(value); setSelectedDate('') }} onTimeChange={setSelectedTime} />
+            <AppointmentPicker locale={locale} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={availability} isLoading={isAvailabilityLoading} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { setCustomDate(value); setSelectedDate('') }} onTimeChange={setSelectedTime} />
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} />
             <RequestDetails note={note} onNoteChange={setNote} />
             <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
             {errorMessage && <p role="alert" className="rounded-[var(--radius-control)] bg-status-danger-surface px-3 py-2 text-sm font-semibold text-status-danger-foreground">{errorMessage}</p>}
-            <button type="submit" disabled={isSubmitting} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : t('autocare.requestSubmit')}</button>
+            <button type="submit" disabled={isSubmitting || isAvailabilityLoading || !effectiveSelectedTime} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : t('autocare.requestSubmit')}</button>
+            {isAvailabilityError ? <p role="alert" className="text-xs font-semibold text-status-danger-foreground">Не удалось загрузить доступность. Обновите дату или попробуйте позже.</p> : null}
         </form>
     )
 }
@@ -59,12 +67,14 @@ type AppointmentPickerProps = {
     selectedDate: string
     customDate: string
     selectedTime: string
+    availability?: AutoCareAvailability
+    isLoading?: boolean
     onDateChange: (date: string) => void
     onCustomDateChange: (date: string) => void
     onTimeChange: (time: string) => void
 }
 
-function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, onDateChange, onCustomDateChange, onTimeChange }: AppointmentPickerProps) {
+function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, availability, isLoading = false, onDateChange, onCustomDateChange, onTimeChange }: AppointmentPickerProps) {
     const { t } = useTranslation()
     const days = appointmentDates.map((id, index) => ({
         id,
@@ -74,6 +84,7 @@ function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, onD
     const selectedDateLabel = customDate
         ? new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long' }).format(new Date(`${customDate}T12:00:00`))
         : days.find((day) => day.id === selectedDate)?.label ?? t('autocare.providerToday')
+    const times = availability?.slots.map((slot) => slot.startTime) ?? []
 
     return (
         <section>
@@ -89,8 +100,9 @@ function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, onD
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestTimeLabel')}</p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
-                        {appointmentTimes.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
+                        {times.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
                     </div>
+                    {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">Проверяем свободные слоты…</p> : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">На эту дату свободных слотов нет.</p> : null}
                     <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" />{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}</p>
                 </div>
             </div>
@@ -118,6 +130,10 @@ function getFutureDate(offset: number) {
     date.setDate(date.getDate() + offset)
 
     return date
+}
+
+function toDateInputValue(date: Date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function RequestDetails({ note, onNoteChange }: { note: string; onNoteChange: (note: string) => void }) {
