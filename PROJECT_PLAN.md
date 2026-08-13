@@ -172,7 +172,7 @@ is now delivered:
 4. [x] Connect `/services/:id/request` to the mutation and show a real success or
    validation state instead of only a local form result.
 5. [x] Cover validation and authorization boundaries with backend schema/unit
-   with backend and frontend tests.
+   tests; frontend build, lint and mock handlers cover the UI contract.
 
 Duplicate-submission idempotency, messages, photo attachments, quotes,
 schedules, bonuses and subscriptions are the following slices and should not
