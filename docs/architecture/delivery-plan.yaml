@@ -2,7 +2,7 @@ schema_version: 1
 document:
   name: AutoCare Hub phase dependency map
   status: proposed
-  updated: 2026-08-12
+  updated: 2026-08-13
   detailed_plan: ../../PROJECT_PLAN.md
 
 global_gates:

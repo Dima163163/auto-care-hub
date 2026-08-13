@@ -43,10 +43,11 @@ export function AdminOwnersPage() {
 
     return (
         <main
-            className="min-h-screen bg-background px-4 py-8 lg:px-8"
+            className="relative z-0 min-h-full bg-background px-4 py-8 lg:px-8"
             aria-busy={isLoading || isFetching}
         >
             <PageHeader
+                eyebrow={t('workspace.admin')}
                 title={t('navigation.adminOwners')}
                 description={t('adminOwners.description')}
             />

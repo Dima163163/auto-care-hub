@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-12
+> Updated: 2026-08-13
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -110,8 +110,8 @@ work.
 | Provider profile `/services/:id` | Public data API and an initial profile page exist. | Bring the screen to the approved provider-profile composition and connect real availability, inquiry and favorite actions. |
 | Service request `/services/:id/request` | Approved request composition is implemented: steps, selected service/provider, visit-time picker, vehicle/contact form, attachment intent and direct-payment summary. | Persist requests and attachments, show provider responses/quotes, and support booking conversion. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration, provider creation and real owner metrics. |
-| Client cabinet | Legacy booking dashboard remains available but contains legacy payment/cabinet assumptions. | Replace with AutoCare requests, bookings, vehicles, favorites, messages and bonuses. |
-| Provider/admin workspaces | Reusable role guards and operational screens exist, but their information architecture is still legacy cabinet-based. | Replace page by page after the customer journeys and new domain contracts are stable. |
+| Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Persist vehicles, conversations, photo quotes and provider bonuses; remove remaining legacy booking/payment copy. |
+| Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Replace location/booking APIs with provider memberships, offerings, inbox, calendar, subscriptions and moderation contracts. |
 | Backend | `/api/v1` discovery/provider profile and initial AutoCare entities, migrations, mock seed data and brand filters are implemented. | Complete provider memberships, schedules, real geospatial search, request/message persistence and authorization tests. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
 
@@ -152,13 +152,14 @@ Current page delivery order:
   discovery contract, filters and brand specializations are implemented; real
   geospatial indexes and schedule availability are pending.
 - [~] Cabinet details -> service-location public profile: `/services/:id`
-  exists and is being aligned with the approved screen; legacy details remain.
+  exists with gallery, offers, amenities, map, reviews and request CTA; visual
+  polish and real availability remain.
 - [ ] Existing booking snapshot -> immutable AutoCare offer/quote snapshot.
 - [ ] Existing cabinet uploads -> provider, location, inquiry, and message media.
 - [ ] Existing generic favorites -> favorite providers/locations/offerings.
 - [~] Legacy mock data, translations, route names, tests, and assets: public
-  AutoCare routes and data exist, but protected/provider/admin routes are still
-  being migrated.
+  AutoCare routes, provider owner profiles, client favorites/bookings/reviews,
+  and shared layouts are migrated; protected admin/location adapters remain.
 
 ### 4.3 Quarantine and later remove
 

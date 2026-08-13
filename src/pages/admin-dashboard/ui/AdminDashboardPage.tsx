@@ -67,7 +67,7 @@ export function AdminDashboardPage() {
     const recentCabinets = cabinets.slice(0, 4)
 
     return (
-        <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
+        <main className="relative z-0 min-h-full bg-background px-4 py-8 lg:px-8">
             <section
                 className="mx-auto max-w-6xl"
                 aria-busy={isLoading || isFetching}

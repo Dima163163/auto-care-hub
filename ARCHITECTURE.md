@@ -4,7 +4,7 @@
 > implemented on `dev`; backend replacement and legacy deletion remain gated by
 > replacement coverage and review
 >
-> Updated: 2026-08-12
+> Updated: 2026-08-13
 >
 > Applies to: web-first product, future iOS/Android clients
 >
@@ -21,7 +21,8 @@ Machine-readable companion maps:
 AutoCare Hub evolves the copied legacy booking repository in place. It is a
 modular monolith, not a greenfield FastAPI/Next.js rewrite.
 
-Current baseline:
+Current baseline (the public AutoCare discovery/profile slices and the first
+owner/client workspace slices are already running on `dev`):
 
 - React 19 + TypeScript + Vite + React Router frontend;
 - Redux Toolkit/RTK Query, MSW, Tailwind and Base UI primitives;
