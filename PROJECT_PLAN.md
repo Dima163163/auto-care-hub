@@ -82,6 +82,9 @@ diff/commit and explicitly approves that action.
   blue action controls; and distinct accessible status colors are defined in
   the shared token layer. The SVG logo now follows the inherited foreground
   color so it remains legible in every shell.
+- [x] The home-page mobile application block is explicitly marked as “In
+  development” with a diagonal translucent status ribbon while preserving the
+  approved app preview and store badges.
 - [x] Design implementation is explicitly authorized in the current thread;
   logo alternatives are proposed for owner selection.
 - [x] Booking/service confirmation is two-sided: provider confirms the work or

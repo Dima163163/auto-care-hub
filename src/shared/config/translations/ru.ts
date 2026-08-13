@@ -929,6 +929,7 @@ export const ruTranslations = {
         reviewsTitle: 'Что говорят наши клиенты',
         allReviews: 'Смотреть все отзывы',
         mobileAppTitle: 'Мобильное приложение',
+        mobileAppComingSoon: 'В разработке',
         mobileAppDescription: 'Все автосервисы в вашем кармане',
         mobileAppSearch: 'Поиск и сравнение',
         mobileAppBooking: 'Онлайн-запись',

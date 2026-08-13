@@ -925,6 +925,7 @@ export const enTranslations = {
         reviewsTitle: 'What our customers say',
         allReviews: 'View all reviews',
         mobileAppTitle: 'Mobile application',
+        mobileAppComingSoon: 'In development',
         mobileAppDescription: 'All auto services in your pocket',
         mobileAppSearch: 'Search and compare',
         mobileAppBooking: 'Online booking',
