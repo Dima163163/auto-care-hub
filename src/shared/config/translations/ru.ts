@@ -880,6 +880,8 @@ export const ruTranslations = {
         providerToday: 'Сегодня',
         providerTomorrow: 'Завтра',
         providerShowMoreTimes: 'Показать ещё время',
+        providerOtherDateTime: 'Другая дата и время',
+        providerCustomDateSelected: 'Выбрано: {{date}}, {{time}}',
         providerContinue: 'Продолжить',
         providerSeatCount: '{{count}} места',
         providerAllRatings: 'Все оценки',

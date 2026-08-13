@@ -876,6 +876,8 @@ export const enTranslations = {
         providerToday: 'Today',
         providerTomorrow: 'Tomorrow',
         providerShowMoreTimes: 'Show more times',
+        providerOtherDateTime: 'Choose another date and time',
+        providerCustomDateSelected: 'Selected: {{date}}, {{time}}',
         providerContinue: 'Continue',
         providerSeatCount: '{{count}} spots',
         providerAllRatings: 'All ratings',
