@@ -1,4 +1,5 @@
 import { ChevronDown, Star } from 'lucide-react'
+import { useState } from 'react'
 
 import type { ProviderReview, ProviderProfile } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -37,5 +38,10 @@ function ReviewCard({ review, index }: ReviewCardProps) {
 }
 
 function ReviewSelect({ options }: { options: readonly SelectOption[] }) {
-    return <label className="relative"><select className="h-8 min-w-25 appearance-none rounded-[var(--radius-control)] border border-border bg-background py-0 pl-3 pr-8 text-[10px] font-semibold text-foreground outline-none transition focus:border-primary" defaultValue={options[0]?.value}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-foreground" /></label>
+    const [isOpen, setIsOpen] = useState(false)
+    const [selectedOption, setSelectedOption] = useState(options[0])
+
+    if (!selectedOption) return null
+
+    return <div className="relative"><button type="button" aria-haspopup="listbox" aria-expanded={isOpen} onClick={() => setIsOpen((value) => !value)} className="inline-flex h-8 min-w-25 items-center justify-between gap-3 rounded-[var(--radius-control)] border border-border bg-background py-0 pl-3 pr-2 text-[10px] font-semibold text-foreground outline-none transition hover:border-primary focus:border-primary"><span>{selectedOption.label}</span><ChevronDown className={`size-3.5 shrink-0 transition ${isOpen ? 'rotate-180' : ''}`} /></button>{isOpen ? <div role="listbox" className="absolute right-0 z-10 mt-1 min-w-full overflow-hidden rounded-[var(--radius-control)] border border-border bg-card py-1 shadow-lg">{options.map((option) => <button key={option.value} role="option" type="button" aria-selected={option.value === selectedOption.value} onClick={() => { setSelectedOption(option); setIsOpen(false) }} className="block w-full whitespace-nowrap px-3 py-2 text-left text-[10px] font-semibold text-foreground hover:bg-secondary">{option.label}</button>)}</div> : null}</div>
 }
