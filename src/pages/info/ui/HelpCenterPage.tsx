@@ -11,8 +11,10 @@ import {
     Search,
     ShieldCheck,
     Star,
+    Store,
     UserRound,
     WalletCards,
+    UsersRound,
     X,
 } from 'lucide-react'
 
@@ -22,12 +24,12 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 
 type AudienceId = 'guest' | 'client' | 'owner'
 type FaqCategory = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'account' | 'safety' | 'travel'
-type TopicId = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'vehicle'
+type TopicId = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'vehicle' | 'owner-services' | 'owner-requests' | 'owner-clients' | 'owner-growth'
 
 const audienceFaqCategories: Record<AudienceId, readonly FaqCategory[]> = {
     guest: ['search', 'pricing', 'reviews', 'safety', 'travel'],
     client: ['search', 'booking', 'pricing', 'messages', 'reviews', 'account', 'safety', 'travel'],
-    owner: ['pricing', 'messages', 'reviews', 'account', 'safety'],
+    owner: ['search', 'pricing', 'messages', 'reviews', 'safety'],
 }
 
 function isAudienceId(value: string | null): value is AudienceId {
@@ -69,6 +71,21 @@ const faqEntries: Array<{ category: FaqCategory; questionKey: TranslationKey; an
         answerKey: `info.help.faq${index + 9}Answer` as TranslationKey,
     })),
 ]
+
+const audienceFaqQuestionKeys: Record<AudienceId, readonly TranslationKey[]> = {
+    guest: [
+        'info.help.faq1Question', 'info.help.faq2Question', 'info.help.faq3Question',
+        'info.help.faq9Question', 'info.help.faq10Question', 'info.help.faq11Question',
+        'info.help.faq30Question', 'info.help.faq31Question', 'info.help.faq32Question',
+    ],
+    client: faqEntries.map(({ questionKey }) => questionKey),
+    owner: [
+        'info.help.faq10Question', 'info.help.faq16Question', 'info.help.faq17Question',
+        'info.help.faq18Question', 'info.help.faq19Question', 'info.help.faq20Question',
+        'info.help.faq22Question', 'info.help.faq23Question', 'info.help.faq27Question',
+        'info.help.faq28Question', 'info.help.faq29Question',
+    ],
+}
 
 export function HelpCenterPage() {
     const { t } = useTranslation()
@@ -120,70 +137,29 @@ export function HelpCenterPage() {
         title: string
         description: string
         count: string
-        audiences: readonly AudienceId[]
         to: string
-    }> = [
-        {
-            id: 'search',
-            icon: Search,
-            title: t('info.help.topicFindSpaceTitle'),
-            description: t('info.help.topicFindSpaceDescription'),
-            count: t('info.help.topicFindSpaceCount'),
-            audiences: ['guest', 'client'],
-            to: ROUTES.serviceDiscovery,
-        },
-        {
-            id: 'booking',
-            icon: CalendarDays,
-            title: t('info.help.topicBookingTitle'),
-            description: t('info.help.topicBookingDescription'),
-            count: t('info.help.topicBookingCount'),
-            audiences: ['guest', 'client'],
-            to: ROUTES.serviceDiscovery,
-        },
-        {
-            id: 'pricing',
-            icon: WalletCards,
-            title: t('info.help.topicCancellationTitle'),
-            description: t('info.help.topicCancellationDescription'),
-            count: t('info.help.topicCancellationCount'),
-            audiences: ['guest', 'client', 'owner'],
-            to: helpTopicPath(activeAudience, 'pricing'),
-        },
-        {
-            id: 'messages',
-            icon: MessageCircle,
-            title: t('info.help.topicManageTitle'),
-            description: t('info.help.topicManageDescription'),
-            count: t('info.help.topicManageCount'),
-            audiences: ['client', 'owner'],
-            to: helpTopicPath(activeAudience, 'messages'),
-        },
-        {
-            id: 'reviews',
-            icon: Star,
-            title: t('info.help.topicAccountTitle'),
-            description: t('info.help.topicAccountDescription'),
-            count: t('info.help.topicAccountCount'),
-            audiences: ['guest', 'client', 'owner'],
-            to: helpTopicPath(activeAudience, 'reviews'),
-        },
-        {
-            id: 'vehicle',
-            icon: CarFront,
-            title: t('info.help.topicVehicleTitle'),
-            description: t('info.help.topicVehicleDescription'),
-            count: t('info.help.topicVehicleCount'),
-            audiences: ['client'],
-            to: ROUTES.profile,
-        },
-    ]
+    }> = activeAudience === 'owner'
+        ? [
+            { id: 'owner-services', icon: Store, title: t('ownerDashboard.activeServices'), description: t('ownerDashboard.activeServicesDescription'), count: t('info.help.topicManageCount'), to: ROUTES.ownerServices },
+            { id: 'owner-requests', icon: CalendarDays, title: t('ownerDashboard.upcomingBookings'), description: t('ownerDashboard.upcomingBookingsDescription'), count: t('info.help.topicBookingCount'), to: ROUTES.ownerBookings },
+            { id: 'owner-clients', icon: UsersRound, title: t('ownerDashboard.clientListTitle'), description: t('ownerDashboard.clientListDescription'), count: t('info.help.topicAccountCount'), to: ROUTES.ownerClients },
+            { id: 'messages', icon: MessageCircle, title: t('ownerDashboard.growth.messagesTitle'), description: t('ownerDashboard.growth.messagesText'), count: t('info.help.topicManageCount'), to: ROUTES.ownerBookings },
+            { id: 'owner-growth', icon: WalletCards, title: t('ownerDashboard.growth.subscriptionTitle'), description: t('ownerDashboard.growth.subscriptionText'), count: t('info.help.topicCancellationCount'), to: ROUTES.pricing },
+        ]
+        : [
+            { id: 'search', icon: Search, title: t('info.help.topicFindSpaceTitle'), description: t('info.help.topicFindSpaceDescription'), count: t('info.help.topicFindSpaceCount'), to: ROUTES.serviceDiscovery },
+            { id: 'booking', icon: CalendarDays, title: t('info.help.topicBookingTitle'), description: t('info.help.topicBookingDescription'), count: t('info.help.topicBookingCount'), to: ROUTES.serviceDiscovery },
+            { id: 'pricing', icon: WalletCards, title: t('info.help.topicCancellationTitle'), description: t('info.help.topicCancellationDescription'), count: t('info.help.topicCancellationCount'), to: helpTopicPath(activeAudience, 'pricing') },
+            ...(activeAudience === 'client' ? [{ id: 'messages' as const, icon: MessageCircle, title: t('info.help.topicManageTitle'), description: t('info.help.topicManageDescription'), count: t('info.help.topicManageCount'), to: helpTopicPath(activeAudience, 'messages') }] : []),
+            { id: 'reviews', icon: Star, title: t('info.help.topicAccountTitle'), description: t('info.help.topicAccountDescription'), count: t('info.help.topicAccountCount'), to: helpTopicPath(activeAudience, 'reviews') },
+            ...(activeAudience === 'client' ? [{ id: 'vehicle' as const, icon: CarFront, title: t('info.help.topicVehicleTitle'), description: t('info.help.topicVehicleDescription'), count: t('info.help.topicVehicleCount'), to: ROUTES.profile }] : []),
+        ]
 
-    const filteredTopics = topicCards.filter(({ title, description, audiences }) =>
-        audiences.includes(activeAudience) &&
-        (!normalizedSearch || [title, description].join(' ').toLocaleLowerCase().includes(normalizedSearch)),
+    const filteredTopics = topicCards.filter(({ title, description }) =>
+        !normalizedSearch || [title, description].join(' ').toLocaleLowerCase().includes(normalizedSearch),
     )
     const filteredFaqs = faqEntries.filter(({ category, questionKey, answerKey }) =>
+        audienceFaqQuestionKeys[activeAudience].includes(questionKey) &&
         audienceFaqCategories[activeAudience].includes(category) &&
         (activeFaqCategory === 'all' || category === activeFaqCategory) &&
         (!normalizedSearch || [t(questionKey), t(answerKey)].join(' ').toLocaleLowerCase().includes(normalizedSearch)),
@@ -192,10 +168,33 @@ export function HelpCenterPage() {
 
     const selectedAudience = audiences.find(({ id }) => id === activeAudience) ?? audiences[0]
     const audienceGuide = activeAudience === 'owner'
-        ? { title: t('info.help.ownerTitle'), description: t('info.help.ownerDescription'), action: t('info.help.ownerAction'), to: ROUTES.ownerDashboard }
+        ? {
+            eyebrow: t('info.help.audienceOwnerTitle'),
+            title: t('info.help.ownerTitle'),
+            description: t('info.help.ownerDescription'),
+            action: t('info.help.ownerAction'),
+            to: ROUTES.ownerDashboard,
+            sectionDescription: t('info.help.ownerDescription'),
+        }
         : activeAudience === 'client'
-            ? { title: t('info.help.clientTitle'), description: t('info.help.clientDescription'), action: t('info.help.clientAction'), to: ROUTES.profileBookings }
-            : { title: t('info.help.audienceGuestTitle'), description: t('info.help.audienceGuestDescription'), action: t('info.openCatalog'), to: ROUTES.serviceDiscovery }
+            ? {
+                eyebrow: t('info.help.audienceClientTitle'),
+                title: t('info.help.clientTitle'),
+                description: t('info.help.clientDescription'),
+                action: t('info.help.clientAction'),
+                to: ROUTES.profileBookings,
+                sectionDescription: t('info.help.clientDescription'),
+            }
+            : {
+                eyebrow: t('info.help.audienceGuestTitle'),
+                title: t('info.help.title'),
+                description: t('info.help.audienceGuestDescription'),
+                action: t('info.openCatalog'),
+                to: ROUTES.serviceDiscovery,
+                sectionDescription: t('info.help.audienceGuestDescription'),
+            }
+    const audienceSectionTitle = `${selectedAudience.title}: ${t('info.help.topicBrowseTitle')}`
+    const audienceFaqTitle = `${selectedAudience.title}: ${t('info.help.faqTitle')}`
 
     return (
         <main className="relative z-0 min-h-full bg-background text-foreground">
@@ -203,13 +202,13 @@ export function HelpCenterPage() {
                 <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1fr_1fr]">
                     <div className="relative z-10 px-5 py-12 md:px-12 md:py-16 lg:px-24 lg:py-8">
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
-                            {t('info.help.eyebrow')}
+                            {audienceGuide.eyebrow} · {t('info.help.eyebrow')}
                         </p>
-                        <h1 className="mt-3 max-w-xl text-4xl font-black leading-tight tracking-tight md:text-5xl">
-                            {t('info.help.title')}
+                        <h1 className="mt-3 max-w-xl text-4xl font-black leading-tight tracking-tight md:text-5xl" aria-live="polite">
+                            {audienceGuide.title}
                         </h1>
-                        <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted-foreground md:text-lg">
-                            {t('info.help.description')}
+                        <p className="mt-4 max-w-xl text-base font-medium leading-7 text-muted-foreground md:text-lg" aria-live="polite">
+                            {audienceGuide.description}
                         </p>
 
                         <div className="mt-7 max-w-2xl">
@@ -281,7 +280,7 @@ export function HelpCenterPage() {
                     <div id="help-audience-content" className="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card px-4 py-3 shadow-sm" role="status">
                         <div className="min-w-0">
                             <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">{selectedAudience.title}</p>
-                            <p className="mt-1 text-sm font-medium text-muted-foreground">{audienceGuide.description}</p>
+                            <p className="mt-1 text-sm font-medium text-muted-foreground">{audienceGuide.sectionDescription}</p>
                         </div>
                         <Link to={audienceGuide.to} className="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-black text-primary-foreground transition-colors hover:bg-primary/90">
                             {audienceGuide.action}
@@ -293,7 +292,8 @@ export function HelpCenterPage() {
 
             <section className="px-5 pb-12 pt-20 md:px-12 md:pb-16 md:pt-24">
                 <div className="mx-auto max-w-6xl">
-                    <h2 className="text-xl font-black tracking-tight">{t('info.help.topicBrowseTitle')}</h2>
+                    <h2 className="text-xl font-black tracking-tight">{audienceSectionTitle}</h2>
+                    <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">{audienceGuide.sectionDescription}</p>
                     {filteredTopics.length > 0 ? (
                         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                             {filteredTopics.map(({ id, icon: Icon, title, description, count, to }) => (
@@ -317,7 +317,7 @@ export function HelpCenterPage() {
                     ) : null}
 
                     <div className="mt-9">
-                        <h2 className="text-xl font-black tracking-tight">{t('info.help.faqTitle')}</h2>
+                        <h2 className="text-xl font-black tracking-tight">{audienceFaqTitle}</h2>
                         <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t('info.help.faqCategoryLabel')}>
                             <button
                                 type="button"
