@@ -1781,6 +1781,32 @@ export const handlers = [
         return HttpResponse.json(response)
     }),
 
+    http.post('/api/v1/service-requests/:requestId/quote/accept', ({ params }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
+        item.status = 'accepted'
+        item.clientConfirmedAt = new Date().toISOString()
+        item.updatedAt = new Date().toISOString()
+        const { clientId: _clientId, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/quote/decline', ({ params }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
+        item.status = 'declined'
+        item.clientConfirmedAt = new Date().toISOString()
+        item.updatedAt = new Date().toISOString()
+        const { clientId: _clientId, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
     http.get('/api/owner/service-requests', () => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -1797,6 +1823,24 @@ export const handlers = [
         item.providerConfirmedAt ??= new Date().toISOString()
         item.status = 'accepted'
         item.updatedAt = new Date().toISOString()
+        const { clientId: _clientId, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.post('/api/owner/service-requests/:requestId/quote', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (item.status === 'accepted' || item.status === 'declined' || item.status === 'closed') return HttpResponse.json({ message: 'This service request cannot receive a new estimate.' }, { status: 409 })
+        const body = await request.json() as { amountMinor?: number; currencyCode?: string; note?: string | null }
+        const amountMinor = body.amountMinor
+        const currencyCode = body.currencyCode
+        if (typeof amountMinor !== 'number' || !Number.isInteger(amountMinor) || amountMinor <= 0 || !/^[A-Z]{3}$/.test(currencyCode ?? '')) return invalidMockBodyResponse()
+        const now = new Date().toISOString()
+        item.quote = { amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now }
+        item.status = 'estimate_shared'
+        item.updatedAt = now
         const { clientId: _clientId, ...response } = item
         return HttpResponse.json(response)
     }),
