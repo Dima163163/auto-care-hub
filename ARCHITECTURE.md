@@ -47,6 +47,22 @@ data. Web and future mobile clients are API consumers. No client directly
 accesses PostgreSQL or reconstructs authorization, price, entitlement, booking,
 quote or bonus rules.
 
+### Deployment capability profiles
+
+Every deployment receives a validated `VITE_DEPLOYMENT_MARKET` profile at
+build/deploy time. The initial values are `ru` and `global`; the registry can
+later add country or market profiles without branching UI components. The
+profile selects market-specific capabilities such as visible OAuth providers,
+payment methods, legal links, currencies and feature copy. For example, the
+`ru` profile hides Google sign-in when that provider is not approved, while
+`global` exposes all providers enabled for the deployment.
+
+This variable is public frontend configuration, not a secret and not an
+authorization boundary. The API must publish or validate the effective
+capability allow-list and reject unsupported OAuth/provider actions server-side.
+Missing or unknown profiles fail closed to the restrictive policy, surface a
+startup/configuration warning, and are covered by deployment smoke tests.
+
 ## 2. Non-negotiable rules
 
 1. Use a versioned API (`/api/v1`) for all new AutoCare endpoints.

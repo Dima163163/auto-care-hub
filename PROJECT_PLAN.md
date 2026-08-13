@@ -62,6 +62,13 @@ diff/commit and explicitly approves that action.
 - [x] Interface locale is independent from service location; Russian, Spanish,
   Romanian and English are the first maintained packs with an extensible
   world-locale model.
+- [ ] Deployment capabilities are selected by one environment profile,
+  `VITE_DEPLOYMENT_MARKET` (`ru`, `global`, and future market profiles). The
+  profile controls which authentication providers and market-specific UI
+  actions are shown: for example, `ru` hides Google sign-in while `global`
+  exposes all providers approved for that deployment. The backend remains the
+  source of truth and must enforce the same provider allow-list; hiding a
+  button is not a security control.
 - [x] The five supplied screens are the approved design baseline; improvements
   may be proposed during design work.
 - [x] Design implementation is explicitly authorized in the current thread;
@@ -116,6 +123,7 @@ work.
 | Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Persist vehicles, conversations, photo quotes and provider bonuses; remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Replace location/booking APIs with provider memberships, offerings, inbox, calendar, subscriptions and moderation contracts. |
 | Backend | `/api/v1` discovery/provider profile and initial AutoCare entities, migrations, mock seed data and brand filters are implemented. | Complete provider memberships, schedules, real geospatial search, request/message persistence and authorization tests. |
+| Deployment configuration | `.env.example` documents a market capability profile for regional auth/UI differences. | Add validated frontend config, backend capability negotiation and deployment-specific smoke tests before enabling each profile. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
 
 Current page delivery order:
@@ -310,6 +318,11 @@ Goal: resolve decisions that would otherwise force schema/API redesign.
 - [x] Select launch countries/regions and the data-driven market/locale model.
 - [x] Select priority launch language packs; keep currency/timezone provider- and
   market-scoped.
+- [ ] Define and approve the deployment capability matrix for
+  `VITE_DEPLOYMENT_MARKET`: allowed OAuth providers, payment methods, legal
+  links, currencies and market-specific features for `ru`, `global` and future
+  profiles. Unknown or missing values must fail closed to the restrictive
+  profile and emit a startup/configuration warning.
 - [ ] Select P0 provider categories and 20–40 P0 service definitions.
 - [ ] For each P0 service, define comparable attributes and price rules.
 - [ ] Decide exact booking modes per service class.
