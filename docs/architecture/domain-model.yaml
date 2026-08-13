@@ -148,6 +148,8 @@ contexts:
       - Review
       - ReviewReport
       - RatingAggregate
+      - ProviderTrustSnapshot
+      - TrustBadge
     depends_on:
       - bookings
       - provider_network

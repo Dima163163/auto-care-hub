@@ -258,6 +258,17 @@ Responsibilities:
 - edit/reply/report/moderation rules;
 - anti-abuse and public projections.
 
+The reviews context also produces a versioned `ProviderTrustSnapshot` for each
+service location. It records the computed score, badge state, policy version,
+input counters, reason codes, `computed_at` and `valid_until`. Inputs are limited
+to attributable platform signals: completed interactions, sample-size-adjusted
+verified ratings, complaint/dispute and cancellation rates, response and quote
+reliability, price consistency, profile verification and moderation state.
+Subscriptions, promo codes and paid placement are never score inputs. Badge
+eligibility is threshold-based, expires on schedule, and can be suspended with
+an auditable reason. Public cards and map markers expose the badge plus a
+short explanation of the current policy version.
+
 ### 4.9 Provider bonuses
 
 Responsibilities:
@@ -610,6 +621,14 @@ approved inputs such as:
 - next availability;
 - provider response/booking reliability;
 - data freshness.
+
+The trust score is one bounded quality input among comparable offers; it may
+improve ordering when service, vehicle and location relevance are otherwise
+comparable, but cannot make an incompatible or materially worse match appear
+first. Ranking explanations must identify the main factors. Quality snapshots
+are recomputed from durable events and retain an audit trail so badge and rank
+changes can be investigated. A sponsored result, if introduced, is a separate
+labelled slot and never masquerades as organic trust.
 
 Any sponsored placement is a separate labeled product. Subscription plan alone
 must not modify organic ranking.

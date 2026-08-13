@@ -1,5 +1,6 @@
 import {
     ArrowRight,
+    BadgeCheck,
     CarFront,
     CheckCircle2,
     Globe2,
@@ -8,6 +9,7 @@ import {
     Search,
     ShieldCheck,
     Store,
+    TrendingUp,
 } from 'lucide-react'
 import { Link } from 'react-router'
 
@@ -34,6 +36,12 @@ const principles: Array<{ icon: Icon; titleKey: TranslationKey; textKey: Transla
     { icon: ShieldCheck, titleKey: 'marketing.about.principle1Title', textKey: 'marketing.about.principle1Text' },
     { icon: Languages, titleKey: 'marketing.about.principle2Title', textKey: 'marketing.about.principle2Text' },
     { icon: MessageSquareText, titleKey: 'marketing.about.principle3Title', textKey: 'marketing.about.principle3Text' },
+]
+
+const trustSignals: Array<{ icon: Icon; titleKey: TranslationKey; textKey: TranslationKey }> = [
+    { icon: TrendingUp, titleKey: 'marketing.about.trustGoodProvidersTitle', textKey: 'marketing.about.trustGoodProvidersText' },
+    { icon: ShieldCheck, titleKey: 'marketing.about.trustClientSafetyTitle', textKey: 'marketing.about.trustClientSafetyText' },
+    { icon: BadgeCheck, titleKey: 'marketing.about.trustBadgeTitle', textKey: 'marketing.about.trustBadgeText' },
 ]
 
 export function AboutPage() {
@@ -69,6 +77,19 @@ export function AboutPage() {
                             </article>
                         ))}
                     </div>
+                </div>
+            </section>
+
+            <section className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-14 sm:py-20">
+                <SectionHeading eyebrow={t('marketing.about.trustEyebrow')} title={t('marketing.about.trustTitle')} description={t('marketing.about.trustDescription')} />
+                <div className="mt-8 grid gap-4 lg:grid-cols-3">
+                    {trustSignals.map(({ icon: Icon, titleKey, textKey }) => (
+                        <article key={titleKey} className="rounded-[var(--radius-panel)] border border-primary/15 bg-primary/[0.04] p-6">
+                            <span className="flex size-11 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Icon className="size-5" /></span>
+                            <h2 className="mt-5 text-lg font-black">{t(titleKey)}</h2>
+                            <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">{t(textKey)}</p>
+                        </article>
+                    ))}
                 </div>
             </section>
 

@@ -45,6 +45,9 @@ diff/commit and explicitly approves that action.
   stable and the shared API is ready.
 - [x] Customers compare equivalent offers by price, rating, reviews, distance,
   included work, warranty, and availability.
+- [ ] The marketplace needs a transparent trust layer: reliable providers can
+  earn a quality badge and additional organic visibility, while clients get
+  enough verified signals to avoid repeatedly poor or dishonest services.
 - [x] Providers can communicate with customers about a specific service.
 - [x] Customers can attach photos of damage or the vehicle to an inquiry.
 - [x] Providers can respond with a detailed estimate/quote.
@@ -431,6 +434,9 @@ Goal: deliver the core marketplace value in the browser.
 - [ ] Add explicit labels for `FIXED`, `FROM`, `RANGE` and `QUOTE_REQUIRED`.
 - [ ] Define deterministic recommended-sort inputs and prevent paid plan status
   from silently changing organic ranking.
+- [ ] Define the provider trust score and “Надёжный сервис” badge policy before
+  production ranking is enabled. The score must be explainable, versioned and
+  recalculated from completed platform interactions rather than manual awards.
 - [ ] Implement comparison for equivalent `ServiceDefinition` results only.
 - [~] Implement provider/location profiles, galleries, hours, contacts,
   offerings, amenities, verified reviews and policies. The data API and base
@@ -446,6 +452,41 @@ Exit gate:
 
 - A user can find and honestly compare the same service across multiple places.
 
+#### Trust score, quality badges and organic visibility
+
+This is a product and backend requirement, not decorative UI. The first version
+must be conservative: no provider receives a quality badge or ranking boost
+because of a subscription, promo code, payment, self-reported review count or
+an admin override without an auditable reason.
+
+- [ ] Define a versioned `ProviderTrustSnapshot` for each service location with
+  `score`, `badge`, `computed_at`, `valid_until`, input counters and reason
+  codes. Keep an audit trail for every recalculation and badge suspension.
+- [ ] Use only attributable signals: completed/confirmed requests, one review
+  per eligible completed visit, Bayesian/sample-size-adjusted rating, recent
+  rating trend, complaint/dispute and refund rate, cancellation/no-show rate,
+  response time, quote-to-final-price consistency, profile/verification
+  completeness, and active moderation/policy violations.
+- [ ] Add anti-gaming controls: verified-booking review eligibility, duplicate
+  and coordinated-review detection, recency decay, anomaly flags, moderation
+  queue, provider appeal flow and immutable moderation/audit events.
+- [ ] Define “Надёжный сервис” eligibility as a documented threshold policy:
+  verified provider/location, minimum completed interactions and review sample,
+  rating confidence above the threshold, low complaint/dispute and no-show
+  rates, acceptable price accuracy, and no unresolved serious violation. The
+  badge expires or is suspended when the policy is no longer met.
+- [ ] Expose the badge and a short “why this service is trusted” explanation on
+  result cards, provider pages and map markers. Include the policy version and
+  last recalculation date in an accessible details view.
+- [ ] Keep organic ranking deterministic and observable. Combine service and
+  vehicle relevance, distance, availability, comparable price completeness,
+  response/booking reliability and the trust score; trust can improve ordering
+  among comparable offers but cannot override an incompatible service or hide a
+  materially worse match. Any sponsored placement is separate and labelled.
+- [ ] Add monitoring for badge rate, complaint rate, review anomalies, ranking
+  changes, provider appeals and false-positive/false-negative quality outcomes.
+  Revisit thresholds using pilot data before broad rollout.
+
 ### Phase 5 — Booking, dashboards and verified reviews
 
 Goal: replace the cabinet booking flow with automotive booking workflows.
@@ -457,7 +498,9 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
 - [ ] Implement cancel/reschedule/no-show policies.
 - [ ] Update customer bookings dashboard and provider calendar/work queue.
 - [ ] Connect notifications and transactional outbox events.
-- [ ] Implement verified review eligibility and rating aggregation.
+- [ ] Implement verified review eligibility, rating aggregation and the trust
+  snapshot inputs described in the “Trust score, quality badges and organic
+  visibility” policy.
 - [ ] Add concurrency, timezone, authorization and E2E tests.
 
 Exit gate:
