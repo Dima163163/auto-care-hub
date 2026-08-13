@@ -16,6 +16,7 @@ import { QueryRefreshError, RetryButton } from '@/shared/ui/query-refresh-error'
 import { StateCard } from '@/shared/ui/state-card'
 
 import { getAutoCareRequestPresentation } from '../lib/getAutoCareRequestPresentation'
+import { AutoCareRequestsPanel } from './AutoCareRequestsPanel'
 
 type RequestTab = 'upcoming' | 'history' | 'cancelled'
 
@@ -75,6 +76,7 @@ export function ProfileBookingsPage() {
                     <ClientAccountPanel />
                     <section aria-busy={isFetching} className="min-w-0">
                         <h1 className="text-3xl font-black tracking-tight text-foreground">{t('autocare.clientRequestsTitle')}</h1>
+                        <AutoCareRequestsPanel />
                         <RequestTabs activeTab={activeTab} counts={{ upcoming: overview.upcomingBookingsCount, history: overview.completedBookingsCount, cancelled: overview.cancelledBookingsCount }} onChange={setActiveTab} />
                         <BookingList bookings={bookingsByTab[activeTab]} tab={activeTab} onCancel={setBookingIdToCancel} />
                     </section>

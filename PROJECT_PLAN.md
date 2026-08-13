@@ -124,7 +124,7 @@ work.
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
 | Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications and API-backed availability slots. | Add timezone-aware schedules, reminder delivery and overlap constraints before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
-| Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Connect request/message APIs, persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
+| Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages and preliminary estimate visibility; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Add quote accept/decline actions in the cabinet, persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; the AutoCare request inbox now supports scoped requests, conversations, confirmations and preliminary estimates; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
 | Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
@@ -416,8 +416,9 @@ Required design work:
   visual system; initial implementations exist.
 - [x] Implement the approved service-request screen and the approved
   owner-acquisition landing page.
-- [ ] Add missing customer mocks: comparison table, vehicle garage,
-  inquiry/chat, attachment viewer, quote acceptance, bonuses and reviews.
+- [~] Add missing customer mocks: service-request conversation and estimate
+  visibility are connected; comparison table, vehicle garage, attachment
+  viewer, quote acceptance, bonuses and reviews remain.
 - [~] Add missing provider mocks: the request inbox, conversation, confirmation
   and quote composer are now connected; onboarding, location/offer editor,
   calendar, bookings, bonus program, analytics and team remain.
