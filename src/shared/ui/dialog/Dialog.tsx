@@ -9,6 +9,7 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 
 import { cn } from '@/lib/utils'
 
@@ -105,9 +106,9 @@ export function Dialog({
         }
     }
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[2000] flex items-center justify-center bg-background/80 px-4 py-4 backdrop-blur-sm sm:py-6"
             onKeyDown={handleKeyDown}
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget) {
@@ -130,7 +131,8 @@ export function Dialog({
                     {children}
                 </DialogContext.Provider>
             </div>
-        </div>
+        </div>,
+        document.body,
     )
 }
 
