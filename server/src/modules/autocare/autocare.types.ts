@@ -1,4 +1,5 @@
 import type { AutomotivePriceType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import type { ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 
 export type AutoCareMarketResponse = {
     id: string
@@ -112,4 +113,39 @@ export type OwnerAutoCareProviderInput = {
     isMultibrand: boolean
     brandSpecializations: string[]
     amenityIds: string[]
+}
+
+export type AutoCareRequestSnapshot = Record<string, string | number | null>
+
+export type CreateAutoCareServiceRequestInput = {
+    providerId: string
+    locationId: string
+    offeringId: string
+    preferredAt: string
+    vehicleSnapshot?: AutoCareRequestSnapshot | null
+    contactSnapshot: AutoCareRequestSnapshot
+    note?: string | null
+}
+
+export type AutoCareServiceRequestResponse = {
+    id: string
+    providerId: string
+    providerName: string
+    locationId: string
+    address: string
+    definitionId: string
+    serviceSlug: string
+    serviceLabels: Record<string, string>
+    offeringId: string | null
+    priceFromMinor: number | null
+    currencyCode: string | null
+    preferredAt: string | null
+    vehicleSnapshot: AutoCareRequestSnapshot | null
+    contactSnapshot: AutoCareRequestSnapshot | null
+    note: string | null
+    status: ServiceRequestStatus
+    clientConfirmedAt: string | null
+    providerConfirmedAt: string | null
+    createdAt: string
+    updatedAt: string
 }

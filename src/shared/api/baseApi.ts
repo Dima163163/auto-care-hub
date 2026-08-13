@@ -45,6 +45,7 @@ const CSRF_PROTECTED_PATHS = new Set([
     '/auth/sessions/revoke-all',
     '/owner/action-center/events',
     '/owner/autocare-providers',
+    '/v1/service-requests',
     '/client/experiment-events',
     '/users/me/deletion-request',
 ])
@@ -101,10 +102,12 @@ function needsCsrfToken(args: string | FetchArgs) {
 
     const isOAuthFlowStart =
         args.url.startsWith('/auth/oauth/') && args.url.endsWith('/start')
+    const isServiceRequestTransition =
+        args.url.startsWith('/v1/service-requests/') || args.url.startsWith('/owner/service-requests/')
 
     return (
         args.method?.toUpperCase() === 'POST' &&
-        (CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart)
+        (CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition)
     )
 }
 
@@ -340,6 +343,7 @@ export const baseApi = createApi({
         'AutoCareMarket',
         'AutoCareServiceDefinition',
         'AutoCareProvider',
+        'AutoCareServiceRequest',
     ],
     endpoints: () => ({}),
 })

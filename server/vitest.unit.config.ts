@@ -157,6 +157,7 @@ export default defineConfig({
       'src/modules/users/data-export-cursor.test.ts',
       'src/modules/users/data-export-integrity.test.ts',
       'src/modules/autocare/autocare-mock-catalog.test.ts',
+      'src/modules/autocare/autocare-request-schema.test.ts',
       'src/modules/users/users.routes.test.ts',
     ],
   },

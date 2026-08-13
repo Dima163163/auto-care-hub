@@ -80,6 +80,48 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
 
+export type AutoCareServiceRequest = {
+    id: string
+    providerId: string
+    providerName: string
+    locationId: string
+    address: string
+    definitionId: string
+    serviceSlug: string
+    serviceLabels: Record<string, string>
+    offeringId: string | null
+    priceFromMinor: number | null
+    currencyCode: string | null
+    preferredAt: string | null
+    vehicleSnapshot: Record<string, string | number | null> | null
+    contactSnapshot: Record<string, string | number | null> | null
+    note: string | null
+    status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'closed'
+    clientConfirmedAt: string | null
+    providerConfirmedAt: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export type CreateAutoCareServiceRequestInput = {
+    providerId: string
+    locationId: string
+    offeringId: string
+    preferredAt: string
+    vehicleSnapshot?: {
+        make: string
+        model: string
+        year: number
+        mileage?: number
+    } | null
+    contactSnapshot: {
+        name: string
+        email: string
+        phone: string
+    }
+    note?: string | null
+}
+
 export type CreateOwnerAutoCareProviderInput = {
     name: string
     description?: string
@@ -149,6 +191,34 @@ export const autoCareApi = baseApi.injectEndpoints({
                 { type: 'AutoCareProvider', id: 'LIST' },
             ],
         }),
+        createAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, CreateAutoCareServiceRequestInput>({
+            query: (body) => ({ url: '/v1/service-requests', method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
+        getMyAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({
+            query: () => '/v1/service-requests/my',
+            providesTags: (result) => result
+                ? [...result.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'LIST' }]
+                : [{ type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
+        getAutoCareServiceRequest: build.query<AutoCareServiceRequest, string>({
+            query: (requestId) => `/v1/service-requests/${requestId}`,
+            providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
+        confirmAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
+            query: (requestId) => ({ url: `/v1/service-requests/${requestId}/confirm`, method: 'POST' }),
+            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
+        getOwnerAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({
+            query: () => '/owner/service-requests',
+            providesTags: (result) => result
+                ? [...result.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'OWNER_LIST' }]
+                : [{ type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
+        }),
+        confirmOwnerAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
+            query: (requestId) => ({ url: `/owner/service-requests/${requestId}/confirm`, method: 'POST' }),
+            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
+        }),
     }),
 })
 
@@ -159,4 +229,10 @@ export const {
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareServiceDefinitionsQuery,
     useCreateOwnerAutoCareProviderMutation,
+    useCreateAutoCareServiceRequestMutation,
+    useGetMyAutoCareServiceRequestsQuery,
+    useGetAutoCareServiceRequestQuery,
+    useConfirmAutoCareServiceRequestMutation,
+    useGetOwnerAutoCareServiceRequestsQuery,
+    useConfirmOwnerAutoCareServiceRequestMutation,
 } = autoCareApi

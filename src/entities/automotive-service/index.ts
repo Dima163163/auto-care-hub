@@ -28,6 +28,12 @@ export {
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareServiceDefinitionsQuery,
     useCreateOwnerAutoCareProviderMutation,
+    useCreateAutoCareServiceRequestMutation,
+    useGetMyAutoCareServiceRequestsQuery,
+    useGetAutoCareServiceRequestQuery,
+    useConfirmAutoCareServiceRequestMutation,
+    useGetOwnerAutoCareServiceRequestsQuery,
+    useConfirmOwnerAutoCareServiceRequestMutation,
 } from './api/autocareApi'
 export type {
     AutoCareApiDiscoveryItem,
@@ -39,6 +45,8 @@ export type {
     AutoCareApiServiceDefinition,
     AutoCareDiscoveryQuery,
     CreateOwnerAutoCareProviderInput,
+    AutoCareServiceRequest,
+    CreateAutoCareServiceRequestInput,
 } from './api/autocareApi'
 export { mapAutoCareDiscoveryItem, mapAutoCareProviderProfile } from './lib/autocareApiMappers'
 export { supportsVehicleBrand } from './lib/brandSpecialization'

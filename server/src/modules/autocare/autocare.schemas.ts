@@ -31,6 +31,33 @@ export const autoCareProviderOffersQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
 })
 
+export const autoCareServiceRequestParamsSchema = z.object({
+    requestId: z.string().uuid(),
+})
+
+const requestVehicleSnapshotSchema = z.object({
+    make: z.string().trim().min(1).max(80),
+    model: z.string().trim().min(1).max(80),
+    year: z.coerce.number().int().min(1886).max(new Date().getFullYear() + 1),
+    mileage: z.coerce.number().int().nonnegative().max(2_000_000).optional(),
+}).strict()
+
+const requestContactSnapshotSchema = z.object({
+    name: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().max(320),
+    phone: z.string().trim().min(5).max(32),
+}).strict()
+
+export const createAutoCareServiceRequestSchema = z.object({
+    providerId: z.string().uuid(),
+    locationId: z.string().uuid(),
+    offeringId: z.string().uuid(),
+    preferredAt: z.string().datetime({ offset: true }),
+    vehicleSnapshot: requestVehicleSnapshotSchema.nullable().optional(),
+    contactSnapshot: requestContactSnapshotSchema,
+    note: z.string().trim().max(4_000).nullable().optional(),
+})
+
 const automotiveAmenityIds = ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment', 'electric_charging', 'pickup_delivery'] as const
 
 export const ownerAutoCareProviderSchema = z.object({

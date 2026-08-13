@@ -172,6 +172,28 @@ export function getOpenApiDocument() {
             '/v1/providers/{providerId}/offers': {
                 get: { operationId: 'listAutoCareProviderOffers', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Active provider offers for comparison and request entry.' } } },
             },
+            '/v1/service-requests': {
+                post: {
+                    operationId: 'createAutoCareServiceRequest',
+                    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/AutoCareServiceRequestCreate' } } } },
+                    responses: { '201': { description: 'Created client service request.' } },
+                },
+            },
+            '/v1/service-requests/my': {
+                get: { operationId: 'listMyAutoCareServiceRequests', responses: { '200': { description: 'Authenticated client service requests.' } } },
+            },
+            '/v1/service-requests/{requestId}': {
+                get: { operationId: 'getAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Service request visible to its client or provider owner.' } } },
+            },
+            '/v1/service-requests/{requestId}/confirm': {
+                post: { operationId: 'confirmAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client confirmation transition.' } } },
+            },
+            '/owner/service-requests': {
+                get: { operationId: 'listOwnerAutoCareServiceRequests', responses: { '200': { description: 'Service requests for owned provider locations.' } } },
+            },
+            '/owner/service-requests/{requestId}/confirm': {
+                post: { operationId: 'confirmOwnerAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider confirmation transition.' } } },
+            },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },
             },
@@ -560,6 +582,20 @@ export function getOpenApiDocument() {
                 },
             },
             schemas: {
+                AutoCareServiceRequestCreate: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['providerId', 'locationId', 'offeringId', 'preferredAt', 'contactSnapshot'],
+                    properties: {
+                        providerId: { type: 'string', format: 'uuid' },
+                        locationId: { type: 'string', format: 'uuid' },
+                        offeringId: { type: 'string', format: 'uuid' },
+                        preferredAt: { type: 'string', format: 'date-time' },
+                        vehicleSnapshot: { type: ['object', 'null'] },
+                        contactSnapshot: { type: 'object' },
+                        note: { type: ['string', 'null'], maxLength: 4_000 },
+                    },
+                },
                 SecurityCenterActionTimelineItem: {
                     type: 'object',
                     additionalProperties: false,

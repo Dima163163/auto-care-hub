@@ -41,6 +41,7 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
 
 function mapOffer(offer: AutoCareApiOffer): ProviderOffering {
     return {
+        id: offer.id,
         serviceId: offer.serviceSlug ?? offer.serviceDefinitionId,
         priceLabel: formatPrice(offer.priceFromMinor, offer.currencyCode),
         duration: `${offer.durationMinutes} min`,

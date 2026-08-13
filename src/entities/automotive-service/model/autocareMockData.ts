@@ -39,6 +39,7 @@ export function getProviderImage(image?: string | null) {
 }
 
 export type ProviderOffering = {
+    id: string
     serviceId: string
     priceLabel: string
     duration: string
@@ -102,9 +103,9 @@ const featuredProviderPreviews: readonly ProviderPreview[] = [
 export const providerPreviews: readonly ProviderPreview[] = [...featuredProviderPreviews, ...generatedProviderPreviews]
 
 const defaultOfferings: readonly ProviderOffering[] = [
-    { serviceId: 'oil-change', priceLabel: 'от 2 900 ₽', duration: '45–60 мин', availability: 'Сегодня', includes: ['Масло и фильтр', 'Проверка уровней', 'Сброс сервисного интервала'] },
-    { serviceId: 'diagnostics', priceLabel: 'от 1 200 ₽', duration: '60 мин', availability: 'Сегодня', includes: ['Компьютерная диагностика', 'Отчёт по ошибкам'] },
-    { serviceId: 'brakes', priceLabel: 'от 3 500 ₽', duration: '90 мин', availability: 'Завтра', includes: ['Осмотр системы', 'Фотоотчёт', 'Гарантия 12 мес.'] },
+    { id: 'mock-offer-oil-change', serviceId: 'oil-change', priceLabel: 'от 2 900 ₽', duration: '45–60 мин', availability: 'Сегодня', includes: ['Масло и фильтр', 'Проверка уровней', 'Сброс сервисного интервала'] },
+    { id: 'mock-offer-diagnostics', serviceId: 'diagnostics', priceLabel: 'от 1 200 ₽', duration: '60 мин', availability: 'Сегодня', includes: ['Компьютерная диагностика', 'Отчёт по ошибкам'] },
+    { id: 'mock-offer-brakes', serviceId: 'brakes', priceLabel: 'от 3 500 ₽', duration: '90 мин', availability: 'Завтра', includes: ['Осмотр системы', 'Фотоотчёт', 'Гарантия 12 мес.'] },
 ]
 
 export const providerProfiles: readonly ProviderProfile[] = providerPreviews.map((provider) => ({

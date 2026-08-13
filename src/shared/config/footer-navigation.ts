@@ -24,7 +24,7 @@ export const footerColumns: FooterColumn[] = [
         items: [
             { labelKey: 'landing.footerOwners', to: ROUTES.owners },
             { labelKey: 'navigation.pricing', to: ROUTES.pricing },
-            { labelKey: 'autocare.footerPartners', to: ROUTES.partners },
+            { labelKey: 'landing.footerPartners', to: ROUTES.partners },
             { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
         ],
     },
