@@ -27,7 +27,7 @@ export function ProfileReviewsPage() {
                 <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
                 <ProfileNavigation />
                 <PageHeader
-                    eyebrow={t('workspace.client')}
+                    eyebrow={t('autocare.reviewsEyebrow')}
                     title={t('review.myReviewsTitle')}
                 />
 
@@ -41,7 +41,7 @@ export function ProfileReviewsPage() {
             <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
                 <ProfileNavigation />
                 <PageHeader
-                    eyebrow={t('workspace.client')}
+                    eyebrow={t('autocare.reviewsEyebrow')}
                     title={t('review.myReviewsTitle')}
                 />
 
@@ -68,7 +68,7 @@ export function ProfileReviewsPage() {
                 label={t('common.refreshing')}
             />
             <PageHeader
-                eyebrow={t('workspace.client')}
+                eyebrow={t('autocare.reviewsEyebrow')}
                 title={t('review.myReviewsTitle')}
                 description={t('review.myReviewsDescription')}
             />

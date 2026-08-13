@@ -1017,6 +1017,7 @@ export const enTranslations = {
         favoritesEmptyDescription: 'Tap the heart on a service card to save a provider here.',
         favoritesBrowse: 'Find a service',
         favoritesRemove: 'Remove from favorites',
+        reviewsEyebrow: 'Your experience',
     },
     landing: {
         eyebrow: 'Automotive service marketplace',

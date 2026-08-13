@@ -1021,6 +1021,7 @@ export const ruTranslations = {
         favoritesEmptyDescription: 'Нажмите сердечко на карточке сервиса, чтобы сохранить его здесь.',
         favoritesBrowse: 'Найти автосервис',
         favoritesRemove: 'Убрать из избранного',
+        reviewsEyebrow: 'Ваш опыт',
     },
     landing: {
         eyebrow: 'Агрегатор автосервисов',
