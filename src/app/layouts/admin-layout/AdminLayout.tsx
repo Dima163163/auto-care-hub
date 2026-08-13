@@ -9,7 +9,7 @@ export function AdminLayout() {
             <WorkspaceHeader role="admin" />
             <div className="mobile-admin-bottom-safe flex min-h-[calc(100vh-72px)] md:pb-0">
                 <WorkspaceSidebar role="admin" />
-                <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 flex-col">
                     <WorkspaceMobileHeader role="admin" />
 
                     <Outlet />

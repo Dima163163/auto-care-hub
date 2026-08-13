@@ -27,7 +27,7 @@ export function CreateServiceFormFields({
         <div className="grid gap-5 lg:grid-cols-2">
             <div>
                 <label htmlFor="cabinetId" className="text-sm font-medium">
-                    {t('cabinet.title')}
+                    {t('autocare.ownerServiceLocationLabel')}
                 </label>
 
                 <select
@@ -37,7 +37,7 @@ export function CreateServiceFormFields({
                     {...register('cabinetId')}
                 >
                     <option value="">
-                        {t('service.form.selectCabinet')}
+                        {t('autocare.ownerServiceLocationPlaceholder')}
                     </option>
 
                     {cabinets.map((cabinet) => (

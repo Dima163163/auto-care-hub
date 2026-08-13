@@ -164,7 +164,7 @@ export function NotificationsPage() {
     }
 
     return (
-        <main className="min-h-screen bg-background px-5 py-8 text-foreground lg:px-8">
+        <main className="relative z-0 min-h-full bg-background px-5 py-8 text-foreground lg:px-8">
             <section
                 className="mx-auto max-w-4xl"
                 aria-busy={isLoading || isFetching}

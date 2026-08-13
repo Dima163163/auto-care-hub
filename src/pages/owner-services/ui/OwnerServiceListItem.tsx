@@ -39,7 +39,7 @@ export function OwnerServiceListItem({
                     )}
 
                     <p className="mt-1 text-xs text-muted-foreground">
-                        {t('service.form.cabinetIdLabel', {
+                        {t('autocare.ownerServiceLocationMeta', {
                             id: service.cabinetId,
                         })}
                     </p>

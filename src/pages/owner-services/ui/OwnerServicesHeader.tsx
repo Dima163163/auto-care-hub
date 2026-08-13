@@ -7,5 +7,12 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 export function OwnerServicesHeader() {
     const { t } = useTranslation()
 
-    return <Link to={ROUTES.ownerCabinets} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{t('service.form.viewCabinets')}</Link>
+    return (
+        <Link
+            to={ROUTES.ownerAutoCareProviders}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+        >
+            {t('autocare.ownerServicesLocationsAction')}
+        </Link>
+    )
 }

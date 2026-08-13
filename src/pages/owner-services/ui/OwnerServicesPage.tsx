@@ -1,4 +1,5 @@
-import { CheckCircle2, Gift, MessageCircle } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, Gift, MessageCircle } from 'lucide-react'
+import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { useState } from 'react'
 
@@ -8,6 +9,7 @@ import {
     useGetOwnerServicesQuery,
 } from '@/entities/service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
 import { QueryRefreshError, RetryButton } from '@/shared/ui/query-refresh-error'
@@ -31,6 +33,7 @@ export function OwnerServicesPage() {
         refetch,
     } = useGetOwnerServicesQuery()
     const hasStaleServices = services.length > 0
+    const activeServices = services.filter((service) => service.isActive).length
 
     const serviceToDelete = services.find(
         (service) => service.id === serviceIdToDelete
@@ -72,12 +75,64 @@ export function OwnerServicesPage() {
     }
 
     return (
-        <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10">
+        <main className="relative z-0 min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10">
             <section
                 className="mx-auto max-w-6xl"
                 aria-busy={isLoading || isFetching}
             >
-                <div className="rounded-[var(--radius-panel)] bg-hero-overlay p-5 text-primary-foreground shadow-sm sm:p-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-primary-foreground/60">{t('workspace.owner')}</p><h1 className="mt-2 text-3xl font-black tracking-tight">{t('service.services')}</h1><p className="mt-2 max-w-2xl text-sm font-medium text-primary-foreground/70">{t('service.form.pageDescription')}</p></div><OwnerServicesHeader /></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><div className="rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/10 p-3"><CheckCircle2 className="size-5 text-status-success-foreground" /><p className="mt-2 text-xs font-bold">{t('ownerDashboard.growth.freePlan')}</p></div><div className="rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/10 p-3"><Gift className="size-5 text-primary" /><p className="mt-2 text-xs font-bold">{t('ownerDashboard.growth.bonusesTitle')}</p></div><div className="rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/10 p-3"><MessageCircle className="size-5 text-primary" /><p className="mt-2 text-xs font-bold">{t('ownerDashboard.growth.messagesTitle')}</p></div></div></div>
+                <div className="rounded-[var(--radius-panel)] bg-hero-overlay p-5 text-primary-foreground shadow-sm sm:p-6">
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary-foreground/60">
+                                {t('autocare.ownerServicesEyebrow')}
+                            </p>
+                            <h1 className="mt-2 text-3xl font-black tracking-tight">
+                                {t('autocare.ownerServicesTitle')}
+                            </h1>
+                            <p className="mt-2 max-w-2xl text-sm font-medium text-primary-foreground/70">
+                                {t('autocare.ownerServicesDescription')}
+                            </p>
+                        </div>
+                        <OwnerServicesHeader />
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/10 p-3">
+                            <CheckCircle2 className="size-5 text-status-success-foreground" />
+                            <p className="mt-2 text-xs font-bold text-primary-foreground/70">
+                                {t('autocare.ownerServicesActiveLabel')}
+                            </p>
+                            <p className="mt-1 text-2xl font-black">{activeServices}</p>
+                        </div>
+                        <div className="rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/10 p-3">
+                            <Gift className="size-5 text-primary" />
+                            <p className="mt-2 text-xs font-bold text-primary-foreground/70">
+                                {t('autocare.ownerServicesTotalLabel')}
+                            </p>
+                            <p className="mt-1 text-2xl font-black">{services.length}</p>
+                        </div>
+                        <div className="rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/10 p-3">
+                            <MessageCircle className="size-5 text-primary" />
+                            <p className="mt-2 text-xs font-bold text-primary-foreground/70">
+                                {t('autocare.ownerServicesBonusesLabel')}
+                            </p>
+                            <p className="mt-1 text-sm font-bold">{t('autocare.ownerServicesBonusesValue')}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 px-4 py-3 text-sm">
+                    <p className="text-muted-foreground">
+                        {t('autocare.ownerProvidersDescription')}
+                    </p>
+                    <Link
+                        to={ROUTES.ownerAutoCareProviders}
+                        className="inline-flex items-center gap-1 font-bold text-primary hover:underline"
+                    >
+                        {t('autocare.ownerServicesLocationsAction')}
+                        <ArrowUpRight className="size-4" />
+                    </Link>
+                </div>
 
                 <QueryRefreshStatus
                     isRefreshing={isFetching && !isLoading}
