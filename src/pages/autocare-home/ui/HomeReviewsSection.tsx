@@ -38,9 +38,14 @@ function MobileAppCard() {
                     <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">{t('autocare.mobileAppComingSoon')}</span>
                 </span>
             </div>
-            <div className="relative z-10 max-w-[15rem]"><h2 className="text-lg font-black">{t('autocare.mobileAppTitle')}</h2><p className="mt-1 text-sm text-muted-foreground">{t('autocare.mobileAppDescription')}</p><ul className="mt-6 grid gap-4 text-sm text-muted-foreground">{items.map((item) => <li key={item.key} className="flex items-center gap-3"><item.icon className="size-4" />{t(item.key)}</li>)}</ul><div className="mt-7 flex gap-2"><StoreBadge store="apple" label="App Store" /><StoreBadge store="google" label="Google Play" /></div></div><img src="/images/autocare/mobile/app-phones.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] block h-[112%] w-[72%] object-cover object-[66%_center] dark:hidden" /><img src="/images/autocare/mobile/app-phones-dark.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] hidden h-[112%] w-[72%] object-cover object-[66%_center] dark:block" /></section>
+            <div className="relative z-10 max-w-[15rem]"><h2 className="text-lg font-black">{t('autocare.mobileAppTitle')}</h2><p className="mt-1 text-sm text-muted-foreground">{t('autocare.mobileAppDescription')}</p><ul className="mt-6 grid gap-4 text-sm text-muted-foreground">{items.map((item) => <li key={item.key} className="flex items-center gap-3"><item.icon className="size-4" />{t(item.key)}</li>)}</ul><div className="mt-7 flex gap-2"><StoreBadge store="apple" label="App Store" /><StoreBadge store="google" label="Google Play" /></div></div><img src="/images/autocare/mobile/app-phones.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] block h-[112%] w-[84%] object-cover object-[70%_center] dark:hidden" style={mobileArtworkMask} /><img src="/images/autocare/mobile/app-phones-dark.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] hidden h-[112%] w-[84%] object-cover object-[70%_center] dark:block" style={mobileArtworkMask} /></section>
     )
 }
+
+const mobileArtworkMask = {
+    maskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, #000 29%, #000 100%)',
+    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, #000 29%, #000 100%)',
+} as const
 
 function StoreBadge({ store, label }: { store: 'apple' | 'google'; label: string }) {
     return <span className="inline-flex h-9 items-center gap-2 rounded-[4px] bg-foreground px-3 text-[0.66rem] font-bold text-background">{store === 'apple' ? <AppleIcon /> : <GooglePlayIcon />}{label}</span>
