@@ -7,7 +7,6 @@ import { AppHeader } from '@/widgets/app-header'
 import { BottomNav } from '@/widgets/bottom-nav'
 import { Footer } from '@/widgets/footer'
 import {
-    WorkspaceFooter,
     WorkspaceMobileHeader,
     WorkspaceSidebar,
     type WorkspaceRole,
@@ -19,12 +18,7 @@ export function PublicLayout() {
     const { pathname } = useLocation()
     const { data: user } = useGetMeQuery()
     const isWorkspaceRoute = Boolean(
-        user && (
-            pathname === ROUTES.profile ||
-            pathname.startsWith(`${ROUTES.profile}/`) ||
-            pathname === ROUTES.favorites ||
-            pathname === ROUTES.notifications
-        ),
+        user && (pathname === ROUTES.profile || pathname === ROUTES.notifications),
     )
     const workspaceRole: WorkspaceRole = user?.role === 'owner'
         ? 'owner'
@@ -43,8 +37,7 @@ export function PublicLayout() {
                 {isWorkspaceRoute && <WorkspaceSidebar role={workspaceRole} />}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                     <main className="min-h-0 flex-1"><Outlet /></main>
-                    {isWorkspaceRoute && <WorkspaceFooter />}
-                    {!isWorkspaceRoute && <Footer />}
+                    <Footer />
                 </div>
             </div>
             <BottomNav />
