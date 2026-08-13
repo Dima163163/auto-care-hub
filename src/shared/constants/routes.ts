@@ -37,6 +37,7 @@ export const ROUTES = {
 
     ownerDashboard: '/owner/dashboard',
     ownerAutoCareProviders: '/owner/autocare-providers',
+    ownerAutoCareProviderDetails: '/owner/autocare-providers/:id',
     ownerCabinets: '/owner/cabinets',
     ownerCabinetCreate: '/owner/cabinets/create',
     ownerCabinetEdit: '/owner/cabinets/:id/edit',
@@ -143,4 +144,5 @@ export const routePaths = {
     cabinetReviewEdit: (cabinetId: EntityId, reviewId: EntityId) =>
         `/cabinets/${cabinetId}?reviewId=${reviewId}`,
     ownerCabinetEdit: (id: string) => `/owner/cabinets/${id}/edit`,
+    ownerAutoCareProviderDetails: (id: EntityId) => `/owner/autocare-providers/${id}`,
 } as const

@@ -1,0 +1,31 @@
+import { ArrowLeft, BarChart3, CalendarCheck2, MapPin, MessageSquareText, Star, UsersRound } from 'lucide-react'
+import { Link, useParams } from 'react-router'
+
+import { useGetOwnerAutoCareProvidersQuery, type AutoCareApiProvider } from '@/entities/automotive-service'
+import { ROUTES } from '@/shared/constants/routes'
+import { useTranslation } from '@/shared/lib/useTranslation'
+import { PageHeader } from '@/shared/ui/page-header'
+
+export function OwnerAutoCareProviderDetailsPage() {
+    const { t } = useTranslation()
+    const { id } = useParams<{ id: string }>()
+    const { data: providers = [], isLoading } = useGetOwnerAutoCareProvidersQuery()
+    const provider = providers.find((item) => item.id === id)
+
+    if (isLoading) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><p className="mx-auto max-w-6xl text-sm font-semibold text-muted-foreground">{t('common.loading')}</p></main>
+    if (!provider) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><h1 className="mt-8 text-2xl font-black">{t('autocare.ownerProviderNotFound')}</h1></div></main>
+
+    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><ProviderOverview provider={provider} /></section></main>
+}
+
+function ProviderOverview({ provider }: { provider: AutoCareApiProvider }) {
+    const { t } = useTranslation()
+    const stats = [
+        { icon: Star, label: t('autocare.ownerProviderRating'), value: provider.rating.toFixed(1) },
+        { icon: MessageSquareText, label: t('autocare.ownerProviderReviews'), value: String(provider.reviewCount) },
+        { icon: UsersRound, label: t('autocare.ownerProviderStaffLabel'), value: String(provider.staffCount) },
+        { icon: CalendarCheck2, label: t('autocare.ownerProviderYearsLabel'), value: String(provider.yearsActive) },
+    ]
+
+    return <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]"><div className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div className="flex items-start gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><MapPin className="size-5" /></span><div><p className="text-sm font-black">{provider.location.address}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{provider.location.hours}</p></div></div><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{stats.map(({ icon: Icon, label, value }) => <div key={label} className="rounded-[var(--radius-card)] bg-secondary p-3"><Icon className="size-4 text-primary" /><p className="mt-3 text-xl font-black">{value}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{label}</p></div>)}</div></div><aside className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><BarChart3 className="size-5" /></span><h2 className="text-base font-black">{t('autocare.ownerProviderStatsTitle')}</h2></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{t('autocare.ownerProviderStatsDescription')}</p><Link to={ROUTES.ownerDashboard} className="mt-5 inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground hover:bg-primary/90">{t('autocare.ownerProviderOpenDashboard')}</Link></aside></div>
+}

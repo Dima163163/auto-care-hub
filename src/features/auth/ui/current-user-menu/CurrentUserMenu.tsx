@@ -4,19 +4,35 @@ import {
     Heart,
     LayoutDashboard,
     MessageSquare,
+    MapPin,
+    Store,
     UserRound,
 } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
+import { useGetOwnerAutoCareProvidersQuery, type AutoCareApiProvider } from '@/entities/automotive-service'
 import { UserRoleBadge, type User } from '@/entities/user'
 import { cn } from '@/lib/utils'
-import { ROUTES } from '@/shared/constants/routes'
+import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { getAccountLinkTranslationKey } from '../../lib/getAccountLinkTranslationKey'
 import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
 import { LogoutButton } from '../logout-button/LogoutButton'
+
+function UserAvatar({ user, size = 'size-full' }: { user: User; size?: string }) {
+    const [hasImageError, setHasImageError] = useState(false)
+    const showImage = Boolean(user.avatarUrl) && !hasImageError
+
+    return showImage ? (
+        <img src={user.avatarUrl!} alt="" onError={() => setHasImageError(true)} className={cn(size, 'rounded-full object-cover')} />
+    ) : (
+        <span className={cn('flex items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground', size)}>
+            {user.name.slice(0, 1).toUpperCase()}
+        </span>
+    )
+}
 
 type CurrentUserMenuProps = {
     user: User
@@ -29,6 +45,7 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const menuId = useId()
+    const { data: providers = [] } = useGetOwnerAutoCareProvidersQuery(undefined, { skip: user.role !== 'owner' })
 
     useEffect(() => {
         if (!isOpen) return
@@ -50,12 +67,19 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
 
     const isDark = variant === 'dark'
     const workspaceRoute = getDefaultRouteByRole(user.role)
-    const menuLinks = [
-        { to: ROUTES.profile, label: t('auth.accountMenuProfile'), icon: UserRound },
-        { to: ROUTES.profileBookings, label: t('auth.accountMenuRequests'), icon: MessageSquare },
-        { to: ROUTES.favorites, label: t('auth.accountMenuFavorites'), icon: Heart },
-        { to: ROUTES.notifications, label: t('auth.accountMenuNotifications'), icon: Bell },
-    ]
+    const menuLinks = user.role === 'owner'
+        ? [
+            { to: ROUTES.profile, label: t('auth.accountMenuProfile'), icon: UserRound },
+            { to: ROUTES.ownerBookings, label: t('auth.accountMenuRequests'), icon: MessageSquare },
+            { to: ROUTES.ownerClients, label: t('auth.accountMenuClients'), icon: Store },
+            { to: ROUTES.notifications, label: t('auth.accountMenuNotifications'), icon: Bell },
+        ]
+        : [
+            { to: ROUTES.profile, label: t('auth.accountMenuProfile'), icon: UserRound },
+            { to: ROUTES.profileBookings, label: t('auth.accountMenuRequests'), icon: MessageSquare },
+            { to: ROUTES.favorites, label: t('auth.accountMenuFavorites'), icon: Heart },
+            { to: ROUTES.notifications, label: t('auth.accountMenuNotifications'), icon: Bell },
+        ]
 
     return (
         <div ref={containerRef} className={cn('relative shrink-0', className)}>
@@ -73,13 +97,7 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
                 aria-controls={menuId}
                 onClick={() => setIsOpen((value) => !value)}
             >
-                {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" className="size-full rounded-full object-cover" />
-                ) : (
-                    <span className="flex size-full items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">
-                        {user.name.slice(0, 1).toUpperCase()}
-                    </span>
-                )}
+                <UserAvatar user={user} />
             </button>
 
             {isOpen && (
@@ -91,7 +109,7 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
                     <div className="border-b border-border px-3 pb-3 pt-2">
                         <div className="flex items-center gap-3">
                             <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-lg font-black text-primary-foreground">
-                                {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="size-full object-cover" /> : user.name.slice(0, 1).toUpperCase()}
+                                <UserAvatar user={user} />
                             </div>
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-black">{user.name}</p>
@@ -101,21 +119,7 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
                         </div>
                     </div>
 
-                    <Link
-                        to={ROUTES.profile}
-                        role="menuitem"
-                        onClick={() => setIsOpen(false)}
-                        className="mt-2 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.06] px-3 py-2.5 transition-colors hover:bg-primary/10"
-                    >
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <CarFront className="size-4" />
-                        </span>
-                        <span className="min-w-0">
-                            <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{t('auth.accountMenuVehicleTitle')}</span>
-                            <span className="block truncate text-sm font-bold">{t('autocare.providerVehicleValue')}</span>
-                            <span className="block truncate text-xs text-muted-foreground">{t('auth.accountMenuVehicleHint')}</span>
-                        </span>
-                    </Link>
+                    {user.role === 'client' ? <VehicleCard onClose={() => setIsOpen(false)} /> : user.role === 'owner' ? <BranchesCard providers={providers} onClose={() => setIsOpen(false)} /> : null}
 
                     <nav className="mt-2 grid gap-0.5" aria-label={t('auth.accountMenuTitle')}>
                         {menuLinks.map(({ to, label, icon: Icon }) => (
@@ -154,4 +158,14 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
             )}
         </div>
     )
+}
+
+function VehicleCard({ onClose }: { onClose: () => void }) {
+    const { t } = useTranslation()
+    return <Link to={ROUTES.profile} role="menuitem" onClick={onClose} className="mt-2 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.06] px-3 py-2.5 transition-colors hover:bg-primary/10"><span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><CarFront className="size-4" /></span><span className="min-w-0"><span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{t('auth.accountMenuVehicleTitle')}</span><span className="block truncate text-sm font-bold">{t('autocare.providerVehicleValue')}</span><span className="block truncate text-xs text-muted-foreground">{t('auth.accountMenuVehicleHint')}</span></span></Link>
+}
+
+function BranchesCard({ providers, onClose }: { providers: AutoCareApiProvider[]; onClose: () => void }) {
+    const { t } = useTranslation()
+    return <section className="mt-2 rounded-xl border border-primary/10 bg-primary/[0.06] px-3 py-2.5"><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground"><Store className="size-3.5 text-primary" />{t('auth.accountMenuBranchesTitle')}</span><Link to={ROUTES.ownerAutoCareProviders} role="menuitem" onClick={onClose} className="text-[11px] font-black text-primary hover:underline">{t('auth.accountMenuAllBranches')}</Link></div>{providers.length > 0 ? <div className="mt-2 grid gap-1">{providers.slice(0, 3).map((provider) => <Link key={provider.id} to={routePaths.ownerAutoCareProviderDetails(provider.id)} role="menuitem" onClick={onClose} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-primary/10"><span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-background text-primary"><MapPin className="size-3.5" /></span><span className="min-w-0"><span className="block truncate text-xs font-bold">{provider.name}</span><span className="block truncate text-[10px] text-muted-foreground">{provider.location.address}</span></span></Link>)}</div> : <p className="mt-2 text-xs font-medium text-muted-foreground">{t('auth.accountMenuNoBranches')}</p>}</section>
 }
