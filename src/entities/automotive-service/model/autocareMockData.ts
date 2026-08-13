@@ -94,13 +94,13 @@ const featuredProviderPreviews: readonly ProviderPreview[] = [
     {
         id: 'proservice-moscow', name: 'ProService', rating: 4.7, reviewCount: 256,
         distance: '2.1 km', price: 2900, currency: 'RUB', nextSlot: 'Today, 14:30',
-        image: '/images/autocare/providers/proservice.webp', bonus: '5% back', verified: true, mapPosition: [55.758, 37.594],
+        image: '/images/autocare/providers/proservice.webp', logoUrl: '/images/autocare/providers/logos/proservice.svg', bonus: '5% back', verified: true, mapPosition: [55.758, 37.594],
         brandSpecializations: ['bmw', 'mercedes-benz', 'audi'], isMultibrand: false,
     },
     {
         id: 'autolux-moscow', name: 'AutoLux', rating: 4.9, reviewCount: 412,
         distance: '3.4 km', price: 3200, currency: 'RUB', nextSlot: 'Today, 15:00',
-        image: '/images/autocare/providers/detailing.webp', verified: true, mapPosition: [55.741, 37.603],
+        image: '/images/autocare/providers/detailing.webp', logoUrl: '/images/autocare/providers/logos/autolux.svg', verified: true, mapPosition: [55.741, 37.603],
         brandSpecializations: ['toyota', 'volkswagen', 'skoda'], isMultibrand: false,
     },
     {

@@ -16,6 +16,7 @@ export type AutomotiveMockProvider = {
     reviewCount: number
     bonusSummary?: string | null
     imageUrl?: string | null
+    logoUrl?: string | null
     galleryImageUrls?: string[]
     amenityIds: string[]
     brandSpecializations: string[]
@@ -63,6 +64,7 @@ export const AUTOMOTIVE_MOCK_SERVICES = [
 export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
     {
         key: 'proservice-moscow', name: 'ProService', description: 'Проверенный сервис с фотоотчётом и гарантией на выполненные работы.', verified: true,
+        logoUrl: '/images/autocare/providers/logos/proservice.svg',
         yearsActive: 8, staffCount: 24, rating: 4.7, reviewCount: 256, bonusSummary: '5% back', imageUrl: '/images/autocare/providers/proservice.webp', galleryImageUrls: ['/images/autocare/providers/proservice.webp'],
         amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
         address: 'Москва, ул. Льва Толстого, 18', hours: 'Пн–Вс: 08:00–21:00', latitude: 55.7337, longitude: 37.5876,
@@ -74,6 +76,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
     },
     {
         key: 'autolux-moscow', name: 'AutoLux', description: 'Диагностика, обслуживание и кузовные работы в одном месте.', verified: true,
+        logoUrl: '/images/autocare/providers/logos/autolux.svg',
         yearsActive: 5, staffCount: 12, rating: 4.9, reviewCount: 412, imageUrl: '/images/autocare/providers/detailing.webp', galleryImageUrls: ['/images/autocare/providers/detailing.webp'],
         amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'card_payment', 'electric_charging'],
         address: 'Москва, Комсомольский пр-т, 45', hours: 'Пн–Вс: 09:00–22:00', latitude: 55.7104, longitude: 37.5838,

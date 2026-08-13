@@ -6,8 +6,8 @@ import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 const providers = [
-    { id: 'proservice-moscow', name: 'ProService', logoUrl: null, rating: 4.7, reviews: 256, distance: '2,1 км', address: 'ул. Льва Толстого, 18', price: '2 900 ₽', oldPrice: '3 500 ₽', discount: '-17%', next: 'Сегодня, 14:30', tag: 'best' },
-    { id: 'autolux-moscow', name: 'АвтоЛюкс', logoUrl: null, rating: 4.9, reviews: 412, distance: '3,4 км', address: 'Комсомольский пр-т, 45', price: '3 200 ₽', next: 'Сегодня, 15:00', tag: 'rating' },
+    { id: 'proservice-moscow', name: 'ProService', logoUrl: '/images/autocare/providers/logos/proservice.svg', rating: 4.7, reviews: 256, distance: '2,1 км', address: 'ул. Льва Толстого, 18', price: '2 900 ₽', oldPrice: '3 500 ₽', discount: '-17%', next: 'Сегодня, 14:30', tag: 'best' },
+    { id: 'autolux-moscow', name: 'АвтоЛюкс', logoUrl: '/images/autocare/providers/logos/autolux.svg', rating: 4.9, reviews: 412, distance: '3,4 км', address: 'Комсомольский пр-т, 45', price: '3 200 ₽', next: 'Сегодня, 15:00', tag: 'rating' },
     { id: 'formula-moscow', name: 'Формула Движения', logoUrl: null, rating: 4.6, reviews: 189, distance: '4,2 км', address: 'ул. Плющиха, 10', price: '2 800 ₽', oldPrice: '3 200 ₽', discount: '-13%', next: 'Сегодня, 16:00' },
     { id: 'turbo-tech-moscow', name: 'Turbo Tech', logoUrl: null, rating: 4.5, reviews: 132, distance: '5,1 км', address: 'Ленинский пр-т, 68', price: '3 500 ₽', next: 'Завтра, 09:00' },
 ] as const
@@ -45,7 +45,7 @@ function ProviderCard({ provider, index }: { provider: typeof providers[number];
         <article className="relative flex min-h-[352px] flex-col rounded-[9px] border border-border bg-card px-4 pb-4 pt-5">
             {'tag' in provider ? <span className={`absolute left-3 top-0 -translate-y-1/2 rounded px-2 py-1 text-[0.68rem] font-semibold ${provider.tag === 'best' ? 'bg-status-success-surface text-status-success-foreground' : 'bg-status-warning-surface text-status-warning-foreground'}`}>{provider.tag === 'best' ? t('autocare.bestValue') : t('autocare.highestRating')}</span> : null}
             <div className="flex items-center gap-2">
-                <ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-6" fallbackLabel={provider.name.slice(0, 2).toUpperCase()} />
+                <ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-6" />
                 <h3 className="text-[1.02rem] font-black">{provider.name}</h3>
                 {index < 2 ? <BadgeCheck className="size-4 fill-primary text-primary-foreground" /> : null}
             </div>
