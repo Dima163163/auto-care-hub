@@ -19,9 +19,7 @@ const inclusionOptions = ['parts', 'materials', 'photo', 'diagnostics', 'warrant
 export function AutoCareResultsFilters({ filters, onChange, onReset, variant = 'light' }: AutoCareResultsFiltersProps) {
     const { t } = useTranslation()
     const isDark = variant === 'dark'
-    const panelClass = isDark
-        ? 'border-primary-foreground/15 bg-primary-foreground/[0.06] text-primary-foreground'
-        : 'border-border bg-card text-foreground'
+    const panelClass = isDark ? 'text-primary-foreground' : 'text-foreground'
     const labelClass = isDark ? 'text-primary-foreground' : 'text-foreground'
     const fieldClass = isDark
         ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground [&>option]:bg-hero-overlay [&>option]:text-primary-foreground'
@@ -44,7 +42,7 @@ export function AutoCareResultsFilters({ filters, onChange, onReset, variant = '
     const update = <K extends keyof AutoCareResultFilters>(key: K, value: AutoCareResultFilters[K]) => onChange({ [key]: value })
 
     return (
-        <section className={`rounded-[var(--radius-panel)] border p-4 shadow-sm sm:p-5 ${panelClass}`} aria-label={t('autocare.filtersTitle')}>
+        <section className={panelClass} aria-label={t('autocare.filtersTitle')}>
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <Filter className="size-4 text-primary" />

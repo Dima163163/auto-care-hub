@@ -46,19 +46,21 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceLabel, bra
     return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
         <section className="bg-hero-overlay text-primary-foreground">
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
-                <div className="grid gap-3 rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:grid-cols-2 lg:grid-cols-12 lg:p-4">
-                    <SearchSummary className="lg:col-span-6" icon={<Search className="size-4" />} label={t('autocare.serviceLabel')} value={serviceLabel} />
-                    <SearchSummary className="lg:col-span-6" icon={<LocateFixed className="size-4" />} label={t('autocare.searchPointLabel')} value={t('autocare.currentLocation')} />
-                    <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
-                    <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
-                    <button type="button" onClick={onStartSearch} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-control)] bg-primary px-3.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90 lg:col-span-2"><Search className="size-3.5" />{t('autocare.startSearch')}</button>
+                <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:p-4">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
+                        <SearchSummary className="lg:col-span-6" icon={<Search className="size-4" />} label={t('autocare.serviceLabel')} value={serviceLabel} />
+                        <SearchSummary className="lg:col-span-6" icon={<LocateFixed className="size-4" />} label={t('autocare.searchPointLabel')} value={t('autocare.currentLocation')} />
+                        <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
+                        <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
+                        <button type="button" onClick={onStartSearch} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-control)] bg-primary px-3.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90 lg:col-span-2"><Search className="size-3.5" />{t('autocare.startSearch')}</button>
+                    </div>
+                    <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
+                    <div className="mt-4 border-t border-primary-foreground/15 pt-4">
+                        <ResultsQuickFilters dark activeCount={Math.max(0, activeFilters.length - 1)} {...quickFilters} onToggleFilters={() => setIsFiltersOpen((value) => !value)} />
+                    </div>
+                    {isFiltersOpen && <div className="mt-4 border-t border-primary-foreground/15 pt-4">{filterPanel}</div>}
+                    <AppliedFilters filters={activeFilters} onClear={onResetFilters} onRemove={onRemoveFilter} />
                 </div>
-                <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
-                <div className="mt-4 border-t border-primary-foreground/15 pt-4">
-                    <ResultsQuickFilters dark activeCount={Math.max(0, activeFilters.length - 1)} {...quickFilters} onToggleFilters={() => setIsFiltersOpen((value) => !value)} />
-                </div>
-                {isFiltersOpen && <div className="mt-4">{filterPanel}</div>}
-                <AppliedFilters filters={activeFilters} onClear={onResetFilters} onRemove={onRemoveFilter} />
             </div>
         </section>
 
