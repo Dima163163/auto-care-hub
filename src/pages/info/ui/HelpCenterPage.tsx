@@ -179,9 +179,12 @@ export function HelpCenterPage() {
 
                     <div className="relative hidden min-h-[300px] lg:block">
                         <img
-                            src="/images/cabinets/cabinet-massage-wellness-draft-01.webp"
+                            src="/images/autocare/help-center-workshop.webp"
                             alt=""
                             className="absolute inset-0 size-full object-cover"
+                            width="1536"
+                            height="1024"
+                            loading="eager"
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/10 to-transparent" />
                     </div>
