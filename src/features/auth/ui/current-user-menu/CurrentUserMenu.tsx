@@ -21,14 +21,14 @@ import { getAccountLinkTranslationKey } from '../../lib/getAccountLinkTranslatio
 import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
 import { LogoutButton } from '../logout-button/LogoutButton'
 
-function UserAvatar({ user, size = 'h-full w-full' }: { user: User; size?: string }) {
+function UserAvatar({ user, size = 'h-full w-full', className }: { user: User; size?: string; className?: string }) {
     const [hasImageError, setHasImageError] = useState(false)
     const showImage = Boolean(user.avatarUrl) && !hasImageError
 
     return showImage ? (
-        <img src={user.avatarUrl!} alt="" onError={() => setHasImageError(true)} className={cn(size, 'block rounded-full object-cover')} />
+        <img src={user.avatarUrl!} alt="" onError={() => setHasImageError(true)} className={cn(size, 'block rounded-full object-cover', className)} />
     ) : (
-        <span className={cn('flex items-center justify-center rounded-full bg-primary text-sm font-black leading-none text-primary-foreground', size)}>
+        <span className={cn('flex items-center justify-center rounded-full bg-primary text-sm font-black leading-none text-primary-foreground', size, className)}>
             {user.name.slice(0, 1).toUpperCase()}
         </span>
     )
@@ -82,11 +82,11 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
         ]
 
     return (
-        <div ref={containerRef} className={cn('relative flex shrink-0 items-center justify-center', className)}>
+        <div ref={containerRef} className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center', className)}>
             <button
                 type="button"
                 className={cn(
-                    'group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent p-0 leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
+                    'account-avatar-trigger group transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
                 )}
                 aria-label={t('auth.accountMenuTrigger')}
                 aria-expanded={isOpen}
@@ -95,12 +95,12 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
                 onClick={() => setIsOpen((value) => !value)}
             >
                 <span className={cn(
-                    'box-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full border p-0.5 leading-none',
+                    'account-avatar-ring',
                     isDark
                         ? 'border-primary-foreground/30 bg-primary-foreground/10 group-hover:bg-primary-foreground/20'
                         : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5',
                 )}>
-                    <UserAvatar user={user} />
+                    <UserAvatar user={user} className="account-avatar-content" />
                 </span>
             </button>
 

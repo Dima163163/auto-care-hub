@@ -392,6 +392,57 @@ body {
     display: none;
 }
 
+/* Keep the authenticated account control centered independently of header text baselines. */
+.account-avatar-trigger {
+    display: flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    font: inherit;
+    line-height: 0;
+    vertical-align: middle;
+    appearance: none;
+}
+
+.account-avatar-ring {
+    display: flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    flex: 0 0 2.25rem;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 9999px;
+    padding: 0.125rem;
+    line-height: 0;
+}
+
+.account-avatar-content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    line-height: 1;
+    text-align: center;
+}
+
 :where(h1, h2, h3, h4, h5, h6)[class*="tracking-"] {
     letter-spacing: 0;
 }
