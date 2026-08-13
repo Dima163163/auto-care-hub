@@ -135,6 +135,7 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         rating: provider.rating,
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonus ?? null,
+        logoUrl: provider.logoUrl ?? null,
         brandSpecializations: [...provider.brandSpecializations],
         isMultibrand: provider.isMultibrand,
         coverImageUrl: provider.image ?? null,
@@ -159,6 +160,7 @@ type OwnerAutoCareProviderMock = AutoCareApiProvider & {
     servicePrices: Record<string, number>
 }
 const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = []
+const mockProviderLogos = new Map<string, string>()
 
 type MockAutoCareServiceRequest = {
     id: string
@@ -1914,6 +1916,24 @@ export const handlers = [
         return HttpResponse.json(ownerAutoCareProviders)
     }),
 
+    http.post('/api/owner/autocare-providers/logo', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+        const body = await request.json() as { contentBase64?: string }
+        if (!body.contentBase64) return HttpResponse.json({ message: 'Invalid provider logo.' }, { status: 400 })
+        const fileName = `${crypto.randomUUID()}.webp`
+        mockProviderLogos.set(fileName, body.contentBase64)
+        return HttpResponse.json({ url: `/uploads/autocare/logos/${fileName}` })
+    }),
+
+    http.get('/api/uploads/autocare/logos/:fileName', ({ params }) => {
+        const contentBase64 = mockProviderLogos.get(String(params.fileName))
+        if (!contentBase64) return HttpResponse.redirect('/images/autocare/placeholders/provider.svg')
+        const bytes = Uint8Array.from(atob(contentBase64), (character) => character.charCodeAt(0))
+        return new HttpResponse(bytes, { headers: { 'content-type': 'image/webp' } })
+    }),
+
     http.post('/api/owner/autocare-providers', async ({ request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
 
@@ -1931,6 +1951,7 @@ export const handlers = [
             isMultibrand?: boolean
             brandSpecializations?: string[]
             amenityIds?: string[]
+            logoUrl?: string | null
         }
 
         if (!body.name?.trim() || !body.marketId || !body.address?.trim() || !body.hours?.trim()) {
@@ -1949,6 +1970,7 @@ export const handlers = [
             rating: 0,
             reviewCount: 0,
             bonusSummary: null,
+            logoUrl: body.logoUrl ?? null,
             brandSpecializations: body.isMultibrand ? [] : [...new Set(body.brandSpecializations ?? [])],
             isMultibrand: Boolean(body.isMultibrand),
             coverImageUrl: null,

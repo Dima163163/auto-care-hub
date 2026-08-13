@@ -185,7 +185,9 @@ mock and real modes.
 | GET | `/api/v1/service-definitions` | public | Moderated major/minor service catalog with comparison schema. |
 | GET | `/api/v1/reviews/featured` | public | Approved homepage reviews with rating, vehicle, avatar and publication date; optional `limit` up to 12. |
 | GET | `/api/v1/discovery/providers` | public | Service/location/radius/vehicle filters, sort, cursor, map projection. |
-| GET | `/api/v1/providers/:providerId` | public | Provider profile, locations, trust status, offerings, bonuses, review summary, `coverImageUrl`, and `galleryImageUrls`. |
+| GET | `/api/v1/providers/:providerId` | public | Provider profile, locations, trust status, offerings, bonuses, review summary, `logoUrl`, `coverImageUrl`, and `galleryImageUrls`. |
+| POST | `/api/owner/autocare-providers/logo` | verified owner | Validates and stores a provider logo as a normalized WebP asset. |
+| GET | `/api/uploads/autocare/logos/:fileName` | public | Serves a normalized provider logo referenced by `logoUrl`; missing files return `404`. |
 | GET | `/api/v1/providers/:providerId/offers` | public | Price type, range/from price, duration, inclusions, warranty, availability preview. |
 | GET | `/api/v1/providers/:providerId/reviews` | public | Approved reviews with service context and pagination. |
 | POST | `/api/v1/service-requests` | authenticated client | Creates a service-scoped inquiry; requires participant authorization and idempotency. |

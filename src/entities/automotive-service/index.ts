@@ -21,10 +21,12 @@ export {
     type AutomotiveAmenityId,
 } from './model/automotiveAmenities'
 export { AutomotiveAmenityIcon } from './ui/AutomotiveAmenityIcon'
+export { ProviderLogo } from './ui/ProviderLogo'
 export {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useUploadOwnerAutoCareProviderLogoMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,

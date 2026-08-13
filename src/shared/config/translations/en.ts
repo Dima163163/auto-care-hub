@@ -814,6 +814,8 @@ export const enTranslations = {
         ownerProviderNamePlaceholder: 'For example, ProService South',
         ownerProviderDescriptionLabel: 'Description',
         ownerProviderDescriptionPlaceholder: 'Tell customers about your specialization and approach',
+        ownerProviderLogoLabel: 'Service logo',
+        ownerProviderLogoHint: 'Upload a square JPG, PNG or WebP logo up to 1 MB.',
         ownerProviderMarketLabel: 'City',
         ownerProviderAddressLabel: 'Address',
         ownerProviderAddressPlaceholder: 'Street, building, unit',

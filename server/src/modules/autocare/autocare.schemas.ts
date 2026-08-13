@@ -35,6 +35,13 @@ export const autoCareFeaturedReviewsQuerySchema = z.object({
     limit: z.coerce.number().int().positive().max(12).default(6),
 })
 
+export const uploadAutoCareProviderLogoSchema = z.object({
+    fileName: z.string().trim().min(1).max(255),
+    mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+    size: z.number().int().positive().max(1_048_576),
+    contentBase64: z.string().min(1).max(1_398_104),
+})
+
 export const autoCareAvailabilityQuerySchema = z.object({
     locationId: z.string().uuid(),
     offeringId: z.string().uuid(),
@@ -103,6 +110,7 @@ export const ownerAutoCareProviderSchema = z.object({
     isMultibrand: z.boolean(),
     brandSpecializations: z.array(z.string().trim().min(1).max(80)).max(30),
     amenityIds: z.array(z.enum(automotiveAmenityIds)).max(automotiveAmenityIds.length),
+    logoUrl: z.string().trim().regex(/^\/uploads\/autocare\/logos\/[a-f0-9-]+\.webp$/i).nullable().optional(),
 }).superRefine((value, context) => {
     if (!value.isMultibrand && value.brandSpecializations.length === 0) {
         context.addIssue({ code: 'custom', path: ['brandSpecializations'], message: 'Choose at least one brand or enable multibrand service.' })

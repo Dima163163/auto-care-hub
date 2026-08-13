@@ -35,6 +35,7 @@ export type AutoCareProviderResponse = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
+    logoUrl: string | null
     coverImageUrl: string | null
     galleryImageUrls: string[]
     amenityIds: string[]
@@ -135,6 +136,7 @@ export type OwnerAutoCareProviderInput = {
     isMultibrand: boolean
     brandSpecializations: string[]
     amenityIds: string[]
+    logoUrl?: string | null
 }
 
 export type AutoCareRequestSnapshot = Record<string, string | number | null>

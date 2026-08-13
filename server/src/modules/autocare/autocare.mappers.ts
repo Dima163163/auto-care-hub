@@ -58,6 +58,7 @@ export function toProviderResponse(
         rating: Number(provider.rating),
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonusSummary,
+        logoUrl: provider.logoUrl,
         coverImageUrl: provider.coverImageUrl,
         galleryImageUrls: provider.galleryImageUrls.length > 0
             ? provider.galleryImageUrls

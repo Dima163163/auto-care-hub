@@ -50,6 +50,7 @@ export type AutoCareApiProvider = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
+    logoUrl: string | null
     coverImageUrl: string | null
     galleryImageUrls: string[]
     amenityIds: string[]
@@ -168,6 +169,7 @@ export type CreateOwnerAutoCareProviderInput = {
     isMultibrand: boolean
     brandSpecializations: string[]
     amenityIds: string[]
+    logoUrl?: string | null
 }
 
 export type AutoCareDiscoveryQuery = {
@@ -222,6 +224,9 @@ export const autoCareApi = baseApi.injectEndpoints({
         getOwnerAutoCareProviders: build.query<AutoCareApiProvider[], void>({
             query: () => '/owner/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
+        }),
+        uploadOwnerAutoCareProviderLogo: build.mutation<{ url: string }, { fileName: string; mimeType: string; size: number; contentBase64: string }>({
+            query: (body) => ({ url: '/owner/autocare-providers/logo', method: 'POST', body }),
         }),
         createOwnerAutoCareProvider: build.mutation<AutoCareApiProvider, CreateOwnerAutoCareProviderInput>({
             query: (body) => ({
@@ -298,6 +303,7 @@ export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useUploadOwnerAutoCareProviderLogoMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,

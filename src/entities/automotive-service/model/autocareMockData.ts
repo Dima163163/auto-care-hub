@@ -19,6 +19,7 @@ export type ProviderPreview = {
     currency: string
     nextSlot: string
     image?: string | null
+    logoUrl?: string | null
     bonus?: string
     verified: boolean
     mapPosition?: [number, number]

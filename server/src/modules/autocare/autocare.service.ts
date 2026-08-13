@@ -15,6 +15,7 @@ import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
+import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, OwnerAutoCareProviderInput } from './autocare.types.js'
 
@@ -62,6 +63,16 @@ export async function getAutoCareMarkets() {
 
 export async function getAutoCareServiceDefinitions() {
     return (await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })).map(toServiceDefinitionResponse)
+}
+
+export async function getAutoCareProviderLogo(fileName: string) {
+    assertAutoCareProviderLogoFileName(fileName)
+    return readAutoCareProviderLogo(fileName)
+}
+
+export async function saveAutoCareProviderLogo(_owner: UserEntity, content: Buffer) {
+    assertOwner(_owner)
+    return { url: await persistAutoCareProviderLogo(content) }
 }
 
 export async function getFeaturedAutoCareReviews(limit: number) {
@@ -181,6 +192,7 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             verified: false,
             yearsActive: input.yearsActive,
             staffCount: input.staffCount,
+            logoUrl: input.logoUrl ?? null,
             amenityIds: [...new Set(input.amenityIds)],
             brandSpecializations: [...new Set(input.brandSpecializations)],
             isMultibrand: input.isMultibrand,

@@ -13,6 +13,7 @@ const provider = {
     rating: 4.7,
     reviewCount: 256,
     bonusSummary: '5% back',
+    logoUrl: '/uploads/autocare/logos/provider-1.webp',
     coverImageUrl: '/images/autocare/providers/proservice.webp',
     galleryImageUrls: ['/images/autocare/providers/proservice.webp'],
     amenityIds: ['waiting_room', 'wifi'],
@@ -33,6 +34,7 @@ describe('AutoCare API mappers', () => {
         expect(result.price).toBe(2900)
         expect(result.distance).toBe('2.1 km')
         expect(result.image).toContain('/images/autocare/')
+        expect(result.logoUrl).toContain('/uploads/autocare/logos/')
     })
 
     it('maps provider offers into the existing profile view model', () => {

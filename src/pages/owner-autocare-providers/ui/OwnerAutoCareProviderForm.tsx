@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -10,12 +10,14 @@ import {
     getAutomotiveAmenityLabel,
     getVehicleBrandLabel,
     useCreateOwnerAutoCareProviderMutation,
+    useUploadOwnerAutoCareProviderLogoMutation,
     type CreateOwnerAutoCareProviderInput,
 } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import type { AutomotiveAmenityId } from '@/entities/automotive-service'
+import { prepareProviderLogo } from '@/entities/automotive-service/lib/providerLogoUpload'
 
 type OwnerAutoCareProviderFormProps = {
     market: { id: string; cityName: string } | undefined
@@ -26,9 +28,13 @@ const inputClassName = 'mt-2 w-full rounded-[var(--radius-control)] border bg-ba
 export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormProps) {
     const { locale, t } = useTranslation()
     const [createProvider, { isLoading }] = useCreateOwnerAutoCareProviderMutation()
+    const [uploadLogo, { isLoading: isLogoUploading }] = useUploadOwnerAutoCareProviderLogoMutation()
     const [isMultibrand, setIsMultibrand] = useState(true)
     const [selectedBrands, setSelectedBrands] = useState<string[]>([])
     const [selectedAmenities, setSelectedAmenities] = useState<AutomotiveAmenityId[]>([...defaultAutomotiveAmenityIds])
+    const [logoPreview, setLogoPreview] = useState<string | null>(null)
+
+    useEffect(() => () => { if (logoPreview) URL.revokeObjectURL(logoPreview) }, [logoPreview])
 
     const toggleValue = <Value extends string>(value: Value, values: Value[], setValues: (nextValues: Value[]) => void) => {
         setValues(values.includes(value) ? values.filter((item) => item !== value) : [...values, value])
@@ -39,25 +45,29 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
         if (!market) return
 
         const formData = new FormData(event.currentTarget)
-        const body: CreateOwnerAutoCareProviderInput = {
-            name: String(formData.get('name') ?? '').trim(),
-            description: String(formData.get('description') ?? '').trim() || undefined,
-            marketId: market.id,
-            address: String(formData.get('address') ?? '').trim(),
-            hours: String(formData.get('hours') ?? '').trim(),
-            yearsActive: Number(formData.get('yearsActive') ?? 0),
-            staffCount: Number(formData.get('staffCount') ?? 0),
-            isMultibrand,
-            brandSpecializations: isMultibrand ? [] : selectedBrands,
-            amenityIds: selectedAmenities,
-        }
-
         try {
+            const logoFile = formData.get('logo')
+            const preparedLogo = logoFile instanceof File && logoFile.size > 0 ? await prepareProviderLogo(logoFile) : null
+            const logoUrl = preparedLogo ? (await uploadLogo(preparedLogo).unwrap()).url : null
+            const body: CreateOwnerAutoCareProviderInput = {
+                name: String(formData.get('name') ?? '').trim(),
+                description: String(formData.get('description') ?? '').trim() || undefined,
+                marketId: market.id,
+                address: String(formData.get('address') ?? '').trim(),
+                hours: String(formData.get('hours') ?? '').trim(),
+                yearsActive: Number(formData.get('yearsActive') ?? 0),
+                staffCount: Number(formData.get('staffCount') ?? 0),
+                isMultibrand,
+                brandSpecializations: isMultibrand ? [] : selectedBrands,
+                amenityIds: selectedAmenities,
+                logoUrl,
+            }
             await createProvider(body).unwrap()
             event.currentTarget.reset()
             setIsMultibrand(true)
             setSelectedBrands([])
             setSelectedAmenities([...defaultAutomotiveAmenityIds])
+            setLogoPreview(null)
             toast.success(t('autocare.ownerProviderCreated'))
         } catch (error) {
             toast.error(getApiErrorMessage(error, t('autocare.ownerProviderCreateFailed')))
@@ -71,7 +81,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 <p className="mt-1 text-sm text-muted-foreground">{t('autocare.ownerProvidersCreateDescription')}</p>
             </div>
 
-            <fieldset disabled={isLoading || !market} className="space-y-6 disabled:cursor-not-allowed disabled:opacity-60">
+            <fieldset disabled={isLoading || isLogoUploading || !market} className="space-y-6 disabled:cursor-not-allowed disabled:opacity-60">
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field label={t('autocare.ownerProviderNameLabel')}>
                         <input required name="name" className={inputClassName} placeholder={t('autocare.ownerProviderNamePlaceholder')} />
@@ -95,6 +105,12 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
 
                 <Field label={t('autocare.ownerProviderDescriptionLabel')}>
                     <textarea name="description" rows={3} className={`${inputClassName} resize-none`} placeholder={t('autocare.ownerProviderDescriptionPlaceholder')} />
+                </Field>
+
+                <Field label={t('autocare.ownerProviderLogoLabel')}>
+                    <input name="logo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; setLogoPreview(file ? URL.createObjectURL(file) : null) }} className={inputClassName} />
+                    <span className="mt-1 block text-xs font-medium text-muted-foreground">{t('autocare.ownerProviderLogoHint')}</span>
+                    {logoPreview && <img src={logoPreview} alt="" className="mt-3 size-20 rounded-lg border object-contain p-2" />}
                 </Field>
 
                 <section className="border-t pt-5">
@@ -129,8 +145,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 </section>
 
                 <div className="flex justify-end border-t pt-5">
-                    <Button type="submit" loading={isLoading} disabled={!market || (!isMultibrand && selectedBrands.length === 0)}>
-                        {isLoading ? t('autocare.ownerProviderSaving') : t('autocare.ownerProviderSave')}
+                    <Button type="submit" loading={isLoading || isLogoUploading} disabled={!market || (!isMultibrand && selectedBrands.length === 0)}>
+                        {isLoading || isLogoUploading ? t('autocare.ownerProviderSaving') : t('autocare.ownerProviderSave')}
                     </Button>
                 </div>
             </fieldset>

@@ -818,6 +818,8 @@ export const ruTranslations = {
         ownerProviderNamePlaceholder: 'Например, ProService Юг',
         ownerProviderDescriptionLabel: 'Описание',
         ownerProviderDescriptionPlaceholder: 'Расскажите о специализации и подходе к работе',
+        ownerProviderLogoLabel: 'Логотип сервиса',
+        ownerProviderLogoHint: 'Загрузите квадратный логотип в JPG, PNG или WebP до 1 МБ.',
         ownerProviderMarketLabel: 'Город',
         ownerProviderAddressLabel: 'Адрес',
         ownerProviderAddressPlaceholder: 'Улица, дом, строение',

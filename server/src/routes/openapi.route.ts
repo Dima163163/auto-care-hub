@@ -172,6 +172,9 @@ export function getOpenApiDocument() {
             '/v1/providers/{providerId}': {
                 get: { operationId: 'getAutoCareProviderProfile', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Public provider profile with offers and image fallbacks.' } } },
             },
+            '/owner/autocare-providers/logo': {
+                post: { operationId: 'uploadOwnerAutoCareProviderLogo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['fileName', 'mimeType', 'size', 'contentBase64'] } } } }, responses: { '200': { description: 'Normalized WebP provider logo URL.' } } },
+            },
             '/v1/providers/{providerId}/availability': {
                 get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.' } } },
             },

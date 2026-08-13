@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
-import type { ProviderProfile } from '@/entities/automotive-service'
+import { ProviderLogo, type ProviderProfile } from '@/entities/automotive-service'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
@@ -54,7 +54,7 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
 }
 
 function ProviderMark({ provider }: ProviderHeroProps) {
-    return <div className="flex size-18 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-card p-2 text-center text-base font-black tracking-tight text-foreground shadow-lg"><span className="leading-4">{provider.name.slice(0, 3).toUpperCase()}<br /><span className="text-primary">AUTO</span></span></div>
+    return <div className="flex size-18 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-card p-2 text-center text-base font-black tracking-tight text-foreground shadow-lg"><ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-full" /></div>
 }
 
 function HeroFact({ icon, label }: { icon: ReactNode; label: string }) {
