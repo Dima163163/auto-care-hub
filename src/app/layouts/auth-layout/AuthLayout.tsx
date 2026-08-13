@@ -19,7 +19,7 @@ export function AuthLayout() {
                 <div className="grid w-full overflow-hidden rounded-xl border bg-card shadow-xl shadow-foreground/10 lg:grid-cols-[0.92fr_1.08fr]">
                     <div className="relative hidden min-h-[680px] overflow-hidden bg-primary/10 lg:block">
                         <img
-                            src="/images/cabinets/cabinet-beauty-bright-01.webp"
+                            src="/images/autocare/owners/workshop-hero.png"
                             alt=""
                             className="absolute inset-0 size-full object-cover"
                         />

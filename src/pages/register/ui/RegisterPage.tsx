@@ -1,3 +1,4 @@
+import { CarFront, CheckCircle2, Store } from 'lucide-react'
 import { Link } from 'react-router'
 import { useEffect, useRef } from 'react'
 import { SocialAuthButtons } from '@/features/auth'
@@ -18,6 +19,11 @@ export function RegisterPage() {
         onSubmit
     } = useRegister()
     const formErrorRef = useRef<HTMLParagraphElement>(null)
+    const registrationBenefits = [
+        'auth.registrationBenefit1',
+        'auth.registrationBenefit2',
+        'auth.registrationBenefit3',
+    ] as const
 
     useEffect(() => {
         if (formError) {
@@ -30,7 +36,7 @@ export function RegisterPage() {
             <section className="mx-auto">
                 <div className="mb-8">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                        {t('auth.createAccount')}
+                        {t('auth.registrationEyebrow')}
                     </p>
 
                     <h1 className="mt-3 text-3xl font-semibold tracking-tight">
@@ -44,10 +50,7 @@ export function RegisterPage() {
                     </p>
                 </div>
 
-                <form
-                    onSubmit={onSubmit}
-                    className="rounded-xl border bg-card p-6 shadow-sm"
-                >
+                <form onSubmit={onSubmit} className="rounded-[var(--radius-panel)] border bg-card p-5 shadow-sm sm:p-7">
                     {formError && (
                         <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
                             <p
@@ -62,7 +65,33 @@ export function RegisterPage() {
                         </div>
                     )}
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
+                        <div>
+                            <p className="text-sm font-black text-foreground">{t('auth.accountType')}</p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('auth.accountTypeDescription')}</p>
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <label className="group relative cursor-pointer">
+                                    <input type="radio" value="client" className="peer sr-only" {...register('role')} />
+                                    <span className="block rounded-[var(--radius-card)] border border-border bg-background p-4 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 group-hover:border-primary/50">
+                                        <span className="flex items-start gap-3">
+                                            <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><CarFront className="size-4" /></span>
+                                            <span><span className="block text-sm font-black">{t('auth.clientRoleTitle')}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t('auth.clientRoleDescription')}</span></span>
+                                        </span>
+                                    </span>
+                                </label>
+                                <label className="group relative cursor-pointer">
+                                    <input type="radio" value="owner" className="peer sr-only" {...register('role')} />
+                                    <span className="block rounded-[var(--radius-card)] border border-border bg-background p-4 transition-colors peer-checked:border-primary peer-checked:bg-primary/5 group-hover:border-primary/50">
+                                        <span className="flex items-start gap-3">
+                                            <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Store className="size-4" /></span>
+                                            <span><span className="block text-sm font-black">{t('auth.ownerRoleTitle')}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t('auth.ownerRoleDescription')}</span></span>
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            {errors.role && <p id="register-role-error" role="alert" className="mt-2 text-sm text-destructive">{errors.role.message}</p>}
+                        </div>
+
                         <div>
                             <FloatingInput
                                 id="name"
@@ -93,29 +122,6 @@ export function RegisterPage() {
                             {errors.email && (
                                 <p id="register-email-error" role="alert" className="mt-2 text-sm text-destructive">
                                     {errors.email.message}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label htmlFor="role" className="text-sm font-medium mb-1 inline-block text-muted-foreground ml-1">
-                                {t('auth.accountType')}
-                            </label>
-
-                            <select
-                                id="role"
-                                aria-invalid={Boolean(errors.role)}
-                                aria-describedby={errors.role ? 'register-role-error' : undefined}
-                                className="w-full h-14 rounded-[1.25rem] border bg-background px-4 text-sm outline-none transition-colors focus:border-primary"
-                                {...register("role")}
-                            >
-                                <option value="client">{t('user.client')}</option>
-                                <option value="owner">{t('user.owner')}</option>
-                            </select>
-
-                            {errors.role && (
-                                <p id="register-role-error" role="alert" className="mt-2 text-sm text-destructive">
-                                    {errors.role.message}
                                 </p>
                             )}
                         </div>
@@ -162,6 +168,12 @@ export function RegisterPage() {
                     >
                         {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
                     </Button>
+
+                    <div className="mt-5 grid gap-2 border-t border-border pt-5 text-xs font-semibold text-muted-foreground sm:grid-cols-3">
+                        {registrationBenefits.map((benefitKey) => (
+                            <span key={benefitKey} className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-status-success-foreground" />{t(benefitKey)}</span>
+                        ))}
+                    </div>
 
                     <div className="mt-6">
                         <SocialAuthButtons

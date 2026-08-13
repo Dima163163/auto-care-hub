@@ -35,6 +35,9 @@ function getSeoCopy(pathname: string, locale: SupportedLocale): SeoCopy {
 
     if (pathname === ROUTES.serviceDiscovery) return { ...home, title: `${home.title} | ${locale === 'ru' ? 'Поиск' : 'Search'}` }
     if (pathname.startsWith('/services/')) return { ...home, title: `${home.title} | Auto service` }
+    if (pathname === ROUTES.about) return locale === 'ru'
+        ? { title: 'О сервисе AutoCare Hub — сравнение автосервисов', description: 'Узнайте, как AutoCare Hub помогает водителям сравнивать автосервисы, общаться с мастерскими и записываться на обслуживание.' }
+        : { title: 'About AutoCare Hub — Compare automotive services', description: 'Learn how AutoCare Hub helps drivers compare automotive services, message providers and book visits.' }
     if (pathname === ROUTES.owners) return { ...home, title: `${home.title} | For businesses` }
     return home
 }
