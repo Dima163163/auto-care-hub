@@ -249,7 +249,7 @@ export function FeaturesPage() {
 }
 
 export function OwnersPage() {
-    return <main className="bg-background"><OwnersHero /><OwnersGrowthSections /></main>
+    return <main className="relative z-0 bg-background"><OwnersHero /><OwnersGrowthSections /></main>
 }
 
 export function AboutPage() {
