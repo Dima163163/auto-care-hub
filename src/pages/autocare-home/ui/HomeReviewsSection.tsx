@@ -34,8 +34,8 @@ function MobileAppCard() {
     return (
         <section className="relative min-h-[326px] overflow-hidden rounded-[10px] border border-border bg-card p-5">
             <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-hidden" aria-hidden="true">
-                <span className="w-[125%] -rotate-[18deg] border-y border-primary/30 bg-primary/75 py-3 text-center text-sm font-black uppercase tracking-[0.28em] text-primary-foreground shadow-lg shadow-primary/20 backdrop-blur-[2px] sm:text-base">
-                    {t('autocare.mobileAppComingSoon')}
+                <span className="relative inline-flex -rotate-[18deg] items-center justify-center rounded-full bg-primary/25 px-5 py-2 text-center text-xs font-black uppercase tracking-[0.28em] text-primary-foreground shadow-[0_8px_24px_rgba(0,36,112,0.18)] backdrop-blur-sm before:absolute before:-inset-x-5 before:-inset-y-3 before:-z-10 before:rounded-full before:bg-primary/25 before:blur-xl sm:px-6 sm:py-2.5 sm:text-sm">
+                    <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">{t('autocare.mobileAppComingSoon')}</span>
                 </span>
             </div>
             <div className="relative z-10 max-w-[15rem]"><h2 className="text-lg font-black">{t('autocare.mobileAppTitle')}</h2><p className="mt-1 text-sm text-muted-foreground">{t('autocare.mobileAppDescription')}</p><ul className="mt-6 grid gap-4 text-sm text-muted-foreground">{items.map((item) => <li key={item.key} className="flex items-center gap-3"><item.icon className="size-4" />{t(item.key)}</li>)}</ul><div className="mt-7 flex gap-2"><StoreBadge store="apple" label="App Store" /><StoreBadge store="google" label="Google Play" /></div></div><img src="/images/autocare/mobile/app-phones.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] block h-[112%] w-[72%] object-cover object-[66%_center] dark:hidden" /><img src="/images/autocare/mobile/app-phones-dark.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] hidden h-[112%] w-[72%] object-cover object-[66%_center] dark:block" /></section>
