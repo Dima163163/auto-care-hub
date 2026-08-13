@@ -10,6 +10,7 @@ import { RouteErrorBoundary } from '@/shared/ui/route-error-boundary'
 
 import {
     AboutPage,
+    AgreementPage,
     AutoCareResultsPage,
     AutoCareProviderPage,
     AutoCareRequestPage,
@@ -71,6 +72,7 @@ export function renderPublicRoutes() {
             <Route path={ROUTES.partners} element={<PartnersPage />} />
             <Route path={ROUTES.contacts} element={<ContactsPage />} />
             <Route path={ROUTES.help} element={<HelpPage />} />
+            <Route path={ROUTES.agreement} element={<AgreementPage />} />
             <Route path={ROUTES.rules} element={<RulesPage />} />
             <Route path={ROUTES.privacy} element={<PrivacyPage />} />
             <Route path={ROUTES.cabinets} element={<CabinetsPage />} />

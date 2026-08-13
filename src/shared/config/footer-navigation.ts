@@ -39,7 +39,7 @@ export const footerColumns: FooterColumn[] = [
     {
         titleKey: 'autocare.footerLegal',
         items: [
-            { labelKey: 'autocare.footerAgreement', to: ROUTES.rules },
+            { labelKey: 'autocare.footerAgreement', to: ROUTES.agreement },
             { labelKey: 'landing.footerPrivacy', to: ROUTES.privacy },
             { labelKey: 'autocare.footerTerms', to: ROUTES.rules },
         ],

@@ -90,6 +90,12 @@ export const RulesPage = lazy(() =>
     })),
 )
 
+export const AgreementPage = lazy(() =>
+    import('@/pages/info').then((module) => ({
+        default: module.AgreementPage,
+    })),
+)
+
 export const PrivacyPage = lazy(() =>
     import('@/pages/info').then((module) => ({
         default: module.PrivacyPage,

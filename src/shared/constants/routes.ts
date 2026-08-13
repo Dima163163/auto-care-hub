@@ -11,6 +11,7 @@ export const ROUTES = {
     partners: '/partners',
     contacts: '/contacts',
     help: '/help',
+    agreement: '/agreement',
     rules: '/rules',
     privacy: '/privacy',
 

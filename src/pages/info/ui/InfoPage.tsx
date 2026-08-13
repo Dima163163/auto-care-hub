@@ -21,6 +21,8 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
+import { LegalDocumentPage } from './LegalDocumentPage'
+
 type InfoContent = {
     eyebrowKey: TranslationKey
     titleKey: TranslationKey
@@ -347,10 +349,14 @@ export function HelpPage() {
     )
 }
 
+export function AgreementPage() {
+    return <LegalDocumentPage document="agreement" />
+}
+
 export function RulesPage() {
-    return <InfoPage content={infoContent.rules} />
+    return <LegalDocumentPage document="rules" />
 }
 
 export function PrivacyPage() {
-    return <InfoPage content={infoContent.privacy} />
+    return <LegalDocumentPage document="privacy" />
 }

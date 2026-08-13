@@ -39,6 +39,15 @@ function getSeoCopy(pathname: string, locale: SupportedLocale): SeoCopy {
         ? { title: 'О сервисе AutoCare Hub — сравнение автосервисов', description: 'Узнайте, как AutoCare Hub помогает водителям сравнивать автосервисы, общаться с мастерскими и записываться на обслуживание.' }
         : { title: 'About AutoCare Hub — Compare automotive services', description: 'Learn how AutoCare Hub helps drivers compare automotive services, message providers and book visits.' }
     if (pathname === ROUTES.owners) return { ...home, title: `${home.title} | For businesses` }
+    if (pathname === ROUTES.agreement) return locale === 'ru'
+        ? { title: 'Пользовательское соглашение AutoCare Hub', description: 'Правила регистрации, поиска автосервисов, заявок, сообщений и взаимодействия клиентов и владельцев на AutoCare Hub.' }
+        : { title: 'AutoCare Hub User Agreement', description: 'Rules for accounts, service discovery, requests, messages and interactions between drivers and automotive service providers.' }
+    if (pathname === ROUTES.rules) return locale === 'ru'
+        ? { title: 'Условия использования AutoCare Hub', description: 'Условия использования каталога, заявок, отзывов, бонусов и инструментов автосервисов AutoCare Hub.' }
+        : { title: 'AutoCare Hub Terms of Use', description: 'Terms for using the marketplace catalog, requests, reviews, bonuses and automotive service tools.' }
+    if (pathname === ROUTES.privacy) return locale === 'ru'
+        ? { title: 'Политика конфиденциальности AutoCare Hub', description: 'Как AutoCare Hub обрабатывает данные аккаунта, автомобиля, заявок, сообщений, фотографий и отзывов.' }
+        : { title: 'AutoCare Hub Privacy Policy', description: 'How AutoCare Hub handles account, vehicle, request, message, photo and review data.' }
     return home
 }
 
