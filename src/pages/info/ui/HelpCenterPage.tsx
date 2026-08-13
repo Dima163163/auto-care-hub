@@ -187,7 +187,7 @@ export function HelpCenterPage() {
             }
             : {
                 eyebrow: t('info.help.audienceGuestTitle'),
-                title: t('info.help.title'),
+                title: t('info.help.topicFindSpaceTitle'),
                 description: t('info.help.audienceGuestDescription'),
                 action: t('info.openCatalog'),
                 to: ROUTES.serviceDiscovery,
