@@ -86,10 +86,7 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
             <button
                 type="button"
                 className={cn(
-                    'box-border inline-flex size-10 aspect-square shrink-0 items-center justify-center overflow-hidden rounded-full border p-0.5 leading-[0] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
-                    isDark
-                        ? 'border-primary-foreground/30 bg-primary-foreground/10 hover:bg-primary-foreground/20'
-                        : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5',
+                    'group inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-transparent p-0 leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
                 )}
                 aria-label={t('auth.accountMenuTrigger')}
                 aria-expanded={isOpen}
@@ -97,7 +94,14 @@ export function CurrentUserMenu({ user, variant = 'surface', className }: Curren
                 aria-controls={menuId}
                 onClick={() => setIsOpen((value) => !value)}
             >
-                <UserAvatar user={user} />
+                <span className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-full border p-0.5',
+                    isDark
+                        ? 'border-primary-foreground/30 bg-primary-foreground/10 group-hover:bg-primary-foreground/20'
+                        : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5',
+                )}>
+                    <UserAvatar user={user} />
+                </span>
             </button>
 
             {isOpen && (
