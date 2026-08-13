@@ -19,6 +19,8 @@ export function AutoCareResultsPage() {
     const { t, locale } = useTranslation()
     const [searchParams, setSearchParams] = useSearchParams()
     const filters = useMemo(() => getAutoCareResultFilters(searchParams), [searchParams])
+    const [draftState, setDraftState] = useState(() => ({ key: searchParams.toString(), filters }))
+    const draftFilters = draftState.key === searchParams.toString() ? draftState.filters : filters
     const { data, isLoading, isError } = useGetAutoCareDiscoveryQuery({
         serviceId: filters.serviceId || undefined,
         marketId: filters.marketId,
@@ -54,11 +56,15 @@ export function AutoCareResultsPage() {
     const activeFocusedProviderId = providers.some((provider) => provider.id === focusedProviderId)
         ? focusedProviderId
         : null
-    const updateFilters = (patch: Partial<AutoCareResultFilters>) => {
+    const updateDraftFilters = (patch: Partial<AutoCareResultFilters>) => {
         setPage(1)
-        setSearchParams((current) => writeAutoCareResultFilters(current, patch), { replace: true })
+        setDraftState({ key: searchParams.toString(), filters: { ...draftFilters, ...patch } })
     }
-    const resetFilters = () => updateFilters({
+    const applyDraftFilters = () => {
+        setPage(1)
+        setSearchParams((current) => writeAutoCareResultFilters(current, draftFilters), { replace: true })
+    }
+    const resetFilters = () => updateDraftFilters({
         radiusKm: 25,
         sort: 'recommended',
         minPrice: '',
@@ -74,28 +80,31 @@ export function AutoCareResultsPage() {
         vehicleModel: '',
         vehicleYear: '',
     })
-    const removeFilter = (key: ActiveFilter['key']) => updateFilters({ [key]: key === 'radiusKm' ? 25 : key === 'availableToday' || key === 'verifiedOnly' || key === 'warrantyOnly' || key === 'hasBonus' ? false : '' } as Partial<AutoCareResultFilters>)
-    const startSearch = () => document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const removeFilter = (key: ActiveFilter['key']) => updateDraftFilters({ [key]: key === 'radiusKm' ? 25 : key === 'availableToday' || key === 'verifiedOnly' || key === 'warrantyOnly' || key === 'hasBonus' ? false : '' } as Partial<AutoCareResultFilters>)
+    const startSearch = () => {
+        applyDraftFilters()
+        document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
     const compareSelected = () => document.getElementById('comparison-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     const totalPages = Math.max(1, Math.ceil(providers.length / RESULTS_PAGE_SIZE))
     const currentPage = Math.min(page, totalPages)
     const pagedProviders = providers.slice((currentPage - 1) * RESULTS_PAGE_SIZE, currentPage * RESULTS_PAGE_SIZE)
-    const serviceLabel = getServiceLabel(automotiveServices.find((service) => service.id === filters.serviceId) ?? automotiveServices[0]!, locale)
-    const brandLabel = filters.brandId ? getVehicleBrandLabel(automotiveVehicleBrands.find((brand) => brand.id === filters.brandId) ?? automotiveVehicleBrands[0]!, locale) : t('autocare.anyBrand')
+    const serviceLabel = getServiceLabel(automotiveServices.find((service) => service.id === draftFilters.serviceId) ?? automotiveServices[0]!, locale)
+    const brandLabel = draftFilters.brandId ? getVehicleBrandLabel(automotiveVehicleBrands.find((brand) => brand.id === draftFilters.brandId) ?? automotiveVehicleBrands[0]!, locale) : t('autocare.anyBrand')
     const activeFilters = useMemo<readonly ActiveFilter[]>(() => [
         { key: 'serviceId', label: serviceLabel },
-        filters.brandId ? { key: 'brandId', label: brandLabel } : null,
-        filters.radiusKm !== 25 ? { key: 'radiusKm', label: `${filters.radiusKm} km` } : null,
-        filters.minRating ? { key: 'minRating', label: `${filters.minRating}+ ★` } : null,
-        filters.minPrice ? { key: 'minPrice', label: `от ${filters.minPrice}` } : null,
-        filters.maxPrice ? { key: 'maxPrice', label: `до ${filters.maxPrice}` } : null,
-        filters.priceType ? { key: 'priceType', label: filters.priceType } : null,
-        filters.availableToday ? { key: 'availableToday', label: t('autocare.availableTodayLabel') } : null,
-        filters.verifiedOnly ? { key: 'verifiedOnly', label: t('autocare.verifiedFilter') } : null,
-        filters.warrantyOnly ? { key: 'warrantyOnly', label: t('autocare.warrantyFilter') } : null,
-        filters.hasBonus ? { key: 'hasBonus', label: t('autocare.bonusFilter') } : null,
-        filters.inclusion ? { key: 'inclusion', label: filters.inclusion } : null,
-    ].filter((filter): filter is ActiveFilter => Boolean(filter)), [brandLabel, filters, serviceLabel, t])
+        draftFilters.brandId ? { key: 'brandId', label: brandLabel } : null,
+        draftFilters.radiusKm !== 25 ? { key: 'radiusKm', label: `${draftFilters.radiusKm} km` } : null,
+        draftFilters.minRating ? { key: 'minRating', label: `${draftFilters.minRating}+ ★` } : null,
+        draftFilters.minPrice ? { key: 'minPrice', label: `от ${draftFilters.minPrice}` } : null,
+        draftFilters.maxPrice ? { key: 'maxPrice', label: `до ${draftFilters.maxPrice}` } : null,
+        draftFilters.priceType ? { key: 'priceType', label: draftFilters.priceType } : null,
+        draftFilters.availableToday ? { key: 'availableToday', label: t('autocare.availableTodayLabel') } : null,
+        draftFilters.verifiedOnly ? { key: 'verifiedOnly', label: t('autocare.verifiedFilter') } : null,
+        draftFilters.warrantyOnly ? { key: 'warrantyOnly', label: t('autocare.warrantyFilter') } : null,
+        draftFilters.hasBonus ? { key: 'hasBonus', label: t('autocare.bonusFilter') } : null,
+        draftFilters.inclusion ? { key: 'inclusion', label: draftFilters.inclusion } : null,
+    ].filter((filter): filter is ActiveFilter => Boolean(filter)), [brandLabel, draftFilters, serviceLabel, t])
     const changePage = (nextPage: number) => {
         setPage(nextPage)
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -108,30 +117,32 @@ export function AutoCareResultsPage() {
                     <ResultsToolbar
                         selectedCount={selectedIds.length}
                         providerCount={providers.length}
+                        serviceId={draftFilters.serviceId}
                         serviceLabel={serviceLabel}
-                        brandId={filters.brandId}
-                        vehicleModel={filters.vehicleModel}
-                        vehicleYear={filters.vehicleYear}
-                        radiusKm={filters.radiusKm}
-                        filterPanel={<AutoCareResultsFilters variant="dark" filters={filters} onChange={updateFilters} onReset={resetFilters} />}
+                        brandId={draftFilters.brandId}
+                        vehicleModel={draftFilters.vehicleModel}
+                        vehicleYear={draftFilters.vehicleYear}
+                        radiusKm={draftFilters.radiusKm}
+                        filterPanel={<AutoCareResultsFilters variant="dark" filters={draftFilters} onChange={updateDraftFilters} onReset={resetFilters} />}
                         onClear={() => setSelectedIds([])}
                         onStartSearch={startSearch}
-                        onRadiusChange={(radiusKm) => updateFilters({ radiusKm })}
-                        onVehicleChange={(vehicle) => updateFilters(vehicle)}
+                        onRadiusChange={(radiusKm) => updateDraftFilters({ radiusKm })}
+                        onServiceChange={(serviceId) => updateDraftFilters({ serviceId })}
+                        onVehicleChange={(vehicle) => updateDraftFilters(vehicle)}
                         activeFilters={activeFilters}
                         onRemoveFilter={removeFilter}
-                        sort={filters.sort}
-                        onSortChange={(sort) => updateFilters({ sort })}
+                        sort={draftFilters.sort}
+                        onSortChange={(sort) => updateDraftFilters({ sort })}
                         onResetFilters={resetFilters}
                         quickFilters={{
-                            isAvailableToday: filters.availableToday,
-                            isNearbyActive: filters.radiusKm === 10,
-                            isPriceActive: filters.sort === 'price_asc',
-                            isRatingActive: filters.minRating === '4.5',
-                            onToggleAvailableToday: () => updateFilters({ availableToday: !filters.availableToday }),
-                            onToggleNearby: () => updateFilters({ radiusKm: filters.radiusKm === 10 ? 25 : 10 }),
-                            onTogglePrice: () => updateFilters({ sort: filters.sort === 'price_asc' ? 'recommended' : 'price_asc' }),
-                            onToggleRating: () => updateFilters({ minRating: filters.minRating === '4.5' ? '' : '4.5' }),
+                            isAvailableToday: draftFilters.availableToday,
+                            isNearbyActive: draftFilters.radiusKm === 10,
+                            isPriceActive: draftFilters.sort === 'price_asc',
+                            isRatingActive: draftFilters.minRating === '4.5',
+                            onToggleAvailableToday: () => updateDraftFilters({ availableToday: !draftFilters.availableToday }),
+                            onToggleNearby: () => updateDraftFilters({ radiusKm: draftFilters.radiusKm === 10 ? 25 : 10 }),
+                            onTogglePrice: () => updateDraftFilters({ sort: draftFilters.sort === 'price_asc' ? 'recommended' : 'price_asc' }),
+                            onToggleRating: () => updateDraftFilters({ minRating: draftFilters.minRating === '4.5' ? '' : '4.5' }),
                         }}
                     />
                 </div>
