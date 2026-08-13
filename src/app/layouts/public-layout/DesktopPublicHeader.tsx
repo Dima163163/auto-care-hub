@@ -7,14 +7,12 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import { BrandLogo } from '@/shared/ui/brand-logo'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
+import { HeaderInfoMenu } from '@/widgets/header-info-menu'
 
 export function DesktopPublicHeader() {
     const { t } = useTranslation()
     const { data: user, isLoading, isError } = useGetMeQuery()
     const links = [
-        { label: t('navigation.services'), to: ROUTES.serviceDiscovery },
-        { label: t('landing.footerHelpCenter'), to: ROUTES.help },
-        { label: t('navigation.owners'), to: ROUTES.owners },
         { label: t('navigation.about'), to: ROUTES.about },
     ]
 
@@ -25,6 +23,10 @@ export function DesktopPublicHeader() {
                     <BrandLogo size="lg" />
                 </Link>
                 <nav className="ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold lg:flex">
+                    <NavLink to={ROUTES.serviceDiscovery} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
+                        {t('navigation.services')}
+                    </NavLink>
+                    <HeaderInfoMenu variant="dark" />
                     {links.map((link) => (
                         <NavLink
                             key={link.to}

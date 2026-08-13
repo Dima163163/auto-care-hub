@@ -4,12 +4,12 @@ import { useState } from 'react'
 
 import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
-import { isProviderPricingVisible } from '@/shared/config/features'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BrandLogo } from '@/shared/ui/brand-logo'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
+import { HeaderInfoMenu } from '@/widgets/header-info-menu'
 
 export type WorkspaceRole = 'client' | 'owner' | 'admin'
 
@@ -39,9 +39,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
 
     const links = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
-        { to: ROUTES.owners, label: t('navigation.owners') },
-        ...(isProviderPricingVisible ? [{ to: ROUTES.pricing, label: t('navigation.pricing') }] : []),
-        { to: ROUTES.help, label: t('landing.footerHelpCenter') },
+        { to: ROUTES.about, label: t('navigation.about') },
     ]
 
     return (
@@ -60,6 +58,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         {link.label}
                     </NavLink>
                 ))}
+                <HeaderInfoMenu variant="light" />
             </nav>
 
             <nav aria-label={t('navigation.mainNavigation')} className="flex h-full items-center gap-3 lg:hidden">

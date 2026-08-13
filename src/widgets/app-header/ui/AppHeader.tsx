@@ -7,11 +7,11 @@ import {
     useGetMeQuery,
 } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
-import { isProviderPricingVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { BrandLogo } from '@/shared/ui/brand-logo'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
+import { headerInfoLinks } from '@/widgets/header-info-menu'
 
 export function AppHeader() {
     const { t } = useTranslation()
@@ -34,9 +34,6 @@ export function AppHeader() {
 
     const primaryLinks = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
-        { to: ROUTES.owners, label: t('navigation.owners') },
-        ...(isProviderPricingVisible ? [{ to: ROUTES.pricing, label: t('navigation.pricing') }] : []),
-        { to: ROUTES.help, label: t('landing.footerHelpCenter') },
     ]
     const secondaryLinks = [
         { to: ROUTES.home, label: t('navigation.home'), end: true },
@@ -89,6 +86,15 @@ export function AppHeader() {
                                     </NavLink>
                                 ))}
                             </nav>
+                            <div className="mt-2 border-t border-border pt-2">
+                                <p className="px-3 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">{t('navigation.helpAndInfo')}</p>
+                                {headerInfoLinks.map(({ to, labelKey, descriptionKey, icon: Icon }) => (
+                                    <NavLink key={to} to={to} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+                                        <Icon className="size-4 text-primary" />
+                                        <span><span className="block">{t(labelKey)}</span><span className="block text-xs font-medium text-muted-foreground">{t(descriptionKey)}</span></span>
+                                    </NavLink>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
