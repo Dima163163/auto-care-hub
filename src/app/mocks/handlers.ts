@@ -1786,7 +1786,9 @@ export const handlers = [
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
+        const allowed = Boolean(item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
+        if (!allowed || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json({ request: response, messages: mockAutoCareMessages.get(item.id) ?? [], attachments: mockAutoCareAttachments.get(item.id) ?? [] })
     }),
@@ -1794,7 +1796,9 @@ export const handlers = [
     http.post('/api/v1/service-requests/:requestId/messages', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
-        if (!user || !item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
+        const allowed = Boolean(item && (item.clientId === user?.id || (user?.role === 'owner' && provider?.id === item.providerId)))
+        if (!user || !item || !allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { body?: string }
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
         const message = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text' as const, body: body.body.trim(), createdAt: new Date().toISOString() }

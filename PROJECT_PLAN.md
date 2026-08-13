@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-13 (repository audit after commit `a461d5a`)
+> Updated: 2026-08-13 (repository audit after commit `4e5b286`)
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -125,7 +125,7 @@ work.
 | Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications and API-backed availability slots. | Add timezone-aware schedules, reminder delivery and overlap constraints before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Connect request/message APIs, persist vehicles and photo quotes, add provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
-| Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, inbox, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
+| Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; the AutoCare request inbox now supports scoped requests, conversations, confirmations and preliminary estimates; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
 | Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
@@ -177,6 +177,9 @@ and follow-up contract are now delivered:
    when a request, message, estimate or confirmation changes the workflow.
 7. [x] Expose provider/location/offer availability and use the returned slots in
    the request form; keep occupied active requests out of the response.
+8. [x] Add an owner-only AutoCare request inbox route with provider-scoped
+   request list, conversation replies, confirmation and preliminary quote
+   actions; keep the legacy cabinet booking page separate.
 
 Real schedules, notifications, bonuses and
 subscriptions are the following slices and should not be mixed into this
@@ -415,8 +418,9 @@ Required design work:
   owner-acquisition landing page.
 - [ ] Add missing customer mocks: comparison table, vehicle garage,
   inquiry/chat, attachment viewer, quote acceptance, bonuses and reviews.
-- [ ] Add missing provider mocks: onboarding, location/offer editor, calendar,
-  inbox, quote composer, bookings, bonus program, analytics and team.
+- [~] Add missing provider mocks: the request inbox, conversation, confirmation
+  and quote composer are now connected; onboarding, location/offer editor,
+  calendar, bookings, bonus program, analytics and team remain.
 - [ ] Add missing admin mocks: catalog, moderation, subscription plans, manual
   grants, promo codes, redemption history and billing incidents.
 - [ ] Include loading, empty, error, stale, offline, success,

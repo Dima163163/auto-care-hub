@@ -42,6 +42,7 @@ export const ROUTES = {
     ownerCabinetCreate: '/owner/cabinets/create',
     ownerCabinetEdit: '/owner/cabinets/:id/edit',
     ownerBookings: '/owner/bookings',
+    ownerAutoCareRequests: '/owner/autocare-requests',
     ownerClients: '/owner/clients',
     ownerServices: '/owner/services',
 

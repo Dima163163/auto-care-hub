@@ -36,6 +36,7 @@ import {
     NotificationsPage,
     OnboardingPage,
     OwnerBookingsPage,
+    OwnerAutoCareRequestsPage,
     OwnerClientsPage,
     OwnerCabinetCreatePage,
     OwnerCabinetEditPage,
@@ -163,6 +164,7 @@ export function renderOwnerRoutes() {
             <Route path={ROUTES.ownerCabinetCreate} element={<OwnerCabinetCreatePage />} />
             <Route path={ROUTES.ownerCabinetEdit} element={<OwnerCabinetEditPage />} />
             <Route path={ROUTES.ownerBookings} element={<OwnerBookingsPage />} />
+            <Route path={ROUTES.ownerAutoCareRequests} element={<OwnerAutoCareRequestsPage />} />
             <Route path={ROUTES.ownerClients} element={<OwnerClientsPage />} />
             <Route path={ROUTES.ownerServices} element={<OwnerServicesPage />} />
         </Route>

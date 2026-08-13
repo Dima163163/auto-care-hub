@@ -210,6 +210,12 @@ export const OwnerBookingsPage = lazy(() =>
     })),
 )
 
+export const OwnerAutoCareRequestsPage = lazy(() =>
+    import('@/pages/owner-autocare-requests').then((module) => ({
+        default: module.OwnerAutoCareRequestsPage,
+    })),
+)
+
 export const OwnerClientsPage = lazy(() =>
     import('@/pages/owner-clients').then((module) => ({
         default: module.OwnerClientsPage,

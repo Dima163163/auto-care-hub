@@ -69,6 +69,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
                 { labelKey: 'navigation.ownerCabinets', to: ROUTES.ownerCabinets, icon: Building2 },
                 { labelKey: 'navigation.ownerBookings', to: ROUTES.ownerBookings, icon: BookOpen },
+                { labelKey: 'navigation.ownerAutoCareRequests', to: ROUTES.ownerAutoCareRequests, icon: MessageSquare },
                 { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
                 { labelKey: 'navigation.ownerServices', to: ROUTES.ownerServices, icon: ClipboardList },
             ],
