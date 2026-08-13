@@ -77,6 +77,11 @@ diff/commit and explicitly approves that action.
   generated automotive pattern assets: the dark WebP for dark mode and the
   light WebP for light mode, switched by the existing theme provider and
   persisted theme preference. Header and footer expose the same theme control.
+- [x] Dark-mode color audit completed: separate midnight background, card,
+  popover, secondary and muted surface levels; readable cool-white text;
+  blue action controls; and distinct accessible status colors are defined in
+  the shared token layer. The SVG logo now follows the inherited foreground
+  color so it remains legible in every shell.
 - [x] Design implementation is explicitly authorized in the current thread;
   logo alternatives are proposed for owner selection.
 - [x] Booking/service confirmation is two-sided: provider confirms the work or

@@ -186,65 +186,73 @@
 }
 
 .dark {
-    --background: oklch(0.11 0.025 245);
+    /* Midnight workshop palette: distinct surface levels keep cards readable over the pattern. */
+    --background: #071525;
     --autocare-pattern-image: url('/images/autocare/patterns/autocare-theme-pattern-dark.webp');
-    --foreground: oklch(0.95 0.01 260);
-    --card: oklch(0.15 0.025 245);
-    --card-foreground: oklch(0.95 0.01 260);
-    --popover: oklch(0.16 0.02 260);
-    --popover-foreground: oklch(0.95 0.01 260);
-    --primary: oklch(0.68 0.2 220);
-    --primary-foreground: oklch(0.1 0.02 260);
-    --secondary: oklch(0.22 0.035 245);
-    --secondary-foreground: oklch(0.9 0.02 260);
-    --muted: oklch(0.2 0.02 260);
-    --muted-foreground: oklch(0.78 0.02 260);
-    --accent: oklch(0.22 0.055 190);
-    --accent-foreground: oklch(0.95 0.02 260);
-    --destructive: oklch(0.5 0.2 25);
-    --success-strong: #4ade80;
-    --border: oklch(0.25 0.02 260);
-    --input: oklch(0.25 0.02 260);
-    --ring: oklch(0.68 0.2 220 / 0.4);
-    --hero-overlay: oklch(0.1 0.045 245);
-    --hero-glow: oklch(0.68 0.2 220 / 0.26);
-    --map-surface: #07192d;
-    --map-overlay: #041225;
-    --map-pin: #8bbfff;
-    --map-marker-success: #34d399;
-    --map-marker-primary: #60a5fa;
-    --map-marker-success-foreground: #052e1b;
+    --foreground: #edf6ff;
+    --card: #10243a;
+    --card-foreground: #edf6ff;
+    --popover: #132b44;
+    --popover-foreground: #edf6ff;
+    --primary: #4d9dff;
+    --primary-foreground: #edf6ff;
+    --secondary: #1b344d;
+    --secondary-foreground: #dcecff;
+    --muted: #152b42;
+    --muted-foreground: #b7c9dc;
+    --accent: #164057;
+    --accent-foreground: #e7f8ff;
+    --destructive: #f87171;
+    --success-strong: #67e8a5;
+    --border: #2b4863;
+    --input: #2b4863;
+    --ring: rgb(77 157 255 / 0.65);
+    --hero-overlay: #061a31;
+    --hero-glow: rgb(77 157 255 / 0.36);
+    --map-surface: #103257;
+    --map-overlay: #071b32;
+    --map-pin: #9acbff;
+    --map-marker-success: #4adea0;
+    --map-marker-primary: #63aaff;
+    --map-marker-success-foreground: #032819;
     --map-marker-primary-foreground: #ffffff;
     --map-rating: #fbbf24;
     --rating-fill: #fbbf24;
-    --rating-foreground: #f59e0b;
-    --status-danger-surface: #451a1a;
-    --status-danger-border: #912018;
-    --status-danger-foreground: #fda29b;
-    --status-info-surface: #172554;
-    --status-info-border: #1d4ed8;
-    --status-info-foreground: #93c5fd;
-    --status-neutral-surface: #1e293b;
-    --status-neutral-border: #475569;
-    --status-neutral-foreground: #e2e8f0;
-    --status-success-surface: #052e1b;
-    --status-success-border: #087443;
-    --status-success-foreground: #6ce9a6;
-    --status-warning-surface: #451a03;
-    --status-warning-border: #b54708;
-    --status-warning-foreground: #fecd6a;
-    --severity-critical-surface: #451a1a;
-    --severity-critical-border: #b42318;
-    --severity-critical-foreground: #fda29b;
-    --severity-high-surface: #431407;
-    --severity-high-border: #c2410c;
-    --severity-high-foreground: #fdba74;
-    --severity-warning-surface: #451a03;
-    --severity-warning-border: #a16207;
+    --rating-foreground: #ffbf3c;
+    --status-danger-surface: #4a2027;
+    --status-danger-border: #b94b5b;
+    --status-danger-foreground: #ffabb6;
+    --status-info-surface: #152f57;
+    --status-info-border: #3c83df;
+    --status-info-foreground: #9dcbff;
+    --status-neutral-surface: #20364d;
+    --status-neutral-border: #56728c;
+    --status-neutral-foreground: #e0edf9;
+    --status-success-surface: #0b3a2d;
+    --status-success-border: #1b8b60;
+    --status-success-foreground: #7cf1b5;
+    --status-warning-surface: #4a3510;
+    --status-warning-border: #bd7b18;
+    --status-warning-foreground: #ffd783;
+    --severity-critical-surface: #4a2027;
+    --severity-critical-border: #c75a68;
+    --severity-critical-foreground: #ffabb6;
+    --severity-high-surface: #4a2a16;
+    --severity-high-border: #d36d32;
+    --severity-high-foreground: #ffc08f;
+    --severity-warning-surface: #4a3510;
+    --severity-warning-border: #bd7b18;
     --severity-warning-foreground: #facc15;
-    --severity-info-surface: #172554;
-    --severity-info-border: #1d4ed8;
-    --severity-info-foreground: #93c5fd;
+    --severity-info-surface: #152f57;
+    --severity-info-border: #3c83df;
+    --severity-info-foreground: #9dcbff;
+}
+
+/* Primary controls sit on the brighter blue action color; use a dark ink
+   label there while keeping hero/header text light on midnight surfaces. */
+.dark .bg-primary.text-primary-foreground,
+.dark .bg-primary .text-primary-foreground {
+    color: #041322;
 }
 
 @layer base {

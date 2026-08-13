@@ -36,7 +36,7 @@ export function AuthLayout() {
 
                     <div className="flex min-h-[680px] items-center bg-background px-6 py-10 sm:px-12 lg:px-16">
                         <div className="w-full max-w-md">
-                            <Link to={ROUTES.home} className="mb-8 flex items-center gap-2">
+                            <Link to={ROUTES.home} className="mb-8 flex items-center gap-2 text-foreground">
                                 <BrandLogo size="sm" />
                             </Link>
                             <Outlet />
