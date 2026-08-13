@@ -391,7 +391,11 @@ Goal: resolve decisions that would otherwise force schema/API redesign.
   links, currencies and market-specific features for `ru`, `global` and future
   profiles. Unknown or missing values must fail closed to the restrictive
   profile and emit a startup/configuration warning.
-- [ ] Select P0 provider categories and 20–40 P0 service definitions.
+- [x] Select the first moderated catalog expansion: 18 service definitions now
+  cover maintenance, diagnostics, tires, body work, auto electrics, tow trucks,
+  mobile diagnostics, roadside assistance, batteries, alignment, washing and
+  glass repair. The catalog remains data-driven so additional countries and
+  categories can be added without changing the discovery API.
 - [ ] For each P0 service, define comparable attributes and price rules.
 - [ ] Decide exact booking modes per service class.
 - [ ] Define provider verification requirements and badge meaning.

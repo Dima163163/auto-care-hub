@@ -12,7 +12,10 @@ describe('AutoCare mock catalog assets', () => {
         expect(AUTOMOTIVE_MOCK_PROVIDERS).toHaveLength(3)
         expect(AUTOMOTIVE_MOCK_PROVIDERS.filter((provider) => provider.imageUrl).every((provider) => provider.imageUrl?.endsWith('.webp'))).toBe(true)
         expect(AUTOMOTIVE_MOCK_PROVIDERS.some((provider) => !provider.imageUrl)).toBe(true)
-        expect(AUTOMOTIVE_MOCK_SERVICES.length).toBeGreaterThanOrEqual(6)
+        expect(AUTOMOTIVE_MOCK_SERVICES.length).toBeGreaterThanOrEqual(18)
+        expect(AUTOMOTIVE_MOCK_SERVICES.map((service) => service.slug)).toEqual(expect.arrayContaining([
+            'tow-truck', 'mobile-diagnostics', 'electric', 'roadside-assistance', 'battery-service',
+        ]))
     })
 
     it('falls back when an image is missing or unsafe', () => {

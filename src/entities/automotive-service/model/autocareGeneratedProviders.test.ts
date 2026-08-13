@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { automotiveServices } from './autocareMockData'
 import { generatedProviderPreviews } from './autocareGeneratedProviders'
 
 describe('generated AutoCare provider fixtures', () => {
@@ -7,7 +8,7 @@ describe('generated AutoCare provider fixtures', () => {
         expect(generatedProviderPreviews).toHaveLength(100)
         expect(new Set(generatedProviderPreviews.map((provider) => provider.id)).size).toBe(100)
         expect(generatedProviderPreviews.every((provider) => provider.image?.includes('/generated/'))).toBe(true)
-        expect(generatedProviderPreviews.every((provider) => provider.serviceIds?.length === 8)).toBe(true)
+        expect(generatedProviderPreviews.every((provider) => provider.serviceIds?.length === automotiveServices.length)).toBe(true)
         expect(generatedProviderPreviews.some((provider) => provider.isMultibrand)).toBe(true)
         expect(generatedProviderPreviews.some((provider) => provider.brandSpecializations.includes('bmw'))).toBe(true)
     })

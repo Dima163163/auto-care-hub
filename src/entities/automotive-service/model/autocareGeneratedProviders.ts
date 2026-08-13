@@ -1,7 +1,12 @@
 import type { AutomotivePriceType, ProviderPreview } from './autocareMockData'
 import { automotiveVehicleBrands } from './vehicleBrands'
 
-const SERVICE_IDS = ['oil-change', 'tire-service', 'diagnostics', 'brakes', 'detailing', 'body-paint', 'air-conditioning', 'maintenance'] as const
+const SERVICE_IDS = [
+    'oil-change', 'tire-service', 'diagnostics', 'brakes', 'detailing', 'body-paint',
+    'air-conditioning', 'maintenance', 'engine', 'suspension', 'electric', 'tow-truck',
+    'mobile-diagnostics', 'roadside-assistance', 'battery-service', 'wheel-alignment',
+    'car-wash', 'windshield-repair',
+] as const
 
 const SERVICE_IMAGES = [
     '/images/autocare/providers/generated/service-oil-change.png',
@@ -23,6 +28,16 @@ const SERVICE_BASE_PRICES: Record<(typeof SERVICE_IDS)[number], number> = {
     'body-paint': 8500,
     'air-conditioning': 2400,
     maintenance: 3600,
+    engine: 6200,
+    suspension: 3800,
+    electric: 2600,
+    'tow-truck': 3500,
+    'mobile-diagnostics': 1800,
+    'roadside-assistance': 2200,
+    'battery-service': 1900,
+    'wheel-alignment': 2800,
+    'car-wash': 1200,
+    'windshield-repair': 5400,
 }
 const PRICE_TYPES: readonly AutomotivePriceType[] = ['fixed', 'from', 'range', 'quote_required']
 const INCLUSION_SETS = [
