@@ -114,12 +114,12 @@ work.
 
 | Area | Current state | Next required work |
 | --- | --- | --- |
-| Public shell | AutoCare SVG logo, responsive header, locale selector, shared footer and SEO metadata foundation are implemented. | Verify long locale labels and finish public legal/help copy with AutoCare terminology. |
+| Public shell | AutoCare SVG logo, responsive header, locale selector, shared footer and SEO metadata foundation are implemented. Footer navigation now avoids duplicate owner/client links and exposes pricing, partners and help routes. | Verify long locale labels and finish public legal/help copy with AutoCare terminology. |
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, full filter contract, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Connect all filters, ranking and comparison to real persisted data; keep map/list to one API query. |
 | Provider profile `/services/:id` | Public data API and an initial profile page exist. | Bring the screen to the approved provider-profile composition and connect real availability, inquiry and favorite actions. |
 | Service request `/services/:id/request` | Approved request composition is implemented: steps, selected service/provider, visit-time picker, vehicle/contact form, attachment intent and direct-payment summary. | Persist requests and attachments, show provider responses/quotes, and support booking conversion. |
-| Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration, provider creation and real owner metrics. |
+| Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect provider creation and real owner metrics. |
 | Client cabinet | AutoCare requests/bookings dashboard, persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. | Persist vehicles, conversations, photo quotes and provider bonuses; remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; admin screens retain legacy API adapters but now use automotive labels. | Replace location/booking APIs with provider memberships, offerings, inbox, calendar, subscriptions and moderation contracts. |
 | Backend | `/api/v1` discovery/provider profile and initial AutoCare entities, migrations, mock seed data and brand filters are implemented. | Complete provider memberships, schedules, real geospatial search, request/message persistence and authorization tests. |
@@ -143,8 +143,9 @@ Current page delivery order:
 
 Delivery order for the remaining client-facing work:
 
-1. finish public information, pricing, favorites, help, registration and
-   account-entry pages with AutoCare terminology and shared footer/header;
+1. finish public information, pricing, favorites and account-entry pages with
+   AutoCare terminology and shared footer/header; role-aware Help Center and
+   the themed registration flow are implemented;
 2. run a responsive pass at mobile (360/390), tablet (768/1024) and desktop
    widths, including long translated labels, maps, galleries and forms;
 3. close the PWA release slice: install prompt, offline shell and cached public

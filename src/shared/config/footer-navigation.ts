@@ -14,9 +14,8 @@ export const footerColumns: FooterColumn[] = [
         titleKey: 'autocare.footerClients',
         items: [
             { labelKey: 'navigation.services', to: ROUTES.serviceDiscovery },
-            { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings },
             { labelKey: 'navigation.favorites', to: ROUTES.favorites },
-            { labelKey: 'autocare.footerReviews', to: ROUTES.profileReviews },
+            { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings },
             { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
         ],
     },
@@ -24,9 +23,9 @@ export const footerColumns: FooterColumn[] = [
         titleKey: 'landing.footerOwners',
         items: [
             { labelKey: 'landing.footerOwners', to: ROUTES.owners },
-            { labelKey: 'autocare.footerAdvertising', to: ROUTES.owners },
-            { labelKey: 'landing.footerBlog', to: ROUTES.blog },
-            { labelKey: 'landing.footerSupport', to: ROUTES.help },
+            { labelKey: 'navigation.pricing', to: ROUTES.pricing },
+            { labelKey: 'autocare.footerPartners', to: ROUTES.partners },
+            { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
         ],
     },
     {
@@ -34,7 +33,6 @@ export const footerColumns: FooterColumn[] = [
         items: [
             { labelKey: 'navigation.about', to: ROUTES.about },
             { labelKey: 'landing.footerBlog', to: ROUTES.blog },
-            { labelKey: 'autocare.footerCareer', to: ROUTES.contacts },
             { labelKey: 'landing.footerContacts', to: ROUTES.contacts },
         ],
     },
