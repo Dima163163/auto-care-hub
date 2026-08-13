@@ -110,6 +110,9 @@ irreversible product choices.
 - Customer payment for repair/service work happens directly with the provider
   in the first release. The platform does not take a repair commission, split
   repair payments, or pay providers.
+- Client access is permanently free: customers never pay AutoCare Hub for
+  searching, comparing, messaging or arranging a service. They pay the chosen
+  provider directly for the completed repair, detailing, tyre or other work.
 - Provider subscription billing is separate from customer repair payments.
 - The first bonus implementation is provider-funded and provider-scoped. Bonus
   units are not withdrawable platform money and cannot move between providers.
@@ -686,6 +689,9 @@ Stable web criteria:
 
 Goal: monetize provider software access after the free phase without affecting
 repair payments or corrupting organic comparison.
+
+This phase only applies to provider software access. The client account and all
+customer discovery, comparison and request flows remain free permanently.
 
 - [ ] Validate provider willingness to pay and approve plan feature matrix.
 - [ ] Define configurable plan periods (for example 1/3/6/12 months; final set

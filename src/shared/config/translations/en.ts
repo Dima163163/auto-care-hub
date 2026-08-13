@@ -167,7 +167,7 @@ export const enTranslations = {
         clientRoleDescription: 'Compare offers, ask questions, send photos and manage requests.',
         ownerRoleTitle: 'I represent an automotive service',
         ownerRoleDescription: 'Publish your service, receive customer requests and grow your business.',
-        registrationBenefit1: 'Free account with no payment for the first launch stage',
+        registrationBenefit1: 'Always free for clients; free service listing for owners during launch',
         registrationBenefit2: 'One place for requests, messages and service history',
         registrationBenefit3: 'Language and location settings for local and international searches',
         name: 'Name',
@@ -2050,6 +2050,8 @@ export const enTranslations = {
     profile: {
         title: 'My profile',
         description: 'View your account details and booking workspace information.',
+        clientDescription: 'AutoCare Hub is always free for clients. You pay the selected automotive service directly for completed work.',
+        clientFreeBadge: 'Always free for clients',
         tabs: {
             general: 'General',
             security: 'Security',
