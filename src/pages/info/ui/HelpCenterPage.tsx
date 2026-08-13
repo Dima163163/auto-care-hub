@@ -29,7 +29,7 @@ type TopicId = 'search' | 'booking' | 'pricing' | 'messages' | 'reviews' | 'vehi
 const audienceFaqCategories: Record<AudienceId, readonly FaqCategory[]> = {
     guest: ['search', 'pricing', 'reviews', 'safety', 'travel'],
     client: ['search', 'booking', 'pricing', 'messages', 'reviews', 'account', 'safety', 'travel'],
-    owner: ['search', 'pricing', 'messages', 'reviews', 'safety'],
+    owner: ['pricing', 'messages', 'reviews', 'safety'],
 }
 
 function isAudienceId(value: string | null): value is AudienceId {
