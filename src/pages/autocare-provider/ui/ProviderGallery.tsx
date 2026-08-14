@@ -13,7 +13,12 @@ const servicePhotos = ['/images/autocare/providers/generated/service-oil-change.
 export function ProviderGallery({ provider }: ProviderGalleryProps) {
     const { t } = useTranslation()
     const reviewPhotos = provider.reviews.flatMap((review) => review.photos ?? [])
-    const images: GalleryImage[] = [{ src: provider.image ?? servicePhotos[0], source: 'service' }, ...servicePhotos.slice(1).map((src) => ({ src, source: 'service' as const })), ...reviewPhotos.map((src) => ({ src, source: 'review' as const }))]
+    const providerPhotos = provider.galleryImageUrls.filter((src) => !src.includes('/placeholders/provider.svg'))
+    const serviceGallery = providerPhotos.length > 0 ? providerPhotos : servicePhotos
+    const images: GalleryImage[] = [
+        ...Array.from(new Set([provider.image, ...serviceGallery].filter((src): src is string => Boolean(src)))).map((src): GalleryImage => ({ src, source: 'service' })),
+        ...reviewPhotos.map((src): GalleryImage => ({ src, source: 'review' })),
+    ]
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [isGalleryOpen, setIsGalleryOpen] = useState(false)
     const selectedImage = images[selectedIndex] ?? images[0]

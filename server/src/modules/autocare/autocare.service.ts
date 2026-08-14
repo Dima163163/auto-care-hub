@@ -21,6 +21,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
+import { saveAutoCareProviderMedia as persistAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
@@ -146,6 +147,11 @@ export async function getAutoCareProviderLogo(fileName: string) {
 export async function saveAutoCareProviderLogo(_owner: UserEntity, content: Buffer) {
     assertOwner(_owner)
     return { url: await persistAutoCareProviderLogo(content) }
+}
+
+export async function saveAutoCareProviderMedia(owner: UserEntity, kind: AutoCareProviderMediaKind, content: Buffer) {
+    assertOwner(owner)
+    return { url: await persistAutoCareProviderMedia(kind, content) }
 }
 
 export async function getFeaturedAutoCareReviews(limit: number) {
@@ -453,7 +459,16 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             verified: false,
             yearsActive: input.yearsActive,
             staffCount: input.staffCount,
+            workstationCount: input.workstationCount ?? 0,
+            phone: input.phone ?? null,
+            email: input.email ?? null,
+            websiteUrl: input.websiteUrl ?? null,
+            metroStation: input.metroStation ?? null,
+            warrantyText: input.warrantyText ?? null,
+            bonusSummary: input.bonusSummary ?? null,
             logoUrl: input.logoUrl ?? null,
+            coverImageUrl: input.coverImageUrl ?? null,
+            galleryImageUrls: [...new Set(input.galleryImageUrls ?? [])],
             amenityIds: [...new Set(input.amenityIds)],
             brandSpecializations: [...new Set(input.brandSpecializations)],
             isMultibrand: input.isMultibrand,

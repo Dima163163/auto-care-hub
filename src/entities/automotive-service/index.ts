@@ -40,6 +40,7 @@ export {
     useUpdateAdminAutoCareProviderStatusMutation,
     useGetSuperAdminPlatformOverviewQuery,
     useUploadOwnerAutoCareProviderLogoMutation,
+    useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,

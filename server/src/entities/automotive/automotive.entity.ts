@@ -97,6 +97,12 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'numeric', precision: 2, scale: 1, default: 0 }) rating!: number
     @Column({ type: 'integer', default: 0 }) reviewCount!: number
     @Column({ type: 'text', nullable: true }) bonusSummary!: string | null
+    @Column({ type: 'text', nullable: true }) phone!: string | null
+    @Column({ type: 'text', nullable: true }) email!: string | null
+    @Column({ type: 'text', nullable: true }) websiteUrl!: string | null
+    @Column({ type: 'text', nullable: true }) metroStation!: string | null
+    @Column({ type: 'integer', default: 0 }) workstationCount!: number
+    @Column({ type: 'text', nullable: true }) warrantyText!: string | null
     @Column({ type: 'text', nullable: true }) logoUrl!: string | null
     @Column({ type: 'text', nullable: true }) coverImageUrl!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) galleryImageUrls!: string[]

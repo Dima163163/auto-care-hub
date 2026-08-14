@@ -76,6 +76,12 @@ export type AutoCareApiProvider = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
+    phone?: string | null
+    email?: string | null
+    websiteUrl?: string | null
+    metroStation?: string | null
+    workstationCount?: number
+    warrantyText?: string | null
     logoUrl: string | null
     coverImageUrl: string | null
     galleryImageUrls: string[]
@@ -324,10 +330,27 @@ export type CreateOwnerAutoCareProviderInput = {
     hours: string
     yearsActive: number
     staffCount: number
+    workstationCount?: number
+    phone?: string | null
+    email?: string | null
+    websiteUrl?: string | null
+    metroStation?: string | null
+    warrantyText?: string | null
+    bonusSummary?: string | null
     isMultibrand: boolean
     brandSpecializations: string[]
     amenityIds: string[]
     logoUrl?: string | null
+    coverImageUrl?: string | null
+    galleryImageUrls?: string[]
+}
+
+export type UploadOwnerAutoCareProviderMediaInput = {
+    kind: 'cover' | 'gallery'
+    fileName: string
+    mimeType: string
+    size: number
+    contentBase64: string
 }
 
 export type AutoCareDiscoveryQuery = {
@@ -444,6 +467,9 @@ export const autoCareApi = baseApi.injectEndpoints({
         }),
         uploadOwnerAutoCareProviderLogo: build.mutation<{ url: string }, { fileName: string; mimeType: string; size: number; contentBase64: string }>({
             query: (body) => ({ url: '/owner/autocare-providers/logo', method: 'POST', body }),
+        }),
+        uploadOwnerAutoCareProviderMedia: build.mutation<{ url: string }, UploadOwnerAutoCareProviderMediaInput>({
+            query: (body) => ({ url: '/owner/autocare-providers/media', method: 'POST', body }),
         }),
         createOwnerAutoCareProvider: build.mutation<AutoCareApiProvider, CreateOwnerAutoCareProviderInput>({
             query: (body) => ({
@@ -568,6 +594,7 @@ export const {
     useUpdateAdminAutoCareProviderStatusMutation,
     useGetSuperAdminPlatformOverviewQuery,
     useUploadOwnerAutoCareProviderLogoMutation,
+    useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareServiceDefinitionsQuery,

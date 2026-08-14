@@ -54,6 +54,12 @@ export type AutoCareProviderResponse = {
     rating: number
     reviewCount: number
     bonusSummary: string | null
+    phone: string | null
+    email: string | null
+    websiteUrl: string | null
+    metroStation: string | null
+    workstationCount: number
+    warrantyText: string | null
     logoUrl: string | null
     coverImageUrl: string | null
     galleryImageUrls: string[]
@@ -211,10 +217,19 @@ export type OwnerAutoCareProviderInput = {
     hours: string
     yearsActive: number
     staffCount: number
+    workstationCount?: number
+    phone?: string | null
+    email?: string | null
+    websiteUrl?: string | null
+    metroStation?: string | null
+    warrantyText?: string | null
+    bonusSummary?: string | null
     isMultibrand: boolean
     brandSpecializations: string[]
     amenityIds: string[]
     logoUrl?: string | null
+    coverImageUrl?: string | null
+    galleryImageUrls?: string[]
 }
 
 export type AutoCareRequestSnapshot = Record<string, string | number | null>

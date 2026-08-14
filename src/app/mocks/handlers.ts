@@ -257,6 +257,12 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         rating: provider.rating,
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonus ?? null,
+        phone: '+7 (495) 645-35-35',
+        email: 'service@example.com',
+        websiteUrl: null,
+        metroStation: 'м. Парк культуры',
+        workstationCount: provider.id === 'proservice-moscow' ? 12 : 8,
+        warrantyText: 'Гарантия на работы 12 месяцев',
         logoUrl: provider.logoUrl ?? null,
         brandSpecializations: [...provider.brandSpecializations],
         isMultibrand: provider.isMultibrand,
@@ -288,6 +294,7 @@ type OwnerAutoCareProviderMock = AutoCareApiProvider & {
 }
 const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = autoCareProviders.slice(0, 2).map((provider) => ({ ...provider }))
 const mockProviderLogos = new Map<string, string>()
+const mockProviderMedia = new Map<string, string>()
 
 type MockAutoCareServiceRequest = {
     id: string
@@ -2444,6 +2451,25 @@ export const handlers = [
         return new HttpResponse(bytes, { headers: { 'content-type': 'image/webp' } })
     }),
 
+    http.post('/api/owner/autocare-providers/media', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+        const body = await request.json() as { kind?: string; contentBase64?: string }
+        if ((body.kind !== 'cover' && body.kind !== 'gallery') || !body.contentBase64) return HttpResponse.json({ message: 'Invalid provider image.' }, { status: 400 })
+        const fileName = `${crypto.randomUUID()}.webp`
+        mockProviderMedia.set(`${body.kind}/${fileName}`, body.contentBase64)
+        return HttpResponse.json({ url: `/uploads/autocare/media/${body.kind}/${fileName}` })
+    }),
+
+    http.get('/api/uploads/autocare/media/:kind/:fileName', ({ params }) => {
+        const key = `${String(params.kind)}/${String(params.fileName)}`
+        const contentBase64 = mockProviderMedia.get(key)
+        if (!contentBase64) return HttpResponse.redirect('/images/autocare/placeholders/provider.svg')
+        const bytes = Uint8Array.from(atob(contentBase64), (character) => character.charCodeAt(0))
+        return new HttpResponse(bytes, { headers: { 'content-type': 'image/webp' } })
+    }),
+
     http.post('/api/owner/autocare-providers', async ({ request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
 
@@ -2458,10 +2484,19 @@ export const handlers = [
             hours?: string
             yearsActive?: number
             staffCount?: number
+            workstationCount?: number
+            phone?: string | null
+            email?: string | null
+            websiteUrl?: string | null
+            metroStation?: string | null
+            warrantyText?: string | null
+            bonusSummary?: string | null
             isMultibrand?: boolean
             brandSpecializations?: string[]
             amenityIds?: string[]
             logoUrl?: string | null
+            coverImageUrl?: string | null
+            galleryImageUrls?: string[]
         }
 
         if (!body.name?.trim() || !body.marketId || !body.address?.trim() || !body.hours?.trim()) {
@@ -2477,14 +2512,20 @@ export const handlers = [
             verified: false,
             yearsActive: Math.max(0, Number(body.yearsActive) || 0),
             staffCount: Math.max(0, Number(body.staffCount) || 0),
+            workstationCount: Math.max(0, Number(body.workstationCount) || 0),
+            phone: body.phone?.trim() || null,
+            email: body.email?.trim() || null,
+            websiteUrl: body.websiteUrl?.trim() || null,
+            metroStation: body.metroStation?.trim() || null,
+            warrantyText: body.warrantyText?.trim() || null,
+            bonusSummary: body.bonusSummary?.trim() || null,
             rating: 0,
             reviewCount: 0,
-            bonusSummary: null,
             logoUrl: body.logoUrl ?? null,
             brandSpecializations: body.isMultibrand ? [] : [...new Set(body.brandSpecializations ?? [])],
             isMultibrand: Boolean(body.isMultibrand),
-            coverImageUrl: null,
-            galleryImageUrls: [],
+            coverImageUrl: body.coverImageUrl ?? null,
+            galleryImageUrls: [...new Set(body.galleryImageUrls ?? [])],
             amenityIds: [...new Set(body.amenityIds ?? [])],
             location: {
                 id: `location-${id}`,

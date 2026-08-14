@@ -46,6 +46,7 @@ const CSRF_PROTECTED_PATHS = new Set([
     '/owner/action-center/events',
     '/owner/autocare-providers',
     '/owner/autocare-providers/logo',
+    '/owner/autocare-providers/media',
     '/v1/service-requests',
     '/client/experiment-events',
     '/users/me/deletion-request',

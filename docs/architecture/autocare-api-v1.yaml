@@ -35,12 +35,22 @@ resources:
   provider_profile:
     read: public
     route: /api/v1/providers/{providerId}
-    includes: [verification, locations, offers, amenities, reviewSummary, logoUrl, coverImageUrl, galleryImageUrls]
+    includes: [verification, locations, offers, amenities, reviewSummary, contact, warrantyText, workstationCount, logoUrl, coverImageUrl, galleryImageUrls]
+  provider_profile_create:
+    create: verified_owner
+    route: /api/owner/autocare-providers
+    fields: [name, description, marketId, zoneId, address, hours, yearsActive, staffCount, workstationCount, phone, email, websiteUrl, metroStation, warrantyText, bonusSummary, isMultibrand, brandSpecializations, amenityIds, logoUrl, coverImageUrl, galleryImageUrls]
   provider_logo:
     create: verified_owner
     route: /api/owner/autocare-providers/logo
     projection: [logoUrl]
     asset_route: /api/uploads/autocare/logos/{fileName}
+  provider_media:
+    create: verified_owner
+    route: /api/owner/autocare-providers/media
+    fields: [kind, fileName, mimeType, size, contentBase64]
+    kinds: [cover, gallery]
+    asset_route: /api/uploads/autocare/media/{kind}/{fileName}
   featured_reviews:
     read: public
     route: /api/v1/reviews/featured

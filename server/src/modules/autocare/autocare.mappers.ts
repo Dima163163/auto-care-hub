@@ -65,6 +65,12 @@ export function toProviderResponse(
         rating: Number(provider.rating),
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonusSummary,
+        phone: provider.phone,
+        email: provider.email,
+        websiteUrl: provider.websiteUrl,
+        metroStation: provider.metroStation,
+        workstationCount: provider.workstationCount,
+        warrantyText: provider.warrantyText,
         logoUrl: provider.logoUrl,
         coverImageUrl: provider.coverImageUrl,
         galleryImageUrls: provider.galleryImageUrls.length > 0

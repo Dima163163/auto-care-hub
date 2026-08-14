@@ -63,6 +63,13 @@ export type ProviderProfile = ProviderPreview & {
     hours: string
     yearsActive: number
     staffCount: number
+    workstationCount: number
+    phone: string | null
+    email: string | null
+    websiteUrl: string | null
+    metroStation: string | null
+    warrantyText: string | null
+    galleryImageUrls: readonly string[]
     about: string
     amenities: readonly AutomotiveAmenityId[]
     offerings: readonly ProviderOffering[]
@@ -125,6 +132,13 @@ export const providerProfiles: readonly ProviderProfile[] = providerPreviews.map
     hours: 'Пн–Вс: 08:00–21:00',
     yearsActive: provider.id === 'proservice-moscow' ? 8 : 5,
     staffCount: provider.id === 'proservice-moscow' ? 24 : 12,
+    workstationCount: provider.id === 'proservice-moscow' ? 12 : 8,
+    phone: '+7 (495) 645-35-35',
+    email: 'service@example.com',
+    websiteUrl: null,
+    metroStation: 'м. Парк культуры',
+    warrantyText: 'Гарантия на работы 12 месяцев',
+    galleryImageUrls: provider.image ? [provider.image] : [],
     about: 'Проверенный сервис с понятными ценами, фотоотчётом и гарантией на выполненные работы.',
     amenities: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
     offerings: defaultOfferings,

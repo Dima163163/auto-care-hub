@@ -90,6 +90,12 @@ export const uploadAutoCareProviderLogoSchema = z.object({
     contentBase64: z.string().min(1).max(1_398_104),
 })
 
+export const uploadAutoCareProviderMediaSchema = uploadAutoCareProviderLogoSchema.extend({
+    kind: z.enum(['cover', 'gallery']),
+    size: z.number().int().positive().max(6 * 1024 * 1024),
+    contentBase64: z.string().min(1).max(8_388_608),
+})
+
 export const autoCareAvailabilityQuerySchema = z.object({
     locationId: z.string().uuid(),
     offeringId: z.string().uuid(),
@@ -195,10 +201,19 @@ export const ownerAutoCareProviderSchema = z.object({
     hours: z.string().trim().min(2).max(120),
     yearsActive: z.coerce.number().int().min(0).max(150),
     staffCount: z.coerce.number().int().min(0).max(10_000),
+    workstationCount: z.coerce.number().int().nonnegative().max(100_000).optional(),
+    phone: z.string().trim().min(5).max(32).nullable().optional(),
+    email: z.string().trim().email().max(320).nullable().optional(),
+    websiteUrl: z.string().trim().url().max(500).nullable().optional(),
+    metroStation: z.string().trim().max(120).nullable().optional(),
+    warrantyText: z.string().trim().max(500).nullable().optional(),
+    bonusSummary: z.string().trim().max(500).nullable().optional(),
     isMultibrand: z.boolean(),
     brandSpecializations: z.array(z.string().trim().min(1).max(80)).max(30),
     amenityIds: z.array(z.enum(automotiveAmenityIds)).max(automotiveAmenityIds.length),
     logoUrl: z.string().trim().regex(/^\/uploads\/autocare\/logos\/[a-f0-9-]+\.webp$/i).nullable().optional(),
+    coverImageUrl: z.string().trim().regex(/^\/uploads\/autocare\/media\/cover\/[a-f0-9-]+\.webp$/i).nullable().optional(),
+    galleryImageUrls: z.array(z.string().trim().regex(/^\/uploads\/autocare\/media\/gallery\/[a-f0-9-]+\.webp$/i)).max(12).optional(),
 }).superRefine((value, context) => {
     if (!value.isMultibrand && value.brandSpecializations.length === 0) {
         context.addIssue({ code: 'custom', path: ['brandSpecializations'], message: 'Choose at least one brand or enable multibrand service.' })
