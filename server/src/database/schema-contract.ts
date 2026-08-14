@@ -51,7 +51,7 @@ const REQUIRED_COLUMNS_QUERY = `
         (table_name = 'bookings' AND column_name = 'idempotency_key')
         OR (table_name = 'user_sessions' AND column_name IN ('revoked_at', 'revocation_reason'))
         OR (table_name = 'security_events' AND column_name IN ('type', 'correlation_id', 'createdAt', 'severity', 'route', 'status_code', 'metadata', 'actor_role', 'auth_outcome', 'rate_limit_result', 'request_size_bytes', 'reason_code', 'proxy_provenance'))
-        OR (table_name = 'security_event_actions' AND column_name IN ('security_event_id', 'actor_id', 'status', 'created_at'))
+        OR (table_name = 'security_event_actions' AND column_name IN ('security_event_id', 'actor_id', 'assignee_id', 'status', 'created_at'))
         OR (table_name = 'booking_payment_invoices' AND column_name IN ('payment_id', 'booking_id', 'invoice_id', 'status'))
         OR (table_name = 'booking_payments' AND column_name IN ('bookingId', 'refunded_amount'))
         OR (table_name = 'outbox_events' AND column_name IN ('idempotencyKey', 'status', 'attempts', 'availableAt', 'createdAt'))
