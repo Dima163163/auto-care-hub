@@ -422,6 +422,8 @@ body {
 /* Keep the authenticated account control centered independently of header text baselines. */
 .account-avatar-trigger {
     display: flex;
+    pointer-events: auto;
+    cursor: pointer;
     width: 2.5rem;
     height: 2.5rem;
     min-width: 2.5rem;
