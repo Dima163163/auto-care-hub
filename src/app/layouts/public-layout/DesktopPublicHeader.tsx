@@ -26,6 +26,9 @@ export function DesktopPublicHeader() {
                     <NavLink to={ROUTES.serviceDiscovery} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
                         {t('navigation.services')}
                     </NavLink>
+                    <NavLink to={ROUTES.platformReviews} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
+                        {t('autocare.footerReviews')}
+                    </NavLink>
                     <HeaderInfoMenu variant="dark" />
                     {links.map((link) => (
                         <NavLink

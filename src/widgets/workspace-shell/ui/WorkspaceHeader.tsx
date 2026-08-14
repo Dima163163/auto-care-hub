@@ -40,6 +40,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
 
     const links = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
+        { to: ROUTES.platformReviews, label: t('autocare.footerReviews') },
         { to: ROUTES.about, label: t('navigation.about') },
     ]
 

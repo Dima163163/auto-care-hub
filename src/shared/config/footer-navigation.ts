@@ -15,6 +15,7 @@ export const footerColumns: FooterColumn[] = [
         titleKey: 'autocare.footerClients',
         items: [
             { labelKey: 'navigation.services', to: ROUTES.serviceDiscovery },
+            { labelKey: 'autocare.footerReviews', to: ROUTES.platformReviews },
             { labelKey: 'navigation.favorites', to: ROUTES.favorites },
             { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings },
             { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
