@@ -11,6 +11,7 @@ import { ProfileNavigation } from '@/widgets/profile-navigation/ui/ProfileNaviga
 import { buttonVariants } from '@/components/ui/button-variants'
 
 import { ProfileReviewCard } from './ProfileReviewCard'
+import { AutoCareReviewResolutionPanel } from './AutoCareReviewResolutionPanel'
 
 export function ProfileReviewsPage() {
     const { t } = useTranslation()
@@ -72,6 +73,8 @@ export function ProfileReviewsPage() {
                 title={t('review.myReviewsTitle')}
                 description={t('review.myReviewsDescription')}
             />
+
+            <AutoCareReviewResolutionPanel />
 
             {reviews.length === 0 ? (
                 <StateCard

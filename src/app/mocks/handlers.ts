@@ -132,8 +132,25 @@ const reviewPhotoAssets = [
     '/images/autocare/providers/generated/review-body-repair.webp',
 ]
 
-const mockFeaturedAutoCareReviews = [
-    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', photoUrls: [reviewPhotoAssets[0]], createdAt: '2026-08-12T10:00:00.000Z' },
+type MockAutoCareReview = {
+    id: string
+    providerId: string
+    authorName: string
+    vehicleLabel: string
+    rating: number
+    text: string
+    avatarUrl: string | null
+    photoUrls: string[]
+    createdAt: string
+    clientId?: string | null
+    serviceRequestId?: string | null
+    serviceSlug?: string | null
+    revisionAllowedUntil?: string | null
+    revisionUsedAt?: string | null
+}
+
+const mockFeaturedAutoCareReviews: MockAutoCareReview[] = [
+    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', photoUrls: [reviewPhotoAssets[0]], createdAt: '2026-08-12T10:00:00.000Z', clientId: 'user-client-1', serviceRequestId: 'owner-request-1', serviceSlug: 'oil-change' },
     { id: 'featured-review-2', providerId: 'api-autolux-moscow', authorName: 'Мария К.', vehicleLabel: 'Toyota RAV4', rating: 4, text: 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', avatarUrl: '/images/autocare/avatars/maria.webp', photoUrls: [reviewPhotoAssets[2]], createdAt: '2026-08-05T10:00:00.000Z' },
     { id: 'featured-review-3', providerId: 'api-formula-moscow', authorName: 'Игорь П.', vehicleLabel: 'Skoda Octavia', rating: 3, text: 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', avatarUrl: '/images/autocare/avatars/igor.webp', photoUrls: [reviewPhotoAssets[1]], createdAt: '2026-07-29T10:00:00.000Z' },
     { id: 'featured-review-4', providerId: 'api-proservice-moscow', authorName: 'Ольга Н.', vehicleLabel: 'Volkswagen Tiguan', rating: 2, text: 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', avatarUrl: null, photoUrls: [], createdAt: '2026-07-21T10:00:00.000Z' },
@@ -272,6 +289,20 @@ const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
 ]
 const mockAutoCareMessages = new Map<string, Array<{ id: string; senderId: string; kind: 'text'; body: string; createdAt: string }>>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
+type MockAutoCareReviewPromo = {
+    id: string
+    reviewId: string
+    providerId: string
+    clientId: string
+    serviceRequestId: string | null
+    serviceSlug: string | null
+    code: string
+    discountPercent: number
+    status: 'active' | 'redeemed' | 'revoked' | 'expired'
+    expiresAt: string
+    redeemedAt: string | null
+}
+const mockAutoCareReviewPromos: MockAutoCareReviewPromo[] = []
 
 function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
@@ -2042,12 +2073,102 @@ export const handlers = [
         if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view automotive service reviews.' }, { status: 403 })
         if (!provider) return HttpResponse.json({ message: 'Automotive service provider not found.' }, { status: 404 })
 
-        const reviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === providerId)
+        const now = Date.now()
+        const reviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === providerId).map((review) => ({
+            ...review,
+            canContact: Boolean(review.serviceRequestId),
+            canEdit: Boolean(review.revisionAllowedUntil && new Date(review.revisionAllowedUntil).getTime() > now && !review.revisionUsedAt),
+        }))
         const distribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
         for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
         const totalReviews = reviews.length
         const averageRating = totalReviews === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1))
         return HttpResponse.json({ providerId, totalReviews, averageRating, distribution, reviews })
+    }),
+
+    http.post('/api/owner/autocare-providers/:providerId/reviews/:reviewId/promos', async ({ params, request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        const providerId = String(params.providerId)
+        const reviewId = String(params.reviewId)
+        const provider = ownerAutoCareProviders.find((item) => item.id === providerId)
+        const review = mockFeaturedAutoCareReviews.find((item) => item.id === reviewId && item.providerId === providerId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can issue service promos.' }, { status: 403 })
+        if (!provider || !review) return HttpResponse.json({ message: 'Automotive review not found.' }, { status: 404 })
+        if (!review.clientId) return HttpResponse.json({ message: 'This review is not linked to a client account yet.' }, { status: 409 })
+
+        const body = await request.json() as { discountPercent?: unknown; serviceSlug?: unknown; expiresInDays?: unknown }
+        const discountPercent = body.discountPercent
+        const expiresInDays = body.expiresInDays ?? 30
+        if (typeof discountPercent !== 'number' || !Number.isInteger(discountPercent) || discountPercent < 1 || discountPercent > 100 || typeof expiresInDays !== 'number' || !Number.isInteger(expiresInDays) || expiresInDays < 1 || expiresInDays > 90) {
+            return HttpResponse.json({ message: 'Discount must be between 1 and 100 percent.' }, { status: 400 })
+        }
+        let code = `CARE-${crypto.randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase()}`
+        while (mockAutoCareReviewPromos.some((promo) => promo.code === code)) code = `CARE-${crypto.randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase()}`
+        const promo: MockAutoCareReviewPromo = {
+            id: crypto.randomUUID(),
+            reviewId,
+            providerId,
+            clientId: review.clientId,
+            serviceRequestId: review.serviceRequestId ?? null,
+            serviceSlug: typeof body.serviceSlug === 'string' ? body.serviceSlug.trim() || null : review.serviceSlug ?? null,
+            code,
+            discountPercent,
+            status: 'active',
+            expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1_000).toISOString(),
+            redeemedAt: null,
+        }
+        mockAutoCareReviewPromos.unshift(promo)
+        return HttpResponse.json(promo)
+    }),
+
+    http.get('/api/v1/autocare-reviews/my', () => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'client') return HttpResponse.json({ message: 'Only clients can view automotive reviews.' }, { status: 403 })
+        const now = Date.now()
+        return HttpResponse.json(mockFeaturedAutoCareReviews.filter((review) => review.clientId === currentUser.id).map((review) => ({
+            ...review,
+            canContact: false,
+            canEdit: Boolean(review.revisionAllowedUntil && new Date(review.revisionAllowedUntil).getTime() > now && !review.revisionUsedAt),
+        })))
+    }),
+
+    http.post('/api/v1/autocare-review-promos/redeem', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'client') return HttpResponse.json({ message: 'Only clients can redeem service promos.' }, { status: 403 })
+        const body = await request.json() as { code?: unknown }
+        const code = typeof body.code === 'string' ? body.code.trim().toUpperCase() : ''
+        const promo = mockAutoCareReviewPromos.find((item) => item.code === code && item.clientId === currentUser.id)
+        if (!promo) return HttpResponse.json({ message: 'Promo code not found.' }, { status: 404 })
+        if (promo.status !== 'active') return HttpResponse.json({ message: 'This promo code has already been used or revoked.' }, { status: 409 })
+        if (new Date(promo.expiresAt).getTime() <= Date.now()) {
+            promo.status = 'expired'
+            return HttpResponse.json({ message: 'This promo code has expired.' }, { status: 409 })
+        }
+        promo.status = 'redeemed'
+        promo.redeemedAt = new Date().toISOString()
+        const review = mockFeaturedAutoCareReviews.find((item) => item.id === promo.reviewId && item.clientId === currentUser.id)
+        if (!review) return HttpResponse.json({ message: 'Review linked to this promo was not found.' }, { status: 404 })
+        review.revisionAllowedUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000).toISOString()
+        review.revisionUsedAt = null
+        return HttpResponse.json(promo)
+    }),
+
+    http.patch('/api/v1/autocare-reviews/:reviewId', async ({ params, request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        const review = mockFeaturedAutoCareReviews.find((item) => item.id === String(params.reviewId))
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'client') return HttpResponse.json({ message: 'Only clients can edit automotive reviews.' }, { status: 403 })
+        if (!review || review.clientId !== currentUser.id) return HttpResponse.json({ message: 'Automotive review not found.' }, { status: 404 })
+        if (!review.revisionAllowedUntil || new Date(review.revisionAllowedUntil).getTime() <= Date.now() || review.revisionUsedAt) return HttpResponse.json({ message: 'Redeem a valid service promo before editing this review.' }, { status: 409 })
+        const body = await request.json() as { rating?: unknown; text?: unknown }
+        if (typeof body.rating !== 'number' || !Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5 || typeof body.text !== 'string' || body.text.trim().length < 10 || body.text.trim().length > 1_000) return HttpResponse.json({ message: 'Invalid review.' }, { status: 400 })
+        review.rating = body.rating
+        review.text = body.text.trim()
+        review.revisionUsedAt = new Date().toISOString()
+        return HttpResponse.json({ ...review, canContact: false, canEdit: false })
     }),
 
     http.post('/api/owner/autocare-providers/logo', async ({ request }) => {

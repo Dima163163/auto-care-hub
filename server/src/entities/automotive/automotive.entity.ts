@@ -5,6 +5,7 @@ import {
     Entity,
     Index,
     PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm'
 
 export enum AutomotiveProviderStatus {
@@ -117,6 +118,38 @@ export class AutomotiveReviewEntity {
     @Column({ type: 'text' }) text!: string
     @Column({ type: 'text', nullable: true }) avatarUrl!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) photoUrls!: string[]
+    @Column({ type: 'uuid', nullable: true }) clientId!: string | null
+    @Column({ type: 'uuid', nullable: true }) serviceRequestId!: string | null
+    @Column({ type: 'text', nullable: true }) serviceSlug!: string | null
+    @Column({ type: 'timestamptz', nullable: true }) revisionAllowedUntil!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) revisionUsedAt!: Date | null
     @Column({ type: 'enum', enum: AutomotiveReviewStatus, enumName: 'autocare_review_status', default: AutomotiveReviewStatus.Approved }) status!: AutomotiveReviewStatus
+    @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
+    @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
+}
+
+export enum AutomotiveReviewPromoStatus {
+    Active = 'active',
+    Redeemed = 'redeemed',
+    Revoked = 'revoked',
+    Expired = 'expired',
+}
+
+@Entity('autocare_review_promos')
+@Index(['providerId', 'createdAt'])
+@Index(['code'], { unique: true })
+export class AutomotiveReviewPromoEntity {
+    @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'uuid' }) providerId!: string
+    @Column({ type: 'uuid' }) reviewId!: string
+    @Column({ type: 'uuid', nullable: true }) clientId!: string | null
+    @Column({ type: 'uuid', nullable: true }) serviceRequestId!: string | null
+    @Column({ type: 'text', nullable: true }) serviceSlug!: string | null
+    @Column({ type: 'text' }) code!: string
+    @Column({ type: 'integer' }) discountPercent!: number
+    @Column({ type: 'enum', enum: AutomotiveReviewPromoStatus, enumName: 'autocare_review_promo_status', default: AutomotiveReviewPromoStatus.Active }) status!: AutomotiveReviewPromoStatus
+    @Column({ type: 'timestamptz' }) expiresAt!: Date
+    @Column({ type: 'timestamptz', nullable: true }) redeemedAt!: Date | null
+    @Column({ type: 'uuid', nullable: true }) redeemedById!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }

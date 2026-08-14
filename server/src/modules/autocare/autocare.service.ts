@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { In } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
@@ -6,18 +7,22 @@ import {
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
+    AutomotiveReviewPromoEntity,
+    AutomotiveReviewPromoStatus,
     AutomotiveReviewStatus,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
 } from '../../entities/index.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
+import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
+import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -36,6 +41,46 @@ function getDistanceKm(latitude: number | null, longitude: number | null, market
     const latDistance = (latitude - marketLatitude) * 111
     const lngDistance = (longitude - marketLongitude) * 111 * Math.cos((marketLatitude * Math.PI) / 180)
     return Math.sqrt((latDistance ** 2) + (lngDistance ** 2))
+}
+
+function isReviewEditable(review: AutomotiveReviewEntity, now = new Date()) {
+    return Boolean(review.revisionAllowedUntil && review.revisionAllowedUntil > now && !review.revisionUsedAt)
+}
+
+function toAutoCareReviewResponse(review: AutomotiveReviewEntity, options: { exposeActions?: boolean } = {}) {
+    const exposeActions = options.exposeActions ?? false
+    return {
+        id: review.id,
+        providerId: review.providerId,
+        authorName: review.authorName,
+        vehicleLabel: review.vehicleLabel,
+        rating: review.rating,
+        text: review.text,
+        avatarUrl: review.avatarUrl,
+        photoUrls: review.photoUrls,
+        createdAt: review.createdAt.toISOString(),
+        serviceRequestId: review.serviceRequestId,
+        serviceSlug: review.serviceSlug,
+        revisionAllowedUntil: review.revisionAllowedUntil?.toISOString() ?? null,
+        revisionUsedAt: review.revisionUsedAt?.toISOString() ?? null,
+        canContact: exposeActions && Boolean(review.serviceRequestId),
+        canEdit: exposeActions && isReviewEditable(review),
+    }
+}
+
+function toAutoCareReviewPromoResponse(promo: AutomotiveReviewPromoEntity): AutoCareReviewPromoResponse {
+    return {
+        id: promo.id,
+        reviewId: promo.reviewId,
+        providerId: promo.providerId,
+        serviceRequestId: promo.serviceRequestId,
+        serviceSlug: promo.serviceSlug,
+        code: promo.code,
+        discountPercent: promo.discountPercent,
+        status: promo.status,
+        expiresAt: promo.expiresAt.toISOString(),
+        redeemedAt: promo.redeemedAt?.toISOString() ?? null,
+    }
 }
 
 async function findServiceDefinition(value: string) {
@@ -82,17 +127,7 @@ export async function getFeaturedAutoCareReviews(limit: number) {
         take: limit,
     })
 
-    return reviews.map((review) => ({
-        id: review.id,
-        providerId: review.providerId,
-        authorName: review.authorName,
-        vehicleLabel: review.vehicleLabel,
-        rating: review.rating,
-        text: review.text,
-        avatarUrl: review.avatarUrl,
-        photoUrls: review.photoUrls,
-        createdAt: review.createdAt.toISOString(),
-    }))
+    return reviews.map((review) => toAutoCareReviewResponse(review))
 }
 
 export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {
@@ -239,18 +274,101 @@ export async function getOwnerAutoCareProviderReviews(owner: UserEntity, provide
         totalReviews,
         averageRating,
         distribution,
-        reviews: reviews.map((review) => ({
-            id: review.id,
-            providerId: review.providerId,
-            authorName: review.authorName,
-            vehicleLabel: review.vehicleLabel,
-            rating: review.rating,
-            text: review.text,
-            avatarUrl: review.avatarUrl,
-            photoUrls: review.photoUrls,
-            createdAt: review.createdAt.toISOString(),
-        })),
+        reviews: reviews.map((review) => toAutoCareReviewResponse(review, { exposeActions: true })),
     }
+}
+
+function assertClient(user: UserEntity) {
+    if (user.role !== UserRole.Client) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only clients can manage automotive review revisions.' })
+    }
+}
+
+function makeReviewPromoCode() {
+    return `CARE-${randomBytes(4).toString('hex').toUpperCase()}`
+}
+
+export async function createOwnerAutoCareReviewPromo(owner: UserEntity, providerId: string, reviewId: string, input: CreateAutoCareReviewPromoInput): Promise<AutoCareReviewPromoResponse> {
+    assertOwner(owner)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: owner.id })
+    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    const review = await AppDataSource.getRepository(AutomotiveReviewEntity).findOneBy({ id: reviewId, providerId, status: AutomotiveReviewStatus.Approved })
+    if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
+    if (!review.clientId) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review is not linked to a client account yet.' })
+
+    const promoRepository = AppDataSource.getRepository(AutomotiveReviewPromoEntity)
+    let code = makeReviewPromoCode()
+    while (await promoRepository.existsBy({ code })) code = makeReviewPromoCode()
+    const promo = promoRepository.create({
+        providerId,
+        reviewId,
+        clientId: review.clientId,
+        serviceRequestId: review.serviceRequestId,
+        serviceSlug: input.serviceSlug ?? review.serviceSlug,
+        code,
+        discountPercent: input.discountPercent,
+        status: AutomotiveReviewPromoStatus.Active,
+        expiresAt: new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1_000),
+        redeemedAt: null,
+        redeemedById: null,
+    })
+    const savedPromo = await promoRepository.save(promo)
+    await enqueueNotificationSafely({
+        userId: review.clientId,
+        category: NotificationCategory.Booking,
+        title: 'Сервис предложил решение по отзыву',
+        message: `Промокод ${savedPromo.code} даёт скидку ${savedPromo.discountPercent}% на следующий визит.`,
+        link: `/profile/reviews?autocarePromo=${savedPromo.code}`,
+        metadata: { domain: 'autocare', reviewId, promoId: savedPromo.id },
+    }, `notification:autocare-review-promo:${savedPromo.id}`)
+    return toAutoCareReviewPromoResponse(savedPromo)
+}
+
+export async function redeemAutoCareReviewPromo(client: UserEntity, input: RedeemAutoCareReviewPromoInput): Promise<AutoCareReviewPromoResponse> {
+    assertClient(client)
+    return AppDataSource.transaction(async (manager) => {
+        const promoRepository = manager.getRepository(AutomotiveReviewPromoEntity)
+        const promo = await promoRepository.findOne({ where: { code: input.code }, lock: { mode: 'pessimistic_write' } })
+        if (!promo || promo.clientId !== client.id) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Promo code not found.' })
+        if (promo.status !== AutomotiveReviewPromoStatus.Active) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This promo code has already been used or revoked.' })
+        if (promo.expiresAt <= new Date()) {
+            promo.status = AutomotiveReviewPromoStatus.Expired
+            await promoRepository.save(promo)
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This promo code has expired.' })
+        }
+
+        const now = new Date()
+        promo.status = AutomotiveReviewPromoStatus.Redeemed
+        promo.redeemedAt = now
+        promo.redeemedById = client.id
+        const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
+        const review = await reviewRepository.findOneBy({ id: promo.reviewId, clientId: client.id })
+        if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Review linked to this promo was not found.' })
+        review.revisionAllowedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1_000)
+        review.revisionUsedAt = null
+        await reviewRepository.save(review)
+        return toAutoCareReviewPromoResponse(await promoRepository.save(promo))
+    })
+}
+
+export async function getMyAutoCareReviews(client: UserEntity) {
+    assertClient(client)
+    const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({ where: { clientId: client.id }, order: { createdAt: 'DESC' } })
+    return reviews.map((review) => toAutoCareReviewResponse(review, { exposeActions: true }))
+}
+
+export async function updateClientAutoCareReview(client: UserEntity, reviewId: string, input: UpdateAutoCareReviewInput) {
+    assertClient(client)
+    const repository = AppDataSource.getRepository(AutomotiveReviewEntity)
+    const review = await repository.findOneBy({ id: reviewId, clientId: client.id })
+    if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
+    if (!isReviewEditable(review)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review can only be edited after redeeming a valid service promo code.' })
+    review.rating = input.rating
+    review.text = input.text
+    review.status = AutomotiveReviewStatus.Pending
+    review.revisionUsedAt = new Date()
+    const savedReview = await repository.save(review)
+    return toAutoCareReviewResponse(savedReview, { exposeActions: true })
 }
 
 export async function createOwnerAutoCareProvider(owner: UserEntity, input: OwnerAutoCareProviderInput) {

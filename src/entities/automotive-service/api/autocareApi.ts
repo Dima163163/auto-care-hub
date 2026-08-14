@@ -113,7 +113,37 @@ export type AutoCareApiReview = {
     avatarUrl: string | null
     photoUrls: string[]
     createdAt: string
+    serviceRequestId?: string | null
+    serviceSlug?: string | null
+    revisionAllowedUntil?: string | null
+    revisionUsedAt?: string | null
+    canContact?: boolean
+    canEdit?: boolean
 }
+
+export type AutoCareReviewPromo = {
+    id: string
+    reviewId: string
+    providerId: string
+    serviceRequestId: string | null
+    serviceSlug: string | null
+    code: string
+    discountPercent: number
+    status: 'active' | 'redeemed' | 'revoked' | 'expired'
+    expiresAt: string
+    redeemedAt: string | null
+}
+
+export type IssueAutoCareReviewPromoInput = {
+    providerId: string
+    reviewId: string
+    discountPercent: number
+    serviceSlug?: string | null
+    expiresInDays?: number
+}
+
+export type RedeemAutoCareReviewPromoInput = { code: string }
+export type UpdateAutoCareReviewInput = { reviewId: string; rating: number; text: string }
 
 export type AutoCareApiProviderReviews = {
     providerId: string
@@ -154,7 +184,26 @@ const featuredReviewSchema = z.object({
     avatarUrl: z.string().nullable(),
     photoUrls: z.array(z.string().min(1)),
     createdAt: z.string().datetime({ offset: true }),
+    serviceRequestId: z.string().nullable().optional(),
+    serviceSlug: z.string().nullable().optional(),
+    revisionAllowedUntil: z.string().datetime({ offset: true }).nullable().optional(),
+    revisionUsedAt: z.string().datetime({ offset: true }).nullable().optional(),
+    canContact: z.boolean().optional(),
+    canEdit: z.boolean().optional(),
 }) satisfies z.ZodType<AutoCareApiReview>
+
+const reviewPromoSchema = z.object({
+    id: z.string(),
+    reviewId: z.string(),
+    providerId: z.string(),
+    serviceRequestId: z.string().nullable(),
+    serviceSlug: z.string().nullable(),
+    code: z.string(),
+    discountPercent: z.number().int().min(1).max(100),
+    status: z.enum(['active', 'redeemed', 'revoked', 'expired']),
+    expiresAt: z.string().datetime({ offset: true }),
+    redeemedAt: z.string().datetime({ offset: true }).nullable(),
+}) satisfies z.ZodType<AutoCareReviewPromo>
 
 const ownerProviderReviewsSchema = z.object({
     providerId: z.string(),
@@ -309,6 +358,26 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => ownerProviderReviewsSchema.parse(value),
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareReview', id: `OWNER_${providerId}` }],
         }),
+        issueOwnerAutoCareReviewPromo: build.mutation<AutoCareReviewPromo, IssueAutoCareReviewPromoInput>({
+            query: ({ providerId, reviewId, ...body }) => ({ url: `/owner/autocare-providers/${providerId}/reviews/${reviewId}/promos`, method: 'POST', body }),
+            transformResponse: (value: unknown) => reviewPromoSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareReview', id: `OWNER_${providerId}` }],
+        }),
+        getMyAutoCareReviews: build.query<AutoCareApiReview[], void>({
+            query: () => '/v1/autocare-reviews/my',
+            transformResponse: (value: unknown) => z.array(featuredReviewSchema).parse(value),
+            providesTags: [{ type: 'AutoCareReview', id: 'CLIENT_LIST' }],
+        }),
+        redeemAutoCareReviewPromo: build.mutation<AutoCareReviewPromo, RedeemAutoCareReviewPromoInput>({
+            query: (body) => ({ url: '/v1/autocare-review-promos/redeem', method: 'POST', body }),
+            transformResponse: (value: unknown) => reviewPromoSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareReview', id: 'CLIENT_LIST' }],
+        }),
+        updateAutoCareReview: build.mutation<AutoCareApiReview, UpdateAutoCareReviewInput>({
+            query: ({ reviewId, ...body }) => ({ url: `/v1/autocare-reviews/${reviewId}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => featuredReviewSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareReview', id: 'CLIENT_LIST' }, { type: 'AutoCareReview', id: 'FEATURED' }],
+        }),
         getAdminAutoCareProviders: build.query<AdminAutoCareProvider[], void>({
             query: () => '/admin/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'ADMIN_LIST' }],
@@ -401,6 +470,10 @@ export const {
     useGetOwnerAutoCareProvidersQuery,
     useUpdateOwnerAutoCareOfferMutation,
     useGetOwnerAutoCareProviderReviewsQuery,
+    useIssueOwnerAutoCareReviewPromoMutation,
+    useGetMyAutoCareReviewsQuery,
+    useRedeemAutoCareReviewPromoMutation,
+    useUpdateAutoCareReviewMutation,
     useGetAdminAutoCareProvidersQuery,
     useUpdateAdminAutoCareProviderStatusMutation,
     useGetSuperAdminPlatformOverviewQuery,

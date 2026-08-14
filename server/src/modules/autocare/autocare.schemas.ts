@@ -32,6 +32,30 @@ export const autoCareOfferParamsSchema = z.object({
     offerId: z.string().uuid(),
 })
 
+export const autoCareReviewParamsSchema = z.object({
+    providerId: z.string().uuid(),
+    reviewId: z.string().uuid(),
+})
+
+export const autoCareReviewOnlyParamsSchema = z.object({
+    reviewId: z.string().uuid(),
+})
+
+export const createAutoCareReviewPromoSchema = z.object({
+    discountPercent: z.number().int().min(1).max(100),
+    serviceSlug: z.string().trim().min(1).max(120).nullable().optional(),
+    expiresInDays: z.number().int().min(1).max(90).default(30),
+})
+
+export const redeemAutoCareReviewPromoSchema = z.object({
+    code: z.string().trim().toUpperCase().regex(/^CARE-[A-Z0-9]{8}$/),
+})
+
+export const updateAutoCareReviewSchema = z.object({
+    rating: z.number().int().min(1).max(5),
+    text: z.string().trim().min(10).max(1_000),
+})
+
 export const updateAutoCareOfferSchema = z.object({
     description: z.string().trim().max(2_000).nullable(),
     priceFromMinor: z.number().int().nonnegative().max(100_000_000_00),

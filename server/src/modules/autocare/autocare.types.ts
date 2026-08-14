@@ -115,7 +115,35 @@ export type AutoCareReviewResponse = {
     avatarUrl: string | null
     photoUrls: string[]
     createdAt: string
+    serviceRequestId: string | null
+    serviceSlug: string | null
+    revisionAllowedUntil: string | null
+    revisionUsedAt: string | null
+    canContact: boolean
+    canEdit: boolean
 }
+
+export type AutoCareReviewPromoResponse = {
+    id: string
+    reviewId: string
+    providerId: string
+    serviceRequestId: string | null
+    serviceSlug: string | null
+    code: string
+    discountPercent: number
+    status: 'active' | 'redeemed' | 'revoked' | 'expired'
+    expiresAt: string
+    redeemedAt: string | null
+}
+
+export type CreateAutoCareReviewPromoInput = {
+    discountPercent: number
+    serviceSlug?: string | null
+    expiresInDays: number
+}
+
+export type RedeemAutoCareReviewPromoInput = { code: string }
+export type UpdateAutoCareReviewInput = { rating: number; text: string }
 
 export type OwnerAutoCareProviderReviewsResponse = {
     providerId: string

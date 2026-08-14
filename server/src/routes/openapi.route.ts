@@ -181,6 +181,17 @@ export function getOpenApiDocument() {
             '/owner/autocare-providers/{providerId}/reviews': {
                 get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
             },
+            '/owner/autocare-providers/{providerId}/reviews/{reviewId}/promos': {
+                post: {
+                    operationId: 'issueAutoCareReviewPromo',
+                    parameters: [
+                        { name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                        { name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                    ],
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['discountPercent'], properties: { discountPercent: { type: 'integer', minimum: 1, maximum: 100 }, serviceSlug: { type: ['string', 'null'], maxLength: 120 }, expiresInDays: { type: 'integer', minimum: 1, maximum: 90, default: 30 } }, additionalProperties: false } } } },
+                    responses: { '200': { description: 'One-time service promo issued to resolve a linked customer review.' } },
+                },
+            },
             '/owner/autocare-providers/{providerId}/offers/{offerId}': {
                 patch: {
                     operationId: 'updateOwnerAutoCareOffer',
@@ -223,6 +234,15 @@ export function getOpenApiDocument() {
             },
             '/v1/service-requests/my': {
                 get: { operationId: 'listMyAutoCareServiceRequests', responses: { '200': { description: 'Authenticated client service requests.' } } },
+            },
+            '/v1/autocare-reviews/my': {
+                get: { operationId: 'listMyAutoCareReviews', responses: { '200': { description: 'Authenticated client automotive reviews and revision eligibility.' } } },
+            },
+            '/v1/autocare-review-promos/redeem': {
+                post: { operationId: 'redeemAutoCareReviewPromo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['code'], properties: { code: { type: 'string', pattern: '^CARE-[A-Z0-9]{8}$' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Redeemed service promo and opened a one-time review revision window.' } } },
+            },
+            '/v1/autocare-reviews/{reviewId}': {
+                patch: { operationId: 'updateAutoCareReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Updated automotive review queued for moderation.' } } },
             },
             '/v1/service-requests/{requestId}': {
                 get: { operationId: 'getAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Service request visible to its client or provider owner.' } } },
