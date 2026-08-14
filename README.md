@@ -24,7 +24,8 @@ cabinet-rental booking product to AutoCare Hub.
   in reviewed vertical slices; the remaining work is to replace legacy
   workspace flows one slice at a time.
 - Existing `cabinet`, booking-commission and Stripe Connect code is an isolated
-  compatibility layer, not the AutoCare product model.
+  compatibility layer, not the AutoCare product model. Stripe Connect is not
+  exposed in the AutoCare UI and is not part of the MVP payment flow.
 - Do not present any legacy deployment as the current AutoCare Hub service.
 - Do not remove legacy code until the corresponding AutoCare vertical slice and
   tests are accepted.

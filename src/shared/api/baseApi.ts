@@ -346,7 +346,6 @@ export const baseApi = createApi({
         'CabinetSchedule',
         'CabinetScheduleExceptions',
         'CabinetBlockedPeriods',
-        'StripeConnect',
         'OwnerReadiness',
         'AutoCareMarket',
         'AutoCareServiceDefinition',

@@ -58,7 +58,6 @@ function createPopularLocale(locale: PopularLocale, overrides: LocaleOverrides):
         pwa: { ...enTranslations.pwa, ...longTail.pwa },
         navigation: { ...enTranslations.navigation, ...overrides.navigation },
         commission: { ...enTranslations.commission, ...longTail.commission },
-        stripeConnect: { ...enTranslations.stripeConnect, ...longTail.stripeConnect },
         adminLayout: { ...enTranslations.adminLayout, ...longTail.adminLayout },
         auth: { ...enTranslations.auth, ...overrides.auth },
         workspace: { ...enTranslations.workspace, ...overrides.workspace },

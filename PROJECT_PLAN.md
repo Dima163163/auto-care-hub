@@ -245,11 +245,14 @@ request contract.
 
 ### 4.3 Quarantine and later remove
 
-The copied project contains commission and Stripe Connect flows for customer
-booking payments. They conflict with the current AutoCare Hub monetization
-direction.
+The copied project contains legacy commission and Stripe Connect flows for
+customer booking payments. They conflict with the current AutoCare Hub
+monetization direction and are not part of the AutoCare product.
 
-- [ ] Stop exposing legacy repair-payment/commission UI in the AutoCare product.
+- [x] Stop exposing legacy repair-payment/commission and Stripe Connect UI in the
+  AutoCare product. Customers always use AutoCare for free and pay the chosen
+  provider directly; AutoCare does not collect repair payments or provider
+  payouts.
 - [ ] Prevent new AutoCare domain code from depending on legacy payment entities.
 - [ ] Preserve only provider-agnostic reliability patterns that are useful for
   future subscription billing: webhook verification, idempotency,

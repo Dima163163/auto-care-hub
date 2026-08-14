@@ -7,7 +7,6 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ChangePasswordForm } from './ChangePasswordForm'
 import { SessionsList } from './SessionsList'
-import { StripeConnectCard } from '@/entities/payment'
 import { cn } from '@/lib/utils'
 import { useProfile } from '../lib/useProfile'
 import { ProfileError, ProfileLoading } from './ProfileStates'
@@ -96,7 +95,6 @@ export function ProfilePage() {
                             <div className="grid gap-6">
                                 <GeneralInfoSection user={user} />
                                 {user.role !== 'client' && <ProfilePreferences user={user} />}
-                                {user.role === 'owner' && <StripeConnectCard />}
                             </div>
                         )}
 

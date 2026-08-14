@@ -117,16 +117,6 @@ export const ruTranslations = {
         featureTransparent: 'Комиссия показывается до оплаты',
         featurePayouts: 'Остаток суммы подготавливается к выплате владельцу',
     },
-    stripeConnect: {
-        title: 'Выплаты через Stripe',
-        description: 'Подключите Stripe, чтобы получать выплаты за оплаченные бронирования.',
-        checking: 'Проверяем подключение...',
-        ready: 'Подключено, выплаты доступны',
-        incomplete: 'Настройка не завершена',
-        opening: 'Открываем Stripe...',
-        connectAction: 'Подключить Stripe',
-        refreshAction: 'Обновить статус',
-    },
     adminLayout: {
         title: 'Модерация и управление платформой',
     },

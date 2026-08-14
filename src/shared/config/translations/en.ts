@@ -113,16 +113,6 @@ export const enTranslations = {
         featureTransparent: 'The commission is shown before payment',
         featurePayouts: 'The remaining amount is prepared for owner payout',
     },
-    stripeConnect: {
-        title: 'Stripe payouts',
-        description: 'Connect Stripe to receive payouts from paid bookings.',
-        checking: 'Checking connection...',
-        ready: 'Connected and ready to receive payouts',
-        incomplete: 'Setup is incomplete',
-        opening: 'Opening Stripe...',
-        connectAction: 'Connect Stripe',
-        refreshAction: 'Refresh status',
-    },
     adminLayout: {
         title: 'Moderation and platform management',
     },
