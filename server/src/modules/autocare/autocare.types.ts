@@ -115,6 +115,14 @@ export type AutoCareReviewResponse = {
     createdAt: string
 }
 
+export type OwnerAutoCareProviderReviewsResponse = {
+    providerId: string
+    totalReviews: number
+    averageRating: number
+    distribution: Record<'1' | '2' | '3' | '4' | '5', number>
+    reviews: AutoCareReviewResponse[]
+}
+
 export type AutoCareAvailabilitySlotResponse = {
     startTime: string
     endTime: string

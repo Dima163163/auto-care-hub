@@ -17,7 +17,7 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, OwnerAutoCareProviderInput } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -195,6 +195,38 @@ export async function getOwnerAutoCareProviders(owner: UserEntity) {
             offers: (offersByLocationId.get(location.id) ?? []).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
         }]
     })
+}
+
+export async function getOwnerAutoCareProviderReviews(owner: UserEntity, providerId: string): Promise<OwnerAutoCareProviderReviewsResponse> {
+    assertOwner(owner)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: owner.id })
+    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+
+    const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
+        where: { providerId: provider.id, status: AutomotiveReviewStatus.Approved },
+        order: { createdAt: 'DESC' },
+    })
+    const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+    for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
+    const totalReviews = reviews.length
+    const averageRating = totalReviews === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1))
+
+    return {
+        providerId: provider.id,
+        totalReviews,
+        averageRating,
+        distribution,
+        reviews: reviews.map((review) => ({
+            id: review.id,
+            providerId: review.providerId,
+            authorName: review.authorName,
+            vehicleLabel: review.vehicleLabel,
+            rating: review.rating,
+            text: review.text,
+            avatarUrl: review.avatarUrl,
+            createdAt: review.createdAt.toISOString(),
+        })),
+    }
 }
 
 export async function createOwnerAutoCareProvider(owner: UserEntity, input: OwnerAutoCareProviderInput) {

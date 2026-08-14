@@ -198,6 +198,12 @@ export const OwnerAutoCareProviderDetailsPage = lazy(() =>
     })),
 )
 
+export const OwnerAutoCareProviderReviewsPage = lazy(() =>
+    import('@/pages/owner-autocare-provider-reviews').then((module) => ({
+        default: module.OwnerAutoCareProviderReviewsPage,
+    })),
+)
+
 export const OwnerCabinetsPage = lazy(() =>
     import('@/pages/owner-cabinets').then((module) => ({
         default: module.OwnerCabinetsPage,

@@ -106,6 +106,14 @@ export type AutoCareApiReview = {
     createdAt: string
 }
 
+export type AutoCareApiProviderReviews = {
+    providerId: string
+    totalReviews: number
+    averageRating: number
+    distribution: Record<'1' | '2' | '3' | '4' | '5', number>
+    reviews: AutoCareApiReview[]
+}
+
 export type AutoCareVehicleEngine = {
     id: string
     fuelType: 'petrol' | 'diesel' | 'hybrid' | 'electric' | 'lpg' | 'hydrogen' | 'other'
@@ -137,6 +145,20 @@ const featuredReviewSchema = z.object({
     avatarUrl: z.string().nullable(),
     createdAt: z.string().datetime({ offset: true }),
 }) satisfies z.ZodType<AutoCareApiReview>
+
+const ownerProviderReviewsSchema = z.object({
+    providerId: z.string(),
+    totalReviews: z.number().int().nonnegative(),
+    averageRating: z.number().min(0).max(5),
+    distribution: z.object({
+        '1': z.number().int().nonnegative(),
+        '2': z.number().int().nonnegative(),
+        '3': z.number().int().nonnegative(),
+        '4': z.number().int().nonnegative(),
+        '5': z.number().int().nonnegative(),
+    }),
+    reviews: z.array(featuredReviewSchema),
+}) satisfies z.ZodType<AutoCareApiProviderReviews>
 
 export type AutoCareAvailability = { date: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string }> }
 
@@ -263,6 +285,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: () => '/owner/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        getOwnerAutoCareProviderReviews: build.query<AutoCareApiProviderReviews, string>({
+            query: (providerId) => `/owner/autocare-providers/${providerId}/reviews`,
+            transformResponse: (value: unknown) => ownerProviderReviewsSchema.parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareReview', id: `OWNER_${providerId}` }],
+        }),
         getAdminAutoCareProviders: build.query<AdminAutoCareProvider[], void>({
             query: () => '/admin/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'ADMIN_LIST' }],
@@ -353,6 +380,7 @@ export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useGetOwnerAutoCareProviderReviewsQuery,
     useGetAdminAutoCareProvidersQuery,
     useUpdateAdminAutoCareProviderStatusMutation,
     useGetSuperAdminPlatformOverviewQuery,

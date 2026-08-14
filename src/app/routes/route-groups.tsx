@@ -38,6 +38,7 @@ import {
     OwnerClientsPage,
     OwnerAutoCareProvidersPage,
     OwnerAutoCareProviderDetailsPage,
+    OwnerAutoCareProviderReviewsPage,
     OwnerDashboardPage,
     OwnerServicesPage,
     OwnersPage,
@@ -158,6 +159,7 @@ export function renderOwnerRoutes() {
             <Route path={ROUTES.ownerDashboard} element={<OwnerDashboardPage />} />
             <Route path={ROUTES.ownerAutoCareProviders} element={<OwnerAutoCareProvidersPage />} />
             <Route path={ROUTES.ownerAutoCareProviderDetails} element={<OwnerAutoCareProviderDetailsPage />} />
+            <Route path={ROUTES.ownerAutoCareProviderReviews} element={<OwnerAutoCareProviderReviewsPage />} />
             <Route path={ROUTES.ownerCabinets} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
             <Route path={ROUTES.ownerCabinetCreate} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
             <Route path={ROUTES.ownerCabinetEdit} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />

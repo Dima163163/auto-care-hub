@@ -1960,6 +1960,22 @@ export const handlers = [
         return HttpResponse.json(ownerAutoCareProviders)
     }),
 
+    http.get('/api/owner/autocare-providers/:providerId/reviews', ({ params }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        const providerId = String(params.providerId)
+        const provider = ownerAutoCareProviders.find((item) => item.id === providerId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view automotive service reviews.' }, { status: 403 })
+        if (!provider) return HttpResponse.json({ message: 'Automotive service provider not found.' }, { status: 404 })
+
+        const reviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === providerId)
+        const distribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+        for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
+        const totalReviews = reviews.length
+        const averageRating = totalReviews === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1))
+        return HttpResponse.json({ providerId, totalReviews, averageRating, distribution, reviews })
+    }),
+
     http.post('/api/owner/autocare-providers/logo', async ({ request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })

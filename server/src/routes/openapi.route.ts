@@ -178,6 +178,9 @@ export function getOpenApiDocument() {
             '/owner/autocare-providers/logo': {
                 post: { operationId: 'uploadOwnerAutoCareProviderLogo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['fileName', 'mimeType', 'size', 'contentBase64'] } } } }, responses: { '200': { description: 'Normalized WebP provider logo URL.' } } },
             },
+            '/owner/autocare-providers/{providerId}/reviews': {
+                get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
+            },
             '/v1/providers/{providerId}/availability': {
                 get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.' } } },
             },

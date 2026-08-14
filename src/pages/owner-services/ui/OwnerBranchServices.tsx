@@ -1,6 +1,8 @@
 import { BadgeCheck, ChevronDown, Clock3, MapPin, Star, Wrench } from 'lucide-react'
+import { Link } from 'react-router'
 
 import type { AutoCareApiOffer, AutoCareApiProvider, AutoCareApiServiceDefinition } from '@/entities/automotive-service'
+import { routePaths } from '@/shared/constants/routes'
 
 type OwnerBranchServicesProps = {
     provider: AutoCareApiProvider
@@ -24,32 +26,29 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
 
     return (
         <section className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm">
-            <button
-                type="button"
-                aria-expanded={isOpen}
-                onClick={onToggle}
-                className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left transition hover:bg-primary/5 md:p-6"
-            >
-                <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary">
-                        <Wrench className="size-5" />
-                    </span>
-                    <span className="min-w-0">
-                        <span className="flex flex-wrap items-center gap-2 text-base font-black text-foreground md:text-lg">
-                            <span className="truncate">{provider.name}</span>
-                            {provider.verified && <BadgeCheck className="size-4 shrink-0 text-primary" />}
+            <div className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left transition hover:bg-primary/5 md:p-6">
+                <button type="button" aria-expanded={isOpen} onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <span className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary">
+                            <Wrench className="size-5" />
                         </span>
-                        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">
-                            <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" />{provider.location.address}</span>
-                            <span className="inline-flex items-center gap-1 text-status-warning-foreground"><Star className="size-3.5 fill-current" />{provider.rating.toFixed(1)} ({provider.reviewCount} {labels.reviews})</span>
+                        <span className="min-w-0">
+                            <span className="flex flex-wrap items-center gap-2 text-base font-black text-foreground md:text-lg">
+                                <span className="truncate">{provider.name}</span>
+                                {provider.verified && <BadgeCheck className="size-4 shrink-0 text-primary" />}
+                            </span>
+                            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">
+                                <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" />{provider.location.address}</span>
+                            </span>
                         </span>
                     </span>
-                </span>
+                </button>
                 <span className="flex items-center gap-3 text-xs font-black text-muted-foreground">
+                    <Link to={routePaths.ownerAutoCareProviderReviews(provider.id)} className="inline-flex items-center gap-1 text-status-warning-foreground hover:text-primary hover:underline"><Star className="size-3.5 fill-current" />{provider.rating.toFixed(1)} ({provider.reviewCount} {labels.reviews})</Link>
                     <span>{offers.length} {labels.branchServices}</span>
-                    <ChevronDown className={`size-5 transition-transform ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+                    <ChevronDown className={`size-5 transition-transform ${isOpen ? 'rotate-180 text-primary' : ''}`} aria-hidden="true" />
                 </span>
-            </button>
+            </div>
 
             {isOpen && (
                 <div className="border-t border-border bg-muted/20 p-4 md:p-5">

@@ -5,7 +5,7 @@ import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } fr
 import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
 import { autoCareAvailabilityQuerySchema, autoCareDiscoveryQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceRequestParamsSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, ownerAutoCareProviderSchema, uploadAutoCareProviderLogoSchema } from './autocare.schemas.js'
-import { createOwnerAutoCareProvider, getAutoCareDiscovery, getAutoCareMarkets, getAutoCareProviderLogo, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions, getFeaturedAutoCareReviews, getOwnerAutoCareProviders, saveAutoCareProviderLogo } from './autocare.service.js'
+import { createOwnerAutoCareProvider, getAutoCareDiscovery, getAutoCareMarkets, getAutoCareProviderLogo, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions, getFeaturedAutoCareReviews, getOwnerAutoCareProviderReviews, getOwnerAutoCareProviders, saveAutoCareProviderLogo } from './autocare.service.js'
 import { vehicleCatalogRoutes } from './vehicle-catalog.routes.js'
 import { decodeAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { acceptAutoCareServiceQuote, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceQuote, createAutoCareServiceRequest, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequests } from './autocare-request.service.js'
@@ -35,6 +35,10 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return getAutoCareProviderOffers(params.providerId, query.serviceId)
     })
     app.get('/owner/autocare-providers', async (request) => getOwnerAutoCareProviders(await requireVerifiedEmail(request)))
+    app.get('/owner/autocare-providers/:providerId/reviews', async (request) => {
+        const params = validateParams(autoCareProviderParamsSchema, request.params)
+        return getOwnerAutoCareProviderReviews(await requireVerifiedEmail(request), params.providerId)
+    })
     app.post('/owner/autocare-providers/logo', { bodyLimit: 1_500_000 }, async (request) => {
         const body = validateBody(uploadAutoCareProviderLogoSchema, request.body)
         return saveAutoCareProviderLogo(await requireVerifiedEmail(request), decodeAutoCareProviderLogo(body.contentBase64))
