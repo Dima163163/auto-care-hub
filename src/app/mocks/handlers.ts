@@ -2294,6 +2294,24 @@ export const handlers = [
         return HttpResponse.json({ providerId, totalReviews, averageRating, distribution, reviews })
     }),
 
+    http.get('/api/owner/autocare-reviews', ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view automotive service reviews.' }, { status: 403 })
+        const providerId = new URL(request.url).searchParams.get('providerId') || null
+        const selectedProviders = providerId ? ownerAutoCareProviders.filter((provider) => provider.id === providerId) : ownerAutoCareProviders
+        if (providerId && selectedProviders.length === 0) return HttpResponse.json({ message: 'Automotive service provider not found.' }, { status: 404 })
+        const providerIds = new Set(selectedProviders.map((provider) => provider.id))
+        const now = Date.now()
+        const reviews = mockFeaturedAutoCareReviews.filter((review) => providerIds.has(review.providerId)).map((review) => {
+            const provider = selectedProviders.find((item) => item.id === review.providerId)
+            return { ...review, providerName: provider?.name ?? 'AutoCare service', providerAddress: provider?.location.address ?? '', canContact: Boolean(review.serviceRequestId), canEdit: Boolean(review.revisionAllowedUntil && new Date(review.revisionAllowedUntil).getTime() > now && !review.revisionUsedAt) }
+        })
+        const distribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+        for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
+        return HttpResponse.json({ selectedProviderId: providerId, providers: ownerAutoCareProviders.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, rating: provider.rating, reviewCount: provider.reviewCount })), totalReviews: reviews.length, averageRating: reviews.length ? Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)) : 0, distribution, reviews })
+    }),
+
     http.post('/api/owner/autocare-providers/:providerId/reviews/:reviewId/promos', async ({ params, request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
         const providerId = String(params.providerId)

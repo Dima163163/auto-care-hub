@@ -22,7 +22,7 @@ import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cu
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -275,6 +275,42 @@ export async function getOwnerAutoCareProviderReviews(owner: UserEntity, provide
         averageRating,
         distribution,
         reviews: reviews.map((review) => toAutoCareReviewResponse(review, { exposeActions: true })),
+    }
+}
+
+export async function getOwnerAutoCareReviews(owner: UserEntity, providerId?: string): Promise<OwnerAutoCareReviewsResponse> {
+    assertOwner(owner)
+    const providers = await getOwnerAutoCareProviders(owner)
+    const selectedProviders = providerId
+        ? providers.filter((provider) => provider.id === providerId)
+        : providers
+    if (providerId && selectedProviders.length === 0) {
+        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    }
+
+    const providerIds = selectedProviders.map((provider) => provider.id)
+    const reviews = providerIds.length === 0
+        ? []
+        : await AppDataSource.getRepository(AutomotiveReviewEntity).find({
+            where: { providerId: In(providerIds), status: AutomotiveReviewStatus.Approved },
+            order: { createdAt: 'DESC' },
+        })
+    const providerById = new Map(selectedProviders.map((provider) => [provider.id, provider]))
+    const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+    for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
+    const totalReviews = reviews.length
+
+    return {
+        selectedProviderId: providerId ?? null,
+        providers: providers.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, rating: provider.rating, reviewCount: provider.reviewCount })),
+        totalReviews,
+        averageRating: totalReviews === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1)),
+        distribution,
+        reviews: reviews.flatMap((review) => {
+            const provider = providerById.get(review.providerId)
+            if (!provider) return []
+            return [{ ...toAutoCareReviewResponse(review, { exposeActions: true }), providerName: provider.name, providerAddress: provider.location.address }]
+        }),
     }
 }
 

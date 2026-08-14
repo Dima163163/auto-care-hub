@@ -1,13 +1,12 @@
 import { ArrowLeft, BarChart3, CarFront, Check, ChevronDown, Copy, Gift, MessageCircle, MessageSquare, Star, Tag, X } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import {
-    useGetOwnerAutoCareProviderReviewsQuery,
-    useGetOwnerAutoCareProvidersQuery,
-    type AutoCareApiProvider,
-    type AutoCareApiProviderReviews,
+    useGetOwnerAutoCareReviewsQuery,
+    type OwnerAutoCareReviewsProvider,
+    type OwnerAutoCareReviews,
     type AutoCareApiReview,
 } from '@/entities/automotive-service'
 import { useIssueOwnerAutoCareReviewPromoMutation } from '@/entities/automotive-service'
@@ -27,6 +26,8 @@ type ReviewsCopy = {
     back: string
     average: string
     total: string
+    allLocations: string
+    locationFilterLabel: string
     distribution: string
     all: string
     review: string
@@ -51,25 +52,26 @@ type ReviewsCopy = {
 export function OwnerAutoCareProviderReviewsPage() {
     const { locale, t } = useTranslation()
     const { id } = useParams<{ id: string }>()
-    const providers = useGetOwnerAutoCareProvidersQuery()
-    const reviews = useGetOwnerAutoCareProviderReviewsQuery(id ?? '', { skip: !id })
+    const [searchParams, setSearchParams] = useSearchParams()
+    const selectedProviderId = searchParams.get('provider') ?? id ?? undefined
+    const reviews = useGetOwnerAutoCareReviewsQuery(selectedProviderId)
     const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
-    const provider = providers.data?.find((item) => item.id === id)
+    const provider = reviews.data?.providers.find((item) => item.id === selectedProviderId)
     const filteredReviews = useMemo(
         () => filterReviews(reviews.data?.reviews ?? [], ratingFilter),
         [ratingFilter, reviews.data?.reviews],
     )
     const copy = getReviewsCopy(locale)
 
-    if (reviews.isLoading || providers.isLoading) {
+    if (reviews.isLoading) {
         return <ReviewsShell><LoadingState label={t('common.loading')} /></ReviewsShell>
     }
 
-    if (reviews.error || providers.error) {
-        return <ReviewsShell><ErrorState error={reviews.error ?? providers.error} copy={copy} onRetry={() => void Promise.all([reviews.refetch(), providers.refetch()])} t={t} /></ReviewsShell>
+    if (reviews.error) {
+        return <ReviewsShell><ErrorState error={reviews.error} copy={copy} onRetry={() => void reviews.refetch()} t={t} /></ReviewsShell>
     }
 
-    if (!provider || !reviews.data) {
+    if (!reviews.data || (selectedProviderId && !provider)) {
         return <ReviewsShell><EmptyState message={copy.noProvider} /></ReviewsShell>
     }
 
@@ -79,23 +81,26 @@ export function OwnerAutoCareProviderReviewsPage() {
                 <Link to={ROUTES.ownerServices} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline">
                     <ArrowLeft className="size-4" />{copy.back}
                 </Link>
-                <Link to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="text-sm font-black text-primary hover:underline">
-                    {provider.name}
-                </Link>
+                {provider && <Link to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="text-sm font-black text-primary hover:underline">{provider.name}</Link>}
             </div>
             <PageHeader eyebrow={copy.eyebrow} title={copy.title} description={copy.description} />
+            <LocationFilter providers={reviews.data.providers} value={selectedProviderId ?? ''} label={copy.locationFilterLabel} allLabel={copy.allLocations} onChange={(value) => setSearchParams(value ? { provider: value } : {})} />
             <ProviderReviewOverview provider={provider} stats={reviews.data} copy={copy} />
-            <ReviewsList providerId={provider.id} reviews={filteredReviews} ratingFilter={ratingFilter} onRatingFilterChange={setRatingFilter} copy={copy} locale={locale} />
+            <ReviewsList reviews={filteredReviews} ratingFilter={ratingFilter} onRatingFilterChange={setRatingFilter} copy={copy} locale={locale} />
         </ReviewsShell>
     )
 }
 
-function ProviderReviewOverview({ provider, stats, copy }: { provider: AutoCareApiProvider; stats: AutoCareApiProviderReviews; copy: ReviewsCopy }) {
+function LocationFilter({ providers, value, label, allLabel, onChange }: { providers: OwnerAutoCareReviewsProvider[]; value: string; label: string; allLabel: string; onChange: (value: string) => void }) {
+    return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><label className="grid max-w-xl gap-1.5 text-xs font-black text-foreground"><span>{label}</span><span className="relative"><select value={value} onChange={(event) => onChange(event.target.value)} className="select-with-icon h-11 w-full appearance-none rounded-[var(--radius-control)] border border-border bg-background px-3 pr-10 text-sm font-bold"><option value="">{allLabel}</option>{providers.map((provider) => <option key={provider.id} value={provider.id}>{provider.name} · {provider.address}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /></span></label></section>
+}
+
+function ProviderReviewOverview({ provider, stats, copy }: { provider?: OwnerAutoCareReviewsProvider; stats: OwnerAutoCareReviews; copy: ReviewsCopy }) {
     return (
         <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm md:p-6">
             <div className="flex flex-wrap items-center gap-4 border-b border-border pb-5">
                 <span className="flex size-12 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><CarFront className="size-6" /></span>
-                <div className="min-w-0 flex-1"><h2 className="truncate text-lg font-black text-foreground">{provider.name}</h2><p className="mt-1 text-xs font-semibold text-muted-foreground">{provider.location.address}</p></div>
+                <div className="min-w-0 flex-1"><h2 className="truncate text-lg font-black text-foreground">{provider?.name ?? copy.allLocations}</h2><p className="mt-1 text-xs font-semibold text-muted-foreground">{provider?.address ?? copy.allLocations}</p></div>
                 <div className="flex items-center gap-1 text-lg font-black text-status-warning-foreground"><Star className="size-5 fill-current" />{stats.averageRating.toFixed(1)}</div>
             </div>
             <div className="mt-5 grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_180px]">
@@ -107,18 +112,18 @@ function ProviderReviewOverview({ provider, stats, copy }: { provider: AutoCareA
     )
 }
 
-function ReviewsList({ providerId, reviews, ratingFilter, onRatingFilterChange, copy, locale }: { providerId: string; reviews: AutoCareApiReview[]; ratingFilter: RatingFilter; onRatingFilterChange: (value: RatingFilter) => void; copy: ReviewsCopy; locale: string }) {
+function ReviewsList({ reviews, ratingFilter, onRatingFilterChange, copy, locale }: { reviews: AutoCareApiReview[]; ratingFilter: RatingFilter; onRatingFilterChange: (value: RatingFilter) => void; copy: ReviewsCopy; locale: string }) {
     return (
         <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black text-foreground">{copy.title}</h2><RatingFilterSelect value={ratingFilter} onChange={onRatingFilterChange} label={copy.all} /></div>
-            {reviews.length === 0 ? <EmptyState message={copy.empty} className="mt-5" /> : <div className="mt-5 grid gap-4 lg:grid-cols-2">{reviews.map((review) => <ReviewCard key={review.id} providerId={providerId} review={review} copy={copy} locale={locale} />)}</div>}
+            {reviews.length === 0 ? <EmptyState message={copy.empty} className="mt-5" /> : <div className="mt-5 grid gap-4 lg:grid-cols-2">{reviews.map((review) => <ReviewCard key={review.id} review={review} copy={copy} locale={locale} />)}</div>}
         </section>
     )
 }
 
-function ReviewCard({ providerId, review, copy, locale }: { providerId: string; review: AutoCareApiReview; copy: ReviewsCopy; locale: string }) {
+function ReviewCard({ review, copy, locale }: { review: AutoCareApiReview; copy: ReviewsCopy; locale: string }) {
     const publishedAt = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(review.createdAt))
-    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p></div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt="Фото выполненной работы" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><Link to={review.serviceRequestId ? `${ROUTES.ownerAutoCareRequests}?request=${review.serviceRequestId}` : '#'} aria-disabled={!review.serviceRequestId} onClick={(event) => { if (!review.serviceRequestId) event.preventDefault() }} className={`inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-black transition ${review.serviceRequestId ? 'border-primary/30 text-primary hover:bg-primary/10' : 'cursor-not-allowed border-border text-muted-foreground'}`}><MessageCircle className="size-3.5" />{review.serviceRequestId ? copy.contact : copy.contactUnavailable}</Link><ReviewResolutionDialog providerId={providerId} review={review} copy={copy} /></div></article>
+    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{review.providerName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{review.providerName} · {review.providerAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt="Фото выполненной работы" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><Link to={review.serviceRequestId ? `${ROUTES.ownerChats}?request=${review.serviceRequestId}` : '#'} aria-disabled={!review.serviceRequestId} onClick={(event) => { if (!review.serviceRequestId) event.preventDefault() }} className={`inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-black transition ${review.serviceRequestId ? 'border-primary/30 text-primary hover:bg-primary/10' : 'cursor-not-allowed border-border text-muted-foreground'}`}><MessageCircle className="size-3.5" />{review.serviceRequestId ? copy.contact : copy.contactUnavailable}</Link><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
 }
 
 function ReviewResolutionDialog({ providerId, review, copy }: { providerId: string; review: AutoCareApiReview; copy: ReviewsCopy }) {
@@ -168,7 +173,7 @@ function filterReviews(reviews: AutoCareApiReview[], filter: RatingFilter) {
 }
 
 function getReviewsCopy(locale: string): ReviewsCopy {
-    return locale === 'ru'
-        ? { eyebrow: 'Рабочая область сервиса', title: 'Отзывы клиентов', description: 'Изучайте обратную связь по филиалу, динамику оценок и повторяющиеся сигналы качества.', back: 'Вернуться к услугам и ценам', average: 'Средняя оценка', total: 'Всего отзывов', distribution: 'Распределение оценок', all: 'Все оценки', review: 'отзывов', empty: 'По этому филиалу пока нет опубликованных отзывов.', published: 'Опубликован', noProvider: 'Филиал не найден.', contact: 'Связаться с клиентом', contactUnavailable: 'Контакт недоступен', issueDiscount: 'Предложить скидку', discountPercent: 'Скидка на следующий визит, %', serviceOptional: 'Услуга (необязательно)', expiresInDays: 'Срок действия, дней', issue: 'Выпустить промокод', cancel: 'Отмена', promoCreated: 'Промокод выпущен', promoNote: 'Предложите клиенту скидку от 1 до 100% после обращения по конкретной заявке. Код одноразовый.', copyCode: 'Скопировать код', copied: 'Скопировано', close: 'Готово' }
-        : { eyebrow: 'Service workspace', title: 'Customer reviews', description: 'Review branch feedback, rating distribution and recurring quality signals.', back: 'Back to services and pricing', average: 'Average rating', total: 'Total reviews', distribution: 'Rating distribution', all: 'All ratings', review: 'reviews', empty: 'This branch has no published reviews yet.', published: 'Published', noProvider: 'Service location not found.', contact: 'Contact client', contactUnavailable: 'Contact unavailable', issueDiscount: 'Offer discount', discountPercent: 'Discount for next visit, %', serviceOptional: 'Service (optional)', expiresInDays: 'Valid for, days', issue: 'Issue promo code', cancel: 'Cancel', promoCreated: 'Promo code issued', promoNote: 'Offer a 1–100% discount after discussing the issue with the client. The code can be used once.', copyCode: 'Copy code', copied: 'Copied', close: 'Done' }
+        return locale === 'ru'
+        ? { eyebrow: 'Рабочая область сервиса', title: 'Отзывы клиентов', description: 'Изучайте отзывы по всем филиалам, выбирайте адрес и сразу переходите к решению вопроса с клиентом.', back: 'Вернуться к услугам и ценам', average: 'Средняя оценка', total: 'Всего отзывов', allLocations: 'Все филиалы', locationFilterLabel: 'Филиал и адрес', distribution: 'Распределение оценок', all: 'Все оценки', review: 'отзывов', empty: 'По выбранному фильтру пока нет опубликованных отзывов.', published: 'Опубликован', noProvider: 'Филиал не найден.', contact: 'Открыть чат', contactUnavailable: 'Контакт недоступен', issueDiscount: 'Предложить скидку', discountPercent: 'Скидка на следующий визит, %', serviceOptional: 'Услуга (необязательно)', expiresInDays: 'Срок действия, дней', issue: 'Выпустить промокод', cancel: 'Отмена', promoCreated: 'Промокод выпущен', promoNote: 'Предложите клиенту скидку от 1 до 100% после обращения по конкретной заявке. Код одноразовый.', copyCode: 'Скопировать код', copied: 'Скопировано', close: 'Готово' }
+        : { eyebrow: 'Service workspace', title: 'Customer reviews', description: 'Review every branch, filter by address and open a direct resolution chat with the customer.', back: 'Back to services and pricing', average: 'Average rating', total: 'Total reviews', allLocations: 'All service locations', locationFilterLabel: 'Service location', distribution: 'Rating distribution', all: 'All ratings', review: 'reviews', empty: 'No published reviews match this filter.', published: 'Published', noProvider: 'Service location not found.', contact: 'Open chat', contactUnavailable: 'Contact unavailable', issueDiscount: 'Offer discount', discountPercent: 'Discount for next visit, %', serviceOptional: 'Service (optional)', expiresInDays: 'Valid for, days', issue: 'Issue promo code', cancel: 'Cancel', promoCreated: 'Promo code issued', promoNote: 'Offer a 1–100% discount after discussing the issue with the client. The code can be used once.', copyCode: 'Copy code', copied: 'Copied', close: 'Done' }
 }

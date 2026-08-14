@@ -86,6 +86,7 @@ export const enTranslations = {
         ownerCabinets: 'My locations',
         ownerBookings: 'Bookings',
         ownerAutoCareRequests: 'Customer requests',
+        ownerReviews: 'Reviews',
         ownerClients: 'Clients',
         ownerServices: 'Services',
         adminDashboard: 'Admin dashboard',

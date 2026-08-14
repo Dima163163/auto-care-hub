@@ -170,6 +170,7 @@ export function renderOwnerRoutes() {
             <Route path={ROUTES.ownerCabinetEdit} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
             <Route path={ROUTES.ownerBookings} element={<Navigate replace to={ROUTES.ownerAutoCareRequests} />} />
             <Route path={ROUTES.ownerAutoCareRequests} element={<OwnerAutoCareRequestsPage />} />
+            <Route path={ROUTES.ownerReviews} element={<OwnerAutoCareProviderReviewsPage />} />
             <Route path={ROUTES.ownerClients} element={<OwnerClientsPage />} />
             <Route path={ROUTES.ownerServices} element={<OwnerServicesPage />} />
             <Route path={ROUTES.ownerChats} element={<ChatsPage workspace="owner" />} />

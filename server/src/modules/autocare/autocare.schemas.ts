@@ -95,6 +95,10 @@ export const autoCareChatParamsSchema = z.object({
     chatId: z.string().uuid(),
 })
 
+export const ownerAutoCareReviewsQuerySchema = z.object({
+    providerId: z.string().uuid().optional(),
+})
+
 export const createAutoCareChatSchema = z.object({
     type: z.enum(['provider_inquiry', 'support', 'admin_escalation']),
     providerId: z.string().uuid().optional(),

@@ -188,6 +188,9 @@ export function getOpenApiDocument() {
             '/owner/autocare-providers/{providerId}/reviews': {
                 get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
             },
+            '/owner/autocare-reviews': {
+                get: { operationId: 'getOwnerAutoCareReviews', parameters: [{ name: 'providerId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Aggregated approved reviews for all owner-managed service locations or one selected location.' } } },
+            },
             '/admin/platform-reviews': {
                 get: { operationId: 'listAdminPlatformReviews', responses: { '200': { description: 'Platform reviews for administrator moderation.' } } },
             },

@@ -154,6 +154,23 @@ export type OwnerAutoCareProviderReviewsResponse = {
     reviews: AutoCareReviewResponse[]
 }
 
+export type OwnerAutoCareReviewsProviderResponse = {
+    id: string
+    name: string
+    address: string
+    rating: number
+    reviewCount: number
+}
+
+export type OwnerAutoCareReviewsResponse = {
+    selectedProviderId: string | null
+    providers: OwnerAutoCareReviewsProviderResponse[]
+    totalReviews: number
+    averageRating: number
+    distribution: Record<'1' | '2' | '3' | '4' | '5', number>
+    reviews: Array<AutoCareReviewResponse & { providerName: string; providerAddress: string }>
+}
+
 export type AutoCareAvailabilitySlotResponse = {
     startTime: string
     endTime: string

@@ -14,6 +14,7 @@ import {
     LayoutDashboard,
     MessageSquare,
     Settings,
+    Star,
     ShieldCheck,
     ShieldAlert,
     Users,
@@ -70,6 +71,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
             items: [
                 { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
                 { labelKey: 'navigation.ownerAutoCareRequests', to: ROUTES.ownerAutoCareRequests, icon: MessageSquare },
+                { labelKey: 'navigation.ownerReviews', to: ROUTES.ownerReviews, icon: Star },
                 { labelKey: 'navigation.chats', to: ROUTES.ownerChats, icon: MessageSquare },
                 { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
                 { labelKey: 'navigation.ownerServices', to: ROUTES.ownerServices, icon: ClipboardList },

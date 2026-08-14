@@ -119,6 +119,8 @@ export type AutoCareApiReview = {
     revisionUsedAt?: string | null
     canContact?: boolean
     canEdit?: boolean
+    providerName?: string
+    providerAddress?: string
 }
 
 export type AutoCareReviewPromo = {
@@ -152,6 +154,9 @@ export type AutoCareApiProviderReviews = {
     distribution: Record<'1' | '2' | '3' | '4' | '5', number>
     reviews: AutoCareApiReview[]
 }
+
+export type OwnerAutoCareReviewsProvider = { id: string; name: string; address: string; rating: number; reviewCount: number }
+export type OwnerAutoCareReviews = { selectedProviderId: string | null; providers: OwnerAutoCareReviewsProvider[]; totalReviews: number; averageRating: number; distribution: Record<'1' | '2' | '3' | '4' | '5', number>; reviews: AutoCareApiReview[] }
 
 export type AutoCareVehicleEngine = {
     id: string
@@ -218,6 +223,15 @@ const ownerProviderReviewsSchema = z.object({
     }),
     reviews: z.array(featuredReviewSchema),
 }) satisfies z.ZodType<AutoCareApiProviderReviews>
+
+const ownerAutoCareReviewsSchema = z.object({
+    selectedProviderId: z.string().nullable(),
+    providers: z.array(z.object({ id: z.string(), name: z.string(), address: z.string(), rating: z.number().min(0).max(5), reviewCount: z.number().int().nonnegative() })),
+    totalReviews: z.number().int().nonnegative(),
+    averageRating: z.number().min(0).max(5),
+    distribution: ownerProviderReviewsSchema.shape.distribution,
+    reviews: z.array(featuredReviewSchema.extend({ providerName: z.string(), providerAddress: z.string() })),
+}) satisfies z.ZodType<OwnerAutoCareReviews>
 
 export type AutoCareAvailability = { date: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string }> }
 
@@ -367,6 +381,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => ownerProviderReviewsSchema.parse(value),
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareReview', id: `OWNER_${providerId}` }],
         }),
+        getOwnerAutoCareReviews: build.query<OwnerAutoCareReviews, string | void>({
+            query: (providerId) => ({ url: '/owner/autocare-reviews', params: providerId ? { providerId } : undefined }),
+            transformResponse: (value: unknown) => ownerAutoCareReviewsSchema.parse(value),
+            providesTags: [{ type: 'AutoCareReview', id: 'OWNER_ALL' }],
+        }),
         issueOwnerAutoCareReviewPromo: build.mutation<AutoCareReviewPromo, IssueAutoCareReviewPromoInput>({
             query: ({ providerId, reviewId, ...body }) => ({ url: `/owner/autocare-providers/${providerId}/reviews/${reviewId}/promos`, method: 'POST', body }),
             transformResponse: (value: unknown) => reviewPromoSchema.parse(value),
@@ -515,6 +534,7 @@ export const {
     useGetOwnerAutoCareProvidersQuery,
     useUpdateOwnerAutoCareOfferMutation,
     useGetOwnerAutoCareProviderReviewsQuery,
+    useGetOwnerAutoCareReviewsQuery,
     useIssueOwnerAutoCareReviewPromoMutation,
     useGetMyAutoCareReviewsQuery,
     useRedeemAutoCareReviewPromoMutation,

@@ -90,6 +90,7 @@ export const ruTranslations = {
         ownerCabinets: 'Мои точки',
         ownerBookings: 'Бронирования',
         ownerAutoCareRequests: 'Заявки клиентов',
+        ownerReviews: 'Отзывы',
         ownerClients: 'Клиенты',
         ownerServices: 'Услуги',
         adminDashboard: 'Панель администратора',
