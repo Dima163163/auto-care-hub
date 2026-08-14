@@ -70,6 +70,7 @@ export const enTranslations = {
         ownerInfoDescription: 'Profile, requests and growth',
         pricing: 'Pricing',
         about: 'About',
+        aboutDescription: 'How AutoCare Hub helps drivers and services',
         profile: 'Profile',
         myBookings: 'My bookings',
         myVehicles: 'My vehicles',

@@ -41,7 +41,6 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
     const links = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
         { to: ROUTES.platformReviews, label: t('autocare.footerReviews') },
-        { to: ROUTES.about, label: t('navigation.about') },
     ]
 
     return (
@@ -103,6 +102,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         </div>
                     )}
                 </div>
+                <HeaderInfoMenu variant="light" />
             </nav>
 
             <div className="ml-auto flex items-center gap-1.5 lg:gap-3">

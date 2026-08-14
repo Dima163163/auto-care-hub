@@ -39,7 +39,6 @@ export function AppHeader() {
         { to: ROUTES.home, label: t('navigation.home'), end: true },
         { to: ROUTES.features, label: t('navigation.features') },
         { to: ROUTES.platformReviews, label: t('autocare.footerReviews') },
-        { to: ROUTES.about, label: t('navigation.about') },
         { to: ROUTES.blog, label: t('landing.footerBlog') },
     ]
 

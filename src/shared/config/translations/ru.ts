@@ -74,6 +74,7 @@ export const ruTranslations = {
         ownerInfoDescription: 'Профиль, заявки и развитие',
         pricing: 'Тарифы',
         about: 'О сервисе',
+        aboutDescription: 'Как AutoCare Hub помогает водителям и сервисам',
         profile: 'Профиль',
         myBookings: 'Мои бронирования',
         myVehicles: 'Мои автомобили',
