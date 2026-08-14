@@ -1,4 +1,4 @@
-import { Route } from 'react-router'
+import { Navigate, Route } from 'react-router'
 
 import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AuthLayout } from '@/app/layouts/auth-layout'
@@ -15,7 +15,6 @@ import {
     AutoCareProviderPage,
     AutoCareRequestPage,
     AdminAuditLogsPage,
-    AdminCabinetsPage,
     AdminDashboardPage,
     AdminOwnersPage,
     AdminReviewsPage,
@@ -23,8 +22,6 @@ import {
     SecurityCenterPage,
     SuperAdminDashboardPage,
     BlogPage,
-    CabinetDetailsPage,
-    CabinetsPage,
     ContactsPage,
     EmailVerificationPage,
     FavoritesPage,
@@ -37,12 +34,8 @@ import {
     NotFoundPage,
     NotificationsPage,
     OnboardingPage,
-    OwnerBookingsPage,
     OwnerAutoCareRequestsPage,
     OwnerClientsPage,
-    OwnerCabinetCreatePage,
-    OwnerCabinetEditPage,
-    OwnerCabinetsPage,
     OwnerAutoCareProvidersPage,
     OwnerAutoCareProviderDetailsPage,
     OwnerDashboardPage,
@@ -76,11 +69,11 @@ export function renderPublicRoutes() {
             <Route path={ROUTES.agreement} element={<AgreementPage />} />
             <Route path={ROUTES.rules} element={<RulesPage />} />
             <Route path={ROUTES.privacy} element={<PrivacyPage />} />
-            <Route path={ROUTES.cabinets} element={<CabinetsPage />} />
+            <Route path={ROUTES.cabinets} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
             <Route path={ROUTES.serviceDiscovery} element={<AutoCareResultsPage />} />
             <Route path={ROUTES.serviceProviderDetails} element={<AutoCareProviderPage />} />
             <Route path={ROUTES.serviceRequest} element={<AutoCareRequestPage />} />
-            <Route path={ROUTES.cabinetDetails} element={<CabinetDetailsPage />} />
+            <Route path={ROUTES.cabinetDetails} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
         </Route>
     )
 }
@@ -163,10 +156,10 @@ export function renderOwnerRoutes() {
             <Route path={ROUTES.ownerDashboard} element={<OwnerDashboardPage />} />
             <Route path={ROUTES.ownerAutoCareProviders} element={<OwnerAutoCareProvidersPage />} />
             <Route path={ROUTES.ownerAutoCareProviderDetails} element={<OwnerAutoCareProviderDetailsPage />} />
-            <Route path={ROUTES.ownerCabinets} element={<OwnerCabinetsPage />} />
-            <Route path={ROUTES.ownerCabinetCreate} element={<OwnerCabinetCreatePage />} />
-            <Route path={ROUTES.ownerCabinetEdit} element={<OwnerCabinetEditPage />} />
-            <Route path={ROUTES.ownerBookings} element={<OwnerBookingsPage />} />
+            <Route path={ROUTES.ownerCabinets} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
+            <Route path={ROUTES.ownerCabinetCreate} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
+            <Route path={ROUTES.ownerCabinetEdit} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
+            <Route path={ROUTES.ownerBookings} element={<Navigate replace to={ROUTES.ownerAutoCareRequests} />} />
             <Route path={ROUTES.ownerAutoCareRequests} element={<OwnerAutoCareRequestsPage />} />
             <Route path={ROUTES.ownerClients} element={<OwnerClientsPage />} />
             <Route path={ROUTES.ownerServices} element={<OwnerServicesPage />} />
@@ -188,7 +181,7 @@ export function renderAdminRoutes() {
             <Route path={ROUTES.adminDashboard} element={<AdminDashboardPage />} />
             <Route path={ROUTES.adminUsers} element={<AdminUsersPage />} />
             <Route path={ROUTES.adminOwners} element={<AdminOwnersPage />} />
-            <Route path={ROUTES.adminCabinets} element={<AdminCabinetsPage />} />
+            <Route path={ROUTES.adminCabinets} element={<Navigate replace to={ROUTES.adminDashboard} />} />
             <Route path={ROUTES.adminReviews} element={<AdminReviewsPage />} />
             <Route path={ROUTES.adminAuditLogs} element={<AdminAuditLogsPage />} />
             <Route path={ROUTES.adminSecurityCenter} element={<SecurityCenterPage />} />

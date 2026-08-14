@@ -15,7 +15,7 @@ export const mockUsers: User[] = [
         emailNotifications: true,
         bookingEmailNotifications: true,
         preferredCity: 'Berlin',
-        preferredCategories: ['Beauty', 'Wellness'],
+        preferredCategories: ['Замена масла', 'Диагностика'],
         createdAt: '2026-01-10T10:00:00.000Z',
     },
     {
@@ -49,7 +49,7 @@ export const mockUsers: User[] = [
         emailNotifications: true,
         bookingEmailNotifications: true,
         preferredCity: 'Berlin',
-        preferredCategories: ['Consultation'],
+        preferredCategories: ['Шиномонтаж', 'Техническое обслуживание'],
         createdAt: '2026-01-05T09:15:00.000Z',
     },
     {

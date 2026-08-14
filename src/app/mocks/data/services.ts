@@ -4,8 +4,8 @@ export const mockServices: Service[] = [
     {
         id: "service-1",
         cabinetId: "cabinet-1",
-        title: "Standard beauty session",
-        description: "A standard 60-minute session for regular treatments.",
+        title: "Замена масла и фильтра",
+        description: "Регламентная замена масла, масляного фильтра и базовая проверка уровней.",
         durationMinutes: 60,
         price: 2000,
         isActive: true
@@ -13,8 +13,8 @@ export const mockServices: Service[] = [
     {
         id: "service-2",
         cabinetId: "cabinet-1",
-        title: "Extended beauty session",
-        description: "A 90-minute session for complex treatments.",
+        title: "Комплексная диагностика",
+        description: "Компьютерная диагностика и проверка основных систем автомобиля.",
         durationMinutes: 90,
         price: 2800,
         isActive: true
@@ -22,8 +22,8 @@ export const mockServices: Service[] = [
     {
         id: "service-3",
         cabinetId: "cabinet-2",
-        title: "Medical consultation",
-        description: "Initial consultation with a specialist.",
+        title: "Шиномонтаж",
+        description: "Сезонная замена колёс, балансировка и проверка давления.",
         durationMinutes: 45,
         price: 3000,
         isActive: true
@@ -31,8 +31,8 @@ export const mockServices: Service[] = [
     {
         id: "service-4",
         cabinetId: "cabinet-2",
-        title: "Medical checkup",
-        description: "Comprehensive health checkup.",
+        title: "Проверка тормозной системы",
+        description: "Осмотр колодок, дисков и тормозной жидкости с понятной оценкой работ.",
         durationMinutes: 60,
         price: 4500,
         isActive: true
@@ -40,8 +40,8 @@ export const mockServices: Service[] = [
     {
         id: "service-5",
         cabinetId: "cabinet-3",
-        title: "Private coaching",
-        description: "One-on-one coaching session.",
+        title: "Детейлинг салона",
+        description: "Глубокая очистка салона и бережный уход за материалами.",
         durationMinutes: 60,
         price: 2500,
         isActive: true
