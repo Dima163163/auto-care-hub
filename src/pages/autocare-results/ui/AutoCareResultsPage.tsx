@@ -26,6 +26,7 @@ export function AutoCareResultsPage() {
     const draftFilters = draftState.key === searchParams.toString() ? draftState.filters : filters
     const { data, isLoading, isError } = useGetAutoCareDiscoveryQuery({
         serviceId: filters.serviceId || undefined,
+        providerName: filters.providerName || undefined,
         marketId: filters.marketId,
         zoneId: filters.zoneId || undefined,
         radiusKm: filters.radiusKm,
@@ -70,6 +71,7 @@ export function AutoCareResultsPage() {
     }
     const resetFilters = () => updateDraftFilters({
         radiusKm: 25,
+        providerName: '',
         sort: 'recommended',
         minPrice: '',
         maxPrice: '',
@@ -98,6 +100,7 @@ export function AutoCareResultsPage() {
     const brandLabel = draftFilters.brandId ? getVehicleBrandLabel(automotiveVehicleBrands.find((brand) => brand.id === draftFilters.brandId) ?? automotiveVehicleBrands[0]!, locale) : t('autocare.anyBrand')
     const activeFilters = useMemo<readonly ActiveFilter[]>(() => [
         { key: 'serviceId', label: serviceLabel },
+        draftFilters.providerName ? { key: 'providerName', label: `${t('autocare.providerLabel')}: ${draftFilters.providerName}` } : null,
         draftFilters.brandId ? { key: 'brandId', label: brandLabel } : null,
         draftFilters.radiusKm !== 25 ? { key: 'radiusKm', label: `${draftFilters.radiusKm} km` } : null,
         draftFilters.minRating ? { key: 'minRating', label: `${draftFilters.minRating}+ ★` } : null,
@@ -124,6 +127,7 @@ export function AutoCareResultsPage() {
                         providerCount={providers.length}
                         serviceId={draftFilters.serviceId}
                         serviceLabel={serviceLabel}
+                        providerName={draftFilters.providerName}
                         brandId={draftFilters.brandId}
                         vehicleModel={draftFilters.vehicleModel}
                         vehicleYear={draftFilters.vehicleYear}

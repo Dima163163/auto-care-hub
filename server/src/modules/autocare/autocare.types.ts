@@ -133,6 +133,7 @@ export type AutoCarePriceBenchmarkResponse = {
 
 export type AutoCareDiscoveryQuery = {
     serviceId?: string
+    providerName?: string
     marketId?: string
     zoneId?: string
     radiusKm: number

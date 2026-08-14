@@ -12,6 +12,7 @@ type ResultsToolbarProps = {
     providerCount: number
     serviceId: string
     serviceLabel: string
+    providerName: string
     brandId: string
     vehicleModel: string
     vehicleYear: string
@@ -39,9 +40,9 @@ type ResultsToolbarProps = {
     }
 }
 
-export type ActiveFilter = { key: 'serviceId' | 'brandId' | 'radiusKm' | 'minRating' | 'minPrice' | 'maxPrice' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'; label: string }
+export type ActiveFilter = { key: 'serviceId' | 'providerName' | 'brandId' | 'radiusKm' | 'minRating' | 'minPrice' | 'maxPrice' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'; label: string }
 
-export function ResultsToolbar({ selectedCount, providerCount, serviceId, serviceLabel, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
+export function ResultsToolbar({ selectedCount, providerCount, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
@@ -73,7 +74,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
                 <div>
                     <p className="text-sm font-semibold text-muted-foreground">{t('autocare.resultsEyebrow')}</p>
                     <h1 className="autocare-results-heading mt-1 text-2xl font-black text-foreground sm:text-3xl">{t('autocare.resultsTitle')}</h1>
-                    <p className="mt-2 text-sm font-medium text-muted-foreground">{serviceLabel} <span className="px-1 text-border">·</span> {t('autocare.resultCount', { count: providerCount })} <span className="px-1 text-border">·</span> {vehicleModel || vehicleYear ? [vehicleModel, vehicleYear].filter(Boolean).join(', ') : t('autocare.anyBrand')}</p>
+                    <p className="mt-2 text-sm font-medium text-muted-foreground">{providerName ? `${t('autocare.providerLabel')}: ${providerName}` : serviceLabel} <span className="px-1 text-border">·</span> {t('autocare.resultCount', { count: providerCount })} <span className="px-1 text-border">·</span> {vehicleModel || vehicleYear ? [vehicleModel, vehicleYear].filter(Boolean).join(', ') : t('autocare.anyBrand')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {selectedCount > 0 && <button type="button" onClick={onClear} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary"><Check className="size-4" />{t('autocare.compareSelected', { count: selectedCount })}</button>}

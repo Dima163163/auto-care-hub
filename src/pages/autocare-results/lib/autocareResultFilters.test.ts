@@ -6,7 +6,7 @@ describe('AutoCare result filters', () => {
     it('restores all supported filters from a shareable URL', () => {
         const filters = getAutoCareResultFilters(new URLSearchParams('service=body-paint&market=ru-moscow&radius=50&sort=rating_desc&minPrice=2000&maxPrice=15000&minRating=4.7&priceType=quote_required&availableToday=true&verifiedOnly=true&warrantyOnly=true&hasBonus=true&inclusion=photo&brand=bmw'))
 
-        expect(filters).toEqual({ serviceId: 'body-paint', marketId: 'ru-moscow', zoneId: '', radiusKm: 50, sort: 'rating_desc', minPrice: '2000', maxPrice: '15000', minRating: '4.7', priceType: 'quote_required', availableToday: true, verifiedOnly: true, warrantyOnly: true, hasBonus: true, inclusion: 'photo', brandId: 'bmw', vehicleModel: '', vehicleYear: '' })
+        expect(filters).toEqual({ serviceId: 'body-paint', providerName: '', marketId: 'ru-moscow', zoneId: '', radiusKm: 50, sort: 'rating_desc', minPrice: '2000', maxPrice: '15000', minRating: '4.7', priceType: 'quote_required', availableToday: true, verifiedOnly: true, warrantyOnly: true, hasBonus: true, inclusion: 'photo', brandId: 'bmw', vehicleModel: '', vehicleYear: '' })
     })
 
     it('rejects invalid numeric and enum values', () => {
@@ -28,5 +28,12 @@ describe('AutoCare result filters', () => {
         expect(next.get('minRating')).toBe('4.5')
         expect(next.get('verifiedOnly')).toBe('true')
         expect(next.get('brand')).toBe('toyota')
+    })
+
+    it('preserves provider-name searches in a shareable URL', () => {
+        const next = writeAutoCareResultFilters(new URLSearchParams(), { providerName: 'ProService' })
+
+        expect(next.get('provider')).toBe('ProService')
+        expect(getAutoCareResultFilters(next).providerName).toBe('ProService')
     })
 })

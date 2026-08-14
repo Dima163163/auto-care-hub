@@ -9,6 +9,7 @@ const autoCareVehicleSnapshotSchema = z.object({
 
 export const autoCareDiscoveryQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
+    providerName: z.string().trim().min(1).max(160).optional(),
     marketId: z.string().trim().min(1).max(120).optional(),
     zoneId: z.string().uuid().optional(),
     radiusKm: z.coerce.number().finite().positive().max(500).default(25),

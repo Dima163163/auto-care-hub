@@ -187,6 +187,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const provider = providerById.get(location.providerId)
         const offer = offerByLocation.get(location.id)
         if (!provider || !offer) return []
+        const matchesProvider = !input.providerName || provider.name.toLowerCase().includes(input.providerName.toLowerCase())
         const distanceKm = getDistanceKm(location.latitude, location.longitude, Number(market?.centerLatitude ?? 55.7558), Number(market?.centerLongitude ?? 37.6173))
         const price = offer.priceFromMinor / 100
         const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
@@ -197,7 +198,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const matchesBonus = !input.hasBonus || Boolean(provider.bonusSummary)
         const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
         const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
-        return distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition }] : []
+        return matchesProvider && distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition }] : []
     })
     const sorted = rows.sort((left, right) => {
         if (input.sort === 'price_asc') return left.offer.priceFromMinor - right.offer.priceFromMinor

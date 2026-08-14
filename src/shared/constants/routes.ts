@@ -70,6 +70,7 @@ export const ROUTES = {
 export const routePaths = {
     serviceDiscovery: (params?: {
         service?: string
+        provider?: string
         market?: string
         zone?: string
         radius?: string | number
@@ -77,6 +78,7 @@ export const routePaths = {
         const searchParams = new URLSearchParams()
 
         if (params?.service?.trim()) searchParams.set('service', params.service.trim())
+        if (params?.provider?.trim()) searchParams.set('provider', params.provider.trim())
         if (params?.market?.trim()) searchParams.set('market', params.market.trim())
         if (params?.zone?.trim()) searchParams.set('zone', params.zone.trim())
         if (params?.radius !== undefined && String(params.radius).trim()) searchParams.set('radius', String(params.radius).trim())

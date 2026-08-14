@@ -381,6 +381,7 @@ export type UploadOwnerAutoCareProviderMediaInput = {
 
 export type AutoCareDiscoveryQuery = {
     serviceId?: string
+    providerName?: string
     marketId?: string
     zoneId?: string
     radiusKm?: number

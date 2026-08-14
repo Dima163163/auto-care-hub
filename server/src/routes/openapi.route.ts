@@ -181,6 +181,7 @@ export function getOpenApiDocument() {
                     security: [],
                     parameters: [
                         { name: 'serviceId', in: 'query', required: false, schema: { type: 'string' } },
+                        { name: 'providerName', in: 'query', required: false, schema: { type: 'string', maxLength: 160 } },
                         { name: 'marketId', in: 'query', required: false, schema: { type: 'string' } },
                         { name: 'radiusKm', in: 'query', required: false, schema: { type: 'number', minimum: 0 } },
                         { name: 'sort', in: 'query', required: false, schema: { type: 'string', enum: ['recommended', 'price_asc', 'rating_desc', 'distance_asc'] } },

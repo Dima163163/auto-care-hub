@@ -1993,6 +1993,7 @@ export const handlers = [
     http.get('/api/v1/discovery/providers', ({ request }) => {
         const url = new URL(request.url)
         const serviceId = url.searchParams.get('serviceId') ?? 'oil-change'
+        const providerName = url.searchParams.get('providerName')?.trim().toLowerCase() ?? ''
         const radiusKm = Number(url.searchParams.get('radiusKm') ?? 25)
         const sort = url.searchParams.get('sort') ?? 'recommended'
         const minPrice = Number(url.searchParams.get('minPrice') ?? 0)
@@ -2020,7 +2021,8 @@ export const handlers = [
             const matchesBrand = !source || supportsVehicleBrand(source, brandId)
             const matchesWarranty = !warrantyOnly || (source?.warrantyMonths ?? 0) > 0
             const matchesPriceType = !priceType || source?.priceType === priceType
-            return hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
+            const matchesProvider = !providerName || item.provider.name.toLowerCase().includes(providerName)
+            return matchesProvider && hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
         })
 
         if (sort === 'price_asc') items.sort((left, right) => left.offer.priceFromMinor - right.offer.priceFromMinor)

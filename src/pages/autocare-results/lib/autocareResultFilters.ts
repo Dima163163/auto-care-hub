@@ -3,6 +3,7 @@ export type AutoCareResultPriceType = 'fixed' | 'from' | 'range' | 'quote_requir
 
 export type AutoCareResultFilters = {
     serviceId: string
+    providerName: string
     marketId: string
     zoneId: string
     radiusKm: number
@@ -37,6 +38,7 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
 
     return {
         serviceId: params.get('service') ?? 'oil-change',
+        providerName: params.get('provider') ?? '',
         marketId: params.get('market') ?? 'ru-moscow',
         zoneId: params.get('zone') ?? '',
         radiusKm: Number.isFinite(radiusValue) && radiusValue > 0 ? radiusValue : 25,
@@ -56,16 +58,16 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
     }
 }
 
-export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'zoneId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId' | 'vehicleModel' | 'vehicleYear'>>
+export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'providerName' | 'marketId' | 'zoneId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId' | 'vehicleModel' | 'vehicleYear'>>
 
 export function writeAutoCareResultFilters(params: URLSearchParams, patch: AutoCareResultFilterPatch) {
     const next = new URLSearchParams(params)
-    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'zoneId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId', 'vehicleModel', 'vehicleYear']
+    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'providerName', 'marketId', 'zoneId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId', 'vehicleModel', 'vehicleYear']
 
     keys.forEach((key) => {
         const value = patch[key]
         if (value === undefined) return
-        const urlKey = key === 'serviceId' ? 'service' : key === 'marketId' ? 'market' : key === 'radiusKm' ? 'radius' : key === 'brandId' ? 'brand' : key
+        const urlKey = key === 'serviceId' ? 'service' : key === 'providerName' ? 'provider' : key === 'marketId' ? 'market' : key === 'radiusKm' ? 'radius' : key === 'brandId' ? 'brand' : key
         if (typeof value === 'boolean') {
             if (value) next.set(urlKey, 'true')
             else next.delete(urlKey)
