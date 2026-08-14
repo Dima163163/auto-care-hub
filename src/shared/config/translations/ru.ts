@@ -821,6 +821,8 @@ export const ruTranslations = {
         chatWorkspaceNew: 'Новый чат',
         chatWorkspaceQuestion: 'Задать вопрос сервису',
         chatWorkspaceSupport: 'Написать в поддержку',
+        chatWorkspaceSupportHint: 'Вопросы по платформе и помощь',
+        chatWorkspaceSupportSubject: 'Поддержка AutoCare Hub',
         chatWorkspaceEscalate: 'Задать вопрос суперадмину',
         chatWorkspaceOpenRequest: 'Открыть чат заявки',
         chatWorkspaceSubject: 'Тема',

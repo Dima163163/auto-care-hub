@@ -1,4 +1,4 @@
-import { In } from 'typeorm'
+import { In, IsNull } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -150,12 +150,25 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
         return toThreadResponse(user, thread)
     }
     if (input.type === 'support') {
-        assertRole(user, [UserRole.Owner], 'Only service owners can open a support chat.')
+        assertRole(user, [UserRole.Client, UserRole.Owner], 'Only clients and service owners can open a support chat.')
         if (input.providerId) {
+            assertRole(user, [UserRole.Owner], 'Only service owners can link support to a service.')
             const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId, ownerId: user.id })
             if (!provider) fail(403, 'You do not manage this service.')
         }
-        const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.Support, providerId: input.providerId ?? null, clientId: null, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
+        const clientId = user.role === UserRole.Client ? user.id : null
+        const existing = await repository.findOne({
+            where: {
+                type: AutoCareChatThreadType.Support,
+                providerId: input.providerId ?? IsNull(),
+                clientId: clientId ?? IsNull(),
+                createdById: user.id,
+                status: AutoCareChatThreadStatus.Open,
+            },
+            order: { updatedAt: 'DESC' },
+        })
+        if (existing) return toThreadResponse(user, existing)
+        const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.Support, providerId: input.providerId ?? null, clientId, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
         return toThreadResponse(user, thread)
     }
     assertRole(user, [UserRole.Admin], 'Only administrators can escalate a platform question.')

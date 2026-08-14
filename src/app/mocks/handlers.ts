@@ -2033,11 +2033,17 @@ export const handlers = [
         const body = await request.json() as { type?: MockAutoCareChatThread['type']; providerId?: string; subject?: string }
         if (!body.type || body.type === 'service_request' || !body.subject?.trim()) return HttpResponse.json({ message: 'Invalid chat.' }, { status: 400 })
         if (body.type === 'provider_inquiry' && user.role !== 'client') return HttpResponse.json({ message: 'Only clients can ask a service a question.' }, { status: 403 })
-        if (body.type === 'support' && user.role !== 'owner') return HttpResponse.json({ message: 'Only service owners can open support.' }, { status: 403 })
+        if (body.type === 'support' && !['client', 'owner'].includes(user.role)) return HttpResponse.json({ message: 'Only clients and service owners can open support.' }, { status: 403 })
+        if (body.type === 'support' && body.providerId && user.role !== 'owner') return HttpResponse.json({ message: 'Only service owners can link support to a service.' }, { status: 403 })
         if (body.type === 'admin_escalation' && user.role !== 'admin') return HttpResponse.json({ message: 'Only administrators can escalate.' }, { status: 403 })
         const provider = body.providerId ? autoCareProviders.find((candidate) => candidate.id === body.providerId) : undefined
+        const clientId = user.role === 'client' ? user.id : null
+        const existing = body.type === 'support'
+            ? mockAutoCareChatThreads.find((thread) => thread.type === 'support' && thread.status === 'open' && thread.createdById === user.id && thread.providerId === (body.providerId ?? null) && thread.clientId === clientId)
+            : undefined
+        if (existing) return HttpResponse.json({ ...existing, unreadCount: mockChatMessages(existing).filter((message) => message.senderId !== user.id && !message.readAt).length }, { status: 201 })
         const now = new Date().toISOString()
-        const thread: MockAutoCareChatThread = { id: `chat-${Date.now()}`, type: body.type, status: 'open', subject: body.subject.trim(), requestId: null, providerId: body.providerId ?? null, providerName: provider?.name ?? null, clientId: user.role === 'client' ? user.id : null, createdById: user.id, lastMessageAt: null, createdAt: now, updatedAt: now }
+        const thread: MockAutoCareChatThread = { id: `chat-${Date.now()}`, type: body.type, status: 'open', subject: body.subject.trim(), requestId: null, providerId: body.providerId ?? null, providerName: provider?.name ?? null, clientId, createdById: user.id, lastMessageAt: null, createdAt: now, updatedAt: now }
         mockAutoCareChatThreads.unshift(thread)
         mockAutoCareChatMessages.set(thread.id, [])
         mockAutoCareChatAttachments.set(thread.id, [])

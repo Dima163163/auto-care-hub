@@ -818,6 +818,8 @@ export const enTranslations = {
         chatWorkspaceNew: 'New chat',
         chatWorkspaceQuestion: 'Ask the service',
         chatWorkspaceSupport: 'Contact support',
+        chatWorkspaceSupportHint: 'Platform questions and help',
+        chatWorkspaceSupportSubject: 'AutoCare Hub support',
         chatWorkspaceEscalate: 'Ask the super admin',
         chatWorkspaceOpenRequest: 'Open request chat',
         chatWorkspaceSubject: 'Topic',
