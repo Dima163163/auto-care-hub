@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-14 (unified chat workspace and role-scoped channels added)
+> Updated: 2026-08-14 (mock/real backend endpoint parity completed)
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -147,7 +147,7 @@ work.
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. | Add provider memberships/locations, offer editing, calendar, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
-| Backend | `/api/v1` markets, hierarchical location zones, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request/chat events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, PostGIS/geospatial indexes, provider memberships and authorization/integration tests. |
+| Backend | Fastify/TypeScript + TypeORM/PostgreSQL now covers every route used by the MSW handlers (150/150), including the previously missing `GET /cabinets/all`; OpenAPI and a parity check are kept in sync. Markets, hierarchical location zones, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request/chat events enqueue notifications through the outbox. Local verification supports MSW mock mode or Docker PostgreSQL/Redis with idempotent demo and AutoCare seeds. | Add timezone-aware schedules, reminder delivery, PostGIS/geospatial indexes, provider memberships, trust/ranking evidence and deeper authorization/integration tests. Python rewrite is explicitly deferred until a later approved phase. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
@@ -205,6 +205,27 @@ and follow-up contract are now delivered:
 Real schedules, notifications, bonuses and
 subscriptions are the following slices and should not be mixed into this
 request contract.
+
+### 4.0.2 Backend contract parity — 2026-08-14
+
+- [x] Inventory all MSW handlers and compare method/path signatures with the
+  Fastify source (150 mock routes, 187 real routes including operational and
+  WebSocket routes).
+- [x] Implement the only missing mock route, `GET /cabinets/all`, with the
+  same active-only public behavior in MSW and PostgreSQL-backed mode.
+- [x] Keep the route in OpenAPI and add `npm run check:api-parity` to the
+  backend quality gate; backend-only health, auth, admin, upload and
+  WebSocket routes are intentionally allowed and documented.
+- [x] Document mock mode, Docker PostgreSQL/Redis mode, idempotent demo and
+  AutoCare seeds, migration and real-mode E2E verification in
+  `docs/backend-api-parity.md`.
+- [ ] Run the Docker-backed migration/seed/E2E flow on a host with Docker
+  Desktop available. The current development environment reports an
+  unavailable Docker daemon; no application code is blocked by that local
+  prerequisite.
+- [ ] Add response-schema and authorization integration coverage for the
+  remaining high-risk workflows (provider memberships, trust ranking,
+  schedules/reminders and subscription administration).
 
 ### 4.1 Reuse as platform foundation
 

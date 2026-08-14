@@ -18,6 +18,7 @@ import {
     deleteOwnerCabinet,
     getOwnerCabinetById,
     getOwnerCabinets,
+    getAllPublicCabinets,
     getPublicCabinetById,
     getPublicCabinets,
     updateOwnerCabinet,
@@ -95,6 +96,7 @@ type CabinetsListResponse = {
     page: number
     totalPages: number
 }
+type AllCabinetsResponse = PublicCabinet[]
 type CabinetDetailsResponse = PublicCabinet
 type OwnerCabinetsListResponse = OwnerCabinet[]
 type OwnerCabinetResponse = OwnerCabinet
@@ -119,6 +121,10 @@ export async function cabinetsRoutes(app: FastifyInstance) {
         const query = validateQuery(publicCabinetsQuerySchema, request.query)
 
         return getPublicCabinets(query)
+    })
+
+    app.get<{ Reply: AllCabinetsResponse }>('/cabinets/all', async () => {
+        return getAllPublicCabinets()
     })
 
     app.get<{ Params: unknown; Reply: CabinetDetailsResponse }>(

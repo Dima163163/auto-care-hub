@@ -350,6 +350,9 @@ export function getOpenApiDocument() {
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },
             },
+            '/cabinets/all': {
+                get: { operationId: 'listAllPublicCabinets', security: [], responses: { '200': { description: 'Flat active public cabinet catalog for legacy and native clients.' } } },
+            },
             '/bookings/my': {
                 get: { operationId: 'listMyBookings', parameters: cursorParameters, responses: { '200': { description: 'Authenticated client bookings.' } } },
             },

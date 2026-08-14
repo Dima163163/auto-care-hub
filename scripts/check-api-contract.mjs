@@ -20,6 +20,7 @@ const expectedRoutes = [
     ['get', '/health/live'],
     ['get', '/health/ready'],
     ['get', '/cabinets'],
+    ['get', '/cabinets/all'],
     ['get', '/bookings/my'],
     ['get', '/bookings/{id}/payment/status'],
     ['get', '/owner/bookings'],
@@ -42,6 +43,7 @@ const expectedRoutes = [
 ]
 const mockPaths = [
     '/cabinets',
+    '/cabinets/all',
     '/bookings/my',
     '/bookings/{id}/payment/status',
     '/notifications',

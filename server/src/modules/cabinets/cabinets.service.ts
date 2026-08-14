@@ -338,6 +338,24 @@ export async function getPublicCabinets(input?: GetPublicCabinetsInput) {
     }
 }
 
+/**
+ * Legacy flat catalog contract used by the browser mock and by older clients.
+ * Keep it public, but never expose drafts or blocked cabinets: those records
+ * are owner/admin workflow state and must not leak through a catalog endpoint.
+ */
+export async function getAllPublicCabinets() {
+    const pageSize = 50
+    const firstPage = await getPublicCabinets({ page: 1, limit: pageSize })
+    const pages = [firstPage.items]
+
+    for (let page = 2; page <= firstPage.totalPages; page += 1) {
+        const nextPage = await getPublicCabinets({ page, limit: pageSize })
+        pages.push(nextPage.items)
+    }
+
+    return pages.flat()
+}
+
 export async function getPublicCabinetById(id: string) {
     const cabinetRepository = AppDataSource.getRepository(CabinetEntity)
 

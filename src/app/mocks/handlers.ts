@@ -2550,7 +2550,7 @@ export const handlers = [
     }),
 
     http.get('/api/cabinets/all', () => {
-        return HttpResponse.json(mockCabinets)
+        return HttpResponse.json(mockCabinets.filter((cabinet) => cabinet.status === 'active'))
     }),
 
     http.get('/api/v1/platform-reviews', ({ request }) => {

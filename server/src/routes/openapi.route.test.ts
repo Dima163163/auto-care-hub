@@ -8,6 +8,7 @@ describe('OpenAPI document', () => {
 
         expect(document.openapi).toBe('3.1.0')
         expect(document.paths['/admin/users']).toBeDefined()
+        expect(document.paths['/cabinets/all'].get.operationId).toBe('listAllPublicCabinets')
         expect(document.paths['/admin/account-deletion-requests'].get.operationId).toBe('listAdminAccountDeletionRequests')
         expect(document.paths['/admin/account-deletion-requests/{id}/status'].patch.operationId).toBe('updateAdminAccountDeletionRequestStatus')
         expect(document.paths['/admin/system-incidents']).toBeDefined()
