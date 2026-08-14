@@ -19,9 +19,19 @@ export function HomeDiscoveryGrid({ marketId }: { marketId: string }) {
 
 function LocationCard({ marketId }: { marketId: string }) {
     const { t, locale } = useTranslation()
-    const { data: zones = [], isLoading, isError } = useGetAutoCareLocationZonesQuery({ marketId }, { skip: !marketId })
-    const getZoneName = (names: Record<string, string>) => names[locale] ?? names[locale.split('-')[0] ?? ''] ?? names.ru ?? Object.values(names)[0] ?? ''
-    const countLabel = (count: number) => `${count.toLocaleString(locale)} ${locale.startsWith('ru') ? (count === 1 ? 'автосервис' : 'автосервисов') : 'services'}`
+    const { data: zones = [], isLoading, isError } = useGetAutoCareLocationZonesQuery({ marketId, limit: 4 }, { skip: !marketId })
+    const getZoneName = (names: Record<string, string>) => names[locale] ?? names[locale.split('-')[0] ?? ''] ?? names.en ?? names.ru ?? Object.values(names)[0] ?? ''
+    const countLabel = (count: number) => {
+        if (!locale.startsWith('ru')) return `${count.toLocaleString(locale)} services`
+        const mod10 = count % 10
+        const mod100 = count % 100
+        const noun = mod10 === 1 && mod100 !== 11
+            ? 'автосервис'
+            : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)
+                ? 'автосервиса'
+                : 'автосервисов'
+        return `${count.toLocaleString(locale)} ${noun}`
+    }
     return (
         <section className="h-full rounded-[10px] bg-card p-5">
             <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">{t('autocare.exploreLocations')}</h2><Link to={routePaths.serviceDiscovery({ market: marketId })} className="text-xs font-semibold text-primary">{t('autocare.viewOnMap')}</Link></div>

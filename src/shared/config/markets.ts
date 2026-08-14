@@ -65,7 +65,22 @@ export const MARKET_REGISTRY: readonly MarketDefinition[] = [
         launchReady: true,
     },
     {
+        id: 'md-bender', countryCode: 'MD', countryName: 'Moldova / Transnistria', cityCode: 'bender', cityName: 'Bender', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true,
+    },
+    {
+        id: 'md-rybnitsa', countryCode: 'MD', countryName: 'Moldova / Transnistria', cityCode: 'rybnitsa', cityName: 'Rybnitsa', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true,
+    },
+    {
+        id: 'md-dubossary', countryCode: 'MD', countryName: 'Moldova / Transnistria', cityCode: 'dubossary', cityName: 'Dubossary', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true,
+    },
+    {
+        id: 'md-slobodzeya', countryCode: 'MD', countryName: 'Moldova / Transnistria', cityCode: 'slobodzeya', cityName: 'Slobodzeya', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true,
+    },
+    {
         id: 'ru-samara', countryCode: 'RU', countryName: 'Russia', cityCode: 'samara', cityName: 'Samara', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Samara', launchReady: true,
+    },
+    {
+        id: 'ru-kaliningrad', countryCode: 'RU', countryName: 'Russia', cityCode: 'kaliningrad', cityName: 'Kaliningrad', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Kaliningrad', launchReady: true,
     },
     {
         id: 'ru-saint-petersburg', countryCode: 'RU', countryName: 'Russia', cityCode: 'saint-petersburg', cityName: 'Saint Petersburg', currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true,

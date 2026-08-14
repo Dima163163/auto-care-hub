@@ -48,6 +48,7 @@ export const AUTOMOTIVE_MOCK_MARKET = {
 export const AUTOMOTIVE_MOCK_MARKETS = [
     AUTOMOTIVE_MOCK_MARKET,
     { countryCode: 'RU', countryName: 'Россия', cityCode: 'samara', cityName: 'Самара', regionCode: 'samara-oblast', regionName: 'Самарская область', centerLatitude: 53.1959, centerLongitude: 50.1002, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Samara', launchReady: true },
+    { countryCode: 'RU', countryName: 'Россия', cityCode: 'kaliningrad', cityName: 'Калининград', regionCode: 'kaliningrad-oblast', regionName: 'Калининградская область', centerLatitude: 54.7104, centerLongitude: 20.4522, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Kaliningrad', launchReady: true },
     { countryCode: 'RU', countryName: 'Россия', cityCode: 'saint-petersburg', cityName: 'Санкт-Петербург', regionCode: 'leningrad-oblast', regionName: 'Ленинградская область', centerLatitude: 59.9343, centerLongitude: 30.3351, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true },
     { countryCode: 'RU', countryName: 'Россия', cityCode: 'kazan', cityName: 'Казань', regionCode: 'tatarstan', regionName: 'Республика Татарстан', centerLatitude: 55.7879, centerLongitude: 49.1233, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true },
     { countryCode: 'RU', countryName: 'Россия', cityCode: 'novosibirsk', cityName: 'Новосибирск', regionCode: 'novosibirsk-oblast', regionName: 'Новосибирская область', centerLatitude: 55.0084, centerLongitude: 82.9357, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Asia/Novosibirsk', launchReady: true },
@@ -56,6 +57,10 @@ export const AUTOMOTIVE_MOCK_MARKETS = [
     { countryCode: 'ES', countryName: 'Испания', cityCode: 'valencia', cityName: 'Валенсия', regionCode: 'valencian-community', regionName: 'Валенсийское сообщество', centerLatitude: 39.4699, centerLongitude: -0.3763, currencyCode: 'EUR', defaultLocale: 'es', supportedLocales: ['es', 'en', 'ru'], timezone: 'Europe/Madrid', launchReady: true },
     { countryCode: 'MD', countryName: 'Молдова', cityCode: 'chisinau', cityName: 'Кишинёв', regionCode: 'chisinau', regionName: 'Муниципий Кишинёв', centerLatitude: 47.0105, centerLongitude: 28.8638, currencyCode: 'MDL', defaultLocale: 'ro', supportedLocales: ['ro', 'ru', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
     { countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'tiraspol', cityName: 'Тирасполь', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.8403, centerLongitude: 29.6433, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'bender', cityName: 'Бендеры', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.8316, centerLongitude: 29.4777, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'rybnitsa', cityName: 'Рыбница', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 47.7681, centerLongitude: 29.0044, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'dubossary', cityName: 'Дубоссары', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 47.2656, centerLongitude: 29.1667, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'slobodzeya', cityName: 'Слободзея', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.7281, centerLongitude: 29.7117, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
 ] as const
 
 export type AutomotiveMockLocationZone = {
@@ -77,17 +82,79 @@ const cityZones = (marketCode: string, cityName: string, latitude: number, longi
     { marketCode, slug: 'east', zoneType: AutomotiveLocationZoneType.ServiceArea, names: { ru: 'Восточная агломерация', en: 'East service area', es: 'Área este' }, centerLatitude: latitude, centerLongitude: longitude + 0.05, radiusKm: 8, imageUrl: imagePrefix === 'moscow' ? '/images/autocare/locations/east.webp' : null, displayOrder: 4 },
 ]
 
+const namedCityZones = (
+    marketCode: string,
+    zones: Array<Omit<AutomotiveMockLocationZone, 'marketCode' | 'displayOrder'>>,
+): AutomotiveMockLocationZone[] => zones.map((zone, index) => ({
+    ...zone,
+    marketCode,
+    names: {
+        ...zone.names,
+        es: zone.names.es ?? zone.names.en ?? zone.names.ru ?? '',
+        ro: zone.names.ro ?? zone.names.en ?? zone.names.ru ?? '',
+    },
+    displayOrder: index + 1,
+}))
+
 export const AUTOMOTIVE_MOCK_LOCATION_ZONES: readonly AutomotiveMockLocationZone[] = [
-    ...cityZones('moscow', 'Москвы', 55.7558, 37.6173, 'moscow'),
-    ...cityZones('samara', 'Самары', 53.1959, 50.1002),
-    ...cityZones('saint-petersburg', 'Санкт-Петербурга', 59.9343, 30.3351),
+    ...namedCityZones('moscow', [
+        { slug: 'central', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Центр Москвы (ЦАО)', en: 'Central Moscow', es: 'Centro de Moscú' }, centerLatitude: 55.7558, centerLongitude: 37.6173, radiusKm: 5, imageUrl: '/images/autocare/locations/center.webp' },
+        { slug: 'north-west', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Северо-Запад Москвы (СЗАО)', en: 'North-West Moscow', es: 'Noroeste de Moscú' }, centerLatitude: 55.8078, centerLongitude: 37.4353, radiusKm: 8, imageUrl: '/images/autocare/locations/north-west.webp' },
+        { slug: 'south-west', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Юго-Запад Москвы (ЮЗАО)', en: 'South-West Moscow', es: 'Suroeste de Moscú' }, centerLatitude: 55.6623, centerLongitude: 37.5223, radiusKm: 8, imageUrl: '/images/autocare/locations/south-west.webp' },
+        { slug: 'east', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Восток Москвы (ВАО)', en: 'East Moscow', es: 'Este de Moscú' }, centerLatitude: 55.7558, centerLongitude: 37.7673, radiusKm: 9, imageUrl: '/images/autocare/locations/east.webp' },
+        { slug: 'north', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Север Москвы (САО)', en: 'North Moscow', es: 'Norte de Moscú' }, centerLatitude: 55.846, centerLongitude: 37.531, radiusKm: 9 },
+        { slug: 'north-east', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Северо-Восток Москвы (СВАО)', en: 'North-East Moscow', es: 'Noreste de Moscú' }, centerLatitude: 55.84, centerLongitude: 37.65, radiusKm: 9 },
+        { slug: 'south-east', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Юго-Восток Москвы (ЮВАО)', en: 'South-East Moscow', es: 'Sureste de Moscú' }, centerLatitude: 55.69, centerLongitude: 37.77, radiusKm: 9 },
+        { slug: 'south', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Юг Москвы (ЮАО)', en: 'South Moscow', es: 'Sur de Moscú' }, centerLatitude: 55.65, centerLongitude: 37.63, radiusKm: 9 },
+        { slug: 'west', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Запад Москвы (ЗАО)', en: 'West Moscow', es: 'Oeste de Moscú' }, centerLatitude: 55.72, centerLongitude: 37.47, radiusKm: 9 },
+        { slug: 'zelenograd', zoneType: AutomotiveLocationZoneType.ServiceArea, names: { ru: 'Зеленоградский округ', en: 'Zelenograd district', es: 'Distrito de Zelenograd' }, centerLatitude: 55.982, centerLongitude: 37.181, radiusKm: 10 },
+        { slug: 'troitsk', zoneType: AutomotiveLocationZoneType.ServiceArea, names: { ru: 'Троицкий округ', en: 'Troitsk district', es: 'Distrito de Troitsk' }, centerLatitude: 55.485, centerLongitude: 37.305, radiusKm: 12 },
+        { slug: 'novomoskovsk', zoneType: AutomotiveLocationZoneType.ServiceArea, names: { ru: 'Новомосковский округ', en: 'Novomoskovsky district', es: 'Distrito de Novomoskovsky' }, centerLatitude: 55.54, centerLongitude: 37.45, radiusKm: 12 },
+    ]),
+    ...namedCityZones('samara', [
+        { slug: 'oktyabrsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Октябрьский район', en: 'Oktyabrsky district' }, centerLatitude: 53.213, centerLongitude: 50.19, radiusKm: 5 },
+        { slug: 'leninsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Ленинский район', en: 'Leninsky district' }, centerLatitude: 53.195, centerLongitude: 50.102, radiusKm: 5 },
+        { slug: 'promyshlenny', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Промышленный район', en: 'Promyshlenny district' }, centerLatitude: 53.221, centerLongitude: 50.22, radiusKm: 8 },
+        { slug: 'kirovsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Кировский район', en: 'Kirovsky district' }, centerLatitude: 53.24, centerLongitude: 50.3, radiusKm: 10 },
+        { slug: 'sovetsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Советский район', en: 'Sovetsky district' }, centerLatitude: 53.205, centerLongitude: 50.245, radiusKm: 6 },
+        { slug: 'zheleznodorozhny', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Железнодорожный район', en: 'Zheleznodorozhny district' }, centerLatitude: 53.19, centerLongitude: 50.11, radiusKm: 5 },
+        { slug: 'samarsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Самарский район', en: 'Samarsky district' }, centerLatitude: 53.18, centerLongitude: 50.095, radiusKm: 5 },
+        { slug: 'kuibyshevsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Куйбышевский район', en: 'Kuibyshevsky district' }, centerLatitude: 53.13, centerLongitude: 50.11, radiusKm: 10 },
+        { slug: 'krasnoglinsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Красноглинский район', en: 'Krasnoglinsky district' }, centerLatitude: 53.32, centerLongitude: 50.24, radiusKm: 14 },
+    ]),
+    ...namedCityZones('kaliningrad', [
+        { slug: 'central', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Центральный район', en: 'Central district' }, centerLatitude: 54.715, centerLongitude: 20.5, radiusKm: 5 },
+        { slug: 'moskovsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Московский район', en: 'Moskovsky district' }, centerLatitude: 54.69, centerLongitude: 20.5, radiusKm: 7 },
+        { slug: 'leningradsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Ленинградский район', en: 'Leningradsky district' }, centerLatitude: 54.735, centerLongitude: 20.55, radiusKm: 7 },
+    ]),
+    ...namedCityZones('saint-petersburg', [
+        { slug: 'central', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Центральный район', en: 'Central district' }, centerLatitude: 59.9343, centerLongitude: 30.3351, radiusKm: 5 },
+        { slug: 'primorsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Приморский район', en: 'Primorsky district' }, centerLatitude: 60.01, centerLongitude: 30.26, radiusKm: 10 },
+        { slug: 'moskovsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Московский район', en: 'Moskovsky district' }, centerLatitude: 59.85, centerLongitude: 30.32, radiusKm: 9 },
+        { slug: 'vyborgsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Выборгский район', en: 'Vyborgsky district' }, centerLatitude: 60.04, centerLongitude: 30.34, radiusKm: 10 },
+        { slug: 'petrogradsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Петроградский район', en: 'Petrogradsky district' }, centerLatitude: 59.965, centerLongitude: 30.3, radiusKm: 5 },
+        { slug: 'nevsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Невский район', en: 'Nevsky district' }, centerLatitude: 59.9, centerLongitude: 30.48, radiusKm: 10 },
+        { slug: 'kirovsky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Кировский район', en: 'Kirovsky district' }, centerLatitude: 59.87, centerLongitude: 30.25, radiusKm: 8 },
+        { slug: 'krasnogvardeysky', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Красногвардейский район', en: 'Krasnogvardeysky district' }, centerLatitude: 59.95, centerLongitude: 30.45, radiusKm: 8 },
+    ]),
     ...cityZones('kazan', 'Казани', 55.7879, 49.1233),
     ...cityZones('novosibirsk', 'Новосибирска', 55.0084, 82.9357),
     ...cityZones('madrid', 'Мадрида', 40.4168, -3.7038),
     ...cityZones('barcelona', 'Барселоны', 41.3874, 2.1686),
     ...cityZones('valencia', 'Валенсии', 39.4699, -0.3763),
     ...cityZones('chisinau', 'Кишинёва', 47.0105, 28.8638),
-    ...cityZones('tiraspol', 'Тирасполя', 46.8403, 29.6433),
+    ...namedCityZones('tiraspol', [
+        { slug: 'central', zoneType: AutomotiveLocationZoneType.District, names: { ru: 'Центр Тирасполя', en: 'Central Tiraspol' }, centerLatitude: 46.8403, centerLongitude: 29.6433, radiusKm: 4 },
+        { slug: 'western', zoneType: AutomotiveLocationZoneType.Neighborhood, names: { ru: 'Западный микрорайон', en: 'Western neighborhood' }, centerLatitude: 46.845, centerLongitude: 29.6, radiusKm: 5 },
+        { slug: 'kirovsky', zoneType: AutomotiveLocationZoneType.Neighborhood, names: { ru: 'Кировский микрорайон', en: 'Kirovsky neighborhood' }, centerLatitude: 46.825, centerLongitude: 29.66, radiusKm: 5 },
+        { slug: 'october', zoneType: AutomotiveLocationZoneType.Neighborhood, names: { ru: 'Октябрьский микрорайон', en: 'Oktyabrsky neighborhood' }, centerLatitude: 46.86, centerLongitude: 29.68, radiusKm: 5 },
+        { slug: 'balka', zoneType: AutomotiveLocationZoneType.Neighborhood, names: { ru: 'Микрорайон Балка', en: 'Balka neighborhood' }, centerLatitude: 46.815, centerLongitude: 29.62, radiusKm: 5 },
+        { slug: 'novotiraspolsky', zoneType: AutomotiveLocationZoneType.ServiceArea, names: { ru: 'Новотираспольский', en: 'Novotiraspolsky area' }, centerLatitude: 46.89, centerLongitude: 29.67, radiusKm: 8 },
+    ]),
+    ...cityZones('bender', 'Бендер', 46.8316, 29.4777),
+    ...cityZones('rybnitsa', 'Рыбницы', 47.7681, 29.0044),
+    ...cityZones('dubossary', 'Дубоссар', 47.2656, 29.1667),
+    ...cityZones('slobodzeya', 'Слободзеи', 46.7281, 29.7117),
 ]
 
 export const AUTOMOTIVE_MOCK_SERVICES = [

@@ -123,12 +123,17 @@ const autoCareMarket = {
 const autoCareMarkets = [
     autoCareMarket,
     { id: 'market-samara', countryCode: 'RU', countryName: 'Россия', cityCode: 'samara', cityName: 'Самара', regionCode: 'samara-oblast', regionName: 'Самарская область', centerLatitude: 53.1959, centerLongitude: 50.1002, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Samara', launchReady: true },
+    { id: 'market-kaliningrad', countryCode: 'RU', countryName: 'Россия', cityCode: 'kaliningrad', cityName: 'Калининград', regionCode: 'kaliningrad-oblast', regionName: 'Калининградская область', centerLatitude: 54.7104, centerLongitude: 20.4522, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Kaliningrad', launchReady: true },
     { id: 'market-saint-petersburg', countryCode: 'RU', countryName: 'Россия', cityCode: 'saint-petersburg', cityName: 'Санкт-Петербург', regionCode: 'leningrad-oblast', regionName: 'Ленинградская область', centerLatitude: 59.9343, centerLongitude: 30.3351, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true },
     { id: 'market-kazan', countryCode: 'RU', countryName: 'Россия', cityCode: 'kazan', cityName: 'Казань', regionCode: 'tatarstan', regionName: 'Республика Татарстан', centerLatitude: 55.7879, centerLongitude: 49.1233, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true },
     { id: 'market-madrid', countryCode: 'ES', countryName: 'Испания', cityCode: 'madrid', cityName: 'Мадрид', regionCode: 'madrid', regionName: 'Мадрид', centerLatitude: 40.4168, centerLongitude: -3.7038, currencyCode: 'EUR', defaultLocale: 'es', supportedLocales: ['es', 'en', 'ru'], timezone: 'Europe/Madrid', launchReady: true },
     { id: 'market-barcelona', countryCode: 'ES', countryName: 'Испания', cityCode: 'barcelona', cityName: 'Барселона', regionCode: 'catalonia', regionName: 'Каталония', centerLatitude: 41.3874, centerLongitude: 2.1686, currencyCode: 'EUR', defaultLocale: 'es', supportedLocales: ['es', 'en', 'ru'], timezone: 'Europe/Madrid', launchReady: true },
     { id: 'market-chisinau', countryCode: 'MD', countryName: 'Молдова', cityCode: 'chisinau', cityName: 'Кишинёв', regionCode: 'chisinau', regionName: 'Муниципий Кишинёв', centerLatitude: 47.0105, centerLongitude: 28.8638, currencyCode: 'MDL', defaultLocale: 'ro', supportedLocales: ['ro', 'ru', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
     { id: 'market-tiraspol', countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'tiraspol', cityName: 'Тирасполь', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.8403, centerLongitude: 29.6433, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { id: 'market-bender', countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'bender', cityName: 'Бендеры', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.8316, centerLongitude: 29.4777, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { id: 'market-rybnitsa', countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'rybnitsa', cityName: 'Рыбница', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 47.7681, centerLongitude: 29.0044, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { id: 'market-dubossary', countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'dubossary', cityName: 'Дубоссары', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 47.2656, centerLongitude: 29.1667, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { id: 'market-slobodzeya', countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'slobodzeya', cityName: 'Слободзея', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.7281, centerLongitude: 29.7117, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
 ]
 
 const autoCareLocationZones = [
@@ -136,7 +141,35 @@ const autoCareLocationZones = [
     { id: 'zone-moscow-north', marketId: autoCareMarket.id, parentId: null, slug: 'north', zoneType: 'district', names: { ru: 'Северо-Запад', en: 'North-West' }, centerLatitude: 55.7908, centerLongitude: 37.6173, radiusKm: 6, imageUrl: '/images/autocare/locations/north-west.webp', serviceCount: 892 },
     { id: 'zone-moscow-south', marketId: autoCareMarket.id, parentId: null, slug: 'south', zoneType: 'district', names: { ru: 'Юго-Запад', en: 'South-West' }, centerLatitude: 55.7208, centerLongitude: 37.6173, radiusKm: 6, imageUrl: '/images/autocare/locations/south-west.webp', serviceCount: 756 },
     { id: 'zone-moscow-east', marketId: autoCareMarket.id, parentId: null, slug: 'east', zoneType: 'service_area', names: { ru: 'Восток Москвы', en: 'East Moscow' }, centerLatitude: 55.7558, centerLongitude: 37.6673, radiusKm: 8, imageUrl: '/images/autocare/locations/east.webp', serviceCount: 645 },
-    ...autoCareMarkets.slice(1).flatMap((market) => [
+    ...[
+        { marketId: 'market-samara', slug: 'oktyabrsky', name: 'Октябрьский район', latitude: 53.213, longitude: 50.19 },
+        { marketId: 'market-samara', slug: 'leninsky', name: 'Ленинский район', latitude: 53.195, longitude: 50.102 },
+        { marketId: 'market-samara', slug: 'promyshlenny', name: 'Промышленный район', latitude: 53.221, longitude: 50.22 },
+        { marketId: 'market-samara', slug: 'kirovsky', name: 'Кировский район', latitude: 53.24, longitude: 50.3 },
+        { marketId: 'market-samara', slug: 'sovetsky', name: 'Советский район', latitude: 53.205, longitude: 50.245 },
+        { marketId: 'market-samara', slug: 'zheleznodorozhny', name: 'Железнодорожный район', latitude: 53.19, longitude: 50.11 },
+        { marketId: 'market-samara', slug: 'samarsky', name: 'Самарский район', latitude: 53.18, longitude: 50.095 },
+        { marketId: 'market-samara', slug: 'kuibyshevsky', name: 'Куйбышевский район', latitude: 53.13, longitude: 50.11 },
+        { marketId: 'market-samara', slug: 'krasnoglinsky', name: 'Красноглинский район', latitude: 53.32, longitude: 50.24 },
+        { marketId: 'market-kaliningrad', slug: 'central', name: 'Центральный район', latitude: 54.715, longitude: 20.5 },
+        { marketId: 'market-kaliningrad', slug: 'moskovsky', name: 'Московский район', latitude: 54.69, longitude: 20.5 },
+        { marketId: 'market-kaliningrad', slug: 'leningradsky', name: 'Ленинградский район', latitude: 54.735, longitude: 20.55 },
+        { marketId: 'market-saint-petersburg', slug: 'central', name: 'Центральный район', latitude: 59.9343, longitude: 30.3351 },
+        { marketId: 'market-saint-petersburg', slug: 'primorsky', name: 'Приморский район', latitude: 60.01, longitude: 30.26 },
+        { marketId: 'market-saint-petersburg', slug: 'moskovsky', name: 'Московский район', latitude: 59.85, longitude: 30.32 },
+        { marketId: 'market-saint-petersburg', slug: 'vyborgsky', name: 'Выборгский район', latitude: 60.04, longitude: 30.34 },
+        { marketId: 'market-saint-petersburg', slug: 'petrogradsky', name: 'Петроградский район', latitude: 59.965, longitude: 30.3 },
+        { marketId: 'market-saint-petersburg', slug: 'nevsky', name: 'Невский район', latitude: 59.9, longitude: 30.48 },
+        { marketId: 'market-saint-petersburg', slug: 'kirovsky', name: 'Кировский район', latitude: 59.87, longitude: 30.25 },
+        { marketId: 'market-saint-petersburg', slug: 'krasnogvardeysky', name: 'Красногвардейский район', latitude: 59.95, longitude: 30.45 },
+        { marketId: 'market-tiraspol', slug: 'central', name: 'Центр Тирасполя', latitude: 46.8403, longitude: 29.6433 },
+        { marketId: 'market-tiraspol', slug: 'western', name: 'Западный микрорайон', latitude: 46.845, longitude: 29.6 },
+        { marketId: 'market-tiraspol', slug: 'kirovsky', name: 'Кировский микрорайон', latitude: 46.825, longitude: 29.66 },
+        { marketId: 'market-tiraspol', slug: 'october', name: 'Октябрьский микрорайон', latitude: 46.86, longitude: 29.68 },
+        { marketId: 'market-tiraspol', slug: 'balka', name: 'Микрорайон Балка', latitude: 46.815, longitude: 29.62 },
+        { marketId: 'market-tiraspol', slug: 'novotiraspolsky', name: 'Новотираспольский', latitude: 46.89, longitude: 29.67 },
+    ].map((zone, index) => ({ id: `zone-${zone.marketId}-${zone.slug}`, marketId: zone.marketId, parentId: null, slug: zone.slug, zoneType: 'district', names: { ru: zone.name, en: zone.name, es: zone.name, ro: zone.name }, centerLatitude: zone.latitude, centerLongitude: zone.longitude, radiusKm: 8, imageUrl: null, serviceCount: 0, displayOrder: index + 1 })),
+    ...autoCareMarkets.filter((market) => !['market-moscow', 'market-samara', 'market-kaliningrad', 'market-saint-petersburg', 'market-tiraspol'].includes(market.id)).flatMap((market) => [
         { id: `${market.id}-central`, marketId: market.id, parentId: null, slug: 'central', zoneType: 'district', names: { ru: `Центр ${market.cityName}`, en: `${market.cityName} centre` }, centerLatitude: market.centerLatitude, centerLongitude: market.centerLongitude, radiusKm: 5, imageUrl: null, serviceCount: 0 },
         { id: `${market.id}-north`, marketId: market.id, parentId: null, slug: 'north', zoneType: 'district', names: { ru: 'Северный район', en: 'North district' }, centerLatitude: market.centerLatitude + 0.035, centerLongitude: market.centerLongitude, radiusKm: 6, imageUrl: null, serviceCount: 0 },
         { id: `${market.id}-south`, marketId: market.id, parentId: null, slug: 'south', zoneType: 'district', names: { ru: 'Южный район', en: 'South district' }, centerLatitude: market.centerLatitude - 0.035, centerLongitude: market.centerLongitude, radiusKm: 6, imageUrl: null, serviceCount: 0 },
@@ -1860,7 +1893,12 @@ export const handlers = [
     }),
 
     http.get('/api/v1/markets', () => HttpResponse.json(autoCareMarkets)),
-    http.get('/api/v1/markets/:marketId/zones', ({ params }) => HttpResponse.json(autoCareLocationZones.filter((zone) => zone.marketId === params.marketId))),
+    http.get('/api/v1/markets/:marketId/zones', ({ params, request }) => {
+        const market = autoCareMarkets.find((item) => item.id === params.marketId || item.cityCode === params.marketId)
+        const requestedLimit = Number(new URL(request.url).searchParams.get('limit') ?? 24)
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(Math.floor(requestedLimit), 100) : 24
+        return HttpResponse.json(autoCareLocationZones.filter((zone) => zone.marketId === market?.id).slice(0, limit))
+    }),
 
     http.get('/api/v1/service-definitions', () => HttpResponse.json(autoCareDefinitions)),
 
