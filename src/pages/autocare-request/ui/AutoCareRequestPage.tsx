@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CheckCircle2, MessageCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
-import { mapAutoCareProviderProfile, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceMessageMutation, useGetAutoCareServiceConversationQuery, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery } from '@/entities/automotive-service'
+import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareServiceConversationQuery } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -70,35 +70,7 @@ export function AutoCareRequestPage() {
 function RequestFollowUp({ providerId, requestId }: { providerId: string; requestId: string }) {
     const { t } = useTranslation()
     const { data } = useGetAutoCareServiceConversationQuery(requestId)
-    const [sendMessage, { isLoading: isSending }] = useCreateAutoCareServiceMessageMutation()
-    const [uploadAttachment] = useCreateAutoCareServiceAttachmentMutation()
     const [acceptQuote, { isLoading: isAcceptingQuote }] = useAcceptAutoCareServiceQuoteMutation()
     const [declineQuote, { isLoading: isDecliningQuote }] = useDeclineAutoCareServiceQuoteMutation()
-    const [message, setMessage] = useState('')
-    const [uploading, setUploading] = useState(false)
-    const submitMessage = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
-        if (!message.trim()) return
-        await sendMessage({ requestId, body: message }).unwrap()
-        setMessage('')
-    }
-    const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (!file) return
-        setUploading(true)
-        const contentBase64 = await readFileAsBase64(file)
-        await uploadAttachment({ requestId, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64 }).unwrap()
-        setUploading(false)
-        event.target.value = ''
-    }
-    return <section className="grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-status-success-surface text-status-success-foreground"><CheckCircle2 className="size-5" /></span><div><h2 className="text-xl font-black text-foreground">{t('autocare.requestSubmittedTitle')}</h2><p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{t('autocare.requestSubmittedDescription')}</p><Link to={routePaths.serviceProviderDetails(providerId)} className="mt-2 inline-flex text-xs font-black text-primary">{t('autocare.requestBackToProfile')}</Link></div></div>{data?.request.quote && data.request.status === 'estimate_shared' ? <div className="rounded-[var(--radius-card)] border border-primary/30 bg-primary/5 p-4"><p className="text-xs font-black uppercase tracking-wide text-primary">Предварительная смета</p><p className="mt-2 text-2xl font-black text-foreground">{new Intl.NumberFormat(undefined, { style: 'currency', currency: data.request.quote.currencyCode, maximumFractionDigits: 0 }).format(data.request.quote.amountMinor / 100)}</p>{data.request.quote.note && <p className="mt-1 text-sm text-muted-foreground">{data.request.quote.note}</p>}<div className="mt-3 flex gap-2"><button type="button" disabled={isAcceptingQuote || isDecliningQuote} onClick={() => void acceptQuote(requestId)} className="h-9 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground">Принять смету</button><button type="button" disabled={isAcceptingQuote || isDecliningQuote} onClick={() => void declineQuote(requestId)} className="h-9 rounded-[var(--radius-control)] border border-border px-3 text-xs font-bold text-foreground">Отказаться</button></div></div> : null}<div className="border-t border-border pt-4"><div className="flex items-center gap-2 text-sm font-black text-foreground"><MessageCircle className="size-4 text-primary" />Переписка по заявке</div><div className="mt-3 grid gap-2">{data?.messages.map((item) => <p key={item.id} className="rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-sm text-foreground">{item.body}</p>) ?? <p className="text-xs text-muted-foreground">Сообщений пока нет.</p>}</div><form className="mt-3 flex gap-2" onSubmit={(event) => void submitMessage(event)}><input value={message} onChange={(event) => setMessage(event.target.value)} className="h-10 min-w-0 flex-1 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40" placeholder="Напишите сервису" /><button disabled={isSending} className="inline-flex h-10 items-center rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground">Отправить</button></form><label className="mt-2 inline-flex h-10 cursor-pointer items-center justify-center rounded-[var(--radius-control)] border border-dashed border-border text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary">{uploading ? 'Загрузка…' : 'Добавить фото повреждения'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void upload(event)} className="sr-only" /></label></div></section>
-}
-
-function readFileAsBase64(file: File) {
-    return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
-        reader.onerror = () => reject(reader.error)
-        reader.readAsDataURL(file)
-    })
+    return <section className="grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-status-success-surface text-status-success-foreground"><CheckCircle2 className="size-5" /></span><div><h2 className="text-xl font-black text-foreground">{t('autocare.requestSubmittedTitle')}</h2><p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{t('autocare.requestSubmittedDescription')}</p><Link to={routePaths.serviceProviderDetails(providerId)} className="mt-2 inline-flex text-xs font-black text-primary">{t('autocare.requestBackToProfile')}</Link></div></div>{data?.request.quote && data.request.status === 'estimate_shared' ? <div className="rounded-[var(--radius-card)] border border-primary/30 bg-primary/5 p-4"><p className="text-xs font-black uppercase tracking-wide text-primary">{t('autocare.clientServiceRequestsQuote')}</p><p className="mt-2 text-2xl font-black text-foreground">{new Intl.NumberFormat(undefined, { style: 'currency', currency: data.request.quote.currencyCode, maximumFractionDigits: 0 }).format(data.request.quote.amountMinor / 100)}</p>{data.request.quote.note && <p className="mt-1 text-sm text-muted-foreground">{data.request.quote.note}</p>}<div className="mt-3 flex gap-2"><button type="button" disabled={isAcceptingQuote || isDecliningQuote} onClick={() => void acceptQuote(requestId)} className="h-9 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground">{t('autocare.clientServiceRequestsAcceptQuote')}</button><button type="button" disabled={isAcceptingQuote || isDecliningQuote} onClick={() => void declineQuote(requestId)} className="h-9 rounded-[var(--radius-control)] border border-border px-3 text-xs font-bold text-foreground">{t('autocare.clientServiceRequestsDeclineQuote')}</button></div></div> : null}<ServiceRequestChat requestId={requestId} /></section>
 }

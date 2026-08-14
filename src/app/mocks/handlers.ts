@@ -10,6 +10,7 @@ import {
     supportsVehicleBrand,
     type AutoCareApiProvider,
 } from '@/entities/automotive-service'
+import { emitMockServiceChatEvent, type ServiceChatMessage } from '@/entities/automotive-service/lib/service-chat'
 
 import {
     mockBookings,
@@ -308,8 +309,16 @@ const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
         id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }, idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
     },
 ]
-const mockAutoCareMessages = new Map<string, Array<{ id: string; senderId: string; kind: 'text'; body: string; createdAt: string }>>()
+const mockAutoCareMessages = new Map<string, ServiceChatMessage[]>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
+mockAutoCareMessages.set('owner-request-1', [
+    { id: 'mock-message-1', senderId: 'user-client-1', kind: 'text', body: 'Здравствуйте! Подскажите, какое масло подойдёт по VIN?', offer: null, deliveredAt: '2026-08-14T08:05:00.000Z', readAt: '2026-08-14T08:06:00.000Z', createdAt: '2026-08-14T08:05:00.000Z' },
+    { id: 'mock-message-2', senderId: 'user-owner-1', kind: 'text', body: 'Добрый день! Проверим VIN и предложим два варианта по цене.', offer: null, deliveredAt: '2026-08-14T08:07:00.000Z', readAt: null, createdAt: '2026-08-14T08:07:00.000Z' },
+    { id: 'mock-message-3', senderId: 'user-owner-1', kind: 'offer', body: 'Предложение по заявке', offer: { type: 'discount', title: 'Скидка 15% на замену масла', description: 'Действует при записи в течение 7 дней. В стоимость входит масло и фильтр.', discountPercent: 15, couponCode: 'AC-OIL15', amountMinor: null, currencyCode: 'RUB', expiresAt: '2026-08-21T23:59:59.000Z', status: 'pending' }, deliveredAt: '2026-08-14T08:08:00.000Z', readAt: null, createdAt: '2026-08-14T08:08:00.000Z' },
+])
+mockAutoCareMessages.set('owner-request-2', [
+    { id: 'mock-message-4', senderId: 'user-owner-1', kind: 'offer', body: 'Альтернативный вариант', offer: { type: 'alternative', title: 'Диагностика тормозов сегодня', description: 'Можем начать с бесплатной проверки дисков, а замену выполнить после согласования.', discountPercent: null, couponCode: null, amountMinor: 0, currencyCode: 'RUB', expiresAt: null, status: 'pending' }, deliveredAt: '2026-08-13T09:30:00.000Z', readAt: null, createdAt: '2026-08-13T09:30:00.000Z' },
+])
 type MockAutoCareReviewPromo = {
     id: string
     reviewId: string
@@ -1949,8 +1958,14 @@ export const handlers = [
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
         const allowed = Boolean(item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
         if (!allowed || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const now = new Date().toISOString()
+        const messages = mockAutoCareMessages.get(item.id) ?? []
+        const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
+        unread.forEach((message) => { message.readAt = now })
+        if (unread.length) emitMockServiceChatEvent({ type: 'message.read', requestId: item.id, payload: { messageIds: unread.map((message) => message.id), readAt: now } })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
-        return HttpResponse.json({ request: response, messages: mockAutoCareMessages.get(item.id) ?? [], attachments: mockAutoCareAttachments.get(item.id) ?? [] })
+        const attachments = (mockAutoCareAttachments.get(item.id) ?? []).map(({ contentBase64: _contentBase64, ...attachment }) => attachment)
+        return HttpResponse.json({ request: response, messages, attachments })
     }),
 
     http.post('/api/v1/service-requests/:requestId/messages', async ({ params, request }) => {
@@ -1961,20 +1976,63 @@ export const handlers = [
         if (!user || !item || !allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { body?: string }
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
-        const message = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text' as const, body: body.body.trim(), createdAt: new Date().toISOString() }
+        const now = new Date().toISOString()
+        const message: ServiceChatMessage = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text', body: body.body.trim(), offer: null, deliveredAt: now, readAt: null, createdAt: now }
         mockAutoCareMessages.set(item.id, [...(mockAutoCareMessages.get(item.id) ?? []), message])
+        emitMockServiceChatEvent({ type: 'message.created', requestId: item.id, payload: message })
         pushMockAutoCareNotification({ userId: user.id === item.clientId ? 'user-owner-1' : item.clientId, requestId: item.id, role: user.id === item.clientId ? 'owner' : 'client', title: 'Новое сообщение по заявке', message: 'В переписке по услуге появилось новое сообщение.' })
         return HttpResponse.json(message, { status: 201 })
+    }),
+
+    http.post('/api/owner/service-requests/:requestId/offers', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
+        if (!user || user.role !== 'owner' || !item || provider?.id !== item.providerId) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json() as { type?: 'discount' | 'alternative'; title?: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
+        if (!body.type || !body.title?.trim() || (body.type === 'discount' && !body.discountPercent)) return HttpResponse.json({ message: 'Invalid service offer.' }, { status: 400 })
+        const now = new Date().toISOString()
+        const message: ServiceChatMessage = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'offer', body: body.title.trim(), offer: { type: body.type, title: body.title.trim(), description: body.description?.trim() || null, discountPercent: body.discountPercent ?? null, couponCode: body.type === 'discount' ? body.couponCode?.trim().toUpperCase() || `AC-${Math.random().toString(36).slice(2, 8).toUpperCase()}` : null, amountMinor: body.amountMinor ?? null, currencyCode: body.currencyCode ?? null, expiresAt: body.expiresAt ?? null, status: 'pending' }, deliveredAt: now, readAt: null, createdAt: now }
+        mockAutoCareMessages.set(item.id, [...(mockAutoCareMessages.get(item.id) ?? []), message])
+        emitMockServiceChatEvent({ type: 'message.created', requestId: item.id, payload: message })
+        return HttpResponse.json(message, { status: 201 })
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/offers/:messageId/decision', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        const message = item ? mockAutoCareMessages.get(item.id)?.find((candidate) => candidate.id === params.messageId) : undefined
+        if (!user || !item || user.id !== item.clientId || !message?.offer) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json() as { decision?: 'accept' | 'decline' }
+        if (message.offer.status !== 'pending' || !body.decision) return HttpResponse.json({ message: 'Offer is no longer available.' }, { status: 409 })
+        message.offer = { ...message.offer, status: body.decision === 'accept' ? 'accepted' : 'declined' }
+        emitMockServiceChatEvent({ type: 'offer.updated', requestId: item.id, payload: message })
+        return HttpResponse.json(message)
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/read', ({ params }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const now = new Date().toISOString()
+        const messages = mockAutoCareMessages.get(item.id) ?? []
+        const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
+        unread.forEach((message) => { message.readAt = now })
+        if (unread.length) emitMockServiceChatEvent({ type: 'message.read', requestId: item.id, payload: { messageIds: unread.map((message) => message.id), readAt: now } })
+        return HttpResponse.json({ updated: unread.length })
     }),
 
     http.post('/api/v1/service-requests/:requestId/attachments', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
-        if (!user || !item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
+        const allowed = Boolean(user && item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
+        if (!allowed || !user || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
         if (!body.fileName || !body.contentType || !body.size || !body.contentBase64) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
-        const attachment = { id: `mock-attachment-${Date.now()}`, uploadedById: user.id, contentType: body.contentType, bytes: body.size, status: 'ready' as const, url: `/api/v1/service-requests/${item.id}/attachments/mock`, createdAt: new Date().toISOString(), contentBase64: body.contentBase64 }
+        const attachment = { id: `mock-attachment-${Date.now()}`, uploadedById: user.id, contentType: body.contentType, bytes: body.size, status: 'ready' as const, url: `/v1/service-requests/${item.id}/attachments/mock`, createdAt: new Date().toISOString(), contentBase64: body.contentBase64 }
         mockAutoCareAttachments.set(item.id, [...(mockAutoCareAttachments.get(item.id) ?? []), attachment])
+        emitMockServiceChatEvent({ type: 'attachment.created', requestId: item.id, payload: attachment })
         const { contentBase64: _contentBase64, ...response } = attachment
         return HttpResponse.json(response, { status: 201 })
     }),

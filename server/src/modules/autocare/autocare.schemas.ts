@@ -118,6 +118,30 @@ export const createAutoCareServiceMessageSchema = z.object({
     body: z.string().trim().min(1).max(4_000),
 })
 
+export const createAutoCareServiceOfferSchema = z.object({
+    type: z.enum(['discount', 'alternative']),
+    title: z.string().trim().min(2).max(160),
+    description: z.string().trim().max(4_000).nullable().optional(),
+    discountPercent: z.number().int().min(1).max(100).nullable().optional(),
+    couponCode: z.string().trim().regex(/^[A-Z0-9_-]{4,32}$/).nullable().optional(),
+    amountMinor: z.number().int().positive().max(10_000_000_00).nullable().optional(),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/).nullable().optional(),
+    expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+}).superRefine((value, context) => {
+    if (value.type === 'discount' && value.discountPercent === undefined) {
+        context.addIssue({ code: 'custom', path: ['discountPercent'], message: 'A discount offer requires discountPercent.' })
+    }
+})
+
+export const autoCareServiceMessageParamsSchema = z.object({
+    requestId: z.string().uuid(),
+    messageId: z.string().uuid(),
+})
+
+export const serviceMessageOfferDecisionSchema = z.object({
+    decision: z.enum(['accept', 'decline']),
+})
+
 export const createAutoCareServiceAttachmentSchema = z.object({
     fileName: z.string().trim().min(1).max(255),
     contentType: z.enum(['image/jpeg', 'image/png', 'image/webp']),

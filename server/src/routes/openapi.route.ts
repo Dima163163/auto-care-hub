@@ -275,6 +275,12 @@ export function getOpenApiDocument() {
             '/v1/service-requests/{requestId}/messages': {
                 post: { operationId: 'createAutoCareServiceMessage', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } } } } } }, responses: { '201': { description: 'Created service message.' } } },
             },
+            '/v1/service-requests/{requestId}/read': {
+                post: { operationId: 'markAutoCareServiceConversationRead', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked unread service messages as read.' } } },
+            },
+            '/v1/service-requests/{requestId}/offers/{messageId}/decision': {
+                post: { operationId: 'decideAutoCareServiceOffer', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'messageId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['decision'], properties: { decision: { type: 'string', enum: ['accept', 'decline'] } }, additionalProperties: false } } } }, responses: { '200': { description: 'Resolved a service offer.' } } },
+            },
             '/v1/service-requests/{requestId}/attachments': {
                 post: { operationId: 'createAutoCareServiceAttachment', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '201': { description: 'Stored service attachment.' } } },
             },
@@ -292,6 +298,12 @@ export function getOpenApiDocument() {
             },
             '/owner/service-requests/{requestId}/quote': {
                 post: { operationId: 'createAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider preliminary estimate.' } } },
+            },
+            '/owner/service-requests/{requestId}/offers': {
+                post: { operationId: 'createAutoCareServiceOffer', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'title'], properties: { type: { type: 'string', enum: ['discount', 'alternative'] }, title: { type: 'string', minLength: 2, maxLength: 160 }, description: { type: ['string', 'null'], maxLength: 4_000 }, discountPercent: { type: ['integer', 'null'], minimum: 1, maximum: 100 }, couponCode: { type: ['string', 'null'], pattern: '^[A-Z0-9_-]{4,32}$' }, amountMinor: { type: ['integer', 'null'], minimum: 1 }, currencyCode: { type: ['string', 'null'], pattern: '^[A-Z]{3}$' }, expiresAt: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a service offer message.' } } },
+            },
+            '/v1/service-requests/{requestId}/ws': {
+                get: { operationId: 'connectAutoCareServiceChat', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'accessToken', in: 'query', required: false, schema: { type: 'string' } }], responses: { '101': { description: 'WebSocket upgrade for the service request chat.' } } },
             },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },

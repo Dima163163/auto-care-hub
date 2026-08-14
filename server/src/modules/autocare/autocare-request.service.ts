@@ -1,4 +1,5 @@
 import { Between, In, type QueryFailedError } from 'typeorm'
+import { randomUUID } from 'node:crypto'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -11,6 +12,7 @@ import {
     ServiceAttachmentStatus,
     ServiceMessageEntity,
     ServiceMessageKind,
+    type ServiceMessageOffer,
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
@@ -24,11 +26,14 @@ import type {
     AutoCareAvailabilitySlotResponse,
     AutoCareServiceRequestResponse,
     AutoCareServiceRequestConversationResponse,
+    AutoCareServiceMessageResponse,
     CreateAutoCareServiceAttachmentInput,
     CreateAutoCareServiceMessageInput,
+    CreateAutoCareServiceOfferInput,
     CreateAutoCareServiceQuoteInput,
     CreateAutoCareServiceRequestInput,
 } from './autocare.types.js'
+import { broadcastServiceChat } from './service-chat.gateway.js'
 
 function clientOnly(user: UserEntity) {
     if (user.role !== UserRole.Client) {
@@ -155,6 +160,19 @@ async function getParticipantRequest(user: UserEntity, requestId: string) {
     return request
 }
 
+function messageResponse(message: ServiceMessageEntity): AutoCareServiceMessageResponse {
+    return {
+        id: message.id,
+        senderId: message.senderId,
+        kind: message.kind,
+        body: message.body,
+        offer: message.offer,
+        deliveredAt: message.deliveredAt?.toISOString() ?? null,
+        readAt: message.readAt?.toISOString() ?? null,
+        createdAt: message.createdAt.toISOString(),
+    }
+}
+
 export async function getAutoCareServiceRequestConversation(user: UserEntity, requestId: string): Promise<AutoCareServiceRequestConversationResponse> {
     const request = await getParticipantRequest(user, requestId)
     const [response, messages, attachments] = await Promise.all([
@@ -162,9 +180,16 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
         AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
         AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
     ])
+    const unreadMessages = messages.filter((message) => message.senderId !== user.id && !message.readAt)
+    if (unreadMessages.length > 0) {
+        const readAt = new Date()
+        unreadMessages.forEach((message) => { message.readAt = readAt })
+        await AppDataSource.getRepository(ServiceMessageEntity).save(unreadMessages)
+        broadcastServiceChat(requestId, { type: 'message.read', requestId, payload: { messageIds: unreadMessages.map((message) => message.id), readAt: readAt.toISOString() } })
+    }
     return {
         request: response,
-        messages: messages.map((message) => ({ id: message.id, senderId: message.senderId, kind: message.kind, body: message.body, createdAt: message.createdAt.toISOString() })),
+        messages: messages.map(messageResponse),
         attachments: attachments.map((attachment) => ({
             id: attachment.id,
             uploadedById: attachment.uploadedById,
@@ -180,13 +205,17 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
 export async function createAutoCareServiceMessage(user: UserEntity, requestId: string, input: CreateAutoCareServiceMessageInput) {
     const request = await getParticipantRequest(user, requestId)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    const recipientId = user.id === request.clientId ? provider?.ownerId : request.clientId
+    const deliveredAt = recipientId ? new Date() : null
     const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
         requestId: request.id,
         senderId: user.id,
         kind: ServiceMessageKind.Text,
         body: input.body,
+        offer: null,
+        deliveredAt,
+        readAt: null,
     }))
-    const recipientId = user.id === request.clientId ? provider?.ownerId : request.clientId
     if (recipientId) {
         await notifyAutoCareParticipant({
             userId: recipientId,
@@ -197,7 +226,71 @@ export async function createAutoCareServiceMessage(user: UserEntity, requestId: 
             message: 'В переписке по услуге появилось новое сообщение.',
         })
     }
-    return { id: message.id, senderId: message.senderId, kind: message.kind, body: message.body, createdAt: message.createdAt.toISOString() }
+    const result = messageResponse(message)
+    broadcastServiceChat(requestId, { type: 'message.created', requestId, payload: result })
+    return result
+}
+
+export async function createAutoCareServiceOffer(user: UserEntity, requestId: string, input: CreateAutoCareServiceOfferInput) {
+    ownerOnly(user)
+    const request = await getRequest(requestId)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    if (!provider || provider.ownerId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+    if (input.type === 'discount' && !input.discountPercent) conflict('A discount offer requires a percentage.')
+    const offer: ServiceMessageOffer = {
+        type: input.type,
+        title: input.title,
+        description: input.description ?? null,
+        discountPercent: input.discountPercent ?? null,
+        couponCode: input.type === 'discount' ? input.couponCode?.trim().toUpperCase() || `AC-${randomUUID().slice(0, 8).toUpperCase()}` : null,
+        amountMinor: input.amountMinor ?? null,
+        currencyCode: input.currencyCode ?? null,
+        expiresAt: input.expiresAt ?? null,
+        status: 'pending',
+    }
+    const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
+        requestId,
+        senderId: user.id,
+        kind: ServiceMessageKind.Offer,
+        body: input.title,
+        offer,
+        deliveredAt: new Date(),
+        readAt: null,
+    }))
+    await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: `offer-${message.id}`, role: 'client', title: 'Сервис предложил вариант решения', message: input.title })
+    const result = messageResponse(message)
+    broadcastServiceChat(requestId, { type: 'message.created', requestId, payload: result })
+    return result
+}
+
+export async function decideAutoCareServiceOffer(user: UserEntity, requestId: string, messageId: string, decision: 'accept' | 'decline') {
+    clientOnly(user)
+    const request = await getParticipantRequest(user, requestId)
+    if (request.clientId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service request.' })
+    const repository = AppDataSource.getRepository(ServiceMessageEntity)
+    const message = await repository.findOneBy({ id: messageId, requestId })
+    if (!message || message.kind !== ServiceMessageKind.Offer || !message.offer) notFound('Service offer not found.')
+    if (message.offer.status !== 'pending') conflict('This service offer has already been resolved.')
+    message.offer = { ...message.offer, status: decision === 'accept' ? 'accepted' : 'declined' }
+    const saved = await repository.save(message)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    if (provider?.ownerId) await notifyAutoCareParticipant({ userId: provider.ownerId, requestId, event: `offer-${decision}-${message.id}`, role: 'owner', title: decision === 'accept' ? 'Клиент принял предложение' : 'Клиент отклонил предложение', message: message.offer.title })
+    const result = messageResponse(saved)
+    broadcastServiceChat(requestId, { type: 'offer.updated', requestId, payload: result })
+    return result
+}
+
+export async function markAutoCareServiceConversationRead(user: UserEntity, requestId: string) {
+    await getParticipantRequest(user, requestId)
+    const repository = AppDataSource.getRepository(ServiceMessageEntity)
+    const messages = await repository.find({ where: { requestId } })
+    const unreadMessages = messages.filter((message) => message.senderId !== user.id && !message.readAt)
+    if (unreadMessages.length === 0) return { updated: 0 }
+    const readAt = new Date()
+    unreadMessages.forEach((message) => { message.readAt = readAt })
+    await repository.save(unreadMessages)
+    broadcastServiceChat(requestId, { type: 'message.read', requestId, payload: { messageIds: unreadMessages.map((message) => message.id), readAt: readAt.toISOString() } })
+    return { updated: unreadMessages.length }
 }
 
 export async function createAutoCareServiceAttachment(user: UserEntity, requestId: string, input: CreateAutoCareServiceAttachmentInput) {
@@ -214,7 +307,9 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
         checksum: null,
         status: ServiceAttachmentStatus.Ready,
     }))
-    return { id: attachment.id, uploadedById: attachment.uploadedById, contentType: attachment.contentType, bytes: attachment.bytes, status: attachment.status, url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`, createdAt: attachment.createdAt.toISOString() }
+    const result = { id: attachment.id, uploadedById: attachment.uploadedById, contentType: attachment.contentType, bytes: attachment.bytes, status: attachment.status, url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`, createdAt: attachment.createdAt.toISOString() }
+    broadcastServiceChat(requestId, { type: 'attachment.created', requestId, payload: result })
+    return result
 }
 
 export async function getAutoCareServiceAttachment(user: UserEntity, requestId: string, attachmentId: string) {

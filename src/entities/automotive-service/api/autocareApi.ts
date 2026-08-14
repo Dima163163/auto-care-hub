@@ -247,10 +247,13 @@ export type AutoCareServiceRequest = {
 }
 
 export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string }
-export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system'; body: string | null; createdAt: string }
+export type AutoCareServiceMessageOffer = { type: 'discount' | 'alternative'; title: string; description: string | null; discountPercent: number | null; couponCode: string | null; amountMinor: number | null; currencyCode: string | null; expiresAt: string | null; status: 'pending' | 'accepted' | 'declined' }
+export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; createdAt: string }
 export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
 export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[] }
 export type CreateAutoCareServiceMessageInput = { requestId: string; body: string }
+export type CreateAutoCareServiceOfferInput = { requestId: string; type: 'discount' | 'alternative'; title: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
+export type DecideAutoCareServiceOfferInput = { requestId: string; messageId: string; decision: 'accept' | 'decline' }
 export type CreateAutoCareServiceAttachmentInput = { requestId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
 export type CreateAutoCareServiceQuoteInput = { requestId: string; amountMinor: number; currencyCode: string; note?: string | null }
 
@@ -431,6 +434,18 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: ({ requestId, body }) => ({ url: `/v1/service-requests/${requestId}/messages`, method: 'POST', body: { body } }),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
         }),
+        createAutoCareServiceOffer: build.mutation<AutoCareServiceMessage, CreateAutoCareServiceOfferInput>({
+            query: ({ requestId, ...body }) => ({ url: `/owner/service-requests/${requestId}/offers`, method: 'POST', body }),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
+        decideAutoCareServiceOffer: build.mutation<AutoCareServiceMessage, DecideAutoCareServiceOfferInput>({
+            query: ({ requestId, messageId, decision }) => ({ url: `/v1/service-requests/${requestId}/offers/${messageId}/decision`, method: 'POST', body: { decision } }),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
+        markAutoCareServiceConversationRead: build.mutation<{ updated: number }, string>({
+            query: (requestId) => ({ url: `/v1/service-requests/${requestId}/read`, method: 'POST' }),
+            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
+        }),
         createAutoCareServiceAttachment: build.mutation<AutoCareServiceAttachment, CreateAutoCareServiceAttachmentInput>({
             query: ({ requestId, ...body }) => ({ url: `/v1/service-requests/${requestId}/attachments`, method: 'POST', body }),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
@@ -489,6 +504,9 @@ export const {
     useGetAutoCareServiceRequestQuery,
     useGetAutoCareServiceConversationQuery,
     useCreateAutoCareServiceMessageMutation,
+    useCreateAutoCareServiceOfferMutation,
+    useDecideAutoCareServiceOfferMutation,
+    useMarkAutoCareServiceConversationReadMutation,
     useCreateAutoCareServiceAttachmentMutation,
     useConfirmAutoCareServiceRequestMutation,
     useAcceptAutoCareServiceQuoteMutation,

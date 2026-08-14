@@ -1,5 +1,5 @@
 import type { AutomotivePriceType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
-import type { ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
+import type { ServiceMessageOffer, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 
 export type AutoCareMarketResponse = {
     id: string
@@ -226,8 +226,11 @@ export type AutoCareServiceQuoteResponse = {
 export type AutoCareServiceMessageResponse = {
     id: string
     senderId: string
-    kind: 'text' | 'system'
+    kind: 'text' | 'system' | 'offer'
     body: string | null
+    offer: ServiceMessageOffer | null
+    deliveredAt: string | null
+    readAt: string | null
     createdAt: string
 }
 
@@ -250,6 +253,19 @@ export type AutoCareServiceRequestConversationResponse = {
 export type CreateAutoCareServiceMessageInput = {
     body: string
 }
+
+export type CreateAutoCareServiceOfferInput = {
+    type: 'discount' | 'alternative'
+    title: string
+    description?: string | null
+    discountPercent?: number | null
+    couponCode?: string | null
+    amountMinor?: number | null
+    currencyCode?: string | null
+    expiresAt?: string | null
+}
+
+export type AutoCareServiceOfferDecision = 'accept' | 'decline'
 
 export type CreateAutoCareServiceAttachmentInput = {
     fileName: string

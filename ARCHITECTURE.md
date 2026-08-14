@@ -868,17 +868,17 @@ desktop density is approved.
 
 PostgreSQL is the message source of truth.
 
-Initial reliable flow:
+Initial reliable flow (implemented for AutoCare service requests):
 
-1. client sends message with idempotency key via REST;
+1. client sends a message or offer via REST;
 2. server authenticates participant and commits message;
 3. transaction records outbox notification event;
-4. response returns durable message/cursor;
-5. recipient refreshes through polling/invalidation until realtime is added.
+4. response returns the durable message/offer projection;
+5. recipient refreshes through polling and WebSocket invalidation events.
 
-Realtime evolution:
+Realtime delivery:
 
-- WebSocket or SSE may push message/inquiry invalidations;
+- WebSocket pushes message, attachment, read-marker and offer invalidations;
 - Redis pub/sub may fan out across API instances;
 - reconnect always resumes from a durable cursor;
 - missed realtime events never lose messages;

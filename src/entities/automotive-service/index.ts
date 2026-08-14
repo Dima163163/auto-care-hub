@@ -23,6 +23,7 @@ export {
 } from './model/automotiveAmenities'
 export { AutomotiveAmenityIcon } from './ui/AutomotiveAmenityIcon'
 export { ProviderLogo } from './ui/ProviderLogo'
+export { ServiceRequestChat } from './ui/ServiceRequestChat'
 export {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
@@ -53,6 +54,9 @@ export {
     useConfirmOwnerAutoCareServiceRequestMutation,
     useGetAutoCareServiceConversationQuery,
     useCreateAutoCareServiceMessageMutation,
+    useCreateAutoCareServiceOfferMutation,
+    useDecideAutoCareServiceOfferMutation,
+    useMarkAutoCareServiceConversationReadMutation,
     useCreateAutoCareServiceAttachmentMutation,
     useCreateAutoCareServiceQuoteMutation,
 } from './api/autocareApi'
@@ -83,10 +87,14 @@ export type {
     CreateAutoCareServiceRequestInput,
     AutoCareServiceConversation,
     AutoCareServiceMessage,
+    AutoCareServiceMessageOffer,
     AutoCareServiceAttachment,
     CreateAutoCareServiceMessageInput,
+    CreateAutoCareServiceOfferInput,
+    DecideAutoCareServiceOfferInput,
     CreateAutoCareServiceAttachmentInput,
     CreateAutoCareServiceQuoteInput,
 } from './api/autocareApi'
 export { mapAutoCareDiscoveryItem, mapAutoCareProviderProfile } from './lib/autocareApiMappers'
 export { supportsVehicleBrand } from './lib/brandSpecialization'
+export { connectServiceChat, type ServiceChatEvent, type ServiceChatMessage } from './lib/service-chat'

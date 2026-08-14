@@ -618,20 +618,25 @@ Exit gate:
 
 Goal: support complex services such as painting and body repair.
 
-- [ ] Create service inquiry/conversation domain anchored to provider location,
+- [x] Create service inquiry/conversation domain anchored to provider location,
   service definition and optional vehicle.
-- [ ] Limit participants to the customer and authorized provider members.
-- [ ] Add durable messages with cursor pagination and idempotent sends.
-- [ ] Add secure image attachments: allowlisted formats, decode/re-encode,
+- [x] Limit participants to the customer and authorized provider members.
+- [~] Add durable messages with cursor pagination and idempotent sends. Durable
+  REST messages are implemented; cursor pagination and message idempotency remain.
+- [~] Add secure image attachments: allowlisted formats, decode/re-encode,
   dimensions/size/count limits, private storage, signed access and retention.
-- [ ] Add read markers, unread counters and notification events.
-- [ ] Add quote versions with items, totals/ranges, currency, expiry, notes,
+- [x] Add read markers and notification events; delivery/read timestamps are
+  broadcast to both participants.
+- [~] Add quote versions with items, totals/ranges, currency, expiry, notes,
   inclusions, exclusions and warranty.
+- [x] Add owner-to-customer chat offers for percentage coupons and alternative
+  service options, with customer accept/decline decisions and immutable message
+  history.
 - [ ] Accepting a quote creates/updates a booking from a server-side snapshot.
 - [ ] Add report/block/moderation workflows without routine admin access to
   private conversation content.
-- [ ] Use REST as the source of truth; add WebSocket/SSE delivery only after the
-  durable message flow is proven.
+- [x] Use REST as the source of truth and add WebSocket delivery for live
+  invalidation, with polling fallback and reconnect-safe refetch.
 - [ ] Add upload abuse, authorization, ordering and retry tests.
 
 Exit gate:

@@ -4,6 +4,7 @@ import Fastify, { type FastifyRequest } from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
+import websocket from '@fastify/websocket'
 import rawBody from 'fastify-raw-body'
 
 import { env } from './config/env.js'
@@ -198,6 +199,7 @@ export async function buildApp() {
     )
 
     await app.register(cors, getCorsOptions(env.corsOrigins))
+    await app.register(websocket)
 
     await app.register(healthRoutes)
     await app.register(metricsRoutes)

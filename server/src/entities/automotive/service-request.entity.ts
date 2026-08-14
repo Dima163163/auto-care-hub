@@ -60,6 +60,19 @@ export class ServiceRequestEntity {
 export enum ServiceMessageKind {
     Text = 'text',
     System = 'system',
+    Offer = 'offer',
+}
+
+export type ServiceMessageOffer = {
+    type: 'discount' | 'alternative'
+    title: string
+    description: string | null
+    discountPercent: number | null
+    couponCode: string | null
+    amountMinor: number | null
+    currencyCode: string | null
+    expiresAt: string | null
+    status: 'pending' | 'accepted' | 'declined'
 }
 
 @Entity('autocare_service_messages')
@@ -71,6 +84,9 @@ export class ServiceMessageEntity {
     @Column({ type: 'uuid' }) senderId!: string
     @Column({ type: 'enum', enum: ServiceMessageKind, enumName: 'autocare_service_message_kind', default: ServiceMessageKind.Text }) kind!: ServiceMessageKind
     @Column({ type: 'text', nullable: true }) body!: string | null
+    @Column({ type: 'jsonb', nullable: true }) offer!: ServiceMessageOffer | null
+    @Column({ type: 'timestamptz', nullable: true }) deliveredAt!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) readAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 

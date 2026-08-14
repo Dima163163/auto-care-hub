@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createAutoCareServiceRequestSchema } from './autocare.schemas.js'
+import { createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema } from './autocare.schemas.js'
 
 const validRequest = {
     providerId: '11111111-1111-4111-8111-111111111111',
@@ -29,5 +29,18 @@ describe('AutoCare service request schema', () => {
             contactSnapshot: { name: 'A', email: 'not-an-email', phone: '' },
         })
         expect(result.success).toBe(false)
+    })
+
+    it('validates discount offers and decisions for the service chat', () => {
+        const offer = createAutoCareServiceOfferSchema.safeParse({
+            type: 'discount',
+            title: 'Скидка на повторный визит',
+            description: 'Действует семь дней.',
+            discountPercent: 15,
+            expiresAt: '2026-08-21T23:59:59.000Z',
+        })
+        expect(offer.success).toBe(true)
+        expect(createAutoCareServiceOfferSchema.safeParse({ type: 'discount', title: 'Без процента' }).success).toBe(false)
+        expect(serviceMessageOfferDecisionSchema.parse({ decision: 'accept' })).toEqual({ decision: 'accept' })
     })
 })
