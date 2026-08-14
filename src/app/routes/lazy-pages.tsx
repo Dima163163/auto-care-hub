@@ -6,6 +6,12 @@ export const HomePage = lazy(() =>
     })),
 )
 
+export const PlatformReviewsPage = lazy(() =>
+    import('@/pages/platform-reviews').then((module) => ({
+        default: module.PlatformReviewsPage,
+    })),
+)
+
 export const CabinetsPage = lazy(() =>
     import('@/pages/cabinets').then((module) => ({
         default: module.CabinetsPage,
@@ -279,6 +285,12 @@ export const AdminCabinetsPage = lazy(() =>
 export const AdminReviewsPage = lazy(() =>
     import('@/pages/admin-reviews').then((module) => ({
         default: module.AdminReviewsPage,
+    })),
+)
+
+export const AdminPlatformReviewsPage = lazy(() =>
+    import('@/pages/admin-platform-reviews').then((module) => ({
+        default: module.AdminPlatformReviewsPage,
     })),
 )
 

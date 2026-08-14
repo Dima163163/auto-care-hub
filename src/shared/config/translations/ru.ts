@@ -96,6 +96,7 @@ export const ruTranslations = {
         adminOwners: 'Владельцы',
         adminCabinets: 'Точки сервисов',
         adminReviews: 'Отзывы',
+        adminPlatformReviews: 'Отзывы AutoCare Hub',
         adminAuditLogs: 'Логи аудита',
         adminSecurityCenter: 'Центр безопасности',
         ownerDashboardShort: 'Панель',

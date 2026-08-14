@@ -101,6 +101,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: ShieldCheck },
                 { labelKey: 'navigation.adminCabinets', to: ROUTES.adminCabinets, icon: Building2 },
                 { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
+                { labelKey: 'navigation.adminPlatformReviews', to: ROUTES.adminPlatformReviews, icon: MessageSquare },
             ],
         },
         {
@@ -130,6 +131,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.adminUsers', to: ROUTES.adminUsers, icon: Users },
                 { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: Building2 },
                 { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
+                { labelKey: 'navigation.adminPlatformReviews', to: ROUTES.adminPlatformReviews, icon: MessageSquare },
             ],
         },
         {

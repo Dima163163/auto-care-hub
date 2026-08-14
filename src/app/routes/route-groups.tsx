@@ -18,6 +18,7 @@ import {
     AdminDashboardPage,
     AdminOwnersPage,
     AdminReviewsPage,
+    AdminPlatformReviewsPage,
     AdminUsersPage,
     SecurityCenterPage,
     SuperAdminDashboardPage,
@@ -51,6 +52,7 @@ import {
     ProfilePage,
     ProfileReviewsPage,
     ProfileVehiclesPage,
+    PlatformReviewsPage,
     RegisterPage,
     RulesPage,
 } from './lazy-pages'
@@ -59,6 +61,7 @@ export function renderPublicRoutes() {
     return (
         <Route element={<RouteErrorBoundary><PublicLayout /></RouteErrorBoundary>}>
             <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.platformReviews} element={<PlatformReviewsPage />} />
             <Route path={ROUTES.features} element={<FeaturesPage />} />
             <Route path={ROUTES.owners} element={<OwnersPage />} />
             <Route path={ROUTES.pricing} element={<PricingPage />} />
@@ -187,6 +190,7 @@ export function renderAdminRoutes() {
             <Route path={ROUTES.adminOwners} element={<AdminOwnersPage />} />
             <Route path={ROUTES.adminCabinets} element={<Navigate replace to={ROUTES.adminDashboard} />} />
             <Route path={ROUTES.adminReviews} element={<AdminReviewsPage />} />
+            <Route path={ROUTES.adminPlatformReviews} element={<AdminPlatformReviewsPage />} />
             <Route path={ROUTES.adminAuditLogs} element={<AdminAuditLogsPage />} />
             <Route path={ROUTES.adminSecurityCenter} element={<SecurityCenterPage />} />
         </Route>

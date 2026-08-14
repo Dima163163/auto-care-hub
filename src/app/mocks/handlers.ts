@@ -176,6 +176,27 @@ const mockFeaturedAutoCareReviews: MockAutoCareReview[] = [
     }),
 ]
 
+type MockPlatformReview = {
+    id: string
+    authorName: string
+    avatarUrl: string | null
+    authorRole: string
+    rating: number
+    text: string
+    status: 'pending' | 'approved' | 'rejected' | 'removed'
+    organizationResponse: string | null
+    organizationRespondedAt: string | null
+    createdAt: string
+    clientId?: string | null
+}
+
+const mockPlatformReviews: MockPlatformReview[] = [
+    { id: 'platform-review-1', authorName: 'Алексей С.', avatarUrl: '/images/autocare/avatars/alexey.webp', authorRole: 'Водитель BMW X5', rating: 5, text: 'Наконец-то можно сравнить сервисы по цене и отзывам в одном месте. Запись прошла без звонков.', status: 'approved', organizationResponse: null, organizationRespondedAt: null, createdAt: '2026-08-12T10:00:00.000Z', clientId: 'user-client-1' },
+    { id: 'platform-review-2', authorName: 'Мария К.', avatarUrl: '/images/autocare/avatars/maria.webp', authorRole: 'Водитель Toyota RAV4', rating: 5, text: 'Очень удобно видеть свободное время, реальные отзывы и переписку с сервисом в одном кабинете.', status: 'approved', organizationResponse: 'Спасибо за доверие! Мы продолжим проверять качество сервисов и улучшать поиск.', organizationRespondedAt: '2026-08-08T12:00:00.000Z', createdAt: '2026-08-05T10:00:00.000Z', clientId: 'user-client-2' },
+    { id: 'platform-review-3', authorName: 'Игорь П.', avatarUrl: '/images/autocare/avatars/igor.webp', authorRole: 'Водитель Skoda Octavia', rating: 4, text: 'Понравилось, что можно заранее отправить фотографии повреждений и получить понятную оценку.', status: 'approved', organizationResponse: null, organizationRespondedAt: null, createdAt: '2026-07-29T10:00:00.000Z', clientId: 'user-client-1' },
+    { id: 'platform-review-4', authorName: 'Ольга Н.', avatarUrl: null, authorRole: 'Водитель Volkswagen Tiguan', rating: 3, text: 'Хочется больше сервисов в небольших городах, но для Москвы сравнение уже очень полезное.', status: 'pending', organizationResponse: null, organizationRespondedAt: null, createdAt: '2026-07-21T10:00:00.000Z', clientId: 'user-client-1' },
+]
+
 function toAutoCareOffer(providerId: string, serviceId: string, price: number, priceType: 'fixed' | 'from' | 'range' | 'quote_required' = 'from') {
     const service = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
     return {
@@ -2249,6 +2270,60 @@ export const handlers = [
 
     http.get('/api/cabinets/all', () => {
         return HttpResponse.json(mockCabinets)
+    }),
+
+    http.get('/api/v1/platform-reviews', ({ request }) => {
+        const limit = Number(new URL(request.url).searchParams.get('limit') ?? 30)
+        return HttpResponse.json(mockPlatformReviews.filter((review) => review.status === 'approved').slice(0, Number.isFinite(limit) ? limit : 30))
+    }),
+
+    http.post('/api/v1/platform-reviews', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'client') return HttpResponse.json({ message: 'Only clients can publish platform reviews.' }, { status: 403 })
+        const body = await request.json() as { rating?: unknown; text?: unknown }
+        if (typeof body.rating !== 'number' || !Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5 || typeof body.text !== 'string' || body.text.trim().length < 10 || body.text.trim().length > 1_000) return HttpResponse.json({ message: 'Invalid platform review.' }, { status: 400 })
+        const review: MockPlatformReview = { id: `platform-review-${Date.now()}`, authorName: currentUser.name, avatarUrl: currentUser.avatarUrl ?? null, authorRole: 'AutoCare Hub клиент', rating: body.rating, text: body.text.trim(), status: 'pending', organizationResponse: null, organizationRespondedAt: null, createdAt: new Date().toISOString(), clientId: currentUser.id }
+        mockPlatformReviews.unshift(review)
+        return HttpResponse.json(review, { status: 201 })
+    }),
+
+    http.get('/api/v1/platform-reviews/my', () => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'client') return HttpResponse.json({ message: 'Only clients can view platform reviews.' }, { status: 403 })
+        return HttpResponse.json(mockPlatformReviews.filter((review) => review.clientId === currentUser.id))
+    }),
+
+    http.get('/api/admin/platform-reviews', () => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') return HttpResponse.json({ message: 'Only administrators can moderate platform reviews.' }, { status: 403 })
+        return HttpResponse.json(mockPlatformReviews)
+    }),
+
+    http.post('/api/admin/platform-reviews/:reviewId/response', async ({ params, request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        const review = mockPlatformReviews.find((item) => item.id === String(params.reviewId))
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') return HttpResponse.json({ message: 'Only administrators can respond to platform reviews.' }, { status: 403 })
+        if (!review) return HttpResponse.json({ message: 'Platform review not found.' }, { status: 404 })
+        const body = await request.json() as { response?: unknown }
+        if (typeof body.response !== 'string' || body.response.trim().length < 5 || body.response.trim().length > 2_000) return HttpResponse.json({ message: 'Invalid organization response.' }, { status: 400 })
+        review.organizationResponse = body.response.trim()
+        review.organizationRespondedAt = new Date().toISOString()
+        if (review.status === 'pending') review.status = 'approved'
+        return HttpResponse.json(review)
+    }),
+
+    http.delete('/api/super-admin/platform-reviews/:reviewId', ({ params }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        const review = mockPlatformReviews.find((item) => item.id === String(params.reviewId))
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'super_admin') return HttpResponse.json({ message: 'Only a super administrator can remove platform reviews.' }, { status: 403 })
+        if (!review) return HttpResponse.json({ message: 'Platform review not found.' }, { status: 404 })
+        review.status = 'removed'
+        return HttpResponse.json({ success: true })
     }),
 
     http.get('/api/v1/reviews/featured', ({ request }) => {

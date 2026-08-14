@@ -1,7 +1,9 @@
 import { Bell, Check, Clock3, Search, Star } from 'lucide-react'
 import { useMemo } from 'react'
+import { Link } from 'react-router'
 
-import { useGetFeaturedAutoCareReviewsQuery, type AutoCareApiReview } from '@/entities/automotive-service'
+import { useGetPlatformReviewsQuery, type PlatformReview } from '@/entities/platform-review'
+import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 export function HomeReviewsSection() {
@@ -15,17 +17,17 @@ export function HomeReviewsSection() {
 
 function ReviewsCard() {
     const { t } = useTranslation()
-    const { data: reviews = [], isLoading, isError } = useGetFeaturedAutoCareReviewsQuery(6)
+    const { data: reviews = [], isLoading, isError } = useGetPlatformReviewsQuery(6)
     const reviewItems = useMemo(() => reviews.slice(0, 3), [reviews])
 
-    return <section className="rounded-[10px] border border-border bg-card p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><span className="text-xs font-semibold text-primary">{t('autocare.allReviews')}</span></div>{isLoading ? <p className="mt-5 text-sm text-muted-foreground">{t('common.loading')}</p> : isError ? <p className="mt-5 text-sm text-muted-foreground">{t('common.failedToLoad')}</p> : <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3">{reviewItems.map((review) => <ReviewCard key={review.id} review={review} />)}</div>}</section>
+    return <section className="rounded-[10px] border border-border bg-card p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><Link to={ROUTES.platformReviews} className="text-xs font-semibold text-primary hover:underline">{t('autocare.allReviews')}</Link></div>{isLoading ? <p className="mt-5 text-sm text-muted-foreground">{t('common.loading')}</p> : isError ? <p className="mt-5 text-sm text-muted-foreground">{t('common.failedToLoad')}</p> : <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3">{reviewItems.map((review) => <ReviewCard key={review.id} review={review} />)}</div>}</section>
 }
 
-function ReviewCard({ review }: { review: AutoCareApiReview }) {
+function ReviewCard({ review }: { review: PlatformReview }) {
     const { locale } = useTranslation()
     const publicationDate = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(review.createdAt))
     const initials = review.authorName.split(/\s+/).map((part) => part[0]).filter(Boolean).slice(0, 2).join('')
-    return <article className="flex h-full flex-col rounded-[8px] border border-border p-4"><div className="flex items-center gap-3">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-11 rounded-full object-cover" /> : <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-black text-primary">{initials}</span>}<div><h3 className="text-sm font-black">{review.authorName}</h3><p className="text-xs text-muted-foreground">{review.vehicleLabel}</p></div></div><div className="mt-3 flex">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className={`size-3.5 ${index < review.rating ? 'fill-rating-fill text-rating-fill' : 'text-muted-foreground/30'}`} />)}</div><p className="mt-3 flex-1 text-[0.7rem] leading-[1.55] text-muted-foreground">{review.text}</p><p className="mt-4 text-[0.68rem] text-muted-foreground/75">{publicationDate}</p></article>
+    return <article className="flex h-full flex-col rounded-[8px] border border-border p-4"><div className="flex items-center gap-3">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-11 rounded-full object-cover" /> : <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-black text-primary">{initials}</span>}<div><h3 className="text-sm font-black">{review.authorName}</h3><p className="text-xs text-muted-foreground">{review.authorRole}</p></div></div><div className="mt-3 flex">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className={`size-3.5 ${index < review.rating ? 'fill-rating-fill text-rating-fill' : 'text-muted-foreground/30'}`} />)}</div><p className="mt-3 flex-1 text-[0.7rem] leading-[1.55] text-muted-foreground">{review.text}</p><p className="mt-4 text-[0.68rem] text-muted-foreground/75">{publicationDate}</p></article>
 }
 
 function MobileAppCard() {

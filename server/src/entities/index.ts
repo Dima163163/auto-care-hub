@@ -43,6 +43,7 @@ import {
     ServiceMessageEntity,
     ServiceRequestEntity,
 } from './automotive/service-request.entity.js'
+import { PlatformReviewEntity } from './platform-review/platform-review.entity.js'
 
 export const entities = [
     UserEntity,
@@ -86,6 +87,7 @@ export const entities = [
     ServiceRequestEntity,
     ServiceMessageEntity,
     ServiceAttachmentEntity,
+    PlatformReviewEntity,
 ]
 
 export { BookingEntity } from './booking/booking.entity.js'
@@ -183,3 +185,4 @@ export {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from './automotive/service-request.entity.js'
+export { PlatformReviewEntity, PlatformReviewStatus } from './platform-review/platform-review.entity.js'

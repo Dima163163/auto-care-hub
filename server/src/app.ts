@@ -22,6 +22,7 @@ import { usersRoutes } from './modules/users/users.routes.js'
 import { paymentsRoutes } from './modules/payments/payments.routes.js'
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js'
 import { autoCareRoutes } from './modules/autocare/autocare.routes.js'
+import { platformReviewsRoutes } from './modules/platform-reviews/platform-reviews.routes.js'
 import { bootstrapSuperAdmin } from './modules/bootstrap/bootstrap-super-admin.js'
 import { registerErrorHandler } from './shared/errors/error-handler.js'
 import { registerNotFoundHandler } from './shared/errors/not-found-handler.js'
@@ -212,6 +213,7 @@ export async function buildApp() {
     await app.register(usersRoutes)
     await app.register(notificationsRoutes)
     await app.register(autoCareRoutes)
+    await app.register(platformReviewsRoutes)
     await app.register(paymentsRoutes)
     await app.register(adminRoutes, {
         mailer,

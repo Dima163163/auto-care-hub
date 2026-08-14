@@ -148,6 +148,13 @@ export function getOpenApiDocument() {
             '/v1/reviews/featured': {
                 get: { operationId: 'listFeaturedAutoCareReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 12, default: 6 } }], responses: { '200': { description: 'Approved reviews for the public AutoCare Hub homepage.' } } },
             },
+            '/v1/platform-reviews': {
+                get: { operationId: 'listPlatformReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, default: 30 } }], responses: { '200': { description: 'Approved reviews about the AutoCare Hub platform.' } } },
+                post: { operationId: 'createPlatformReview', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Submitted platform review awaiting moderation.' } } },
+            },
+            '/v1/platform-reviews/my': {
+                get: { operationId: 'listMyPlatformReviews', responses: { '200': { description: 'Authenticated client platform reviews.' } } },
+            },
             '/v1/discovery/providers': {
                 get: {
                     operationId: 'discoverAutoCareProviders',
@@ -180,6 +187,15 @@ export function getOpenApiDocument() {
             },
             '/owner/autocare-providers/{providerId}/reviews': {
                 get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
+            },
+            '/admin/platform-reviews': {
+                get: { operationId: 'listAdminPlatformReviews', responses: { '200': { description: 'Platform reviews for administrator moderation.' } } },
+            },
+            '/admin/platform-reviews/{reviewId}/response': {
+                post: { operationId: 'respondToPlatformReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['response'], properties: { response: { type: 'string', minLength: 5, maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Official AutoCare Hub response added to a platform review.' } } },
+            },
+            '/super-admin/platform-reviews/{reviewId}': {
+                delete: { operationId: 'removePlatformReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Platform review removed by a super administrator.' } } },
             },
             '/owner/autocare-providers/{providerId}/reviews/{reviewId}/promos': {
                 post: {

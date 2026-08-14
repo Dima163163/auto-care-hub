@@ -92,6 +92,7 @@ export const enTranslations = {
         adminOwners: 'Owners',
         adminCabinets: 'Service locations',
         adminReviews: 'Reviews',
+        adminPlatformReviews: 'AutoCare Hub reviews',
         adminAuditLogs: 'Audit logs',
         adminSecurityCenter: 'Security center',
         ownerDashboardShort: 'Dashboard',

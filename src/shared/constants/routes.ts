@@ -2,6 +2,7 @@ import type { EntityId } from '@/shared/types/common'
 
 export const ROUTES = {
     home: '/',
+    platformReviews: '/reviews',
     features: '/features',
     owners: '/for-owners',
     about: '/about',
@@ -54,6 +55,7 @@ export const ROUTES = {
     adminOwners: '/admin/owners',
     adminCabinets: '/admin/cabinets',
     adminReviews: '/admin/reviews',
+    adminPlatformReviews: '/admin/platform-reviews',
     adminAuditLogs: '/admin/audit-logs',
     adminSecurityCenter: '/admin/security-center',
 
