@@ -41,6 +41,11 @@ const mockRoutes = collectRoutes(mockSource, MOCK_ROUTE_PATTERN)
 const backendRoutes = collectRoutes(backendSource, BACKEND_ROUTE_PATTERN)
 const missingRoutes = [...mockRoutes].filter((route) => !backendRoutes.has(route)).sort()
 const backendOnlyRoutes = [...backendRoutes].filter((route) => !mockRoutes.has(route)).sort()
+const requiredWebSocketRoutes = [
+    'get:/v1/chats/:chatId/ws',
+    'get:/v1/service-requests/:requestId/ws',
+]
+const missingWebSocketRoutes = requiredWebSocketRoutes.filter((route) => !backendRoutes.has(route))
 
 if (missingRoutes.length > 0) {
     throw new Error([
@@ -49,9 +54,17 @@ if (missingRoutes.length > 0) {
     ].join('\n'))
 }
 
+if (missingWebSocketRoutes.length > 0) {
+    throw new Error([
+        'Backend is missing a required WebSocket route declaration:',
+        ...missingWebSocketRoutes.map((route) => `- ${route}`),
+    ].join('\n'))
+}
+
 console.log([
     `Mock routes: ${mockRoutes.size}`,
     `Backend routes: ${backendRoutes.size}`,
     `Covered mock routes: ${mockRoutes.size}`,
+    `WebSocket routes: ${requiredWebSocketRoutes.length}/${requiredWebSocketRoutes.length}`,
     `Backend-only routes (including health, auth and WebSocket support): ${backendOnlyRoutes.length}`,
 ].join('\n'))
