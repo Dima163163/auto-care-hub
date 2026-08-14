@@ -46,6 +46,17 @@ import {
     ServiceRequestEntity,
 } from './automotive/service-request.entity.js'
 import { PlatformReviewEntity } from './platform-review/platform-review.entity.js'
+import {
+    AutoCareBroadcastOfferEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareRepairEventEntity,
+    AutoCareTrustEvidenceEntity,
+} from './automotive/marketplace-enhancements.entity.js'
 
 export const entities = [
     UserEntity,
@@ -92,6 +103,15 @@ export const entities = [
     ServiceMessageEntity,
     ServiceAttachmentEntity,
     PlatformReviewEntity,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareTrustEvidenceEntity,
+    AutoCareRepairEventEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareBroadcastOfferEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
 ]
 
 export { BookingEntity } from './booking/booking.entity.js'
@@ -196,3 +216,14 @@ export {
     ServiceRequestStatus,
 } from './automotive/service-request.entity.js'
 export { PlatformReviewEntity, PlatformReviewStatus } from './platform-review/platform-review.entity.js'
+export {
+    AutoCareBroadcastOfferEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareRepairEventEntity,
+    AutoCareTrustEvidenceEntity,
+} from './automotive/marketplace-enhancements.entity.js'

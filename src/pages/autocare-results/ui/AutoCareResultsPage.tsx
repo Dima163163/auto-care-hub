@@ -12,6 +12,9 @@ import { ResultsToolbar } from './ResultsToolbar'
 import type { ActiveFilter } from './ResultsToolbar'
 import { ProviderResultsList } from './ProviderResultsList'
 import { ResultsPagination } from './ResultsPagination'
+import { MultiProviderRequestCard } from './MultiProviderRequestCard'
+import { FairPriceBenchmarkCard } from './FairPriceBenchmarkCard'
+import { ExpertQuestionCard } from './ExpertQuestionCard'
 
 const RESULTS_PAGE_SIZE = 8
 
@@ -182,6 +185,9 @@ export function AutoCareResultsPage() {
                         />
                     </div>
                 </div>
+                <div className="mt-6"><FairPriceBenchmarkCard serviceId={filters.serviceId || 'oil-change'} marketId={filters.marketId} /></div>
+                <div className="mt-4"><ExpertQuestionCard categorySlug={filters.serviceId || 'oil-change'} /></div>
+                <div className="mt-6"><MultiProviderRequestCard serviceDefinitionId={filters.serviceId || 'oil-change'} marketId={filters.marketId} /></div>
                 <TrustStrip />
             </div>
         </main>

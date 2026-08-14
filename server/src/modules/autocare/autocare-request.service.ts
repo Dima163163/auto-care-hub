@@ -27,6 +27,7 @@ import type {
     AutoCareServiceRequestResponse,
     AutoCareServiceRequestConversationResponse,
     AutoCareServiceMessageResponse,
+    AutoCareQuoteLineItemResponse,
     CreateAutoCareServiceAttachmentInput,
     CreateAutoCareServiceMessageInput,
     CreateAutoCareServiceOfferInput,
@@ -35,6 +36,7 @@ import type {
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
+import { appendAutoCareRepairEvent } from './autocare-marketplace.service.js'
 
 function clientOnly(user: UserEntity) {
     if (user.role !== UserRole.Client) {
@@ -142,8 +144,14 @@ function requestResponse(
         quote: request.estimateSnapshot && typeof request.estimateSnapshot.amountMinor === 'number'
             ? {
                 amountMinor: request.estimateSnapshot.amountMinor,
+                lineItems: Array.isArray(request.estimateSnapshot.lineItems) ? request.estimateSnapshot.lineItems as AutoCareQuoteLineItemResponse[] : [],
+                subtotalMinor: typeof request.estimateSnapshot.subtotalMinor === 'number' ? request.estimateSnapshot.subtotalMinor : request.estimateSnapshot.amountMinor,
+                taxMinor: typeof request.estimateSnapshot.taxMinor === 'number' ? request.estimateSnapshot.taxMinor : 0,
+                feesMinor: typeof request.estimateSnapshot.feesMinor === 'number' ? request.estimateSnapshot.feesMinor : 0,
                 currencyCode: String(request.estimateSnapshot.currencyCode ?? 'RUB'),
                 note: typeof request.estimateSnapshot.note === 'string' ? request.estimateSnapshot.note : null,
+                validUntil: typeof request.estimateSnapshot.validUntil === 'string' ? request.estimateSnapshot.validUntil : null,
+                priceLocked: request.estimateSnapshot.priceLocked === true,
                 createdAt: String(request.estimateSnapshot.createdAt ?? request.updatedAt.toISOString()),
             }
             : null,
@@ -333,9 +341,34 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     if (!provider || provider.ownerId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
     if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed, ServiceRequestStatus.Accepted].includes(request.status)) conflict('This service request cannot receive a new estimate.')
-    request.estimateSnapshot = { amountMinor: input.amountMinor, currencyCode: input.currencyCode, note: input.note ?? null, createdAt: new Date().toISOString() }
+    const lineItems = (input.lineItems ?? []).map((item) => ({
+        kind: item.kind,
+        title: item.title,
+        quantity: item.quantity,
+        unitPriceMinor: item.unitPriceMinor,
+        totalMinor: Math.round(item.quantity * item.unitPriceMinor),
+    }))
+    const subtotalMinor = lineItems.reduce((total, item) => total + item.totalMinor, 0)
+    const taxMinor = input.taxMinor ?? 0
+    const feesMinor = input.feesMinor ?? 0
+    if (lineItems.length > 0 && subtotalMinor + taxMinor + feesMinor !== input.amountMinor) {
+        conflict('Structured quote totals must equal the amount.')
+    }
+    request.estimateSnapshot = {
+        amountMinor: input.amountMinor,
+        lineItems,
+        subtotalMinor: lineItems.length > 0 ? subtotalMinor : input.amountMinor,
+        taxMinor,
+        feesMinor,
+        currencyCode: input.currencyCode,
+        note: input.note ?? null,
+        validUntil: input.validUntil ?? null,
+        priceLocked: input.priceLocked ?? false,
+        createdAt: new Date().toISOString(),
+    }
     request.status = ServiceRequestStatus.EstimateShared
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    await appendAutoCareRepairEvent({ requestId, actorId: user.id, eventType: 'estimate_shared', title: 'Смета отправлена клиенту', notes: input.note ?? null, metadata: { amountMinor: input.amountMinor, currencyCode: input.currencyCode, priceLocked: input.priceLocked ?? false } })
     await notifyAutoCareParticipant({
         userId: request.clientId,
         requestId,
@@ -355,6 +388,7 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
     request.status = accepted ? ServiceRequestStatus.Accepted : ServiceRequestStatus.Declined
     request.clientConfirmedAt = new Date()
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    await appendAutoCareRepairEvent({ requestId, actorId: user.id, eventType: accepted ? 'estimate_accepted' : 'estimate_declined', title: accepted ? 'Клиент принял смету' : 'Клиент отклонил смету' })
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     if (provider?.ownerId) {
         await notifyAutoCareParticipant({
@@ -451,6 +485,7 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
         throw error
     }
     await ensureAutoCareRequestChatThread(savedRequest)
+    await appendAutoCareRepairEvent({ requestId: savedRequest.id, actorId: user.id, eventType: 'created', title: 'Заявка создана', notes: savedRequest.note, metadata: { providerId: provider.id, serviceSlug: definition.slug } })
     if (provider.ownerId) {
         await notifyAutoCareParticipant({
             userId: provider.ownerId,
@@ -542,6 +577,7 @@ export async function confirmAutoCareServiceRequest(user: UserEntity, requestId:
     if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed].includes(request.status)) conflict('This service request can no longer be confirmed.')
     request.clientConfirmedAt ??= new Date()
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    await appendAutoCareRepairEvent({ requestId, actorId: user.id, eventType: 'client_confirmed', title: 'Клиент подтвердил заявку' })
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     if (provider?.ownerId) {
         await notifyAutoCareParticipant({ userId: provider.ownerId, requestId, event: 'confirmed-client', role: 'owner', title: 'Клиент подтвердил заявку', message: 'Клиент подтвердил детали заявки на услугу.' })
@@ -558,6 +594,7 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
     request.providerConfirmedAt ??= new Date()
     request.status = ServiceRequestStatus.Accepted
     await AppDataSource.getRepository(ServiceRequestEntity).save(request)
+    await appendAutoCareRepairEvent({ requestId, actorId: user.id, eventType: 'provider_confirmed', title: 'Сервис подтвердил заявку' })
     await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'confirmed-owner', role: 'client', title: 'Сервис подтвердил заявку', message: 'Сервис подтвердил заявку и готов перейти к следующему шагу.' })
     return hydrateRequest(request)
 }

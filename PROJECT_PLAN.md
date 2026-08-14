@@ -36,6 +36,46 @@ All implementation pushes target `dev` or a feature branch. No push, merge or
 deployment to production `main` happens before the user reviews the local
 diff/commit and explicitly approves that action.
 
+## 1.1 Approved competitor-parity expansion (2026-08-14)
+
+The product owner approved implementation of the full competitor-parity set.
+These features extend the AutoCare roadmap without changing the first-release
+payment boundary: repair and service payment remains directly between the
+customer and provider.
+
+- [x] Fair-price benchmark: market/service/vehicle-aware range with an
+  explainable parts + labour basis; always labelled as an estimate.
+- [x] Structured quotes: parts, labour, consumables, tax/fees, validity,
+  price-lock state and immutable accepted snapshot.
+- [x] Multi-provider request: broadcast one request to matched providers,
+  receive bounded offers, compare them and close the request without spam.
+- [~] Guided issue intake: symptoms, photos and VIN become clarifying
+  questions and suggested service categories before provider selection.
+- [~] Mobile and pickup workflows: coverage areas, dispatch state, ETA,
+  hand-off notes and proof-of-delivery for mobile mechanics and towing.
+- [~] Repair timeline and photo report: milestones, approvals, before/after
+  media, customer-visible updates and immutable event history.
+- [x] Trust evidence: documents, qualifications, insurance, expiry dates,
+  verification reasons, periodic reassessment and transparent explanations.
+- [~] AutoCare guarantee: separate provider warranty from optional platform
+  guarantee with claim, evidence, escalation and resolution states.
+- [~] Verified reviews: completed-visit eligibility, one-review-per-service,
+  photos, revision after resolution, anti-fraud, moderation and replies.
+- [~] Scheduling completion: timezone-aware availability, specialist/resource
+  selection, overlap/no-show protection, reschedule/cancel/rebook and reminders.
+- [x] Expert help: moderated automotive Q&A and symptom guidance, separated
+  from a provider diagnosis or repair promise.
+- [x] Fleet and partner tools: multi-vehicle fleet workspace, approvals,
+  reporting and a versioned partner API after consumer workflows stabilize.
+
+Online payment, preauthorisation and platform collection of repair money remain
+explicitly out of scope until a separate legal and product decision reopens it.
+
+`[x]` means the endpoint, browser mock, seed data and at least one user-facing
+flow are wired. `[~]` means the first contract and persistence foundation is
+ready, while the remaining production workflow still needs its dedicated slice
+(for example dispatch hand-off, media moderation or resource-level scheduling).
+
 ## 2. Confirmed product decisions
 
 - [x] The product name is AutoCare Hub.

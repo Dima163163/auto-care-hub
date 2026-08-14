@@ -31,6 +31,8 @@ export type ProviderPreview = {
     warrantyMonths?: number | null
     brandSpecializations: readonly string[]
     isMultibrand: boolean
+    trustScore?: number
+    trustBadge?: string | null
 }
 
 export const DEFAULT_PROVIDER_IMAGE = '/images/autocare/placeholders/provider.svg'
@@ -74,6 +76,9 @@ export type ProviderProfile = ProviderPreview & {
     amenities: readonly AutomotiveAmenityId[]
     offerings: readonly ProviderOffering[]
     reviews: readonly ProviderReview[]
+    supportsMobile?: boolean
+    supportsPickup?: boolean
+    coverageRadiusKm?: number | null
 }
 
 export const automotiveServices: readonly AutomotiveService[] = [

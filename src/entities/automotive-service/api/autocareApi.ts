@@ -96,7 +96,15 @@ export type AutoCareApiProvider = {
         hours: string
         latitude: number | null
         longitude: number | null
+        supportsMobile?: boolean
+        supportsPickup?: boolean
+        coverageRadiusKm?: number | null
+        dispatchBasePriceMinor?: number
+        etaMinutes?: number | null
     }
+    trustScore?: number
+    trustBadge?: string | null
+    trustReassessedAt?: string | null
     offers?: AutoCareApiOffer[]
 }
 
@@ -285,7 +293,8 @@ export type AutoCareServiceRequest = {
     quote: AutoCareServiceQuote | null
 }
 
-export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string }
+export type AutoCareQuoteLineItem = { kind: 'part' | 'labour' | 'consumable' | 'tax' | 'fee' | 'discount'; title: string; quantity: number; unitPriceMinor: number; totalMinor: number }
+export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; lineItems?: AutoCareQuoteLineItem[]; subtotalMinor?: number; taxMinor?: number; feesMinor?: number; validUntil?: string | null; priceLocked?: boolean }
 export type AutoCareServiceMessageOffer = { type: 'discount' | 'alternative'; title: string; description: string | null; discountPercent: number | null; couponCode: string | null; amountMinor: number | null; currencyCode: string | null; expiresAt: string | null; status: 'pending' | 'accepted' | 'declined' }
 export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; createdAt: string }
 export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
@@ -300,7 +309,24 @@ export type CreateAutoCareServiceMessageInput = { requestId: string; body: strin
 export type CreateAutoCareServiceOfferInput = { requestId: string; type: 'discount' | 'alternative'; title: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
 export type DecideAutoCareServiceOfferInput = { requestId: string; messageId: string; decision: 'accept' | 'decline' }
 export type CreateAutoCareServiceAttachmentInput = { requestId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
-export type CreateAutoCareServiceQuoteInput = { requestId: string; amountMinor: number; currencyCode: string; note?: string | null }
+export type CreateAutoCareServiceQuoteInput = { requestId: string; amountMinor: number; currencyCode: string; note?: string | null; lineItems?: Array<Omit<AutoCareQuoteLineItem, 'totalMinor'>>; taxMinor?: number; feesMinor?: number; validUntil?: string | null; priceLocked?: boolean }
+
+export type AutoCarePriceBenchmark = { serviceDefinitionId: string; serviceSlug: string; marketId: string | null; makeId: string | null; modelId: string | null; minPriceMinor: number; medianPriceMinor: number; maxPriceMinor: number; currencyCode: string; methodology: Record<string, unknown>; source: string; generatedAt: string }
+export type AutoCareRepairEvent = { id: string; requestId: string; eventType: string; actorId: string | null; title: string; notes: string | null; metadata: Record<string, unknown>; createdAt: string }
+export type AutoCareBroadcastOffer = { id: string; broadcastRequestId: string; providerId: string; providerName: string; locationId: string; address: string; offerSnapshot: Record<string, unknown>; status: string; createdAt: string }
+export type AutoCareBroadcastRequest = { id: string; serviceDefinitionId: string; serviceSlug: string; marketId: string | null; issueDescription: string; vehicleSnapshot: Record<string, string | number | null> | null; preferredAt: string | null; status: string; maxProviders: number; expiresAt: string; createdAt: string; offers: AutoCareBroadcastOffer[] }
+export type CreateAutoCareBroadcastRequestInput = { serviceDefinitionId: string; marketId?: string | null; issueDescription: string; vehicleSnapshot?: Record<string, string | number | null> | null; photoUrls?: string[]; preferredAt?: string | null; maxProviders?: number }
+export type CreateAutoCareBroadcastOfferInput = { broadcastId: string; locationId: string; amountMinor: number; currencyCode: string; note?: string | null; durationMinutes?: number; validUntil?: string | null }
+export type AutoCareTrustEvidence = { id: string; providerId: string; kind: string; label: string; status: string; expiresAt: string | null; verifiedAt: string | null }
+export type AutoCareTrustResponse = { providerId: string; score: number; badge: string | null; reassessedAt: string | null; evidence: AutoCareTrustEvidence[] }
+export type AutoCareGuaranteeClaim = { id: string; requestId: string; claimType: string; status: string; summary: string; evidenceUrls: string[]; resolution: string | null; createdAt: string; updatedAt: string }
+export type CreateAutoCareGuaranteeClaimInput = { requestId: string; claimType: string; summary: string; evidenceUrls?: string[] }
+export type AutoCareExpertQuestion = { id: string; symptoms: string; categorySlug: string | null; vehicleSnapshot: Record<string, unknown> | null; status: string; answer: string | null; createdAt: string; answeredAt: string | null }
+export type CreateAutoCareExpertQuestionInput = { symptoms: string; categorySlug?: string | null; vehicleSnapshot?: Record<string, string | number | null> | null }
+export type AutoCareFleetVehicle = { id: string; fleetId: string; label: string; vehicleSnapshot: Record<string, unknown>; approvalPolicy: string | null; createdAt: string }
+export type AutoCareFleet = { id: string; name: string; notes: string | null; vehicles: AutoCareFleetVehicle[]; createdAt: string; updatedAt: string }
+export type CreateAutoCareFleetInput = { name: string; notes?: string | null }
+export type CreateAutoCareFleetVehicleInput = { fleetId: string; label: string; vehicleSnapshot: Record<string, unknown>; approvalPolicy?: string | null }
 
 export type CreateAutoCareServiceRequestInput = {
     providerId: string
@@ -410,6 +436,14 @@ export const autoCareApi = baseApi.injectEndpoints({
         }),
         getAutoCareAvailability: build.query<AutoCareAvailability, { providerId: string; locationId: string; offeringId: string; date: string }>({
             query: ({ providerId, ...params }) => ({ url: `/v1/providers/${providerId}/availability`, params }),
+        }),
+        getAutoCareFairPrice: build.query<AutoCarePriceBenchmark | null, { serviceId: string; marketId?: string; makeId?: string; modelId?: string; fuelType?: string; engineLiters?: number }>({
+            query: (params) => ({ url: '/v1/fair-price', params }),
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'PRICE' }],
+        }),
+        getAutoCareProviderTrust: build.query<AutoCareTrustResponse, string>({
+            query: (providerId) => `/v1/providers/${providerId}/trust`,
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareMarketplace', id: `TRUST_${providerId}` }],
         }),
         getOwnerAutoCareProviders: build.query<AutoCareApiProvider[], void>({
             query: () => '/owner/autocare-providers',
@@ -525,6 +559,58 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: (requestId) => `/v1/service-requests/${requestId}`,
             providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
         }),
+        getAutoCareRepairTimeline: build.query<AutoCareRepairEvent[], string>({
+            query: (requestId) => `/v1/service-requests/${requestId}/timeline`,
+            providesTags: (_result, _error, requestId) => [{ type: 'AutoCareMarketplace', id: `TIMELINE_${requestId}` }],
+        }),
+        createAutoCareBroadcastRequest: build.mutation<AutoCareBroadcastRequest, CreateAutoCareBroadcastRequestInput>({
+            query: (body) => ({ url: '/v1/broadcast-requests', method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'BROADCAST_LIST' }],
+        }),
+        getMyAutoCareBroadcastRequests: build.query<AutoCareBroadcastRequest[], void>({
+            query: () => '/v1/broadcast-requests/my',
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'BROADCAST_LIST' }],
+        }),
+        getAutoCareBroadcastRequest: build.query<AutoCareBroadcastRequest, string>({
+            query: (broadcastId) => `/v1/broadcast-requests/${broadcastId}`,
+            providesTags: (_result, _error, broadcastId) => [{ type: 'AutoCareMarketplace', id: `BROADCAST_${broadcastId}` }],
+        }),
+        getOwnerAutoCareBroadcastRequests: build.query<AutoCareBroadcastRequest[], void>({
+            query: () => '/owner/broadcast-requests',
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'OWNER_BROADCAST_LIST' }],
+        }),
+        createAutoCareBroadcastOffer: build.mutation<AutoCareBroadcastOffer, CreateAutoCareBroadcastOfferInput>({
+            query: ({ broadcastId, ...body }) => ({ url: `/owner/broadcast-requests/${broadcastId}/offers`, method: 'POST', body }),
+            invalidatesTags: (_result, _error, { broadcastId }) => [{ type: 'AutoCareMarketplace', id: `BROADCAST_${broadcastId}` }],
+        }),
+        createAutoCareGuaranteeClaim: build.mutation<AutoCareGuaranteeClaim, CreateAutoCareGuaranteeClaimInput>({
+            query: (body) => ({ url: '/v1/guarantee-claims', method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'GUARANTEE_LIST' }],
+        }),
+        getMyAutoCareGuaranteeClaims: build.query<AutoCareGuaranteeClaim[], void>({
+            query: () => '/v1/guarantee-claims/my',
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'GUARANTEE_LIST' }],
+        }),
+        createAutoCareExpertQuestion: build.mutation<AutoCareExpertQuestion, CreateAutoCareExpertQuestionInput>({
+            query: (body) => ({ url: '/v1/expert-questions', method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'EXPERT_LIST' }],
+        }),
+        getMyAutoCareExpertQuestions: build.query<AutoCareExpertQuestion[], void>({
+            query: () => '/v1/expert-questions/my',
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'EXPERT_LIST' }],
+        }),
+        getMyAutoCareFleets: build.query<AutoCareFleet[], void>({
+            query: () => '/owner/fleets',
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'FLEET_LIST' }],
+        }),
+        createAutoCareFleet: build.mutation<AutoCareFleet, CreateAutoCareFleetInput>({
+            query: (body) => ({ url: '/owner/fleets', method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'FLEET_LIST' }],
+        }),
+        createAutoCareFleetVehicle: build.mutation<AutoCareFleetVehicle, CreateAutoCareFleetVehicleInput>({
+            query: ({ fleetId, ...body }) => ({ url: `/owner/fleets/${fleetId}/vehicles`, method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'FLEET_LIST' }],
+        }),
         getAutoCareServiceConversation: build.query<AutoCareServiceConversation, string>({
             query: (requestId) => `/v1/service-requests/${requestId}/conversation`,
             providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
@@ -597,6 +683,8 @@ export const {
     useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,
+    useGetAutoCareFairPriceQuery,
+    useGetAutoCareProviderTrustQuery,
     useGetAutoCareServiceDefinitionsQuery,
     useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
@@ -610,6 +698,19 @@ export const {
     useMarkAutoCareChatReadMutation,
     useCreateAutoCareChatAttachmentMutation,
     useGetAutoCareServiceRequestQuery,
+    useGetAutoCareRepairTimelineQuery,
+    useCreateAutoCareBroadcastRequestMutation,
+    useGetMyAutoCareBroadcastRequestsQuery,
+    useGetAutoCareBroadcastRequestQuery,
+    useGetOwnerAutoCareBroadcastRequestsQuery,
+    useCreateAutoCareBroadcastOfferMutation,
+    useCreateAutoCareGuaranteeClaimMutation,
+    useGetMyAutoCareGuaranteeClaimsQuery,
+    useCreateAutoCareExpertQuestionMutation,
+    useGetMyAutoCareExpertQuestionsQuery,
+    useGetMyAutoCareFleetsQuery,
+    useCreateAutoCareFleetMutation,
+    useCreateAutoCareFleetVehicleMutation,
     useGetAutoCareServiceConversationQuery,
     useCreateAutoCareServiceMessageMutation,
     useCreateAutoCareServiceOfferMutation,

@@ -79,6 +79,9 @@ export function toProviderResponse(
         amenityIds: provider.amenityIds,
         brandSpecializations: provider.brandSpecializations,
         isMultibrand: provider.isMultibrand,
+        trustScore: Number(provider.trustScore),
+        trustBadge: provider.trustBadge,
+        trustReassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
         location: toLocationResponse(location),
     }
 }

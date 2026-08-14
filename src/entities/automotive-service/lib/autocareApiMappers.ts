@@ -67,6 +67,8 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         verified: profile.verified,
         brandSpecializations: profile.brandSpecializations,
         isMultibrand: profile.isMultibrand,
+        trustScore: profile.trustScore,
+        trustBadge: profile.trustBadge,
         address: profile.location.address,
         hours: profile.location.hours,
         yearsActive: profile.yearsActive,
@@ -89,5 +91,8 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         mapPosition: profile.location.latitude !== null && profile.location.longitude !== null
             ? [profile.location.latitude, profile.location.longitude]
             : undefined,
+        supportsMobile: profile.location.supportsMobile,
+        supportsPickup: profile.location.supportsPickup,
+        coverageRadiusKm: profile.location.coverageRadiusKm,
     }
 }

@@ -109,6 +109,9 @@ export class AutomotiveProviderEntity {
     @Column('text', { array: true, default: () => "'{}'" }) amenityIds!: string[]
     @Column('text', { array: true, default: () => "'{}'" }) brandSpecializations!: string[]
     @Column({ type: 'boolean', default: false }) isMultibrand!: boolean
+    @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 }) trustScore!: number
+    @Column({ type: 'text', nullable: true }) trustBadge!: string | null
+    @Column({ type: 'timestamptz', nullable: true }) trustReassessedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 
@@ -123,6 +126,11 @@ export class AutomotiveServiceLocationEntity {
     @Column({ type: 'text' }) hours!: string
     @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) latitude!: number | null
     @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) longitude!: number | null
+    @Column({ type: 'boolean', default: false }) supportsMobile!: boolean
+    @Column({ type: 'boolean', default: false }) supportsPickup!: boolean
+    @Column({ type: 'numeric', precision: 7, scale: 2, nullable: true }) coverageRadiusKm!: number | null
+    @Column({ type: 'integer', default: 0 }) dispatchBasePriceMinor!: number
+    @Column({ type: 'integer', nullable: true }) etaMinutes!: number | null
 }
 
 @Entity('autocare_service_offerings')
@@ -155,6 +163,7 @@ export class AutomotiveReviewEntity {
     @Column('text', { array: true, default: () => "'{}'" }) photoUrls!: string[]
     @Column({ type: 'uuid', nullable: true }) clientId!: string | null
     @Column({ type: 'uuid', nullable: true }) serviceRequestId!: string | null
+    @Column({ type: 'boolean', default: false }) verifiedVisit!: boolean
     @Column({ type: 'text', nullable: true }) serviceSlug!: string | null
     @Column({ type: 'timestamptz', nullable: true }) revisionAllowedUntil!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) revisionUsedAt!: Date | null

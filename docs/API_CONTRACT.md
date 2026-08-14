@@ -184,10 +184,12 @@ mock and real modes.
 | GET | `/api/v1/markets` | public | Country, region, city center, currency, timezone, and available UI locales. |
 | GET | `/api/v1/markets/:marketId/zones` | public | Localized district/neighborhood/service-area hierarchy with parent traversal, active service counts, images, radius and optional nearest-coordinate ordering. |
 | GET | `/api/v1/service-definitions` | public | Moderated major/minor service catalog with comparison schema. |
+| GET | `/api/v1/fair-price` | public | Fair-price benchmark by service, market and optional vehicle context; includes methodology and disclaimer. |
 | GET | `/api/v1/vehicle-catalog` | public | Versioned makes, models, production years and engine options; optional `brandId` narrows the response. The checked-in MVP catalog is normalized to the official NHTSA vPIC schema; a scheduled production importer is still required for full market coverage. |
 | GET | `/api/v1/reviews/featured` | public | Approved homepage reviews with rating, vehicle, avatar and publication date; optional `limit` up to 12. |
 | GET | `/api/v1/discovery/providers` | public | Service/location/radius/vehicle filters, sort, cursor, map projection. |
 | GET | `/api/v1/providers/:providerId` | public | Provider profile, locations, trust status, offerings, bonuses, review summary, `logoUrl`, `coverImageUrl`, and `galleryImageUrls`. |
+| GET | `/api/v1/providers/:providerId/trust` | public | Trust score, badge and auditable evidence items used for ranking explanations. |
 | POST | `/api/owner/autocare-providers` | verified owner | Creates a draft service point with profile, contact, warranty, brand, amenity and media references. |
 | POST | `/api/owner/autocare-providers/logo` | verified owner | Validates and stores a provider logo as a normalized WebP asset. |
 | POST | `/api/owner/autocare-providers/media` | verified owner | Stores a normalized WebP cover or gallery image; `kind` is `cover` or `gallery`. |
@@ -201,6 +203,19 @@ mock and real modes.
 | POST | `/api/v1/service-requests/:requestId/confirmations/provider` | provider membership | Provider confirms work/quote; only both confirmations activate the booking. |
 | GET | `/api/v1/service-requests/:requestId/messages` | request participant | Cursor-paginated private thread, no public provider chat. |
 | POST | `/api/v1/service-requests/:requestId/messages` | request participant | Durable text message with optional attachment references. |
+| GET | `/api/v1/service-requests/:requestId/timeline` | request participant | Repair timeline with request, quote and confirmation events. |
+| POST | `/api/v1/broadcast-requests` | authenticated client | Sends one issue and vehicle/photo context to multiple eligible providers for comparable offers. |
+| GET | `/api/v1/broadcast-requests/my` | authenticated client | Lists the client's multi-provider requests and received offers. |
+| GET | `/api/v1/broadcast-requests/:broadcastId` | participant/admin | Returns a broadcast request and normalized provider offers. |
+| GET | `/api/owner/broadcast-requests` | verified owner | Lists open broadcast requests matching the owner's published service catalog. |
+| POST | `/api/owner/broadcast-requests/:broadcastId/offers` | verified owner | Publishes a structured provider offer with price, duration and validity. |
+| POST | `/api/v1/guarantee-claims` | authenticated client | Opens a post-visit AutoCare guarantee claim with evidence links. |
+| GET | `/api/v1/guarantee-claims/my` | authenticated client | Lists guarantee claims and their resolution status. |
+| POST | `/api/v1/expert-questions` | authenticated client | Sends a guided symptom/vehicle question to the expert queue. |
+| GET | `/api/v1/expert-questions/my` | authenticated client | Lists expert questions and answers. |
+| GET | `/api/owner/fleets` | verified owner | Lists fleet accounts and their vehicles for partner/fleet workflows. |
+| POST | `/api/owner/fleets` | verified owner | Creates a fleet account with optional approval notes. |
+| POST | `/api/owner/fleets/:fleetId/vehicles` | verified owner | Adds a vehicle and approval policy to an owned fleet. |
 
 The first browser slice intentionally does not collect repair payment. Payment
 status, if needed for a provider’s own workflow, is a provider-side note and

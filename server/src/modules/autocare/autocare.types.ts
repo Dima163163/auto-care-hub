@@ -66,6 +66,9 @@ export type AutoCareProviderResponse = {
     amenityIds: string[]
     brandSpecializations: string[]
     isMultibrand: boolean
+    trustScore: number
+    trustBadge: string | null
+    trustReassessedAt: string | null
     location: AutoCareLocationResponse
     offers?: AutoCareOfferResponse[]
 }
@@ -78,6 +81,11 @@ export type AutoCareLocationResponse = {
     hours: string
     latitude: number | null
     longitude: number | null
+    supportsMobile: boolean
+    supportsPickup: boolean
+    coverageRadiusKm: number | null
+    dispatchBasePriceMinor: number
+    etaMinutes: number | null
 }
 
 export type AutoCareOfferResponse = {
@@ -106,6 +114,21 @@ export type AutoCareProviderResultResponse = {
 export type AutoCareDiscoveryResponse = {
     items: AutoCareProviderResultResponse[]
     nextCursor: string | null
+}
+
+export type AutoCarePriceBenchmarkResponse = {
+    serviceDefinitionId: string
+    serviceSlug: string
+    marketId: string | null
+    makeId: string | null
+    modelId: string | null
+    minPriceMinor: number
+    medianPriceMinor: number
+    maxPriceMinor: number
+    currencyCode: string
+    methodology: Record<string, unknown>
+    source: string
+    generatedAt: string
 }
 
 export type AutoCareDiscoveryQuery = {
@@ -272,10 +295,135 @@ export type AutoCareServiceRequestResponse = {
 
 export type AutoCareServiceQuoteResponse = {
     amountMinor: number
+    lineItems: AutoCareQuoteLineItemResponse[]
+    subtotalMinor: number
+    taxMinor: number
+    feesMinor: number
     currencyCode: string
     note: string | null
+    validUntil: string | null
+    priceLocked: boolean
     createdAt: string
 }
+
+export type AutoCareQuoteLineItemResponse = {
+    kind: 'part' | 'labour' | 'consumable' | 'tax' | 'fee' | 'discount'
+    title: string
+    quantity: number
+    unitPriceMinor: number
+    totalMinor: number
+}
+
+export type AutoCareRepairEventResponse = {
+    id: string
+    requestId: string
+    eventType: string
+    actorId: string | null
+    title: string
+    notes: string | null
+    metadata: Record<string, unknown>
+    createdAt: string
+}
+
+export type CreateAutoCareBroadcastRequestInput = {
+    serviceDefinitionId: string
+    marketId?: string | null
+    issueDescription: string
+    vehicleSnapshot?: AutoCareRequestSnapshot | null
+    photoUrls?: string[]
+    preferredAt?: string | null
+    maxProviders?: number
+}
+
+export type AutoCareBroadcastOfferResponse = {
+    id: string
+    broadcastRequestId: string
+    providerId: string
+    providerName: string
+    locationId: string
+    address: string
+    offerSnapshot: Record<string, unknown>
+    status: string
+    createdAt: string
+}
+
+export type AutoCareBroadcastRequestResponse = {
+    id: string
+    serviceDefinitionId: string
+    serviceSlug: string
+    marketId: string | null
+    issueDescription: string
+    vehicleSnapshot: AutoCareRequestSnapshot | null
+    preferredAt: string | null
+    status: string
+    maxProviders: number
+    expiresAt: string
+    createdAt: string
+    offers: AutoCareBroadcastOfferResponse[]
+}
+
+export type CreateAutoCareBroadcastOfferInput = {
+    locationId: string
+    amountMinor: number
+    currencyCode: string
+    note?: string | null
+    durationMinutes?: number
+    validUntil?: string | null
+}
+
+export type AutoCareTrustEvidenceResponse = {
+    id: string
+    providerId: string
+    kind: string
+    label: string
+    status: string
+    expiresAt: string | null
+    verifiedAt: string | null
+}
+
+export type AutoCareGuaranteeClaimResponse = {
+    id: string
+    requestId: string
+    claimType: string
+    status: string
+    summary: string
+    evidenceUrls: string[]
+    resolution: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export type AutoCareExpertQuestionResponse = {
+    id: string
+    symptoms: string
+    categorySlug: string | null
+    vehicleSnapshot: Record<string, unknown> | null
+    status: string
+    answer: string | null
+    createdAt: string
+    answeredAt: string | null
+}
+
+export type AutoCareFleetVehicleResponse = {
+    id: string
+    fleetId: string
+    label: string
+    vehicleSnapshot: Record<string, unknown>
+    approvalPolicy: string | null
+    createdAt: string
+}
+
+export type AutoCareFleetResponse = {
+    id: string
+    name: string
+    notes: string | null
+    vehicles: AutoCareFleetVehicleResponse[]
+    createdAt: string
+    updatedAt: string
+}
+
+export type CreateAutoCareFleetInput = { name: string; notes?: string | null }
+export type CreateAutoCareFleetVehicleInput = { label: string; vehicleSnapshot: Record<string, unknown>; approvalPolicy?: string | null }
 
 export type AutoCareServiceMessageResponse = {
     id: string
@@ -362,4 +510,16 @@ export type CreateAutoCareServiceQuoteInput = {
     amountMinor: number
     currencyCode: string
     note?: string | null
+    lineItems?: AutoCareQuoteLineItemInput[]
+    taxMinor?: number
+    feesMinor?: number
+    validUntil?: string | null
+    priceLocked?: boolean
+}
+
+export type AutoCareQuoteLineItemInput = {
+    kind: 'part' | 'labour' | 'consumable' | 'tax' | 'fee' | 'discount'
+    title: string
+    quantity: number
+    unitPriceMinor: number
 }

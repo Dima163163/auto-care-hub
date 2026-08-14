@@ -329,6 +329,16 @@ const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = autoCareProviders.sl
 const mockProviderLogos = new Map<string, string>()
 const mockProviderMedia = new Map<string, string>()
 
+const mockAutoCareTrustEvidence = autoCareProviders.flatMap((provider) => [
+    { id: `evidence-${provider.id}-license`, providerId: provider.id, kind: 'license', label: 'Документы сервиса проверены', status: 'verified', expiresAt: null, verifiedAt: '2026-08-01T10:00:00.000Z' },
+    { id: `evidence-${provider.id}-reviews`, providerId: provider.id, kind: 'reviews', label: 'Отзывы подтверждены визитами', status: 'verified', expiresAt: null, verifiedAt: '2026-08-01T10:00:00.000Z' },
+])
+const mockAutoCareRepairEvents = new Map<string, Array<Record<string, unknown>>>()
+const mockAutoCareBroadcastRequests: Array<Record<string, unknown>> = []
+const mockAutoCareGuaranteeClaims: Array<Record<string, unknown>> = []
+const mockAutoCareExpertQuestions: Array<Record<string, unknown>> = []
+const mockAutoCareFleets: Array<Record<string, unknown>> = [{ id: 'fleet-demo', ownerId: 'user-owner-1', name: 'Автопарк ProService', notes: 'Согласование через диспетчера', vehicles: [{ id: 'fleet-vehicle-demo', fleetId: 'fleet-demo', label: 'BMW X5 · AC-001', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel' }, approvalPolicy: 'Только после подтверждения владельца', createdAt: '2026-08-10T10:00:00.000Z' }], createdAt: '2026-08-10T09:00:00.000Z', updatedAt: '2026-08-10T10:00:00.000Z' }]
+
 type MockAutoCareServiceRequest = {
     id: string
     providerId: string
@@ -1902,6 +1912,21 @@ export const handlers = [
 
     http.get('/api/v1/service-definitions', () => HttpResponse.json(autoCareDefinitions)),
 
+    http.get('/api/v1/fair-price', ({ request }) => {
+        const url = new URL(request.url)
+        const serviceSlug = url.searchParams.get('serviceId') ?? 'oil-change'
+        const definition = autoCareDefinitions.find((item) => item.slug === serviceSlug) ?? autoCareDefinitions[0]
+        const prices = autoCareProviders.map((provider) => provider.offers?.find((offer) => offer.serviceSlug === definition?.slug)?.priceFromMinor).filter((price): price is number => typeof price === 'number').sort((left, right) => left - right)
+        if (!definition || prices.length === 0) return HttpResponse.json(null)
+        return HttpResponse.json({ serviceDefinitionId: definition.id, serviceSlug: definition.slug, marketId: url.searchParams.get('marketId'), makeId: url.searchParams.get('makeId'), modelId: url.searchParams.get('modelId'), minPriceMinor: prices[0], medianPriceMinor: prices[Math.floor(prices.length / 2)], maxPriceMinor: prices.at(-1), currencyCode: 'RUB', methodology: { kind: 'provider-offer-derived', sampleSize: prices.length, disclaimer: 'Ориентир по опубликованным предложениям.' }, source: 'mock-provider-offers', generatedAt: new Date().toISOString() })
+    }),
+
+    http.get('/api/v1/providers/:providerId/trust', ({ params }) => {
+        const provider = autoCareProviders.find((item) => item.id === params.providerId)
+        if (!provider) return HttpResponse.json({ message: 'Provider not found.' }, { status: 404 })
+        return HttpResponse.json({ providerId: provider.id, score: provider.verified ? 91.5 : 78.2, badge: provider.verified ? 'Надёжный сервис' : null, reassessedAt: '2026-08-01T10:00:00.000Z', evidence: mockAutoCareTrustEvidence.filter((item) => item.providerId === provider.id), explanation: 'Оценка доверия складывается из документов, отзывов и соблюдения условий.' })
+    }),
+
     http.get('/api/v1/vehicle-catalog', ({ request }) => {
         const brandId = new URL(request.url).searchParams.get('brandId')
         return HttpResponse.json(brandId ? vehicleCatalog.filter((brand) => brand.id === brandId) : vehicleCatalog)
@@ -1945,6 +1970,128 @@ export const handlers = [
         if (sort === 'distance_asc') items.sort((left, right) => left.distanceKm - right.distanceKm)
 
         return HttpResponse.json({ items, nextCursor: null })
+    }),
+
+    http.get('/api/v1/service-requests/:requestId/timeline', ({ params }) => {
+        const user = currentMockUser()
+        const requestItem = mockAutoCareServiceRequests.find((item) => item.id === params.requestId)
+        if (!user || !requestItem || (requestItem.clientId !== user.id && user.role !== 'owner')) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const existing = mockAutoCareRepairEvents.get(requestItem.id)
+        if (!existing) {
+            const events = [
+                { id: `repair-event-${requestItem.id}-created`, requestId: requestItem.id, eventType: 'request_created', actorId: requestItem.clientId, title: 'Заявка создана', notes: requestItem.note, metadata: {}, createdAt: requestItem.createdAt },
+                ...(requestItem.quote ? [{ id: `repair-event-${requestItem.id}-quote`, requestId: requestItem.id, eventType: 'quote_shared', actorId: 'user-owner-1', title: 'Смета отправлена сервисом', notes: requestItem.quote.note, metadata: { amountMinor: requestItem.quote.amountMinor }, createdAt: requestItem.quote.createdAt }] : []),
+            ]
+            mockAutoCareRepairEvents.set(requestItem.id, events)
+        }
+        return HttpResponse.json(mockAutoCareRepairEvents.get(requestItem.id) ?? [])
+    }),
+
+    http.post('/api/v1/broadcast-requests', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can create broadcast requests.' }, { status: 403 })
+        const body = await request.json() as { serviceDefinitionId?: string; marketId?: string | null; issueDescription?: string; vehicleSnapshot?: Record<string, string | number | null> | null; photoUrls?: string[]; preferredAt?: string | null; maxProviders?: number }
+        if (!body.serviceDefinitionId || !body.issueDescription?.trim()) return invalidMockBodyResponse()
+        const now = new Date().toISOString()
+        const item = { id: `broadcast-${Date.now()}`, clientId: user.id, serviceDefinitionId: body.serviceDefinitionId, serviceSlug: autoCareDefinitions.find((definition) => definition.id === body.serviceDefinitionId || definition.slug === body.serviceDefinitionId)?.slug ?? body.serviceDefinitionId, marketId: body.marketId ?? autoCareMarket.id, issueDescription: body.issueDescription.trim(), vehicleSnapshot: body.vehicleSnapshot ?? null, preferredAt: body.preferredAt ?? null, status: 'open', maxProviders: body.maxProviders ?? 5, expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), createdAt: now, offers: [] }
+        mockAutoCareBroadcastRequests.unshift(item)
+        return HttpResponse.json(item, { status: 201 })
+    }),
+
+    http.get('/api/v1/broadcast-requests/my', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        return HttpResponse.json(mockAutoCareBroadcastRequests.filter((item) => item.clientId === user.id))
+    }),
+
+    http.get('/api/v1/broadcast-requests/:broadcastId', ({ params }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareBroadcastRequests.find((candidate) => candidate.id === params.broadcastId)
+        if (!user || !item || (item.clientId !== user.id && user.role === 'client')) return HttpResponse.json({ message: 'Broadcast request not found.' }, { status: 404 })
+        const { clientId: _clientId, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.get('/api/owner/broadcast-requests', () => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'owner') return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        return HttpResponse.json(mockAutoCareBroadcastRequests.filter((item) => item.status === 'open' && new Date(String(item.expiresAt)) > new Date()))
+    }),
+
+    http.post('/api/owner/broadcast-requests/:broadcastId/offers', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareBroadcastRequests.find((candidate) => candidate.id === params.broadcastId)
+        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json() as Record<string, unknown>
+        const provider = ownerAutoCareProviders[0]
+        const offer = { id: `broadcast-offer-${Date.now()}`, broadcastRequestId: item.id, providerId: provider.id, providerName: provider.name, locationId: provider.location.id, address: provider.location.address, offerSnapshot: body, status: 'pending', createdAt: new Date().toISOString() }
+        ;(item.offers as Array<unknown>).push(offer)
+        return HttpResponse.json(offer, { status: 201 })
+    }),
+
+    http.post('/api/v1/guarantee-claims', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can create claims.' }, { status: 403 })
+        const body = await request.json() as { requestId?: string; claimType?: string; summary?: string; evidenceUrls?: string[] }
+        if (!body.requestId || !body.claimType || !body.summary?.trim()) return invalidMockBodyResponse()
+        const now = new Date().toISOString()
+        const claim = { id: `guarantee-${Date.now()}`, requestId: body.requestId, claimType: body.claimType, status: 'submitted', summary: body.summary.trim(), evidenceUrls: body.evidenceUrls ?? [], resolution: null, createdAt: now, updatedAt: now, clientId: user.id }
+        mockAutoCareGuaranteeClaims.unshift(claim)
+        const { clientId: _clientId, ...response } = claim
+        return HttpResponse.json(response, { status: 201 })
+    }),
+
+    http.get('/api/v1/guarantee-claims/my', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        return HttpResponse.json(mockAutoCareGuaranteeClaims.filter((claim) => claim.clientId === user.id).map(({ clientId: _clientId, ...claim }) => claim))
+    }),
+
+    http.post('/api/v1/expert-questions', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can ask experts.' }, { status: 403 })
+        const body = await request.json() as { symptoms?: string; categorySlug?: string | null; vehicleSnapshot?: Record<string, unknown> | null }
+        if (!body.symptoms?.trim()) return invalidMockBodyResponse()
+        const item = { id: `expert-question-${Date.now()}`, clientId: user.id, symptoms: body.symptoms.trim(), categorySlug: body.categorySlug ?? null, vehicleSnapshot: body.vehicleSnapshot ?? null, status: 'open', answer: null, createdAt: new Date().toISOString(), answeredAt: null }
+        mockAutoCareExpertQuestions.unshift(item)
+        const { clientId: _clientId, ...response } = item
+        return HttpResponse.json(response, { status: 201 })
+    }),
+
+    http.get('/api/v1/expert-questions/my', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        return HttpResponse.json(mockAutoCareExpertQuestions.filter((question) => question.clientId === user.id).map(({ clientId: _clientId, ...question }) => question))
+    }),
+
+    http.get('/api/owner/fleets', () => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view fleets.' }, { status: 403 })
+        return HttpResponse.json(mockAutoCareFleets.filter((fleet) => fleet.ownerId === user.id).map(({ ownerId: _ownerId, ...fleet }) => fleet))
+    }),
+
+    http.post('/api/owner/fleets', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'owner') return HttpResponse.json({ message: 'Only owners can create fleets.' }, { status: 403 })
+        const body = await request.json() as { name?: string; notes?: string | null }
+        if (!body.name?.trim()) return invalidMockBodyResponse()
+        const now = new Date().toISOString()
+        const fleet = { id: `fleet-${Date.now()}`, ownerId: user.id, name: body.name.trim(), notes: body.notes?.trim() || null, vehicles: [], createdAt: now, updatedAt: now }
+        mockAutoCareFleets.unshift(fleet)
+        const { ownerId: _ownerId, ...response } = fleet
+        return HttpResponse.json(response, { status: 201 })
+    }),
+
+    http.post('/api/owner/fleets/:fleetId/vehicles', async ({ params, request }) => {
+        const user = currentMockUser()
+        const fleet = mockAutoCareFleets.find((candidate) => candidate.id === params.fleetId && candidate.ownerId === user?.id)
+        if (!user || user.role !== 'owner' || !fleet) return HttpResponse.json({ message: 'Fleet not found.' }, { status: 404 })
+        const body = await request.json() as { label?: string; vehicleSnapshot?: Record<string, unknown>; approvalPolicy?: string | null }
+        if (!body.label?.trim() || !body.vehicleSnapshot) return invalidMockBodyResponse()
+        const vehicle = { id: `fleet-vehicle-${Date.now()}`, fleetId: fleet.id, label: body.label.trim(), vehicleSnapshot: body.vehicleSnapshot, approvalPolicy: body.approvalPolicy?.trim() || null, createdAt: new Date().toISOString() }
+        ;(fleet.vehicles as Array<unknown>).push(vehicle)
+        fleet.updatedAt = new Date().toISOString()
+        return HttpResponse.json(vehicle, { status: 201 })
     }),
 
     http.get('/api/v1/providers/:providerId', ({ params }) => {

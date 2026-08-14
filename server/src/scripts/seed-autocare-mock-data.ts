@@ -1,4 +1,5 @@
 import { AppDataSource } from '../database/data-source.js'
+import { IsNull } from 'typeorm'
 import {
     AutomotiveMarketEntity,
     AutomotiveLocationZoneEntity,
@@ -10,6 +11,8 @@ import {
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
     AutomotivePriceType,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareTrustEvidenceEntity,
 } from '../entities/index.js'
 import {
     AUTOMOTIVE_MOCK_LOCATION_ZONES,
@@ -33,6 +36,8 @@ async function seedAutoCareMockData() {
             const locationRepository = manager.getRepository(AutomotiveServiceLocationEntity)
             const offeringRepository = manager.getRepository(AutomotiveServiceOfferingEntity)
             const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
+            const benchmarkRepository = manager.getRepository(AutoCarePriceBenchmarkEntity)
+            const trustEvidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
 
             const markets = new Map<string, AutomotiveMarketEntity>()
             for (const marketInput of AUTOMOTIVE_MOCK_MARKETS) {
@@ -99,6 +104,9 @@ async function seedAutoCareMockData() {
                     amenityIds: input.amenityIds,
                     brandSpecializations: input.brandSpecializations,
                     isMultibrand: input.isMultibrand,
+                    trustScore: input.verified ? 91.5 : 78.2,
+                    trustBadge: input.verified ? 'Надёжный сервис' : null,
+                    trustReassessedAt: new Date(),
                 }))
 
                 const existingLocation = await locationRepository.findOneBy({ providerId: provider.id, marketId: market.id })
@@ -111,7 +119,31 @@ async function seedAutoCareMockData() {
                     hours: input.hours,
                     latitude: input.latitude,
                     longitude: input.longitude,
+                    supportsMobile: input.amenityIds.includes('pickup_delivery'),
+                    supportsPickup: input.amenityIds.includes('pickup_delivery'),
+                    coverageRadiusKm: input.amenityIds.includes('pickup_delivery') ? 15 : null,
+                    dispatchBasePriceMinor: input.amenityIds.includes('pickup_delivery') ? 50000 : 0,
+                    etaMinutes: input.amenityIds.includes('pickup_delivery') ? 60 : null,
                 }))
+
+                const evidenceFixtures = [
+                    ['profile', 'Данные компании подтверждены', input.verified ? 'verified' : 'pending'],
+                    ['quality_review', 'Проверка качества и отзывов', input.verified ? 'verified' : 'pending'],
+                ] as const
+                for (const [kind, label, status] of evidenceFixtures) {
+                    const existingEvidence = await trustEvidenceRepository.findOneBy({ providerId: provider.id, kind, label })
+                    await trustEvidenceRepository.save(trustEvidenceRepository.create({
+                        ...existingEvidence,
+                        providerId: provider.id,
+                        kind,
+                        label,
+                        status,
+                        expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+                        reference: `seed:${provider.id}:${kind}`,
+                        notes: status === 'verified' ? 'Проверено модератором в демо-каталоге.' : 'Ожидает проверки документов.',
+                        verifiedAt: status === 'verified' ? new Date() : null,
+                    }))
+                }
 
                 for (const offeringInput of input.offerings) {
                     const definition = definitions.get(offeringInput.serviceSlug)
@@ -158,9 +190,33 @@ async function seedAutoCareMockData() {
                         text,
                         avatarUrl,
                         photoUrls: [...photoUrls],
+                        verifiedVisit: true,
                         status: AutomotiveReviewStatus.Approved,
                     }))
                 }
+            }
+
+            for (const definition of definitions.values()) {
+                const offerings = await offeringRepository.find({ where: { definitionId: definition.id, active: true } })
+                if (offerings.length === 0) continue
+                const prices = offerings.map((offering) => offering.priceFromMinor).sort((left, right) => left - right)
+                const existingBenchmark = await benchmarkRepository.findOneBy({ marketId: market.id, serviceDefinitionId: definition.id, makeId: IsNull(), modelId: IsNull() })
+                await benchmarkRepository.save(benchmarkRepository.create({
+                    ...existingBenchmark,
+                    marketId: market.id,
+                    serviceDefinitionId: definition.id,
+                    makeId: null,
+                    modelId: null,
+                    fuelType: null,
+                    engineLiters: null,
+                    minPriceMinor: prices[0]!,
+                    medianPriceMinor: prices[Math.floor(prices.length / 2)]!,
+                    maxPriceMinor: prices.at(-1)!,
+                    currencyCode: AUTOMOTIVE_MOCK_MARKET.currencyCode,
+                    methodology: { kind: 'seeded-provider-sample', sampleSize: offerings.length, includes: ['parts', 'labour'], disclaimer: 'Ориентир, не финальная смета.' },
+                    source: 'autocare-demo-seed',
+                    active: true,
+                }))
             }
         })
         console.info('AutoCare mock catalog seeded with generated provider images and safe fallbacks.')

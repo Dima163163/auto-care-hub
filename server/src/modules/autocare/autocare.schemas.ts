@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+const autoCareVehicleSnapshotSchema = z.object({
+    make: z.string().trim().min(1).max(80),
+    model: z.string().trim().min(1).max(80),
+    year: z.coerce.number().int().min(1886).max(new Date().getFullYear() + 1),
+    mileage: z.coerce.number().int().nonnegative().max(2_000_000).optional(),
+}).strict()
+
 export const autoCareDiscoveryQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
     marketId: z.string().trim().min(1).max(120).optional(),
@@ -83,6 +90,15 @@ export const autoCareFeaturedReviewsQuerySchema = z.object({
     limit: z.coerce.number().int().positive().max(12).default(6),
 })
 
+export const autoCareFairPriceQuerySchema = z.object({
+    serviceId: z.string().trim().min(1).max(120),
+    marketId: z.string().trim().min(1).max(120).optional(),
+    makeId: z.string().trim().min(1).max(80).optional(),
+    modelId: z.string().trim().min(1).max(80).optional(),
+    fuelType: z.string().trim().min(1).max(40).optional(),
+    engineLiters: z.coerce.number().finite().positive().max(20).optional(),
+})
+
 export const uploadAutoCareProviderLogoSchema = z.object({
     fileName: z.string().trim().min(1).max(255),
     mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
@@ -126,13 +142,6 @@ export const createAutoCareChatSchema = z.object({
     subject: z.string().trim().min(2).max(160),
 })
 
-const requestVehicleSnapshotSchema = z.object({
-    make: z.string().trim().min(1).max(80),
-    model: z.string().trim().min(1).max(80),
-    year: z.coerce.number().int().min(1886).max(new Date().getFullYear() + 1),
-    mileage: z.coerce.number().int().nonnegative().max(2_000_000).optional(),
-}).strict()
-
 const requestContactSnapshotSchema = z.object({
     name: z.string().trim().min(2).max(120),
     email: z.string().trim().email().max(320),
@@ -144,7 +153,7 @@ export const createAutoCareServiceRequestSchema = z.object({
     locationId: z.string().uuid(),
     offeringId: z.string().uuid(),
     preferredAt: z.string().datetime({ offset: true }),
-    vehicleSnapshot: requestVehicleSnapshotSchema.nullable().optional(),
+    vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
     contactSnapshot: requestContactSnapshotSchema,
     note: z.string().trim().max(4_000).nullable().optional(),
 })
@@ -188,6 +197,63 @@ export const createAutoCareServiceQuoteSchema = z.object({
     amountMinor: z.number().int().positive().max(10_000_000_00),
     currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
     note: z.string().trim().max(4_000).nullable().optional(),
+    lineItems: z.array(z.object({
+        kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']),
+        title: z.string().trim().min(1).max(160),
+        quantity: z.number().positive().max(10_000),
+        unitPriceMinor: z.number().int().max(10_000_000_00),
+    })).max(100).optional(),
+    taxMinor: z.number().int().nonnegative().max(10_000_000_00).default(0),
+    feesMinor: z.number().int().nonnegative().max(10_000_000_00).default(0),
+    validUntil: z.string().datetime({ offset: true }).nullable().optional(),
+    priceLocked: z.boolean().default(false),
+})
+
+export const createAutoCareBroadcastRequestSchema = z.object({
+    serviceDefinitionId: z.string().trim().min(1).max(120),
+    marketId: z.string().trim().min(1).max(120).nullable().optional(),
+    issueDescription: z.string().trim().min(10).max(4_000),
+    vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
+    photoUrls: z.array(z.string().url().max(500)).max(12).optional(),
+    preferredAt: z.string().datetime({ offset: true }).nullable().optional(),
+    maxProviders: z.number().int().min(1).max(10).default(5),
+})
+
+export const autoCareBroadcastParamsSchema = z.object({ broadcastId: z.string().uuid() })
+
+export const createAutoCareBroadcastOfferSchema = z.object({
+    locationId: z.string().uuid(),
+    amountMinor: z.number().int().positive().max(10_000_000_00),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
+    note: z.string().trim().max(4_000).nullable().optional(),
+    durationMinutes: z.number().int().positive().max(2_880).optional(),
+    validUntil: z.string().datetime({ offset: true }).nullable().optional(),
+})
+
+export const createAutoCareGuaranteeClaimSchema = z.object({
+    requestId: z.string().uuid(),
+    claimType: z.enum(['price', 'quality', 'warranty', 'no_show', 'safety']),
+    summary: z.string().trim().min(10).max(4_000),
+    evidenceUrls: z.array(z.string().url().max(500)).max(20).optional(),
+})
+
+export const createAutoCareExpertQuestionSchema = z.object({
+    symptoms: z.string().trim().min(10).max(4_000),
+    categorySlug: z.string().trim().min(1).max(120).nullable().optional(),
+    vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
+})
+
+export const createAutoCareFleetSchema = z.object({
+    name: z.string().trim().min(2).max(160),
+    notes: z.string().trim().max(4_000).nullable().optional(),
+})
+
+export const autoCareFleetParamsSchema = z.object({ fleetId: z.string().uuid() })
+
+export const createAutoCareFleetVehicleSchema = z.object({
+    label: z.string().trim().min(1).max(120),
+    vehicleSnapshot: z.record(z.string(), z.unknown()),
+    approvalPolicy: z.string().trim().max(160).nullable().optional(),
 })
 
 const automotiveAmenityIds = ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment', 'electric_charging', 'pickup_delivery'] as const

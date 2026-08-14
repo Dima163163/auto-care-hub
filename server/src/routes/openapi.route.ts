@@ -156,6 +156,9 @@ export function getOpenApiDocument() {
             '/v1/service-definitions': {
                 get: { operationId: 'listAutoCareServiceDefinitions', security: [], responses: { '200': { description: 'Active standardized automotive services.' } } },
             },
+            '/v1/fair-price': {
+                get: { operationId: 'getAutoCareFairPrice', security: [], parameters: [{ name: 'serviceId', in: 'query', required: true, schema: { type: 'string' } }, { name: 'marketId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'makeId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'modelId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'fuelType', in: 'query', required: false, schema: { type: 'string' } }, { name: 'engineLiters', in: 'query', required: false, schema: { type: 'number', minimum: 0 } }], responses: { '200': { description: 'Fair-price benchmark derived from market data and comparable provider offers.' } } },
+            },
             '/v1/vehicle-catalog': {
                 get: { operationId: 'listVehicleCatalog', security: [], parameters: [{ name: 'brandId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Versioned vehicle makes, models, years and engine options.' } } },
             },
@@ -195,6 +198,9 @@ export function getOpenApiDocument() {
             },
             '/v1/providers/{providerId}': {
                 get: { operationId: 'getAutoCareProviderProfile', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Public provider profile with offers and image fallbacks.' } } },
+            },
+            '/v1/providers/{providerId}/trust': {
+                get: { operationId: 'getAutoCareProviderTrust', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Trust score and evidence used for the verified-service badge.' } } },
             },
             '/owner/autocare-providers/logo': {
                 post: { operationId: 'uploadOwnerAutoCareProviderLogo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['fileName', 'mimeType', 'size', 'contentBase64'] } } } }, responses: { '200': { description: 'Normalized WebP provider logo URL.' } } },
@@ -268,6 +274,43 @@ export function getOpenApiDocument() {
             '/v1/service-requests/my': {
                 get: { operationId: 'listMyAutoCareServiceRequests', responses: { '200': { description: 'Authenticated client service requests.' } } },
             },
+            '/v1/service-requests/{requestId}/timeline': {
+                get: { operationId: 'getAutoCareRepairTimeline', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Repair timeline with quote, confirmations and status events.' } } },
+            },
+            '/v1/broadcast-requests': {
+                post: { operationId: 'createAutoCareBroadcastRequest', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['serviceDefinitionId', 'issueDescription'], properties: { serviceDefinitionId: { type: 'string' }, marketId: { type: ['string', 'null'] }, issueDescription: { type: 'string', minLength: 10, maxLength: 4000 }, vehicleSnapshot: { type: ['object', 'null'] }, photoUrls: { type: 'array', maxItems: 12, items: { type: 'string', format: 'uri' } }, preferredAt: { type: ['string', 'null'], format: 'date-time' }, maxProviders: { type: 'integer', minimum: 1, maximum: 10, default: 5 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Broadcast request sent to eligible providers.' } } },
+            },
+            '/v1/broadcast-requests/my': {
+                get: { operationId: 'listMyAutoCareBroadcastRequests', responses: { '200': { description: 'Client broadcast requests and provider offers.' } } },
+            },
+            '/v1/broadcast-requests/{broadcastId}': {
+                get: { operationId: 'getAutoCareBroadcastRequest', parameters: [{ name: 'broadcastId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Broadcast request with comparable service offers.' } } },
+            },
+            '/owner/broadcast-requests': {
+                get: { operationId: 'listOwnerAutoCareBroadcastRequests', responses: { '200': { description: 'Open broadcast requests matching the owner service catalog.' } } },
+            },
+            '/owner/broadcast-requests/{broadcastId}/offers': {
+                post: { operationId: 'createAutoCareBroadcastOffer', parameters: [{ name: 'broadcastId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['locationId', 'amountMinor', 'currencyCode'], properties: { locationId: { type: 'string', format: 'uuid' }, amountMinor: { type: 'integer', minimum: 1 }, currencyCode: { type: 'string', pattern: '^[A-Z]{3}$' }, note: { type: ['string', 'null'] }, durationMinutes: { type: 'integer', minimum: 1 }, validUntil: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Provider offer added to a broadcast request.' } } },
+            },
+            '/v1/guarantee-claims': {
+                post: { operationId: 'createAutoCareGuaranteeClaim', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['requestId', 'claimType', 'summary'], properties: { requestId: { type: 'string', format: 'uuid' }, claimType: { type: 'string', maxLength: 80 }, summary: { type: 'string', minLength: 10, maxLength: 4000 }, evidenceUrls: { type: 'array', maxItems: 12, items: { type: 'string', format: 'uri' } } }, additionalProperties: false } } } }, responses: { '201': { description: 'Guarantee claim submitted for review.' } } },
+            },
+            '/v1/guarantee-claims/my': {
+                get: { operationId: 'listMyAutoCareGuaranteeClaims', responses: { '200': { description: 'Authenticated client guarantee claims.' } } },
+            },
+            '/v1/expert-questions': {
+                post: { operationId: 'createAutoCareExpertQuestion', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['symptoms'], properties: { symptoms: { type: 'string', minLength: 10, maxLength: 4000 }, categorySlug: { type: ['string', 'null'] }, vehicleSnapshot: { type: ['object', 'null'] } }, additionalProperties: false } } } }, responses: { '201': { description: 'Question sent to an AutoCare expert.' } } },
+            },
+            '/v1/expert-questions/my': {
+                get: { operationId: 'listMyAutoCareExpertQuestions', responses: { '200': { description: 'Authenticated client expert questions and answers.' } } },
+            },
+            '/owner/fleets': {
+                get: { operationId: 'listOwnerAutoCareFleets', responses: { '200': { description: 'Fleet accounts and vehicles managed by the authenticated service owner.' } } },
+                post: { operationId: 'createOwnerAutoCareFleet', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['name'], properties: { name: { type: 'string', minLength: 2, maxLength: 160 }, notes: { type: ['string', 'null'], maxLength: 4000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Fleet account created.' } } },
+            },
+            '/owner/fleets/{fleetId}/vehicles': {
+                post: { operationId: 'createOwnerAutoCareFleetVehicle', parameters: [{ name: 'fleetId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['label', 'vehicleSnapshot'], properties: { label: { type: 'string', minLength: 1, maxLength: 120 }, vehicleSnapshot: { type: 'object' }, approvalPolicy: { type: ['string', 'null'], maxLength: 160 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Fleet vehicle created.' } } },
+            },
             '/v1/autocare-reviews/my': {
                 get: { operationId: 'listMyAutoCareReviews', responses: { '200': { description: 'Authenticated client automotive reviews and revision eligibility.' } } },
             },
@@ -317,7 +360,7 @@ export function getOpenApiDocument() {
                 post: { operationId: 'confirmOwnerAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider confirmation transition.' } } },
             },
             '/owner/service-requests/{requestId}/quote': {
-                post: { operationId: 'createAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider preliminary estimate.' } } },
+                post: { operationId: 'createAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['amountMinor', 'currencyCode'], properties: { amountMinor: { type: 'integer', minimum: 1 }, currencyCode: { type: 'string', pattern: '^[A-Z]{3}$' }, note: { type: ['string', 'null'] }, lineItems: { type: 'array', maxItems: 100, items: { type: 'object', required: ['kind', 'title', 'quantity', 'unitPriceMinor'] } }, taxMinor: { type: 'integer', minimum: 0 }, feesMinor: { type: 'integer', minimum: 0 }, validUntil: { type: ['string', 'null'], format: 'date-time' }, priceLocked: { type: 'boolean' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Provider structured preliminary estimate with a locked snapshot.' } } },
             },
             '/owner/service-requests/{requestId}/offers': {
                 post: { operationId: 'createAutoCareServiceOffer', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'title'], properties: { type: { type: 'string', enum: ['discount', 'alternative'] }, title: { type: 'string', minLength: 2, maxLength: 160 }, description: { type: ['string', 'null'], maxLength: 4_000 }, discountPercent: { type: ['integer', 'null'], minimum: 1, maximum: 100 }, couponCode: { type: ['string', 'null'], pattern: '^[A-Z0-9_-]{4,32}$' }, amountMinor: { type: ['integer', 'null'], minimum: 1 }, currencyCode: { type: ['string', 'null'], pattern: '^[A-Z]{3}$' }, expiresAt: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a service offer message.' } } },

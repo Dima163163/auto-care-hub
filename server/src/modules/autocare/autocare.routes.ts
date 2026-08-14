@@ -4,7 +4,7 @@ import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
 import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
 import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
-import { autoCareAvailabilityQuerySchema, autoCareChatParamsSchema, autoCareDiscoveryQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareLocationZonesQuerySchema, autoCareMarketParamsSchema, autoCareOfferParamsSchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareReviewOnlyParamsSchema, autoCareReviewParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceMessageParamsSchema, autoCareServiceRequestParamsSchema, createAutoCareChatSchema, createAutoCareReviewPromoSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceOfferSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, ownerAutoCareProviderSchema, ownerAutoCareReviewsQuerySchema, redeemAutoCareReviewPromoSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema, updateAutoCareReviewSchema, uploadAutoCareProviderLogoSchema, uploadAutoCareProviderMediaSchema } from './autocare.schemas.js'
+import { autoCareAvailabilityQuerySchema, autoCareBroadcastParamsSchema, autoCareChatParamsSchema, autoCareDiscoveryQuerySchema, autoCareFairPriceQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareFleetParamsSchema, autoCareLocationZonesQuerySchema, autoCareMarketParamsSchema, autoCareOfferParamsSchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareReviewOnlyParamsSchema, autoCareReviewParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceMessageParamsSchema, autoCareServiceRequestParamsSchema, createAutoCareBroadcastOfferSchema, createAutoCareBroadcastRequestSchema, createAutoCareChatSchema, createAutoCareExpertQuestionSchema, createAutoCareFleetSchema, createAutoCareFleetVehicleSchema, createAutoCareGuaranteeClaimSchema, createAutoCareReviewPromoSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceOfferSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, ownerAutoCareProviderSchema, ownerAutoCareReviewsQuerySchema, redeemAutoCareReviewPromoSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema, updateAutoCareReviewSchema, uploadAutoCareProviderLogoSchema, uploadAutoCareProviderMediaSchema } from './autocare.schemas.js'
 import { createOwnerAutoCareProvider, createOwnerAutoCareReviewPromo, getAutoCareDiscovery, getAutoCareLocationZones, getAutoCareMarkets, getAutoCareProviderLogo, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareServiceDefinitions, getFeaturedAutoCareReviews, getMyAutoCareReviews, getOwnerAutoCareProviderReviews, getOwnerAutoCareProviders, getOwnerAutoCareReviews, redeemAutoCareReviewPromo, saveAutoCareProviderLogo, saveAutoCareProviderMedia, updateClientAutoCareReview, updateOwnerAutoCareOffer } from './autocare.service.js'
 import { vehicleCatalogRoutes } from './vehicle-catalog.routes.js'
 import { decodeAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
@@ -12,6 +12,7 @@ import { decodeAutoCareProviderMedia, readAutoCareProviderMedia, type AutoCarePr
 import { acceptAutoCareServiceQuote, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceOffer, createAutoCareServiceQuote, createAutoCareServiceRequest, decideAutoCareServiceOffer, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequests, markAutoCareServiceConversationRead } from './autocare-request.service.js'
 import { sendServiceChatEvent, subscribeServiceChat } from './service-chat.gateway.js'
 import { createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatMessage, getAutoCareChat, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, getMyAutoCareChats, markAutoCareChatRead } from './autocare-chat.service.js'
+import { createAutoCareBroadcastOffer, createAutoCareBroadcastRequest, createAutoCareExpertQuestion, createAutoCareFleet, createAutoCareFleetVehicle, createAutoCareGuaranteeClaim, getAutoCareFairPrice, getAutoCareProviderTrust, getAutoCareRepairTimeline, getMyAutoCareBroadcastRequests, getMyAutoCareExpertQuestions, getMyAutoCareFleets, getMyAutoCareGuaranteeClaims, getOwnerAutoCareBroadcastRequests, getAutoCareBroadcastRequest } from './autocare-marketplace.service.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:request-transition', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -26,6 +27,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return getAutoCareLocationZones(params.marketId, query.parentId, coordinates, query.limit)
     })
     app.get('/v1/service-definitions', async () => getAutoCareServiceDefinitions())
+    app.get('/v1/fair-price', async (request) => getAutoCareFairPrice(validateQuery(autoCareFairPriceQuerySchema, request.query)))
     app.get('/v1/reviews/featured', async (request) => getFeaturedAutoCareReviews(validateQuery(autoCareFeaturedReviewsQuerySchema, request.query).limit))
     app.get('/uploads/autocare/logos/:fileName', async (request, reply) => {
         const logo = await getAutoCareProviderLogo(String((request.params as { fileName: string }).fileName))
@@ -39,6 +41,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
     })
     app.get('/v1/discovery/providers', async (request) => getAutoCareDiscovery(validateQuery(autoCareDiscoveryQuerySchema, request.query)))
     app.get('/v1/providers/:providerId', async (request) => getAutoCareProviderProfile(validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/v1/providers/:providerId/trust', async (request) => getAutoCareProviderTrust(validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.get('/v1/providers/:providerId/availability', async (request) => {
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const query = validateQuery(autoCareAvailabilityQuerySchema, request.query)
@@ -76,6 +79,17 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.post('/owner/autocare-providers', async (request) => createOwnerAutoCareProvider(await requireVerifiedEmail(request), validateBody(ownerAutoCareProviderSchema, request.body)))
     app.post('/v1/service-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareServiceRequest(await requireVerifiedEmail(request), { ...validateBody(createAutoCareServiceRequestSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
     app.get('/v1/service-requests/my', async (request) => getMyAutoCareServiceRequests(await requireAuth(request)))
+    app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
+    app.post('/v1/broadcast-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareBroadcastRequest(await requireVerifiedEmail(request), validateBody(createAutoCareBroadcastRequestSchema, request.body)))
+    app.get('/v1/broadcast-requests/my', async (request) => getMyAutoCareBroadcastRequests(await requireAuth(request)))
+    app.get('/v1/broadcast-requests/:broadcastId', async (request) => getAutoCareBroadcastRequest(await requireAuth(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId))
+    app.post('/v1/guarantee-claims', async (request) => createAutoCareGuaranteeClaim(await requireVerifiedEmail(request), validateBody(createAutoCareGuaranteeClaimSchema, request.body)))
+    app.get('/v1/guarantee-claims/my', async (request) => getMyAutoCareGuaranteeClaims(await requireAuth(request)))
+    app.post('/v1/expert-questions', async (request) => createAutoCareExpertQuestion(await requireVerifiedEmail(request), validateBody(createAutoCareExpertQuestionSchema, request.body)))
+    app.get('/v1/expert-questions/my', async (request) => getMyAutoCareExpertQuestions(await requireAuth(request)))
+    app.get('/owner/fleets', async (request) => getMyAutoCareFleets(await requireAuth(request)))
+    app.post('/owner/fleets', async (request) => createAutoCareFleet(await requireVerifiedEmail(request), validateBody(createAutoCareFleetSchema, request.body)))
+    app.post('/owner/fleets/:fleetId/vehicles', async (request) => createAutoCareFleetVehicle(await requireVerifiedEmail(request), validateParams(autoCareFleetParamsSchema, request.params).fleetId, validateBody(createAutoCareFleetVehicleSchema, request.body)))
     app.get('/v1/chats', async (request) => getMyAutoCareChats(await requireAuth(request)))
     app.post('/v1/chats', async (request) => createAutoCareChat(await requireVerifiedEmail(request), validateBody(createAutoCareChatSchema, request.body)))
     app.get('/v1/service-requests/:requestId/chat-thread', async (request) => getAutoCareChatThreadForRequest(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
@@ -169,6 +183,8 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.post('/v1/service-requests/:requestId/quote/accept', { preHandler: serviceRequestTransitionRateLimit }, async (request) => acceptAutoCareServiceQuote(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/service-requests/:requestId/quote/decline', { preHandler: serviceRequestTransitionRateLimit }, async (request) => declineAutoCareServiceQuote(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.get('/owner/service-requests', async (request) => getOwnerAutoCareServiceRequests(await requireAuth(request)))
+    app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requireAuth(request)))
+    app.post('/owner/broadcast-requests/:broadcastId/offers', async (request) => createAutoCareBroadcastOffer(await requireVerifiedEmail(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId, validateBody(createAutoCareBroadcastOfferSchema, request.body)))
     app.post('/owner/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmOwnerAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/owner/service-requests/:requestId/quote', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceQuote(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceQuoteSchema, request.body)))
 }
