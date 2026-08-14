@@ -27,7 +27,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
     return (
         <section className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm">
             <div className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left transition hover:bg-primary/5 md:p-6">
-                <button type="button" aria-expanded={isOpen} onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                <button type="button" aria-expanded={isOpen} onClick={onToggle} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                     <span className="flex min-w-0 items-center gap-3">
                         <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary">
                             <Wrench className="size-5" />
