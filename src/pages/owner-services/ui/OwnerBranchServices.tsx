@@ -63,7 +63,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
             </div>
 
             {isOpen && (
-                <div className="border-t border-border bg-muted/20 p-4 md:p-5">
+                <div className="border-t border-border bg-muted p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-primary" />{labels.address}: {provider.location.address}</span>
                         <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3.5 text-primary" />{labels.hours}: {provider.location.hours}</span>
