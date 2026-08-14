@@ -790,7 +790,7 @@ export const ruTranslations = {
         chatLoading: 'Загрузка переписки…',
         chatEmpty: 'Сообщений пока нет. Начните диалог по заявке.',
         chatPlaceholder: 'Напишите сообщение…',
-        chatSend: 'Отправить сообщение',
+        chatSend: 'Отправить',
         chatAttachmentHint: 'Фото повреждений: JPG, PNG или WebP',
         chatUploading: 'Фото загружается…',
         chatOfferButton: 'Предложить вариант',

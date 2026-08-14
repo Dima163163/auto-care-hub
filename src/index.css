@@ -472,6 +472,39 @@ body {
     text-align: center;
 }
 
+/* Chat send actions keep the wheel mark as a universal visual verb while the
+   accessible label supplies the localized action text. */
+button[type="submit"][aria-label] {
+    width: auto;
+    min-width: 5.75rem;
+    padding-left: 1.8rem;
+    padding-right: 0.75rem;
+    background-image: url('/images/autocare/icons/wheel-send.svg');
+    background-position: 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 0.9rem;
+    cursor: pointer;
+}
+
+button[type="submit"][aria-label] > svg {
+    display: none;
+}
+
+button[type="submit"][aria-label]::after {
+    content: attr(aria-label);
+    font: inherit;
+    line-height: 1;
+}
+
+/* In Russian the wheel takes the visual place of the initial «О». */
+button[type="submit"][aria-label="Отправить"]::after {
+    content: "тправить";
+}
+
+button:disabled[type="submit"][aria-label] {
+    cursor: not-allowed;
+}
+
 :where(h1, h2, h3, h4, h5, h6)[class*="tracking-"] {
     letter-spacing: 0;
 }

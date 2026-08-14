@@ -787,7 +787,7 @@ export const enTranslations = {
         chatLoading: 'Loading conversation…',
         chatEmpty: 'No messages yet. Start the conversation about this request.',
         chatPlaceholder: 'Write a message…',
-        chatSend: 'Send message',
+        chatSend: 'Send',
         chatAttachmentHint: 'Damage photos: JPG, PNG or WebP',
         chatUploading: 'Uploading photo…',
         chatOfferButton: 'Suggest an option',
