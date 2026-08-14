@@ -266,6 +266,9 @@ export function getOpenApiDocument() {
             '/v1/service-requests/{requestId}/conversation': {
                 get: { operationId: 'getAutoCareServiceConversation', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Messages and attachments for a service request.' } } },
             },
+            '/v1/service-requests/{requestId}/chat-thread': {
+                get: { operationId: 'getAutoCareServiceRequestChatThread', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Unified chat thread metadata for a service request.' } } },
+            },
             '/v1/service-requests/{requestId}/quote/accept': {
                 post: { operationId: 'acceptAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client accepts provider estimate.' } } },
             },
@@ -304,6 +307,28 @@ export function getOpenApiDocument() {
             },
             '/v1/service-requests/{requestId}/ws': {
                 get: { operationId: 'connectAutoCareServiceChat', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'accessToken', in: 'query', required: false, schema: { type: 'string' } }], responses: { '101': { description: 'WebSocket upgrade for the service request chat.' } } },
+            },
+            '/v1/chats': {
+                get: { operationId: 'listMyAutoCareChats', responses: { '200': { description: 'Chats available to the authenticated client, service owner or administrator.' } } },
+                post: { operationId: 'createAutoCareChat', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'subject'], properties: { type: { type: 'string', enum: ['provider_inquiry', 'support', 'admin_escalation'] }, providerId: { type: 'string', format: 'uuid' }, requestId: { type: 'string', format: 'uuid' }, subject: { type: 'string', minLength: 2, maxLength: 160 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a general question, support or escalation chat.' } } },
+            },
+            '/v1/chats/{chatId}': {
+                get: { operationId: 'getAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Messages and attachments for a chat thread.' } } },
+            },
+            '/v1/chats/{chatId}/messages': {
+                post: { operationId: 'createAutoCareChatMessage', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a message in a general chat thread.' } } },
+            },
+            '/v1/chats/{chatId}/read': {
+                post: { operationId: 'markAutoCareChatRead', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked chat messages as read.' } } },
+            },
+            '/v1/chats/{chatId}/attachments': {
+                post: { operationId: 'createAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '201': { description: 'Stored a photo in a general chat thread.' } } },
+            },
+            '/v1/chats/{chatId}/attachments/{attachmentId}': {
+                get: { operationId: 'getAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Private general chat attachment bytes.' } } },
+            },
+            '/v1/chats/{chatId}/ws': {
+                get: { operationId: 'connectAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'accessToken', in: 'query', required: false, schema: { type: 'string' } }], responses: { '101': { description: 'WebSocket upgrade for a general chat thread.' } } },
             },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },

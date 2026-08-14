@@ -23,6 +23,7 @@ import {
     SecurityCenterPage,
     SuperAdminDashboardPage,
     BlogPage,
+    ChatsPage,
     ContactsPage,
     EmailVerificationPage,
     FavoritesPage,
@@ -97,6 +98,7 @@ export function renderAuthenticatedPublicRoutes() {
             <Route path={ROUTES.profile} element={<ProfilePage />} />
             <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
+            <Route path={ROUTES.chats} element={<ChatsPage workspace="client" />} />
         </Route>
     )
 }
@@ -170,6 +172,7 @@ export function renderOwnerRoutes() {
             <Route path={ROUTES.ownerAutoCareRequests} element={<OwnerAutoCareRequestsPage />} />
             <Route path={ROUTES.ownerClients} element={<OwnerClientsPage />} />
             <Route path={ROUTES.ownerServices} element={<OwnerServicesPage />} />
+            <Route path={ROUTES.ownerChats} element={<ChatsPage workspace="owner" />} />
         </Route>
     )
 }
@@ -193,6 +196,7 @@ export function renderAdminRoutes() {
             <Route path={ROUTES.adminPlatformReviews} element={<AdminPlatformReviewsPage />} />
             <Route path={ROUTES.adminAuditLogs} element={<AdminAuditLogsPage />} />
             <Route path={ROUTES.adminSecurityCenter} element={<SecurityCenterPage />} />
+            <Route path={ROUTES.adminChats} element={<ChatsPage workspace="admin" />} />
         </Route>
     )
 }
@@ -209,6 +213,7 @@ export function renderSuperAdminRoutes() {
             }
         >
             <Route path={ROUTES.superAdminDashboard} element={<SuperAdminDashboardPage />} />
+            <Route path={ROUTES.superAdminChats} element={<ChatsPage workspace="super_admin" />} />
         </Route>
     )
 }

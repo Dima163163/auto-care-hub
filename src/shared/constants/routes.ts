@@ -8,6 +8,7 @@ export const ROUTES = {
     about: '/about',
     favorites: '/favorites',
     notifications: '/notifications',
+    chats: '/chats',
     blog: '/blog',
     partners: '/partners',
     contacts: '/contacts',
@@ -49,6 +50,7 @@ export const ROUTES = {
     ownerAutoCareRequests: '/owner/autocare-requests',
     ownerClients: '/owner/clients',
     ownerServices: '/owner/services',
+    ownerChats: '/owner/chats',
 
     adminDashboard: '/admin/dashboard',
     adminUsers: '/admin/users',
@@ -58,8 +60,10 @@ export const ROUTES = {
     adminPlatformReviews: '/admin/platform-reviews',
     adminAuditLogs: '/admin/audit-logs',
     adminSecurityCenter: '/admin/security-center',
+    adminChats: '/admin/chats',
 
     superAdminDashboard: '/super-admin/dashboard',
+    superAdminChats: '/super-admin/chats',
 } as const
 
 export const routePaths = {

@@ -34,6 +34,7 @@ import type {
     CreateAutoCareServiceRequestInput,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
+import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 
 function clientOnly(user: UserEntity) {
     if (user.role !== UserRole.Client) {
@@ -175,6 +176,7 @@ function messageResponse(message: ServiceMessageEntity): AutoCareServiceMessageR
 
 export async function getAutoCareServiceRequestConversation(user: UserEntity, requestId: string): Promise<AutoCareServiceRequestConversationResponse> {
     const request = await getParticipantRequest(user, requestId)
+    await ensureAutoCareRequestChatThread(request)
     const [response, messages, attachments] = await Promise.all([
         hydrateRequest(request),
         AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
@@ -204,11 +206,13 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
 
 export async function createAutoCareServiceMessage(user: UserEntity, requestId: string, input: CreateAutoCareServiceMessageInput) {
     const request = await getParticipantRequest(user, requestId)
+    const thread = await ensureAutoCareRequestChatThread(request)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     const recipientId = user.id === request.clientId ? provider?.ownerId : request.clientId
     const deliveredAt = recipientId ? new Date() : null
     const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
         requestId: request.id,
+        threadId: thread.id,
         senderId: user.id,
         kind: ServiceMessageKind.Text,
         body: input.body,
@@ -234,6 +238,7 @@ export async function createAutoCareServiceMessage(user: UserEntity, requestId: 
 export async function createAutoCareServiceOffer(user: UserEntity, requestId: string, input: CreateAutoCareServiceOfferInput) {
     ownerOnly(user)
     const request = await getRequest(requestId)
+    const thread = await ensureAutoCareRequestChatThread(request)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     if (!provider || provider.ownerId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
     if (input.type === 'discount' && !input.discountPercent) conflict('A discount offer requires a percentage.')
@@ -250,6 +255,7 @@ export async function createAutoCareServiceOffer(user: UserEntity, requestId: st
     }
     const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
         requestId,
+        threadId: thread.id,
         senderId: user.id,
         kind: ServiceMessageKind.Offer,
         body: input.title,
@@ -295,10 +301,12 @@ export async function markAutoCareServiceConversationRead(user: UserEntity, requ
 
 export async function createAutoCareServiceAttachment(user: UserEntity, requestId: string, input: CreateAutoCareServiceAttachmentInput) {
     const request = await getParticipantRequest(user, requestId)
+    const thread = await ensureAutoCareRequestChatThread(request)
     const content = Buffer.from(input.contentBase64, 'base64')
     if (content.length !== input.size) conflict('Attachment content does not match its declared size.')
     const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).save(AppDataSource.getRepository(ServiceAttachmentEntity).create({
         requestId: request.id,
+        threadId: thread.id,
         uploadedById: user.id,
         objectKey: `autocare-requests/${request.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, '-')}`,
         contentType: input.contentType,
@@ -442,6 +450,7 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
         if (existing) requestIdempotencyConflict()
         throw error
     }
+    await ensureAutoCareRequestChatThread(savedRequest)
     if (provider.ownerId) {
         await notifyAutoCareParticipant({
             userId: provider.ownerId,

@@ -4,7 +4,7 @@
 > implemented on `dev`; backend replacement and legacy deletion remain gated by
 > replacement coverage and review
 >
-> Updated: 2026-08-13
+> Updated: 2026-08-14
 >
 > Applies to: web-first product, future iOS/Android clients
 >
@@ -250,20 +250,35 @@ Responsibilities:
 - immutable commercial/service snapshot;
 - completion events and review/bonus eligibility.
 
-### 4.7 Inquiry, conversation and quote
+### 4.7 Unified chat, inquiry and quote
 
 Responsibilities:
 
-- pre-booking service inquiry;
-- customer/provider conversation;
+- provider questions before a booking and service-request conversation;
+- owner-to-admin support and admin-to-super-admin escalation channels;
+- one role-scoped chat workspace for web and future mobile clients;
 - private media attachments;
 - read/unread state;
+- WebSocket delivery with REST as the source of truth and reconnect-safe
+  refetch/polling fallback;
 - versioned estimates/quotes;
 - quote acceptance and booking conversion;
 - reports and exceptional moderation access.
 
-A conversation is not a general social chat. It is anchored to a specific
-provider location, service definition, customer, and optional vehicle/booking.
+A chat is not a general social network. Each thread has an explicit type:
+`service_request`, `provider_inquiry`, `support` or `admin_escalation`. A
+provider inquiry may be created before a booking and can optionally reference a
+service, vehicle or location. Access is granted only to the client/provider
+members involved, the assigned support/admin roles, or the super-admin; knowing
+an identifier is never sufficient. Messages and attachments are private by
+default and every exceptional moderation access is audited.
+
+The durable model is `AutoCareChatThread` plus `ServiceMessage` and
+`ServiceAttachment`. Request threads keep the legacy request identifier for
+backward-compatible reads while new records also store `thread_id`. The same
+contract is available through `/api/v1/chats` and `/v1/chats/:chatId/ws`, so
+web and native clients share lifecycle, read-marker, attachment and timestamp
+semantics.
 
 ### 4.8 Reviews and reputation
 

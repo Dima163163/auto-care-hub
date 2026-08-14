@@ -46,6 +46,12 @@ export {
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,
+    useGetAutoCareChatsQuery,
+    useCreateAutoCareChatMutation,
+    useGetAutoCareChatQuery,
+    useCreateAutoCareChatMessageMutation,
+    useMarkAutoCareChatReadMutation,
+    useCreateAutoCareChatAttachmentMutation,
     useGetAutoCareServiceRequestQuery,
     useConfirmAutoCareServiceRequestMutation,
     useAcceptAutoCareServiceQuoteMutation,
@@ -86,6 +92,12 @@ export type {
     AutoCareServiceRequest,
     CreateAutoCareServiceRequestInput,
     AutoCareServiceConversation,
+    AutoCareChatThread,
+    AutoCareChatConversation,
+    AutoCareChatThreadType,
+    CreateAutoCareChatInput,
+    CreateAutoCareChatMessageInput,
+    CreateAutoCareChatAttachmentInput,
     AutoCareServiceMessage,
     AutoCareServiceMessageOffer,
     AutoCareServiceAttachment,
@@ -97,4 +109,4 @@ export type {
 } from './api/autocareApi'
 export { mapAutoCareDiscoveryItem, mapAutoCareProviderProfile } from './lib/autocareApiMappers'
 export { supportsVehicleBrand } from './lib/brandSpecialization'
-export { connectServiceChat, type ServiceChatEvent, type ServiceChatMessage } from './lib/service-chat'
+export { connectAutoCareChat, connectServiceChat, emitMockAutoCareChatEvent, type ServiceChatEvent, type ServiceChatMessage } from './lib/service-chat'

@@ -251,6 +251,12 @@ export type AutoCareServiceMessageOffer = { type: 'discount' | 'alternative'; ti
 export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; createdAt: string }
 export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
 export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[] }
+export type AutoCareChatThreadType = 'service_request' | 'provider_inquiry' | 'support' | 'admin_escalation'
+export type AutoCareChatThread = { id: string; type: AutoCareChatThreadType; status: 'open' | 'closed'; subject: string; requestId: string | null; providerId: string | null; providerName: string | null; clientId: string | null; lastMessageAt: string | null; unreadCount: number; createdAt: string; updatedAt: string }
+export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[] }
+export type CreateAutoCareChatInput = { type: Exclude<AutoCareChatThreadType, 'service_request'>; providerId?: string; requestId?: string; subject: string }
+export type CreateAutoCareChatMessageInput = { chatId: string; body: string }
+export type CreateAutoCareChatAttachmentInput = { chatId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
 export type CreateAutoCareServiceMessageInput = { requestId: string; body: string }
 export type CreateAutoCareServiceOfferInput = { requestId: string; type: 'discount' | 'alternative'; title: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
 export type DecideAutoCareServiceOfferInput = { requestId: string; messageId: string; decision: 'accept' | 'decline' }
@@ -422,6 +428,30 @@ export const autoCareApi = baseApi.injectEndpoints({
                 ? [...result.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'LIST' }]
                 : [{ type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
+        getAutoCareChats: build.query<AutoCareChatThread[], void>({
+            query: () => '/v1/chats',
+            providesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
+        }),
+        createAutoCareChat: build.mutation<AutoCareChatThread, CreateAutoCareChatInput>({
+            query: (body) => ({ url: '/v1/chats', method: 'POST', body }),
+            invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
+        }),
+        getAutoCareChat: build.query<AutoCareChatConversation, string>({
+            query: (chatId) => `/v1/chats/${chatId}`,
+            providesTags: (_result, _error, chatId) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }],
+        }),
+        createAutoCareChatMessage: build.mutation<AutoCareServiceMessage, CreateAutoCareChatMessageInput>({
+            query: ({ chatId, body }) => ({ url: `/v1/chats/${chatId}/messages`, method: 'POST', body: { body } }),
+            invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }, { type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
+        }),
+        markAutoCareChatRead: build.mutation<{ updated: number }, string>({
+            query: (chatId) => ({ url: `/v1/chats/${chatId}/read`, method: 'POST' }),
+            invalidatesTags: (_result, _error, chatId) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }, { type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
+        }),
+        createAutoCareChatAttachment: build.mutation<AutoCareServiceAttachment, CreateAutoCareChatAttachmentInput>({
+            query: ({ chatId, ...body }) => ({ url: `/v1/chats/${chatId}/attachments`, method: 'POST', body }),
+            invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }],
+        }),
         getAutoCareServiceRequest: build.query<AutoCareServiceRequest, string>({
             query: (requestId) => `/v1/service-requests/${requestId}`,
             providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
@@ -501,6 +531,12 @@ export const {
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,
+    useGetAutoCareChatsQuery,
+    useCreateAutoCareChatMutation,
+    useGetAutoCareChatQuery,
+    useCreateAutoCareChatMessageMutation,
+    useMarkAutoCareChatReadMutation,
+    useCreateAutoCareChatAttachmentMutation,
     useGetAutoCareServiceRequestQuery,
     useGetAutoCareServiceConversationQuery,
     useCreateAutoCareServiceMessageMutation,

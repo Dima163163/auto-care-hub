@@ -1,5 +1,6 @@
 import type { AutomotivePriceType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
 import type { ServiceMessageOffer, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
+import type { AutoCareChatThreadStatus, AutoCareChatThreadType } from '../../entities/automotive/service-request.entity.js'
 
 export type AutoCareMarketResponse = {
     id: string
@@ -243,6 +244,36 @@ export type AutoCareServiceAttachmentResponse = {
     url: string
     createdAt: string
 }
+
+export type AutoCareChatThreadResponse = {
+    id: string
+    type: AutoCareChatThreadType
+    status: AutoCareChatThreadStatus
+    subject: string
+    requestId: string | null
+    providerId: string | null
+    providerName: string | null
+    clientId: string | null
+    lastMessageAt: string | null
+    unreadCount: number
+    createdAt: string
+    updatedAt: string
+}
+
+export type AutoCareChatConversationResponse = {
+    thread: AutoCareChatThreadResponse
+    messages: AutoCareServiceMessageResponse[]
+    attachments: AutoCareServiceAttachmentResponse[]
+}
+
+export type CreateAutoCareChatInput = {
+    type: 'provider_inquiry' | 'support' | 'admin_escalation'
+    providerId?: string
+    requestId?: string
+    subject: string
+}
+
+export type CreateAutoCareChatMessageInput = { body: string }
 
 export type AutoCareServiceRequestConversationResponse = {
     request: AutoCareServiceRequestResponse

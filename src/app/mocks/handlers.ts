@@ -10,7 +10,7 @@ import {
     supportsVehicleBrand,
     type AutoCareApiProvider,
 } from '@/entities/automotive-service'
-import { emitMockServiceChatEvent, type ServiceChatMessage } from '@/entities/automotive-service/lib/service-chat'
+import { emitMockAutoCareChatEvent, emitMockServiceChatEvent, type ServiceChatMessage } from '@/entities/automotive-service/lib/service-chat'
 
 import {
     mockBookings,
@@ -311,6 +311,31 @@ const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
 ]
 const mockAutoCareMessages = new Map<string, ServiceChatMessage[]>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
+const mockAutoCareChatAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
+type MockAutoCareChatThread = {
+    id: string
+    type: 'service_request' | 'provider_inquiry' | 'support' | 'admin_escalation'
+    status: 'open' | 'closed'
+    subject: string
+    requestId: string | null
+    providerId: string | null
+    providerName: string | null
+    clientId: string | null
+    createdById: string | null
+    lastMessageAt: string | null
+    createdAt: string
+    updatedAt: string
+}
+const mockAutoCareChatThreads: MockAutoCareChatThread[] = [
+    { id: 'chat-inquiry-proservice', type: 'provider_inquiry', status: 'open', subject: 'Вопрос по подбору масла', requestId: null, providerId: 'api-proservice-moscow', providerName: 'ProService', clientId: 'user-client-1', createdById: 'user-client-1', lastMessageAt: '2026-08-14T08:20:00.000Z', createdAt: '2026-08-14T08:15:00.000Z', updatedAt: '2026-08-14T08:20:00.000Z' },
+    { id: 'chat-support-owner', type: 'support', status: 'open', subject: 'Не отображается новое расписание', requestId: null, providerId: 'api-proservice-moscow', providerName: 'ProService', clientId: null, createdById: 'user-owner-1', lastMessageAt: '2026-08-14T07:40:00.000Z', createdAt: '2026-08-14T07:30:00.000Z', updatedAt: '2026-08-14T07:40:00.000Z' },
+    { id: 'chat-escalation-admin', type: 'admin_escalation', status: 'open', subject: 'Проверка блокировки сервиса', requestId: null, providerId: null, providerName: null, clientId: null, createdById: 'user-admin-1', lastMessageAt: '2026-08-14T06:40:00.000Z', createdAt: '2026-08-14T06:35:00.000Z', updatedAt: '2026-08-14T06:40:00.000Z' },
+]
+const mockAutoCareChatMessages = new Map<string, ServiceChatMessage[]>([
+    ['chat-inquiry-proservice', [{ id: 'chat-message-1', senderId: 'user-client-1', kind: 'text', body: 'Здравствуйте! Можно ли подобрать масло по VIN и сколько займёт работа?', offer: null, deliveredAt: '2026-08-14T08:16:00.000Z', readAt: null, createdAt: '2026-08-14T08:16:00.000Z' }, { id: 'chat-message-2', senderId: 'user-owner-1', kind: 'text', body: 'Да, пришлите VIN и фото текущего фильтра — проверим совместимость.', offer: null, deliveredAt: '2026-08-14T08:20:00.000Z', readAt: null, createdAt: '2026-08-14T08:20:00.000Z' }]],
+    ['chat-support-owner', [{ id: 'chat-message-3', senderId: 'user-owner-1', kind: 'text', body: 'После сохранения расписания новые слоты не видны клиентам.', offer: null, deliveredAt: '2026-08-14T07:31:00.000Z', readAt: null, createdAt: '2026-08-14T07:31:00.000Z' }, { id: 'chat-message-4', senderId: 'user-admin-1', kind: 'text', body: 'Проверяем кэш расписания, вернёмся с результатом в этом чате.', offer: null, deliveredAt: '2026-08-14T07:40:00.000Z', readAt: null, createdAt: '2026-08-14T07:40:00.000Z' }]],
+    ['chat-escalation-admin', [{ id: 'chat-message-5', senderId: 'user-admin-1', kind: 'text', body: 'Нужна консультация по блокировке повторного нарушителя.', offer: null, deliveredAt: '2026-08-14T06:40:00.000Z', readAt: null, createdAt: '2026-08-14T06:40:00.000Z' }]],
+])
 mockAutoCareMessages.set('owner-request-1', [
     { id: 'mock-message-1', senderId: 'user-client-1', kind: 'text', body: 'Здравствуйте! Подскажите, какое масло подойдёт по VIN?', offer: null, deliveredAt: '2026-08-14T08:05:00.000Z', readAt: '2026-08-14T08:06:00.000Z', createdAt: '2026-08-14T08:05:00.000Z' },
     { id: 'mock-message-2', senderId: 'user-owner-1', kind: 'text', body: 'Добрый день! Проверим VIN и предложим два варианта по цене.', offer: null, deliveredAt: '2026-08-14T08:07:00.000Z', readAt: null, createdAt: '2026-08-14T08:07:00.000Z' },
@@ -336,6 +361,26 @@ const mockAutoCareReviewPromos: MockAutoCareReviewPromo[] = []
 
 function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
+}
+
+function mockChatThreadFromRequest(request: MockAutoCareServiceRequest): MockAutoCareChatThread {
+    return { id: `chat-request-${request.id}`, type: 'service_request', status: request.status === 'closed' ? 'closed' : 'open', subject: request.serviceLabels.ru ?? request.serviceSlug, requestId: request.id, providerId: request.providerId, providerName: request.providerName, clientId: request.clientId, createdById: request.clientId, lastMessageAt: request.updatedAt, createdAt: request.createdAt, updatedAt: request.updatedAt }
+}
+
+function getMockAutoCareChatThreads(user: User) {
+    const requestThreads = mockAutoCareServiceRequests
+        .filter((request) => request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)))
+        .map(mockChatThreadFromRequest)
+    const genericThreads = mockAutoCareChatThreads.filter((thread) => ((user.role === 'super_admin' || user.role === 'admin') && ['support', 'admin_escalation'].includes(thread.type)) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
+    return [...requestThreads, ...genericThreads].sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
+}
+
+function mockChatMessages(thread: MockAutoCareChatThread) {
+    return thread.requestId ? (mockAutoCareMessages.get(thread.requestId) ?? []) : (mockAutoCareChatMessages.get(thread.id) ?? [])
+}
+
+function mockChatAttachments(thread: MockAutoCareChatThread) {
+    return thread.requestId ? (mockAutoCareAttachments.get(thread.requestId) ?? []) : (mockAutoCareChatAttachments.get(thread.id) ?? [])
 }
 
 function pushMockAutoCareNotification(input: { userId: string; requestId: string; title: string; message: string; role: 'client' | 'owner' }) {
@@ -1937,6 +1982,90 @@ export const handlers = [
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         const items = mockAutoCareServiceRequests.filter((item) => item.clientId === user.id).map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
         return HttpResponse.json(items)
+    }),
+
+    http.get('/api/v1/chats', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const threads = getMockAutoCareChatThreads(user).map((thread) => ({ ...thread, unreadCount: mockChatMessages(thread).filter((message) => message.senderId !== user.id && !message.readAt).length }))
+        return HttpResponse.json(threads)
+    }),
+
+    http.post('/api/v1/chats', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const body = await request.json() as { type?: MockAutoCareChatThread['type']; providerId?: string; subject?: string }
+        if (!body.type || body.type === 'service_request' || !body.subject?.trim()) return HttpResponse.json({ message: 'Invalid chat.' }, { status: 400 })
+        if (body.type === 'provider_inquiry' && user.role !== 'client') return HttpResponse.json({ message: 'Only clients can ask a service a question.' }, { status: 403 })
+        if (body.type === 'support' && user.role !== 'owner') return HttpResponse.json({ message: 'Only service owners can open support.' }, { status: 403 })
+        if (body.type === 'admin_escalation' && user.role !== 'admin') return HttpResponse.json({ message: 'Only administrators can escalate.' }, { status: 403 })
+        const provider = body.providerId ? autoCareProviders.find((candidate) => candidate.id === body.providerId) : undefined
+        const now = new Date().toISOString()
+        const thread: MockAutoCareChatThread = { id: `chat-${Date.now()}`, type: body.type, status: 'open', subject: body.subject.trim(), requestId: null, providerId: body.providerId ?? null, providerName: provider?.name ?? null, clientId: user.role === 'client' ? user.id : null, createdById: user.id, lastMessageAt: null, createdAt: now, updatedAt: now }
+        mockAutoCareChatThreads.unshift(thread)
+        mockAutoCareChatMessages.set(thread.id, [])
+        mockAutoCareChatAttachments.set(thread.id, [])
+        return HttpResponse.json({ ...thread, unreadCount: 0 }, { status: 201 })
+    }),
+
+    http.get('/api/v1/chats/:chatId', ({ params }) => {
+        const user = currentMockUser()
+        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        const messages = mockChatMessages(thread)
+        const now = new Date().toISOString()
+        messages.filter((message) => message.senderId !== user.id && !message.readAt).forEach((message) => { message.readAt = now })
+        const attachments = mockChatAttachments(thread).map(({ contentBase64: _contentBase64, ...attachment }) => attachment)
+        return HttpResponse.json({ thread: { ...thread, unreadCount: 0 }, messages, attachments })
+    }),
+
+    http.post('/api/v1/chats/:chatId/messages', async ({ params, request }) => {
+        const user = currentMockUser()
+        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        const body = await request.json() as { body?: string }
+        if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
+        const now = new Date().toISOString()
+        const message: ServiceChatMessage = { id: `chat-message-${Date.now()}`, senderId: user.id, kind: 'text', body: body.body.trim(), offer: null, deliveredAt: now, readAt: null, createdAt: now }
+        const messages = mockChatMessages(thread)
+        messages.push(message)
+        thread.lastMessageAt = now
+        thread.updatedAt = now
+        emitMockAutoCareChatEvent({ type: 'message.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: message })
+        return HttpResponse.json(message, { status: 201 })
+    }),
+
+    http.post('/api/v1/chats/:chatId/read', ({ params }) => {
+        const user = currentMockUser()
+        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        if (!user || !thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        const now = new Date().toISOString()
+        const messages = mockChatMessages(thread)
+        const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
+        unread.forEach((message) => { message.readAt = now })
+        if (unread.length) emitMockAutoCareChatEvent({ type: 'message.read', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: { messageIds: unread.map((message) => message.id), readAt: now } })
+        return HttpResponse.json({ updated: unread.length })
+    }),
+
+    http.post('/api/v1/chats/:chatId/attachments', async ({ params, request }) => {
+        const user = currentMockUser()
+        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
+        if (!body.fileName || !body.contentType || !body.size || !body.contentBase64 || !['image/jpeg', 'image/png', 'image/webp'].includes(body.contentType)) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
+        const now = new Date().toISOString()
+        const attachment = { id: `chat-attachment-${Date.now()}`, uploadedById: user.id, contentType: body.contentType, bytes: body.size, status: 'ready' as const, url: `data:${body.contentType};base64,${body.contentBase64}`, createdAt: now, contentBase64: body.contentBase64 }
+        const attachments = mockChatAttachments(thread)
+        attachments.push(attachment)
+        mockAutoCareChatAttachments.set(thread.id, attachments)
+        thread.updatedAt = now
+        thread.lastMessageAt = now
+        emitMockAutoCareChatEvent({ type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: attachment })
+        const { contentBase64: _contentBase64, ...response } = attachment
+        return HttpResponse.json(response, { status: 201 })
     }),
 
     http.get('/api/v1/service-requests/:requestId', ({ params }) => {

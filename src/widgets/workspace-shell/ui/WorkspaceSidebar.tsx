@@ -49,6 +49,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.services', to: ROUTES.serviceDiscovery, icon: Building2 },
                 { labelKey: 'navigation.myVehicles', to: ROUTES.profileVehicles, icon: CarFront },
                 { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings, icon: BookOpen },
+                { labelKey: 'navigation.chats', to: ROUTES.chats, icon: MessageSquare },
                 { labelKey: 'navigation.myReviews', to: ROUTES.profileReviews, icon: MessageSquare },
                 { labelKey: 'navigation.favorites', to: ROUTES.favorites, icon: Heart },
                 { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
@@ -69,6 +70,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
             items: [
                 { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
                 { labelKey: 'navigation.ownerAutoCareRequests', to: ROUTES.ownerAutoCareRequests, icon: MessageSquare },
+                { labelKey: 'navigation.chats', to: ROUTES.ownerChats, icon: MessageSquare },
                 { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
                 { labelKey: 'navigation.ownerServices', to: ROUTES.ownerServices, icon: ClipboardList },
             ],
@@ -102,6 +104,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.adminCabinets', to: ROUTES.adminCabinets, icon: Building2 },
                 { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
                 { labelKey: 'navigation.adminPlatformReviews', to: ROUTES.adminPlatformReviews, icon: MessageSquare },
+                { labelKey: 'navigation.chats', to: ROUTES.adminChats, icon: MessageSquare },
             ],
         },
         {
@@ -132,6 +135,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: Building2 },
                 { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
                 { labelKey: 'navigation.adminPlatformReviews', to: ROUTES.adminPlatformReviews, icon: MessageSquare },
+                { labelKey: 'navigation.chats', to: ROUTES.superAdminChats, icon: MessageSquare },
             ],
         },
         {

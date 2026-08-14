@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-13 (theme background implementation in progress)
+> Updated: 2026-08-14 (unified chat workspace and role-scoped channels added)
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -147,7 +147,7 @@ work.
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. | Add provider memberships/locations, offer editing, calendar, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
-| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
+| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request/chat events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
@@ -614,19 +614,24 @@ Exit gate:
 - Search -> provider -> booking -> completion -> review works against the real
   backend and survives retries/concurrency.
 
-### Phase 6 — Service messenger, photo assessment and quotes
+### Phase 6 — Unified messenger, photo assessment and quotes
 
 Goal: support complex services such as painting and body repair.
 
-- [x] Create service inquiry/conversation domain anchored to provider location,
-  service definition and optional vehicle.
+- [x] Create a durable chat-thread domain for service requests, pre-booking
+  provider inquiries, owner support and admin-to-super-admin escalation.
+- [x] Expose one authenticated full-width chat workspace with client, owner,
+  admin and super-admin routes; owner request inboxes link into the workspace.
+- [x] Keep provider questions usable before booking, with an optional service
+  and optional vehicle rather than forcing a request record.
 - [x] Limit participants to the customer and authorized provider members.
 - [~] Add durable messages with cursor pagination and idempotent sends. Durable
-  REST messages are implemented; cursor pagination and message idempotency remain.
+  REST messages and reconnect-safe WebSocket invalidation are implemented;
+  cursor pagination and message idempotency remain.
 - [~] Add secure image attachments: allowlisted formats, decode/re-encode,
   dimensions/size/count limits, private storage, signed access and retention.
-- [x] Add read markers and notification events; delivery/read timestamps are
-  broadcast to both participants.
+- [x] Add read markers, today/yesterday timestamps and notification events;
+  delivery/read/attachment events are broadcast to the active chat channel.
 - [~] Add quote versions with items, totals/ranges, currency, expiry, notes,
   inclusions, exclusions and warranty.
 - [x] Add owner-to-customer chat offers for percentage coupons and alternative
@@ -636,13 +641,16 @@ Goal: support complex services such as painting and body repair.
 - [ ] Add report/block/moderation workflows without routine admin access to
   private conversation content.
 - [x] Use REST as the source of truth and add WebSocket delivery for live
-  invalidation, with polling fallback and reconnect-safe refetch.
+  invalidation, with mock event parity, polling fallback and reconnect-safe
+  refetch.
 - [ ] Add upload abuse, authorization, ordering and retry tests.
 
 Exit gate:
 
-- A customer can send damage photos, receive a detailed quote and convert it to
-  a booking without losing conversation history.
+- A customer can ask a provider a general question or send damage photos,
+  receive a detailed quote, and convert it to a booking without losing
+  conversation history; owners can contact support and admins can escalate to
+  the super-admin without leaving the chat workspace.
 
 ### Phase 7 — Provider onboarding and administration
 

@@ -186,6 +186,12 @@ export const ProfileReviewsPage = lazy(() =>
     })),
 )
 
+export const ChatsPage = lazy(() =>
+    import('@/pages/chats').then((module) => ({
+        default: module.ChatsPage,
+    })),
+)
+
 export const OwnerDashboardPage = lazy(() =>
     import('@/pages/owner-dashboard').then((module) => ({
         default: module.OwnerDashboardPage,

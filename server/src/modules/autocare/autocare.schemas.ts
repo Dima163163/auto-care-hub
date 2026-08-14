@@ -91,6 +91,17 @@ export const autoCareServiceAttachmentParamsSchema = z.object({
     attachmentId: z.string().uuid(),
 })
 
+export const autoCareChatParamsSchema = z.object({
+    chatId: z.string().uuid(),
+})
+
+export const createAutoCareChatSchema = z.object({
+    type: z.enum(['provider_inquiry', 'support', 'admin_escalation']),
+    providerId: z.string().uuid().optional(),
+    requestId: z.string().uuid().optional(),
+    subject: z.string().trim().min(2).max(160),
+})
+
 const requestVehicleSnapshotSchema = z.object({
     make: z.string().trim().min(1).max(80),
     model: z.string().trim().min(1).max(80),

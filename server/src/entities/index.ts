@@ -39,6 +39,7 @@ import {
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 import {
+    AutoCareChatThreadEntity,
     ServiceAttachmentEntity,
     ServiceMessageEntity,
     ServiceRequestEntity,
@@ -85,6 +86,7 @@ export const entities = [
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
     ServiceRequestEntity,
+    AutoCareChatThreadEntity,
     ServiceMessageEntity,
     ServiceAttachmentEntity,
     PlatformReviewEntity,
@@ -177,6 +179,9 @@ export {
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 export {
+    AutoCareChatThreadEntity,
+    AutoCareChatThreadStatus,
+    AutoCareChatThreadType,
     type AutomotiveOfferingSnapshot,
     type ServiceMessageOffer,
     ServiceAttachmentEntity,

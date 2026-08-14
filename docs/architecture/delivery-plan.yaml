@@ -116,13 +116,16 @@ phases:
 
   phase_6_messaging_quotes:
     order: 6
-    status: pending
+    status: in_progress
     depends_on:
       - phase_3_domain_foundation
       - phase_4_search_comparison_profiles
       - phase_5_booking_reviews
     journeys:
       - service_inquiry
+      - provider_general_question
+      - owner_support_chat
+      - admin_super_admin_escalation
       - private_photo_upload
       - durable_messages
       - quote_versions
@@ -132,6 +135,8 @@ phases:
       - private_media_access
       - retention_policy
       - send_accept_idempotency
+      - role_scoped_chat_access
+      - websocket_reconnect_parity
 
   phase_7_provider_admin:
     order: 7

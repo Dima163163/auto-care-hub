@@ -18,6 +18,36 @@ export enum ServiceRequestStatus {
     Closed = 'closed',
 }
 
+export enum AutoCareChatThreadType {
+    ServiceRequest = 'service_request',
+    ProviderInquiry = 'provider_inquiry',
+    Support = 'support',
+    AdminEscalation = 'admin_escalation',
+}
+
+export enum AutoCareChatThreadStatus {
+    Open = 'open',
+    Closed = 'closed',
+}
+
+@Entity('autocare_chat_threads')
+@Index(['clientId', 'status', 'updatedAt'])
+@Index(['providerId', 'status', 'updatedAt'])
+@Index(['type', 'status', 'updatedAt'])
+export class AutoCareChatThreadEntity {
+    @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'enum', enum: AutoCareChatThreadType, enumName: 'autocare_chat_thread_type' }) type!: AutoCareChatThreadType
+    @Column({ type: 'uuid', nullable: true }) requestId!: string | null
+    @Column({ type: 'uuid', nullable: true }) providerId!: string | null
+    @Column({ type: 'uuid', nullable: true }) clientId!: string | null
+    @Column({ type: 'uuid', nullable: true }) createdById!: string | null
+    @Column({ type: 'text' }) subject!: string
+    @Column({ type: 'enum', enum: AutoCareChatThreadStatus, enumName: 'autocare_chat_thread_status', default: AutoCareChatThreadStatus.Open }) status!: AutoCareChatThreadStatus
+    @Column({ type: 'timestamptz', nullable: true }) lastMessageAt!: Date | null
+    @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
+    @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
+}
+
 export type AutomotiveOfferingSnapshot = {
     serviceSlug: string
     serviceLabels: Record<string, string>
@@ -80,7 +110,8 @@ export type ServiceMessageOffer = {
 @Check('CHK_autocare_service_messages_body', '"body" IS NULL OR char_length("body") BETWEEN 1 AND 4000')
 export class ServiceMessageEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
-    @Column({ type: 'uuid' }) requestId!: string
+    @Column({ type: 'uuid', nullable: true }) requestId!: string | null
+    @Column({ type: 'uuid', nullable: true }) threadId!: string | null
     @Column({ type: 'uuid' }) senderId!: string
     @Column({ type: 'enum', enum: ServiceMessageKind, enumName: 'autocare_service_message_kind', default: ServiceMessageKind.Text }) kind!: ServiceMessageKind
     @Column({ type: 'text', nullable: true }) body!: string | null
@@ -101,7 +132,8 @@ export enum ServiceAttachmentStatus {
 @Check('CHK_autocare_service_attachments_bytes', '"bytes" BETWEEN 1 AND 10485760')
 export class ServiceAttachmentEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
-    @Column({ type: 'uuid' }) requestId!: string
+    @Column({ type: 'uuid', nullable: true }) requestId!: string | null
+    @Column({ type: 'uuid', nullable: true }) threadId!: string | null
     @Column({ type: 'uuid' }) uploadedById!: string
     @Column({ type: 'text' }) objectKey!: string
     @Column({ type: 'text' }) contentType!: string
