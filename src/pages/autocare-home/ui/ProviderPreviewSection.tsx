@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BadgeCheck, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
+import { BadgeCheck, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { ProviderLogo, providerPreviews, type ProviderPreview } from '@/entities/automotive-service'
@@ -88,7 +88,10 @@ export function ProviderPreviewSection() {
         setPage(0)
     }
 
-    const showNextPage = () => setPage((current) => (current + 1) % pageCount)
+    const showPreviousPage = () => setPage((current) => Math.max(current - 1, 0))
+    const showNextPage = () => setPage((current) => Math.min(current + 1, pageCount - 1))
+    const isFirstPage = page === 0
+    const isLastPage = page >= pageCount - 1
 
     return (
         <section className="py-[22px]">
@@ -114,9 +117,12 @@ export function ProviderPreviewSection() {
                 <div className="mt-5 grid gap-4 lg:grid-cols-4">
                     {visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
                 </div>
-                <button type="button" onClick={showNextPage} className="absolute -right-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('autocare.nextPage')}>
+                {!isFirstPage ? <button type="button" onClick={showPreviousPage} className="absolute -left-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('common.back')}>
+                    <ChevronLeft className="size-7" />
+                </button> : null}
+                {!isLastPage ? <button type="button" onClick={showNextPage} className="absolute -right-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('autocare.nextPage')}>
                     <ChevronRight className="size-7" />
-                </button>
+                </button> : null}
             </div>
         </section>
     )
