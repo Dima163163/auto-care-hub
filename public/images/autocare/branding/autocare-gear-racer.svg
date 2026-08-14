@@ -1,42 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 112" role="img" aria-labelledby="title desc">
-  <title id="title">AutoCare Hub — шестерёнка и гоночный автомобиль</title>
-  <desc id="desc">Технологичный знак AutoCare Hub с силуэтом гоночного автомобиля внутри шестерёнки.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="autocare-gear-title autocare-gear-desc">
+  <title id="autocare-gear-title">AutoCare Hub — гоночный автомобиль в шестерёнке</title>
+  <desc id="autocare-gear-desc">Детальная эмблема автосервиса: спортивный автомобиль, встроенный в технологичную шестерёнку.</desc>
   <defs>
-    <linearGradient id="gear" x1="12" y1="10" x2="92" y2="94" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#62D7FF"/>
-      <stop offset="1" stop-color="#0877F9"/>
+    <linearGradient id="gearFace" x1="14" y1="10" x2="112" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8CE8FF"/>
+      <stop offset=".42" stop-color="#1689FF"/>
+      <stop offset="1" stop-color="#0756D8"/>
     </linearGradient>
-    <linearGradient id="car" x1="19" y1="39" x2="78" y2="76" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F5FBFF"/>
-      <stop offset="1" stop-color="#B7EFFF"/>
+    <linearGradient id="gearEdge" x1="23" y1="12" x2="108" y2="111" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8F8FF" stop-opacity=".95"/>
+      <stop offset=".5" stop-color="#1CA4FF" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#063BAA" stop-opacity=".95"/>
     </linearGradient>
+    <linearGradient id="hub" x1="25" y1="20" x2="103" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E3157"/>
+      <stop offset="1" stop-color="#061323"/>
+    </linearGradient>
+    <linearGradient id="carBody" x1="29" y1="57" x2="103" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4FCFF"/>
+      <stop offset=".32" stop-color="#B8ECFF"/>
+      <stop offset=".62" stop-color="#319DFF"/>
+      <stop offset="1" stop-color="#0758D5"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="47" y1="54" x2="86" y2="74" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8F5FF"/>
+      <stop offset=".38" stop-color="#2C9CEB"/>
+      <stop offset="1" stop-color="#082B59"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="28" y1="80" x2="98" y2="105" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5FDFF"/>
+      <stop offset=".45" stop-color="#84DFFF"/>
+      <stop offset="1" stop-color="#1689FF"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#031126" flood-opacity=".55"/>
+    </filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="1.7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
-  <g transform="translate(8 8)">
-    <g fill="url(#gear)">
-      <rect x="40" y="0" width="16" height="18" rx="4"/>
-      <rect x="40" y="64" width="16" height="18" rx="4"/>
-      <rect x="0" y="40" width="18" height="16" rx="4"/>
-      <rect x="78" y="40" width="18" height="16" rx="4"/>
-      <rect x="12" y="11" width="16" height="18" rx="4" transform="rotate(-45 20 20)"/>
-      <rect x="68" y="11" width="16" height="18" rx="4" transform="rotate(45 76 20)"/>
-      <rect x="12" y="67" width="16" height="18" rx="4" transform="rotate(45 20 76)"/>
-      <rect x="68" y="67" width="16" height="18" rx="4" transform="rotate(-45 76 76)"/>
+  <g filter="url(#shadow)">
+    <g fill="url(#gearFace)" stroke="url(#gearEdge)" stroke-width="1.2">
+      <rect x="57" y="3" width="14" height="22" rx="4"/>
+      <rect x="57" y="103" width="14" height="22" rx="4" transform="rotate(180 64 114)"/>
+      <rect x="103" y="57" width="22" height="14" rx="4" transform="rotate(90 114 64)"/>
+      <rect x="3" y="57" width="22" height="14" rx="4" transform="rotate(-90 14 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(30 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(60 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(120 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(150 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(210 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(240 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(300 64 64)"/>
+      <rect x="57" y="3" width="14" height="22" rx="4" transform="rotate(330 64 64)"/>
     </g>
-    <circle cx="48" cy="48" r="39" fill="#081A31" stroke="url(#gear)" stroke-width="5"/>
-    <circle cx="48" cy="48" r="30" fill="#0E2A4B" stroke="#2B91FF" stroke-opacity=".4" stroke-width="1.5"/>
-    <path d="M18 54.5c3.8-1.1 7.2-4.2 10.6-9.1l6.2-8.8c1.3-1.8 3.4-2.8 5.6-2.8h9.2c2.1 0 4.1.8 5.6 2.3l5.9 6.1 8.2 1.6c2.3.5 4 2.5 4 4.9v5.8H18v-0.0Z" fill="url(#car)"/>
-    <path d="M27.7 45.2h38.7l-5-5.1a6.8 6.8 0 0 0-4.8-2h-8.4a5.8 5.8 0 0 0-4.8 2.5l-3.3 4.6H27.7Z" fill="#1183F5" opacity=".9"/>
-    <path d="M20 53.5h54" stroke="#62D7FF" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="31" cy="55" r="7" fill="#071628" stroke="#62D7FF" stroke-width="2"/>
-    <circle cx="65" cy="55" r="7" fill="#071628" stroke="#62D7FF" stroke-width="2"/>
-    <circle cx="31" cy="55" r="2.2" fill="#F5FBFF"/>
-    <circle cx="65" cy="55" r="2.2" fill="#F5FBFF"/>
-    <path d="M20 48h7M70 48h5" stroke="#FFB74A" stroke-width="2.5" stroke-linecap="round"/>
-  </g>
+    <circle cx="64" cy="64" r="52" fill="url(#gearFace)" stroke="#B8F2FF" stroke-opacity=".45" stroke-width="1.4"/>
+    <circle cx="64" cy="64" r="47" fill="url(#hub)" stroke="#062B65" stroke-width="3"/>
+    <circle cx="64" cy="64" r="42" fill="none" stroke="#3DC5FF" stroke-opacity=".42" stroke-width="1.3" stroke-dasharray="1 6" stroke-linecap="round"/>
+    <circle cx="64" cy="64" r="36" fill="#071A31" stroke="#1A7DE5" stroke-opacity=".45" stroke-width="1.2"/>
 
-  <g font-family="Manrope, Inter, Arial, sans-serif">
-    <text x="116" y="55" fill="#F5FBFF" font-size="32" font-weight="800" letter-spacing="-1.1">AutoCare <tspan fill="#39B6FF">Hub</tspan></text>
-    <text x="118" y="76" fill="#9AB6D2" font-size="11" font-weight="600" letter-spacing=".2">Сервис, которому доверяют</text>
+    <g opacity=".68" fill="none" stroke="#59D8FF" stroke-linecap="round">
+      <path d="M28 42h7M93 42h7M28 86h7M93 86h7" stroke-width="1.4"/>
+      <path d="M42 28v7M86 28v7M42 93v7M86 93v7" stroke-width="1.4"/>
+    </g>
+
+    <g>
+      <path d="M20 86.5c2.1-5.2 6.3-8.1 12.6-8.8l10.7-1.2 10.3-12.7c2.3-2.9 5.8-4.6 9.5-4.6h12.4c4.2 0 8.2 1.8 10.9 4.9l8.4 9.7 8.5 1.6c4.3.8 7.4 4.5 7.4 8.9v4.8H20Z" fill="url(#carBody)" stroke="#D3F8FF" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="m48.3 75.6 9.2-11.3c1.6-2 4-3.1 6.5-3.1h11.2c3.1 0 6 1.3 8 3.6l7.3 8.3-5.9-.7H49.4Z" fill="url(#glass)" stroke="#9FEAFF" stroke-opacity=".78" stroke-width="1" stroke-linejoin="round"/>
+      <path d="M66.2 61.7v13.9M82.9 65.2l-3.6 10.4" stroke="#B6F3FF" stroke-opacity=".55" stroke-width=".9"/>
+      <path d="M29 80.5c8.8 1.3 18 1.9 27.4 1.9h43.9" fill="none" stroke="#F4FDFF" stroke-opacity=".8" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M22.5 87h80.6" fill="none" stroke="#052D75" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M24 82.5h10.4M91.1 82.5h8.7" stroke="#FFBF4C" stroke-width="2" stroke-linecap="round"/>
+      <path d="M98.5 78.6c3.2.6 5.1 2.1 6 4.9h-8.9" fill="#F7FDFF" stroke="#2EACFF" stroke-width=".8"/>
+      <path d="M22 79.3c2.8-1.2 5.8-1.8 9-1.8" stroke="#F7FDFF" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M43 78.7c10.5 2.1 30 2.4 47.8.5" fill="none" stroke="#0A63D9" stroke-width="1.4"/>
+      <g>
+        <circle cx="39" cy="86.5" r="10.8" fill="#040D1C" stroke="#C6F4FF" stroke-width="1.5"/>
+        <circle cx="39" cy="86.5" r="7.1" fill="url(#rim)"/>
+        <circle cx="39" cy="86.5" r="3.1" fill="#08265A" stroke="#E0FBFF" stroke-width=".8"/>
+        <path d="M39 79.8v13.4M32.3 86.5h13.4" stroke="#E4FCFF" stroke-width=".8" opacity=".8"/>
+      </g>
+      <g>
+        <circle cx="88" cy="86.5" r="10.8" fill="#040D1C" stroke="#C6F4FF" stroke-width="1.5"/>
+        <circle cx="88" cy="86.5" r="7.1" fill="url(#rim)"/>
+        <circle cx="88" cy="86.5" r="3.1" fill="#08265A" stroke="#E0FBFF" stroke-width=".8"/>
+        <path d="M88 79.8v13.4M81.3 86.5h13.4" stroke="#E4FCFF" stroke-width=".8" opacity=".8"/>
+      </g>
+      <path d="M51 91.8h25" stroke="#8BE7FF" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M56 96.2h17" stroke="#1689FF" stroke-width="1.4" stroke-linecap="round"/>
+    </g>
+
+    <g filter="url(#glow)" fill="none" stroke-linecap="round">
+      <path d="M22 67h8M98 59h8M19 72h4" stroke="#65DCFF" stroke-width="1.5"/>
+      <path d="M31 28l5 3M92 93l5 3" stroke="#FFB84C" stroke-width="1.7"/>
+    </g>
   </g>
 </svg>
