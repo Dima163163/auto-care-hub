@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
+import { AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
 import { AccountDeletionRequestStatus } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { BookingPaymentStatus } from '../../entities/booking/booking-payment.entity.js'
 import { UserRole, UserStatus } from '../../entities/user/user.entity.js'
@@ -176,6 +177,14 @@ export const adminDeletionRequestParamsSchema = z.object({
 
 export const adminCabinetParamsSchema = z.object({
     id: z.string().uuid('Cabinet id must be a valid UUID.'),
+})
+
+export const adminAutoCareProviderParamsSchema = z.object({
+    id: z.string().uuid('Automotive provider id must be a valid UUID.'),
+})
+
+export const updateAdminAutoCareProviderStatusSchema = z.object({
+    status: z.nativeEnum(AutomotiveProviderStatus),
 })
 
 export const adminPaymentParamsSchema = z.object({

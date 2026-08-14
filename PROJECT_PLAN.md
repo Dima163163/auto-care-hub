@@ -131,7 +131,7 @@ irreversible product choices.
 
 ## 4. Current repository audit
 
-### 4.0 Implementation snapshot — 2026-08-13
+### 4.0 Implementation snapshot — 2026-08-14
 
 The repository is no longer at the planning-only stage. The following is the
 current, reviewed implementation state and is the source for the next slices of
@@ -146,7 +146,7 @@ work.
 | Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications and API-backed availability slots. | Add timezone-aware schedules, reminder delivery and overlap constraints before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
-| Provider/admin workspaces | Owner service catalog, automotive provider profiles, owner clients/bookings and workspace footer/layout are implemented; the AutoCare request inbox now supports scoped requests, conversations, confirmations and preliminary estimates; admin screens retain legacy API adapters but now use automotive labels. | Add provider memberships/locations, offer editing, calendar, subscriptions, trust moderation and super-admin grant/promo workflows. |
+| Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. | Add provider memberships/locations, offer editing, calendar, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
 | Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, conversation, image attachment, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Old cabinet/booking/payment paths still exist (roughly 370 source references). | Remove only after each AutoCare replacement is live and covered by tests. |
@@ -164,7 +164,7 @@ Current page delivery order:
 2. provider profile and request follow-up: timezone-aware availability and reminder hardening;
 3. provider workspace: onboarding, locations, offerings, inbox, calendar and
   team;
-4. admin/super-admin workspaces;
+4. complete provider workspace operations and the remaining admin/super-admin workflows;
 5. real-API hardening, pilot and mobile-readiness gate.
 
 Delivery order for the remaining client-facing work:
@@ -344,10 +344,22 @@ direction.
 ### Admin journey
 
 - [ ] Maintain standardized categories, definitions and comparison attributes.
-- [ ] Moderate providers, locations, service requests and public content.
+- [~] Moderate provider publication status from an audited AutoCare queue;
+  location, service-request, review, complaint and public-content moderation
+  are still pending.
 - [ ] Inspect reports, audit logs, incidents and data-quality issues.
 - [ ] Manage provider subscriptions, grants and promo codes when monetization is
   activated.
+
+### Super-admin journey
+
+- [x] Open a role-protected overview of markets, locales, platform access,
+  provider trust signals and the billing-launch state.
+- [ ] Create and govern launch markets, country/city locales and operating rules.
+- [ ] Define transparent trust metrics, verification evidence, ranking boosts,
+  suspensions and appeals without allowing a paid plan to alter organic ranking.
+- [ ] Grant/revoke provider subscription access and manage promo codes only after
+  the separate monetisation phase is approved.
 
 ## 7. Delivery roadmap
 
@@ -635,8 +647,14 @@ Goal: let real businesses operate safely on the platform.
 - [ ] Multi-location provider profiles and membership invitations.
 - [ ] Scoped staff permissions and revocation.
 - [ ] Catalog gap requests for missing standardized services.
-- [ ] Moderation queues for provider/location/review/report content.
+- [~] Provider moderation queue: administrators can list service profiles and
+  move their publication status through audited API actions; location, review,
+  complaint and appeal moderation are still pending.
 - [ ] Admin audit viewer and operational issue queues.
+- [~] Provider dashboard: AutoCare locations, latest requests, confirmed-estimate
+  totals, conversion and rating signals are available; impressions, profile
+  opens, response-time, booking-completion and repeat-customer analytics are
+  still pending.
 - [ ] Provider analytics: impressions, profile opens, inquiries, response time,
   quote conversion, bookings, completion and repeat customers.
 

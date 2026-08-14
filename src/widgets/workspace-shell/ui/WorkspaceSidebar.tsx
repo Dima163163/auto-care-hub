@@ -67,8 +67,6 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
             labelKey: 'workspace.manage',
             items: [
                 { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
-                { labelKey: 'navigation.ownerCabinets', to: ROUTES.ownerCabinets, icon: Building2 },
-                { labelKey: 'navigation.ownerBookings', to: ROUTES.ownerBookings, icon: BookOpen },
                 { labelKey: 'navigation.ownerAutoCareRequests', to: ROUTES.ownerAutoCareRequests, icon: MessageSquare },
                 { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
                 { labelKey: 'navigation.ownerServices', to: ROUTES.ownerServices, icon: ClipboardList },
@@ -98,6 +96,32 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
                 { labelKey: 'navigation.adminUsers', to: ROUTES.adminUsers, icon: Users },
                 { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: ShieldCheck },
                 { labelKey: 'navigation.adminCabinets', to: ROUTES.adminCabinets, icon: Building2 },
+                { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
+            ],
+        },
+        {
+            labelKey: 'workspace.configure',
+            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }],
+        },
+        {
+            labelKey: 'workspace.support',
+            items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }],
+        },
+    ],
+    super_admin: [
+        {
+            labelKey: 'workspace.monitor',
+            items: [
+                { labelKey: 'user.superAdmin', to: ROUTES.superAdminDashboard, icon: ShieldCheck, end: true },
+                { labelKey: 'navigation.adminAuditLogs', to: ROUTES.adminAuditLogs, icon: FileText },
+                { labelKey: 'navigation.adminSecurityCenter', to: ROUTES.adminSecurityCenter, icon: ShieldAlert },
+            ],
+        },
+        {
+            labelKey: 'workspace.manage',
+            items: [
+                { labelKey: 'navigation.adminUsers', to: ROUTES.adminUsers, icon: Users },
+                { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: Building2 },
                 { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
             ],
         },

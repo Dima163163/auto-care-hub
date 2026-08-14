@@ -8,6 +8,7 @@ import {
 } from '../../shared/validation/validate.js'
 import {
     adminCabinetParamsSchema,
+    adminAutoCareProviderParamsSchema,
     adminAuditLogsQuerySchema,
     auditLogsExportQuerySchema,
     adminPaymentParamsSchema,
@@ -31,6 +32,7 @@ import {
     extendSecurityMitigationSchema,
     securityMitigationParamsSchema,
     updateCabinetStatusSchema,
+    updateAdminAutoCareProviderStatusSchema,
     updateSystemIncidentStatusSchema,
     updateUserRoleSchema,
     updateUserStatusSchema,
@@ -47,6 +49,9 @@ import {
     getAdminPaymentRefunds,
     getAdminPaymentDisputes,
     updateAdminCabinetStatus,
+    getAdminAutoCareProviders,
+    getSuperAdminPlatformOverview,
+    updateAdminAutoCareProviderStatus,
     updateAdminUserRole,
     updateAdminUserStatus,
 } from './admin.service.js'
@@ -90,6 +95,7 @@ import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import type { SystemIncidentEntity } from '../../entities/system-incident/system-incident.entity.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
 import type { AdminCabinet, AdminPayment, AdminPaymentDispute, AdminPaymentRefund, AdminUser, CreateAdminResponse } from './admin.types.js'
+import type { AdminAutoCareProvider, SuperAdminPlatformOverview } from './admin.service.js'
 import { env } from '../../config/env.js'
 import { getRequestLocale } from '../../shared/i18n/request-locale.js'
 import { refundBookingPayment } from '../payments/payment-refund.service.js'
@@ -206,6 +212,33 @@ function mapCursorResponse<T, M>(
 export async function adminRoutes(
     app: FastifyInstance
 ) {
+    app.get<{ Reply: AdminAutoCareProvider[] }>('/admin/autocare-providers', async (request) => {
+        return getAdminAutoCareProviders(await requireAuth(request))
+    })
+
+    app.patch<{ Params: unknown; Body: unknown; Reply: AdminAutoCareProvider }>(
+        '/admin/autocare-providers/:id/status',
+        async (request) => {
+            const user = await requireAuth(request)
+            const params = validateParams(adminAutoCareProviderParamsSchema, request.params)
+            const body = validateBody(updateAdminAutoCareProviderStatusSchema, request.body)
+            const result = await updateAdminAutoCareProviderStatus(user, params.id, body.status)
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.AutoCareProviderStatusUpdated,
+                targetId: params.id,
+                targetType: 'autocare_provider',
+                metadata: { oldStatus: result.oldStatus, newStatus: result.newStatus },
+                request,
+            })
+            return result.provider
+        },
+    )
+
+    app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {
+        return getSuperAdminPlatformOverview(await requireAuth(request))
+    })
+
     app.get<{ Querystring: unknown; Reply: AdminUsersListResponse }>(
         '/admin/users',
         async (request) => {

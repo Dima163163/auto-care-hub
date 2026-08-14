@@ -6,6 +6,7 @@ import { StateCard } from '@/shared/ui/state-card'
 
 import {
     renderAdminRoutes,
+    renderSuperAdminRoutes,
     renderAuthenticatedPublicRoutes,
     renderAuthUtilityRoutes,
     renderClientRoutes,
@@ -38,6 +39,7 @@ export function AppRouter() {
                 {renderAuthUtilityRoutes()}
                 {renderOwnerRoutes()}
                 {renderAdminRoutes()}
+                {renderSuperAdminRoutes()}
                 {renderNotFoundRoute()}
             </Routes>
         </Suspense>

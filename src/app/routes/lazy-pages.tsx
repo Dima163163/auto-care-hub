@@ -282,6 +282,12 @@ export const SecurityCenterPage = lazy(() =>
     })),
 )
 
+export const SuperAdminDashboardPage = lazy(() =>
+    import('@/pages/super-admin-dashboard').then((module) => ({
+        default: module.SuperAdminDashboardPage,
+    })),
+)
+
 export const NotFoundPage = lazy(() =>
     import('@/pages/not-found').then((module) => ({
         default: module.NotFoundPage,

@@ -24,7 +24,14 @@ export function getBottomNavPrimaryTarget(
         }
     }
 
-    if (role === 'admin' || role === 'super_admin') {
+    if (role === 'super_admin') {
+        return {
+            labelKey: 'user.superAdmin',
+            to: ROUTES.superAdminDashboard,
+        }
+    }
+
+    if (role === 'admin') {
         return {
             labelKey: 'navigation.adminDashboard',
             to: ROUTES.adminDashboard,

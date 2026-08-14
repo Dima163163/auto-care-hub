@@ -1,0 +1,101 @@
+.owner-provider-map {
+    background:
+        radial-gradient(circle at 60% 38%, rgb(49 143 255 / 0.64), transparent 38%),
+        linear-gradient(135deg, #073c7b 0%, #0a4f9a 52%, #063b78 100%);
+    font-family: inherit;
+}
+
+.owner-provider-map .leaflet-tile-pane {
+    filter: sepia(0.22) hue-rotate(168deg) saturate(2.3) brightness(1.62) contrast(0.8);
+    mix-blend-mode: screen;
+    opacity: 0.6;
+}
+
+.owner-provider-map .leaflet-control-attribution,
+.owner-provider-map .leaflet-control-zoom {
+    display: none;
+}
+
+.owner-provider-map-marker-host {
+    background: transparent;
+    border: 0;
+}
+
+.owner-provider-map-marker {
+    display: inline-flex;
+    width: max-content;
+    max-width: 224px;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgb(147 197 253 / 0.3);
+    border-radius: 12px;
+    background: rgb(7 27 53 / 0.94);
+    box-shadow: 0 10px 24px rgb(0 5 18 / 0.45), inset 0 1px rgb(255 255 255 / 0.08);
+    color: #eff6ff;
+    cursor: pointer;
+    padding: 7px 10px 7px 7px;
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.owner-provider-map-marker:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.22), 0 12px 28px rgb(0 5 18 / 0.55);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.owner-provider-map-marker__pin {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgb(255 255 255 / 0.92);
+    border-radius: 50% 50% 50% 8px;
+    background: #087cf5;
+    box-shadow: 0 0 14px rgb(37 99 235 / 0.55);
+    color: #fff;
+    transform: rotate(-45deg);
+}
+
+.owner-provider-map-marker__pin svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    transform: rotate(45deg);
+}
+
+.owner-provider-map-marker__copy {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+    line-height: 1.15;
+}
+
+.owner-provider-map-marker__copy strong,
+.owner-provider-map-marker__copy span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.owner-provider-map-marker__copy strong {
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.owner-provider-map-marker__copy span {
+    color: rgb(219 234 254 / 0.78);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.owner-provider-map-marker__copy b {
+    color: #fbd36a;
+    font-size: 10px;
+    font-weight: 900;
+}

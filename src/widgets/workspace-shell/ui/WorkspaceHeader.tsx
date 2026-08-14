@@ -11,12 +11,13 @@ import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitche
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { HeaderInfoMenu } from '@/widgets/header-info-menu'
 
-export type WorkspaceRole = 'client' | 'owner' | 'admin'
+export type WorkspaceRole = 'client' | 'owner' | 'admin' | 'super_admin'
 
 const workspaceLabelKeys: Record<WorkspaceRole, TranslationKey> = {
     client: 'workspace.client',
     owner: 'workspace.owner',
     admin: 'workspace.admin',
+    super_admin: 'user.superAdmin',
 }
 
 function Logo() {

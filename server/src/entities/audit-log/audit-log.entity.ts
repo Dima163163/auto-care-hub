@@ -15,6 +15,7 @@ export enum AuditAction {
     UserRoleUpdated = 'user_role_updated',
     AdminCreated = 'admin_created',
     CabinetStatusUpdated = 'cabinet_status_updated',
+    AutoCareProviderStatusUpdated = 'autocare_provider_status_updated',
     ReviewModerated = 'review_moderated',
     ReviewDeleted = 'review_deleted',
     SubscriptionCreated = 'subscription_created',

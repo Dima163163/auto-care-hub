@@ -14,6 +14,7 @@ const workspaceLabelKeys: Record<WorkspaceRole, TranslationKey> = {
     client: 'workspace.client',
     owner: 'workspace.owner',
     admin: 'workspace.admin',
+    super_admin: 'user.superAdmin',
 }
 
 type WorkspaceMobileHeaderProps = {

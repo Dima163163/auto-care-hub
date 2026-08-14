@@ -183,10 +183,10 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
 
 const autoCareProviders = providerPreviews.map(toAutoCareProvider)
 type OwnerAutoCareProviderMock = AutoCareApiProvider & {
-    serviceIds: string[]
-    servicePrices: Record<string, number>
+    serviceIds: readonly string[]
+    servicePrices: Partial<Record<string, number>>
 }
-const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = []
+const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = autoCareProviders.slice(0, 2).map((provider) => ({ ...provider }))
 const mockProviderLogos = new Map<string, string>()
 
 type MockAutoCareServiceRequest = {
@@ -216,7 +216,14 @@ type MockAutoCareServiceRequest = {
     updatedAt: string
 }
 
-const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = []
+const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
+    {
+        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021 }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
+    },
+    {
+        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }, idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
+    },
+]
 const mockAutoCareMessages = new Map<string, Array<{ id: string; senderId: string; kind: 'text'; body: string; createdAt: string }>>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
 
@@ -2675,6 +2682,31 @@ export const handlers = [
 
     http.get('/api/admin/users', () => {
         return HttpResponse.json(mockUsers)
+    }),
+
+    http.get('/api/admin/autocare-providers', () => {
+        const user = currentMockUser()
+        if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const providers = [...new Map([...autoCareProviders, ...ownerAutoCareProviders].map((provider) => [provider.id, provider])).values()]
+        return HttpResponse.json(providers.map((provider) => ({ ...provider, ownerName: 'Demo Owner', trustScore: Math.min(100, Math.round((provider.verified ? 30 : 0) + provider.rating * 9 + Math.min(provider.reviewCount, 40) / 2 + Math.min(provider.yearsActive, 10))) })))
+    }),
+
+    http.patch('/api/admin/autocare-providers/:id/status', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json() as { status?: 'draft' | 'active' | 'suspended' }
+        if (!body.status || !['draft', 'active', 'suspended'].includes(body.status)) return invalidMockBodyResponse()
+        const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.id)
+        if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
+        provider.status = body.status
+        return HttpResponse.json({ ...provider, ownerName: 'Demo Owner', trustScore: Math.min(100, Math.round((provider.verified ? 30 : 0) + provider.rating * 9 + Math.min(provider.reviewCount, 40) / 2 + Math.min(provider.yearsActive, 10))) })
+    }),
+
+    http.get('/api/super-admin/platform-overview', () => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'super_admin') return HttpResponse.json({ message: 'Only super admin can use this endpoint.' }, { status: 403 })
+        const providers = [...new Map([...autoCareProviders, ...ownerAutoCareProviders].map((provider) => [provider.id, provider])).values()]
+        return HttpResponse.json({ markets: [autoCareMarket], providers: { total: providers.length, active: providers.filter((provider) => provider.status === 'active').length, draft: providers.filter((provider) => provider.status === 'draft').length, suspended: providers.filter((provider) => provider.status === 'suspended').length, verified: providers.filter((provider) => provider.verified).length }, users: { clients: mockUsers.filter((item) => item.role === 'client').length, owners: mockUsers.filter((item) => item.role === 'owner').length, admins: mockUsers.filter((item) => item.role === 'admin').length, superAdmins: mockUsers.filter((item) => item.role === 'super_admin').length }, billing: { phase: 'launch', subscriptionsEnabled: false, promoCodesEnabled: false } })
     }),
 
     http.get('/api/admin/cabinets', () => {

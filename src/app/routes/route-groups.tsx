@@ -21,6 +21,7 @@ import {
     AdminReviewsPage,
     AdminUsersPage,
     SecurityCenterPage,
+    SuperAdminDashboardPage,
     BlogPage,
     CabinetDetailsPage,
     CabinetsPage,
@@ -191,6 +192,22 @@ export function renderAdminRoutes() {
             <Route path={ROUTES.adminReviews} element={<AdminReviewsPage />} />
             <Route path={ROUTES.adminAuditLogs} element={<AdminAuditLogsPage />} />
             <Route path={ROUTES.adminSecurityCenter} element={<SecurityCenterPage />} />
+        </Route>
+    )
+}
+
+export function renderSuperAdminRoutes() {
+    return (
+        <Route
+            element={
+                <RouteErrorBoundary>
+                    <RequireAuth allowedRoles={['super_admin']}>
+                        <AdminLayout />
+                    </RequireAuth>
+                </RouteErrorBoundary>
+            }
+        >
+            <Route path={ROUTES.superAdminDashboard} element={<SuperAdminDashboardPage />} />
         </Route>
     )
 }

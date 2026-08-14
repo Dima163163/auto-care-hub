@@ -2,7 +2,11 @@ import type { UserRole } from '@/entities/user'
 import { ROUTES } from '@/shared/constants/routes'
 
 export function getDefaultRouteByRole(role: UserRole) {
-    if (role === 'admin' || role === 'super_admin') {
+    if (role === 'super_admin') {
+        return ROUTES.superAdminDashboard
+    }
+
+    if (role === 'admin') {
         return ROUTES.adminDashboard
     }
 

@@ -1,9 +1,16 @@
 import { AppDataSource } from '../../database/data-source.js'
+import { In } from 'typeorm'
 import {
     CabinetEntity,
     CabinetStatus,
 } from '../../entities/cabinet/cabinet.entity.js'
 import { BookingEntity } from '../../entities/booking/booking.entity.js'
+import {
+    AutomotiveMarketEntity,
+    AutomotiveProviderEntity,
+    AutomotiveProviderStatus,
+    AutomotiveServiceLocationEntity,
+} from '../../entities/automotive/automotive.entity.js'
 import { BookingPaymentEntity, BookingPaymentStatus } from '../../entities/booking/booking-payment.entity.js'
 import { BookingPaymentRefundEntity } from '../../entities/booking/booking-payment-refund.entity.js'
 import {
@@ -46,6 +53,8 @@ import { getAdminLegacyListLimit } from './admin-list-policy.js'
 import { normalizeAuthEmail } from '../auth/email-policy.js'
 import { normalizeAuthUserName } from '../auth/user-input-policy.js'
 import { getRemainingPaymentAmountMinor } from '../payments/payment-money.js'
+import { toProviderResponse } from '../autocare/autocare.mappers.js'
+import type { AutoCareProviderResponse } from '../autocare/autocare.types.js'
 
 export type AdminPaymentAttention = {
     failedPaymentCount: number
@@ -60,6 +69,111 @@ function assertAdmin(user: UserEntity) {
             code: ERROR_CODES.Forbidden,
             message: 'Only admins can use this endpoint.',
         })
+    }
+}
+
+function assertSuperAdmin(user: UserEntity) {
+    if (!isSuperAdmin(user)) {
+        throw new AppError({
+            statusCode: 403,
+            code: ERROR_CODES.Forbidden,
+            message: 'Only super admin can use this endpoint.',
+        })
+    }
+}
+
+export type AdminAutoCareProvider = AutoCareProviderResponse & {
+    ownerName: string | null
+    trustScore: number
+}
+
+export type SuperAdminPlatformOverview = {
+    markets: Array<{
+        id: string
+        countryCode: string
+        countryName: string
+        cityCode: string
+        cityName: string
+        currencyCode: string
+        launchReady: boolean
+        supportedLocales: string[]
+    }>
+    providers: { total: number; active: number; draft: number; suspended: number; verified: number }
+    users: { clients: number; owners: number; admins: number; superAdmins: number }
+    billing: { phase: 'launch'; subscriptionsEnabled: false; promoCodesEnabled: false }
+}
+
+export function getProviderTrustScore(provider: AutomotiveProviderEntity) {
+    const reviewScore = Math.min(provider.reviewCount, 50) / 2
+    const ratingScore = Math.min(Number(provider.rating), 5) * 8
+    const experienceScore = Math.min(provider.yearsActive, 10)
+    const verificationScore = provider.verified ? 25 : 0
+    const publicationScore = provider.status === AutomotiveProviderStatus.Active ? 5 : 0
+
+    return Math.round(Math.min(100, reviewScore + ratingScore + experienceScore + verificationScore + publicationScore))
+}
+
+export async function getAdminAutoCareProviders(admin: UserEntity): Promise<AdminAutoCareProvider[]> {
+    assertAdmin(admin)
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ order: { createdAt: 'DESC' } })
+    const locations = providers.length
+        ? await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findBy({ providerId: In(providers.map((provider) => provider.id)) })
+        : []
+    const owners = providers.some((provider) => provider.ownerId)
+        ? await AppDataSource.getRepository(UserEntity).findBy({ id: In(providers.flatMap((provider) => provider.ownerId ? [provider.ownerId] : [])) })
+        : []
+    const locationByProvider = new Map(locations.map((location) => [location.providerId, location]))
+    const ownerById = new Map(owners.map((owner) => [owner.id, owner]))
+
+    return providers.flatMap((provider) => {
+        const location = locationByProvider.get(provider.id)
+        if (!location) return []
+        return [{ ...toProviderResponse(provider, location), ownerName: provider.ownerId ? ownerById.get(provider.ownerId)?.name ?? null : null, trustScore: getProviderTrustScore(provider) }]
+    })
+}
+
+export async function updateAdminAutoCareProviderStatus(admin: UserEntity, providerId: string, status: AutomotiveProviderStatus) {
+    assertAdmin(admin)
+    const repository = AppDataSource.getRepository(AutomotiveProviderEntity)
+    const provider = await repository.findOneBy({ id: providerId })
+    if (!provider) {
+        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
+    }
+    const oldStatus = provider.status
+    provider.status = status
+    const saved = await repository.save(provider)
+    const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ providerId: saved.id })
+    if (!location) {
+        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider location not found.' })
+    }
+    const owner = saved.ownerId ? await AppDataSource.getRepository(UserEntity).findOneBy({ id: saved.ownerId }) : null
+    return { provider: { ...toProviderResponse(saved, location), ownerName: owner?.name ?? null, trustScore: getProviderTrustScore(saved) }, oldStatus, newStatus: saved.status }
+}
+
+export async function getSuperAdminPlatformOverview(actor: UserEntity): Promise<SuperAdminPlatformOverview> {
+    assertSuperAdmin(actor)
+    const [markets, providers, users] = await Promise.all([
+        AppDataSource.getRepository(AutomotiveMarketEntity).find({ order: { countryName: 'ASC', cityName: 'ASC' } }),
+        AppDataSource.getRepository(AutomotiveProviderEntity).find(),
+        AppDataSource.getRepository(UserEntity).find({ select: { role: true } }),
+    ])
+
+    return {
+        markets: markets.map((market) => ({ id: market.id, countryCode: market.countryCode, countryName: market.countryName, cityCode: market.cityCode, cityName: market.cityName, currencyCode: market.currencyCode, launchReady: market.launchReady, supportedLocales: market.supportedLocales })),
+        providers: {
+            total: providers.length,
+            active: providers.filter((provider) => provider.status === AutomotiveProviderStatus.Active).length,
+            draft: providers.filter((provider) => provider.status === AutomotiveProviderStatus.Draft).length,
+            suspended: providers.filter((provider) => provider.status === AutomotiveProviderStatus.Suspended).length,
+            verified: providers.filter((provider) => provider.verified).length,
+        },
+        users: {
+            clients: users.filter((user) => user.role === UserRole.Client).length,
+            owners: users.filter((user) => user.role === UserRole.Owner).length,
+            admins: users.filter((user) => user.role === UserRole.Admin).length,
+            superAdmins: users.filter((user) => user.role === UserRole.SuperAdmin).length,
+        },
+        billing: { phase: 'launch', subscriptionsEnabled: false, promoCodesEnabled: false },
     }
 }
 

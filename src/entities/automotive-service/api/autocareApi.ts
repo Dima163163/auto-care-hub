@@ -82,6 +82,18 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
 
+export type AdminAutoCareProvider = AutoCareApiProvider & {
+    ownerName: string | null
+    trustScore: number
+}
+
+export type SuperAdminPlatformOverview = {
+    markets: Array<{ id: string; countryCode: string; countryName: string; cityCode: string; cityName: string; currencyCode: string; launchReady: boolean; supportedLocales: string[] }>
+    providers: { total: number; active: number; draft: number; suspended: number; verified: number }
+    users: { clients: number; owners: number; admins: number; superAdmins: number }
+    billing: { phase: 'launch'; subscriptionsEnabled: boolean; promoCodesEnabled: boolean }
+}
+
 export type AutoCareApiReview = {
     id: string
     providerId: string
@@ -250,6 +262,18 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: () => '/owner/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        getAdminAutoCareProviders: build.query<AdminAutoCareProvider[], void>({
+            query: () => '/admin/autocare-providers',
+            providesTags: [{ type: 'AutoCareProvider', id: 'ADMIN_LIST' }],
+        }),
+        updateAdminAutoCareProviderStatus: build.mutation<AdminAutoCareProvider, { id: string; status: AutoCareApiProvider['status'] }>({
+            query: ({ id, status }) => ({ url: `/admin/autocare-providers/${id}/status`, method: 'PATCH', body: { status } }),
+            invalidatesTags: (_result, _error, { id }) => [{ type: 'AutoCareProvider', id }, { type: 'AutoCareProvider', id: 'ADMIN_LIST' }],
+        }),
+        getSuperAdminPlatformOverview: build.query<SuperAdminPlatformOverview, void>({
+            query: () => '/super-admin/platform-overview',
+            providesTags: [{ type: 'AutoCareProvider', id: 'PLATFORM_OVERVIEW' }],
+        }),
         uploadOwnerAutoCareProviderLogo: build.mutation<{ url: string }, { fileName: string; mimeType: string; size: number; contentBase64: string }>({
             query: (body) => ({ url: '/owner/autocare-providers/logo', method: 'POST', body }),
         }),
@@ -328,6 +352,9 @@ export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useGetAdminAutoCareProvidersQuery,
+    useUpdateAdminAutoCareProviderStatusMutation,
+    useGetSuperAdminPlatformOverviewQuery,
     useUploadOwnerAutoCareProviderLogoMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareAvailabilityQuery,

@@ -54,6 +54,8 @@ export const ROUTES = {
     adminReviews: '/admin/reviews',
     adminAuditLogs: '/admin/audit-logs',
     adminSecurityCenter: '/admin/security-center',
+
+    superAdminDashboard: '/super-admin/dashboard',
 } as const
 
 export const routePaths = {

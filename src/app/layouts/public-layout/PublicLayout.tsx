@@ -22,9 +22,11 @@ export function PublicLayout() {
     )
     const workspaceRole: WorkspaceRole = user?.role === 'owner'
         ? 'owner'
-        : user?.role === 'admin' || user?.role === 'super_admin'
-            ? 'admin'
-            : 'client'
+        : user?.role === 'super_admin'
+            ? 'super_admin'
+            : user?.role === 'admin'
+                ? 'admin'
+                : 'client'
 
     return (
         <div className="autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col md:pb-0">
