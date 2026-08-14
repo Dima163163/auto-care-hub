@@ -47,6 +47,7 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
             labelKey: 'workspace.manage',
             items: [
                 { labelKey: 'navigation.services', to: ROUTES.serviceDiscovery, icon: Building2 },
+                { labelKey: 'navigation.myVehicles', to: ROUTES.profileVehicles, icon: CarFront },
                 { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings, icon: BookOpen },
                 { labelKey: 'navigation.myReviews', to: ROUTES.profileReviews, icon: MessageSquare },
                 { labelKey: 'navigation.favorites', to: ROUTES.favorites, icon: Heart },
@@ -74,7 +75,10 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
         },
         {
             labelKey: 'workspace.configure',
-            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }],
+            items: [
+                { labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings },
+                { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
+            ],
         },
         {
             labelKey: 'workspace.support',
@@ -101,7 +105,10 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
         },
         {
             labelKey: 'workspace.configure',
-            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }],
+            items: [
+                { labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings },
+                { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
+            ],
         },
         {
             labelKey: 'workspace.support',
@@ -127,7 +134,10 @@ const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
         },
         {
             labelKey: 'workspace.configure',
-            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }],
+            items: [
+                { labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings },
+                { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
+            ],
         },
         {
             labelKey: 'workspace.support',

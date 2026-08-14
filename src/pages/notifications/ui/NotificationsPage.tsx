@@ -16,12 +16,14 @@ import {
 import type { AppDispatch } from '@/app/store'
 import { Button } from '@/components/ui/button'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
-import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { StateCard } from '@/shared/ui/state-card'
 import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
 import { QueryRefreshError, RetryButton } from '@/shared/ui/query-refresh-error'
 import { formatDateTime } from '@/shared/lib/formatDateTime'
+import { useGetMeQuery } from '@/features/auth'
+import { ProfilePreferences } from '@/pages/profile/ui/ProfilePreferences'
+import { ProfileNavigation } from '@/widgets/profile-navigation/ui/ProfileNavigation'
 
 function NotificationLink({
     notification,
@@ -49,6 +51,7 @@ const notificationQuery = { limit: 20 }
 export function NotificationsPage() {
     const { t } = useTranslation()
     const dispatch = useDispatch<AppDispatch>()
+    const { data: user } = useGetMeQuery()
     const {
         data: notificationPage,
         error,
@@ -169,6 +172,7 @@ export function NotificationsPage() {
                 className="mx-auto max-w-4xl"
                 aria-busy={isLoading || isFetching}
             >
+                <ProfileNavigation />
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
                     {t('notifications.eyebrow')}
                 </p>
@@ -305,12 +309,7 @@ export function NotificationsPage() {
                     </Button>
                 )}
 
-                <Link
-                    to={ROUTES.profile}
-                    className="mt-8 inline-flex rounded-md border border-primary px-6 py-3 text-sm font-bold text-primary"
-                >
-                    {t('notifications.managePreferences')}
-                </Link>
+                {user && <div className="mt-8"><ProfilePreferences user={user} /></div>}
             </section>
         </main>
     )

@@ -1,5 +1,6 @@
 import {
     Bell,
+    CarFront,
     CalendarDays,
     Heart,
     Home,
@@ -27,6 +28,7 @@ export function ProfileNavigation({ desktopHidden = true }: ProfileNavigationPro
         ...(user?.role === 'client'
             ? [
                   { to: ROUTES.profileBookings, label: t('navigation.myBookings'), icon: CalendarDays },
+                  { to: ROUTES.profileVehicles, label: t('navigation.myVehicles'), icon: CarFront },
                   { to: ROUTES.profileReviews, label: t('navigation.myReviews'), icon: MessageSquare },
                   { to: ROUTES.favorites, label: t('navigation.favorites'), icon: Heart },
                   { to: ROUTES.notifications, label: t('navigation.notifications'), icon: Bell },

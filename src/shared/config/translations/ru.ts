@@ -76,6 +76,7 @@ export const ruTranslations = {
         about: 'О сервисе',
         profile: 'Профиль',
         myBookings: 'Мои бронирования',
+        myVehicles: 'Мои автомобили',
         myReviews: 'Мои отзывы',
         favorites: 'Избранное',
         notifications: 'Уведомления',
@@ -2053,7 +2054,7 @@ export const ruTranslations = {
     },
     profile: {
         title: 'Мой профиль',
-        description: 'Просматривайте данные аккаунта и информацию рабочего пространства бронирований.',
+        description: 'Просматривайте данные аккаунта и настройки рабочего пространства AutoCare Hub.',
         clientDescription: 'AutoCare Hub всегда бесплатен для клиентов. За выполненную работу вы рассчитываетесь напрямую с выбранным автосервисом.',
         clientFreeBadge: 'Бесплатно для клиентов',
         vehicles: {
@@ -2096,11 +2097,11 @@ export const ruTranslations = {
         createdAt: 'Создан',
         preferences: {
             title: 'Уведомления',
-            description: 'Управляйте настройками связи по вашим бронированиям.',
+            description: 'Управляйте настройками связи по вашим заявкам и сервисным визитам.',
             emailNotifications: 'Email-уведомления',
-            emailNotificationsDesc: 'Получать письма о создании, подтверждении или отмене бронирований.',
-            bookingEmailNotifications: 'Письма о бронированиях',
-            bookingEmailNotificationsDesc: 'Получать письма об изменениях бронирования при включённых общих email-уведомлениях.',
+            emailNotificationsDesc: 'Получать письма о создании, подтверждении или отмене заявок.',
+            bookingEmailNotifications: 'Письма о записи в сервис',
+            bookingEmailNotificationsDesc: 'Получать письма об изменениях записи при включённых общих email-уведомлениях.',
             preferredCity: 'Предпочтительный город',
             preferredCategories: 'Предпочтительные категории',
             updateSuccess: 'Настройки успешно обновлены',
@@ -2221,8 +2222,8 @@ export const ruTranslations = {
     },
     notifications: {
         eyebrow: 'Уведомления',
-        title: 'Обновления по броням',
-        description: 'Важные события по броням и аккаунту собраны здесь. Email-уведомления настраиваются в профиле.',
+        title: 'Обновления по заявкам',
+        description: 'События по заявкам, сервисным визитам и аккаунту собраны здесь. Настройки доставки — ниже.',
         unreadCount: '{{count}} непрочитанных',
         unread: 'Новое',
         markRead: 'Отметить прочитанным',

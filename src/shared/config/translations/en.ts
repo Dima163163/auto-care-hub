@@ -72,6 +72,7 @@ export const enTranslations = {
         about: 'About',
         profile: 'Profile',
         myBookings: 'My bookings',
+        myVehicles: 'My vehicles',
         myReviews: 'My reviews',
         favorites: 'Favorites',
         notifications: 'Notifications',
@@ -2049,7 +2050,7 @@ export const enTranslations = {
     },
     profile: {
         title: 'My profile',
-        description: 'View your account details and booking workspace information.',
+        description: 'View your account details and AutoCare Hub workspace settings.',
         clientDescription: 'AutoCare Hub is always free for clients. You pay the selected automotive service directly for completed work.',
         clientFreeBadge: 'Always free for clients',
         vehicles: {
@@ -2092,11 +2093,11 @@ export const enTranslations = {
         createdAt: 'Created at',
         preferences: {
             title: 'Notifications',
-            description: 'Manage how we communicate with you about your bookings.',
+            description: 'Manage how we communicate with you about your requests and service visits.',
             emailNotifications: 'Email Notifications',
-            emailNotificationsDesc: 'Receive emails when your bookings are created, confirmed, or cancelled.',
-            bookingEmailNotifications: 'Booking email updates',
-            bookingEmailNotificationsDesc: 'Receive booking lifecycle emails while general email notifications stay enabled.',
+            emailNotificationsDesc: 'Receive emails when your requests are created, confirmed, or cancelled.',
+            bookingEmailNotifications: 'Service appointment emails',
+            bookingEmailNotificationsDesc: 'Receive service appointment updates while general email notifications stay enabled.',
             preferredCity: 'Preferred city',
             preferredCategories: 'Preferred categories',
             updateSuccess: 'Preferences updated successfully',
@@ -2217,8 +2218,8 @@ export const enTranslations = {
     },
     notifications: {
         eyebrow: 'Notifications',
-        title: 'Booking updates',
-        description: 'Important booking and account events are collected here. Email delivery is still managed from your profile.',
+        title: 'Request updates',
+        description: 'Important request, service visit, and account events are collected here. Delivery settings are below.',
         unreadCount: '{{count}} unread',
         unread: 'Unread',
         markRead: 'Mark as read',

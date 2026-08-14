@@ -31,6 +31,7 @@ export const ROUTES = {
     onboarding: '/onboarding',
 
     profile: '/profile',
+    profileVehicles: '/profile/vehicles',
     profileBookings: '/profile/bookings',
     profileReviews: '/profile/reviews',
 

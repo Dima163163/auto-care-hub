@@ -162,6 +162,12 @@ export const ProfilePage = lazy(() =>
     })),
 )
 
+export const ProfileVehiclesPage = lazy(() =>
+    import('@/pages/profile-vehicles').then((module) => ({
+        default: module.ProfileVehiclesPage,
+    })),
+)
+
 export const ProfileBookingsPage = lazy(() =>
     import('@/pages/profile-bookings').then((module) => ({
         default: module.ProfileBookingsPage,

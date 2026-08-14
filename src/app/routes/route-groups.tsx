@@ -49,6 +49,7 @@ import {
     ProfileBookingsPage,
     ProfilePage,
     ProfileReviewsPage,
+    ProfileVehiclesPage,
     RegisterPage,
     RulesPage,
 } from './lazy-pages'
@@ -109,6 +110,7 @@ export function renderClientRoutes() {
         >
             <Route path={ROUTES.profileBookings} element={<ProfileBookingsPage />} />
             <Route path={ROUTES.profileReviews} element={<ProfileReviewsPage />} />
+            <Route path={ROUTES.profileVehicles} element={<ProfileVehiclesPage />} />
         </Route>
     )
 }

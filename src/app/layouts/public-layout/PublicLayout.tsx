@@ -17,9 +17,14 @@ import { DesktopPublicHeader } from './DesktopPublicHeader'
 export function PublicLayout() {
     const { pathname } = useLocation()
     const { data: user } = useGetMeQuery()
-    const isWorkspaceRoute = Boolean(
-        user && (pathname === ROUTES.profile || pathname === ROUTES.notifications),
-    )
+    const workspacePaths = new Set<string>([
+            ROUTES.profile,
+            ROUTES.profileVehicles,
+            ROUTES.profileBookings,
+            ROUTES.profileReviews,
+            ROUTES.notifications,
+        ])
+    const isWorkspaceRoute = Boolean(user && workspacePaths.has(pathname))
     const workspaceRole: WorkspaceRole = user?.role === 'owner'
         ? 'owner'
         : user?.role === 'super_admin'
