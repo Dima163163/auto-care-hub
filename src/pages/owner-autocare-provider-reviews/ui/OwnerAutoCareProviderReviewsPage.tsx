@@ -1,4 +1,4 @@
-import { ArrowLeft, BarChart3, CarFront, MessageSquare, Star } from 'lucide-react'
+import { ArrowLeft, BarChart3, CarFront, ChevronDown, MessageSquare, Star } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -107,7 +107,7 @@ function ReviewCard({ review, copy, locale }: { review: AutoCareApiReview; copy:
 }
 
 function RatingFilterSelect({ value, onChange, label }: { value: RatingFilter; onChange: (value: RatingFilter) => void; label: string }) {
-    return <label className="relative"><span className="sr-only">{label}</span><select value={value} onChange={(event) => onChange(event.target.value as RatingFilter)} className="select-with-icon h-10 appearance-none rounded-[var(--radius-control)] border border-border bg-background px-3 pr-9 text-sm font-bold"><option value="all">{label}</option>{ratingRows.map((rating) => <option key={rating} value={rating}>{rating} ★</option>)}</select></label>
+    return <label className="relative"><span className="sr-only">{label}</span><select value={value} onChange={(event) => onChange(event.target.value as RatingFilter)} className="select-with-icon h-10 appearance-none rounded-[var(--radius-control)] border border-border bg-background px-3 pr-9 text-sm font-bold"><option value="all">{label}</option>{ratingRows.map((rating) => <option key={rating} value={rating}>{rating} ★</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /></label>
 }
 
 function RatingRow({ rating, count, total }: { rating: number; count: number; total: number }) {
