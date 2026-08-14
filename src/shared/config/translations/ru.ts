@@ -2064,6 +2064,7 @@ export const ruTranslations = {
             general: 'Общее',
             security: 'Безопасность',
             sessions: 'Сессии',
+            account: 'Управление аккаунтом',
         },
         loading: 'Загрузка профиля...',
         failedToLoad: 'Не удалось загрузить профиль.',

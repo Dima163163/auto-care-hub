@@ -82,6 +82,7 @@ export function useProfile() {
         { id: 'general', label: t('profile.tabs.general') },
         { id: 'security', label: t('profile.tabs.security') },
         { id: 'sessions', label: t('profile.tabs.sessions') },
+        { id: 'account', label: t('profile.tabs.account') },
     ]
 
     const currentTabId = tabs.find(t => t.id === activeTab) ? activeTab : 'general'

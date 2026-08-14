@@ -2060,6 +2060,7 @@ export const enTranslations = {
             general: 'General',
             security: 'Security',
             sessions: 'Sessions',
+            account: 'Account management',
         },
         loading: 'Loading profile...',
         failedToLoad: 'Failed to load profile.',

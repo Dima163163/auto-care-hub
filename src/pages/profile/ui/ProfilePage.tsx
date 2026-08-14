@@ -96,7 +96,6 @@ export function ProfilePage() {
                             <div className="grid gap-6">
                                 <GeneralInfoSection user={user} />
                                 {user.role !== 'client' && <ProfilePreferences user={user} />}
-                                <ProfilePrivacy />
                                 {user.role === 'owner' && <StripeConnectCard />}
                             </div>
                         )}
@@ -118,6 +117,10 @@ export function ProfilePage() {
 
                         {activeTab === 'sessions' && (
                             <SessionsList />
+                        )}
+
+                        {activeTab === 'account' && (
+                            <ProfilePrivacy />
                         )}
                     </div>
             </div>
