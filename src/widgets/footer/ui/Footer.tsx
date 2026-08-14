@@ -12,7 +12,7 @@ type FooterProps = { desktopOnly?: boolean; variant?: 'public' | 'operational' }
 export function Footer({ desktopOnly = false, variant = 'public' }: FooterProps) {
     const { t } = useTranslation()
 
-    if (variant === 'operational') return <footer className="mt-auto flex items-center justify-between gap-4 border-t border-border/80 bg-background/75 px-6 py-4 text-xs text-muted-foreground backdrop-blur"><p>{t('workspace.systemStatus')}</p><ThemeSwitcher /></footer>
+    if (variant === 'operational') return <footer className="mt-auto flex items-center justify-between gap-4 border-t border-border bg-card px-6 py-4 text-xs text-muted-foreground"><p>{t('workspace.systemStatus')}</p><ThemeSwitcher /></footer>
 
     return (
         <footer className={`${desktopOnly ? 'hidden xl:block' : ''} relative z-10 mt-auto shrink-0 border-t border-primary-foreground/10 bg-hero-overlay py-9 text-primary-foreground`}>

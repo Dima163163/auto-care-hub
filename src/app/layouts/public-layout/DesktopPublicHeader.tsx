@@ -43,7 +43,7 @@ export function DesktopPublicHeader() {
                             <Heart className="size-7 stroke-[1.7]" />
                         </Link>
                     )}
-                    {isLoading ? <CurrentUserBadge isLoading /> : null}
+                    {isLoading ? <CurrentUserBadge isLoading variant="dark" /> : null}
                     {!isLoading && (isError || !user) ? (
                         <Link
                             to={ROUTES.login}

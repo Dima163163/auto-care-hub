@@ -44,7 +44,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
     ]
 
     return (
-        <header className="sticky top-0 z-50 hidden h-[72px] items-center gap-3 border-b bg-background/95 px-3 backdrop-blur-md md:flex lg:gap-7 lg:px-8">
+        <header className="sticky top-0 z-50 hidden h-[72px] items-center gap-3 border-b border-primary-foreground/10 bg-hero-overlay px-3 text-primary-foreground md:flex lg:gap-7 lg:px-8">
             <Logo />
 
             <nav aria-label={t('navigation.mainNavigation')} className="hidden h-full items-center gap-5 lg:flex">
@@ -53,13 +53,13 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         key={link.to}
                         to={link.to}
                         className={({ isActive }) => `flex h-full items-center border-b-2 px-1 text-[13px] font-semibold transition-colors hover:text-primary ${
-                            isActive ? 'border-primary text-primary' : 'border-transparent text-foreground'
+                            isActive ? 'border-primary text-primary' : 'border-transparent text-primary-foreground/90'
                         }`}
                     >
                         {link.label}
                     </NavLink>
                 ))}
-                <HeaderInfoMenu variant="light" />
+                <HeaderInfoMenu variant="dark" />
             </nav>
 
             <nav aria-label={t('navigation.mainNavigation')} className="flex h-full items-center gap-3 lg:hidden">
@@ -68,7 +68,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         key={link.to}
                         to={link.to}
                         className={({ isActive }) => `${index === 1 ? 'hidden lg:flex' : 'flex'} h-full items-center border-b-2 px-1 text-xs font-semibold transition-colors hover:text-primary ${
-                            isActive ? 'border-primary text-primary' : 'border-transparent text-foreground'
+                            isActive ? 'border-primary text-primary' : 'border-transparent text-primary-foreground/90'
                         }`}
                     >
                         {link.label}
@@ -77,7 +77,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                 <div className="relative flex h-full items-center">
                     <button
                         type="button"
-                        className="flex items-center gap-1 text-xs font-semibold text-foreground transition-colors hover:text-primary"
+                        className="flex items-center gap-1 text-xs font-semibold text-primary-foreground/90 transition-colors hover:text-primary"
                         title={t('common.more')}
                         aria-expanded={isMoreOpen}
                         onClick={() => setIsMoreOpen((value) => !value)}
@@ -102,18 +102,18 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         </div>
                     )}
                 </div>
-                <HeaderInfoMenu variant="light" />
+                <HeaderInfoMenu variant="dark" />
             </nav>
 
             <div className="ml-auto flex items-center gap-1.5 lg:gap-3">
                 <div className="hidden items-center gap-2 border-l pl-5 text-xs font-bold text-muted-foreground xl:flex">
-                    <span className="rounded-md bg-primary/10 px-2 py-1 text-primary">{t(workspaceLabelKeys[role])}</span>
+                    <span className="rounded-md bg-primary-foreground/10 px-2 py-1 text-primary-foreground/85">{t(workspaceLabelKeys[role])}</span>
                 </div>
                 <LanguageSwitcher />
                 <ThemeSwitcher />
                 <Link
                     to={ROUTES.notifications}
-                    className="flex size-10 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted hover:text-primary"
+                    className="flex size-10 items-center justify-center rounded-md text-primary-foreground/85 transition-colors hover:bg-primary-foreground/10 hover:text-primary"
                     aria-label={t('navigation.notifications')}
                 >
                     <Bell className="size-4" />
@@ -128,7 +128,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                         <span className="hidden xl:inline">{t('autocare.ownerProvidersCreate')}</span>
                     </Link>
                 )}
-                {isLoading ? <CurrentUserBadge isLoading /> : user ? <CurrentUserMenu user={user} /> : <CurrentUserBadge isError={isError} />}
+                {isLoading ? <CurrentUserBadge isLoading variant="dark" /> : user ? <CurrentUserMenu user={user} variant="dark" /> : <CurrentUserBadge isError={isError} variant="dark" />}
             </div>
         </header>
     )
