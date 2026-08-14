@@ -1,6 +1,7 @@
 import { AppDataSource } from '../database/data-source.js'
 import {
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
@@ -11,6 +12,8 @@ import {
     AutomotivePriceType,
 } from '../entities/index.js'
 import {
+    AUTOMOTIVE_MOCK_LOCATION_ZONES,
+    AUTOMOTIVE_MOCK_MARKETS,
     AUTOMOTIVE_MOCK_MARKET,
     AUTOMOTIVE_MOCK_PROVIDERS,
     AUTOMOTIVE_MOCK_SERVICES,
@@ -24,14 +27,45 @@ async function seedAutoCareMockData() {
     try {
         await AppDataSource.transaction(async (manager) => {
             const marketRepository = manager.getRepository(AutomotiveMarketEntity)
+            const zoneRepository = manager.getRepository(AutomotiveLocationZoneEntity)
             const definitionRepository = manager.getRepository(AutomotiveServiceDefinitionEntity)
             const providerRepository = manager.getRepository(AutomotiveProviderEntity)
             const locationRepository = manager.getRepository(AutomotiveServiceLocationEntity)
             const offeringRepository = manager.getRepository(AutomotiveServiceOfferingEntity)
             const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
 
-            const existingMarket = await marketRepository.findOneBy({ countryCode: AUTOMOTIVE_MOCK_MARKET.countryCode, cityCode: AUTOMOTIVE_MOCK_MARKET.cityCode })
-            const market = await marketRepository.save(marketRepository.create({ ...existingMarket, ...AUTOMOTIVE_MOCK_MARKET }))
+            const markets = new Map<string, AutomotiveMarketEntity>()
+            for (const marketInput of AUTOMOTIVE_MOCK_MARKETS) {
+                const existingMarket = await marketRepository.findOneBy({ countryCode: marketInput.countryCode, cityCode: marketInput.cityCode })
+                const market = marketRepository.create({ ...existingMarket, ...marketInput, supportedLocales: [...marketInput.supportedLocales] })
+                markets.set(marketInput.cityCode, await marketRepository.save(market))
+            }
+            const zoneIdsByMarket = new Map<string, Map<string, string>>()
+            for (const zoneInput of AUTOMOTIVE_MOCK_LOCATION_ZONES) {
+                const zoneMarket = markets.get(zoneInput.marketCode)
+                if (!zoneMarket) continue
+                const existingZone = await zoneRepository.findOneBy({ marketId: zoneMarket.id, slug: zoneInput.slug })
+                const zone = await zoneRepository.save(zoneRepository.create({
+                    ...existingZone,
+                    marketId: zoneMarket.id,
+                    parentId: null,
+                    slug: zoneInput.slug,
+                    zoneType: zoneInput.zoneType,
+                    names: zoneInput.names,
+                    centerLatitude: zoneInput.centerLatitude,
+                    centerLongitude: zoneInput.centerLongitude,
+                    radiusKm: zoneInput.radiusKm,
+                    imageUrl: zoneInput.imageUrl ?? null,
+                    displayOrder: zoneInput.displayOrder,
+                    active: true,
+                }))
+                const marketZones = zoneIdsByMarket.get(zoneMarket.id) ?? new Map<string, string>()
+                marketZones.set(zone.slug, zone.id)
+                zoneIdsByMarket.set(zoneMarket.id, marketZones)
+            }
+            const market = markets.get(AUTOMOTIVE_MOCK_MARKET.cityCode)
+            if (!market) throw new Error('Primary AutoCare mock market was not seeded.')
+            const marketZones = zoneIdsByMarket.get(market.id) ?? new Map<string, string>()
             const definitions = new Map<string, AutomotiveServiceDefinitionEntity>()
 
             for (const input of AUTOMOTIVE_MOCK_SERVICES) {
@@ -72,6 +106,7 @@ async function seedAutoCareMockData() {
                     ...existingLocation,
                     providerId: provider.id,
                     marketId: market.id,
+                    zoneId: input.zoneSlug ? (marketZones.get(input.zoneSlug) ?? null) : null,
                     address: input.address,
                     hours: input.hours,
                     latitude: input.latitude,

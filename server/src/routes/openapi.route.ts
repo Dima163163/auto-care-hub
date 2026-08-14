@@ -139,6 +139,20 @@ export function getOpenApiDocument() {
             '/v1/markets': {
                 get: { operationId: 'listAutoCareMarkets', security: [], responses: { '200': { description: 'AutoCare launch markets and supported locales.' } } },
             },
+            '/v1/markets/{marketId}/zones': {
+                get: {
+                    operationId: 'listAutoCareLocationZones',
+                    security: [],
+                    parameters: [
+                        { name: 'marketId', in: 'path', required: true, schema: { type: 'string' } },
+                        { name: 'parentId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' } },
+                        { name: 'latitude', in: 'query', required: false, schema: { type: 'number', minimum: -90, maximum: 90 } },
+                        { name: 'longitude', in: 'query', required: false, schema: { type: 'number', minimum: -180, maximum: 180 } },
+                        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 24 } },
+                    ],
+                    responses: { '200': { description: 'Hierarchical districts and service areas for a market, ordered by display order or nearest coordinates.' } },
+                },
+            },
             '/v1/service-definitions': {
                 get: { operationId: 'listAutoCareServiceDefinitions', security: [], responses: { '200': { description: 'Active standardized automotive services.' } } },
             },

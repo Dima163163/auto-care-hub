@@ -1,5 +1,6 @@
 import type {
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
@@ -7,6 +8,7 @@ import type {
 } from '../../entities/index.js'
 import type {
     AutoCareLocationResponse,
+    AutoCareLocationZoneResponse,
     AutoCareMarketResponse,
     AutoCareOfferResponse,
     AutoCareProviderResponse,
@@ -24,6 +26,10 @@ export function toServiceDefinitionResponse(entity: AutomotiveServiceDefinitionE
 
 export function toLocationResponse(entity: AutomotiveServiceLocationEntity): AutoCareLocationResponse {
     return { ...entity }
+}
+
+export function toLocationZoneResponse(entity: AutomotiveLocationZoneEntity, serviceCount: number): AutoCareLocationZoneResponse {
+    return { ...entity, serviceCount }
 }
 
 export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definition?: AutomotiveServiceDefinitionEntity): AutoCareOfferResponse {

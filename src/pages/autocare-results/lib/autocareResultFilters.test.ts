@@ -6,7 +6,7 @@ describe('AutoCare result filters', () => {
     it('restores all supported filters from a shareable URL', () => {
         const filters = getAutoCareResultFilters(new URLSearchParams('service=body-paint&market=ru-moscow&radius=50&sort=rating_desc&minPrice=2000&maxPrice=15000&minRating=4.7&priceType=quote_required&availableToday=true&verifiedOnly=true&warrantyOnly=true&hasBonus=true&inclusion=photo&brand=bmw'))
 
-        expect(filters).toEqual({ serviceId: 'body-paint', marketId: 'ru-moscow', radiusKm: 50, sort: 'rating_desc', minPrice: '2000', maxPrice: '15000', minRating: '4.7', priceType: 'quote_required', availableToday: true, verifiedOnly: true, warrantyOnly: true, hasBonus: true, inclusion: 'photo', brandId: 'bmw' })
+        expect(filters).toEqual({ serviceId: 'body-paint', marketId: 'ru-moscow', zoneId: '', radiusKm: 50, sort: 'rating_desc', minPrice: '2000', maxPrice: '15000', minRating: '4.7', priceType: 'quote_required', availableToday: true, verifiedOnly: true, warrantyOnly: true, hasBonus: true, inclusion: 'photo', brandId: 'bmw', vehicleModel: '', vehicleYear: '' })
     })
 
     it('rejects invalid numeric and enum values', () => {

@@ -963,6 +963,7 @@ export const ruTranslations = {
         nearestBooking: 'Ближайшая запись',
         exploreLocations: 'Исследуйте по локации',
         viewOnMap: 'Смотреть на карте',
+        noLocations: 'Для этого города пока нет опубликованных зон',
         partnerTitle: 'Вы владелец автосервиса?',
         partnerDescription: 'Присоединяйтесь к AutoCare Hub и находите новых клиентов',
         partnerBenefitClients: 'Больше клиентов каждый день',

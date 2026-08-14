@@ -71,12 +71,14 @@ export const routePaths = {
     serviceDiscovery: (params?: {
         service?: string
         market?: string
+        zone?: string
         radius?: string | number
     }) => {
         const searchParams = new URLSearchParams()
 
         if (params?.service?.trim()) searchParams.set('service', params.service.trim())
         if (params?.market?.trim()) searchParams.set('market', params.market.trim())
+        if (params?.zone?.trim()) searchParams.set('zone', params.zone.trim())
         if (params?.radius !== undefined && String(params.radius).trim()) searchParams.set('radius', String(params.radius).trim())
 
         const query = searchParams.toString()

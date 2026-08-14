@@ -8,11 +8,29 @@ export type AutoCareMarketResponse = {
     countryName: string
     cityCode: string
     cityName: string
+    regionCode: string | null
+    regionName: string | null
+    centerLatitude: number | null
+    centerLongitude: number | null
     currencyCode: string
     defaultLocale: string
     supportedLocales: string[]
     timezone: string
     launchReady: boolean
+}
+
+export type AutoCareLocationZoneResponse = {
+    id: string
+    marketId: string
+    parentId: string | null
+    slug: string
+    zoneType: 'district' | 'neighborhood' | 'service_area'
+    names: Record<string, string>
+    centerLatitude: number | null
+    centerLongitude: number | null
+    radiusKm: number | null
+    imageUrl: string | null
+    serviceCount: number
 }
 
 export type AutoCareServiceDefinitionResponse = {
@@ -49,6 +67,7 @@ export type AutoCareProviderResponse = {
 export type AutoCareLocationResponse = {
     id: string
     marketId: string
+    zoneId: string | null
     address: string
     hours: string
     latitude: number | null
@@ -86,6 +105,7 @@ export type AutoCareDiscoveryResponse = {
 export type AutoCareDiscoveryQuery = {
     serviceId?: string
     marketId?: string
+    zoneId?: string
     radiusKm: number
     sort: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     cursor?: string
@@ -186,6 +206,7 @@ export type OwnerAutoCareProviderInput = {
     name: string
     description?: string | null
     marketId: string
+    zoneId?: string | null
     address: string
     hours: string
     yearsActive: number

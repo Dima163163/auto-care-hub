@@ -1,6 +1,6 @@
 # AutoCare Hub — Open Product Decisions
 
-> Updated: 2026-08-12
+> Updated: 2026-08-14
 >
 > Rule: decisions affecting money, privacy, ranking, legal behavior, schema or
 > destructive migration must be approved explicitly.
@@ -18,6 +18,10 @@ Decision:
 - country, city, location and user interface locale remain separate concepts;
 - local currency/display rules resolve from the service location and user
   preference.
+- the location product is a full hierarchy (country → region → city →
+  district/service area), backed by market and zone entities rather than a
+  fixed list of launch-city labels; new markets and localized zones are added
+  through data and moderation workflows.
 
 Need:
 

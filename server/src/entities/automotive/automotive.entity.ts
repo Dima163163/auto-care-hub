@@ -27,6 +27,12 @@ export enum AutomotiveReviewStatus {
     Rejected = 'rejected',
 }
 
+export enum AutomotiveLocationZoneType {
+    District = 'district',
+    Neighborhood = 'neighborhood',
+    ServiceArea = 'service_area',
+}
+
 @Entity('autocare_markets')
 @Index(['countryCode', 'cityCode'], { unique: true })
 export class AutomotiveMarketEntity {
@@ -35,11 +41,33 @@ export class AutomotiveMarketEntity {
     @Column({ type: 'text' }) countryName!: string
     @Column({ type: 'text' }) cityCode!: string
     @Column({ type: 'text' }) cityName!: string
+    @Column({ type: 'text', nullable: true }) regionCode!: string | null
+    @Column({ type: 'text', nullable: true }) regionName!: string | null
+    @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) centerLatitude!: number | null
+    @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) centerLongitude!: number | null
     @Column({ type: 'text' }) currencyCode!: string
     @Column({ type: 'text' }) defaultLocale!: string
     @Column('text', { array: true, default: () => "'{}'" }) supportedLocales!: string[]
     @Column({ type: 'text' }) timezone!: string
     @Column({ type: 'boolean', default: false }) launchReady!: boolean
+}
+
+@Entity('autocare_location_zones')
+@Index(['marketId', 'parentId', 'active'])
+@Index(['marketId', 'slug'], { unique: true })
+export class AutomotiveLocationZoneEntity {
+    @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'uuid' }) marketId!: string
+    @Column({ type: 'uuid', nullable: true }) parentId!: string | null
+    @Column({ type: 'text' }) slug!: string
+    @Column({ type: 'enum', enum: AutomotiveLocationZoneType, enumName: 'autocare_location_zone_type' }) zoneType!: AutomotiveLocationZoneType
+    @Column({ type: 'jsonb', default: () => "'{}'" }) names!: Record<string, string>
+    @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) centerLatitude!: number | null
+    @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) centerLongitude!: number | null
+    @Column({ type: 'numeric', precision: 7, scale: 2, nullable: true }) radiusKm!: number | null
+    @Column({ type: 'text', nullable: true }) imageUrl!: string | null
+    @Column({ type: 'integer', default: 0 }) displayOrder!: number
+    @Column({ type: 'boolean', default: true }) active!: boolean
 }
 
 @Entity('autocare_service_definitions')
@@ -84,6 +112,7 @@ export class AutomotiveServiceLocationEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) providerId!: string
     @Column({ type: 'uuid' }) marketId!: string
+    @Column({ type: 'uuid', nullable: true }) zoneId!: string | null
     @Column({ type: 'text' }) address!: string
     @Column({ type: 'text' }) hours!: string
     @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) latitude!: number | null

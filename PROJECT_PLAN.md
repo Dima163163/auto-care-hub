@@ -147,7 +147,7 @@ work.
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. | Add provider memberships/locations, offer editing, calendar, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
-| Backend | `/api/v1` markets, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request/chat events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, geospatial indexes, provider memberships and authorization/integration tests. |
+| Backend | `/api/v1` markets, hierarchical location zones, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers; request/chat events enqueue notifications through the outbox. | Add timezone-aware schedules, reminder delivery, PostGIS/geospatial indexes, provider memberships and authorization/integration tests. |
 | Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
@@ -499,6 +499,11 @@ Goal: build the new automotive domain beside reusable platform services.
   attachment and two-sided-confirmation contracts.
 - [x] Create the first isolated TypeORM migration and entities for markets,
   service definitions, providers, locations and service offerings.
+- [x] Replace the temporary city/area fixture with a full location model:
+  country and region metadata on markets, city centers, hierarchical districts
+  and service areas with localized names, images, radius and active-service
+  counts. Service locations carry a zone reference and public APIs expose
+  market zones, parent traversal and nearest-zone ordering by coordinates.
 - [x] Add isolated service-request, message and private-attachment persistence
   with request status and two-sided confirmation timestamps.
 - [~] Extend the new TypeORM domain with:
@@ -509,7 +514,10 @@ Goal: build the new automotive domain beside reusable platform services.
   - provider vehicle compatibility rules;
   - service offerings and vehicle rules;
   - schedules and location exceptions.
-- [ ] Add PostGIS or an approved geospatial alternative with proper indexes.
+- [~] Add PostGIS or an approved geospatial alternative with proper indexes;
+  the current migration stores normalized coordinates and zone radii, while
+  the production cutover must add geography columns/GiST indexes and SQL-side
+  distance filtering before the pilot.
 - [~] Add service/repository layers and object-level authorization guards.
 - [x] Add seed data for realistic services, providers, locations and offers.
 - [ ] Add negative authorization, constraint and migration tests.

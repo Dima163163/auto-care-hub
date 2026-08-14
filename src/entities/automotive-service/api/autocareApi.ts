@@ -7,11 +7,29 @@ export type AutoCareApiMarket = {
     countryName: string
     cityCode: string
     cityName: string
+    regionCode: string | null
+    regionName: string | null
+    centerLatitude: number | null
+    centerLongitude: number | null
     currencyCode: string
     defaultLocale: string
     supportedLocales: string[]
     timezone: string
     launchReady: boolean
+}
+
+export type AutoCareApiLocationZone = {
+    id: string
+    marketId: string
+    parentId: string | null
+    slug: string
+    zoneType: 'district' | 'neighborhood' | 'service_area'
+    names: Record<string, string>
+    centerLatitude: number | null
+    centerLongitude: number | null
+    radiusKm: number | null
+    imageUrl: string | null
+    serviceCount: number
 }
 
 export type AutoCareApiServiceDefinition = {
@@ -67,6 +85,7 @@ export type AutoCareApiProvider = {
     location: {
         id: string
         marketId: string
+        zoneId?: string | null
         address: string
         hours: string
         latitude: number | null
@@ -314,6 +333,7 @@ export type CreateOwnerAutoCareProviderInput = {
 export type AutoCareDiscoveryQuery = {
     serviceId?: string
     marketId?: string
+    zoneId?: string
     radiusKm?: number
     sort?: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     limit?: number
@@ -334,6 +354,10 @@ export const autoCareApi = baseApi.injectEndpoints({
         getAutoCareMarkets: build.query<AutoCareApiMarket[], void>({
             query: () => '/v1/markets',
             providesTags: [{ type: 'AutoCareMarket', id: 'LIST' }],
+        }),
+        getAutoCareLocationZones: build.query<AutoCareApiLocationZone[], { marketId: string; parentId?: string; limit?: number }>({
+            query: ({ marketId, ...params }) => ({ url: `/v1/markets/${encodeURIComponent(marketId)}/zones`, params }),
+            providesTags: (_result, _error, { marketId }) => [{ type: 'AutoCareMarket', id: `ZONES_${marketId}` }],
         }),
         getAutoCareServiceDefinitions: build.query<AutoCareApiServiceDefinition[], void>({
             query: () => '/v1/service-definitions',
@@ -531,6 +555,7 @@ export const autoCareApi = baseApi.injectEndpoints({
 export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
+    useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
     useUpdateOwnerAutoCareOfferMutation,
     useGetOwnerAutoCareProviderReviewsQuery,

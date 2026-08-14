@@ -4,6 +4,7 @@ export type AutoCareResultPriceType = 'fixed' | 'from' | 'range' | 'quote_requir
 export type AutoCareResultFilters = {
     serviceId: string
     marketId: string
+    zoneId: string
     radiusKm: number
     sort: AutoCareResultSort
     minPrice: string
@@ -37,6 +38,7 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
     return {
         serviceId: params.get('service') ?? 'oil-change',
         marketId: params.get('market') ?? 'ru-moscow',
+        zoneId: params.get('zone') ?? '',
         radiusKm: Number.isFinite(radiusValue) && radiusValue > 0 ? radiusValue : 25,
         sort: sort && SORTS.has(sort as AutoCareResultSort) ? sort as AutoCareResultSort : 'recommended',
         minPrice: positiveNumber(params.get('minPrice'), ''),
@@ -54,11 +56,11 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
     }
 }
 
-export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId' | 'vehicleModel' | 'vehicleYear'>>
+export type AutoCareResultFilterPatch = Partial<Pick<AutoCareResultFilters, 'serviceId' | 'marketId' | 'zoneId' | 'radiusKm' | 'sort' | 'minPrice' | 'maxPrice' | 'minRating' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion' | 'brandId' | 'vehicleModel' | 'vehicleYear'>>
 
 export function writeAutoCareResultFilters(params: URLSearchParams, patch: AutoCareResultFilterPatch) {
     const next = new URLSearchParams(params)
-    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId', 'vehicleModel', 'vehicleYear']
+    const keys: Array<keyof AutoCareResultFilterPatch> = ['serviceId', 'marketId', 'zoneId', 'radiusKm', 'sort', 'minPrice', 'maxPrice', 'minRating', 'priceType', 'availableToday', 'verifiedOnly', 'warrantyOnly', 'hasBonus', 'inclusion', 'brandId', 'vehicleModel', 'vehicleYear']
 
     keys.forEach((key) => {
         const value = patch[key]

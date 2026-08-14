@@ -2,7 +2,7 @@ schema_version: 1
 document:
   name: AutoCare Hub target domain model
   status: proposed
-  updated: 2026-08-12
+  updated: 2026-08-14
   source_of_truth:
     - ../../ARCHITECTURE.md
     - ../../PROJECT_PLAN.md
@@ -60,6 +60,8 @@ contexts:
     owns:
       - ServiceProvider
       - ServiceLocation
+      - AutomotiveMarket
+      - AutomotiveLocationZone
       - ProviderVerification
       - LocationSchedule
       - ScheduleException
@@ -67,6 +69,25 @@ contexts:
     depends_on:
       - identity_access
     security_boundary: provider_membership_and_location_scope
+
+  location_intelligence:
+    status: active
+    implementation_status: hierarchical_market_zone_api_added
+    owns:
+      - AutomotiveMarket
+      - AutomotiveLocationZone
+      - ServiceLocationZoneLink
+    hierarchy: country_region_city_zone
+    endpoint: GET /api/v1/markets/:marketId/zones
+    capabilities:
+      - localized_zone_names_and_images
+      - parent_zone_traversal
+      - nearest_zone_ordering_by_coordinates
+      - active_provider_location_counts
+    depends_on:
+      - provider_network
+      - discovery
+    security_boundary: public_read_provider_scoped_write
 
   vehicles:
     status: new

@@ -109,12 +109,40 @@ const autoCareMarket = {
     countryName: 'Россия',
     cityCode: 'moscow',
     cityName: 'Москва',
+    regionCode: 'moscow',
+    regionName: 'Москва',
+    centerLatitude: 55.7558,
+    centerLongitude: 37.6173,
     currencyCode: 'RUB',
     defaultLocale: 'ru',
     supportedLocales: ['ru', 'en', 'es', 'ro'],
     timezone: 'Europe/Moscow',
     launchReady: true,
 }
+
+const autoCareMarkets = [
+    autoCareMarket,
+    { id: 'market-samara', countryCode: 'RU', countryName: 'Россия', cityCode: 'samara', cityName: 'Самара', regionCode: 'samara-oblast', regionName: 'Самарская область', centerLatitude: 53.1959, centerLongitude: 50.1002, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Samara', launchReady: true },
+    { id: 'market-saint-petersburg', countryCode: 'RU', countryName: 'Россия', cityCode: 'saint-petersburg', cityName: 'Санкт-Петербург', regionCode: 'leningrad-oblast', regionName: 'Ленинградская область', centerLatitude: 59.9343, centerLongitude: 30.3351, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true },
+    { id: 'market-kazan', countryCode: 'RU', countryName: 'Россия', cityCode: 'kazan', cityName: 'Казань', regionCode: 'tatarstan', regionName: 'Республика Татарстан', centerLatitude: 55.7879, centerLongitude: 49.1233, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'en'], timezone: 'Europe/Moscow', launchReady: true },
+    { id: 'market-madrid', countryCode: 'ES', countryName: 'Испания', cityCode: 'madrid', cityName: 'Мадрид', regionCode: 'madrid', regionName: 'Мадрид', centerLatitude: 40.4168, centerLongitude: -3.7038, currencyCode: 'EUR', defaultLocale: 'es', supportedLocales: ['es', 'en', 'ru'], timezone: 'Europe/Madrid', launchReady: true },
+    { id: 'market-barcelona', countryCode: 'ES', countryName: 'Испания', cityCode: 'barcelona', cityName: 'Барселона', regionCode: 'catalonia', regionName: 'Каталония', centerLatitude: 41.3874, centerLongitude: 2.1686, currencyCode: 'EUR', defaultLocale: 'es', supportedLocales: ['es', 'en', 'ru'], timezone: 'Europe/Madrid', launchReady: true },
+    { id: 'market-chisinau', countryCode: 'MD', countryName: 'Молдова', cityCode: 'chisinau', cityName: 'Кишинёв', regionCode: 'chisinau', regionName: 'Муниципий Кишинёв', centerLatitude: 47.0105, centerLongitude: 28.8638, currencyCode: 'MDL', defaultLocale: 'ro', supportedLocales: ['ro', 'ru', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+    { id: 'market-tiraspol', countryCode: 'MD', countryName: 'Молдова / Приднестровье', cityCode: 'tiraspol', cityName: 'Тирасполь', regionCode: 'transnistria', regionName: 'Приднестровье', centerLatitude: 46.8403, centerLongitude: 29.6433, currencyCode: 'RUB', defaultLocale: 'ru', supportedLocales: ['ru', 'ro', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
+]
+
+const autoCareLocationZones = [
+    { id: 'zone-moscow-central', marketId: autoCareMarket.id, parentId: null, slug: 'central', zoneType: 'district', names: { ru: 'Центр Москвы', en: 'Moscow centre' }, centerLatitude: 55.7558, centerLongitude: 37.6173, radiusKm: 5, imageUrl: '/images/autocare/locations/center.webp', serviceCount: 1248 },
+    { id: 'zone-moscow-north', marketId: autoCareMarket.id, parentId: null, slug: 'north', zoneType: 'district', names: { ru: 'Северо-Запад', en: 'North-West' }, centerLatitude: 55.7908, centerLongitude: 37.6173, radiusKm: 6, imageUrl: '/images/autocare/locations/north-west.webp', serviceCount: 892 },
+    { id: 'zone-moscow-south', marketId: autoCareMarket.id, parentId: null, slug: 'south', zoneType: 'district', names: { ru: 'Юго-Запад', en: 'South-West' }, centerLatitude: 55.7208, centerLongitude: 37.6173, radiusKm: 6, imageUrl: '/images/autocare/locations/south-west.webp', serviceCount: 756 },
+    { id: 'zone-moscow-east', marketId: autoCareMarket.id, parentId: null, slug: 'east', zoneType: 'service_area', names: { ru: 'Восток Москвы', en: 'East Moscow' }, centerLatitude: 55.7558, centerLongitude: 37.6673, radiusKm: 8, imageUrl: '/images/autocare/locations/east.webp', serviceCount: 645 },
+    ...autoCareMarkets.slice(1).flatMap((market) => [
+        { id: `${market.id}-central`, marketId: market.id, parentId: null, slug: 'central', zoneType: 'district', names: { ru: `Центр ${market.cityName}`, en: `${market.cityName} centre` }, centerLatitude: market.centerLatitude, centerLongitude: market.centerLongitude, radiusKm: 5, imageUrl: null, serviceCount: 0 },
+        { id: `${market.id}-north`, marketId: market.id, parentId: null, slug: 'north', zoneType: 'district', names: { ru: 'Северный район', en: 'North district' }, centerLatitude: market.centerLatitude + 0.035, centerLongitude: market.centerLongitude, radiusKm: 6, imageUrl: null, serviceCount: 0 },
+        { id: `${market.id}-south`, marketId: market.id, parentId: null, slug: 'south', zoneType: 'district', names: { ru: 'Южный район', en: 'South district' }, centerLatitude: market.centerLatitude - 0.035, centerLongitude: market.centerLongitude, radiusKm: 6, imageUrl: null, serviceCount: 0 },
+        { id: `${market.id}-east`, marketId: market.id, parentId: null, slug: 'east', zoneType: 'service_area', names: { ru: 'Восточная агломерация', en: 'East service area' }, centerLatitude: market.centerLatitude, centerLongitude: market.centerLongitude + 0.05, radiusKm: 8, imageUrl: null, serviceCount: 0 },
+    ]),
+]
 
 const autoCareDefinitions = automotiveServices.map((service) => ({
     id: `definition-${service.id}`,
@@ -1824,7 +1852,8 @@ export const handlers = [
         })
     }),
 
-    http.get('/api/v1/markets', () => HttpResponse.json([autoCareMarket])),
+    http.get('/api/v1/markets', () => HttpResponse.json(autoCareMarkets)),
+    http.get('/api/v1/markets/:marketId/zones', ({ params }) => HttpResponse.json(autoCareLocationZones.filter((zone) => zone.marketId === params.marketId))),
 
     http.get('/api/v1/service-definitions', () => HttpResponse.json(autoCareDefinitions)),
 

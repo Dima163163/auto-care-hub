@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const autoCareDiscoveryQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
     marketId: z.string().trim().min(1).max(120).optional(),
+    zoneId: z.string().uuid().optional(),
     radiusKm: z.coerce.number().finite().positive().max(500).default(25),
     sort: z.enum(['recommended', 'price_asc', 'rating_desc', 'distance_asc']).default('recommended'),
     cursor: z.string().trim().max(2_048).optional(),
@@ -21,6 +22,19 @@ export const autoCareDiscoveryQuerySchema = z.object({
     if (value.minPrice !== undefined && value.maxPrice !== undefined && value.minPrice > value.maxPrice) {
         context.addIssue({ code: 'custom', path: ['minPrice'], message: 'minPrice must not exceed maxPrice' })
     }
+})
+
+export const autoCareMarketParamsSchema = z.object({
+    marketId: z.string().trim().min(1).max(120),
+})
+
+export const autoCareLocationZonesQuerySchema = z.object({
+    parentId: z.string().uuid().optional(),
+    latitude: z.coerce.number().finite().min(-90).max(90).optional(),
+    longitude: z.coerce.number().finite().min(-180).max(180).optional(),
+    limit: z.coerce.number().int().positive().max(100).default(24),
+}).superRefine((value, context) => {
+    if ((value.latitude === undefined) !== (value.longitude === undefined)) context.addIssue({ code: 'custom', path: ['latitude'], message: 'latitude and longitude must be provided together' })
 })
 
 export const autoCareProviderParamsSchema = z.object({
@@ -176,6 +190,7 @@ export const ownerAutoCareProviderSchema = z.object({
     name: z.string().trim().min(2).max(160),
     description: z.string().trim().max(5_000).nullable().optional(),
     marketId: z.string().uuid(),
+    zoneId: z.string().uuid().nullable().optional(),
     address: z.string().trim().min(2).max(240),
     hours: z.string().trim().min(2).max(120),
     yearsActive: z.coerce.number().int().min(0).max(150),

@@ -959,6 +959,7 @@ export const enTranslations = {
         nearestBooking: 'Nearest booking',
         exploreLocations: 'Explore by location',
         viewOnMap: 'View on map',
+        noLocations: 'No published service areas for this city yet',
         partnerTitle: 'Do you own an auto service?',
         partnerDescription: 'Join AutoCare Hub and find new customers',
         partnerBenefitClients: 'More customers every day',

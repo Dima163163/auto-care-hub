@@ -31,6 +31,7 @@ import { SecurityMitigationEntity } from './security-mitigation/security-mitigat
 import { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 import {
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveReviewEntity,
     AutomotiveReviewPromoEntity,
@@ -79,6 +80,7 @@ export const entities = [
     SecurityMitigationEntity,
     CabinetImageManifestEntity,
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveServiceDefinitionEntity,
     AutomotiveProviderEntity,
     AutomotiveReviewEntity,
@@ -167,6 +169,8 @@ export {
 export { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 export {
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
+    AutomotiveLocationZoneType,
     AutomotivePriceType,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,

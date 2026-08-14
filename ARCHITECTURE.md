@@ -204,6 +204,28 @@ Responsibilities:
 `ServiceProvider` represents the business/brand. `ServiceLocation` represents
 the physical place used for search, map distance, schedules and bookings.
 
+### 4.3.1 Location intelligence
+
+Locations are a first-class hierarchy rather than a hard-coded city list:
+
+```text
+Country
+  └─ Region / administrative area (market metadata)
+       └─ City (AutomotiveMarket)
+            └─ District / neighborhood / service area (LocationZone)
+                 └─ ServiceLocation → ServiceProvider
+```
+
+`AutomotiveMarket` stores country, region, city, locale/currency/timezone and
+city-center coordinates. `AutomotiveLocationZone` stores localized names,
+parent zone, zone type, center, radius, image and display order. A physical
+service location references both its city market and its zone. Public clients
+use `GET /api/v1/markets/:marketId/zones` for the same location cards and
+discovery links; optional coordinates order the zones by proximity. Counts are
+computed from active provider locations, never copied into frontend fixtures.
+This keeps new cities and languages data-driven and gives web and future iOS /
+Android clients one contract.
+
 ### 4.4 Vehicles
 
 Responsibilities:
@@ -372,6 +394,7 @@ specific permission; knowing a provider/location UUID is never sufficient.
 
 - `provider_id`, name, description, address components;
 - latitude/longitude/geography point and timezone;
+- market and optional location-zone IDs used for localized area discovery;
 - public contacts, facilities, policies and verification state;
 - active/suspended status;
 - aggregate rating fields as cached projections only.
@@ -707,6 +730,8 @@ Clients do not branch on translated message text.
 GET    /api/v1/catalog/categories
 GET    /api/v1/catalog/services
 GET    /api/v1/vehicle-catalog?brandId={brandId}
+GET    /api/v1/markets
+GET    /api/v1/markets/:marketId/zones?parentId={zoneId}&latitude={lat}&longitude={lng}
 
 GET    /api/v1/search/offerings
 GET    /api/v1/providers/:providerId

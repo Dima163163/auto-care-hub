@@ -24,6 +24,7 @@ export function AutoCareResultsPage() {
     const { data, isLoading, isError } = useGetAutoCareDiscoveryQuery({
         serviceId: filters.serviceId || undefined,
         marketId: filters.marketId,
+        zoneId: filters.zoneId || undefined,
         radiusKm: filters.radiusKm,
         sort: filters.sort,
         minRating: filters.minRating ? Number(filters.minRating) : undefined,
@@ -77,6 +78,7 @@ export function AutoCareResultsPage() {
         hasBonus: false,
         inclusion: '',
         brandId: '',
+        zoneId: '',
         vehicleModel: '',
         vehicleYear: '',
     })

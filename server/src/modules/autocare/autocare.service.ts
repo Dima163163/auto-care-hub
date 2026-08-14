@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto'
-import { In } from 'typeorm'
+import { In, IsNull } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
@@ -21,7 +22,7 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
-import { toDiscoveryResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
+import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
@@ -106,6 +107,33 @@ export async function getAutoCareMarkets() {
     return (await AppDataSource.getRepository(AutomotiveMarketEntity).find({ order: { countryName: 'ASC', cityName: 'ASC' } })).map(toMarketResponse)
 }
 
+export async function getAutoCareLocationZones(marketValue: string, parentId?: string, coordinates?: { latitude: number; longitude: number }, limit = 24) {
+    const market = await findMarket(marketValue)
+    if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+
+    const zoneRepository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
+    const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
+    const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
+    const zones = await zoneRepository.find({
+        where: { marketId: market.id, parentId: parentId ?? IsNull(), active: true },
+        order: { displayOrder: 'ASC', slug: 'ASC' },
+        take: coordinates ? undefined : limit,
+    })
+    if (zones.length === 0) return []
+
+    const locations = await locationRepository.find({ where: { marketId: market.id } })
+    const providers = await providerRepository.find({ where: { status: AutomotiveProviderStatus.Active } })
+    const activeProviderIds = new Set(providers.map((provider) => provider.id))
+    const counts = new Map<string, number>()
+    for (const location of locations) {
+        if (location.zoneId && activeProviderIds.has(location.providerId)) counts.set(location.zoneId, (counts.get(location.zoneId) ?? 0) + 1)
+    }
+    const orderedZones = coordinates
+        ? zones.sort((left, right) => getDistanceKm(left.centerLatitude, left.centerLongitude, coordinates.latitude, coordinates.longitude) - getDistanceKm(right.centerLatitude, right.centerLongitude, coordinates.latitude, coordinates.longitude))
+        : zones
+    return orderedZones.slice(0, limit).map((zone) => toLocationZoneResponse(zone, counts.get(zone.id) ?? 0))
+}
+
 export async function getAutoCareServiceDefinitions() {
     return (await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })).map(toServiceDefinitionResponse)
 }
@@ -142,7 +170,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         : (await definitionRepository.find({ where: { active: true }, take: 1 }))[0]
     if (!definition) return { items: [], nextCursor: null }
     const market = input.marketId ? await findMarket(input.marketId) : null
-    const locations = await locationRepository.find({ where: market ? { marketId: market.id } : undefined, order: { id: 'ASC' } })
+    const locations = await locationRepository.find({ where: market ? { marketId: market.id, ...(input.zoneId ? { zoneId: input.zoneId } : {}) } : undefined, order: { id: 'ASC' } })
     const locationIds = locations.map((location) => location.id)
     if (locationIds.length === 0) return { items: [], nextCursor: null }
     const offers = await offerRepository.find({ where: { definitionId: definition.id, active: true } })
@@ -153,7 +181,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const provider = providerById.get(location.providerId)
         const offer = offerByLocation.get(location.id)
         if (!provider || !offer) return []
-        const distanceKm = getDistanceKm(location.latitude, location.longitude)
+        const distanceKm = getDistanceKm(location.latitude, location.longitude, Number(market?.centerLatitude ?? 55.7558), Number(market?.centerLongitude ?? 37.6173))
         const price = offer.priceFromMinor / 100
         const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
         const matchesRating = input.minRating === undefined || Number(provider.rating) >= input.minRating
@@ -411,6 +439,10 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
     assertOwner(owner)
     const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: input.marketId })
     if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+    const zone = input.zoneId
+        ? await AppDataSource.getRepository(AutomotiveLocationZoneEntity).findOneBy({ id: input.zoneId, marketId: market.id, active: true })
+        : null
+    if (input.zoneId && !zone) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'The selected service zone does not belong to this market.' })
 
     return AppDataSource.transaction(async (manager) => {
         const provider = await manager.getRepository(AutomotiveProviderEntity).save(manager.getRepository(AutomotiveProviderEntity).create({
@@ -429,6 +461,7 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
         const location = await manager.getRepository(AutomotiveServiceLocationEntity).save(manager.getRepository(AutomotiveServiceLocationEntity).create({
             providerId: provider.id,
             marketId: market.id,
+            zoneId: zone?.id ?? null,
             address: input.address,
             hours: input.hours,
             latitude: null,

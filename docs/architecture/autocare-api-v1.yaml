@@ -1,6 +1,6 @@
 schema_version: 1
 document:
-  name: AutoCare Hub discovery and service-request API slice
+  name: AutoCare Hub discovery, location and service-request API
   status: proposed
   source_of_truth:
     - ../../docs/API_CONTRACT.md
@@ -10,7 +10,13 @@ resources:
   markets:
     read: public
     route: /api/v1/markets
-    fields: [countryCode, cityCode, currencyCode, timezone, supportedLocales]
+    fields: [countryCode, countryName, regionCode, regionName, cityCode, cityName, centerLatitude, centerLongitude, currencyCode, timezone, supportedLocales]
+  location_zones:
+    read: public
+    route: /api/v1/markets/{marketId}/zones
+    query: [parentId, latitude, longitude, limit]
+    fields: [id, marketId, parentId, slug, zoneType, names, centerLatitude, centerLongitude, radiusKm, imageUrl, serviceCount]
+    ordering: display_order_or_nearest_coordinates
   service_definitions:
     read: public
     route: /api/v1/service-definitions
@@ -20,7 +26,7 @@ resources:
     route: /api/v1/vehicle-catalog
     query: [brandId]
     fields: [id, labels, models, yearsFrom, yearsTo, engines]
-    source: normalized MVP catalog aligned with the official NHTSA vPIC schema; production importer pending
+    source: normalized catalog aligned with the official NHTSA vPIC schema; production importer and refresh jobs are versioned
   provider_discovery:
     read: public
     route: /api/v1/discovery/providers
@@ -66,7 +72,7 @@ resources:
 security_invariants:
   - locale_currency_and_market_never_grant_authorization
   - attachments_are_private_to_request_participants
-  - repair_payment_is_direct_to_provider_in_mvp
+  - repair_payment_is_direct_to_provider
   - provider_subscription_is_separate_from_customer_service_request
   - all_mutating_requests_support_csrf_and_idempotency_where_retried
   - generated_provider_images_are_optional_and_missing_assets_resolve_to_a_placeholder
