@@ -27,6 +27,16 @@ export const autoCareProviderParamsSchema = z.object({
     providerId: z.string().uuid(),
 })
 
+export const autoCareOfferParamsSchema = z.object({
+    providerId: z.string().uuid(),
+    offerId: z.string().uuid(),
+})
+
+export const updateAutoCareOfferSchema = z.object({
+    description: z.string().trim().max(2_000).nullable(),
+    priceFromMinor: z.number().int().nonnegative().max(100_000_000_00),
+})
+
 export const autoCareProviderOffersQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
 })

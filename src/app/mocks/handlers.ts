@@ -166,6 +166,7 @@ function toAutoCareOffer(providerId: string, serviceId: string, price: number, p
         serviceDefinitionId: service?.id ?? `definition-${serviceId}`,
         serviceSlug: service?.slug ?? serviceId,
         serviceLabels: service?.labels ?? {},
+        description: service?.labels.ru ? `Работы по услуге «${service.labels.ru}» с предварительной оценкой и фотоотчётом.` : null,
         priceFromMinor: price * 100,
         priceToMinor: priceType === 'range' ? Math.round(price * 1.2 * 100) : null,
         currencyCode: 'RUB',
@@ -230,9 +231,22 @@ type MockAutoCareServiceRequest = {
     definitionId: string
     serviceSlug: string
     serviceLabels: Record<string, string>
+    serviceDescription?: string | null
     offeringId: string | null
     priceFromMinor: number | null
     currencyCode: string | null
+    offeringSnapshot?: {
+        serviceSlug: string
+        serviceLabels: Record<string, string>
+        description: string | null
+        priceFromMinor: number
+        priceToMinor: number | null
+        currencyCode: string
+        durationMinutes: number
+        inclusions: string[]
+        warrantyText: string | null
+        priceType: string
+    } | null
     preferredAt: string | null
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
@@ -1807,6 +1821,7 @@ export const handlers = [
         const source = provider ? providerPreviews.find((item) => item.id === provider.id.replace('api-', '')) : undefined
         const service = automotiveServices.find((item) => body.offeringId?.endsWith(`-${item.id}`)) ?? automotiveServices[0]
         const definition = autoCareDefinitions.find((item) => item.slug === service?.id) ?? autoCareDefinitions[0]
+        const offer = provider?.offers?.find((item) => item.id === body.offeringId)
         if (!provider || !body.locationId || !body.offeringId || !body.preferredAt || !body.contactSnapshot || !definition) {
             return HttpResponse.json({ message: 'Invalid service request.' }, { status: 400 })
         }
@@ -1820,9 +1835,22 @@ export const handlers = [
             definitionId: definition.id,
             serviceSlug: definition.slug,
             serviceLabels: definition.labels,
+            serviceDescription: offer?.description ?? null,
             offeringId: body.offeringId,
-            priceFromMinor: source?.price ? source.price * 100 : null,
-            currencyCode: 'RUB',
+            priceFromMinor: offer?.priceFromMinor ?? (source?.price ? source.price * 100 : null),
+            currencyCode: offer?.currencyCode ?? 'RUB',
+            offeringSnapshot: offer ? {
+                serviceSlug: offer.serviceSlug ?? definition.slug,
+                serviceLabels: offer.serviceLabels ?? definition.labels,
+                description: offer.description ?? null,
+                priceFromMinor: offer.priceFromMinor,
+                priceToMinor: offer.priceToMinor,
+                currencyCode: offer.currencyCode,
+                durationMinutes: offer.durationMinutes,
+                inclusions: offer.inclusions,
+                warrantyText: offer.warrantyText,
+                priceType: offer.priceType ?? definition.priceType,
+            } : null,
             preferredAt: body.preferredAt,
             vehicleSnapshot: body.vehicleSnapshot ?? null,
             contactSnapshot: body.contactSnapshot,
@@ -1985,6 +2013,25 @@ export const handlers = [
         if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
 
         return HttpResponse.json(ownerAutoCareProviders)
+    }),
+
+    http.patch('/api/owner/autocare-providers/:providerId/offers/:offerId', async ({ params, request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        const provider = ownerAutoCareProviders.find((item) => item.id === params.providerId)
+        const offer = provider?.offers?.find((item) => item.id === params.offerId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can edit automotive service offers.' }, { status: 403 })
+        if (!provider || !offer) return HttpResponse.json({ message: 'Automotive service offer not found.' }, { status: 404 })
+
+        const body = await request.json() as { description?: unknown; priceFromMinor?: unknown }
+        if ((body.description !== null && (typeof body.description !== 'string' || body.description.length > 2_000)) || typeof body.priceFromMinor !== 'number' || !Number.isInteger(body.priceFromMinor) || body.priceFromMinor < 0 || body.priceFromMinor > 10_000_000_000) {
+            return HttpResponse.json({ message: 'Invalid automotive service offer.' }, { status: 400 })
+        }
+
+        offer.description = typeof body.description === 'string' ? body.description.trim() || null : null
+        offer.priceFromMinor = body.priceFromMinor
+        if (offer.priceToMinor !== null && offer.priceToMinor < offer.priceFromMinor) offer.priceToMinor = offer.priceFromMinor
+        return HttpResponse.json(offer)
     }),
 
     http.get('/api/owner/autocare-providers/:providerId/reviews', ({ params }) => {

@@ -96,6 +96,7 @@ export class AutomotiveServiceOfferingEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) locationId!: string
     @Column({ type: 'uuid' }) definitionId!: string
+    @Column({ type: 'text', nullable: true }) description!: string | null
     @Column({ type: 'integer' }) priceFromMinor!: number
     @Column({ type: 'integer', nullable: true }) priceToMinor!: number | null
     @Column({ type: 'text' }) currencyCode!: string

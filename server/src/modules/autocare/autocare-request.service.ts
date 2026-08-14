@@ -14,6 +14,7 @@ import {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
+import type { AutomotiveOfferingSnapshot } from '../../entities/automotive/service-request.entity.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
@@ -74,6 +75,21 @@ function requestIdempotencyConflict(): never {
     })
 }
 
+function createOfferingSnapshot(definition: AutomotiveServiceDefinitionEntity, offering: AutomotiveServiceOfferingEntity): AutomotiveOfferingSnapshot {
+    return {
+        serviceSlug: definition.slug,
+        serviceLabels: definition.labels,
+        description: offering.description,
+        priceFromMinor: offering.priceFromMinor,
+        priceToMinor: offering.priceToMinor,
+        currencyCode: offering.currencyCode,
+        durationMinutes: offering.durationMinutes,
+        inclusions: offering.inclusions,
+        warrantyText: offering.warrantyText,
+        priceType: definition.priceType,
+    }
+}
+
 async function notifyAutoCareParticipant(input: {
     userId: string
     requestId: string
@@ -99,6 +115,7 @@ function requestResponse(
     definition: AutomotiveServiceDefinitionEntity,
     offering: AutomotiveServiceOfferingEntity | null,
 ): AutoCareServiceRequestResponse {
+    const snapshot = request.offeringSnapshot ?? (offering ? createOfferingSnapshot(definition, offering) : null)
     return {
         id: request.id,
         providerId: provider.id,
@@ -106,11 +123,12 @@ function requestResponse(
         locationId: location.id,
         address: location.address,
         definitionId: definition.id,
-        serviceSlug: definition.slug,
-        serviceLabels: definition.labels,
+        serviceSlug: snapshot?.serviceSlug ?? definition.slug,
+        serviceLabels: snapshot?.serviceLabels ?? definition.labels,
+        serviceDescription: snapshot?.description ?? offering?.description ?? null,
         offeringId: offering?.id ?? null,
-        priceFromMinor: offering?.priceFromMinor ?? null,
-        currencyCode: offering?.currencyCode ?? null,
+        priceFromMinor: snapshot?.priceFromMinor ?? offering?.priceFromMinor ?? null,
+        currencyCode: snapshot?.currencyCode ?? offering?.currencyCode ?? null,
         preferredAt: request.preferredAt?.toISOString() ?? null,
         vehicleSnapshot: request.vehicleSnapshot as AutoCareServiceRequestResponse['vehicleSnapshot'],
         contactSnapshot: request.contactSnapshot as AutoCareServiceRequestResponse['contactSnapshot'],
@@ -309,6 +327,7 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
         locationId: location.id,
         definitionId: definition.id,
         offeringId: offering.id,
+        offeringSnapshot: createOfferingSnapshot(definition, offering),
         vehicleSnapshot: input.vehicleSnapshot ?? null,
         contactSnapshot: input.contactSnapshot,
         preferredAt: new Date(input.preferredAt),

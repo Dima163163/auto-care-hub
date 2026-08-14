@@ -181,6 +181,32 @@ export function getOpenApiDocument() {
             '/owner/autocare-providers/{providerId}/reviews': {
                 get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
             },
+            '/owner/autocare-providers/{providerId}/offers/{offerId}': {
+                patch: {
+                    operationId: 'updateOwnerAutoCareOffer',
+                    parameters: [
+                        { name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                        { name: 'offerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                    ],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['description', 'priceFromMinor'],
+                                    properties: {
+                                        description: { type: ['string', 'null'], maxLength: 2_000 },
+                                        priceFromMinor: { type: 'integer', minimum: 0, maximum: 10_000_000_000 },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '200': { description: 'Updated owner automotive service offer.' } },
+                },
+            },
             '/v1/providers/{providerId}/availability': {
                 get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.' } } },
             },

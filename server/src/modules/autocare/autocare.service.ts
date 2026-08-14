@@ -164,6 +164,28 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
     return definition ? profile.offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
 }
 
+export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number }) {
+    assertOwner(owner)
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: owner.id })
+    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+
+    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findBy({ providerId: provider.id })
+    if (locations.length === 0) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service location not found.' })
+
+    const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
+    const offering = await offeringRepository.findOne({ where: { id: offerId, locationId: In(locations.map((location) => location.id)), active: true } })
+    if (!offering) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
+
+    const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: offering.definitionId })
+    if (!definition) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service definition not found.' })
+
+    offering.description = input.description
+    offering.priceFromMinor = input.priceFromMinor
+    if (offering.priceToMinor !== null && offering.priceToMinor < input.priceFromMinor) offering.priceToMinor = input.priceFromMinor
+    const savedOffering = await offeringRepository.save(offering)
+    return toOfferResponse(savedOffering, definition)
+}
+
 export async function getOwnerAutoCareProviders(owner: UserEntity) {
     assertOwner(owner)
     const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { ownerId: owner.id }, order: { createdAt: 'DESC' } })

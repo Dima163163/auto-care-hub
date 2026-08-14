@@ -86,6 +86,7 @@ async function seedAutoCareMockData() {
                         ...existingOffering,
                         locationId: location.id,
                         definitionId: definition.id,
+                        description: `${definition.labels.ru ?? definition.slug}: предварительная оценка и фотоотчёт по запросу.`,
                         priceFromMinor: offeringInput.priceFromMinor,
                         priceToMinor: null,
                         currencyCode: AUTOMOTIVE_MOCK_MARKET.currencyCode,

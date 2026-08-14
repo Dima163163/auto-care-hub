@@ -171,6 +171,7 @@ export {
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 export {
+    type AutomotiveOfferingSnapshot,
     ServiceAttachmentEntity,
     ServiceAttachmentStatus,
     ServiceMessageEntity,

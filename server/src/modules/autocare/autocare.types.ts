@@ -59,6 +59,7 @@ export type AutoCareOfferResponse = {
     serviceDefinitionId: string
     serviceSlug?: string
     serviceLabels?: Record<string, string>
+    description: string | null
     priceFromMinor: number
     priceToMinor: number | null
     currencyCode: string
@@ -171,6 +172,7 @@ export type AutoCareServiceRequestResponse = {
     definitionId: string
     serviceSlug: string
     serviceLabels: Record<string, string>
+    serviceDescription: string | null
     offeringId: string | null
     priceFromMinor: number | null
     currencyCode: string | null

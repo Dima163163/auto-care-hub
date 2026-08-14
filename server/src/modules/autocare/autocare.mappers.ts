@@ -32,6 +32,7 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
         serviceDefinitionId: entity.definitionId,
         serviceSlug: definition?.slug,
         serviceLabels: definition?.labels,
+        description: entity.description,
         priceFromMinor: entity.priceFromMinor,
         priceToMinor: entity.priceToMinor,
         currencyCode: entity.currencyCode,

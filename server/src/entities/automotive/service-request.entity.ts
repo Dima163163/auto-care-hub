@@ -18,6 +18,19 @@ export enum ServiceRequestStatus {
     Closed = 'closed',
 }
 
+export type AutomotiveOfferingSnapshot = {
+    serviceSlug: string
+    serviceLabels: Record<string, string>
+    description: string | null
+    priceFromMinor: number
+    priceToMinor: number | null
+    currencyCode: string
+    durationMinutes: number
+    inclusions: string[]
+    warrantyText: string | null
+    priceType: string
+}
+
 @Entity('autocare_service_requests')
 @Index(['clientId', 'createdAt'])
 @Index(['providerId', 'status', 'createdAt'])
@@ -30,6 +43,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'uuid' }) locationId!: string
     @Column({ type: 'uuid' }) definitionId!: string
     @Column({ type: 'uuid', nullable: true }) offeringId!: string | null
+    @Column({ type: 'jsonb', nullable: true }) offeringSnapshot!: AutomotiveOfferingSnapshot | null
     @Column({ type: 'jsonb', nullable: true }) vehicleSnapshot!: Record<string, unknown> | null
     @Column({ type: 'jsonb', nullable: true }) contactSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null

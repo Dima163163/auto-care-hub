@@ -1,8 +1,11 @@
 import { BadgeCheck, ChevronDown, Clock3, MapPin, Star, Wrench } from 'lucide-react'
 import { Link } from 'react-router'
+import { useState } from 'react'
 
 import type { AutoCareApiOffer, AutoCareApiProvider, AutoCareApiServiceDefinition } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
+
+import { EditOfferButton, OwnerOfferEditor } from './OwnerOfferEditor'
 
 type OwnerBranchServicesProps = {
     provider: AutoCareApiProvider
@@ -16,6 +19,15 @@ type OwnerBranchServicesProps = {
         from: string
         estimate: string
         noPublished: string
+        edit: string
+        save: string
+        cancel: string
+        offerDescription: string
+        descriptionPlaceholder: string
+        price: string
+        priceInvalid: string
+        editError: string
+        priceSnapshotNotice: string
     }
     isOpen: boolean
     onToggle: () => void
@@ -58,7 +70,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
                     </div>
                     {offers.length > 0 ? (
                         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                            {offers.map((offer) => <ServiceOfferCard key={offer.id} offer={offer} definitions={definitions} locale={locale} labels={labels} />)}
+                            {offers.map((offer) => <ServiceOfferCard key={offer.id} providerId={provider.id} offer={offer} definitions={definitions} locale={locale} labels={labels} />)}
                         </div>
                     ) : (
                         <p className="rounded-[var(--radius-card)] border border-dashed border-border p-5 text-center text-sm font-semibold text-muted-foreground">{labels.noPublished}</p>
@@ -69,20 +81,24 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
     )
 }
 
-function ServiceOfferCard({ offer, definitions, locale, labels }: { offer: AutoCareApiOffer; definitions: AutoCareApiServiceDefinition[]; locale: string; labels: OwnerBranchServicesProps['labels'] }) {
+function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { providerId: string; offer: AutoCareApiOffer; definitions: AutoCareApiServiceDefinition[]; locale: string; labels: OwnerBranchServicesProps['labels'] }) {
+    const [isEditing, setIsEditing] = useState(false)
     const definition = definitions.find((item) => item.id === offer.serviceDefinitionId || item.slug === offer.serviceSlug)
     const title = offer.serviceLabels?.[locale] ?? definition?.labels[locale] ?? offer.serviceLabels?.en ?? definition?.labels.en ?? offer.serviceSlug ?? 'AutoCare service'
     const price = new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : 'en-US', { style: 'currency', currency: offer.currencyCode, maximumFractionDigits: 0 }).format(offer.priceFromMinor / 100)
 
     return (
         <article className="rounded-[var(--radius-card)] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-                <span className="flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span>
-                <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{offer.priceType === 'quote_required' ? labels.estimate : labels.from}</span>
-            </div>
-            <h3 className="mt-4 text-sm font-black text-foreground">{title}</h3>
-            <p className="mt-2 text-lg font-black text-foreground">{offer.priceType === 'quote_required' ? labels.estimate : price}</p>
-            <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? '—'}</p>
+            {isEditing ? <OwnerOfferEditor providerId={providerId} offer={offer} labels={labels} onCancel={() => setIsEditing(false)} onSaved={() => setIsEditing(false)} /> : <>
+                <div className="flex items-start justify-between gap-3">
+                    <span className="flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span>
+                    <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{offer.priceType === 'quote_required' ? labels.estimate : labels.from}</span>
+                </div>
+                <div className="mt-4 flex items-start justify-between gap-3"><h3 className="text-sm font-black text-foreground">{title}</h3><EditOfferButton label={labels.edit} onClick={() => setIsEditing(true)} /></div>
+                {offer.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{offer.description}</p> : null}
+                <p className="mt-2 text-lg font-black text-foreground">{offer.priceType === 'quote_required' ? labels.estimate : price}</p>
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? '—'}</p>
+            </>}
         </article>
     )
 }

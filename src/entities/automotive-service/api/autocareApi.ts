@@ -29,6 +29,7 @@ export type AutoCareApiOffer = {
     serviceDefinitionId: string
     serviceSlug?: string
     serviceLabels?: Record<string, string>
+    description?: string | null
     priceFromMinor: number
     priceToMinor: number | null
     currencyCode: string
@@ -37,6 +38,13 @@ export type AutoCareApiOffer = {
     warrantyText: string | null
     active: boolean
     priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+}
+
+export type UpdateAutoCareOfferInput = {
+    providerId: string
+    offerId: string
+    description: string | null
+    priceFromMinor: number
 }
 
 export type AutoCareApiProvider = {
@@ -173,6 +181,7 @@ export type AutoCareServiceRequest = {
     definitionId: string
     serviceSlug: string
     serviceLabels: Record<string, string>
+    serviceDescription: string | null
     offeringId: string | null
     priceFromMinor: number | null
     currencyCode: string | null
@@ -287,6 +296,14 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: () => '/owner/autocare-providers',
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        updateOwnerAutoCareOffer: build.mutation<AutoCareApiOffer, UpdateAutoCareOfferInput>({
+            query: ({ providerId, offerId, ...body }) => ({ url: `/owner/autocare-providers/${providerId}/offers/${offerId}`, method: 'PATCH', body }),
+            invalidatesTags: (_result, _error, { providerId }) => [
+                { type: 'AutoCareProvider', id: providerId },
+                { type: 'AutoCareProvider', id: 'OWNER_LIST' },
+                { type: 'AutoCareProvider', id: 'LIST' },
+            ],
+        }),
         getOwnerAutoCareProviderReviews: build.query<AutoCareApiProviderReviews, string>({
             query: (providerId) => `/owner/autocare-providers/${providerId}/reviews`,
             transformResponse: (value: unknown) => ownerProviderReviewsSchema.parse(value),
@@ -382,6 +399,7 @@ export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useUpdateOwnerAutoCareOfferMutation,
     useGetOwnerAutoCareProviderReviewsQuery,
     useGetAdminAutoCareProvidersQuery,
     useUpdateAdminAutoCareProviderStatusMutation,
