@@ -125,12 +125,39 @@ const autoCareDefinitions = automotiveServices.map((service) => ({
     active: true,
 }))
 
+const reviewPhotoAssets = [
+    '/images/autocare/providers/generated/review-oil-change.webp',
+    '/images/autocare/providers/generated/review-tire-service.webp',
+    '/images/autocare/providers/generated/review-detailing.webp',
+    '/images/autocare/providers/generated/review-body-repair.webp',
+]
+
 const mockFeaturedAutoCareReviews = [
-    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', createdAt: '2026-08-12T10:00:00.000Z' },
-    { id: 'featured-review-2', providerId: 'api-autolux-moscow', authorName: 'Мария К.', vehicleLabel: 'Toyota RAV4', rating: 4, text: 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', avatarUrl: '/images/autocare/avatars/maria.webp', createdAt: '2026-08-05T10:00:00.000Z' },
-    { id: 'featured-review-3', providerId: 'api-formula-moscow', authorName: 'Игорь П.', vehicleLabel: 'Skoda Octavia', rating: 3, text: 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', avatarUrl: '/images/autocare/avatars/igor.webp', createdAt: '2026-07-29T10:00:00.000Z' },
-    { id: 'featured-review-4', providerId: 'api-proservice-moscow', authorName: 'Ольга Н.', vehicleLabel: 'Volkswagen Tiguan', rating: 2, text: 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', avatarUrl: null, createdAt: '2026-07-21T10:00:00.000Z' },
-] as const
+    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', photoUrls: [reviewPhotoAssets[0]], createdAt: '2026-08-12T10:00:00.000Z' },
+    { id: 'featured-review-2', providerId: 'api-autolux-moscow', authorName: 'Мария К.', vehicleLabel: 'Toyota RAV4', rating: 4, text: 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', avatarUrl: '/images/autocare/avatars/maria.webp', photoUrls: [reviewPhotoAssets[2]], createdAt: '2026-08-05T10:00:00.000Z' },
+    { id: 'featured-review-3', providerId: 'api-formula-moscow', authorName: 'Игорь П.', vehicleLabel: 'Skoda Octavia', rating: 3, text: 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', avatarUrl: '/images/autocare/avatars/igor.webp', photoUrls: [reviewPhotoAssets[1]], createdAt: '2026-07-29T10:00:00.000Z' },
+    { id: 'featured-review-4', providerId: 'api-proservice-moscow', authorName: 'Ольга Н.', vehicleLabel: 'Volkswagen Tiguan', rating: 2, text: 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', avatarUrl: null, photoUrls: [], createdAt: '2026-07-21T10:00:00.000Z' },
+    ...Array.from({ length: 24 }, (_, index) => {
+        const providers = ['api-proservice-moscow', 'api-autolux-moscow'] as const
+        const names = ['Сергей В.', 'Елена Р.', 'Дмитрий Л.', 'Наталья А.', 'Андрей К.', 'Виктор М.', 'Полина Т.', 'Роман Д.']
+        const vehicles = ['Kia Sportage', 'Hyundai Tucson', 'Ford Focus', 'Mazda CX-5', 'Volvo XC60', 'Honda CR-V', 'Renault Duster', 'Nissan X-Trail']
+        const ratings = [5, 4, 3, 2, 1] as const
+        const photoUrls = index % 5 === 3 ? [] : [reviewPhotoAssets[index % reviewPhotoAssets.length], ...(index % 6 === 0 ? [reviewPhotoAssets[(index + 1) % reviewPhotoAssets.length]] : [])]
+        return {
+            id: `featured-review-generated-${index + 1}`,
+            providerId: providers[index % providers.length],
+            authorName: names[index % names.length]!,
+            vehicleLabel: vehicles[index % vehicles.length]!,
+            rating: ratings[index % ratings.length]!,
+            text: index % 5 === 4
+                ? 'Остались вопросы по срокам, но сервис быстро вышел на связь и предложил понятное решение.'
+                : 'Мастер заранее объяснил состав работ, прислал фотографии и выдал автомобиль в согласованное время.',
+            avatarUrl: null,
+            photoUrls,
+            createdAt: new Date(Date.UTC(2026, 7, 19 - index, 10, 0, 0)).toISOString(),
+        }
+    }),
+]
 
 function toAutoCareOffer(providerId: string, serviceId: string, price: number, priceType: 'fixed' | 'from' | 'range' | 'quote_required' = 'from') {
     const service = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]

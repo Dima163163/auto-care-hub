@@ -112,6 +112,7 @@ export type AutoCareReviewResponse = {
     rating: number
     text: string
     avatarUrl: string | null
+    photoUrls: string[]
     createdAt: string
 }
 

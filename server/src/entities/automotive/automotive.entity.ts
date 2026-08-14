@@ -115,6 +115,7 @@ export class AutomotiveReviewEntity {
     @Column({ type: 'integer' }) rating!: number
     @Column({ type: 'text' }) text!: string
     @Column({ type: 'text', nullable: true }) avatarUrl!: string | null
+    @Column('text', { array: true, default: () => "'{}'" }) photoUrls!: string[]
     @Column({ type: 'enum', enum: AutomotiveReviewStatus, enumName: 'autocare_review_status', default: AutomotiveReviewStatus.Approved }) status!: AutomotiveReviewStatus
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }

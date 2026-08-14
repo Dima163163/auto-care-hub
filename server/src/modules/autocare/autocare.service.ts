@@ -90,6 +90,7 @@ export async function getFeaturedAutoCareReviews(limit: number) {
         rating: review.rating,
         text: review.text,
         avatarUrl: review.avatarUrl,
+        photoUrls: review.photoUrls,
         createdAt: review.createdAt.toISOString(),
     }))
 }
@@ -224,6 +225,7 @@ export async function getOwnerAutoCareProviderReviews(owner: UserEntity, provide
             rating: review.rating,
             text: review.text,
             avatarUrl: review.avatarUrl,
+            photoUrls: review.photoUrls,
             createdAt: review.createdAt.toISOString(),
         })),
     }

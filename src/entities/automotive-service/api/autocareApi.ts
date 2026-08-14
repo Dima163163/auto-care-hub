@@ -103,6 +103,7 @@ export type AutoCareApiReview = {
     rating: number
     text: string
     avatarUrl: string | null
+    photoUrls: string[]
     createdAt: string
 }
 
@@ -143,6 +144,7 @@ const featuredReviewSchema = z.object({
     rating: z.number().int().min(1).max(5),
     text: z.string(),
     avatarUrl: z.string().nullable(),
+    photoUrls: z.array(z.string().min(1)),
     createdAt: z.string().datetime({ offset: true }),
 }) satisfies z.ZodType<AutoCareApiReview>
 

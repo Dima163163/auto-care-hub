@@ -97,13 +97,21 @@ async function seedAutoCareMockData() {
                 }
 
                 const reviewFixtures = [
-                    ['Алексей С.', 'BMW X5', 5, 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', '/images/autocare/avatars/alexey.webp'],
-                    ['Мария К.', 'Toyota RAV4', 4, 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', '/images/autocare/avatars/maria.webp'],
-                    ['Игорь П.', 'Skoda Octavia', 3, 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', '/images/autocare/avatars/igor.webp'],
-                    ['Ольга Н.', 'Volkswagen Tiguan', 2, 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', null],
+                    ['Алексей С.', 'BMW X5', 5, 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', '/images/autocare/avatars/alexey.webp', ['/images/autocare/providers/generated/review-oil-change.webp']],
+                    ['Мария К.', 'Toyota RAV4', 4, 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', '/images/autocare/avatars/maria.webp', ['/images/autocare/providers/generated/review-detailing.webp']],
+                    ['Игорь П.', 'Skoda Octavia', 3, 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', '/images/autocare/avatars/igor.webp', ['/images/autocare/providers/generated/review-tire-service.webp']],
+                    ['Ольга Н.', 'Volkswagen Tiguan', 2, 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', null, []],
+                    ['Сергей В.', 'Kia Sportage', 5, 'Колёса заменили аккуратно, давление проверили, а фотографии результата прислали в чате.', null, ['/images/autocare/providers/generated/review-tire-service.webp', '/images/autocare/providers/generated/review-oil-change.webp']],
+                    ['Елена Р.', 'Hyundai Tucson', 4, 'Мастер подробно показал повреждение и согласовал этапы ремонта до начала работы.', null, ['/images/autocare/providers/generated/review-body-repair.webp']],
+                    ['Дмитрий Л.', 'Ford Focus', 1, 'Пришлось долго ждать ответа, а итоговую стоимость объяснили уже после выполнения работ.', null, []],
+                    ['Наталья А.', 'Mazda CX-5', 5, 'Очень чисто отполировали кузов, вернули машину вовремя и учли все пожелания.', null, ['/images/autocare/providers/generated/review-detailing.webp']],
+                    ['Андрей К.', 'Volvo XC60', 4, 'Хорошая диагностика и понятное объяснение рекомендаций. Фото деталей пригодились для отчёта.', null, ['/images/autocare/providers/generated/review-oil-change.webp']],
+                    ['Виктор М.', 'Honda CR-V', 3, 'Основную проблему нашли, но по срокам вышло дольше, чем обещали при записи.', null, ['/images/autocare/providers/generated/review-body-repair.webp']],
+                    ['Полина Т.', 'Renault Duster', 2, 'Работу пришлось перепроверять после визита, сервис принял замечания и исправил результат.', null, ['/images/autocare/providers/generated/review-body-repair.webp']],
+                    ['Роман Д.', 'Nissan X-Trail', 5, 'Сервис держал связь на каждом шаге, прислал фотографии и выдал автомобиль без задержек.', null, ['/images/autocare/providers/generated/review-detailing.webp', '/images/autocare/providers/generated/review-tire-service.webp']],
                 ] as const
 
-                for (const [authorName, vehicleLabel, rating, text, avatarUrl] of reviewFixtures) {
+                for (const [authorName, vehicleLabel, rating, text, avatarUrl, photoUrls] of reviewFixtures) {
                     const existingReview = await reviewRepository.findOneBy({ providerId: provider.id, authorName, vehicleLabel })
                     await reviewRepository.save(reviewRepository.create({
                         ...existingReview,
@@ -113,6 +121,7 @@ async function seedAutoCareMockData() {
                         rating,
                         text,
                         avatarUrl,
+                        photoUrls: [...photoUrls],
                         status: AutomotiveReviewStatus.Approved,
                     }))
                 }
