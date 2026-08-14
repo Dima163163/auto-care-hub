@@ -1,4 +1,4 @@
-import { ChevronDown, Heart, MapPin, UserRound } from 'lucide-react'
+import { Heart, UserRound } from 'lucide-react'
 import { Link, NavLink } from 'react-router'
 
 import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
@@ -8,6 +8,7 @@ import { BrandLogo } from '@/shared/ui/brand-logo'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { HeaderInfoMenu } from '@/widgets/header-info-menu'
+import { MarketSwitcher } from '@/widgets/market-switcher'
 
 export function DesktopPublicHeader() {
     const { t } = useTranslation()
@@ -28,14 +29,7 @@ export function DesktopPublicHeader() {
                     <HeaderInfoMenu variant="dark" />
                 </nav>
                 <div className="ml-auto flex items-center gap-3 xl:gap-4">
-                    <Link
-                        to={ROUTES.serviceDiscovery}
-                        className="flex h-10 items-center gap-1.5 rounded-[9px] border border-primary-foreground/20 px-2.5 text-xs font-semibold xl:px-3"
-                    >
-                        <MapPin className="size-4" />
-                        <span className="hidden xl:inline">Москва</span>
-                        <ChevronDown className="size-3.5" />
-                    </Link>
+                    <MarketSwitcher compact />
                     <LanguageSwitcher compact />
                     <ThemeSwitcher />
                     {!isLoading && !user && (

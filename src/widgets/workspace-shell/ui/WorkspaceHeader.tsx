@@ -10,6 +10,7 @@ import { BrandLogo } from '@/shared/ui/brand-logo'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { HeaderInfoMenu } from '@/widgets/header-info-menu'
+import { MarketSwitcher } from '@/widgets/market-switcher'
 
 export type WorkspaceRole = 'client' | 'owner' | 'admin' | 'super_admin'
 
@@ -110,6 +111,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                     <span className="rounded-md bg-primary-foreground/10 px-2 py-1 text-primary-foreground/85">{t(workspaceLabelKeys[role])}</span>
                 </div>
                 <LanguageSwitcher />
+                <MarketSwitcher compact />
                 <ThemeSwitcher />
                 <Link
                     to={ROUTES.notifications}

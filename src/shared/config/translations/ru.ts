@@ -928,6 +928,7 @@ export const ruTranslations = {
         serviceLabel: 'Какая услуга нужна?',
         servicePlaceholder: 'Выберите услугу, например, Замена тормозных колодок',
         locationLabel: 'Где вы находитесь?',
+        selectCity: 'Выберите город',
         locationPlaceholder: 'Город, адрес или определить местоположение',
         currentLocation: 'Рядом с вами',
         searchPointLabel: 'Точка поиска',

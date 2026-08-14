@@ -11,8 +11,14 @@ import {
 
 describe('AutoCare mock catalog assets', () => {
     it('ships a data-driven market and location hierarchy', () => {
-        expect(AUTOMOTIVE_MOCK_MARKETS.length).toBeGreaterThanOrEqual(10)
+        expect(AUTOMOTIVE_MOCK_MARKETS.length).toBeGreaterThanOrEqual(50)
         expect(new Set(AUTOMOTIVE_MOCK_MARKETS.map((market) => market.cityCode)).size).toBe(AUTOMOTIVE_MOCK_MARKETS.length)
+        expect(new Set(AUTOMOTIVE_MOCK_MARKETS.map((market) => market.countryCode))).toEqual(new Set(['RU', 'ES', 'MD']))
+        expect(AUTOMOTIVE_MOCK_MARKETS.map((market) => market.cityCode)).toEqual(expect.arrayContaining([
+            'moscow', 'samara', 'saint-petersburg', 'krasnodar', 'vladivostok', 'sochi',
+            'madrid', 'barcelona', 'seville', 'malaga',
+            'chisinau', 'balti', 'tiraspol', 'bender', 'rybnitsa',
+        ]))
         for (const market of AUTOMOTIVE_MOCK_MARKETS) {
             const marketZones = AUTOMOTIVE_MOCK_LOCATION_ZONES.filter((zone) => zone.marketCode === market.cityCode)
             expect(marketZones.length).toBeGreaterThanOrEqual(3)

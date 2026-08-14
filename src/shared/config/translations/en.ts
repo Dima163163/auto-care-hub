@@ -924,6 +924,7 @@ export const enTranslations = {
         serviceLabel: 'What does your car need?',
         servicePlaceholder: 'Choose a service, for example oil change',
         locationLabel: 'Where are you?',
+        selectCity: 'Choose a city',
         locationPlaceholder: 'City, address, or use my location',
         currentLocation: 'Near you',
         searchPointLabel: 'Search point',
