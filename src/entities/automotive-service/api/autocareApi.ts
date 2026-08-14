@@ -64,6 +64,7 @@ export type AutoCareApiProvider = {
         latitude: number | null
         longitude: number | null
     }
+    offers?: AutoCareApiOffer[]
 }
 
 export type AutoCareApiDiscoveryItem = {

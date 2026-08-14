@@ -171,10 +171,29 @@ export async function getOwnerAutoCareProviders(owner: UserEntity) {
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const locations = await locationRepository.findBy({ providerId: In(providers.map((provider) => provider.id)) })
     const locationByProviderId = new Map(locations.map((location) => [location.providerId, location]))
+    const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
+    const offers = locations.length === 0
+        ? []
+        : await offeringRepository.find({ where: { locationId: In(locations.map((location) => location.id)), active: true }, order: { priceFromMinor: 'ASC' } })
+    const definitionIds = [...new Set(offers.map((offer) => offer.definitionId))]
+    const definitions = definitionIds.length === 0
+        ? []
+        : await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findBy({ id: In(definitionIds) })
+    const definitionById = new Map(definitions.map((definition) => [definition.id, definition]))
+    const offersByLocationId = new Map<string, AutomotiveServiceOfferingEntity[]>()
+    for (const offer of offers) {
+        const locationOffers = offersByLocationId.get(offer.locationId) ?? []
+        locationOffers.push(offer)
+        offersByLocationId.set(offer.locationId, locationOffers)
+    }
 
     return providers.flatMap((provider) => {
         const location = locationByProviderId.get(provider.id)
-        return location ? [toProviderResponse(provider, location)] : []
+        if (!location) return []
+        return [{
+            ...toProviderResponse(provider, location),
+            offers: (offersByLocationId.get(location.id) ?? []).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
+        }]
     })
 }
 

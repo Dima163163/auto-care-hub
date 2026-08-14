@@ -178,6 +178,11 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         },
         serviceIds: provider.serviceIds ?? automotiveServices.map((service) => service.id),
         servicePrices: provider.servicePrices ?? { [automotiveServices[0]?.id ?? 'oil-change']: provider.price },
+        offers: (provider.serviceIds ?? automotiveServices.map((service) => service.id)).map((serviceId) => toAutoCareOffer(
+            `api-${provider.id}`,
+            serviceId,
+            provider.servicePrices?.[serviceId] ?? provider.price,
+        )),
     }
 }
 

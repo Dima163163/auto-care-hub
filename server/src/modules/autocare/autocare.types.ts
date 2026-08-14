@@ -42,6 +42,7 @@ export type AutoCareProviderResponse = {
     brandSpecializations: string[]
     isMultibrand: boolean
     location: AutoCareLocationResponse
+    offers?: AutoCareOfferResponse[]
 }
 
 export type AutoCareLocationResponse = {
