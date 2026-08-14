@@ -12,10 +12,6 @@ import { HeaderInfoMenu } from '@/widgets/header-info-menu'
 export function DesktopPublicHeader() {
     const { t } = useTranslation()
     const { data: user, isLoading, isError } = useGetMeQuery()
-    const links = [
-        { label: t('navigation.about'), to: ROUTES.about },
-    ]
-
     return (
         <header className="sticky top-0 z-50 hidden h-[84px] shrink-0 border-b border-primary-foreground/10 bg-hero-overlay/95 text-primary-foreground backdrop-blur-md md:block">
             <div className="mx-auto flex h-full max-w-[1416px] items-center px-[clamp(1.5rem,3.2vw,3.5rem)]">
@@ -30,15 +26,6 @@ export function DesktopPublicHeader() {
                         {t('autocare.footerReviews')}
                     </NavLink>
                     <HeaderInfoMenu variant="dark" />
-                    {links.map((link) => (
-                        <NavLink
-                            key={link.to}
-                            to={link.to}
-                            className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground"
-                        >
-                            {link.label}
-                        </NavLink>
-                    ))}
                 </nav>
                 <div className="ml-auto flex items-center gap-3 xl:gap-4">
                     <Link
