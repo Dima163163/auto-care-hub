@@ -4,6 +4,11 @@ import type { User } from '@/entities/user'
 import { getVehicleImage, type ClientVehicle, type CreateClientVehicleInput } from '@/entities/user/model/vehicles'
 import type { Notification } from '@/entities/notification/model/types'
 import {
+    isDeploymentOAuthProviderEnabled,
+    STATIC_DEPLOYMENT_CAPABILITIES,
+    type DeploymentOAuthProvider,
+} from '@/shared/config/deployment'
+import {
     automotiveServices,
     vehicleCatalog,
     providerPreviews,
@@ -880,7 +885,9 @@ export const handlers = [
         const identities = getMockOAuthIdentities(currentUser)
 
         return HttpResponse.json(
-            (['google', 'yandex'] as const).map((provider) => ({
+            (['google', 'yandex'] as const)
+                .filter((provider) => isDeploymentOAuthProviderEnabled(provider))
+                .map((provider) => ({
                 provider,
                 isLinked: identities.has(provider),
                 identityCount: identities.has(provider) ? 1 : 0,
@@ -888,7 +895,7 @@ export const handlers = [
                     ? currentUser.createdAt
                     : null,
                 canUnlink: identities.has(provider) && identities.size > 1,
-            }))
+                }))
         )
     }),
 
@@ -904,6 +911,10 @@ export const handlers = [
 
         if (provider !== 'google' && provider !== 'yandex') {
             return HttpResponse.json({ message: 'Invalid provider' }, { status: 400 })
+        }
+
+        if (!isDeploymentOAuthProviderEnabled(provider as DeploymentOAuthProvider)) {
+            return HttpResponse.json({ message: 'OAuth provider is not enabled for this deployment.' }, { status: 403 })
         }
 
         getMockOAuthIdentities(currentUser).add(provider)
@@ -926,6 +937,10 @@ export const handlers = [
 
         if (provider !== 'google' && provider !== 'yandex') {
             return HttpResponse.json({ message: 'Invalid provider' }, { status: 400 })
+        }
+
+        if (!isDeploymentOAuthProviderEnabled(provider as DeploymentOAuthProvider)) {
+            return HttpResponse.json({ message: 'OAuth provider is not enabled for this deployment.' }, { status: 403 })
         }
 
         const identities = getMockOAuthIdentities(currentUser)
@@ -1945,6 +1960,7 @@ export const handlers = [
     }),
 
     http.get('/api/v1/markets', () => HttpResponse.json(autoCareMarkets)),
+    http.get('/api/v1/deployment-capabilities', () => HttpResponse.json(STATIC_DEPLOYMENT_CAPABILITIES)),
     http.get('/api/v1/markets/:marketId/zones', ({ params, request }) => {
         const market = autoCareMarkets.find((item) => item.id === params.marketId || item.cityCode === params.marketId)
         const requestedLimit = Number(new URL(request.url).searchParams.get('limit') ?? 24)
@@ -3997,6 +4013,10 @@ export const handlers = [
     }),
 
     http.post('/api/auth/google/mock', () => {
+        if (!isDeploymentOAuthProviderEnabled('google')) {
+            return HttpResponse.json({ message: 'OAuth provider is not enabled for this deployment.' }, { status: 403 })
+        }
+
         const user = mockUsers.find(
             (user) => user.provider === 'google'
         )
@@ -4024,6 +4044,10 @@ export const handlers = [
     }),
 
     http.post('/api/auth/yandex/mock', () => {
+        if (!isDeploymentOAuthProviderEnabled('yandex')) {
+            return HttpResponse.json({ message: 'OAuth provider is not enabled for this deployment.' }, { status: 403 })
+        }
+
         const user = mockUsers.find(
             (user) => user.provider === 'yandex'
         )

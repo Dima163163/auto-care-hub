@@ -24,6 +24,11 @@ import {
     DEFAULT_BOOKING_REMINDER_HOURS,
     MAX_BOOKING_REMINDER_HOURS,
 } from '../modules/jobs/booking-reminder-policy.js'
+import {
+    getDeploymentCapabilities,
+    resolveDeploymentMarket,
+    type DeploymentCapabilities,
+} from './deployment-capabilities.js'
 
 const NODE_ENVS = ['development', 'test', 'production'] as const
 
@@ -57,6 +62,7 @@ export type EnvConfig = {
     cabinetUploadsDir: string
     corsOrigins: string[]
     frontendOrigin: string
+    deployment: DeploymentCapabilities
     database: {
         url: string | null
         host: string
@@ -482,6 +488,15 @@ function getCorsOrigins(nodeEnv: NodeEnv, defaultOrigin: string) {
 }
 
 const nodeEnv = getNodeEnv()
+const configuredDeploymentMarket = process.env.DEPLOYMENT_MARKET ?? process.env.VITE_DEPLOYMENT_MARKET
+const resolvedDeploymentMarket = resolveDeploymentMarket(configuredDeploymentMarket)
+
+if (resolvedDeploymentMarket.usedFallback) {
+    console.warn(
+        `[AutoCare Hub] Unsupported DEPLOYMENT_MARKET "${configuredDeploymentMarket}"; using restrictive "ru" capabilities.`,
+    )
+}
+
 const breachedPasswordCheckMode = resolveBreachedPasswordCheckMode({
     nodeEnv,
     configuredMode: process.env.BREACHED_PASSWORD_CHECK_MODE,
@@ -529,6 +544,7 @@ export const env: EnvConfig = {
         getOptionalEnv('FRONTEND_ORIGIN', defaultFrontendOrigin),
         { allowHttpLoopback: nodeEnv !== 'production' },
     ),
+    deployment: getDeploymentCapabilities(resolvedDeploymentMarket.market),
     database: getDatabaseConfig(),
     redis: getRedisConfig(),
     auth: {

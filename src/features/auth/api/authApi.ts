@@ -2,12 +2,14 @@ import { baseApi } from '@/shared/api/baseApi'
 
 import type { User } from '@/entities/user'
 import { IS_MOCK_API } from '@/shared/config/api'
+import type { DeploymentMarket, DeploymentOAuthProvider } from '@/shared/config/deployment'
 import { clearAccessToken } from '@/shared/lib/auth-token'
 import { clearCsrfToken } from '@/shared/lib/csrf-token'
 import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
 import { clearMockSession } from '@/shared/lib/mock-session'
 import {
     normalizeAuthResponse,
+    normalizeDeploymentCapabilitiesResponse,
     normalizeEmailVerificationTokenResponse,
     normalizeLogoutResponse,
     normalizeMeResponse,
@@ -97,17 +99,26 @@ type CompleteEmailVerificationRequest = {
     token: string
 }
 
+export type OAuthProvider = DeploymentOAuthProvider
+
 type OAuthUrlRequest = {
-    provider: 'google' | 'yandex'
+    provider: OAuthProvider
 }
 
 export type OAuthUrlResponse = {
-    provider: 'google' | 'yandex'
+    provider: OAuthProvider
     authUrl: string
 }
 
+export type DeploymentCapabilities = {
+    deploymentMarket: DeploymentMarket
+    auth: {
+        oauthProviders: OAuthProvider[]
+    }
+}
+
 export type OAuthIdentitySummary = {
-    provider: 'google' | 'yandex'
+    provider: OAuthProvider
     isLinked: boolean
     identityCount: number
     createdAt: string | null
@@ -150,6 +161,11 @@ export const authApi = baseApi.injectEndpoints({
                             id: 'ME'
                         }
                     ]
+        }),
+
+        getDeploymentCapabilities: build.query<DeploymentCapabilities, void>({
+            query: () => '/v1/deployment-capabilities',
+            transformResponse: normalizeDeploymentCapabilitiesResponse,
         }),
 
         login: build.mutation<User, LoginRequest>({
@@ -429,6 +445,7 @@ export const authApi = baseApi.injectEndpoints({
 
 export const {
     useGetMeQuery,
+    useGetDeploymentCapabilitiesQuery,
     useLoginMutation,
     useLogoutMutation,
     useRegisterMutation,

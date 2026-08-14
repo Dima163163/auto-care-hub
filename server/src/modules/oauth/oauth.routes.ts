@@ -55,6 +55,16 @@ import { recordSecurityActivitySafely } from '../auth/security-event-stream.js'
 
 const OAUTH_LINK_TTL_MS = 10 * 60 * 1000
 
+function assertDeploymentOAuthProviderAllowed(provider: OAuthAuthorizeResponse['provider']) {
+    if (env.deployment.auth.oauthProviders.includes(provider)) return
+
+    throw new AppError({
+        statusCode: 403,
+        code: ERROR_CODES.Forbidden,
+        message: `OAuth provider "${provider}" is not enabled for this deployment.`,
+    })
+}
+
 async function assertProtectedOAuthRequest(
     request: FastifyRequest
 ) {
@@ -88,26 +98,28 @@ export async function oauthRoutes(app: FastifyInstance) {
             })
             const hasPassword = Boolean(user.passwordHash)
 
-            return OAUTH_PROVIDERS.map((provider) => {
-                const identityProvider = provider === 'google'
-                    ? OAuthIdentityProvider.Google
-                    : OAuthIdentityProvider.Yandex
-                const providerIdentities = identities.filter(
-                    (identity) => identity.provider === identityProvider
-                )
-                const firstIdentity = providerIdentities[0]
+            return OAUTH_PROVIDERS
+                .filter((provider) => env.deployment.auth.oauthProviders.includes(provider))
+                .map((provider) => {
+                    const identityProvider = provider === 'google'
+                        ? OAuthIdentityProvider.Google
+                        : OAuthIdentityProvider.Yandex
+                    const providerIdentities = identities.filter(
+                        (identity) => identity.provider === identityProvider
+                    )
+                    const firstIdentity = providerIdentities[0]
 
-                return {
-                    provider,
-                    isLinked: providerIdentities.length > 0,
-                    identityCount: providerIdentities.length,
-                    createdAt: firstIdentity?.createdAt.toISOString() ?? null,
-                    canUnlink: Boolean(
-                        firstIdentity &&
-                        (hasPassword || identities.length > 1)
-                    ),
-                }
-            })
+                    return {
+                        provider,
+                        isLinked: providerIdentities.length > 0,
+                        identityCount: providerIdentities.length,
+                        createdAt: firstIdentity?.createdAt.toISOString() ?? null,
+                        canUnlink: Boolean(
+                            firstIdentity &&
+                            (hasPassword || identities.length > 1)
+                        ),
+                    }
+                })
         }
     )
 
@@ -119,6 +131,7 @@ export async function oauthRoutes(app: FastifyInstance) {
                 oauthProviderParamsSchema,
                 request.params
             )
+            assertDeploymentOAuthProviderAllowed(params.provider)
             const user = await requireAuth(request)
             const state = generateOAuthState()
             const repository = AppDataSource.getRepository(OAuthLinkRequestEntity)
@@ -156,6 +169,7 @@ export async function oauthRoutes(app: FastifyInstance) {
                 oauthProviderParamsSchema,
                 request.params
             )
+            assertDeploymentOAuthProviderAllowed(params.provider)
             const user = await requireAuth(request)
             const identityProvider = params.provider === 'google'
                 ? OAuthIdentityProvider.Google
@@ -240,6 +254,7 @@ export async function oauthRoutes(app: FastifyInstance) {
                 oauthProviderParamsSchema,
                 request.params
             )
+            assertDeploymentOAuthProviderAllowed(params.provider)
             const state = generateOAuthState()
             const authUrl = buildOAuthAuthorizationUrl(params.provider, state)
 
@@ -257,6 +272,7 @@ export async function oauthRoutes(app: FastifyInstance) {
         Querystring: unknown
     }>('/auth/oauth/:provider/callback', async (request, reply) => {
         const params = validateParams(oauthProviderParamsSchema, request.params)
+        assertDeploymentOAuthProviderAllowed(params.provider)
         const validatedQuery = validateQuery(oauthCallbackQuerySchema, request.query)
         const query = {
             ...validatedQuery,

@@ -139,6 +139,9 @@ export function getOpenApiDocument() {
             '/v1/markets': {
                 get: { operationId: 'listAutoCareMarkets', security: [], responses: { '200': { description: 'AutoCare launch markets and supported locales.' } } },
             },
+            '/v1/deployment-capabilities': {
+                get: { operationId: 'getDeploymentCapabilities', security: [], responses: { '200': { description: 'Deployment-scoped authentication and product capabilities.' } } },
+            },
             '/v1/markets/{marketId}/zones': {
                 get: {
                     operationId: 'listAutoCareLocationZones',

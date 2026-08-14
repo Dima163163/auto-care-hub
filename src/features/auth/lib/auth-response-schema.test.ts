@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { getAccessToken, clearAccessToken } from '@/shared/lib/auth-token'
 import {
     normalizeAuthResponse,
+    normalizeDeploymentCapabilitiesResponse,
     normalizeMeResponse,
     normalizeOAuthIdentitiesResponse,
     normalizeOAuthUrlResponse,
@@ -55,6 +56,10 @@ describe('auth response schemas', () => {
     })
 
     it('validates OAuth and session response boundaries', () => {
+        expect(normalizeDeploymentCapabilitiesResponse({
+            deploymentMarket: 'ru',
+            auth: { oauthProviders: ['yandex'] },
+        }).auth.oauthProviders).toEqual(['yandex'])
         expect(normalizeOAuthUrlResponse({
             provider: 'google',
             authUrl: 'https://accounts.google.com/o/oauth2/auth?state=test',

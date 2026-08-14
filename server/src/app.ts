@@ -39,6 +39,7 @@ import { openApiRoutes } from './routes/openapi.route.js'
 import { sanitizeIncomingRequestId } from './shared/http/request-id.js'
 import { MAX_FASTIFY_JSON_BODY_BYTES } from './shared/security/request-limits.js'
 import { getBoundedApiLatencyMs } from './shared/observability/api-latency.js'
+import { deploymentCapabilitiesRoutes } from './routes/deployment-capabilities.route.js'
 import {
     isSecurityIpBlocked,
     shouldRecordSecurityMitigationSignal,
@@ -203,6 +204,7 @@ export async function buildApp() {
 
     await app.register(healthRoutes)
     await app.register(metricsRoutes)
+    await app.register(deploymentCapabilitiesRoutes)
     await app.register(openApiRoutes)
     await app.register(authRoutes, {
         mailer,

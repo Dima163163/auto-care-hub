@@ -49,17 +49,20 @@ quote or bonus rules.
 
 ### Deployment capability profiles
 
-Every deployment receives a validated `VITE_DEPLOYMENT_MARKET` profile at
-build/deploy time. The initial values are `ru` and `global`; the registry can
-later add country or market profiles without branching UI components. The
+Every deployment receives a validated `VITE_DEPLOYMENT_MARKET` frontend profile
+and a server-side `DEPLOYMENT_MARKET` profile at build/deploy time. The initial
+values are `ru` and `global`; the registry can later add country or market
+profiles without branching UI components. The
 profile selects market-specific capabilities such as visible OAuth providers,
 payment methods, legal links, currencies and feature copy. For example, the
 `ru` profile hides Google sign-in when that provider is not approved, while
 `global` exposes all providers enabled for the deployment.
 
 This variable is public frontend configuration, not a secret and not an
-authorization boundary. The API must publish or validate the effective
-capability allow-list and reject unsupported OAuth/provider actions server-side.
+authorization boundary. The API publishes the effective allow-list through
+`GET /api/v1/deployment-capabilities` and rejects unsupported OAuth/provider
+actions server-side. The backend profile is the authority if the two build
+variables differ.
 Missing or unknown profiles fail closed to the restrictive policy, surface a
 startup/configuration warning, and are covered by deployment smoke tests.
 

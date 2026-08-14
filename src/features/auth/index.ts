@@ -1,5 +1,6 @@
 export {
     useGetMeQuery,
+    useGetDeploymentCapabilitiesQuery,
     useLoginMutation,
     useLogoutMutation,
     useRegisterMutation,
@@ -23,6 +24,7 @@ export {
     useGetOAuthUnlinkUrlMutation,
     type UserSession,
     type OAuthIdentitySummary,
+    type DeploymentCapabilities,
     } from './api/authApi'
 
 export { CurrentUserBadge } from './ui/current-user-badge/CurrentUserBadge'

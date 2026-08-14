@@ -2,7 +2,7 @@
 
 > Status: working implementation roadmap
 >
-> Updated: 2026-08-14 (mock/real backend endpoint parity completed)
+> Updated: 2026-08-14 (deployment capability negotiation completed)
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -104,13 +104,15 @@ ready, while the remaining production workflow still needs its dedicated slice
 - [x] Interface locale is independent from service location; Russian, Spanish,
   Romanian and English are the first maintained packs with an extensible
   world-locale model.
-- [~] Deployment capabilities are selected by one environment profile,
+- [x] Deployment capabilities are selected by one environment profile,
   `VITE_DEPLOYMENT_MARKET` (`ru`, `global`, and future market profiles). The
   profile controls which authentication providers and market-specific UI
   actions are shown: for example, `ru` hides Google sign-in while `global`
   exposes all providers approved for that deployment. The backend remains the
-  source of truth and must enforce the same provider allow-list; hiding a
-  button is not a security control.
+  source of truth and enforces the same provider allow-list through
+  `DEPLOYMENT_MARKET` and `/api/v1/deployment-capabilities`; hiding a button is
+  not a security control. Unknown values fail closed to `ru` and emit a startup
+  warning.
 - [x] The five supplied screens are the approved design baseline; improvements
   may be proposed during design work.
 - [x] Every application shell (public, auth, client, owner and admin) uses the
@@ -188,7 +190,7 @@ work.
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. | Add provider memberships/locations, offer editing, calendar, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
 | Backend | Fastify/TypeScript + TypeORM/PostgreSQL now covers every route used by the MSW handlers (150/150), including the previously missing `GET /cabinets/all`; OpenAPI and a parity check are kept in sync. Markets, canonical localized location zones for Moscow, Samara, Kaliningrad, Saint Petersburg and Transnistria, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers. The mock and real zone APIs accept both market ids and city codes; the homepage requests four zones while the map can request the full hierarchy. Request/chat events enqueue notifications through the outbox. Local verification supports MSW mock mode or Docker PostgreSQL/Redis with idempotent demo and AutoCare seeds. | Add timezone-aware schedules, reminder delivery, PostGIS/geospatial indexes, provider memberships, trust/ranking evidence and deeper authorization/integration tests. Python rewrite is explicitly deferred until a later approved phase. |
-| Deployment configuration | `.env.example` documents `VITE_DEPLOYMENT_MARKET`; UI/backend enforcement and capability negotiation are not complete. | Add typed frontend config, server allow-list negotiation, Google/Yandex visibility rules and deployment smoke tests. |
+| Deployment configuration | Typed frontend and backend deployment profiles are now fail-closed. `GET /api/v1/deployment-capabilities` keeps mock/real capability negotiation in sync; OAuth buttons, profile linking and server OAuth routes use the deployment allow-list. | Add deployment smoke tests for every supported profile and extend the capability matrix with legal links, currencies and market-specific features. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
 The remaining public pages use the AutoCare visual shell, but Blog, Partners,
@@ -465,11 +467,12 @@ Goal: resolve decisions that would otherwise force schema/API redesign.
 - [x] Select launch countries/regions and the data-driven market/locale model.
 - [x] Select priority launch language packs; keep currency/timezone provider- and
   market-scoped.
-- [ ] Define and approve the deployment capability matrix for
+- [~] Define and approve the deployment capability matrix for
   `VITE_DEPLOYMENT_MARKET`: allowed OAuth providers, payment methods, legal
   links, currencies and market-specific features for `ru`, `global` and future
-  profiles. Unknown or missing values must fail closed to the restrictive
-  profile and emit a startup/configuration warning.
+  profiles. OAuth providers and fail-closed unknown-value handling are now
+  implemented; payment methods, legal links, currencies and other market
+  capabilities still require explicit product approval.
 - [x] Select the first moderated catalog expansion: 18 service definitions now
   cover maintenance, diagnostics, tires, body work, auto electrics, tow trucks,
   mobile diagnostics, roadside assistance, batteries, alignment, washing and
