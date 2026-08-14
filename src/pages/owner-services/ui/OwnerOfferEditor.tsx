@@ -3,8 +3,10 @@ import { useState, type FormEvent } from 'react'
 
 import { useUpdateOwnerAutoCareOfferMutation, type AutoCareApiOffer } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 
 type OwnerOfferEditorLabels = {
+    edit: string
     offerDescription: string
     descriptionPlaceholder: string
     price: string
@@ -21,6 +23,27 @@ type OwnerOfferEditorProps = {
     labels: OwnerOfferEditorLabels
     onCancel: () => void
     onSaved: () => void
+}
+
+type OwnerOfferDialogProps = OwnerOfferEditorProps & {
+    title: string
+    isOpen: boolean
+    onOpenChange: (open: boolean) => void
+}
+
+export function OwnerOfferDialog({ title, isOpen, onOpenChange, ...editorProps }: OwnerOfferDialogProps) {
+    return (
+        <Dialog isOpen={isOpen} onOpenChange={onOpenChange} className="max-w-lg p-5 sm:p-6">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-black">{editorProps.labels.edit} · {title}</DialogTitle>
+                </DialogHeader>
+                <div className="mt-5">
+                    <OwnerOfferEditor {...editorProps} />
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 export function OwnerOfferEditor({ providerId, offer, labels, onCancel, onSaved }: OwnerOfferEditorProps) {

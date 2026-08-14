@@ -5,7 +5,7 @@ import { useState } from 'react'
 import type { AutoCareApiOffer, AutoCareApiProvider, AutoCareApiServiceDefinition } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 
-import { EditOfferButton, OwnerOfferEditor } from './OwnerOfferEditor'
+import { EditOfferButton, OwnerOfferDialog } from './OwnerOfferEditor'
 
 type OwnerBranchServicesProps = {
     provider: AutoCareApiProvider
@@ -88,8 +88,8 @@ function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { 
     const price = new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : 'en-US', { style: 'currency', currency: offer.currencyCode, maximumFractionDigits: 0 }).format(offer.priceFromMinor / 100)
 
     return (
-        <article className="rounded-[var(--radius-card)] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-sm">
-            {isEditing ? <OwnerOfferEditor providerId={providerId} offer={offer} labels={labels} onCancel={() => setIsEditing(false)} onSaved={() => setIsEditing(false)} /> : <>
+        <>
+            <article className="rounded-[var(--radius-card)] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                     <span className="flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span>
                     <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{offer.priceType === 'quote_required' ? labels.estimate : labels.from}</span>
@@ -98,7 +98,8 @@ function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { 
                 {offer.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{offer.description}</p> : null}
                 <p className="mt-2 text-lg font-black text-foreground">{offer.priceType === 'quote_required' ? labels.estimate : price}</p>
                 <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? '—'}</p>
-            </>}
-        </article>
+            </article>
+            <OwnerOfferDialog title={title} isOpen={isEditing} onOpenChange={setIsEditing} providerId={providerId} offer={offer} labels={labels} onCancel={() => setIsEditing(false)} onSaved={() => setIsEditing(false)} />
+        </>
     )
 }
