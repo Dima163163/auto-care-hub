@@ -479,6 +479,7 @@ export type AutoCareTrustResponse = {
     badge: string | null
     reassessedAt: string | null
     evidence: AutoCareTrustEvidence[]
+    explanation?: string
     factors?: { profile: number; reviews: number; evidence: number; reliability: number; claimsPenalty: number }
 }
 export type AutoCareGuaranteeClaim = { id: string; requestId: string; claimType: string; status: string; summary: string; evidenceUrls: string[]; resolution: string | null; createdAt: string; updatedAt: string }
