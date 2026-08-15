@@ -127,6 +127,15 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
 
+export type AutoCareFavorite = {
+    id: string
+    providerId: string
+    locationId: string
+    createdAt: string
+    provider: AutoCareApiProvider
+    offer: AutoCareApiOffer | null
+}
+
 export type AdminAutoCareProvider = AutoCareApiProvider & {
     ownerName: string | null
     trustScore: number
@@ -333,6 +342,15 @@ const autoCareProviderSchema = z.object({
 }).passthrough() satisfies z.ZodType<AutoCareApiProvider>
 
 const autoCareProviderProfileSchema = autoCareProviderSchema.extend({ offers: z.array(autoCareOfferSchema) }).passthrough() satisfies z.ZodType<AutoCareApiProviderProfile>
+const autoCareFavoriteSchema = z.object({
+    id: z.string(),
+    providerId: z.string(),
+    locationId: z.string(),
+    createdAt: z.string().datetime({ offset: true }),
+    provider: autoCareProviderSchema,
+    offer: autoCareOfferSchema.nullable(),
+}).passthrough() satisfies z.ZodType<AutoCareFavorite>
+const autoCareFavoritesSchema = z.array(autoCareFavoriteSchema)
 const autoCareDiscoverySchema = z.object({
     items: z.array(z.object({
         provider: autoCareProviderSchema,
@@ -587,6 +605,26 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: (providerId) => `/v1/providers/${encodeURIComponent(providerId)}`,
             transformResponse: (value: unknown) => autoCareProviderProfileSchema.parse(value),
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: providerId }],
+        }),
+        getAutoCareFavorites: build.query<AutoCareFavorite[], void>({
+            query: () => '/v1/favorites/providers',
+            transformResponse: (value: unknown) => autoCareFavoritesSchema.parse(value),
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'FAVORITES' }],
+        }),
+        addAutoCareFavorite: build.mutation<AutoCareFavorite, { providerId: string; locationId?: string }>({
+            query: ({ providerId, ...body }) => ({ url: `/v1/favorites/providers/${encodeURIComponent(providerId)}`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareFavoriteSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'FAVORITES' }],
+        }),
+        removeAutoCareFavorite: build.mutation<{ success: true }, string>({
+            query: (providerId) => ({ url: `/v1/favorites/providers/${encodeURIComponent(providerId)}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => z.object({ success: z.literal(true) }).parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'FAVORITES' }],
+        }),
+        syncAutoCareFavorites: build.mutation<AutoCareFavorite[], { providerIds: string[] }>({
+            query: (body) => ({ url: '/v1/favorites/providers/sync', method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareFavoritesSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'FAVORITES' }],
         }),
         getAutoCareAvailability: build.query<AutoCareAvailability, { providerId: string; locationId: string; offeringId: string; date: string }>({
             query: ({ providerId, ...params }) => ({ url: `/v1/providers/${encodeURIComponent(providerId)}/availability`, params }),
@@ -887,6 +925,10 @@ export const {
     useUploadOwnerAutoCareProviderLogoMutation,
     useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
+    useGetAutoCareFavoritesQuery,
+    useAddAutoCareFavoriteMutation,
+    useRemoveAutoCareFavoriteMutation,
+    useSyncAutoCareFavoritesMutation,
     useGetAutoCareAvailabilityQuery,
     useGetAutoCareFairPriceQuery,
     useGetAutoCareProviderTrustQuery,

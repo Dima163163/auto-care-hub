@@ -49,6 +49,18 @@ export const autoCareProviderParamsSchema = z.object({
     providerId: z.string().uuid(),
 })
 
+export const autoCareFavoriteParamsSchema = z.object({
+    providerId: z.string().uuid(),
+})
+
+export const createAutoCareFavoriteSchema = z.object({
+    locationId: z.string().uuid().optional(),
+})
+
+export const syncAutoCareFavoritesSchema = z.object({
+    providerIds: z.array(z.string().uuid()).max(100),
+})
+
 export const autoCareOfferParamsSchema = z.object({
     providerId: z.string().uuid(),
     offerId: z.string().uuid(),

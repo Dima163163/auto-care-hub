@@ -185,7 +185,7 @@ work.
 | Public shell | AutoCare SVG logo, responsive header with grouped help/client/provider navigation, locale selector, shared footer, SEO foundation, role-aware Help Center, themed registration and non-duplicated footer navigation are implemented. Legal links now resolve to detailed `/agreement`, `/rules` and `/privacy` pages with client/provider sections, table of contents, stable anchors and SEO metadata. The provider pricing route/components remain preserved but pricing navigation and promotional blocks are hidden during the free MVP launch. | Have the legal entity review and approve the draft texts for Russia, Spain and Moldova/Transnistria; then test every footer route at all maintained locales and publish the final controller/contact/retention details. Enable provider pricing only after the monetization gate is approved. |
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Finish backend parity for every filter (availability, price type, inclusion, bonus, warranty, sort and radius), persisted ranking and one-query map/list loading. |
-| Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
+| Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews, working date picker/modal gallery and authenticated provider favorites are implemented. | Connect live availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
 | Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications, transactional repair events, timezone-aware schedules and locked overlap checks. | Add reminder delivery and production resource-capacity scheduling before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
@@ -349,7 +349,7 @@ than informal follow-up notes.
   polish and real availability remain.
 - [ ] Existing booking snapshot -> immutable AutoCare offer/quote snapshot.
 - [ ] Existing cabinet uploads -> provider, location, inquiry, and message media.
-- [ ] Existing generic favorites -> favorite providers/locations/offerings.
+- [x] Existing generic favorites -> authenticated automotive provider favorites with canonical location/offer snapshots and guest local fallback.
 - [~] Legacy mock data, translations, route names, tests, and assets: public
   AutoCare routes, provider owner profiles, client favorites/bookings/reviews,
   and shared layouts are migrated; protected admin/location adapters remain.
@@ -683,7 +683,7 @@ Goal: deliver the core marketplace value in the browser.
   offerings, amenities, verified reviews and policies. The data API and base
   screen exist; current work is matching the approved profile composition and
   replacing mock-only interactions.
-- [ ] Add favorites.
+- [x] Add authenticated AutoCare provider favorites with guest local fallback, sync and removal endpoints.
 - [x] Add the service request wizard with photo intent, direct-provider payment
   copy, durable request persistence, conversation, image attachments, provider
   quote and explicit customer/provider confirmation boundary.

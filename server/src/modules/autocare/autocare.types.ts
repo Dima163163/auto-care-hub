@@ -159,6 +159,15 @@ export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {
     offers: AutoCareOfferResponse[]
 }
 
+export type AutoCareFavoriteResponse = {
+    id: string
+    providerId: string
+    locationId: string
+    createdAt: string
+    provider: AutoCareProviderResponse
+    offer: AutoCareOfferResponse | null
+}
+
 export type AutoCareReviewResponse = {
     id: string
     providerId: string

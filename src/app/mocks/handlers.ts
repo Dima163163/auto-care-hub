@@ -374,6 +374,9 @@ type OwnerAutoCareProviderMock = AutoCareApiProvider & {
     servicePrices: Partial<Record<string, number>>
 }
 const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = autoCareProviders.slice(0, 2).map((provider) => ({ ...provider }))
+const mockAutoCareFavorites = new Map<string, Set<string>>([
+    ['user-client-1', new Set(['api-proservice-moscow'])],
+])
 const mockProviderLogos = new Map<string, string>()
 const mockProviderMedia = new Map<string, string>()
 
@@ -488,6 +491,19 @@ const mockAutoCareReviewPromos: MockAutoCareReviewPromo[] = []
 
 function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
+}
+
+function toMockAutoCareFavorite(providerId: string, userId: string) {
+    const provider = autoCareProviders.find((item) => item.id === providerId)
+    if (!provider) return null
+    return {
+        id: `favorite-${userId}-${provider.id}`,
+        providerId: provider.id,
+        locationId: provider.location.id,
+        createdAt: '2026-08-14T08:00:00.000Z',
+        provider,
+        offer: provider.offers?.[0] ?? null,
+    }
 }
 
 function mockChatThreadFromRequest(request: MockAutoCareServiceRequest): MockAutoCareChatThread {
@@ -2038,6 +2054,46 @@ export const handlers = [
         if (sort === 'distance_asc') items.sort((left, right) => left.distanceKm - right.distanceKm)
 
         return HttpResponse.json({ items, nextCursor: null })
+    }),
+
+    http.get('/api/v1/favorites/providers', () => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can view automotive favorites.' }, { status: 403 })
+        const providerIds = [...(mockAutoCareFavorites.get(user.id) ?? new Set<string>())]
+        return HttpResponse.json(providerIds.map((providerId) => toMockAutoCareFavorite(providerId, user.id)).filter((item): item is NonNullable<typeof item> => item !== null))
+    }),
+
+    http.post('/api/v1/favorites/providers/sync', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can sync automotive favorites.' }, { status: 403 })
+        const body = await request.json() as { providerIds?: unknown }
+        const providerIds = Array.isArray(body.providerIds) ? body.providerIds.filter((value): value is string => typeof value === 'string').slice(0, 100) : []
+        const favorites = mockAutoCareFavorites.get(user.id) ?? new Set<string>()
+        providerIds.forEach((providerId) => {
+            if (autoCareProviders.some((provider) => provider.id === providerId)) favorites.add(providerId)
+        })
+        mockAutoCareFavorites.set(user.id, favorites)
+        return HttpResponse.json([...favorites].map((providerId) => toMockAutoCareFavorite(providerId, user.id)).filter((item): item is NonNullable<typeof item> => item !== null))
+    }),
+
+    http.post('/api/v1/favorites/providers/:providerId', async ({ params }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can save automotive favorites.' }, { status: 403 })
+        const providerId = String(params.providerId)
+        if (!autoCareProviders.some((provider) => provider.id === providerId)) return HttpResponse.json({ message: 'Provider not found.' }, { status: 404 })
+        const favorites = mockAutoCareFavorites.get(user.id) ?? new Set<string>()
+        favorites.add(providerId)
+        mockAutoCareFavorites.set(user.id, favorites)
+        return HttpResponse.json(toMockAutoCareFavorite(providerId, user.id), { status: 201 })
+    }),
+
+    http.delete('/api/v1/favorites/providers/:providerId', ({ params }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can remove automotive favorites.' }, { status: 403 })
+        const favorites = mockAutoCareFavorites.get(user.id) ?? new Set<string>()
+        favorites.delete(String(params.providerId))
+        mockAutoCareFavorites.set(user.id, favorites)
+        return HttpResponse.json({ success: true })
     }),
 
     http.get('/api/v1/service-requests/:requestId/timeline', ({ params }) => {

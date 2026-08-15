@@ -42,6 +42,7 @@ import {
 import {
     AutomotiveProviderMembershipEntity,
 } from './automotive/provider-membership.entity.js'
+import { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
 import {
     AutoCareChatThreadEntity,
     ServiceAttachmentEntity,
@@ -103,6 +104,7 @@ export const entities = [
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
     AutomotiveProviderMembershipEntity,
+    AutomotiveProviderFavoriteEntity,
     ServiceRequestEntity,
     AutoCareServiceQuoteEntity,
     AutoCareChatThreadEntity,
@@ -121,6 +123,7 @@ export const entities = [
 ]
 
 export { BookingEntity } from './booking/booking.entity.js'
+export { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
 export { CabinetEntity } from './cabinet/cabinet.entity.js'
 export { ReviewEntity } from './review/review.entity.js'
 export { SecurityTokenEntity } from './security-token/security-token.entity.js'

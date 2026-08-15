@@ -280,6 +280,13 @@ presentation data only and never a verification signal.
 | POST | `/users/me/favorites/sync` | authenticated |
 | POST | `/users/me/favorites/:cabinetId` | authenticated |
 | DELETE | `/users/me/favorites/:cabinetId` | authenticated |
+
+AutoCare provider favorites are separate from the legacy cabinet collection:
+
+| GET | `/v1/favorites/providers` | authenticated client |
+| POST | `/v1/favorites/providers/sync` | authenticated client |
+| POST | `/v1/favorites/providers/:providerId` | authenticated client |
+| DELETE | `/v1/favorites/providers/:providerId` | authenticated client |
 | PATCH | `/users/me/preferences` | authenticated |
 | GET | `/users/me/export` | authenticated | Rate-limited JSON export of the caller's own data; response is `no-store`. |
 | POST | `/users/me/deletion-request` | authenticated | Creates or returns one pending deletion request; does not delete data. |
