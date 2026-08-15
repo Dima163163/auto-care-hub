@@ -90,6 +90,7 @@ export {
     useCreateAutoCareServiceAttachmentMutation,
     useCreateAutoCareServiceQuoteMutation,
     useRequestAutoCareServiceRescheduleMutation,
+    useMarkAutoCareServiceRequestNoShowMutation,
 } from './api/autocareApi'
 export type {
     AutoCareApiDiscoveryItem,

@@ -16,6 +16,7 @@ export enum ServiceRequestStatus {
     Accepted = 'accepted',
     Declined = 'declined',
     Cancelled = 'cancelled',
+    NoShow = 'no_show',
     Closed = 'closed',
 }
 
@@ -87,6 +88,9 @@ export class ServiceRequestEntity {
     @Column({ type: 'timestamptz', nullable: true }) cancelledAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) cancelledById!: string | null
     @Column({ type: 'text', nullable: true }) cancellationReason!: string | null
+    @Column({ type: 'timestamptz', nullable: true }) noShowAt!: Date | null
+    @Column({ type: 'uuid', nullable: true }) noShowById!: string | null
+    @Column({ type: 'text', nullable: true }) noShowReason!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }

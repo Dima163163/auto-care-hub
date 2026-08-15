@@ -423,13 +423,16 @@ type MockAutoCareServiceRequest = {
     quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string }>
     idempotencyKey: string | null
     idempotencyFingerprint: string
-    status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'cancelled' | 'closed'
+    status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'cancelled' | 'no_show' | 'closed'
     clientId: string
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null
     cancelledAt?: string | null
     cancelledById?: string | null
     cancellationReason?: string | null
+    noShowAt?: string | null
+    noShowById?: string | null
+    noShowReason?: string | null
     reschedule?: {
         id: string
         proposedAt: string
@@ -2617,6 +2620,27 @@ export const handlers = [
         if (body.decision === 'accept') item.preferredAt = reschedule.proposedAt
         item.updatedAt = now
         pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: body.decision === 'accept' ? 'Клиент подтвердил новое время' : 'Клиент отклонил новое время', message: body.decision === 'accept' ? 'Новое время визита подтверждено клиентом.' : 'Клиент отклонил предложенное время визита.' })
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.post('/api/owner/service-requests/:requestId/no-show', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (item.status === 'no_show') {
+            const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+            return HttpResponse.json(response)
+        }
+        if (item.status !== 'accepted' || !item.providerConfirmedAt || !item.preferredAt || new Date(item.preferredAt).getTime() > Date.now()) return HttpResponse.json({ message: 'Only confirmed visits after their scheduled time can be marked as no-show.' }, { status: 409 })
+        const body = await request.json().catch(() => ({})) as { reason?: string | null }
+        const now = new Date().toISOString()
+        item.status = 'no_show'
+        item.noShowAt = now
+        item.noShowById = user.id
+        item.noShowReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
+        item.updatedAt = now
+        pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Визит отмечен как неявка', message: 'Сервис отметил, что визит не состоялся.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),

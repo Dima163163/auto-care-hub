@@ -746,8 +746,8 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
 - [ ] Implement explicit state transitions and actor permissions.
 - [~] Implement transactional cancellation and reschedule workflows: client
   cancellation, provider-proposed time changes, client accept/reject decisions,
-  audit events and participant notifications are live; no-show policy remains
-  pending.
+  audit events and participant notifications are live; a provider can mark a
+  confirmed missed visit as no-show only after its scheduled time.
 - [ ] Update customer bookings dashboard and provider calendar/work queue.
 - [~] Connect AutoCare request notifications to the transactional outbox; booking
   reminders and localized service-request email/push templates remain open.

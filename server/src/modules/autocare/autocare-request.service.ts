@@ -236,6 +236,9 @@ function requestResponse(
         cancelledAt: request.cancelledAt?.toISOString() ?? null,
         cancelledById: request.cancelledById,
         cancellationReason: request.cancellationReason,
+        noShowAt: request.noShowAt?.toISOString() ?? null,
+        noShowById: request.noShowById,
+        noShowReason: request.noShowReason,
         reschedule,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
@@ -930,6 +933,28 @@ export async function decideAutoCareServiceReschedule(user: UserEntity, requestI
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
         if (provider?.ownerId) await notifyAutoCareParticipant({ userId: provider.ownerId, requestId, event: `reschedule-${decision}-${pending.id}`, role: 'owner', title: decision === 'accept' ? 'Клиент подтвердил новое время' : 'Клиент отклонил новое время', message: decision === 'accept' ? 'Новое время визита подтверждено клиентом.' : 'Клиент отклонил предложенное время визита.' }, manager)
         return { request, reschedule: pending, changed: true }
+    })
+    return hydrateRequest(transactionResult.request)
+}
+
+export async function markAutoCareServiceRequestNoShow(user: UserEntity, requestId: string, reason?: string | null) {
+    ownerOnly(user)
+    const transactionResult = await AppDataSource.transaction(async (manager) => {
+        const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!request) notFound('Service request not found.')
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
+        if (request.status === ServiceRequestStatus.NoShow) return { request, changed: false }
+        if (request.status !== ServiceRequestStatus.Accepted || !request.providerConfirmedAt || !request.preferredAt) conflict('Only confirmed visits can be marked as no-show.')
+        if (request.preferredAt.getTime() > Date.now()) conflict('A visit can be marked as no-show only after its scheduled time.')
+        request.status = ServiceRequestStatus.NoShow
+        request.noShowAt = new Date()
+        request.noShowById = user.id
+        request.noShowReason = reason?.trim() || null
+        await manager.getRepository(ServiceRequestEntity).save(request)
+        await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'no_show', title: 'Заявка отмечена как неявка клиента', notes: request.noShowReason })
+        await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'no-show', role: 'client', title: 'Визит отмечен как неявка', message: 'Сервис отметил, что визит не состоялся.' }, manager)
+        return { request, changed: true }
     })
     return hydrateRequest(transactionResult.request)
 }

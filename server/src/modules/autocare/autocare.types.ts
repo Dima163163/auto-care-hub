@@ -311,6 +311,9 @@ export type AutoCareServiceRequestResponse = {
     cancelledAt: string | null
     cancelledById: string | null
     cancellationReason: string | null
+    noShowAt: string | null
+    noShowById: string | null
+    noShowReason: string | null
     reschedule: AutoCareRescheduleResponse | null
     createdAt: string
     updatedAt: string

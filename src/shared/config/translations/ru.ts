@@ -772,8 +772,9 @@ export const ruTranslations = {
         ownerRequestsRescheduleTitle: 'Предложить другое время',
         ownerRequestsRescheduleDate: 'Новая дата и время',
         ownerRequestsRescheduleSend: 'Предложить новое время',
+        ownerRequestsNoShow: 'Отметить как неявку',
         ownerRequestStatus: {
-            draft: 'Черновик', open: 'Новая', awaiting_reply: 'Ждёт ответа', estimate_shared: 'Смета отправлена', accepted: 'Подтверждена', declined: 'Отклонена', cancelled: 'Отменена', closed: 'Закрыта',
+            draft: 'Черновик', open: 'Новая', awaiting_reply: 'Ждёт ответа', estimate_shared: 'Смета отправлена', accepted: 'Подтверждена', declined: 'Отклонена', cancelled: 'Отменена', no_show: 'Неявка', closed: 'Закрыта',
         },
         clientServiceRequestsTitle: 'Заявки в автосервисы',
         clientServiceRequestsDescription: 'Вопросы, фотографии и сметы из переписки с AutoCare-сервисами.',
