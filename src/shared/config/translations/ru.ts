@@ -770,7 +770,7 @@ export const ruTranslations = {
         ownerRequestsSendMessage: 'Отправить сообщение',
         ownerRequestsConfirm: 'Подтвердить заявку',
         ownerRequestStatus: {
-            draft: 'Черновик', open: 'Новая', awaiting_reply: 'Ждёт ответа', estimate_shared: 'Смета отправлена', accepted: 'Подтверждена', declined: 'Отклонена', closed: 'Закрыта',
+            draft: 'Черновик', open: 'Новая', awaiting_reply: 'Ждёт ответа', estimate_shared: 'Смета отправлена', accepted: 'Подтверждена', declined: 'Отклонена', cancelled: 'Отменена', closed: 'Закрыта',
         },
         clientServiceRequestsTitle: 'Заявки в автосервисы',
         clientServiceRequestsDescription: 'Вопросы, фотографии и сметы из переписки с AutoCare-сервисами.',
@@ -782,6 +782,9 @@ export const ruTranslations = {
         clientServiceRequestsQuote: 'Предварительная смета',
         clientServiceRequestsAcceptQuote: 'Принять смету',
         clientServiceRequestsDeclineQuote: 'Отклонить',
+        clientServiceRequestsCancel: 'Отменить заявку',
+        clientServiceRequestsCancelConfirm: 'Отменить эту заявку на услугу?',
+        clientServiceRequestsCancelError: 'Не удалось отменить заявку.',
         clientServiceRequestsNoMessages: 'Сообщений пока нет.',
         clientServiceRequestsMessagePlaceholder: 'Напишите автосервису',
         clientServiceRequestsSendMessage: 'Отправить сообщение',

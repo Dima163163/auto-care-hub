@@ -15,6 +15,7 @@ export enum ServiceRequestStatus {
     EstimateShared = 'estimate_shared',
     Accepted = 'accepted',
     Declined = 'declined',
+    Cancelled = 'cancelled',
     Closed = 'closed',
 }
 
@@ -83,6 +84,9 @@ export class ServiceRequestEntity {
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) providerConfirmedAt!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) cancelledAt!: Date | null
+    @Column({ type: 'uuid', nullable: true }) cancelledById!: string | null
+    @Column({ type: 'text', nullable: true }) cancellationReason!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }

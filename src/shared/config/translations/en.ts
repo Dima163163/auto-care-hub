@@ -767,7 +767,7 @@ export const enTranslations = {
         ownerRequestsSendMessage: 'Send message',
         ownerRequestsConfirm: 'Confirm request',
         ownerRequestStatus: {
-            draft: 'Draft', open: 'New', awaiting_reply: 'Awaiting reply', estimate_shared: 'Estimate sent', accepted: 'Confirmed', declined: 'Declined', closed: 'Closed',
+            draft: 'Draft', open: 'New', awaiting_reply: 'Awaiting reply', estimate_shared: 'Estimate sent', accepted: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', closed: 'Closed',
         },
         clientServiceRequestsTitle: 'Service requests',
         clientServiceRequestsDescription: 'Questions, photos and estimates from your AutoCare conversations.',
@@ -779,6 +779,9 @@ export const enTranslations = {
         clientServiceRequestsQuote: 'Preliminary estimate',
         clientServiceRequestsAcceptQuote: 'Accept estimate',
         clientServiceRequestsDeclineQuote: 'Decline',
+        clientServiceRequestsCancel: 'Cancel request',
+        clientServiceRequestsCancelConfirm: 'Cancel this service request?',
+        clientServiceRequestsCancelError: 'Could not cancel the request.',
         clientServiceRequestsNoMessages: 'No messages yet.',
         clientServiceRequestsMessagePlaceholder: 'Write to the service',
         clientServiceRequestsSendMessage: 'Send message',

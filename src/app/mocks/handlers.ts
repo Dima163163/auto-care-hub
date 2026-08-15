@@ -423,10 +423,13 @@ type MockAutoCareServiceRequest = {
     quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string }>
     idempotencyKey: string | null
     idempotencyFingerprint: string
-    status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'closed'
+    status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'cancelled' | 'closed'
     clientId: string
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null
+    cancelledAt?: string | null
+    cancelledById?: string | null
+    cancellationReason?: string | null
     createdAt: string
     updatedAt: string
 }
@@ -2539,6 +2542,28 @@ export const handlers = [
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         item.clientConfirmedAt ??= new Date().toISOString()
         item.updatedAt = new Date().toISOString()
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/cancel', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (item.status === 'cancelled') {
+            const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+            return HttpResponse.json(response)
+        }
+        if (['declined', 'closed'].includes(item.status)) return HttpResponse.json({ message: 'This service request can no longer be cancelled.' }, { status: 409 })
+        const body = await request.json().catch(() => ({})) as { reason?: string | null }
+        const now = new Date().toISOString()
+        item.status = 'cancelled'
+        item.cancelledAt = now
+        item.cancelledById = user.id
+        item.cancellationReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
+        item.updatedAt = now
+        pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент отменил заявку', message: 'Клиент отменил заявку на услугу.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),

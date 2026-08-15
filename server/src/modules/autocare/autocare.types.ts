@@ -308,6 +308,9 @@ export type AutoCareServiceRequestResponse = {
     status: ServiceRequestStatus
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null
+    cancelledAt: string | null
+    cancelledById: string | null
+    cancellationReason: string | null
     createdAt: string
     updatedAt: string
 }

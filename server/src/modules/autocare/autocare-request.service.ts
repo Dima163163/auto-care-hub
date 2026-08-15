@@ -119,6 +119,14 @@ const serviceRequestConfirmableStates = new Set<ServiceRequestStatus>([
     ServiceRequestStatus.Accepted,
 ])
 
+const serviceRequestCancellableStates = new Set<ServiceRequestStatus>([
+    ServiceRequestStatus.Draft,
+    ServiceRequestStatus.Open,
+    ServiceRequestStatus.AwaitingReply,
+    ServiceRequestStatus.EstimateShared,
+    ServiceRequestStatus.Accepted,
+])
+
 function sameServiceOffer(a: ServiceMessageOffer, b: ServiceMessageOffer, compareCoupon: boolean) {
     return a.type === b.type &&
         a.title === b.title &&
@@ -214,6 +222,9 @@ function requestResponse(
         status: request.status,
         clientConfirmedAt: request.clientConfirmedAt?.toISOString() ?? null,
         providerConfirmedAt: request.providerConfirmedAt?.toISOString() ?? null,
+        cancelledAt: request.cancelledAt?.toISOString() ?? null,
+        cancelledById: request.cancelledById,
+        cancellationReason: request.cancellationReason,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
     }
@@ -827,4 +838,27 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
     })
     const request = transactionResult.request
     return hydrateRequest(request)
+}
+
+export async function cancelAutoCareServiceRequest(user: UserEntity, requestId: string, reason?: string | null) {
+    clientOnly(user)
+    const transactionResult = await AppDataSource.transaction(async (manager) => {
+        const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!request) notFound('Service request not found.')
+        if (request.clientId !== user.id) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service request.' })
+        if (request.status === ServiceRequestStatus.Cancelled) return { request, changed: false }
+        if (!serviceRequestCancellableStates.has(request.status)) conflict('This service request can no longer be cancelled.')
+        request.status = ServiceRequestStatus.Cancelled
+        request.cancelledAt = new Date()
+        request.cancelledById = user.id
+        request.cancellationReason = reason?.trim() || null
+        await manager.getRepository(ServiceRequestEntity).save(request)
+        await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'cancelled', title: 'Клиент отменил заявку', notes: request.cancellationReason })
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+        if (provider?.ownerId) {
+            await notifyAutoCareParticipant({ userId: provider.ownerId, requestId, event: 'cancelled-client', role: 'owner', title: 'Клиент отменил заявку', message: 'Клиент отменил заявку на услугу.', }, manager)
+        }
+        return { request, changed: true }
+    })
+    return hydrateRequest(transactionResult.request)
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { CheckCircle2, Wrench } from 'lucide-react'
+import { CheckCircle2, CircleX, Wrench } from 'lucide-react'
 
 import {
     ServiceRequestChat,
     useAcceptAutoCareServiceQuoteMutation,
+    useCancelAutoCareServiceRequestMutation,
     useDeclineAutoCareServiceQuoteMutation,
     useGetMyAutoCareServiceRequestsQuery,
     type AutoCareServiceRequest,
@@ -30,7 +31,13 @@ function Conversation({ request, onClose }: { request: AutoCareServiceRequest; o
     const { t } = useTranslation()
     const [acceptQuote, { isLoading: isAccepting }] = useAcceptAutoCareServiceQuoteMutation()
     const [declineQuote, { isLoading: isDeclining }] = useDeclineAutoCareServiceQuoteMutation()
-    return <div className="mt-5 border-t border-border pt-5"><div className="mb-3 flex items-center justify-end"><button type="button" onClick={onClose} className="text-xs font-bold text-muted-foreground hover:text-foreground">{t('common.close')}</button></div>{request.quote ? <div className="mb-4 rounded-[var(--radius-card)] bg-primary/5 p-3"><div className="flex items-center gap-3"><CheckCircle2 className="size-4 text-primary" /><p className="text-xs font-bold text-foreground">{t('autocare.clientServiceRequestsQuote')} · {formatMoney(request.quote.amountMinor, request.quote.currencyCode)}</p></div>{request.status === 'estimate_shared' ? <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={isAccepting || isDeclining} onClick={() => void acceptQuote(request.id)} className="h-9 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground">{isAccepting ? t('common.saving') : t('autocare.clientServiceRequestsAcceptQuote')}</button><button type="button" disabled={isAccepting || isDeclining} onClick={() => void declineQuote(request.id)} className="h-9 rounded-[var(--radius-control)] border border-border px-3 text-xs font-bold text-foreground">{isDeclining ? t('common.saving') : t('autocare.clientServiceRequestsDeclineQuote')}</button></div> : null}</div> : null}<ServiceRequestChat requestId={request.id} /></div>
+    const [cancelRequest, { isLoading: isCancelling, error: cancelError }] = useCancelAutoCareServiceRequestMutation()
+    const canCancel = ['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted'].includes(request.status)
+    const handleCancel = () => {
+        if (!window.confirm(t('autocare.clientServiceRequestsCancelConfirm'))) return
+        void cancelRequest({ requestId: request.id }).unwrap().catch(() => undefined)
+    }
+    return <div className="mt-5 border-t border-border pt-5"><div className="mb-3 flex items-center justify-end"><button type="button" onClick={onClose} className="text-xs font-bold text-muted-foreground hover:text-foreground">{t('common.close')}</button></div>{request.quote ? <div className="mb-4 rounded-[var(--radius-card)] bg-primary/5 p-3"><div className="flex items-center gap-3"><CheckCircle2 className="size-4 text-primary" /><p className="text-xs font-bold text-foreground">{t('autocare.clientServiceRequestsQuote')} · {formatMoney(request.quote.amountMinor, request.quote.currencyCode)}</p></div>{request.status === 'estimate_shared' ? <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={isAccepting || isDeclining} onClick={() => void acceptQuote(request.id)} className="h-9 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground">{isAccepting ? t('common.saving') : t('autocare.clientServiceRequestsAcceptQuote')}</button><button type="button" disabled={isAccepting || isDeclining} onClick={() => void declineQuote(request.id)} className="h-9 rounded-[var(--radius-control)] border border-border px-3 text-xs font-bold text-foreground">{isDeclining ? t('common.saving') : t('autocare.clientServiceRequestsDeclineQuote')}</button></div> : null}</div> : null}<ServiceRequestChat requestId={request.id} />{canCancel ? <div className="mt-4 border-t border-border pt-4"><button type="button" disabled={isCancelling} onClick={handleCancel} className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive hover:bg-destructive/5"><CircleX className="size-3.5" />{isCancelling ? t('common.saving') : t('autocare.clientServiceRequestsCancel')}</button>{cancelError ? <p className="mt-2 text-xs font-semibold text-destructive">{getApiErrorMessage(cancelError, t('autocare.clientServiceRequestsCancelError'))}</p> : null}</div> : null}</div>
 }
 
 function Status({ status }: { status: AutoCareServiceRequest['status'] }) { const { t } = useTranslation(); return <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{t(`autocare.ownerRequestStatus.${status}` as const)}</span> }
