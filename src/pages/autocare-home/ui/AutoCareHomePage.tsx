@@ -27,7 +27,7 @@ export function AutoCareHomePage() {
     return (
         <>
             <AutoCareHero marketId={marketId} onMarketChange={handleMarketChange} />
-            <ProviderPreviewSection />
+            <ProviderPreviewSection marketId={marketId} />
             <HomeDiscoveryGrid marketId={marketId} />
             <HomeProcessSection />
             <HomeReviewsSection />

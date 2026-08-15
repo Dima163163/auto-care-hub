@@ -74,15 +74,17 @@ function sortProviders(items: readonly HomeProvider[], sort: HomeSort) {
     })
 }
 
-export function ProviderPreviewSection() {
+export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     const { t } = useTranslation()
-    const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: 'ru-moscow', radius: 10 })
+    const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: marketId, radius: 10 })
     const [sort, setSort] = useState<HomeSort>('recommended')
     const [page, setPage] = useState(0)
-    const discovery = useGetAutoCareDiscoveryQuery({ serviceId: 'brakes', marketId: 'ru-moscow', radiusKm: 10, limit: 16 })
+    const discovery = useGetAutoCareDiscoveryQuery({ serviceId: 'brakes', marketId, radiusKm: 10, limit: 16 })
     const pageSize = 4
     const remoteProviders = useMemo(() => discovery.data?.items.map(mapAutoCareDiscoveryItem) ?? [], [discovery.data])
-    const sourceProviders = IS_MOCK_API ? providers : remoteProviders.map(toHomeProvider)
+    const sourceProviders = IS_MOCK_API
+        ? remoteProviders.length > 0 || marketId !== 'moscow' ? remoteProviders.map(toHomeProvider) : providers
+        : remoteProviders.map(toHomeProvider)
     const sortedProviders = useMemo(() => sortProviders(sourceProviders, sort), [sort, sourceProviders])
     const pageCount = Math.ceil(sortedProviders.length / pageSize)
     const visibleProviders = sortedProviders.slice(page * pageSize, page * pageSize + pageSize)
