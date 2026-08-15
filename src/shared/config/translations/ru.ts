@@ -1000,6 +1000,7 @@ export const ruTranslations = {
         bookingToday: 'Запись сегодня',
         addFavorite: 'Добавить в избранное',
         nearestBooking: 'Ближайшая запись',
+        noProvidersInRegion: 'В данный момент доступных сервисов в вашем регионе нет',
         exploreLocations: 'Исследуйте по локации',
         viewOnMap: 'Смотреть на карте',
         noLocations: 'Для этого города пока нет опубликованных зон',

@@ -81,7 +81,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     const { t } = useTranslation()
     const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: marketId, radius: 10 })
     const [sort, setSort] = useState<HomeSort>('recommended')
-    const [page, setPage] = useState(0)
+    const [pageState, setPageState] = useState({ marketId, page: 0 })
     const discovery = useGetAutoCareDiscoveryQuery({ serviceId: 'brakes', marketId, radiusKm: 10, limit: 16 })
     const pageSize = 4
     const remoteProviders = useMemo(() => discovery.data?.items.map(mapAutoCareDiscoveryItem) ?? [], [discovery.data])
@@ -89,17 +89,26 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
         ? remoteProviders.length > 0 || marketId !== 'moscow' ? remoteProviders.map(toHomeProvider) : providers
         : remoteProviders.map(toHomeProvider)
     const sortedProviders = useMemo(() => sortProviders(sourceProviders, sort), [sort, sourceProviders])
+    const page = pageState.marketId === marketId ? pageState.page : 0
     const pageCount = Math.ceil(sortedProviders.length / pageSize)
     const visibleProviders = sortedProviders.slice(page * pageSize, page * pageSize + pageSize)
     const isInitialLoading = discovery.isLoading && sourceProviders.length === 0
+    const hasNoProviders = !isInitialLoading && !discovery.isError && sourceProviders.length === 0
+
+    const setActivePage = (nextPage: (currentPage: number) => number) => {
+        setPageState((current) => ({
+            marketId,
+            page: nextPage(current.marketId === marketId ? current.page : 0),
+        }))
+    }
 
     const handleSortChange = (value: HomeSort) => {
         setSort(value)
-        setPage(0)
+        setActivePage(() => 0)
     }
 
-    const showPreviousPage = () => setPage((current) => Math.max(current - 1, 0))
-    const showNextPage = () => setPage((current) => Math.min(current + 1, pageCount - 1))
+    const showPreviousPage = () => setActivePage((current) => Math.max(current - 1, 0))
+    const showNextPage = () => setActivePage((current) => Math.min(current + 1, pageCount - 1))
     const isFirstPage = page === 0
     const isLastPage = page >= pageCount - 1
 
@@ -128,6 +137,8 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                 <div className="mt-5 grid gap-4 lg:grid-cols-4" aria-busy={isInitialLoading}>
                     {isInitialLoading
                         ? <ProviderPreviewSkeleton label={t('common.loading')} />
+                        : hasNoProviders
+                            ? <ProviderPreviewEmptyState message={t('autocare.noProvidersInRegion')} />
                         : visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
                 </div>
                 {!isFirstPage ? <button type="button" onClick={showPreviousPage} className="absolute -left-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('common.back')}>
@@ -138,6 +149,19 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                 </button> : null}
             </div>
         </section>
+    )
+}
+
+function ProviderPreviewEmptyState({ message }: { message: string }) {
+    return (
+        <div role="status" aria-live="polite" className="flex min-h-[352px] items-center justify-center rounded-[9px] border border-border bg-card p-6 text-center lg:col-span-4">
+            <div className="max-w-md">
+                <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <MapPin className="size-6" aria-hidden="true" />
+                </span>
+                <p className="mt-4 text-base font-black text-foreground">{message}</p>
+            </div>
+        </div>
     )
 }
 
