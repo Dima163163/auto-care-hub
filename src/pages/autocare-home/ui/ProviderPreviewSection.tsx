@@ -25,6 +25,7 @@ type HomeProvider = {
     next: string
     tag?: 'best' | 'rating'
     verified: boolean
+    trustBadge?: string | null
 }
 
 const featuredProviders: readonly HomeProvider[] = [
@@ -57,6 +58,7 @@ function toHomeProvider(provider: ProviderPreview): HomeProvider {
         priceValue: provider.price,
         next: formatSlot(provider.nextSlot),
         verified: provider.verified,
+        trustBadge: provider.trustBadge,
     }
 }
 
@@ -145,6 +147,7 @@ function ProviderCard({ provider }: { provider: HomeProvider }) {
                 <ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-6" />
                 <h3 className="text-[1.02rem] font-black">{provider.name}</h3>
                 {provider.verified ? <BadgeCheck className="size-4 fill-primary text-primary-foreground" /> : null}
+                {provider.trustBadge === 'trusted' ? <span className="rounded-full bg-status-success-surface px-1.5 py-0.5 text-[9px] font-black text-status-success-foreground">{t('autocare.trustBadgeLabel')}</span> : null}
             </div>
             <p className="mt-3 flex items-center gap-1 text-sm"><strong className="text-rating-foreground">{provider.rating}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="size-3.5 fill-rating-fill text-rating-fill" />)}<span className="ml-1 text-xs text-muted-foreground">({t('autocare.reviews', { count: provider.reviews })})</span></p>
             <p className="mt-3 flex items-center gap-2 text-xs font-medium text-muted-foreground"><MapPin className="size-3.5" />{provider.distance}<span>·</span>{provider.address}</p>

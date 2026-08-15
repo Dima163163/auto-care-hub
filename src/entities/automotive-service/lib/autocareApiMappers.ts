@@ -31,6 +31,8 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         logoUrl: item.provider.logoUrl,
         bonus: item.provider.bonusSummary ?? undefined,
         verified: item.provider.verified,
+        trustScore: item.provider.trustScore,
+        trustBadge: item.provider.trustBadge,
         priceType: item.offer.priceType ?? (item.offer.priceToMinor === null ? 'from' : 'range'),
         inclusions: item.offer.inclusions,
         warrantyMonths: item.offer.warrantyText ? 12 : null,
