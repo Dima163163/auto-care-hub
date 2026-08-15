@@ -421,6 +421,9 @@ type MockAutoCareServiceRequest = {
     note: string | null
     quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string } | null
     quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string }>
+    acceptedQuoteVersion?: number | null
+    acceptedQuoteSnapshot?: Record<string, unknown> | null
+    acceptedQuoteAt?: string | null
     idempotencyKey: string | null
     idempotencyFingerprint: string
     status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'cancelled' | 'no_show' | 'closed'
@@ -2678,8 +2681,14 @@ export const handlers = [
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
         item.status = 'accepted'
-        item.clientConfirmedAt = new Date().toISOString()
-        item.updatedAt = new Date().toISOString()
+        const acceptedAt = new Date().toISOString()
+        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
+        const latestQuoteVersion = latestQuote && 'version' in latestQuote && typeof latestQuote.version === 'number' ? latestQuote.version : null
+        item.clientConfirmedAt = acceptedAt
+        item.acceptedQuoteVersion = latestQuoteVersion
+        item.acceptedQuoteSnapshot = latestQuote ? { ...latestQuote, acceptedAt, acceptedFromQuoteVersion: latestQuoteVersion } : null
+        item.acceptedQuoteAt = acceptedAt
+        item.updatedAt = acceptedAt
         pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент принял смету', message: 'Клиент подтвердил предварительную стоимость услуги.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
@@ -2693,6 +2702,9 @@ export const handlers = [
         if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
         item.status = 'declined'
         item.clientConfirmedAt = new Date().toISOString()
+        item.acceptedQuoteVersion = null
+        item.acceptedQuoteSnapshot = null
+        item.acceptedQuoteAt = null
         item.updatedAt = new Date().toISOString()
         pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент отклонил смету', message: 'Клиент попросил не продолжать по этой смете.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item

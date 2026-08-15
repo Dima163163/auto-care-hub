@@ -230,6 +230,9 @@ function requestResponse(
             }
             : null,
         quoteHistory,
+        acceptedQuoteVersion: request.acceptedQuoteVersion,
+        acceptedQuoteSnapshot: request.acceptedQuoteSnapshot,
+        acceptedQuoteAt: request.acceptedQuoteAt?.toISOString() ?? null,
         status: request.status,
         clientConfirmedAt: request.clientConfirmedAt?.toISOString() ?? null,
         providerConfirmedAt: request.providerConfirmedAt?.toISOString() ?? null,
@@ -583,9 +586,20 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
         if (lockedRequest.status !== ServiceRequestStatus.EstimateShared || !lockedRequest.estimateSnapshot) conflict('There is no pending estimate for this service request.')
         const validUntil = lockedRequest.estimateSnapshot.validUntil
         if (typeof validUntil === 'string' && new Date(validUntil).getTime() <= Date.now()) conflict('This estimate has expired.')
+        const latestQuote = await manager.getRepository(AutoCareServiceQuoteEntity).findOne({ where: { requestId }, order: { version: 'DESC' } })
+        const acceptedAt = new Date()
         lockedRequest.status = targetStatus
-        lockedRequest.clientConfirmedAt = new Date()
+        lockedRequest.clientConfirmedAt = acceptedAt
         lockedRequest.estimateSnapshot = { ...lockedRequest.estimateSnapshot, clientDecision: targetStatus }
+        lockedRequest.acceptedQuoteVersion = accepted ? latestQuote?.version ?? null : null
+        lockedRequest.acceptedQuoteSnapshot = accepted
+            ? {
+                ...(latestQuote?.snapshot ?? lockedRequest.estimateSnapshot),
+                acceptedAt: acceptedAt.toISOString(),
+                acceptedFromQuoteVersion: latestQuote?.version ?? null,
+            }
+            : null
+        lockedRequest.acceptedQuoteAt = accepted ? acceptedAt : null
         const request = await manager.getRepository(ServiceRequestEntity).save(lockedRequest)
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: accepted ? 'estimate_accepted' : 'estimate_declined', title: accepted ? 'Клиент принял смету' : 'Клиент отклонил смету' })

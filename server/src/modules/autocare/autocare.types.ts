@@ -305,6 +305,9 @@ export type AutoCareServiceRequestResponse = {
     note: string | null
     quote: AutoCareServiceQuoteResponse | null
     quoteHistory: AutoCareServiceQuoteHistoryResponse[]
+    acceptedQuoteVersion: number | null
+    acceptedQuoteSnapshot: Record<string, unknown> | null
+    acceptedQuoteAt: string | null
     status: ServiceRequestStatus
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null

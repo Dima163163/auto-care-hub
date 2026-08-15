@@ -82,6 +82,10 @@ export class ServiceRequestEntity {
     @Column({ type: 'text', nullable: true }) note!: string | null
     @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'jsonb', nullable: true }) estimateSnapshot!: Record<string, unknown> | null
+    /** Immutable price and scope captured when the client accepts a quote. */
+    @Column({ type: 'integer', nullable: true }) acceptedQuoteVersion!: number | null
+    @Column({ type: 'jsonb', nullable: true }) acceptedQuoteSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'timestamptz', nullable: true }) acceptedQuoteAt!: Date | null
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) providerConfirmedAt!: Date | null

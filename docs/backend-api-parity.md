@@ -17,8 +17,8 @@ The inventory compares the route signatures declared in
 
 | Set | Count | Meaning |
 | --- | ---: | --- |
-| MSW mock routes | 168 | Requests the browser can exercise without a server |
-| Fastify routes | 204 | Mock routes plus auth, health, admin, uploads, payment, chat and WebSocket support |
+| MSW mock routes | 177 | Requests the browser can exercise without a server |
+| Fastify routes | 213 | Mock routes plus auth, health, admin, uploads, payment, chat and WebSocket support |
 | Missing mock routes | 0 | Every mock request has a real backend route |
 
 The check is executable with `npm run check:api-parity`. It intentionally
@@ -32,7 +32,7 @@ implemented as a flat public catalog of active cabinets and declared in
 OpenAPI. The mock uses the same active-only rule; drafts and blocked records
 remain owner/admin state and are never exposed through a public catalog.
 
-The 168 mock routes are distributed across these top-level API groups:
+The 177 mock routes are distributed across these top-level API groups:
 
 | Prefix | Routes | Contract role |
 | --- | ---: | --- |
