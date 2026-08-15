@@ -122,6 +122,7 @@ export type ServiceMessageOffer = {
 
 @Entity('autocare_service_messages')
 @Index(['requestId', 'createdAt'])
+@Index('IDX_autocare_service_messages_idempotency', ['requestId', 'senderId', 'idempotencyKey'], { unique: true, where: '"idempotencyKey" IS NOT NULL' })
 @Check('CHK_autocare_service_messages_body', '"body" IS NULL OR char_length("body") BETWEEN 1 AND 4000')
 export class ServiceMessageEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
@@ -130,6 +131,8 @@ export class ServiceMessageEntity {
     @Column({ type: 'uuid' }) senderId!: string
     @Column({ type: 'enum', enum: ServiceMessageKind, enumName: 'autocare_service_message_kind', default: ServiceMessageKind.Text }) kind!: ServiceMessageKind
     @Column({ type: 'text', nullable: true }) body!: string | null
+    @Column({ type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
+    @Column({ type: 'char', length: 64, nullable: true }) idempotencyFingerprint!: string | null
     @Column({ type: 'jsonb', nullable: true }) offer!: ServiceMessageOffer | null
     @Column({ type: 'timestamptz', nullable: true }) deliveredAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) readAt!: Date | null

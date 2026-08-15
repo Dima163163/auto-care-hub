@@ -20,6 +20,9 @@ export type ServiceChatMessage = {
     deliveredAt: string | null
     readAt: string | null
     createdAt: string
+    /** Mock-only persistence metadata; never rendered or sent by the real API. */
+    idempotencyKey?: string | null
+    idempotencyFingerprint?: string | null
 }
 
 export type ServiceChatEvent = {

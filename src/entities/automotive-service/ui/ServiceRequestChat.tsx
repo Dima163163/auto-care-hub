@@ -1,5 +1,5 @@
 import { Check, CheckCheck, Clock3, MessageCircle, Paperclip, Percent, Send, Sparkles, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 
 import {
@@ -38,6 +38,7 @@ export function ServiceRequestChat({ requestId, ownerMode = false }: ServiceRequ
     const [couponCode, setCouponCode] = useState('')
     const [offerAmount, setOfferAmount] = useState('')
     const [actionError, setActionError] = useState<string | null>(null)
+    const pendingMessage = useRef<{ key: string; body: string } | null>(null)
 
     useEffect(() => {
         if (!canUseChat) return
@@ -49,9 +50,15 @@ export function ServiceRequestChat({ requestId, ownerMode = false }: ServiceRequ
         event.preventDefault()
         if (!message.trim()) return
         setActionError(null)
+        const body = message.trim()
+        const pending = pendingMessage.current?.body === body
+            ? pendingMessage.current
+            : { key: crypto.randomUUID(), body }
+        pendingMessage.current = pending
         try {
-            await sendMessage({ requestId, body: message.trim() }).unwrap()
+            await sendMessage({ requestId, body, idempotencyKey: pending.key }).unwrap()
             setMessage('')
+            pendingMessage.current = null
         } catch {
             setActionError(t('autocare.chatSendError'))
         }

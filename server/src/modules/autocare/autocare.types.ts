@@ -554,6 +554,7 @@ export type AutoCareServiceRequestConversationResponse = {
 
 export type CreateAutoCareServiceMessageInput = {
     body: string
+    idempotencyKey?: string
 }
 
 export type CreateAutoCareServiceOfferInput = {

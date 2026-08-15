@@ -91,6 +91,13 @@ function isRequestIdempotencyUniqueError(error: unknown) {
     return driverError?.code === '23505' && driverError.constraint === 'IDX_autocare_service_requests_client_idempotency_key'
 }
 
+function isMessageIdempotencyUniqueError(error: unknown) {
+    const driverError = (error as QueryFailedError | undefined)?.driverError as
+        | { code?: unknown; constraint?: unknown }
+        | undefined
+    return driverError?.code === '23505' && driverError.constraint === 'IDX_autocare_service_messages_idempotency'
+}
+
 function isSameAutoCareServiceRequest(request: ServiceRequestEntity, input: CreateAutoCareServiceRequestInput) {
     return request.providerId === input.providerId &&
         request.locationId === input.locationId &&
@@ -106,6 +113,14 @@ function requestIdempotencyConflict(): never {
         statusCode: 409,
         code: ERROR_CODES.Conflict,
         message: 'Idempotency key was already used for another service request.',
+    })
+}
+
+function messageIdempotencyConflict(): never {
+    throw new AppError({
+        statusCode: 409,
+        code: ERROR_CODES.Conflict,
+        message: 'Idempotency key was already used for another message.',
     })
 }
 
@@ -316,32 +331,63 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
 
 export async function createAutoCareServiceMessage(user: UserEntity, requestId: string, input: CreateAutoCareServiceMessageInput) {
     const request = await getParticipantRequest(user, requestId)
-    const thread = await ensureAutoCareRequestChatThread(request)
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-    const recipientId = user.id === request.clientId ? provider?.ownerId : request.clientId
-    const deliveredAt = recipientId ? new Date() : null
-    const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({
-        requestId: request.id,
-        threadId: thread.id,
-        senderId: user.id,
-        kind: ServiceMessageKind.Text,
-        body: input.body,
-        offer: null,
-        deliveredAt,
-        readAt: null,
-    }))
-    if (recipientId) {
+    const body = input.body.trim()
+    const idempotencyFingerprint = createHash('sha256').update(body).digest('hex')
+    let transactionResult: { message: ServiceMessageEntity; recipientId: string | null; recipientRole: 'owner' | 'client'; changed: boolean }
+    try {
+        transactionResult = await AppDataSource.transaction(async (manager) => {
+            const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({
+                where: { id: request.id },
+                lock: { mode: 'pessimistic_write' },
+            })
+            if (!lockedRequest) notFound('Service request not found.')
+            const messageRepository = manager.getRepository(ServiceMessageEntity)
+            if (input.idempotencyKey) {
+                const existing = await messageRepository.findOneBy({ requestId: request.id, senderId: user.id, idempotencyKey: input.idempotencyKey })
+                if (existing) {
+                    if (existing.idempotencyFingerprint !== idempotencyFingerprint) messageIdempotencyConflict()
+                    const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
+                    return { message: existing, recipientId: user.id === lockedRequest.clientId ? provider?.ownerId ?? null : lockedRequest.clientId, recipientRole: user.id === lockedRequest.clientId ? 'owner' : 'client', changed: false }
+                }
+            }
+            const thread = await ensureAutoCareRequestChatThread(lockedRequest, manager)
+            const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
+            const recipientId = user.id === lockedRequest.clientId ? provider?.ownerId ?? null : lockedRequest.clientId
+            const deliveredAt = recipientId ? new Date() : null
+            const message = await messageRepository.save(messageRepository.create({
+                requestId: lockedRequest.id,
+                threadId: thread.id,
+                senderId: user.id,
+                kind: ServiceMessageKind.Text,
+                body,
+                idempotencyKey: input.idempotencyKey ?? null,
+                idempotencyFingerprint: input.idempotencyKey ? idempotencyFingerprint : null,
+                offer: null,
+                deliveredAt,
+                readAt: null,
+            }))
+            return { message, recipientId, recipientRole: user.id === lockedRequest.clientId ? 'owner' : 'client', changed: true }
+        })
+    } catch (error) {
+        if (!input.idempotencyKey || !isMessageIdempotencyUniqueError(error)) throw error
+        const existing = await AppDataSource.getRepository(ServiceMessageEntity).findOneBy({ requestId: request.id, senderId: user.id, idempotencyKey: input.idempotencyKey })
+        if (!existing) throw error
+        if (existing.idempotencyFingerprint !== idempotencyFingerprint) messageIdempotencyConflict()
+        transactionResult = { message: existing, recipientId: null, recipientRole: 'client', changed: false }
+    }
+    const { message, recipientId, recipientRole, changed } = transactionResult
+    if (changed && recipientId) {
         await notifyAutoCareParticipant({
             userId: recipientId,
             requestId,
             event: `message-${message.id}`,
-            role: recipientId === provider?.ownerId ? 'owner' : 'client',
+            role: recipientRole,
             title: 'Новое сообщение по заявке',
             message: 'В переписке по услуге появилось новое сообщение.',
         })
     }
     const result = messageResponse(message)
-    broadcastServiceChat(requestId, { type: 'message.created', requestId, payload: result })
+    if (changed) broadcastServiceChat(requestId, { type: 'message.created', requestId, payload: result })
     return result
 }
 

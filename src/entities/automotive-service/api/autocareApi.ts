@@ -487,7 +487,7 @@ export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: A
 export type CreateAutoCareChatInput = { type: Exclude<AutoCareChatThreadType, 'service_request'>; providerId?: string; requestId?: string; subject: string }
 export type CreateAutoCareChatMessageInput = { chatId: string; body: string }
 export type CreateAutoCareChatAttachmentInput = { chatId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
-export type CreateAutoCareServiceMessageInput = { requestId: string; body: string }
+export type CreateAutoCareServiceMessageInput = { requestId: string; body: string; idempotencyKey?: string }
 export type CreateAutoCareServiceOfferInput = { requestId: string; type: 'discount' | 'alternative'; title: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
 export type DecideAutoCareServiceOfferInput = { requestId: string; messageId: string; decision: 'accept' | 'decline' }
 export type CreateAutoCareServiceAttachmentInput = { requestId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
@@ -878,7 +878,7 @@ export const autoCareApi = baseApi.injectEndpoints({
             providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }],
         }),
         createAutoCareServiceMessage: build.mutation<AutoCareServiceMessage, CreateAutoCareServiceMessageInput>({
-            query: ({ requestId, body }) => ({ url: `/v1/service-requests/${requestId}/messages`, method: 'POST', body: { body } }),
+            query: ({ requestId, body, idempotencyKey }) => ({ url: `/v1/service-requests/${requestId}/messages`, method: 'POST', headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined, body: { body } }),
             transformResponse: (value: unknown) => autoCareServiceMessageSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
         }),

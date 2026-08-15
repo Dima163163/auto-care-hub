@@ -2480,8 +2480,17 @@ export const handlers = [
         if (!user || !item || !allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { body?: string }
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
+        const idempotencyKey = request.headers.get('Idempotency-Key')
+        const normalizedBody = body.body.trim()
+        const existing = idempotencyKey
+            ? (mockAutoCareMessages.get(item.id) ?? []).find((candidate) => candidate.senderId === user.id && candidate.idempotencyKey === idempotencyKey)
+            : undefined
+        if (existing) {
+            if (existing.idempotencyFingerprint !== normalizedBody) return HttpResponse.json({ message: 'Idempotency key was already used for another message.' }, { status: 409 })
+            return HttpResponse.json(existing, { status: 201 })
+        }
         const now = new Date().toISOString()
-        const message: ServiceChatMessage = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text', body: body.body.trim(), offer: null, deliveredAt: now, readAt: null, createdAt: now }
+        const message: ServiceChatMessage = { id: `mock-message-${Date.now()}`, senderId: user.id, kind: 'text', body: normalizedBody, offer: null, deliveredAt: now, readAt: null, createdAt: now, idempotencyKey, idempotencyFingerprint: normalizedBody }
         mockAutoCareMessages.set(item.id, [...(mockAutoCareMessages.get(item.id) ?? []), message])
         emitMockServiceChatEvent({ type: 'message.created', requestId: item.id, payload: message })
         pushMockAutoCareNotification({ userId: user.id === item.clientId ? 'user-owner-1' : item.clientId, requestId: item.id, role: user.id === item.clientId ? 'owner' : 'client', title: 'Новое сообщение по заявке', message: 'В переписке по услуге появилось новое сообщение.' })
