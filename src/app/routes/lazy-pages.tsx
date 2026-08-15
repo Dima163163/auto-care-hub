@@ -1,11 +1,5 @@
 import { lazy } from 'react'
 
-export const HomePage = lazy(() =>
-    import('@/pages/autocare-home').then((module) => ({
-        default: module.AutoCareHomePage,
-    })),
-)
-
 export const PlatformReviewsPage = lazy(() =>
     import('@/pages/platform-reviews').then((module) => ({
         default: module.PlatformReviewsPage,

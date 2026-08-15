@@ -7,6 +7,7 @@ import { PublicLayout } from '@/app/layouts/public-layout'
 import { RequireAuth, RequireGuest } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { RouteErrorBoundary } from '@/shared/ui/route-error-boundary'
+import { AutoCareHomePage } from '@/pages/autocare-home'
 
 import {
     AboutPage,
@@ -30,7 +31,6 @@ import {
     FeaturesPage,
     ForgotPasswordPage,
     HelpPage,
-    HomePage,
     LoginCallbackPage,
     LoginPage,
     NotFoundPage,
@@ -61,7 +61,7 @@ import {
 export function renderPublicRoutes() {
     return (
         <Route element={<RouteErrorBoundary><PublicLayout /></RouteErrorBoundary>}>
-            <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.home} element={<AutoCareHomePage />} />
             <Route path={ROUTES.platformReviews} element={<PlatformReviewsPage />} />
             <Route path={ROUTES.features} element={<FeaturesPage />} />
             <Route path={ROUTES.owners} element={<OwnersPage />} />
