@@ -302,9 +302,10 @@ than informal follow-up notes.
 - [ ] Add those AutoCare-specific database-backed authorization, concurrency,
   migration-validation and anonymization scenarios to CI; production
   readiness still needs deployment secrets and external evidence.
-- [ ] Replace in-process chat fan-out with the Redis pub/sub bridge validation
-  and reconnect/backfill tests; the bridge is present, but multi-replica
-  behavior still needs a two-process smoke run.
+- [~] Replace in-process chat fan-out with the Redis pub/sub bridge. The bridge
+  now waits for initialization before publishing, bounds realtime payloads and
+  has local gateway coverage; multi-replica reconnect/backfill still needs a
+  two-process smoke run.
 - [x] Add provider memberships, timezone-aware schedules, blackout dates and
   transactional slot-overlap checks; owner authorization accepts provider-wide
   or branch-scoped active memberships while legacy ownerId remains compatible.
@@ -717,9 +718,11 @@ an admin override without an auditable reason.
   rating confidence above the threshold, low complaint/dispute and no-show
   rates, acceptable price accuracy, and no unresolved serious violation. The
   badge expires or is suspended when the policy is no longer met.
-- [ ] Expose the badge and a short “why this service is trusted” explanation on
-  result cards, provider pages and map markers. Include the policy version and
-  last recalculation date in an accessible details view.
+- [~] Expose the badge and a short “why this service is trusted” explanation on
+  result cards, provider pages and map markers. Result cards, the map focus and
+  provider details now use the API badge; the provider page includes factors,
+  policy version and last recalculation date. A full location-level snapshot
+  and accessible explanation audit remain before ranking activation.
 - [ ] Keep organic ranking deterministic and observable. Combine service and
   vehicle relevance, distance, availability, comparable price completeness,
   response/booking reliability and the trust score; trust can improve ordering
