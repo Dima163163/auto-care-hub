@@ -239,6 +239,9 @@ function requestResponse(
         noShowAt: request.noShowAt?.toISOString() ?? null,
         noShowById: request.noShowById,
         noShowReason: request.noShowReason,
+        completedAt: request.completedAt?.toISOString() ?? null,
+        completedById: request.completedById,
+        completionNote: request.completionNote,
         reschedule,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
@@ -954,6 +957,31 @@ export async function markAutoCareServiceRequestNoShow(user: UserEntity, request
         await manager.getRepository(ServiceRequestEntity).save(request)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'no_show', title: 'Заявка отмечена как неявка клиента', notes: request.noShowReason })
         await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'no-show', role: 'client', title: 'Визит отмечен как неявка', message: 'Сервис отметил, что визит не состоялся.' }, manager)
+        return { request, changed: true }
+    })
+    return hydrateRequest(transactionResult.request)
+}
+
+export async function completeAutoCareServiceRequest(user: UserEntity, requestId: string, note?: string | null) {
+    ownerOnly(user)
+    const transactionResult = await AppDataSource.transaction(async (manager) => {
+        const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!request) notFound('Service request not found.')
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
+        if (request.status === ServiceRequestStatus.Closed) return { request, changed: false }
+        if (request.status !== ServiceRequestStatus.Accepted || !request.clientConfirmedAt || !request.providerConfirmedAt || !request.preferredAt) {
+            conflict('Only a confirmed visit can be completed.')
+        }
+        const now = new Date()
+        if (request.preferredAt.getTime() > now.getTime()) conflict('A visit can be completed only after its scheduled time.')
+        request.status = ServiceRequestStatus.Closed
+        request.completedAt = now
+        request.completedById = user.id
+        request.completionNote = note?.trim() || null
+        await manager.getRepository(ServiceRequestEntity).save(request)
+        await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'completed', title: 'Сервис отметил визит завершённым', notes: request.completionNote })
+        await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'completed', role: 'client', title: 'Визит завершён', message: 'Сервис отметил услугу завершённой. Теперь можно оставить отзыв.' }, manager)
         return { request, changed: true }
     })
     return hydrateRequest(transactionResult.request)

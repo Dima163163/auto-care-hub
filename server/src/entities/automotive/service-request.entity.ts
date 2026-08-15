@@ -91,6 +91,9 @@ export class ServiceRequestEntity {
     @Column({ type: 'timestamptz', nullable: true }) noShowAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) noShowById!: string | null
     @Column({ type: 'text', nullable: true }) noShowReason!: string | null
+    @Column({ type: 'timestamptz', nullable: true }) completedAt!: Date | null
+    @Column({ type: 'uuid', nullable: true }) completedById!: string | null
+    @Column({ type: 'text', nullable: true }) completionNote!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }

@@ -91,6 +91,7 @@ export {
     useCreateAutoCareServiceQuoteMutation,
     useRequestAutoCareServiceRescheduleMutation,
     useMarkAutoCareServiceRequestNoShowMutation,
+    useCompleteAutoCareServiceRequestMutation,
 } from './api/autocareApi'
 export type {
     AutoCareApiDiscoveryItem,
@@ -155,6 +156,7 @@ export type {
     DecideAutoCareServiceOfferInput,
     CreateAutoCareServiceAttachmentInput,
     CreateAutoCareServiceQuoteInput,
+    CompleteAutoCareServiceRequestInput,
 } from './api/autocareApi'
 export { mapAutoCareDiscoveryItem, mapAutoCareProviderProfile } from './lib/autocareApiMappers'
 export { supportsVehicleBrand } from './lib/brandSpecialization'

@@ -770,6 +770,7 @@ export const enTranslations = {
         ownerRequestsRescheduleDate: 'New date and time',
         ownerRequestsRescheduleSend: 'Offer new time',
         ownerRequestsNoShow: 'Mark as no-show',
+        ownerRequestsComplete: 'Complete visit',
         ownerRequestStatus: {
             draft: 'Draft', open: 'New', awaiting_reply: 'Awaiting reply', estimate_shared: 'Estimate sent', accepted: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', no_show: 'No-show', closed: 'Closed',
         },

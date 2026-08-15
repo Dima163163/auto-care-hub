@@ -195,6 +195,10 @@ export const markAutoCareNoShowSchema = z.object({
     reason: z.string().trim().max(1_000).nullable().optional(),
 })
 
+export const completeAutoCareServiceRequestSchema = z.object({
+    note: z.string().trim().max(1_000).nullable().optional(),
+})
+
 export const createAutoCareServiceMessageSchema = z.object({
     body: z.string().trim().min(1).max(4_000),
 })

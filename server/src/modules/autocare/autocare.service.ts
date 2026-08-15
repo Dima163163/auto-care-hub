@@ -495,7 +495,7 @@ export async function createAutoCareReview(client: UserEntity, input: CreateAuto
         })
         if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service request not found.' })
         const confirmed = request.clientConfirmedAt && request.providerConfirmedAt
-        if (!confirmed || (request.status !== ServiceRequestStatus.Accepted && request.status !== ServiceRequestStatus.Closed)) {
+        if (!confirmed || request.status !== ServiceRequestStatus.Closed) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A completed and confirmed visit is required before leaving a review.' })
         }
 

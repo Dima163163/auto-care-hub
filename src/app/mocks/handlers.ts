@@ -433,6 +433,9 @@ type MockAutoCareServiceRequest = {
     noShowAt?: string | null
     noShowById?: string | null
     noShowReason?: string | null
+    completedAt?: string | null
+    completedById?: string | null
+    completionNote?: string | null
     reschedule?: {
         id: string
         proposedAt: string
@@ -2641,6 +2644,29 @@ export const handlers = [
         item.noShowReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
         item.updatedAt = now
         pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Визит отмечен как неявка', message: 'Сервис отметил, что визит не состоялся.' })
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.post('/api/owner/service-requests/:requestId/complete', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (item.status === 'closed') {
+            const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+            return HttpResponse.json(response)
+        }
+        if (item.status !== 'accepted' || !item.clientConfirmedAt || !item.providerConfirmedAt || !item.preferredAt || new Date(item.preferredAt).getTime() > Date.now()) {
+            return HttpResponse.json({ message: 'Only confirmed visits after their scheduled time can be completed.' }, { status: 409 })
+        }
+        const body = await request.json().catch(() => ({})) as { note?: string | null }
+        const now = new Date().toISOString()
+        item.status = 'closed'
+        item.completedAt = now
+        item.completedById = user.id
+        item.completionNote = typeof body.note === 'string' ? body.note.trim().slice(0, 1000) || null : null
+        item.updatedAt = now
+        pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Визит завершён', message: 'Сервис отметил услугу завершённой. Теперь можно оставить отзыв.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),

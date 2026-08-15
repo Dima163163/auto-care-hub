@@ -744,19 +744,20 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
 - [ ] Implement hybrid booking modes: request confirmation and instant slot.
 - [x] Implement idempotent AutoCare request creation; retain overlap protection for the scheduling slice.
 - [ ] Implement explicit state transitions and actor permissions.
-- [~] Implement transactional cancellation and reschedule workflows: client
-  cancellation, provider-proposed time changes, client accept/reject decisions,
-  audit events and participant notifications are live; a provider can mark a
-  confirmed missed visit as no-show only after its scheduled time.
+- [~] Implement transactional cancellation, reschedule, no-show and completion
+  workflows: client cancellation, provider-proposed time changes, client
+  accept/reject decisions, confirmed missed visits and post-visit completion are
+  live with audit events and participant notifications; full calendar conflict
+  policy, rebooking and reminder templates remain open.
 - [ ] Update customer bookings dashboard and provider calendar/work queue.
 - [~] Connect AutoCare request notifications to the transactional outbox; booking
   reminders and localized service-request email/push templates remain open.
 - [~] Implement verified review eligibility, rating aggregation and the trust
   snapshot inputs described in the “Trust score, quality badges and organic
-  visibility” policy. Confirmed AutoCare requests can now create one pending
+  visibility” policy. A closed AutoCare request now creates one pending
   verified review through `POST /v1/autocare-reviews`; persisted score
-  reassessment is live, while trust snapshots and completed-visit evidence
-  remain.
+  reassessment is live, while trust snapshots and broader completed-visit
+  evidence remain.
 - [ ] Add concurrency, timezone, authorization and E2E tests.
 
 Exit gate:
