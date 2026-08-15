@@ -413,6 +413,19 @@ export type AutoCareTrustFactorsResponse = {
     claimsPenalty: number
 }
 
+export type AutoCareTrustSnapshotResponse = {
+    id: string
+    providerId: string
+    locationId: string
+    policyVersion: string
+    score: number
+    badge: string | null
+    computedAt: string
+    validUntil: string
+    inputCounters: Record<string, number>
+    reasonCodes: string[]
+}
+
 export type AutoCareGuaranteeClaimResponse = {
     id: string
     requestId: string

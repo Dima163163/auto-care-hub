@@ -390,12 +390,18 @@ const autoCareServiceConversationSchema = z.object({ request: autoCareServiceReq
 const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema) }).passthrough()
 const autoCarePriceBenchmarkSchema = z.object({ serviceDefinitionId: z.string(), serviceSlug: z.string(), marketId: z.string().nullable(), makeId: z.string().nullable(), modelId: z.string().nullable(), minPriceMinor: z.number().finite(), medianPriceMinor: z.number().finite(), maxPriceMinor: z.number().finite(), currencyCode: z.string(), methodology: z.record(z.string(), z.unknown()), source: z.string(), generatedAt: z.string() }).passthrough()
 const autoCareTrustEvidenceSchema = z.object({ id: z.string(), providerId: z.string(), kind: z.string(), label: z.string(), status: z.string(), expiresAt: z.string().nullable(), verifiedAt: z.string().nullable() }).passthrough()
+const autoCareTrustSnapshotSchema = z.object({
+    id: z.string(), providerId: z.string(), locationId: z.string(), policyVersion: z.string(),
+    score: z.number().finite(), badge: z.string().nullable(), computedAt: z.string(), validUntil: z.string(),
+    inputCounters: z.record(z.string(), z.number().finite()), reasonCodes: z.array(z.string()),
+}).passthrough()
 const autoCareTrustSchema = z.object({
     providerId: z.string(),
     score: z.number().finite(),
     badge: z.string().nullable(),
     reassessedAt: z.string().nullable(),
     evidence: z.array(autoCareTrustEvidenceSchema),
+    snapshots: z.array(autoCareTrustSnapshotSchema).default([]),
     factors: z.object({
         profile: z.number().finite(),
         reviews: z.number().finite(),
@@ -473,12 +479,14 @@ export type AutoCareBroadcastRequest = { id: string; serviceDefinitionId: string
 export type CreateAutoCareBroadcastRequestInput = { serviceDefinitionId: string; marketId?: string | null; issueDescription: string; vehicleSnapshot?: Record<string, string | number | null> | null; photoUrls?: string[]; preferredAt?: string | null; maxProviders?: number }
 export type CreateAutoCareBroadcastOfferInput = { broadcastId: string; locationId: string; amountMinor: number; currencyCode: string; note?: string | null; durationMinutes?: number; validUntil?: string | null }
 export type AutoCareTrustEvidence = { id: string; providerId: string; kind: string; label: string; status: string; expiresAt: string | null; verifiedAt: string | null }
+export type AutoCareTrustSnapshot = { id: string; providerId: string; locationId: string; policyVersion: string; score: number; badge: string | null; computedAt: string; validUntil: string; inputCounters: Record<string, number>; reasonCodes: string[] }
 export type AutoCareTrustResponse = {
     providerId: string
     score: number
     badge: string | null
     reassessedAt: string | null
     evidence: AutoCareTrustEvidence[]
+    snapshots: AutoCareTrustSnapshot[]
     explanation?: string
     factors?: { profile: number; reviews: number; evidence: number; reliability: number; claimsPenalty: number }
 }

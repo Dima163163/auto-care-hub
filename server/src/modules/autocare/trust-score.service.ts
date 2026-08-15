@@ -4,12 +4,17 @@ import { AppDataSource } from '../../database/data-source.js'
 import {
     AutoCareGuaranteeClaimEntity,
     AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
+    AutomotiveServiceLocationEntity,
 } from '../../entities/index.js'
 import { calculateAutoCareTrustScore, type AutoCareTrustScore } from './trust-score.js'
+
+const TRUST_POLICY_VERSION = 'autocare-trust-v1'
+const TRUST_SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000
 
 function getProfileFieldCount(provider: AutomotiveProviderEntity) {
     return [
@@ -29,7 +34,7 @@ function getProfileFieldCount(provider: AutomotiveProviderEntity) {
 export async function reassessAutoCareProviderTrust(
     providerId: string,
     manager: EntityManager = AppDataSource.manager,
-): Promise<{ provider: AutomotiveProviderEntity; trust: AutoCareTrustScore; changed: boolean } | null> {
+): Promise<{ provider: AutomotiveProviderEntity; trust: AutoCareTrustScore; changed: boolean; snapshots: AutoCareTrustSnapshotEntity[] } | null> {
     const providerRepository = manager.getRepository(AutomotiveProviderEntity)
     const provider = await providerRepository.findOneBy({ id: providerId })
     if (!provider) return null
@@ -39,32 +44,74 @@ export async function reassessAutoCareProviderTrust(
         manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved } }),
         manager.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { providerId } }),
     ])
-    const now = Date.now()
+    const nowMs = Date.now()
     const verifiedEvidenceCount = evidence.filter((item) =>
-        item.status === 'verified' && (item.expiresAt === null || item.expiresAt.getTime() > now),
+        item.status === 'verified' && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
     ).length
     const reviewCount = reviews.length
     const rating = reviewCount > 0
         ? reviews.reduce((total, review) => total + review.rating, 0) / reviewCount
         : Number(provider.rating)
     const activeGuaranteeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status)).length
+    const profileFields = getProfileFieldCount(provider)
     const trust = calculateAutoCareTrustScore({
         verified: provider.verified,
         rating,
         reviewCount,
         yearsActive: provider.yearsActive,
-        profileFields: getProfileFieldCount(provider),
+        profileFields,
         verifiedEvidenceCount,
         activeGuaranteeClaims,
     })
+    const now = new Date()
+    const inputCounters = {
+        profileFields,
+        reviewCount,
+        verifiedEvidenceCount,
+        activeGuaranteeClaims,
+        rating: Math.round(rating * 100) / 100,
+    }
+    const reasonCodes = [
+        !provider.verified ? 'provider_not_verified' : null,
+        reviewCount < 10 ? 'small_review_sample' : null,
+        verifiedEvidenceCount === 0 ? 'no_verified_evidence' : null,
+        activeGuaranteeClaims > 0 ? 'open_guarantee_claims' : null,
+    ].filter((code): code is string => code !== null)
+    const locations = await manager.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId } })
+    const previousSnapshots = await manager.getRepository(AutoCareTrustSnapshotEntity).find({
+        where: { providerId },
+        order: { computedAt: 'DESC' },
+    })
+    const latestByLocation = new Map<string, AutoCareTrustSnapshotEntity>()
+    for (const snapshot of previousSnapshots) {
+        if (!latestByLocation.has(snapshot.locationId)) latestByLocation.set(snapshot.locationId, snapshot)
+    }
+    const snapshots: AutoCareTrustSnapshotEntity[] = []
+    for (const location of locations) {
+        const previous = latestByLocation.get(location.id)
+        const sameInputs = previous !== undefined && JSON.stringify(previous.inputCounters) === JSON.stringify(inputCounters)
+        const stillValid = previous !== undefined && previous.validUntil.getTime() > now.getTime()
+        if (sameInputs && previous.policyVersion === TRUST_POLICY_VERSION && previous.score === trust.score && previous.badge === trust.badge && stillValid) continue
+        snapshots.push(await manager.getRepository(AutoCareTrustSnapshotEntity).save(manager.getRepository(AutoCareTrustSnapshotEntity).create({
+            providerId,
+            locationId: location.id,
+            policyVersion: TRUST_POLICY_VERSION,
+            score: trust.score,
+            badge: trust.badge,
+            computedAt: now,
+            validUntil: new Date(now.getTime() + TRUST_SNAPSHOT_TTL_MS),
+            inputCounters,
+            reasonCodes,
+        })))
+    }
     const changed = Number(provider.trustScore) !== trust.score || provider.trustBadge !== trust.badge
-    if (changed || provider.trustReassessedAt === null) {
+    if (changed || provider.trustReassessedAt === null || snapshots.length > 0) {
         provider.trustScore = trust.score
         provider.trustBadge = trust.badge
-        provider.trustReassessedAt = new Date()
+        provider.trustReassessedAt = now
         await providerRepository.save(provider)
     }
-    return { provider, trust, changed }
+    return { provider, trust, changed, snapshots }
 }
 
 /**

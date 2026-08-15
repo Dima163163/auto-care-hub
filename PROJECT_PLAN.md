@@ -704,10 +704,11 @@ must be conservative: no provider receives a quality badge or ranking boost
 because of a subscription, promo code, payment, self-reported review count or
 an admin override without an auditable reason.
 
-- [~] Define a versioned `ProviderTrustSnapshot` for each service location with
+- [x] Define a versioned `ProviderTrustSnapshot` for each service location with
   `score`, `badge`, `computed_at`, `valid_until`, input counters and reason
-  codes. Provider score/badge fields and worker recalculation now exist; the
-  immutable snapshot/audit trail and location-level model are still pending.
+  codes. Migration `178597` stores immutable location-level versions and the
+  reassessment worker/API expose the current valid snapshots; ranking rollout
+  and policy expansion remain gated.
 - [ ] Use only attributable signals: completed/confirmed requests, one review
   per eligible completed visit, Bayesian/sample-size-adjusted rating, recent
   rating trend, complaint/dispute and refund rate, cancellation/no-show rate,
@@ -724,8 +725,8 @@ an admin override without an auditable reason.
 - [~] Expose the badge and a short “why this service is trusted” explanation on
   result cards, provider pages and map markers. Result cards, the map focus and
   provider details now use the API badge; the provider page includes factors,
-  policy version and last recalculation date. A full location-level snapshot
-  and accessible explanation audit remain before ranking activation.
+  policy version, last recalculation date and the location snapshot contract.
+  A full accessible explanation audit remains before ranking activation.
 - [ ] Keep organic ranking deterministic and observable. Combine service and
   vehicle relevance, distance, availability, comparable price completeness,
   response/booking reliability and the trust score; trust can improve ordering

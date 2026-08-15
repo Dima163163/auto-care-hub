@@ -45,6 +45,22 @@ export class AutoCareTrustEvidenceEntity {
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }
 
+@Entity('autocare_trust_snapshots')
+@Index(['locationId', 'computedAt'])
+@Index(['providerId', 'locationId', 'policyVersion', 'computedAt'])
+export class AutoCareTrustSnapshotEntity {
+    @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'uuid' }) providerId!: string
+    @Column({ type: 'uuid' }) locationId!: string
+    @Column({ type: 'text' }) policyVersion!: string
+    @Column({ type: 'numeric', precision: 5, scale: 2 }) score!: number
+    @Column({ type: 'text', nullable: true }) badge!: string | null
+    @Column({ type: 'timestamptz' }) computedAt!: Date
+    @Column({ type: 'timestamptz' }) validUntil!: Date
+    @Column({ type: 'jsonb', default: () => "'{}'" }) inputCounters!: Record<string, number>
+    @Column('text', { array: true, default: () => "'{}'" }) reasonCodes!: string[]
+}
+
 @Entity('autocare_repair_events')
 @Index(['requestId', 'createdAt'])
 export class AutoCareRepairEventEntity {

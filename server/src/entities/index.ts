@@ -61,6 +61,7 @@ import {
     AutoCarePriceBenchmarkEntity,
     AutoCareRepairEventEntity,
     AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
 } from './automotive/marketplace-enhancements.entity.js'
 
 export const entities = [
@@ -113,6 +114,7 @@ export const entities = [
     PlatformReviewEntity,
     AutoCarePriceBenchmarkEntity,
     AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
     AutoCareRepairEventEntity,
     AutoCareBroadcastRequestEntity,
     AutoCareBroadcastOfferEntity,
@@ -241,4 +243,5 @@ export {
     AutoCarePriceBenchmarkEntity,
     AutoCareRepairEventEntity,
     AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
 } from './automotive/marketplace-enhancements.entity.js'
