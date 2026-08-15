@@ -157,8 +157,6 @@ jobs:
       FRONTEND_ORIGIN: http://localhost:5173
       CORS_ORIGINS: http://localhost:5173
       MAIL_MODE: logger
-      STRIPE_SECRET_KEY: sk_test_mock
-      STRIPE_WEBHOOK_SECRET: whsec_mock
 
     steps:
       - name: Checkout
@@ -294,8 +292,6 @@ jobs:
       FRONTEND_ORIGIN: http://127.0.0.1:5174
       CORS_ORIGINS: http://127.0.0.1:5174
       MAIL_MODE: logger
-      STRIPE_SECRET_KEY: sk_test_mock
-      STRIPE_WEBHOOK_SECRET: whsec_mock
       VITE_API_MODE: real
       VITE_API_BASE_URL: http://127.0.0.1:4000
 

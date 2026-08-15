@@ -53,14 +53,7 @@ authorization, no-store responses, and a bounded rate limit.
 Successful Book again booking creation is counted server-side from the bounded
 `experiment: "book_again"` request field plus its source booking id. The source
 must belong to the authenticated client, match the requested cabinet/service,
-and have `completed` or `cancelled` status; the old slot and payment are never
-reused.
-
-The super-admin-only `GET /admin/payments/attention` endpoint returns only
-bounded counts for failed payments, open disputes, and disputes where funds
-were withdrawn. It uses `no-store`, has OpenAPI/MSW/runtime-schema parity, and
-does not return Stripe identifiers, payment payloads, customer data, or
-provider error text.
+and have `completed` or `cancelled` status; the old slot is never reused.
 
 Every response includes `X-Request-Id`. A caller may provide a request ID made
 of letters, digits, `_`, and `-` with a length from 8 to 128 characters.
@@ -79,8 +72,8 @@ bounded cursor contract:
 The cursor is tied to the endpoint's stable sort and must be passed back
 unchanged. Bookings support `status`, `fromDate`, and `toDate`; notifications
 support `read` and `category`. Admin users support `search`, `role`, and
-`status`; admin payments support `search` and `status`; audit logs support
-`action`, `targetType`, and `actorId`; system incidents support `search`,
+`status`; audit logs support `action`, `targetType`, and `actorId`; system
+incidents support `search`,
 `type`, `severity`, and `status`. Limits are positive integers capped at 100.
 
 Security-sensitive server records use the resolved client IP. Forwarded client
@@ -242,12 +235,12 @@ presentation data only and never a verification signal.
 | PATCH | `/services/:id` | service owner |
 | PATCH | `/services/:id/status` | service owner |
 | DELETE | `/services/:id` | service owner |
-| GET | `/owner/bookings` | owner | Cursor mode supports `status`, `fromDate`, and `toDate`; each booking includes an owner-safe `paymentLedger` with gross, commission, owner payout, refund, remaining balance, currency, status, and creation time when a payment exists. Stripe provider identifiers are never returned. |
+| GET | `/owner/bookings` | owner | Cursor mode supports `status`, `fromDate`, and `toDate`. |
 | POST | `/owner/bookings` | owner |
 | PATCH | `/bookings/:id/status` | cabinet owner |
 | GET | `/owner/clients` | owner |
 
-### Admin, notifications, favorites, and payments
+### Admin, notifications, and favorites
 
 | Method | Path | Access |
 | --- | --- | --- |
@@ -257,12 +250,7 @@ presentation data only and never a verification signal.
 | POST | `/admin/admins` | super-admin |
 | GET | `/admin/cabinets` | admin |
 | PATCH | `/admin/cabinets/:id/status` | admin |
-| GET | `/admin/payments` | admin | Cursor mode supports `search` and `status`. |
-| POST | `/admin/payments/:id/refund` | super-admin | Financial refund mutation; amount/reason are bounded and the payment transition writes an idempotent audit record. |
-| GET | `/bookings/:id/payment/status` | client booking owner | Returns server-calculated payment balance and a provider-free receipt summary. |
-| GET | `/admin/payments/:id/refunds` | admin | Returns at most 100 auditable refund ledger records in creation order. |
 | PATCH | `/admin/security-center/mitigations/:id` | super admin | Extends an active temporary mitigation within the 24-hour recovery window; response is `no-store`. |
-| GET | `/admin/payments/:id/disputes` | admin | Returns at most 100 retained Stripe dispute records in event order; response is `no-store`. |
 | GET | `/admin/reviews` | admin |
 | PATCH | `/admin/reviews/:id/status` | admin |
 | GET | `/admin/audit-logs` | admin | Cursor mode supports `action`, `targetType`, and `actorId`. |
@@ -292,8 +280,6 @@ AutoCare provider favorites are separate from the legacy cabinet collection:
 | POST | `/users/me/deletion-request` | authenticated | Creates or returns one pending deletion request; does not delete data. |
 | GET | `/users/me/deletion-request` | authenticated | Returns the caller's pending deletion request or `null`. |
 | DELETE | `/users/me/deletion-request` | authenticated | Cancels the caller's pending deletion request. |
-| POST | `/bookings/:id/payment/checkout` | verified client | Accepts an optional validated `Idempotency-Key`; returns `{ url, attemptId, reused }` and reuses the active Checkout attempt on retries. |
-| POST | `/webhooks/stripe` | Stripe signature | Processed duplicates return `200`; an active concurrent delivery returns `409` with `Retry-After` while a five-minute processing lease is held. |
 
 `PATCH /users/me/preferences` accepts optional `emailNotifications`,
 `bookingEmailNotifications`, `preferredCity`, and `preferredCategories` fields.

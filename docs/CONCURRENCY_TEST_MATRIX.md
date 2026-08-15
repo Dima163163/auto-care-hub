@@ -4,8 +4,6 @@
 | --- | --- | --- | --- |
 | Refresh rotation | Two requests with one refresh token | At most one replacement session survives; reuse revokes active sessions. | `npm --prefix server run test:integration` |
 | OAuth state consumption | Two callbacks with one state hash | One callback consumes the state and the replay is rejected. | `npm --prefix server run test:integration` |
-| Checkout reservation | Two requests with the same idempotency key | One payment attempt and one Stripe idempotency key are retained. | `npm --prefix server run test:integration` |
-| Stripe webhook claim | Two workers with the same event id | One lease owner processes the event; the other returns in progress or processed. | `npm --prefix server run test:integration` |
 | Outbox processing | Two maintenance workers | Row locking and stale leases prevent duplicate dispatch. | `npm --prefix server run test:integration` |
 | Scheduler leadership | Two maintenance cycles | PostgreSQL advisory lock allows one cycle and skips the other. | `npm --prefix server run test:integration` |
 | Account deletion | Repeated request and cancel calls | Pending uniqueness and status transitions remain valid. | `npm --prefix server run test:integration` |

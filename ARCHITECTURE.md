@@ -1129,8 +1129,9 @@ Each replacement includes real API, frontend/mock contract, tests and docs.
 Only after replacement gates pass:
 
 - remove cabinet routes/entities/pages/mocks/translations/assets;
-- remove customer booking payment, commission and Stripe Connect code;
-- preserve/generalize only subscription-relevant payment reliability helpers;
+- remove customer booking-payment, commission and provider-payment code;
+- preserve only provider-agnostic reliability patterns when a separately
+  approved subscription-billing context needs them;
 - verify migrations, OpenAPI, lint, unit/integration/E2E and production build;
 - list deleted files and data consequences for user review.
 

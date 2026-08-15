@@ -1,9 +1,9 @@
 # AutoCare Hub Incident Runbook
 
 Use this document for production incidents affecting the frontend, API,
-database, Redis, email delivery, bookings, or Stripe payments. Never paste
-secrets, access tokens, passwords, full cookies, or raw payment data into an
-incident channel.
+database, Redis, email delivery, bookings, or provider communications. Never
+paste secrets, access tokens, passwords, or full cookies into an incident
+channel.
 
 ## 1. Triage
 
@@ -52,9 +52,8 @@ structured backend logs by that ID and inspect the matching audit record when
 the operation is security-sensitive or administrative:
 
 - authentication and CSRF failures;
-- booking and payment mutations;
+- booking mutations;
 - moderation and account status changes;
-- Stripe webhook processing.
 
 Authorization and cookie values are redacted by the application. Continue to
 avoid copying them into external tools or tickets.
@@ -103,20 +102,6 @@ configuration.
 4. Do not switch production to `MAIL_MODE=logger`; that would expose one-time
    setup/reset links in logs.
 5. Retry the affected account flow only after the provider is healthy.
-
-### Stripe or booking payment outage
-
-1. Check Stripe Dashboard webhook delivery and the matching `requestId`.
-2. Verify the webhook signing secret and connected-account capability status.
-3. Do not mark a booking paid manually without an auditable reconciliation
-   decision.
-4. Preserve the Stripe event ID, booking ID, payment ID, and outcome in the
-   incident record, without storing card data.
-5. Reconcile pending payments after the provider recovers.
-
-Webhook claims use a five-minute processing lease. A worker that loses the
-lease cannot overwrite the newer attempt; after the lease expires, Stripe can
-retry the event and the idempotent payment transition will converge the state.
 
 ### Security incident
 

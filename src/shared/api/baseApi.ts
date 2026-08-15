@@ -342,8 +342,6 @@ export const baseApi = createApi({
         'Review',
         'UserSessions',
         'AuditLogs',
-        'PaymentRefunds',
-        'PaymentDisputes',
         'SystemIncidents',
         'SecurityEvents',
         'Notification',

@@ -1,10 +1,7 @@
 import type { BookingEntity } from '../../entities/booking/booking.entity.js'
-import type { BookingPaymentEntity } from '../../entities/booking/booking-payment.entity.js'
-import { getRemainingPaymentAmountMinor } from '../payments/payment-money.js'
 import type {
     ClientBooking,
     OwnerBooking,
-    OwnerPaymentLedger,
     PublicBooking,
 } from './bookings.types.js'
 
@@ -46,31 +43,8 @@ export function toClientBooking(booking: BookingEntity): ClientBooking {
     }
 }
 
-export function toOwnerPaymentLedger(
-    payment: BookingPaymentEntity | null,
-): OwnerPaymentLedger | null {
-    if (!payment) return null
-
-    const refundedAmountMinor = payment.refundedAmountMinor ?? 0
-
-    return {
-        grossAmount: payment.grossAmount,
-        commissionAmount: payment.commissionAmount,
-        ownerPayoutAmount: payment.ownerPayoutAmount,
-        refundedAmountMinor,
-        remainingAmountMinor: getRemainingPaymentAmountMinor(
-            payment.grossAmount,
-            refundedAmountMinor,
-        ),
-        currency: payment.currency,
-        status: payment.status,
-        createdAt: payment.createdAt,
-    }
-}
-
 export function toOwnerBooking(
     booking: BookingEntity,
-    payment: BookingPaymentEntity | null = null,
 ): OwnerBooking {
     return {
         ...toClientBooking(booking),
@@ -81,6 +55,5 @@ export function toOwnerBooking(
             email: booking.client.email,
             phone: booking.client.phone,
         },
-        paymentLedger: toOwnerPaymentLedger(payment),
     }
 }

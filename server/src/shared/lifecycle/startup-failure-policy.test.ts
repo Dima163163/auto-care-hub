@@ -26,9 +26,6 @@ describe('startup failure guidance', () => {
         expect(getStartupFailureGuidance(new Error(
             'OUTBOX_TOKEN_ENCRYPTION_KEY is required in production.',
         ))).toBe('Configure the required production secrets in the deployment environment, then restart the web process. Never place secret values in tracked files.')
-        expect(getStartupFailureGuidance(new Error(
-            'Production requires a live Stripe secret key.',
-        ))).toBe('Configure the required production secrets in the deployment environment, then restart the web process. Never place secret values in tracked files.')
     })
 
     it('does not invent guidance for unrelated failures', () => {

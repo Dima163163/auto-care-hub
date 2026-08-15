@@ -41,9 +41,6 @@ function createMaintenanceResult() {
         orphanImageCleanup: { failed: 0, scanned: 0, removed: 0 },
         trustReassessment: { scanned: 0, changed: 0 },
         phaseFailures: [],
-        payments: { checked: 0, errors: 0 },
-        paymentRefunds: { checked: 0, errors: 0 },
-        paymentInvoiceBackfill: { checked: 0, errors: 0 },
     }
 }
 
@@ -78,10 +75,10 @@ describe('background job lifecycle', () => {
         expect(logger.warn).not.toHaveBeenCalled()
     })
 
-    it('raises a critical incident when payment reconciliation is partial', async () => {
+    it('raises a warning incident when a maintenance phase is partial', async () => {
         mocks.runMaintenanceCycle.mockResolvedValueOnce({
             ...createMaintenanceResult(),
-            phaseFailures: [{ phase: 'payment_reconciliation', errorClass: 'dependency' }],
+            phaseFailures: [{ phase: 'audit_cleanup', errorClass: 'dependency' }],
         })
 
         const logger = createLogger()
@@ -90,57 +87,16 @@ describe('background job lifecycle', () => {
         await stop()
 
         expect(mocks.recordSystemIncidentSafely).toHaveBeenCalledWith(expect.objectContaining({
-            severity: 'critical',
+            severity: 'warning',
             title: 'Background maintenance phases failed',
             metadata: {
-                phaseFailures: [{ phase: 'payment_reconciliation', errorClass: 'dependency' }],
-                hasPaymentFailure: true,
+                phaseFailures: [{ phase: 'audit_cleanup', errorClass: 'dependency' }],
             },
         }))
         expect(logger.warn).toHaveBeenCalledWith(
-            { phaseFailures: [{ phase: 'payment_reconciliation', errorClass: 'dependency' }] },
+            { phaseFailures: [{ phase: 'audit_cleanup', errorClass: 'dependency' }] },
             'Background maintenance cycle completed partially',
         )
-    })
-
-    it('raises a critical incident when refund reconciliation is partial', async () => {
-        mocks.runMaintenanceCycle.mockResolvedValueOnce({
-            ...createMaintenanceResult(),
-            phaseFailures: [{ phase: 'payment_refund_reconciliation', errorClass: 'dependency' }],
-        })
-
-        const logger = createLogger()
-        const stop = startBackgroundJobs(logger, {} as Mailer)
-        await new Promise<void>((resolve) => setImmediate(resolve))
-        await stop()
-
-        expect(mocks.recordSystemIncidentSafely).toHaveBeenCalledWith(expect.objectContaining({
-            severity: 'critical',
-            metadata: {
-                phaseFailures: [{ phase: 'payment_refund_reconciliation', errorClass: 'dependency' }],
-                hasPaymentFailure: true,
-            },
-        }))
-    })
-
-    it('raises a critical incident when invoice backfill is partial', async () => {
-        mocks.runMaintenanceCycle.mockResolvedValueOnce({
-            ...createMaintenanceResult(),
-            phaseFailures: [{ phase: 'payment_invoice_backfill', errorClass: 'dependency' }],
-        })
-
-        const logger = createLogger()
-        const stop = startBackgroundJobs(logger, {} as Mailer)
-        await new Promise<void>((resolve) => setImmediate(resolve))
-        await stop()
-
-        expect(mocks.recordSystemIncidentSafely).toHaveBeenCalledWith(expect.objectContaining({
-            severity: 'critical',
-            metadata: {
-                phaseFailures: [{ phase: 'payment_invoice_backfill', errorClass: 'dependency' }],
-                hasPaymentFailure: true,
-            },
-        }))
     })
 
     it('redacts sensitive maintenance errors before structured logging', async () => {

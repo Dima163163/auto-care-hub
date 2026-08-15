@@ -4,20 +4,12 @@ import {
     CabinetEntity,
     CabinetStatus,
 } from '../../entities/cabinet/cabinet.entity.js'
-import { BookingEntity } from '../../entities/booking/booking.entity.js'
 import {
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveServiceLocationEntity,
 } from '../../entities/automotive/automotive.entity.js'
-import { BookingPaymentEntity, BookingPaymentStatus } from '../../entities/booking/booking-payment.entity.js'
-import { BookingPaymentRefundEntity } from '../../entities/booking/booking-payment-refund.entity.js'
-import {
-    BookingPaymentDisputeEntity,
-    BookingPaymentDisputeStatus,
-} from '../../entities/booking/booking-payment-dispute.entity.js'
-import { ServiceEntity } from '../../entities/service/service.entity.js'
 import {
     UserEntity,
     UserProvider,
@@ -38,7 +30,7 @@ import type { SupportedLocale } from '../../config/i18n.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { enqueuePasswordSetupEmailSafely } from '../outbox/password-setup-outbox.service.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
-import type { AdminPayment, AdminPaymentDispute, AdminPaymentRefund, AdminUser } from './admin.types.js'
+import type { AdminUser } from './admin.types.js'
 import {
     assertCursorDate,
     decodeCursor,
@@ -47,20 +39,13 @@ import {
     toCursorPage,
 } from '../../shared/http/cursor-pagination.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
-import type { AdminPaymentsQuery, AdminUsersQuery } from './admin.schemas.js'
+import type { AdminUsersQuery } from './admin.schemas.js'
 import { normalizeAdminSearch } from './admin-query-policy.js'
 import { getAdminLegacyListLimit } from './admin-list-policy.js'
 import { normalizeAuthEmail } from '../auth/email-policy.js'
 import { normalizeAuthUserName } from '../auth/user-input-policy.js'
-import { getRemainingPaymentAmountMinor } from '../payments/payment-money.js'
 import { toProviderResponse } from '../autocare/autocare.mappers.js'
 import type { AutoCareProviderResponse } from '../autocare/autocare.types.js'
-
-export type AdminPaymentAttention = {
-    failedPaymentCount: number
-    openDisputeCount: number
-    fundsWithdrawnDisputeCount: number
-}
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) {
@@ -373,249 +358,6 @@ export async function getAdminCabinets(admin: UserEntity) {
         .getMany()
 
     return cabinets.map(toAdminCabinet)
-}
-
-type AdminPaymentRow = {
-    id: string
-    bookingId: string
-    clientId: string
-    clientName: string
-    clientEmail: string
-    ownerId: string
-    ownerName: string
-    ownerEmail: string
-    cabinetTitle: string
-    serviceTitle: string
-    date: string
-    startTime: string
-    endTime: string
-    grossAmount: string | number
-    refundedAmountMinor: string | number
-    commissionAmount: string | number
-    ownerPayoutAmount: string | number
-    currency: string
-    status: BookingPaymentStatus
-    stripeSessionId: string | null
-    stripePaymentIntentId: string | null
-    createdAt: Date | string
-}
-
-export async function getAdminPayments(
-    admin: UserEntity,
-    input: AdminPaymentsQuery = {},
-): Promise<AdminPayment[] | CursorPage<AdminPayment>> {
-    assertAdmin(admin)
-
-    const isPaginated = isCursorPaginationRequested(input)
-    const limit = getCursorLimit(input.limit)
-    const search = normalizeAdminSearch(input.search)
-    const query = AppDataSource.getRepository(BookingPaymentEntity)
-        .createQueryBuilder('payment')
-        .innerJoin(BookingEntity, 'booking', 'booking.id = payment.bookingId')
-        .innerJoin(UserEntity, 'client', 'client.id = booking.clientId')
-        .innerJoin(CabinetEntity, 'cabinet', 'cabinet.id = booking.cabinetId')
-        .innerJoin(UserEntity, 'owner', 'owner.id = cabinet.ownerId')
-        .innerJoin(ServiceEntity, 'service', 'service.id = booking.serviceId')
-        .select('payment.id', 'id')
-        .addSelect('payment.bookingId', 'bookingId')
-        .addSelect('client.id', 'clientId')
-        .addSelect('client.name', 'clientName')
-        .addSelect('client.email', 'clientEmail')
-        .addSelect('owner.id', 'ownerId')
-        .addSelect('owner.name', 'ownerName')
-        .addSelect('owner.email', 'ownerEmail')
-        .addSelect('cabinet.title', 'cabinetTitle')
-        .addSelect('service.title', 'serviceTitle')
-        .addSelect('booking.date', 'date')
-        .addSelect('booking.startTime', 'startTime')
-        .addSelect('booking.endTime', 'endTime')
-        .addSelect('payment.grossAmount', 'grossAmount')
-        .addSelect('payment.refundedAmountMinor', 'refundedAmountMinor')
-        .addSelect('payment.commissionAmount', 'commissionAmount')
-        .addSelect('payment.ownerPayoutAmount', 'ownerPayoutAmount')
-        .addSelect('payment.currency', 'currency')
-        .addSelect('payment.status', 'status')
-        .addSelect('payment.stripeSessionId', 'stripeSessionId')
-        .addSelect('payment.stripePaymentIntentId', 'stripePaymentIntentId')
-        .addSelect('payment.createdAt', 'createdAt')
-
-    if (input.status) {
-        query.andWhere('payment.status = :paymentStatus', {
-            paymentStatus: input.status,
-        })
-    }
-
-    if (search) {
-        query.andWhere(
-            '(client.name ILIKE :search OR client.email ILIKE :search OR owner.name ILIKE :search OR owner.email ILIKE :search OR cabinet.title ILIKE :search OR service.title ILIKE :search)',
-            { search: `%${search}%` },
-        )
-    }
-
-    if (input.cursor) {
-        const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
-        const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
-        query.andWhere(
-            '(payment.createdAt < :cursorCreatedAt OR (payment.createdAt = :cursorCreatedAt AND payment.id < :cursorId))',
-            {
-                cursorCreatedAt,
-                cursorId: cursor.id,
-            },
-        )
-    }
-
-    const rows = await query
-        .orderBy('payment.createdAt', 'DESC')
-        .addOrderBy('payment.id', 'DESC')
-        .take(isPaginated ? limit + 1 : 200)
-        .getRawMany<AdminPaymentRow>()
-
-    const payments = rows.map((row) => ({
-        id: row.id,
-        bookingId: row.bookingId,
-        client: {
-            id: row.clientId,
-            name: row.clientName,
-            email: row.clientEmail,
-        },
-        owner: {
-            id: row.ownerId,
-            name: row.ownerName,
-            email: row.ownerEmail,
-        },
-        cabinetTitle: row.cabinetTitle,
-        serviceTitle: row.serviceTitle,
-        date: row.date,
-        startTime: row.startTime,
-        endTime: row.endTime,
-        grossAmount: Number(row.grossAmount),
-        refundedAmountMinor: Number(row.refundedAmountMinor),
-        remainingAmountMinor: getRemainingPaymentAmountMinor(
-            Number(row.grossAmount),
-            Number(row.refundedAmountMinor),
-        ),
-        commissionAmount: Number(row.commissionAmount),
-        ownerPayoutAmount: Number(row.ownerPayoutAmount),
-        currency: row.currency,
-        status: row.status,
-        stripeSessionId: row.stripeSessionId,
-        stripePaymentIntentId: row.stripePaymentIntentId,
-        createdAt: new Date(row.createdAt),
-    }))
-
-    return isPaginated
-        ? toCursorPage(payments, limit, (payment) => ({
-            createdAt: payment.createdAt.toISOString(),
-            id: payment.id,
-        }))
-        : payments
-}
-
-export async function getAdminPaymentAttention(
-    admin: UserEntity,
-): Promise<AdminPaymentAttention> {
-    if (!isSuperAdmin(admin)) {
-        throw new AppError({
-            statusCode: 403,
-            code: ERROR_CODES.Forbidden,
-            message: 'Only super admins can view payment attention.',
-        })
-    }
-
-    const paymentRepository = AppDataSource.getRepository(BookingPaymentEntity)
-    const disputeRepository = AppDataSource.getRepository(BookingPaymentDisputeEntity)
-    const [failedPaymentCount, openDisputeCount, fundsWithdrawnDisputeCount] = await Promise.all([
-        paymentRepository.countBy({ status: BookingPaymentStatus.Failed }),
-        disputeRepository.countBy({ status: BookingPaymentDisputeStatus.Open }),
-        disputeRepository.countBy({ status: BookingPaymentDisputeStatus.FundsWithdrawn }),
-    ])
-
-    return {
-        failedPaymentCount,
-        openDisputeCount,
-        fundsWithdrawnDisputeCount,
-    }
-}
-
-export async function getAdminPaymentRefunds(
-    admin: UserEntity,
-    paymentId: string,
-): Promise<AdminPaymentRefund[]> {
-    assertAdmin(admin)
-
-    const payment = await AppDataSource.getRepository(BookingPaymentEntity).findOne({
-        where: { id: paymentId },
-        select: { id: true },
-    })
-    if (!payment) {
-        throw new AppError({
-            statusCode: 404,
-            code: ERROR_CODES.NotFound,
-            message: 'Payment not found.',
-        })
-    }
-
-    const refunds = await AppDataSource.getRepository(BookingPaymentRefundEntity).find({
-        where: { paymentId },
-        order: { createdAt: 'ASC', id: 'ASC' },
-        take: 100,
-    })
-
-    return refunds.map((refund) => ({
-        id: refund.id,
-        paymentId: refund.paymentId,
-        bookingId: refund.bookingId,
-        providerRefundId: refund.providerRefundId,
-        providerChargeId: refund.providerChargeId,
-        amountMinor: refund.amountMinor,
-        currency: refund.currency,
-        reason: refund.reason,
-        status: refund.status,
-        createdAt: refund.createdAt,
-        updatedAt: refund.updatedAt,
-    }))
-}
-
-export async function getAdminPaymentDisputes(
-    admin: UserEntity,
-    paymentId: string,
-): Promise<AdminPaymentDispute[]> {
-    assertAdmin(admin)
-
-    const payment = await AppDataSource.getRepository(BookingPaymentEntity).findOne({
-        where: { id: paymentId },
-        select: { id: true },
-    })
-    if (!payment) {
-        throw new AppError({
-            statusCode: 404,
-            code: ERROR_CODES.NotFound,
-            message: 'Payment not found.',
-        })
-    }
-
-    const disputes = await AppDataSource.getRepository(BookingPaymentDisputeEntity).find({
-        where: { paymentId },
-        order: { lastEventCreatedAt: 'ASC', id: 'ASC' },
-        take: 100,
-    })
-
-    return disputes.map((dispute) => ({
-        id: dispute.id,
-        paymentId: dispute.paymentId,
-        bookingId: dispute.bookingId,
-        providerDisputeId: dispute.providerDisputeId,
-        providerChargeId: dispute.providerChargeId,
-        amountMinor: dispute.amountMinor,
-        currency: dispute.currency,
-        reason: dispute.reason,
-        providerStatus: dispute.providerStatus,
-        status: dispute.status,
-        lastEventId: dispute.lastEventId,
-        lastEventCreatedAt: dispute.lastEventCreatedAt,
-        createdAt: dispute.createdAt,
-        updatedAt: dispute.updatedAt,
-    }))
 }
 
 export async function updateAdminCabinetStatus(

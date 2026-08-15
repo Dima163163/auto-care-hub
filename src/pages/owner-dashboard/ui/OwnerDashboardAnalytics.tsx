@@ -74,8 +74,6 @@ export function OwnerDashboardAnalytics({ bookings, services }: OwnerDashboardAn
             city: t('cabinet.publicList.cityLabel'),
             durationMinutes: t('service.form.durationLabel'),
             price: t('service.form.priceLabel'),
-            currency: 'Currency',
-            paymentStatus: t('booking.paymentStatusPaid'),
         })
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
         const link = document.createElement('a')

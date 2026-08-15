@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
 import { AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
 import { AccountDeletionRequestStatus } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
-import { BookingPaymentStatus } from '../../entities/booking/booking-payment.entity.js'
 import { UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import {
     SecurityEventAuthOutcome,
@@ -32,14 +31,6 @@ export const adminUsersQuerySchema = z.object({
 })
 
 export type AdminUsersQuery = z.infer<typeof adminUsersQuerySchema>
-
-export const adminPaymentsQuerySchema = z.object({
-    ...cursorPaginationFields,
-    search: z.string().trim().max(120).optional(),
-    status: z.nativeEnum(BookingPaymentStatus).optional(),
-})
-
-export type AdminPaymentsQuery = z.infer<typeof adminPaymentsQuerySchema>
 
 export const adminAuditLogsQuerySchema = z.object({
     ...cursorPaginationFields,
@@ -187,10 +178,6 @@ export const updateAdminAutoCareProviderStatusSchema = z.object({
     status: z.nativeEnum(AutomotiveProviderStatus),
 })
 
-export const adminPaymentParamsSchema = z.object({
-    id: z.string().uuid('Payment id must be a valid UUID.'),
-})
-
 export const updateUserStatusSchema = z.object({
     status: z.enum(UserStatus),
 })
@@ -213,11 +200,6 @@ export const updateCabinetStatusSchema = z.object({
 export const createAdminSchema = z.object({
     name: z.string().trim().min(2, 'Name must contain at least 2 characters.').max(120),
     email: z.string().trim().email('Enter a valid email.').max(320),
-})
-
-export const refundPaymentSchema = z.object({
-    reason: z.enum(['duplicate', 'fraudulent', 'requested_by_customer']),
-    amountMinor: z.number().int().positive().safe().optional(),
 })
 
 export const systemIncidentParamsSchema = z.object({

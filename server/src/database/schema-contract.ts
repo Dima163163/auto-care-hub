@@ -52,13 +52,7 @@ const REQUIRED_COLUMNS_QUERY = `
         OR (table_name = 'user_sessions' AND column_name IN ('revoked_at', 'revocation_reason'))
         OR (table_name = 'security_events' AND column_name IN ('type', 'correlation_id', 'createdAt', 'severity', 'route', 'status_code', 'metadata', 'actor_role', 'auth_outcome', 'rate_limit_result', 'request_size_bytes', 'reason_code', 'proxy_provenance'))
         OR (table_name = 'security_event_actions' AND column_name IN ('security_event_id', 'actor_id', 'assignee_id', 'status', 'created_at'))
-        OR (table_name = 'booking_payment_invoices' AND column_name IN ('payment_id', 'booking_id', 'invoice_id', 'status'))
-        OR (table_name = 'booking_payments' AND column_name IN ('bookingId', 'refunded_amount'))
         OR (table_name = 'outbox_events' AND column_name IN ('idempotencyKey', 'status', 'attempts', 'availableAt', 'createdAt'))
-        OR (table_name = 'booking_payment_attempts' AND column_name IN ('payment_id', 'booking_id', 'attempt_number', 'idempotency_key', 'status', 'created_at'))
-        OR (table_name = 'booking_payment_refunds' AND column_name IN ('payment_id', 'booking_id', 'provider_refund_id', 'provider_charge_id', 'amount_minor', 'currency', 'reason', 'status', 'created_at', 'updated_at'))
-        OR (table_name = 'booking_payment_disputes' AND column_name IN ('payment_id', 'booking_id', 'provider_dispute_id', 'provider_charge_id', 'amount_minor', 'currency', 'reason', 'provider_status', 'status', 'last_event_id', 'last_event_created_at', 'created_at', 'updated_at'))
-        OR (table_name = 'stripe_webhook_events' AND column_name IN ('stripe_event_id', 'status', 'created_at', 'lease_token', 'lease_expires_at'))
       )
 `
 
@@ -86,7 +80,7 @@ const REQUIRED_INDEXES_QUERY = `
       ON attribute.attrelid = table_info.oid
      AND attribute.attnum = indexed_column.attnum
     WHERE table_namespace.nspname = 'public'
-      AND table_info.relname IN ('bookings', 'security_events', 'security_event_actions', 'booking_payment_invoices', 'booking_payments', 'outbox_events', 'booking_payment_attempts', 'booking_payment_refunds', 'booking_payment_disputes', 'stripe_webhook_events')
+      AND table_info.relname IN ('bookings', 'security_events', 'security_event_actions', 'outbox_events')
     GROUP BY table_info.relname, index_table.relname, index_info.indisunique
 `
 
@@ -94,7 +88,7 @@ const REQUIRED_CONSTRAINTS_QUERY = `
     SELECT table_name, constraint_name, NULL::text AS on_delete
     FROM information_schema.table_constraints
     WHERE constraint_schema = 'public'
-      AND table_name IN ('bookings', 'security_events', 'security_event_actions', 'booking_payment_invoices', 'booking_payments', 'outbox_events', 'booking_payment_attempts', 'booking_payment_refunds', 'booking_payment_disputes', 'stripe_webhook_events')
+      AND table_name IN ('bookings', 'security_events', 'security_event_actions', 'outbox_events')
     UNION ALL
     SELECT
         table_info.relname AS table_name,
@@ -113,7 +107,7 @@ const REQUIRED_CONSTRAINTS_QUERY = `
     JOIN pg_namespace AS table_namespace
       ON table_namespace.oid = table_info.relnamespace
     WHERE table_namespace.nspname = 'public'
-      AND table_info.relname IN ('bookings', 'security_events', 'security_event_actions', 'booking_payment_invoices', 'booking_payments', 'outbox_events', 'booking_payment_attempts', 'booking_payment_refunds', 'booking_payment_disputes', 'stripe_webhook_events')
+      AND table_info.relname IN ('bookings', 'security_events', 'security_event_actions', 'outbox_events')
       AND schema_constraint.contype IN ('f', 'x')
 `
 

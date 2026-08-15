@@ -16,16 +16,6 @@ export function assertRenderProductionConfig(source) {
         .filter(([, fragment]) => !source.includes(fragment))
         .map(([name]) => name)
 
-    const paymentsDisabled = source.includes('key: PAYMENTS_ENABLED\n        value: "false"')
-    if (!paymentsDisabled) {
-        for (const [name, fragment] of [
-            ['Stripe secret key', 'key: STRIPE_SECRET_KEY\n        sync: false'],
-            ['Stripe webhook secret', 'key: STRIPE_WEBHOOK_SECRET\n        sync: false'],
-        ]) {
-            if (!source.includes(fragment)) missing.push(name)
-        }
-    }
-
     if (source.includes('key: MAIL_MODE\n        value: logger')) {
         missing.push('no production logger mail mode')
     }

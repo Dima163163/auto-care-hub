@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, CalendarClock, CircleCheck, RotateCcw, WalletCards } from 'lucide-react'
+import { ArrowRight, Building2, CalendarClock, CircleCheck, RotateCcw } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { ROUTES } from '@/shared/constants/routes'
@@ -11,22 +11,9 @@ type OwnerActionCenterProps = {
     summary: OwnerActionSummary
 }
 
-function getReadinessHref(summary: OwnerActionSummary) {
-    if (summary.readinessBlockers.some((blocker) => blocker === 'payout_account' || blocker === 'email_verification')) {
-        return ROUTES.profile
-    }
-
-    if (summary.readinessBlockers.includes('active_service')) {
-        return ROUTES.ownerServices
-    }
-
-    return ROUTES.ownerCabinets
-}
-
 export function OwnerActionCenter({ summary }: OwnerActionCenterProps) {
     const { t } = useTranslation()
     const [recordAction] = useRecordOwnerActionCenterEventMutation()
-    const readinessCount = summary.readinessBlockers.length
     const items = [
         {
             key: 'pending-bookings',
@@ -67,16 +54,6 @@ export function OwnerActionCenter({ summary }: OwnerActionCenterProps) {
             icon: Building2,
             title: t('ownerDashboard.actionCenter.blockedCabinets'),
             description: t('ownerDashboard.actionCenter.blockedCabinetsDescription'),
-        },
-        {
-            key: 'readiness',
-            action: 'readiness' as const,
-            count: readinessCount,
-            overdue: 0,
-            href: getReadinessHref(summary),
-            icon: WalletCards,
-            title: t('ownerDashboard.actionCenter.readiness'),
-            description: t('ownerDashboard.actionCenter.readinessDescription'),
         },
     ].filter((item) => item.count > 0)
 

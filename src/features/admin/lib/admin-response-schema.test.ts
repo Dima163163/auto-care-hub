@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
     normalizeAuditLogPageResponse,
-    normalizeAdminPaymentRefundListResponse,
-    normalizeAdminPaymentDisputeListResponse,
     normalizeSecurityCenterEventPageResponse,
     normalizeSecurityCenterExportResponse,
     normalizeSecurityCenterSummaryResponse,
@@ -241,23 +239,6 @@ describe('admin response schemas', () => {
         }]).items[0]?.action).toBe('future_platform_action')
     })
 
-    it('normalizes bounded payment refund history', () => {
-        expect(normalizeAdminPaymentRefundListResponse([{
-            id: 'refund-1',
-            paymentId: 'payment-1',
-            bookingId: 'booking-1',
-            providerRefundId: 're_123',
-            providerChargeId: 'ch_123',
-            amountMinor: 2500,
-            currency: 'rub',
-            reason: 'requested_by_customer',
-            status: 'succeeded',
-            createdAt: '2026-08-01T00:00:00.000Z',
-            updatedAt: '2026-08-01T00:00:00.000Z',
-        }])).toHaveLength(1)
-        expect(() => normalizeAdminPaymentRefundListResponse(new Array(101).fill({}))).toThrow()
-    })
-
     it('normalizes bounded security mitigation responses', () => {
         const mitigation = {
             id: 'mitigation-1',
@@ -276,23 +257,4 @@ describe('admin response schemas', () => {
         expect(() => normalizeSecurityMitigationListResponse(new Array(101).fill(mitigation))).toThrow()
     })
 
-    it('normalizes bounded payment dispute history', () => {
-        expect(normalizeAdminPaymentDisputeListResponse([{
-            id: 'dispute-1',
-            paymentId: 'payment-1',
-            bookingId: 'booking-1',
-            providerDisputeId: 'dp_123',
-            providerChargeId: 'ch_123',
-            amountMinor: 2500,
-            currency: 'rub',
-            reason: 'fraudulent',
-            providerStatus: 'needs_response',
-            status: 'open',
-            lastEventId: 'evt_123',
-            lastEventCreatedAt: '2026-08-01T00:00:00.000Z',
-            createdAt: '2026-08-01T00:00:00.000Z',
-            updatedAt: '2026-08-01T00:00:00.000Z',
-        }])).toHaveLength(1)
-        expect(() => normalizeAdminPaymentDisputeListResponse(new Array(101).fill({}))).toThrow()
-    })
 })

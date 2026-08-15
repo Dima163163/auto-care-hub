@@ -657,7 +657,7 @@ const mockNotifications: Notification[] = [
 
 type MockSystemIncident = {
     id: string
-    type: 'server_error' | 'health_check' | 'background_job' | 'payment_webhook'
+    type: 'server_error' | 'health_check' | 'background_job'
     severity: 'warning' | 'critical'
     status: 'open' | 'acknowledged' | 'resolved'
     title: string
@@ -735,7 +735,7 @@ type MockSecurityEvent = {
     }>
     relatedSystemIncidents: Array<{
         id: string
-        type: 'server_error' | 'health_check' | 'background_job' | 'payment_webhook'
+        type: 'server_error' | 'health_check' | 'background_job'
         severity: 'warning' | 'critical'
         status: 'open' | 'acknowledged' | 'resolved'
         title: string
@@ -852,7 +852,6 @@ function toOwnerBooking(booking: typeof mockBookings[number]) {
             phone: client?.phone ?? null,
         },
         ownerNote: null,
-        paymentLedger: null,
     }
 }
 
@@ -1535,32 +1534,6 @@ export const handlers = [
             passwordSetupToken: 'mock-setup-token-123',
             passwordSetupExpiresAt: new Date(Date.now() + 3600000).toISOString(),
         })
-    }),
-
-    http.get('/api/admin/payments', () => {
-        return HttpResponse.json([])
-    }),
-
-    http.get('/api/admin/payments/attention', () => {
-        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
-
-        if (!currentUser) {
-            return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        }
-
-        if (currentUser.role !== 'super_admin') {
-            return HttpResponse.json({ message: 'Only super admins can view payment attention.' }, { status: 403 })
-        }
-
-        return HttpResponse.json({
-            failedPaymentCount: 0,
-            openDisputeCount: 0,
-            fundsWithdrawnDisputeCount: 0,
-        })
-    }),
-
-    http.get('/api/admin/payments/:id/disputes', () => {
-        return HttpResponse.json([])
     }),
 
     http.get('/api/admin/audit-logs', ({ request }) => {
@@ -3451,40 +3424,6 @@ export const handlers = [
         return HttpResponse.json(ownerCabinets)
     }),
 
-    http.get('/api/owner/readiness', () => {
-        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
-
-        if (!currentUser) {
-            return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        }
-
-        if (currentUser.role !== 'owner') {
-            return HttpResponse.json({ message: 'Only owners can view owner readiness.' }, { status: 403 })
-        }
-
-        const ownerCabinets = mockCabinets.filter((cabinet) => cabinet.ownerId === currentUser.id)
-        const activeCabinet = ownerCabinets.some((cabinet) => cabinet.status === 'active')
-        const activeCabinetIds = new Set(ownerCabinets.filter((cabinet) => cabinet.status === 'active').map((cabinet) => cabinet.id))
-        const activeService = mockServices.some((service) => activeCabinetIds.has(service.cabinetId) && service.isActive)
-        const payoutAccount: 'not_connected' | 'ready' = 'not_connected'
-        const checks = {
-            emailVerified: Boolean(currentUser.emailVerifiedAt),
-            activeCabinet,
-            activeService,
-            scheduleConfigured: false,
-            payoutAccount,
-        }
-        const blockers = [
-            ...(!checks.emailVerified ? ['email_verification' as const] : []),
-            ...(!checks.activeCabinet ? ['active_cabinet' as const] : []),
-            ...(!checks.activeService ? ['active_service' as const] : []),
-            ...(!checks.scheduleConfigured ? ['schedule' as const] : []),
-            'payout_account' as const,
-        ]
-
-        return HttpResponse.json({ ready: blockers.length === 0, blockers, checks })
-    }),
-
     http.post('/api/owner/action-center/events', async ({ request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
 
@@ -4120,44 +4059,6 @@ export const handlers = [
             .map(toClientBooking)
 
         return HttpResponse.json(clientBookings)
-    }),
-
-    http.get('/api/bookings/:id/payment/status', ({ params, request }) => {
-        if (!mockSession.currentUserId) {
-            return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        }
-
-        const booking = mockBookings.find(
-            (item) => item.id === String(params.id) && item.clientId === mockSession.currentUserId,
-        )
-        if (!booking) {
-            return HttpResponse.json({ message: 'Booking not found' }, { status: 404 })
-        }
-
-        const requestedTestStatus = request.headers.get('x-autocarehub-test-payment-status')
-
-        return HttpResponse.json({
-            status: requestedTestStatus === 'paid' ? 'paid' : null,
-            grossAmount: requestedTestStatus === 'paid'
-                ? mockServices.find((service) => service.id === booking.serviceId)?.price ?? null
-                : null,
-            refundedAmountMinor: 0,
-            remainingAmountMinor: requestedTestStatus === 'paid'
-                ? (mockServices.find((service) => service.id === booking.serviceId)?.price ?? 0) * 100
-                : null,
-            currency: requestedTestStatus === 'paid' ? 'rub' : null,
-            createdAt: null,
-            invoice: requestedTestStatus === 'paid'
-                ? {
-                    invoiceId: `inv_${booking.id}`,
-                    amount: mockServices.find((service) => service.id === booking.serviceId)?.price ?? 0,
-                    currency: 'rub',
-                    status: 'paid',
-                    issuedAt: new Date().toISOString(),
-                }
-                : null,
-            attempts: [],
-        })
     }),
 
     http.get('/api/bookings/:id/history', ({ params }) => {

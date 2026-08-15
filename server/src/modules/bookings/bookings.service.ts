@@ -15,7 +15,6 @@ import {
     BookingRescheduleRequestEntity,
     BookingRescheduleStatus,
 } from '../../entities/booking/booking-reschedule-request.entity.js'
-import { BookingPaymentEntity } from '../../entities/booking/booking-payment.entity.js'
 import {
     CabinetEntity,
     CabinetStatus,
@@ -870,8 +869,6 @@ export async function resolveOwnerBookingReschedule(
         }, booking.id)
     }
 
-    let paymentStatus: BookingPaymentEntity['status'] | null = null
-
     try {
         await AppDataSource.transaction(async (manager) => {
             rescheduleRequest.status = decision
@@ -898,7 +895,6 @@ export async function resolveOwnerBookingReschedule(
                 })
             )
 
-            paymentStatus = (await manager.getRepository(BookingPaymentEntity).findOneBy({ bookingId }))?.status ?? null
             const accepted = decision === BookingRescheduleStatus.Accepted
 
             await createBookingNotification({
@@ -913,7 +909,7 @@ export async function resolveOwnerBookingReschedule(
                             accepted ? proposedSlot : previousSlot,
                     },
                 },
-                metadata: { bookingId, rescheduleRequestId: rescheduleRequest.id, paymentStatus },
+                metadata: { bookingId, rescheduleRequestId: rescheduleRequest.id },
             }, bookingNotificationKey(bookingId, `reschedule-${decision}`, booking.clientId, rescheduleRequest.id), manager)
 
             await createBookingNotification({
@@ -951,7 +947,6 @@ export async function resolveOwnerBookingReschedule(
     return {
         request: toBookingRescheduleRequest(rescheduleRequest),
         booking: toOwnerBooking(booking),
-        paymentStatus,
     }
 }
 
@@ -1233,31 +1228,7 @@ export async function getOwnerBookings(
         ? await query.take(limit + 1).getMany()
         : await query.getMany()
 
-    const paymentByBookingId = new Map<string, BookingPaymentEntity>()
-    if (bookings.length > 0) {
-        const payments = await AppDataSource.getRepository(BookingPaymentEntity).find({
-            where: { bookingId: In(bookings.map((booking) => booking.id)) },
-            select: {
-                id: true,
-                bookingId: true,
-                grossAmount: true,
-                commissionAmount: true,
-                ownerPayoutAmount: true,
-                refundedAmountMinor: true,
-                currency: true,
-                status: true,
-                createdAt: true,
-            },
-        })
-
-        for (const payment of payments) {
-            paymentByBookingId.set(payment.bookingId, payment)
-        }
-    }
-
-    const mappedBookings = bookings.map((booking) =>
-        toOwnerBooking(booking, paymentByBookingId.get(booking.id) ?? null)
-    )
+    const mappedBookings = bookings.map(toOwnerBooking)
     const pendingBookings = mappedBookings.filter((booking) => booking.status === BookingStatus.Pending)
     const pendingBookingsOlderThan24Hours = pendingBookings.filter((booking) =>
         Date.now() - booking.createdAt.getTime() >= DAY_IN_MILLISECONDS

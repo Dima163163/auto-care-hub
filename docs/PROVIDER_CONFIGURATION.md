@@ -43,10 +43,9 @@ object storage before running multiple API replicas.
 
 ## Payments
 
-Stripe webhook events older than 24 hours or more than five minutes in the
-future are rejected before event claiming. Reconciliation classifies provider
-failures as retryable, permanent, or escalation-worthy; inspect the related
-metrics and system incidents during provider recovery.
+AutoCare Hub does not process customer payments. Clients agree payment directly
+with the service point, so owner configuration contains no payment-provider,
+payout, webhook, or reconciliation settings.
 
 ## Password breach checks
 

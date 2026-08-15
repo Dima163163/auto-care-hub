@@ -1,5 +1,4 @@
 import type { BookingStatus } from '../../entities/booking/booking.entity.js'
-import type { BookingPaymentStatus } from '../../entities/booking/booking-payment.entity.js'
 
 export type PublicBooking = {
     id: string
@@ -41,21 +40,9 @@ export type ClientBooking = PublicBooking & {
     service: BookingService
 }
 
-export type OwnerPaymentLedger = {
-    grossAmount: number
-    commissionAmount: number
-    ownerPayoutAmount: number
-    refundedAmountMinor: number
-    remainingAmountMinor: number
-    currency: string
-    status: BookingPaymentStatus
-    createdAt: Date
-}
-
 export type OwnerBooking = ClientBooking & {
     client: BookingClient
     ownerNote: string | null
-    paymentLedger: OwnerPaymentLedger | null
 }
 
 export type BookingStatusHistory = {

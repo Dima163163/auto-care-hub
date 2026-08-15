@@ -11,10 +11,6 @@ envVars:
         sync: false
       - key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
       - key: CABINET_UPLOADS_DIR
         sync: false
       - key: MAIL_MODE

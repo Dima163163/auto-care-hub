@@ -31,7 +31,7 @@ describe('maintenance phase runner', () => {
         const failure = new Error('phase failed')
 
         await expect(runMaintenancePhase({
-            phase: 'payment_reconciliation',
+            phase: 'audit_cleanup',
             timeoutMs: 1_000,
             task: async () => {
                 throw failure
@@ -41,14 +41,14 @@ describe('maintenance phase runner', () => {
         expect(metrics.snapshot().counters).toEqual(expect.arrayContaining([
             expect.objectContaining({
                 name: 'maintenance_phase_runs_total',
-                labels: { phase: 'payment_reconciliation', outcome: 'failed' },
+                labels: { phase: 'audit_cleanup', outcome: 'failed' },
             }),
         ]))
     })
 
     it('fails a phase independently when its timeout is exceeded', async () => {
         await expect(runMaintenancePhase({
-            phase: 'stripe_webhook',
+            phase: 'trust_reassessment',
             timeoutMs: 1,
             task: () => new Promise(() => undefined),
         })).rejects.toMatchObject({ name: 'OperationTimeoutError' })
@@ -92,8 +92,6 @@ describe('maintenance phase runner', () => {
         expect(task).toHaveBeenCalledTimes(2)
         expect(getMaintenancePhaseRetryLimit('audit_cleanup')).toBe(2)
         expect(getMaintenancePhaseRetryLimit('outbox')).toBe(1)
-        expect(getMaintenancePhaseRetryLimit('payment_refund_reconciliation')).toBe(2)
-        expect(getMaintenancePhaseRetryLimit('payment_invoice_backfill')).toBe(2)
         expect(metrics.snapshot().counters).toEqual(expect.arrayContaining([
             expect.objectContaining({
                 name: 'maintenance_phase_retries_total',
@@ -119,13 +117,13 @@ describe('maintenance phase runner', () => {
 
     it('aborts the cycle for a timeout or a lost lease', async () => {
         await expect(runMaintenancePhaseWithFailurePolicy({
-            phase: 'payment_reconciliation',
+            phase: 'audit_cleanup',
             timeoutMs: 1,
             task: () => new Promise(() => undefined),
         })).rejects.toMatchObject({ name: 'OperationTimeoutError' })
 
         await expect(runMaintenancePhaseWithFailurePolicy({
-            phase: 'payment_reconciliation',
+            phase: 'audit_cleanup',
             timeoutMs: 1_000,
             task: async () => {
                 throw new Error('Maintenance lease was lost before reconciliation')
@@ -133,35 +131,4 @@ describe('maintenance phase runner', () => {
         })).rejects.toThrow('Maintenance lease was lost')
     })
 
-    it('retries refund reconciliation because the transition is idempotent', async () => {
-        const task = vi.fn()
-            .mockRejectedValueOnce(new Error('temporary Stripe failure'))
-            .mockResolvedValueOnce({ checked: 1, repaired: 1, skipped: 0, errors: 0 })
-
-        await expect(runMaintenancePhaseWithFailurePolicy({
-            phase: 'payment_refund_reconciliation',
-            timeoutMs: 1_000,
-            task,
-        })).resolves.toEqual({
-            ok: true,
-            value: { checked: 1, repaired: 1, skipped: 0, errors: 0 },
-        })
-        expect(task).toHaveBeenCalledTimes(2)
-    })
-
-    it('retries invoice backfill because inserts are conflict-safe', async () => {
-        const task = vi.fn()
-            .mockRejectedValueOnce(new Error('temporary database failure'))
-            .mockResolvedValueOnce({ checked: 1, created: 1, skipped: 0, errors: 0 })
-
-        await expect(runMaintenancePhaseWithFailurePolicy({
-            phase: 'payment_invoice_backfill',
-            timeoutMs: 1_000,
-            task,
-        })).resolves.toEqual({
-            ok: true,
-            value: { checked: 1, created: 1, skipped: 0, errors: 0 },
-        })
-        expect(task).toHaveBeenCalledTimes(2)
-    })
 })

@@ -716,24 +716,6 @@ export const enTranslations = {
                 message: '{{cabinetTitle}} is booked for {{date}} at {{startTime}}.',
             },
         },
-        payment: {
-            completed: {
-                title: 'Payment completed',
-                message: 'Your booking payment was completed successfully.',
-            },
-            failed: {
-                title: 'Payment failed',
-                message: 'Your booking payment could not be completed. You can try again from your bookings.',
-            },
-            partiallyRefunded: {
-                title: 'Payment partially refunded',
-                message: 'Part of your booking payment was refunded. The remaining balance is still recorded in your account.',
-            },
-            refunded: {
-                title: 'Payment refunded',
-                message: 'Your booking payment was refunded.',
-            },
-        },
         moderation: {
             reviewUpdated: {
                 title: 'Review moderation updated',

@@ -83,7 +83,8 @@ The copied baseline still implements:
 - `Cabinet` and provider-owned free-text `Service`;
 - global `owner` assumptions;
 - cabinet booking routes/pages/mocks;
-- customer booking payments, 2% commission and Stripe Connect;
+- historical customer-booking payment and commission schemas retained only in
+  migrations;
 - legacy translations, assets, seeds, deployment names and docs.
 
 These are current-code facts, not AutoCare product requirements. Do not extend

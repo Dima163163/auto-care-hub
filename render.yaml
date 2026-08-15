@@ -11,8 +11,6 @@ services:
         value: production
       - key: RUNTIME_MODE
         value: api
-      - key: PAYMENTS_ENABLED
-        value: "false"
       - key: PORT
         value: 10000
       - key: DATABASE_URL
@@ -61,8 +59,6 @@ services:
         value: production
       - key: RUNTIME_MODE
         value: worker
-      - key: PAYMENTS_ENABLED
-        value: "false"
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL

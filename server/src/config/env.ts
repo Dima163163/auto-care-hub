@@ -4,7 +4,6 @@ import type { SignOptions } from 'jsonwebtoken'
 import { validateTrustedProxyConfig } from '../shared/security/trusted-proxy.js'
 import { validateOAuthRedirectUri } from '../shared/security/oauth-redirect.js'
 import { resolveCabinetImageStorageProvider } from '../modules/cabinets/storage-provider-policy.js'
-import { resolveExternalPaymentProviderConfig } from '../modules/payments/external-provider-config.js'
 import { parseHealthThreshold } from '../routes/health-thresholds.js'
 import { normalizeAuditLogRetentionDays } from '../modules/admin/audit-retention-policy.js'
 import {
@@ -19,7 +18,6 @@ import {
 import { assertMailModeAllowed } from './mail-config-policy.js'
 import { normalizeRuntimeMode, type RuntimeMode } from './runtime-mode-policy.js'
 import { resolveCabinetUploadsDir } from './cabinet-uploads-path.js'
-import { getStripeConfig } from './stripe-config-policy.js'
 import {
     DEFAULT_BOOKING_REMINDER_HOURS,
     MAX_BOOKING_REMINDER_HOURS,
@@ -119,13 +117,6 @@ export type EnvConfig = {
             redirectUri: string
         }
     }
-    stripe: {
-        secretKey: string
-        webhookSecret: string
-        requestTimeoutMs: number
-        maxNetworkRetries: number
-    }
-    paymentsEnabled: boolean
     auditLogRetentionDays: number
     securityEventIpRetentionDays: number
     notificationRetentionDays: number
@@ -508,24 +499,6 @@ const breachedPasswordCheckMode = resolveBreachedPasswordCheckMode({
     configuredMode: process.env.BREACHED_PASSWORD_CHECK_MODE,
 })
 const breachedPasswordClientPolicy = getBreachedPasswordClientPolicy(breachedPasswordCheckMode)
-// Keep legacy payment fixtures available to the isolated test suite, while
-// every development/production deployment starts with payments disabled.
-const paymentsEnabled = getBooleanEnv('PAYMENTS_ENABLED', nodeEnv === 'test')
-const stripeCredentials = getStripeConfig(nodeEnv, {
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    requireProductionCredentials: paymentsEnabled,
-})
-const stripeRequestTimeoutMs = getBoundedPositiveNumberEnv('STRIPE_REQUEST_TIMEOUT_MS', 8_000, 120_000)
-const stripeMaxNetworkRetries = getBoundedNonNegativeNumberEnv('STRIPE_MAX_NETWORK_RETRIES', 2, 3)
-if (paymentsEnabled) {
-    resolveExternalPaymentProviderConfig({
-        ...stripeCredentials,
-        nodeEnv,
-        requestTimeoutMs: stripeRequestTimeoutMs,
-        maxNetworkRetries: stripeMaxNetworkRetries,
-    })
-}
 const defaultFrontendOrigin = getOptionalEnv('CORS_ORIGIN', 'http://localhost:5173')
 const corsOrigins = getCorsOrigins(nodeEnv, defaultFrontendOrigin)
 const auditLogRetentionDays = normalizeAuditLogRetentionDays(
@@ -617,12 +590,6 @@ export const env: EnvConfig = {
             ),
         },
     },
-    stripe: {
-        ...stripeCredentials,
-        requestTimeoutMs: stripeRequestTimeoutMs,
-        maxNetworkRetries: stripeMaxNetworkRetries,
-    },
-    paymentsEnabled,
     auditLogRetentionDays,
     securityEventIpRetentionDays,
     notificationRetentionDays: getBoundedPositiveNumberEnv('NOTIFICATION_RETENTION_DAYS', 180, 730),

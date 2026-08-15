@@ -17,8 +17,8 @@ The inventory compares the route signatures declared in
 
 | Set | Count | Meaning |
 | --- | ---: | --- |
-| MSW mock routes | 177 | Requests the browser can exercise without a server |
-| Fastify routes | 213 | Mock routes plus auth, health, admin, uploads, payment, chat and WebSocket support |
+| MSW mock routes | 172 | Requests the browser can exercise without a server |
+| Fastify routes | 202 | Mock routes plus auth, health, admin, uploads, chat and WebSocket support |
 | Missing mock routes | 0 | Every mock request has a real backend route |
 
 The check is executable with `npm run check:api-parity`. It intentionally
@@ -32,23 +32,23 @@ implemented as a flat public catalog of active cabinets and declared in
 OpenAPI. The mock uses the same active-only rule; drafts and blocked records
 remain owner/admin state and are never exposed through a public catalog.
 
-The 177 mock routes are distributed across these top-level API groups:
+The 172 mock routes are distributed across these top-level API groups:
 
 | Prefix | Routes | Contract role |
 | --- | ---: | --- |
 | `/auth` | 22 | Registration, login, refresh, verification, password, OAuth and sessions |
 | `/users` | 13 | Profile, vehicles, preferences, data export and deletion |
 | `/notifications` | 4 | List, unread count, mark one/read all |
-| `/admin` | 31 | Users, providers, reviews, payments, audit, security and incidents |
+| `/admin` | 28 | Users, providers, reviews, audit, security and incidents |
 | `/cabinets` + `/cabinet-images` | 9 | Legacy-compatible catalog and owner cabinet/media contracts |
-| `/v1` | 31 | AutoCare discovery, markets, providers, offers, reviews, requests and chats |
-| `/owner` | 21 | Provider workspace, locations, services, clients, requests and reviews |
+| `/v1` | 50 | AutoCare discovery, markets, providers, offers, reviews, requests and chats |
+| `/owner` | 28 | Provider workspace, locations, services, clients, requests and reviews |
 | `/uploads` | 2 | AutoCare image delivery |
 | `/super-admin` | 2 | Platform overview and platform review controls |
 | `/reviews` | 2 | Cabinet review reads and client review actions |
 | `/services` | 5 | Service catalog and owner offer management |
 | `/client` | 1 | Experiment event telemetry |
-| `/bookings` | 7 | Client bookings, availability, rescheduling and payment lifecycle |
+| `/bookings` | 6 | Client bookings, availability and rescheduling |
 
 Counts are generated from the route declarations rather than maintained by
 hand; run `npm run check:api-parity` after changing a handler or route.

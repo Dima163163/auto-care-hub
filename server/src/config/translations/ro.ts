@@ -75,24 +75,6 @@ export const roTranslations = {
                 message: '{{cabinetTitle}} este rezervat pentru {{date}} la {{startTime}}.',
             },
         },
-        payment: {
-            completed: {
-                title: 'Plată finalizată',
-                message: 'Plata rezervării a fost finalizată cu succes.',
-            },
-            failed: {
-                title: 'Plata a eșuat',
-                message: 'Plata rezervării nu a putut fi finalizată. Încercați din nou din secțiunea rezervărilor.',
-            },
-            partiallyRefunded: {
-                title: 'Plată rambursată parțial',
-                message: 'O parte din plata rezervării a fost rambursată. Soldul rămas este păstrat în contul dumneavoastră.',
-            },
-            refunded: {
-                title: 'Plată rambursată',
-                message: 'Plata rezervării a fost rambursată.',
-            },
-        },
         moderation: {
             reviewUpdated: {
                 title: 'Moderarea recenziei a fost actualizată',

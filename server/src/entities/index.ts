@@ -9,9 +9,6 @@ import { UserSessionEntity } from './user-session/user-session.entity.js'
 import { AuditLogEntity } from './audit-log/audit-log.entity.js'
 import { NotificationEntity } from './notification/notification.entity.js'
 import { BookingStatusHistoryEntity } from './booking/booking-status-history.entity.js'
-import { BookingPaymentEntity } from './booking/booking-payment.entity.js'
-import { BookingPaymentAttemptEntity } from './booking/booking-payment-attempt.entity.js'
-import { StripeWebhookEventEntity } from './booking/stripe-webhook-event.entity.js'
 import { CabinetScheduleEntity } from './cabinet/cabinet-schedule.entity.js'
 import { CabinetScheduleExceptionEntity } from './cabinet/cabinet-schedule-exception.entity.js'
 import { BookingRescheduleRequestEntity } from './booking/booking-reschedule-request.entity.js'
@@ -24,9 +21,6 @@ import { OAuthLinkRequestEntity } from './oauth-link-request/oauth-link-request.
 import { AccountDeletionRequestEntity } from './account-deletion-request/account-deletion-request.entity.js'
 import { SecurityEventEntity } from './security-event/security-event.entity.js'
 import { SecurityEventActionEntity } from './security-event/security-event-action.entity.js'
-import { BookingPaymentInvoiceEntity } from './booking/booking-payment-invoice.entity.js'
-import { BookingPaymentRefundEntity } from './booking/booking-payment-refund.entity.js'
-import { BookingPaymentDisputeEntity } from './booking/booking-payment-dispute.entity.js'
 import { SecurityMitigationEntity } from './security-mitigation/security-mitigation.entity.js'
 import { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 import {
@@ -77,9 +71,6 @@ export const entities = [
     AuditLogEntity,
     NotificationEntity,
     BookingStatusHistoryEntity,
-    BookingPaymentEntity,
-    BookingPaymentAttemptEntity,
-    StripeWebhookEventEntity,
     CabinetScheduleEntity,
     CabinetScheduleExceptionEntity,
     BookingRescheduleRequestEntity,
@@ -92,9 +83,6 @@ export const entities = [
     AccountDeletionRequestEntity,
     SecurityEventEntity,
     SecurityEventActionEntity,
-    BookingPaymentInvoiceEntity,
-    BookingPaymentRefundEntity,
-    BookingPaymentDisputeEntity,
     SecurityMitigationEntity,
     CabinetImageManifestEntity,
     AutomotiveMarketEntity,
@@ -138,15 +126,6 @@ export { UserSessionEntity } from './user-session/user-session.entity.js'
 export { AuditLogEntity, AuditAction } from './audit-log/audit-log.entity.js'
 export { NotificationEntity, NotificationCategory } from './notification/notification.entity.js'
 export { BookingStatusHistoryEntity } from './booking/booking-status-history.entity.js'
-export { BookingPaymentEntity, BookingPaymentStatus } from './booking/booking-payment.entity.js'
-export {
-    BookingPaymentAttemptEntity,
-    BookingPaymentAttemptStatus,
-} from './booking/booking-payment-attempt.entity.js'
-export {
-    StripeWebhookEventEntity,
-    StripeWebhookEventStatus,
-} from './booking/stripe-webhook-event.entity.js'
 export { CabinetScheduleEntity } from './cabinet/cabinet-schedule.entity.js'
 export { CabinetScheduleExceptionEntity } from './cabinet/cabinet-schedule-exception.entity.js'
 export { BookingRescheduleRequestEntity, BookingRescheduleStatus } from './booking/booking-reschedule-request.entity.js'
@@ -183,18 +162,6 @@ export {
     SecurityEventActionEntity,
     SecurityEventActionStatus,
 } from './security-event/security-event-action.entity.js'
-export {
-    BookingPaymentInvoiceEntity,
-    BookingPaymentInvoiceStatus,
-} from './booking/booking-payment-invoice.entity.js'
-export {
-    BookingPaymentRefundEntity,
-    BookingPaymentRefundStatus,
-} from './booking/booking-payment-refund.entity.js'
-export {
-    BookingPaymentDisputeEntity,
-    BookingPaymentDisputeStatus,
-} from './booking/booking-payment-dispute.entity.js'
 export {
     SecurityMitigationEntity,
     SecurityMitigationKind,

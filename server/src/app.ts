@@ -5,7 +5,6 @@ import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import websocket from '@fastify/websocket'
-import rawBody from 'fastify-raw-body'
 
 import { env } from './config/env.js'
 import { connectDatabase } from './database/database.js'
@@ -20,7 +19,6 @@ import { healthRoutes } from './routes/health.route.js'
 import { adminRoutes } from './modules/admin/admin.routes.js'
 import { oauthRoutes } from './modules/oauth/oauth.routes.js'
 import { usersRoutes } from './modules/users/users.routes.js'
-import { paymentsRoutes } from './modules/payments/payments.routes.js'
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js'
 import { autoCareRoutes } from './modules/autocare/autocare.routes.js'
 import { platformReviewsRoutes } from './modules/platform-reviews/platform-reviews.routes.js'
@@ -151,19 +149,6 @@ export async function buildApp() {
         requestStartedAt.delete(request)
     })
 
-    // AutoCare never processes repair payments. Keep the legacy Stripe webhook
-    // parser completely out of development/production processes unless an
-    // explicitly approved legacy payment test/runtime enables it.
-    if (env.paymentsEnabled) {
-        await app.register(rawBody, {
-            field: 'rawBody',
-            global: false,
-            encoding: false,
-            runFirst: true,
-            routes: ['/webhooks/stripe']
-        })
-    }
-
     const mailer = createMailer(env.mail, app.log)
     app.decorate('mailer', mailer)
 
@@ -251,7 +236,6 @@ export async function buildApp() {
     await app.register(notificationsRoutes)
     await app.register(autoCareRoutes)
     await app.register(platformReviewsRoutes)
-    await app.register(paymentsRoutes)
     await app.register(adminRoutes, {
         mailer,
     })

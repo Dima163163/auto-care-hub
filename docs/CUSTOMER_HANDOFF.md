@@ -12,7 +12,6 @@ database credentials in chat.
 - PostgreSQL database reachable by the backend.
 - Redis for shared rate limiting when running more than one backend instance.
 - SMTP/provider account for verification, password, and booking emails.
-- Stripe account and connected-account setup when payments are enabled.
 
 ## 2. Environment handoff
 
@@ -29,12 +28,10 @@ Configure secrets in the hosting provider, not in Git:
   persistent volume;
 - `REDIS_URL` or the Redis host/port settings;
 - complete SMTP settings with `MAIL_MODE=smtp`;
-- Stripe secret, webhook signing secret, and frontend publishable key;
 - `BOOTSTRAP_SUPER_ADMIN_EMAIL` and `BOOTSTRAP_SUPER_ADMIN_NAME`.
 
-Production must use HTTPS, strong unique JWT secrets, real SMTP, and a real
-customer-owned Stripe account. Never reuse demo credentials or the local
-password `123456` in production.
+Production must use HTTPS, strong unique JWT secrets, and real SMTP. Never
+reuse demo credentials or the local password `123456` in production.
 
 ### Client IP and Render proxy policy
 
@@ -72,7 +69,7 @@ verified handoff when the deployment process no longer needs them.
 
 ## 4. Deployment order
 
-1. Provision PostgreSQL, Redis, backend, frontend, SMTP, and Stripe.
+1. Provision PostgreSQL, Redis, backend, frontend, and SMTP.
 2. Configure secrets and allowed frontend origins.
 3. Deploy backend dependencies and build the server.
 4. Run `npm run check:mvp-readiness` in the production-shaped environment and
@@ -139,7 +136,6 @@ hosting/database provider. Store backup files outside the application repo.
 - [ ] Production SMTP sends verification/reset mail.
 - [ ] Bootstrap super-admin completed password setup.
 - [ ] Demo users and demo secrets are absent from production.
-- [ ] Stripe webhook signature and payout capability are verified.
 - [ ] A backup restore rehearsal has an owner and a recorded result.
 - [ ] Incident contacts and escalation windows are documented.
 - [ ] Customer receives the incident runbook and deployment contact.

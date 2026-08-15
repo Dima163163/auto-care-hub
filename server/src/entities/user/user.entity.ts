@@ -74,9 +74,6 @@ export class UserEntity {
     @Column({ type: 'text', nullable: true })
     locale!: SupportedLocale | null
 
-    @Column({ type: 'text', nullable: true, unique: true })
-    stripeConnectAccountId!: string | null
-
     @Column({
         type: 'enum',
         enum: UserProvider,

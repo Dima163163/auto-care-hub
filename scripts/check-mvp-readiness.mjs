@@ -9,8 +9,6 @@ import {
 import { assertRenderProductionConfig } from './check-render-production-config.mjs'
 
 const SECRET_PLACEHOLDER_PATTERN = /(?:replace|change[-_ ]?me|mock|example\.com|admin@example\.com)/i
-const STRIPE_LIVE_KEY_PREFIX = 'sk_live_'
-const STRIPE_WEBHOOK_PREFIX = 'whsec_'
 
 function hasConfiguredValue(value) {
     const normalized = String(value ?? '').trim()
@@ -19,25 +17,6 @@ function hasConfiguredValue(value) {
 
 function check(name, status, detail) {
     return { name, status, detail }
-}
-
-function getStripeConfigurationIssues(environment) {
-    const issues = []
-    const secretKey = String(environment.STRIPE_SECRET_KEY ?? '').trim()
-    const webhookSecret = String(environment.STRIPE_WEBHOOK_SECRET ?? '').trim()
-
-    if (!hasConfiguredValue(secretKey)) issues.push('STRIPE_SECRET_KEY')
-    if (!hasConfiguredValue(webhookSecret)) issues.push('STRIPE_WEBHOOK_SECRET')
-
-    const nodeEnv = String(environment.NODE_ENV ?? 'production').trim()
-    if (nodeEnv === 'production' && hasConfiguredValue(secretKey) && !secretKey.startsWith(STRIPE_LIVE_KEY_PREFIX)) {
-        issues.push('STRIPE_SECRET_KEY must use live mode')
-    }
-    if (nodeEnv === 'production' && hasConfiguredValue(webhookSecret) && !webhookSecret.startsWith(STRIPE_WEBHOOK_PREFIX)) {
-        issues.push('STRIPE_WEBHOOK_SECRET has an invalid format')
-    }
-
-    return issues
 }
 
 export function getMvpReadinessChecks(environment = process.env, renderSource = '') {
@@ -63,16 +42,6 @@ export function getMvpReadinessChecks(environment = process.env, renderSource = 
         ? check('SMTP configuration', 'pass', 'SMTP mode and required non-placeholder settings are present')
         : check('SMTP configuration', 'blocked', `missing or placeholder values: ${missingSmtp.join(', ')}`))
 
-    const paymentsEnabled = String(environment.PAYMENTS_ENABLED ?? 'false').trim().toLowerCase() === 'true'
-    if (paymentsEnabled) {
-        const stripeIssues = getStripeConfigurationIssues(environment)
-        checks.push(stripeIssues.length === 0
-            ? check('Stripe configuration', 'pass', 'secret and webhook settings are present without printing their values')
-            : check('Stripe configuration', 'blocked', `missing, placeholder, or invalid production values: ${stripeIssues.join(', ')}`))
-    } else {
-        checks.push(check('Stripe configuration', 'pass', 'legacy payments are disabled by PAYMENTS_ENABLED=false'))
-    }
-
     const provider = String(environment.CABINET_IMAGE_STORAGE_PROVIDER ?? 'filesystem').trim()
     if (provider === 's3') {
         checks.push(check('Cabinet media storage', 'blocked', 'the S3 adapter is not installed; use a mounted filesystem volume or add the approved adapter'))
@@ -88,9 +57,7 @@ export function getMvpReadinessChecks(environment = process.env, renderSource = 
         ? check('Bootstrap super-admin', 'pass', 'bootstrap identity is explicitly configured')
         : check('Bootstrap super-admin', 'blocked', `missing or placeholder values: ${bootstrapMissing.join(', ')}`))
 
-    checks.push(check('External launch evidence', 'manual', paymentsEnabled
-        ? 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, Stripe recovery, and privacy approval'
-        : 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, and privacy approval'))
+    checks.push(check('External launch evidence', 'manual', 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, and privacy approval'))
 
     return checks
 }

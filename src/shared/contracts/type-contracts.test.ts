@@ -5,7 +5,6 @@ import { normalizeCabinetResponse } from '@/entities/cabinet/lib/cabinet-respons
 import { normalizeBookingResponse } from '@/entities/booking/lib/booking-response-schema'
 import type { Booking } from '@/entities/booking'
 import { getBottomNavPrimaryTarget, type BottomNavPrimaryTarget } from '@/widgets/bottom-nav/model/get-bottom-nav-primary-target'
-import { getPaymentReturnState, type PaymentReturnState } from '@/pages/profile-bookings/lib/get-payment-return-state'
 import { parseLoginLocationState, type LoginLocationState } from '@/pages/login/lib/parse-login-location-state'
 
 describe('cross-layer type contracts', () => {
@@ -16,7 +15,6 @@ describe('cross-layer type contracts', () => {
 
     it('keeps route and UI state helpers discriminated', () => {
         expectTypeOf(parseLoginLocationState).returns.toEqualTypeOf<LoginLocationState>()
-        expectTypeOf(getPaymentReturnState).returns.toEqualTypeOf<PaymentReturnState>()
         expectTypeOf(getBottomNavPrimaryTarget).returns.toEqualTypeOf<BottomNavPrimaryTarget>()
     })
 })

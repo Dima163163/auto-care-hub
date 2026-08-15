@@ -3,9 +3,6 @@ import type { CursorPage, CursorQuery } from '@/shared/api/cursorPagination'
 import {
     normalizeAuditLogListResponse,
     normalizeAuditLogPageResponse,
-    normalizeAdminPaymentRefundListResponse,
-    normalizeAdminPaymentDisputeListResponse,
-    normalizeAdminPaymentAttentionResponse,
     normalizeSecurityEventListResponse,
     normalizeSecurityEventPageResponse,
     normalizeSecurityCenterEventPageResponse,
@@ -70,10 +67,6 @@ export type AuditLogActor = {
 export type KnownAuditLogAction =
     | 'admin_created'
     | 'cabinet_status_updated'
-    | 'payment_failed'
-    | 'payment_succeeded'
-    | 'payment_partially_refunded'
-    | 'payment_refunded'
     | 'promo_subscription_issued'
     | 'review_deleted'
     | 'review_moderated'
@@ -119,7 +112,7 @@ export type SystemIncidentStatus = 'open' | 'acknowledged' | 'resolved'
 
 export type SystemIncident = {
     id: string
-    type: 'server_error' | 'health_check' | 'background_job' | 'payment_webhook'
+    type: 'server_error' | 'health_check' | 'background_job'
     severity: 'warning' | 'critical'
     status: SystemIncidentStatus
     title: string
@@ -194,7 +187,7 @@ export type SecurityCenterEvent = {
     }>
     relatedSystemIncidents: Array<{
         id: string
-        type: 'server_error' | 'health_check' | 'background_job' | 'payment_webhook'
+        type: 'server_error' | 'health_check' | 'background_job'
         severity: 'warning' | 'critical'
         status: 'open' | 'acknowledged' | 'resolved'
         title: string
@@ -260,43 +253,6 @@ export type OutboxHealth = {
         lastError: string | null
         createdAt: string
     }>
-}
-
-export type AdminPaymentRefund = {
-    id: string
-    paymentId: string
-    bookingId: string
-    providerRefundId: string
-    providerChargeId: string | null
-    amountMinor: number
-    currency: string
-    reason: string | null
-    status: 'pending' | 'succeeded' | 'failed' | 'canceled'
-    createdAt: string
-    updatedAt: string
-}
-
-export type AdminPaymentDispute = {
-    id: string
-    paymentId: string
-    bookingId: string
-    providerDisputeId: string
-    providerChargeId: string | null
-    amountMinor: number
-    currency: string
-    reason: string
-    providerStatus: string
-    status: 'open' | 'funds_withdrawn' | 'funds_reinstated' | 'closed'
-    lastEventId: string
-    lastEventCreatedAt: string
-    createdAt: string
-    updatedAt: string
-}
-
-export type AdminPaymentAttention = {
-    failedPaymentCount: number
-    openDisputeCount: number
-    fundsWithdrawnDisputeCount: number
 }
 
 export const adminApi = baseApi.injectEndpoints({
@@ -374,21 +330,6 @@ export const adminApi = baseApi.injectEndpoints({
             query: (id) => `/admin/security-center/events/${id}`,
             transformResponse: normalizeSecurityCenterEventResponse,
             providesTags: ['SecurityEvents'],
-        }),
-        getAdminPaymentRefunds: build.query<AdminPaymentRefund[], string>({
-            query: (paymentId) => `/admin/payments/${paymentId}/refunds`,
-            transformResponse: normalizeAdminPaymentRefundListResponse,
-            providesTags: ['PaymentRefunds'],
-        }),
-        getAdminPaymentDisputes: build.query<AdminPaymentDispute[], string>({
-            query: (paymentId) => `/admin/payments/${paymentId}/disputes`,
-            transformResponse: normalizeAdminPaymentDisputeListResponse,
-            providesTags: ['PaymentDisputes'],
-        }),
-        getAdminPaymentAttention: build.query<AdminPaymentAttention, void>({
-            query: () => '/admin/payments/attention',
-            transformResponse: normalizeAdminPaymentAttentionResponse,
-            providesTags: ['PaymentDisputes'],
         }),
         updateSystemIncidentStatus: build.mutation<
             SystemIncident,
@@ -480,9 +421,6 @@ export const {
     useLazyGetSecurityCenterEventsPageQuery,
     useLazyGetSecurityCenterExportQuery,
     useGetSecurityCenterEventQuery,
-    useGetAdminPaymentRefundsQuery,
-    useGetAdminPaymentDisputesQuery,
-    useGetAdminPaymentAttentionQuery,
     useUpdateSystemIncidentStatusMutation,
     useUpdateSecurityCenterEventStatusMutation,
     useGetSecurityMitigationsQuery,

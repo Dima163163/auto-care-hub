@@ -27,13 +27,6 @@ describe('summarizeMaintenanceCycle', () => {
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
             trustReassessment: { scanned: 4, changed: 2 },
-            stripeWebhook: {
-                unmatchedExpired: 2,
-                replay: { checked: 1, applied: 1, unsupported: 0, retryable: 0, failed: 0, skipped: 0 },
-            },
-            payments: { checked: 7, paid: 1, failed: 0, repaired: 0, skipped: 6, errors: 0 },
-            paymentRefunds: { checked: 2, repaired: 1, skipped: 1, errors: 0 },
-            paymentInvoiceBackfill: { checked: 3, created: 2, skipped: 1, errors: 0 },
             phaseFailures: [],
         })).toEqual({
             remindersScheduled: 1,
@@ -43,13 +36,6 @@ describe('summarizeMaintenanceCycle', () => {
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
             trustReassessment: { scanned: 4, changed: 2 },
-            stripeWebhook: {
-                unmatchedExpired: 2,
-                replay: { checked: 1, applied: 1, unsupported: 0, retryable: 0, failed: 0, skipped: 0 },
-            },
-            payments: { checked: 7, paid: 1, failed: 0, repaired: 0, skipped: 6, errors: 0 },
-            paymentRefunds: { checked: 2, repaired: 1, skipped: 1, errors: 0 },
-            paymentInvoiceBackfill: { checked: 3, created: 2, skipped: 1, errors: 0 },
         })
     })
 })

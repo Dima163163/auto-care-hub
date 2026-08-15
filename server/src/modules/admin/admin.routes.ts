@@ -11,8 +11,6 @@ import {
     adminAutoCareProviderParamsSchema,
     adminAuditLogsQuerySchema,
     auditLogsExportQuerySchema,
-    adminPaymentParamsSchema,
-    adminPaymentsQuerySchema,
     adminUserParamsSchema,
     adminUsersQuerySchema,
     adminDeletionRequestsQuerySchema,
@@ -37,17 +35,12 @@ import {
     updateUserRoleSchema,
     updateUserStatusSchema,
     updateAdminDeletionRequestStatusSchema,
-    refundPaymentSchema,
 } from './admin.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
 import {
     createAdmin,
     getAdminCabinets,
     getAdminUsers,
-    getAdminPayments,
-    getAdminPaymentAttention,
-    getAdminPaymentRefunds,
-    getAdminPaymentDisputes,
     updateAdminCabinetStatus,
     getAdminAutoCareProviders,
     getSuperAdminPlatformOverview,
@@ -94,11 +87,10 @@ import {
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import type { SystemIncidentEntity } from '../../entities/system-incident/system-incident.entity.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
-import type { AdminCabinet, AdminPayment, AdminPaymentDispute, AdminPaymentRefund, AdminUser, CreateAdminResponse } from './admin.types.js'
+import type { AdminCabinet, AdminUser, CreateAdminResponse } from './admin.types.js'
 import type { AdminAutoCareProvider, SuperAdminPlatformOverview } from './admin.service.js'
 import { env } from '../../config/env.js'
 import { getRequestLocale } from '../../shared/i18n/request-locale.js'
-import { refundBookingPayment } from '../payments/payment-refund.service.js'
 import {
     getAdminDeletionRequests,
     updateAdminDeletionRequestStatus,
@@ -111,19 +103,6 @@ type AdminDeletionRequestsListResponse = AdminDeletionRequest[] | CursorResponse
 type AdminUserResponse = AdminUser
 type AdminCabinetsListResponse = AdminCabinet[]
 type AdminCabinetResponse = AdminCabinet
-type AdminPaymentResponse = Omit<AdminPayment, 'createdAt'> & { createdAt: string }
-type AdminPaymentsListResponse = AdminPaymentResponse[] | CursorResponse<AdminPaymentResponse>
-type AdminPaymentRefundResponse = Omit<AdminPaymentRefund, 'createdAt' | 'updatedAt'> & {
-    createdAt: string
-    updatedAt: string
-}
-type AdminPaymentDisputeResponse = Omit<AdminPaymentDispute, 'createdAt' | 'updatedAt' | 'lastEventCreatedAt'> & {
-    lastEventCreatedAt: string
-    createdAt: string
-    updatedAt: string
-}
-type AdminPaymentAttentionResponse = Awaited<ReturnType<typeof getAdminPaymentAttention>>
-type RefundPaymentResponse = { paymentId: string; status: string; refundedAmountMinor: number }
 
 type AuditLogResponse = {
     id: string
@@ -339,87 +318,6 @@ export async function adminRoutes(
             const user = await requireAuth(request)
 
             return getAdminCabinets(user)
-        }
-    )
-
-    app.get<{ Querystring: unknown; Reply: AdminPaymentsListResponse }>(
-        '/admin/payments',
-        async (request) => {
-            const user = await requireAuth(request)
-            const query = validateQuery(adminPaymentsQuerySchema, request.query)
-            const payments = await getAdminPayments(user, query)
-
-            return mapCursorResponse(payments, (payment) => ({
-                ...payment,
-                createdAt: payment.createdAt.toISOString(),
-            }))
-        }
-    )
-
-    app.get<{ Reply: AdminPaymentAttentionResponse }>(
-        '/admin/payments/attention',
-        async (request, reply) => {
-            const user = await requireAuth(request)
-            const attention = await getAdminPaymentAttention(user)
-
-            return reply
-                .header('cache-control', 'no-store')
-                .send(attention)
-        },
-    )
-
-    app.get<{ Params: unknown; Reply: AdminPaymentRefundResponse[] }>(
-        '/admin/payments/:id/refunds',
-        async (request, reply) => {
-            const user = await requireAuth(request)
-            const params = validateParams(adminPaymentParamsSchema, request.params)
-            const refunds = await getAdminPaymentRefunds(user, params.id)
-
-            return reply
-                .header('cache-control', 'no-store')
-                .send(refunds.map((refund) => ({
-                    ...refund,
-                    createdAt: refund.createdAt.toISOString(),
-                    updatedAt: refund.updatedAt.toISOString(),
-                })))
-        },
-    )
-
-    app.get<{ Params: unknown; Reply: AdminPaymentDisputeResponse[] }>(
-        '/admin/payments/:id/disputes',
-        async (request, reply) => {
-            const user = await requireAuth(request)
-            const params = validateParams(adminPaymentParamsSchema, request.params)
-            const disputes = await getAdminPaymentDisputes(user, params.id)
-
-            return reply
-                .header('cache-control', 'no-store')
-                .send(disputes.map((dispute) => ({
-                    ...dispute,
-                    lastEventCreatedAt: dispute.lastEventCreatedAt.toISOString(),
-                    createdAt: dispute.createdAt.toISOString(),
-                    updatedAt: dispute.updatedAt.toISOString(),
-                })))
-        },
-    )
-
-    app.post<{
-        Params: unknown
-        Body: unknown
-        Reply: RefundPaymentResponse
-    }>(
-        '/admin/payments/:id/refund',
-        async (request) => {
-            const user = await requireAuth(request)
-            const params = validateParams(adminPaymentParamsSchema, request.params)
-            const body = validateBody(refundPaymentSchema, request.body)
-            const payment = await refundBookingPayment(user, params.id, body.reason, request, body.amountMinor)
-
-            return {
-                paymentId: payment.id,
-                status: payment.status,
-                refundedAmountMinor: payment.refundedAmountMinor,
-            }
         }
     )
 

@@ -19,7 +19,6 @@ const booking = (createdAt: string, status: OwnerBooking['status'] = 'pending') 
     service: { id: 'service-1', title: 'Consultation', durationMinutes: 60, price: 1500 },
     client: { id: 'client-1', name: 'Alex', email: 'alex@example.com', phone: null },
     ownerNote: null,
-    paymentLedger: null,
 }) satisfies OwnerBooking
 
 const reschedule = (createdAt: string) => ({
@@ -57,17 +56,6 @@ describe('buildOwnerActionSummary', () => {
             ],
             rescheduleRequests: [reschedule('2026-08-07T08:00:00.000Z')],
             cabinets: [cabinet('active'), cabinet('draft'), cabinet('blocked')],
-            readiness: {
-                ready: false,
-                blockers: ['schedule', 'payout_account'],
-                checks: {
-                    emailVerified: true,
-                    activeCabinet: true,
-                    activeService: true,
-                    scheduleConfigured: false,
-                    payoutAccount: 'not_connected',
-                },
-            },
             now: new Date('2026-08-09T12:00:00.000Z'),
         })
 
@@ -76,7 +64,6 @@ describe('buildOwnerActionSummary', () => {
             pendingReschedules: 1,
             draftCabinets: 1,
             blockedCabinets: 1,
-            readinessBlockers: ['schedule', 'payout_account'],
             pendingBookingsOlderThan24Hours: 1,
             pendingReschedulesOlderThan24Hours: 1,
             oldestPendingBookingAt: '2026-08-07T08:00:00.000Z',
@@ -89,19 +76,11 @@ describe('buildOwnerActionSummary', () => {
             bookings: [],
             rescheduleRequests: [],
             cabinets: [],
-            readiness: { ready: true, blockers: [], checks: {
-                emailVerified: true,
-                activeCabinet: true,
-                activeService: true,
-                scheduleConfigured: true,
-                payoutAccount: 'ready',
-            } },
         })).toEqual({
             pendingBookings: 0,
             pendingReschedules: 0,
             draftCabinets: 0,
             blockedCabinets: 0,
-            readinessBlockers: [],
             pendingBookingsOlderThan24Hours: 0,
             pendingReschedulesOlderThan24Hours: 0,
             oldestPendingBookingAt: null,

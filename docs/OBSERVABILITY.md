@@ -27,8 +27,8 @@ occurrence count, first/last occurrence, and the latest `requestId`.
 
 Super-admins can acknowledge and resolve incidents. The app cannot record its
 own process after it is down, so an external uptime/error monitor must later
-send or surface outage, background-job, and Stripe webhook incidents. That
-provider configuration remains a production deployment task.
+send or surface outage and background-job incidents. That provider
+configuration remains a production deployment task.
 
 ## Health checks
 
@@ -67,9 +67,7 @@ Readiness also evaluates `DATABASE_MAX_ACTIVE_RATIO` and
 critical health incident so saturation is visible before request failures.
 Slow queries above `DATABASE_SLOW_QUERY_THRESHOLD_MS` are emitted as
 structured events with a normalized SQL shape; bind parameters are never
-logged. OAuth requests use bounded fetch timeouts and transient-error retries,
-while Stripe uses the SDK's bounded request timeout and idempotency-aware
-network retry policy.
+logged. OAuth requests use bounded fetch timeouts and transient-error retries.
 
 The in-process registry limits each metric name to 100 unique label series by
 default. Keep route, status, outcome, and provider labels from finite sets;
@@ -101,14 +99,12 @@ absent: traffic rejected before the application is invisible to this process.
 Alert routing and provider-side DDoS evidence remain deployment tasks.
 
 Phase W adds bounded negative-path signals: `external_error_reports_total`
-tracks `sent`, `failed`, and `disabled` reporter outcomes;
-`payment_reconciliation_errors_total` tracks `retry`, `ignore`, and `escalate`
-decisions; and classified maintenance incidents distinguish `timeout`,
-`lease_lost`, `dependency`, and `unknown` failures. Cabinet image cleanup is
-limited to a bounded provider scan, and outbox payloads are capped before the
-database write. These controls keep operator signals finite and prevent a
-provider payload or user-controlled value from becoming an unbounded metric or
-log field.
+tracks `sent`, `failed`, and `disabled` reporter outcomes; classified
+maintenance incidents distinguish `timeout`, `lease_lost`, `dependency`, and
+`unknown` failures. Cabinet image cleanup is limited to a bounded provider scan,
+and outbox payloads are capped before the database write. These controls keep
+operator signals finite and prevent a provider payload or user-controlled value
+from becoming an unbounded metric or log field.
 
 ## Alert thresholds
 
@@ -119,7 +115,6 @@ Configure these alerts in the deployment provider or monitoring service:
 | `/health/ready` availability | below 99.9% for 15 min | any 5 min outage | check dependency probe details, Render deploys, and request IDs |
 | HTTP 5xx rate | above 1% for 15 min | above 5% for 5 min | inspect structured errors by `requestId`; roll back if tied to a deploy |
 | p95 API latency | above 1.5 s for 15 min | above 3 s for 5 min | inspect database/Redis saturation and slow routes |
-| Stripe webhook failures | 3 failures in 15 min | 10 failures in 15 min | verify signature secret, retry events in Stripe, reconcile payments |
 | Maintenance cycle failures | 1 failure in 10 min | 2 failures in 10 min | inspect the latest structured error and verify the database/Redis lease |
 | Maintenance cycle duration | above 30 s for 15 min | above 55 s for 5 min | inspect outbox volume, database slow queries, and lease renewal |
 | Background job lease skips | above 90% of starts for 15 min | 100% for 10 min | compare replica health and verify Redis/PostgreSQL advisory locking |
@@ -129,8 +124,7 @@ Configure these alerts in the deployment provider or monitoring service:
 ## Dashboard minimums
 
 Track request volume, 2xx/4xx/5xx counts, p50/p95 latency, readiness uptime,
-database connections, Redis availability, Stripe webhook results, and payment
-state reconciliation. Also track `maintenance_cycle_duration_ms`,
+database connections and Redis availability. Also track `maintenance_cycle_duration_ms`,
 `maintenance_cycles_completed_total`, `background_job_runs_total`, and
 `background_job_shutdown_timeouts_total`. Create an external error-monitoring project before
 production launch and configure its DSN only through deployment secrets.
@@ -138,21 +132,11 @@ Track `maintenance_cleanup_batch_size{resource="auth"}` alongside expired
 token/session deletion counts; a repeated full batch is a signal that cleanup
 capacity or retention settings need operator review.
 
-For payment evidence, dashboard `payment_refund_reconciliation_backlog`,
-`payment_refund_reconciliation_oldest_age_ms`,
-`payment_invoice_backfill_backlog`, and
-`payment_invoice_backfill_oldest_age_ms`. Alert on repeated non-zero
-`payment_refund_reconciliation_last_errors` or
-`payment_invoice_backfill_last_errors`; these phases are retryable but a
-persistent error means provider evidence and local financial state may diverge.
-Keep dispute provider IDs and event IDs in bounded admin records, not metric
-labels.
-
 ## Phase Z Baseline
 
 Record the migration inventory checksum with each release artifact. Keep
-cursor-limit, notification-content, audit-target, outbox-backoff, and Stripe
-client-budget failures in structured test output; none of these policies should
+cursor-limit, notification-content, audit-target, and outbox-backoff failures
+in structured test output; none of these policies should
 emit user-controlled values as metric labels.
 
 ## Phase AA Baseline
@@ -209,7 +193,7 @@ approved reviews, verified evidence, provider reliability and open guarantee
 claim penalties. Reassessment jobs should record the policy version and input
 snapshot before persisting a badge or using it in ranking.
 
-Keep origin, email, locale, OAuth, payment URL, outbox, rate-limit, external
-fetch, incident metadata, and export policy failures in unit-test output. Do
+Keep origin, email, locale, OAuth, outbox, rate-limit, external fetch, incident
+metadata, and export policy failures in unit-test output. Do
 not add user IDs, provider response values, tokens, URLs, or free-form error
 messages as metric labels.

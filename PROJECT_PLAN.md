@@ -190,7 +190,7 @@ work.
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. Provider memberships now support owner/manager/staff scope with optional branch assignment. | Add membership-management UI, offer editing, calendar/reminders, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
-| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 177 MSW routes used by the browser and 213 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers, request lifecycle, unified chat threads, image attachments, immutable quote history, accepted-quote booking snapshots, verified-review submission, idempotent requests and availability routes are implemented with migrations and mock handlers. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. Legacy Stripe/payment code is quarantined behind `PAYMENTS_ENABLED`, disabled in every deployment manifest, removed from the server CLI/example configuration, and never queried by the owner readiness flow while disabled. | Add PostGIS/geospatial indexes, durable object storage/quarantine, versioned trust snapshots and ranking rollout, and database-backed authorization/concurrency integration tests. Python rewrite is explicitly deferred until a later approved phase. |
+| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 172 MSW routes used by the browser and 202 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers, request lifecycle, unified chat threads, image attachments, immutable quote history, accepted-quote booking snapshots, verified-review submission, idempotent requests and availability routes are implemented with migrations and mock handlers. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. The legacy financial-provider runtime is fully removed: dependencies, routes, UI, configuration, jobs, tests and active documentation are gone; only immutable historical migrations remain for existing databases. | Add PostGIS/geospatial indexes, durable object storage/quarantine, versioned trust snapshots and ranking rollout, and database-backed authorization/concurrency integration tests. Python rewrite is explicitly deferred until a later approved phase. |
 | Deployment configuration | Typed frontend and backend deployment profiles are now fail-closed. `GET /api/v1/deployment-capabilities` keeps mock/real capability negotiation in sync; OAuth buttons, profile linking and server OAuth routes use the deployment allow-list. | Add deployment smoke tests for every supported profile and extend the capability matrix with legal links, currencies and market-specific features. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. Dead legacy cabinet/owner/admin lazy imports were removed from the route manifest, reducing the production bundle without deleting compatibility source. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
@@ -252,7 +252,7 @@ request contract.
 ### 4.0.2 Backend contract parity — 2026-08-14
 
 - [x] Inventory all MSW handlers and compare method/path signatures with the
-  Fastify source (177 mock routes, 213 real routes including operational and
+  Fastify source (172 mock routes, 202 real routes including operational and
   WebSocket routes).
 - [x] Implement the only missing mock route, `GET /cabinets/all`, with the
   same active-only public behavior in MSW and PostgreSQL-backed mode.
@@ -357,25 +357,22 @@ than informal follow-up notes.
 
 ### 4.3 Quarantine and later remove
 
-The copied project contains legacy commission and Stripe Connect flows for
-customer booking payments. They conflict with the current AutoCare Hub
-monetization direction and are not part of the AutoCare product.
+The copied project contained legacy commission and customer-payment provider
+flows. They conflict with the current AutoCare Hub direction and are not part
+of the AutoCare product.
 
-- [x] Stop exposing legacy repair-payment/commission and Stripe Connect UI in the
-  AutoCare product. Customers always use AutoCare for free and pay the chosen
-  provider directly; AutoCare does not collect repair payments or provider
-  payouts.
-- [x] Disable the legacy Stripe route body parser and payment runtime by default
-  in development and every deployment profile. The owner readiness endpoint is
-  retained only as a read-only explanation that payouts are unavailable.
-- [ ] Prevent new AutoCare domain code from depending on legacy payment entities.
-- [ ] Preserve only provider-agnostic reliability patterns that are useful for
-  future subscription billing: webhook verification, idempotency,
-  reconciliation, audit, and provider timeouts.
-- [ ] Remove legacy booking-payment entities, migrations, routes, translations,
-  tests, and Stripe Connect code only after the AutoCare schema and test gates
-  are green.
-- [ ] Record removed paths and migration consequences in the reviewed commit.
+- [x] Remove legacy repair-payment, commission and provider-payment runtime
+  modules. Customers always use AutoCare for free and pay the chosen provider
+  directly; AutoCare does not collect repair payments or provider payouts.
+- [x] Remove the payment-provider dependency, environment configuration, route
+  parser, APIs, UI, mocks, background tasks, tests and active documentation.
+- [x] Prevent new AutoCare domain code from depending on legacy financial
+  entities. Future subscription billing, if approved, starts with a separate
+  contract and implementation.
+- [x] Preserve immutable historical migrations so existing databases can still
+  replay their already-applied schema history. Dropping historical tables is a
+  separate destructive data-retention decision and is not part of this change.
+- [x] Record removed paths and migration consequences in the reviewed commit.
 
 ## 5. Product roles and workspaces
 

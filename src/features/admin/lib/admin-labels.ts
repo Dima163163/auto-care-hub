@@ -3,7 +3,6 @@ import type { TranslationKey } from '@/shared/lib/i18n'
 
 type KnownAuditTargetType =
     | 'account_deletion_request'
-    | 'booking_payment'
     | 'cabinet'
     | 'oauth_identity'
     | 'outbox_event'
@@ -18,7 +17,6 @@ type KnownAuditTargetType =
 
 const auditTargetTypeTranslationKeys: Record<KnownAuditTargetType, TranslationKey> = {
     account_deletion_request: 'adminAuditLogs.targetTypes.account_deletion_request',
-    booking_payment: 'adminAuditLogs.targetTypes.booking_payment',
     cabinet: 'adminAuditLogs.targetTypes.cabinet',
     oauth_identity: 'adminAuditLogs.targetTypes.oauth_identity',
     outbox_event: 'adminAuditLogs.targetTypes.outbox_event',
@@ -35,10 +33,6 @@ const auditTargetTypeTranslationKeys: Record<KnownAuditTargetType, TranslationKe
 const auditLogActionTranslationKeys: Record<KnownAuditLogAction, TranslationKey> = {
     admin_created: 'adminAuditLogs.actions.admin_created',
     cabinet_status_updated: 'adminAuditLogs.actions.cabinet_status_updated',
-    payment_failed: 'adminAuditLogs.actions.payment_failed',
-    payment_succeeded: 'adminAuditLogs.actions.payment_succeeded',
-    payment_partially_refunded: 'adminAuditLogs.actions.payment_partially_refunded',
-    payment_refunded: 'adminAuditLogs.actions.payment_refunded',
     promo_subscription_issued: 'adminAuditLogs.actions.promo_subscription_issued',
     review_deleted: 'adminAuditLogs.actions.review_deleted',
     review_moderated: 'adminAuditLogs.actions.review_moderated',

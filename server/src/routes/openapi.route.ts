@@ -8,12 +8,6 @@ const cursorParameters = [
     { $ref: '#/components/parameters/Limit' },
 ] as const
 
-const adminPaymentParameters = [
-    ...cursorParameters,
-    { $ref: '#/components/parameters/AdminPaymentSearch' },
-    { $ref: '#/components/parameters/AdminPaymentStatus' },
-] as const
-
 const adminAuditParameters = [
     ...cursorParameters,
     { $ref: '#/components/parameters/AdminSearch' },
@@ -406,20 +400,13 @@ export function getOpenApiDocument() {
             '/bookings/my': {
                 get: { operationId: 'listMyBookings', parameters: cursorParameters, responses: { '200': { description: 'Authenticated client bookings.' } } },
             },
-            '/bookings/{id}/payment/status': {
-                get: {
-                    operationId: 'getMyBookingPaymentStatus',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    responses: { '200': { description: 'Client-safe booking payment lifecycle status and receipt summary.', content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientBookingPaymentStatus' } } } } },
-                },
-            },
             '/owner/bookings': {
                 get: {
                     operationId: 'listOwnerBookings',
                     parameters: cursorParameters,
                     responses: {
                         '200': {
-                            description: 'Authenticated owner bookings with owner-safe payment ledger fields and no provider identifiers.',
+                            description: 'Authenticated owner bookings.',
                             content: {
                                 'application/json': {
                                     schema: {
@@ -430,17 +417,6 @@ export function getOpenApiDocument() {
                                     },
                                 },
                             },
-                        },
-                    },
-                },
-            },
-            '/owner/readiness': {
-                get: {
-                    operationId: 'getOwnerReadiness',
-                    responses: {
-                        '200': {
-                            description: 'Owner go-live readiness checks.',
-                            content: { 'application/json': { schema: { $ref: '#/components/schemas/OwnerReadiness' } } },
                         },
                     },
                 },
@@ -500,112 +476,6 @@ export function getOpenApiDocument() {
                         '200': {
                             description: 'Updated account deletion request.',
                             content: { 'application/json': { schema: { $ref: '#/components/schemas/AdminDeletionRequest' } } },
-                        },
-                    },
-                },
-            },
-            '/admin/payments': {
-                get: {
-                    operationId: 'listAdminPayments',
-                    parameters: adminPaymentParameters,
-                    responses: {
-                        '200': {
-                            description: 'Legacy array or cursor page of payments.',
-                            content: {
-                                'application/json': {
-                                    schema: {
-                                        oneOf: [
-                                            { type: 'array', items: { $ref: '#/components/schemas/AdminPayment' } },
-                                            { $ref: '#/components/schemas/AdminPaymentCursorPage' },
-                                        ],
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/attention': {
-                get: {
-                    operationId: 'getAdminPaymentAttention',
-                    responses: {
-                        '200': {
-                            description: 'Bounded super-admin payment and provider outcome counters without provider identifiers.',
-                            content: { 'application/json': { schema: { $ref: '#/components/schemas/AdminPaymentAttention' } } },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/{id}/refunds': {
-                get: {
-                    operationId: 'listAdminPaymentRefunds',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    responses: {
-                        '200': {
-                            description: 'Bounded refund ledger history for an admin payment.',
-                            content: {
-                                'application/json': {
-                                    schema: { type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/AdminPaymentRefund' } },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/{id}/refund': {
-                post: {
-                    operationId: 'refundAdminPayment',
-                    description: 'Super-admin-only financial mutation. Payment transition audit is idempotent.',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    requestBody: {
-                        required: true,
-                        content: {
-                            'application/json': {
-                                schema: {
-                                    type: 'object',
-                                    required: ['reason'],
-                                    additionalProperties: false,
-                                    properties: {
-                                        reason: { type: 'string', enum: ['duplicate', 'fraudulent', 'requested_by_customer'] },
-                                        amountMinor: { type: 'integer', minimum: 1 },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    responses: {
-                        '200': {
-                            description: 'Provider-confirmed refund result.',
-                            content: {
-                                'application/json': {
-                                    schema: {
-                                        type: 'object',
-                                        required: ['paymentId', 'status', 'refundedAmountMinor'],
-                                        additionalProperties: false,
-                                        properties: {
-                                            paymentId: { type: 'string', format: 'uuid' },
-                                            status: { type: 'string' },
-                                            refundedAmountMinor: { type: 'integer', minimum: 0 },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/{id}/disputes': {
-                get: {
-                    operationId: 'listAdminPaymentDisputes',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    responses: {
-                        '200': {
-                            description: 'Bounded dispute history for an admin payment.',
-                            content: {
-                                'application/json': {
-                                    schema: { type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/AdminPaymentDispute' } },
-                                },
-                            },
                         },
                     },
                 },
@@ -800,12 +670,6 @@ export function getOpenApiDocument() {
                     required: false,
                     schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
                 },
-                AdminPaymentSearch: {
-                    name: 'search',
-                    in: 'query',
-                    required: false,
-                    schema: { type: 'string', maxLength: 120 },
-                },
                 AdminSearch: {
                     name: 'search',
                     in: 'query',
@@ -817,12 +681,6 @@ export function getOpenApiDocument() {
                     in: 'query',
                     required: false,
                     schema: { type: 'string', enum: ['open', 'acknowledged', 'resolved'] },
-                },
-                AdminPaymentStatus: {
-                    name: 'status',
-                    in: 'query',
-                    required: false,
-                    schema: { type: 'string', enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded'] },
                 },
                 AdminDeletionStatus: {
                     name: 'status',
@@ -877,7 +735,7 @@ export function getOpenApiDocument() {
                     required: ['id', 'type', 'severity', 'status', 'title', 'requestId', 'occurrenceCount', 'firstOccurredAt', 'lastOccurredAt'],
                     properties: {
                         id: { type: 'string', format: 'uuid' },
-                        type: { type: 'string', enum: ['server_error', 'health_check', 'background_job', 'payment_webhook'] },
+                        type: { type: 'string', enum: ['server_error', 'health_check', 'background_job'] },
                         severity: { type: 'string', enum: ['warning', 'critical'] },
                         status: { type: 'string', enum: ['open', 'acknowledged', 'resolved'] },
                         title: { type: 'string', maxLength: 240 },
@@ -1006,91 +864,6 @@ export function getOpenApiDocument() {
                         service: { type: 'string', enum: ['autocare-hub-api'] },
                     },
                 },
-                OwnerReadiness: {
-                    type: 'object',
-                    required: ['ready', 'blockers', 'checks'],
-                    properties: {
-                        ready: { type: 'boolean' },
-                        blockers: {
-                            type: 'array',
-                            maxItems: 5,
-                            items: {
-                                type: 'string',
-                                enum: ['email_verification', 'active_cabinet', 'active_service', 'schedule', 'payout_account'],
-                            },
-                        },
-                        checks: {
-                            type: 'object',
-                            required: ['emailVerified', 'activeCabinet', 'activeService', 'scheduleConfigured', 'payoutAccount'],
-                            properties: {
-                                emailVerified: { type: 'boolean' },
-                                activeCabinet: { type: 'boolean' },
-                                activeService: { type: 'boolean' },
-                                scheduleConfigured: { type: 'boolean' },
-                                payoutAccount: { type: 'string', enum: ['ready', 'not_connected', 'pending', 'unavailable'] },
-                            },
-                        },
-                    },
-                },
-                ClientBookingPaymentStatus: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['status', 'grossAmount', 'refundedAmountMinor', 'remainingAmountMinor', 'currency', 'createdAt', 'invoice', 'attempts'],
-                    properties: {
-                        status: { type: ['string', 'null'], enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded', null] },
-                        grossAmount: { type: ['integer', 'null'], minimum: 0 },
-                        refundedAmountMinor: { type: 'integer', minimum: 0 },
-                        remainingAmountMinor: { type: ['integer', 'null'], minimum: 0 },
-                        currency: { type: ['string', 'null'], minLength: 3, maxLength: 3 },
-                        createdAt: { type: ['string', 'null'], format: 'date-time' },
-                        invoice: {
-                            oneOf: [
-                                { type: 'null' },
-                                {
-                                    type: 'object',
-                                    additionalProperties: false,
-                                    required: ['invoiceId', 'amount', 'currency', 'status', 'issuedAt'],
-                                    properties: {
-                                        invoiceId: { type: 'string', minLength: 1 },
-                                        amount: { type: 'integer', minimum: 0 },
-                                        currency: { type: 'string', minLength: 3, maxLength: 3 },
-                                        status: { type: 'string', enum: ['open', 'paid', 'void'] },
-                                        issuedAt: { type: 'string', format: 'date-time' },
-                                    },
-                                },
-                            ],
-                        },
-                        attempts: {
-                            type: 'array',
-                            maxItems: 20,
-                            items: {
-                                type: 'object',
-                                additionalProperties: false,
-                                required: ['attemptNumber', 'status', 'createdAt'],
-                                properties: {
-                                    attemptNumber: { type: 'integer', minimum: 1 },
-                                    status: { type: 'string', enum: ['creating', 'created', 'failed', 'paid', 'expired'] },
-                                    createdAt: { type: 'string', format: 'date-time' },
-                                },
-                            },
-                        },
-                    },
-                },
-                OwnerPaymentLedger: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['grossAmount', 'commissionAmount', 'ownerPayoutAmount', 'refundedAmountMinor', 'remainingAmountMinor', 'currency', 'status', 'createdAt'],
-                    properties: {
-                        grossAmount: { type: 'integer', minimum: 0 },
-                        commissionAmount: { type: 'integer', minimum: 0 },
-                        ownerPayoutAmount: { type: 'integer', minimum: 0 },
-                        refundedAmountMinor: { type: 'integer', minimum: 0 },
-                        remainingAmountMinor: { type: 'integer', minimum: 0 },
-                        currency: { type: 'string', minLength: 3, maxLength: 3 },
-                        status: { type: 'string', enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                    },
-                },
                 OutboxHealth: {
                     type: 'object',
                     additionalProperties: false,
@@ -1125,7 +898,7 @@ export function getOpenApiDocument() {
                 OwnerBooking: {
                     type: 'object',
                     additionalProperties: false,
-                    required: ['id', 'clientId', 'cabinetId', 'serviceId', 'date', 'startTime', 'endTime', 'status', 'comment', 'cancellationReason', 'createdAt', 'cabinet', 'service', 'ownerNote', 'client', 'paymentLedger'],
+                    required: ['id', 'clientId', 'cabinetId', 'serviceId', 'date', 'startTime', 'endTime', 'status', 'comment', 'cancellationReason', 'createdAt', 'cabinet', 'service', 'ownerNote', 'client'],
                     properties: {
                         id: { type: 'string', format: 'uuid' },
                         clientId: { type: 'string', format: 'uuid' },
@@ -1168,12 +941,6 @@ export function getOpenApiDocument() {
                                 email: { type: 'string' },
                                 phone: { type: ['string', 'null'] },
                             },
-                        },
-                        paymentLedger: {
-                            oneOf: [
-                                { $ref: '#/components/schemas/OwnerPaymentLedger' },
-                                { type: 'null' },
-                            ],
                         },
                     },
                 },
@@ -1430,131 +1197,6 @@ export function getOpenApiDocument() {
                         message: { type: 'string' },
                         requestId: { type: 'string' },
                     },
-                },
-                AdminPaymentParty: {
-                    type: 'object',
-                    required: ['id', 'name', 'email'],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        name: { type: 'string' },
-                        email: { type: 'string', format: 'email' },
-                    },
-                },
-                PaymentRecoveryAttempt: {
-                    type: 'object',
-                    required: ['attemptNumber', 'status', 'createdAt'],
-                    additionalProperties: false,
-                    properties: {
-                        attemptNumber: { type: 'integer', minimum: 1 },
-                        status: { type: 'string', enum: ['creating', 'created', 'failed', 'paid', 'expired'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                PaymentRecoveryTimeline: {
-                    type: 'array',
-                    items: { $ref: '#/components/schemas/PaymentRecoveryAttempt' },
-                    maxItems: 100,
-                },
-                AdminPayment: {
-                    type: 'object',
-                    required: [
-                        'id', 'bookingId', 'client', 'owner', 'cabinetTitle',
-                        'serviceTitle', 'date', 'startTime', 'endTime',
-                        'grossAmount', 'refundedAmountMinor', 'remainingAmountMinor', 'commissionAmount', 'ownerPayoutAmount',
-                        'currency', 'status', 'stripeSessionId',
-                        'stripePaymentIntentId', 'createdAt',
-                    ],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        bookingId: { type: 'string', format: 'uuid' },
-                        client: { $ref: '#/components/schemas/AdminPaymentParty' },
-                        owner: { $ref: '#/components/schemas/AdminPaymentParty' },
-                        cabinetTitle: { type: 'string' },
-                        serviceTitle: { type: 'string' },
-                        date: { type: 'string', format: 'date' },
-                        startTime: { type: 'string' },
-                        endTime: { type: 'string' },
-                        grossAmount: { type: 'number' },
-                        refundedAmountMinor: { type: 'integer', minimum: 0 },
-                        remainingAmountMinor: { type: 'integer', minimum: 0 },
-                        commissionAmount: { type: 'number' },
-                        ownerPayoutAmount: { type: 'number' },
-                        currency: { type: 'string' },
-                        status: { type: 'string', enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded'] },
-                        stripeSessionId: { type: ['string', 'null'] },
-                        stripePaymentIntentId: { type: ['string', 'null'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                AdminPaymentRefund: {
-                    type: 'object',
-                    required: [
-                        'id', 'paymentId', 'bookingId', 'providerRefundId',
-                        'providerChargeId', 'amountMinor', 'currency', 'reason',
-                        'status', 'createdAt', 'updatedAt',
-                    ],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        paymentId: { type: 'string', format: 'uuid' },
-                        bookingId: { type: 'string', format: 'uuid' },
-                        providerRefundId: { type: 'string' },
-                        providerChargeId: { type: ['string', 'null'] },
-                        amountMinor: { type: 'integer', minimum: 1 },
-                        currency: { type: 'string' },
-                        reason: { type: ['string', 'null'] },
-                        status: { type: 'string', enum: ['pending', 'succeeded', 'failed', 'canceled'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                        updatedAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                AdminPaymentDispute: {
-                    type: 'object',
-                    required: [
-                        'id', 'paymentId', 'bookingId', 'providerDisputeId',
-                        'providerChargeId', 'amountMinor', 'currency', 'reason',
-                        'providerStatus', 'status', 'lastEventId', 'lastEventCreatedAt',
-                        'createdAt', 'updatedAt',
-                    ],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        paymentId: { type: 'string', format: 'uuid' },
-                        bookingId: { type: 'string', format: 'uuid' },
-                        providerDisputeId: { type: 'string' },
-                        providerChargeId: { type: ['string', 'null'] },
-                        amountMinor: { type: 'integer', minimum: 1 },
-                        currency: { type: 'string' },
-                        reason: { type: 'string' },
-                        providerStatus: { type: 'string' },
-                        status: { type: 'string', enum: ['open', 'funds_withdrawn', 'funds_reinstated', 'closed'] },
-                        lastEventId: { type: 'string' },
-                        lastEventCreatedAt: { type: 'string', format: 'date-time' },
-                        createdAt: { type: 'string', format: 'date-time' },
-                        updatedAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                AdminPaymentAttention: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['failedPaymentCount', 'openDisputeCount', 'fundsWithdrawnDisputeCount'],
-                    properties: {
-                        failedPaymentCount: { type: 'integer', minimum: 0 },
-                        openDisputeCount: { type: 'integer', minimum: 0 },
-                        fundsWithdrawnDisputeCount: { type: 'integer', minimum: 0 },
-                    },
-                },
-                AdminPaymentCursorPage: {
-                    allOf: [
-                        { $ref: '#/components/schemas/CursorPage' },
-                        {
-                            type: 'object',
-                            properties: {
-                                items: {
-                                    type: 'array',
-                                    items: { $ref: '#/components/schemas/AdminPayment' },
-                                },
-                            },
-                        },
-                    ],
                 },
             },
             headers: {

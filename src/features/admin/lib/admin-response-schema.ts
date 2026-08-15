@@ -2,9 +2,6 @@ import { z } from 'zod'
 
 import type { CursorPage } from '@/shared/api/cursorPagination'
 import type {
-    AdminPaymentDispute,
-    AdminPaymentAttention,
-    AdminPaymentRefund,
     OutboxHealth,
     AuditLog,
     SecurityCenterEvent,
@@ -30,7 +27,7 @@ const auditLogSchema = z.object({
 
 const systemIncidentSchema = z.object({
     id: z.string(),
-    type: z.enum(['server_error', 'health_check', 'background_job', 'payment_webhook']),
+    type: z.enum(['server_error', 'health_check', 'background_job']),
     severity: z.enum(['warning', 'critical']),
     status: z.enum(['open', 'acknowledged', 'resolved']),
     title: z.string(),
@@ -121,7 +118,7 @@ const securityCenterEventSchema = z.object({
     })).max(50),
     relatedSystemIncidents: z.array(z.object({
         id: z.string(),
-        type: z.enum(['server_error', 'health_check', 'background_job', 'payment_webhook']),
+        type: z.enum(['server_error', 'health_check', 'background_job']),
         severity: z.enum(['warning', 'critical']),
         status: z.enum(['open', 'acknowledged', 'resolved']),
         title: z.string(),
@@ -175,43 +172,6 @@ const securityCenterSummarySchema = z.object({
     }),
     recentEvents: z.array(securityCenterEventSchema),
 }) satisfies z.ZodType<SecurityCenterSummary>
-
-const adminPaymentRefundSchema = z.object({
-    id: z.string(),
-    paymentId: z.string(),
-    bookingId: z.string(),
-    providerRefundId: z.string(),
-    providerChargeId: z.string().nullable(),
-    amountMinor: z.number().int().positive(),
-    currency: z.string(),
-    reason: z.string().nullable(),
-    status: z.enum(['pending', 'succeeded', 'failed', 'canceled']),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-}) satisfies z.ZodType<AdminPaymentRefund>
-
-const adminPaymentDisputeSchema = z.object({
-    id: z.string(),
-    paymentId: z.string(),
-    bookingId: z.string(),
-    providerDisputeId: z.string(),
-    providerChargeId: z.string().nullable(),
-    amountMinor: z.number().int().positive(),
-    currency: z.string(),
-    reason: z.string(),
-    providerStatus: z.string(),
-    status: z.enum(['open', 'funds_withdrawn', 'funds_reinstated', 'closed']),
-    lastEventId: z.string(),
-    lastEventCreatedAt: z.string(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-}) satisfies z.ZodType<AdminPaymentDispute>
-
-const adminPaymentAttentionSchema = z.object({
-    failedPaymentCount: z.number().int().nonnegative(),
-    openDisputeCount: z.number().int().nonnegative(),
-    fundsWithdrawnDisputeCount: z.number().int().nonnegative(),
-}) satisfies z.ZodType<AdminPaymentAttention>
 
 function normalizePage<T>(value: unknown, itemSchema: z.ZodType<T>): CursorPage<T> {
     if (Array.isArray(value)) {
@@ -288,16 +248,4 @@ export function normalizeSecurityMitigationResponse(value: unknown): SecurityMit
 
 export function normalizeSecuritySessionRevocationResponse(value: unknown): SecuritySessionRevocation {
     return securitySessionRevocationSchema.parse(value)
-}
-
-export function normalizeAdminPaymentRefundListResponse(value: unknown): AdminPaymentRefund[] {
-    return z.array(adminPaymentRefundSchema).max(100).parse(value)
-}
-
-export function normalizeAdminPaymentDisputeListResponse(value: unknown): AdminPaymentDispute[] {
-    return z.array(adminPaymentDisputeSchema).max(100).parse(value)
-}
-
-export function normalizeAdminPaymentAttentionResponse(value: unknown): AdminPaymentAttention {
-    return adminPaymentAttentionSchema.parse(value)
 }

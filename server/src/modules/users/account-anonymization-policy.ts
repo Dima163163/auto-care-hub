@@ -16,10 +16,6 @@ export type AccountAnonymizationPolicy = {
         text: 'redact'
         clientReference: 'preserve'
     }
-    paymentsAndInvoices: {
-        amountsCurrenciesProviderReferencesAndStatuses: 'preserve'
-        userReference: 'preserve_through_booking'
-    }
     audit: {
         actionAndTimestamp: 'preserve'
         nullableActorReference: 'set_null'
@@ -37,25 +33,6 @@ export type AccountAnonymizationPolicy = {
             bookingAndCabinetReferences: 'preserve'
             clientReference: 'preserve_through_booking'
             text: 'redact'
-        }
-        invoice: {
-            amountsCurrencyStatusAndIssuedAt: 'preserve'
-            providerReference: 'preserve'
-            userReference: 'preserve_through_booking'
-        }
-        refund: {
-            amountCurrencyStatusAndTimestamps: 'preserve'
-            providerReferences: 'preserve'
-            freeTextReason: 'redact'
-        }
-        dispute: {
-            amountCurrencyStatusAndTimestamps: 'preserve'
-            providerReferencesAndEventCursor: 'preserve'
-            freeTextReason: 'redact'
-        }
-        providerEvidence: {
-            boundedIdentifiersAndSettlementFields: 'preserve'
-            rawPayloadsAndPersonalMetadata: 'redact'
         }
     }
 }
@@ -78,10 +55,6 @@ export const accountAnonymizationPolicy = {
         text: 'redact',
         clientReference: 'preserve',
     },
-    paymentsAndInvoices: {
-        amountsCurrenciesProviderReferencesAndStatuses: 'preserve',
-        userReference: 'preserve_through_booking',
-    },
     audit: {
         actionAndTimestamp: 'preserve',
         nullableActorReference: 'set_null',
@@ -99,25 +72,6 @@ export const accountAnonymizationPolicy = {
             bookingAndCabinetReferences: 'preserve',
             clientReference: 'preserve_through_booking',
             text: 'redact',
-        },
-        invoice: {
-            amountsCurrencyStatusAndIssuedAt: 'preserve',
-            providerReference: 'preserve',
-            userReference: 'preserve_through_booking',
-        },
-        refund: {
-            amountCurrencyStatusAndTimestamps: 'preserve',
-            providerReferences: 'preserve',
-            freeTextReason: 'redact',
-        },
-        dispute: {
-            amountCurrencyStatusAndTimestamps: 'preserve',
-            providerReferencesAndEventCursor: 'preserve',
-            freeTextReason: 'redact',
-        },
-        providerEvidence: {
-            boundedIdentifiersAndSettlementFields: 'preserve',
-            rawPayloadsAndPersonalMetadata: 'redact',
         },
     },
 } as const satisfies AccountAnonymizationPolicy

@@ -7,7 +7,6 @@ import type {
     OwnerBooking,
     BookingStatusHistory,
     BookingRescheduleRequest,
-    BookingPaymentStatusResponse,
     ResolveBookingRescheduleResponse,
 } from '../model/types'
 
@@ -15,12 +14,10 @@ import type { EntityId } from '@/shared/types/common'
 import {
     normalizeBookingResponse,
     normalizeBookingStatusHistoryResponse,
-    normalizeCheckoutResponse,
     normalizeClientBookingListResponse,
     normalizeOccupiedSlotsResponse,
     normalizeOwnerBookingListResponse,
     normalizeOwnerBookingResponse,
-    normalizePaymentStatusResponse,
     normalizeRescheduleRequestListResponse,
     normalizeRescheduleRequestResponse,
     normalizeResolveBookingRescheduleResponse,
@@ -81,12 +78,6 @@ type ResolveBookingRescheduleInput = {
     reason?: string | undefined
 }
 
-export type BookingPaymentCheckout = {
-    url: string
-    attemptId: EntityId
-    reused: boolean
-}
-
 export const bookingsApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         // Получить все бронирования владельца кабинета
@@ -115,11 +106,6 @@ export const bookingsApi = baseApi.injectEndpoints({
         getBookingStatusHistory: build.query<BookingStatusHistory[], EntityId>({
             query: (id) => `/bookings/${id}/history`,
             transformResponse: normalizeBookingStatusHistoryResponse,
-            providesTags: (_result, _error, id) => [{ type: 'Booking', id }],
-        }),
-        getMyBookingPaymentStatus: build.query<BookingPaymentStatusResponse, EntityId>({
-            query: (id) => `/bookings/${id}/payment/status`,
-            transformResponse: normalizePaymentStatusResponse,
             providesTags: (_result, _error, id) => [{ type: 'Booking', id }],
         }),
         getOwnerPendingRescheduleRequests: build.query<BookingRescheduleRequest[], void>({
@@ -157,16 +143,6 @@ export const bookingsApi = baseApi.injectEndpoints({
                 { type: 'Booking', id: 'RESCHEDULE_REQUESTS' },
                 { type: 'Notification', id: 'LIST' },
                 { type: 'Notification', id: 'UNREAD_COUNT' },
-            ],
-        }),
-        createBookingPaymentCheckout: build.mutation<BookingPaymentCheckout, EntityId>({
-            query: (id) => ({
-                url: `/bookings/${id}/payment/checkout`,
-                method: 'POST',
-            }),
-            transformResponse: normalizeCheckoutResponse,
-            invalidatesTags: (_result, _error, id) => [
-                { type: 'Booking', id },
             ],
         }),
         // Обновление статуса бронирования
@@ -355,11 +331,9 @@ export const bookingsApi = baseApi.injectEndpoints({
 export const {
     useGetOwnerBookingsQuery,
     useGetBookingStatusHistoryQuery,
-    useGetMyBookingPaymentStatusQuery,
     useGetOwnerPendingRescheduleRequestsQuery,
     useRequestBookingRescheduleMutation,
     useResolveBookingRescheduleMutation,
-    useCreateBookingPaymentCheckoutMutation,
     useUpdateBookingStatusMutation,
     useUpdateOwnerBookingNoteMutation,
     useCreateBookingMutation,

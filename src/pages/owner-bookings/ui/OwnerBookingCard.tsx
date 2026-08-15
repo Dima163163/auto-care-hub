@@ -18,7 +18,6 @@ import { formatDateTime } from '@/shared/lib/formatDateTime'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { OwnerBookingNote } from './OwnerBookingNote'
 import { ResolveBookingRescheduleActions } from '@/features/booking/resolve-reschedule/ui/ResolveBookingRescheduleActions'
-import type { TranslationKey } from '@/shared/lib/i18n'
 
 type OwnerBookingCardProps = {
     booking: OwnerBooking
@@ -26,14 +25,6 @@ type OwnerBookingCardProps = {
     cabinet?: Cabinet | undefined
     service?: Service | undefined
 }
-
-const paymentStatusLabels = {
-    pending: 'booking.paymentStatusPending',
-    paid: 'booking.paymentStatusPaid',
-    failed: 'booking.paymentStatusFailed',
-    partially_refunded: 'booking.paymentStatusPartiallyRefunded',
-    refunded: 'booking.paymentStatusRefunded',
-} satisfies Record<NonNullable<OwnerBooking['paymentLedger']>['status'], TranslationKey>
 
 export function OwnerBookingCard({
     booking,
@@ -134,36 +125,6 @@ export function OwnerBookingCard({
                     )}
                 </div>
             </div>
-
-            {booking.paymentLedger && (
-                <section
-                    className="mt-5 rounded-xl border bg-muted/20 p-4"
-                    aria-label={t('booking.ownerPaymentLedgerTitle')}
-                >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-foreground">
-                            {t('booking.ownerPaymentLedgerTitle')}
-                        </p>
-                        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                            {t(paymentStatusLabels[booking.paymentLedger.status])}
-                        </span>
-                    </div>
-                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
-                        {[
-                            [t('booking.ownerGrossAmount'), formatCurrency(booking.paymentLedger.grossAmount, booking.paymentLedger.currency)],
-                            [t('booking.ownerCommissionAmount'), formatCurrency(booking.paymentLedger.commissionAmount, booking.paymentLedger.currency)],
-                            [t('booking.ownerPayoutAmount'), formatCurrency(booking.paymentLedger.ownerPayoutAmount, booking.paymentLedger.currency)],
-                            [t('booking.ownerRefundedAmount'), formatCurrency(booking.paymentLedger.refundedAmountMinor / 100, booking.paymentLedger.currency)],
-                            [t('booking.ownerRemainingAmount'), formatCurrency(booking.paymentLedger.remainingAmountMinor / 100, booking.paymentLedger.currency)],
-                        ].map(([label, value]) => (
-                            <div key={label}>
-                                <dt className="text-muted-foreground">{label}</dt>
-                                <dd className="font-medium">{value}</dd>
-                            </div>
-                        ))}
-                    </dl>
-                </section>
-            )}
 
             {booking.comment && (
                 <div className="mt-5 rounded-xl border bg-muted/40 px-4 py-3">

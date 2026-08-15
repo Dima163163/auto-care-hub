@@ -30,13 +30,7 @@ export const REQUIRED_SCHEMA_TABLES: readonly SchemaTable[] = [
     { tableName: 'user_sessions' },
     { tableName: 'security_events' },
     { tableName: 'security_event_actions' },
-    { tableName: 'booking_payment_invoices' },
-    { tableName: 'booking_payments' },
     { tableName: 'outbox_events' },
-    { tableName: 'booking_payment_attempts' },
-    { tableName: 'booking_payment_refunds' },
-    { tableName: 'booking_payment_disputes' },
-    { tableName: 'stripe_webhook_events' },
     { tableName: 'migrations' },
 ]
 
@@ -62,51 +56,11 @@ export const REQUIRED_SCHEMA_COLUMNS: readonly SchemaColumn[] = [
     { tableName: 'security_event_actions', columnName: 'assignee_id' },
     { tableName: 'security_event_actions', columnName: 'status' },
     { tableName: 'security_event_actions', columnName: 'created_at' },
-    { tableName: 'booking_payment_invoices', columnName: 'payment_id' },
-    { tableName: 'booking_payment_invoices', columnName: 'booking_id' },
-    { tableName: 'booking_payment_invoices', columnName: 'invoice_id' },
-    { tableName: 'booking_payment_invoices', columnName: 'status' },
-    { tableName: 'booking_payments', columnName: 'bookingId' },
-    { tableName: 'booking_payments', columnName: 'refunded_amount' },
     { tableName: 'outbox_events', columnName: 'idempotencyKey' },
     { tableName: 'outbox_events', columnName: 'status' },
     { tableName: 'outbox_events', columnName: 'attempts' },
     { tableName: 'outbox_events', columnName: 'availableAt' },
     { tableName: 'outbox_events', columnName: 'createdAt' },
-    { tableName: 'booking_payment_attempts', columnName: 'payment_id' },
-    { tableName: 'booking_payment_attempts', columnName: 'booking_id' },
-    { tableName: 'booking_payment_attempts', columnName: 'attempt_number' },
-    { tableName: 'booking_payment_attempts', columnName: 'idempotency_key' },
-    { tableName: 'booking_payment_attempts', columnName: 'status' },
-    { tableName: 'booking_payment_attempts', columnName: 'created_at' },
-    { tableName: 'booking_payment_refunds', columnName: 'payment_id' },
-    { tableName: 'booking_payment_refunds', columnName: 'booking_id' },
-    { tableName: 'booking_payment_refunds', columnName: 'provider_refund_id' },
-    { tableName: 'booking_payment_refunds', columnName: 'provider_charge_id' },
-    { tableName: 'booking_payment_refunds', columnName: 'amount_minor' },
-    { tableName: 'booking_payment_refunds', columnName: 'currency' },
-    { tableName: 'booking_payment_refunds', columnName: 'reason' },
-    { tableName: 'booking_payment_refunds', columnName: 'status' },
-    { tableName: 'booking_payment_refunds', columnName: 'created_at' },
-    { tableName: 'booking_payment_refunds', columnName: 'updated_at' },
-    { tableName: 'booking_payment_disputes', columnName: 'payment_id' },
-    { tableName: 'booking_payment_disputes', columnName: 'booking_id' },
-    { tableName: 'booking_payment_disputes', columnName: 'provider_dispute_id' },
-    { tableName: 'booking_payment_disputes', columnName: 'provider_charge_id' },
-    { tableName: 'booking_payment_disputes', columnName: 'amount_minor' },
-    { tableName: 'booking_payment_disputes', columnName: 'currency' },
-    { tableName: 'booking_payment_disputes', columnName: 'reason' },
-    { tableName: 'booking_payment_disputes', columnName: 'provider_status' },
-    { tableName: 'booking_payment_disputes', columnName: 'status' },
-    { tableName: 'booking_payment_disputes', columnName: 'last_event_id' },
-    { tableName: 'booking_payment_disputes', columnName: 'last_event_created_at' },
-    { tableName: 'booking_payment_disputes', columnName: 'created_at' },
-    { tableName: 'booking_payment_disputes', columnName: 'updated_at' },
-    { tableName: 'stripe_webhook_events', columnName: 'stripe_event_id' },
-    { tableName: 'stripe_webhook_events', columnName: 'status' },
-    { tableName: 'stripe_webhook_events', columnName: 'created_at' },
-    { tableName: 'stripe_webhook_events', columnName: 'lease_token' },
-    { tableName: 'stripe_webhook_events', columnName: 'lease_expires_at' },
 ]
 
 export function getMissingSchemaTables(
@@ -163,64 +117,8 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
         indexName: 'IDX_security_event_actions_assignee_created_at',
     },
     {
-        tableName: 'booking_payment_invoices',
-        indexName: 'UQ_booking_payment_invoices_payment_id',
-    },
-    {
-        tableName: 'booking_payment_invoices',
-        indexName: 'UQ_booking_payment_invoices_invoice_id',
-    },
-    {
-        tableName: 'booking_payment_invoices',
-        indexName: 'IDX_booking_payment_invoices_status_issued_at',
-    },
-    {
-        tableName: 'booking_payments',
-        indexName: 'IDX_booking_payments_booking',
-    },
-    {
         tableName: 'outbox_events',
         indexName: 'IDX_outbox_status_available',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        indexName: 'UQ_booking_payment_attempts_idempotency_key',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        indexName: 'UQ_booking_payment_attempts_payment_attempt_number',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        indexName: 'UQ_booking_payment_attempts_stripe_session',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        indexName: 'IDX_booking_payment_attempts_payment_created',
-    },
-    {
-        tableName: 'booking_payment_refunds',
-        indexName: 'UQ_booking_payment_refunds_provider_id',
-    },
-    {
-        tableName: 'booking_payment_refunds',
-        indexName: 'IDX_booking_payment_refunds_payment_created',
-    },
-    {
-        tableName: 'booking_payment_disputes',
-        indexName: 'UQ_booking_payment_disputes_provider_id',
-    },
-    {
-        tableName: 'booking_payment_disputes',
-        indexName: 'IDX_booking_payment_disputes_payment_created',
-    },
-    {
-        tableName: 'stripe_webhook_events',
-        indexName: 'IDX_stripe_webhook_events_status_created_at',
-    },
-    {
-        tableName: 'stripe_webhook_events',
-        indexName: 'IDX_stripe_webhook_events_status_lease',
     },
 ]
 
@@ -290,83 +188,8 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
         constraintName: 'FK_security_event_actions_assignee',
     },
     {
-        tableName: 'booking_payment_invoices',
-        constraintName: 'FK_booking_payment_invoices_payment',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payment_invoices',
-        constraintName: 'FK_booking_payment_invoices_booking',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payment_invoices',
-        constraintName: 'CHK_booking_payment_invoices_amount',
-    },
-    {
-        tableName: 'booking_payments',
-        constraintName: 'FK_booking_payments_booking',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payments',
-        constraintName: 'CHK_booking_payments_refunded_amount',
-    },
-    {
         tableName: 'outbox_events',
         constraintName: 'UQ_outbox_idempotency_key',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        constraintName: 'UQ_booking_payment_attempts_payment_attempt_number',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        constraintName: 'UQ_booking_payment_attempts_idempotency_key',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        constraintName: 'FK_booking_payment_attempts_payment',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        constraintName: 'FK_booking_payment_attempts_booking',
-    },
-    {
-        tableName: 'booking_payment_attempts',
-        constraintName: 'CHK_booking_payment_attempts_attempt_number',
-    },
-    {
-        tableName: 'booking_payment_refunds',
-        constraintName: 'FK_booking_payment_refunds_payment',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payment_refunds',
-        constraintName: 'FK_booking_payment_refunds_booking',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payment_refunds',
-        constraintName: 'CHK_booking_payment_refunds_amount',
-    },
-    {
-        tableName: 'booking_payment_disputes',
-        constraintName: 'FK_booking_payment_disputes_payment',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payment_disputes',
-        constraintName: 'FK_booking_payment_disputes_booking',
-        onDelete: 'RESTRICT',
-    },
-    {
-        tableName: 'booking_payment_disputes',
-        constraintName: 'CHK_booking_payment_disputes_amount',
-    },
-    {
-        tableName: 'stripe_webhook_events',
-        constraintName: 'UQ_stripe_webhook_events_event_id',
     },
 ]
 

@@ -1,6 +1,5 @@
 import type { BookingRescheduleRequest, OwnerBooking } from '@/entities/booking'
 import type { Cabinet } from '@/entities/cabinet'
-import type { OwnerReadiness } from '@/entities/payment'
 
 export const OWNER_ACTION_QUERY_LIMIT = 50
 
@@ -9,7 +8,6 @@ export type OwnerActionSummary = {
     pendingReschedules: number
     draftCabinets: number
     blockedCabinets: number
-    readinessBlockers: OwnerReadiness['blockers']
     pendingBookingsOlderThan24Hours: number
     pendingReschedulesOlderThan24Hours: number
     oldestPendingBookingAt: string | null
@@ -20,7 +18,6 @@ type BuildOwnerActionSummaryInput = {
     bookings: OwnerBooking[]
     rescheduleRequests: BookingRescheduleRequest[]
     cabinets: Cabinet[]
-    readiness: OwnerReadiness | null
     now?: Date
 }
 
@@ -62,7 +59,6 @@ export function buildOwnerActionSummary({
     bookings,
     rescheduleRequests,
     cabinets,
-    readiness,
     now = new Date(),
 }: BuildOwnerActionSummaryInput): OwnerActionSummary {
     const pendingBookingCreatedAt = bookings
@@ -78,7 +74,6 @@ export function buildOwnerActionSummary({
         pendingReschedules: pendingRescheduleCreatedAt.length,
         draftCabinets: cabinets.filter((cabinet) => cabinet.status === 'draft').length,
         blockedCabinets: cabinets.filter((cabinet) => cabinet.status === 'blocked').length,
-        readinessBlockers: readiness?.blockers ?? [],
         pendingBookingsOlderThan24Hours: countOlderThan24Hours(pendingBookingCreatedAt, nowTimestamp),
         pendingReschedulesOlderThan24Hours: countOlderThan24Hours(pendingRescheduleCreatedAt, nowTimestamp),
         oldestPendingBookingAt: getOldestTimestamp(pendingBookingCreatedAt),

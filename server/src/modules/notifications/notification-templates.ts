@@ -18,10 +18,6 @@ export const NOTIFICATION_TEMPLATE_KEYS = [
     'booking.reschedule.accepted.owner',
     'booking.reschedule.rejected.owner',
     'booking.reminder',
-    'payment.completed',
-    'payment.failed',
-    'payment.partially_refunded',
-    'payment.refunded',
     'moderation.review_updated',
 ] as const
 

@@ -23,9 +23,9 @@ cabinet-rental booking product to AutoCare Hub.
 - The automotive provider/catalog/search/messaging/bonus domain is implemented
   in reviewed vertical slices; the remaining work is to replace legacy
   workspace flows one slice at a time.
-- Existing `cabinet`, booking-commission and Stripe Connect code is an isolated
-  compatibility layer, not the AutoCare product model. Stripe Connect is not
-  exposed in the AutoCare UI and is not part of the MVP payment flow.
+- The historical cabinet-rental and booking-payment schema is retained only in
+  immutable migration history; it is not mapped, exposed, or executed by the
+  AutoCare application.
 - Do not present any legacy deployment as the current AutoCare Hub service.
 - Do not remove legacy code until the corresponding AutoCare vertical slice and
   tests are accepted.
@@ -79,8 +79,8 @@ Read before making changes:
 - transactional outbox, email and notifications;
 - media decoding/re-encoding through `sharp`;
 - audit logs, security events, health/readiness and metrics;
-- Stripe reliability code currently tied to legacy AutoCare Hub payments and not
-  approved as AutoCare repair-payment behavior.
+- Clients arrange payment directly with the selected service; the platform has
+  no payment-provider integration.
 
 ## Project structure
 

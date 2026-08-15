@@ -52,7 +52,7 @@ AutoCare domain model, but not as executable instructions for this repository.
 | Operations | health/readiness, metrics, incidents, backups/runbooks | Reuse and rename/revalidate |
 | Tests | Vitest, Testing Library, Playwright, CI checks | Reuse and add AutoCare vertical coverage |
 | API contract | OpenAPI foundation and runtime schemas | Version and expand for mobile |
-| Payments | booking payments, commission, Stripe Connect | Legacy conflict; quarantine/remove |
+| Legacy payments | booking payments and commission | Removed from runtime; preserve migration history only |
 | Subscription | old migration existed, then was dropped | Redesign provider-scoped subscriptions |
 
 ## Reusable modules/patterns
@@ -70,8 +70,6 @@ currently legacy cabinet-booking-specific:
 - cursor pagination and stable error patterns;
 - upload decoding/re-encoding/checksum/orphan-cleanup techniques;
 - booking idempotency, schedule and concurrency techniques;
-- Stripe webhook/reconciliation techniques that can be generalized for later
-  provider subscription billing without retaining repair commissions.
 
 ## Legacy domain to replace
 
@@ -85,8 +83,7 @@ currently legacy cabinet-booking-specific:
 | cabinet booking snapshot | automotive offer/quote snapshot | Preserve inclusions, vehicle and policy |
 | favorite cabinet | favorite provider/location/offering | Product decision per UI |
 | cabinet gallery storage | provider/location public media | Separate from private inquiry media |
-| booking payment/commission | no initial repair payment context | Remove after new booking path |
-| Stripe Connect payout | provider subscription billing later | Different payer/payee/state model |
+| booking payment/commission | no repair-payment context | Removed from runtime |
 
 ## Why not rewrite the backend
 

@@ -21,7 +21,6 @@ export function getStartupFailureGuidance(error: unknown) {
         message.includes('is required in production.')
         || message.includes('requires') && message.includes('in production.')
         || message.includes('must not use a placeholder value in production.')
-        || message.includes('Production requires a live Stripe secret key.')
     ) {
         return 'Configure the required production secrets in the deployment environment, then restart the web process. Never place secret values in tracked files.'
     }

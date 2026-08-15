@@ -8,12 +8,11 @@
 - [ ] Check `/health/live` and `/health/ready`, application logs, and error alerts after deployment.
 - [ ] Tune `DATABASE_POOL_*`, database timeout variables, and `OAUTH_*` request
       limits against the hosting plan; verify slow-query events contain no
-      request parameters or secrets. Keep `PAYMENTS_ENABLED=false` for the
-      free AutoCare launch.
+      request parameters or secrets.
 - [ ] Verify database backup creation and perform a restore rehearsal in a non-production environment.
-- [x] Legacy Stripe/payment reconciliation is disabled by default for the free
-      AutoCare launch. Re-open payment success, webhook replay, payout and
-      refund procedures only after explicit product and legal approval.
+- [x] Legacy payment runtime, provider SDK, webhooks, routes, UI, deployment
+      configuration, and background reconciliation are removed. Historical
+      migrations remain immutable for existing databases only.
 - [ ] Verify trusted-proxy/CORS/CSRF configuration rejects wildcard, ambiguous, malformed, and untrusted origins in production mode.
 - [ ] Review audit-log export access and retention policy with the project owner.
 - [ ] Run the Phase L design QA checklist on supported desktop and mobile browsers.

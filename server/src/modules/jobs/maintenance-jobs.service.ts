@@ -10,15 +10,6 @@ import { UserSessionEntity } from '../../entities/user-session/user-session.enti
 import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { SecurityEventEntity } from '../../entities/security-event/security-event.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
-import {
-    StripeWebhookEventEntity,
-    StripeWebhookEventStatus,
-} from '../../entities/booking/stripe-webhook-event.entity.js'
-import {
-    SystemIncidentSeverity,
-    SystemIncidentType,
-} from '../../entities/system-incident/system-incident.entity.js'
-import { recordSystemIncidentSafely } from '../admin/system-incidents.service.js'
 import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
 import {
     AccountDeletionRequestEntity,
@@ -33,22 +24,6 @@ import { addDays, zonedDateTimeToInstant } from '../../shared/date-time/cabinet-
 import { enqueueOutboxEvent, processOutboxBatch } from '../outbox/outbox.service.js'
 import { enqueueNotification } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
-import {
-    reconcileStripePayments,
-    type PaymentReconciliationResult,
-} from '../payments/payment-reconciliation.service.js'
-import {
-    reconcileStripePaymentRefunds,
-    type PaymentRefundReconciliationResult,
-} from '../payments/payment-refund-reconciliation.service.js'
-import {
-    backfillMissingPaymentInvoices,
-    type PaymentInvoiceBackfillResult,
-} from '../payments/payment-invoice-backfill.service.js'
-import {
-    reconcileUnmatchedStripeWebhooks,
-    type StripeWebhookReconciliationResult,
-} from '../payments/stripe-webhook-reconciliation.service.js'
 import type { Mailer } from '../../shared/mail/mailer.js'
 import type { MaintenanceLease } from './maintenance-lease.service.js'
 import { metrics } from '../../shared/observability/metrics.js'
@@ -68,7 +43,6 @@ import {
     getBookingReminderWindowMs,
 } from './booking-reminder-policy.js'
 import { getMaintenanceDeleteBatchSize } from './maintenance-cleanup-policy.js'
-import { getStripeUnmatchedWebhookExpiryCutoff } from '../payments/stripe-webhook-retention.js'
 import { getAccountDeletionRetentionCutoff } from '../users/account-deletion-retention.js'
 import { getOutboxHealthSummary } from '../outbox/outbox-health.service.js'
 import { getMaintenanceBacklogAgeMs } from './maintenance-backlog-policy.js'
@@ -111,13 +85,6 @@ export type MaintenanceCycleResult = {
         scanned: number
         changed: number
     }
-    stripeWebhook: {
-        unmatchedExpired: number
-        replay: StripeWebhookReconciliationResult
-    }
-    payments: PaymentReconciliationResult
-    paymentRefunds: PaymentRefundReconciliationResult
-    paymentInvoiceBackfill: PaymentInvoiceBackfillResult
     phaseFailures: MaintenancePhaseFailure[]
 }
 
@@ -131,19 +98,6 @@ export function summarizeMaintenanceCycle(result: MaintenanceCycleResult) {
         notificationCleanup: Object.fromEntries(Object.entries(result.notificationCleanup).map(([key, value]) => [key, count(value)])),
         orphanImageCleanup: Object.fromEntries(Object.entries(result.orphanImageCleanup).map(([key, value]) => [key, count(value)])),
         trustReassessment: Object.fromEntries(Object.entries(result.trustReassessment).map(([key, value]) => [key, count(value)])),
-        stripeWebhook: {
-            unmatchedExpired: count(result.stripeWebhook.unmatchedExpired),
-            replay: Object.fromEntries(
-                Object.entries(result.stripeWebhook.replay).map(([key, value]) => [key, count(value)]),
-            ),
-        },
-        payments: Object.fromEntries(Object.entries(result.payments).map(([key, value]) => [key, count(value)])),
-        paymentRefunds: Object.fromEntries(
-            Object.entries(result.paymentRefunds).map(([key, value]) => [key, count(value)]),
-        ),
-        paymentInvoiceBackfill: Object.fromEntries(
-            Object.entries(result.paymentInvoiceBackfill).map(([key, value]) => [key, count(value)]),
-        ),
     }
 }
 
@@ -416,45 +370,6 @@ export async function measureMaintenanceOutboxBacklog(now = Date.now()) {
     return summary
 }
 
-export async function escalateExpiredUnmatchedStripeWebhooks(now = new Date()) {
-    const rows = await AppDataSource.getRepository(StripeWebhookEventEntity)
-        .createQueryBuilder('event')
-        .where('event.status = :status', { status: StripeWebhookEventStatus.Unmatched })
-        .andWhere('event.createdAt < :cutoff', {
-            cutoff: getStripeUnmatchedWebhookExpiryCutoff(now),
-        })
-        .orderBy('event.createdAt', 'ASC')
-        .take(getMaintenanceDeleteBatchSize())
-        .getMany()
-
-    for (const event of rows) {
-        await recordSystemIncidentSafely({
-            type: SystemIncidentType.PaymentWebhook,
-            severity: SystemIncidentSeverity.Critical,
-            title: `Stripe unmatched webhook expired: ${event.stripeEventId.slice(0, 160)}`,
-            metadata: {
-                stripeEventId: event.stripeEventId,
-                stripeEventType: event.eventType,
-                status: event.status,
-                createdAt: event.createdAt.toISOString(),
-            },
-        })
-    }
-
-    metrics.setGauge('maintenance_unmatched_webhooks_expired_last', rows.length)
-    metrics.increment('maintenance_unmatched_webhooks_expired_total', rows.length)
-    return { unmatchedExpired: rows.length }
-}
-
-export async function reconcileStripeWebhookEvents(
-    now = new Date(),
-    assertLease?: () => void,
-) {
-    const replay = await reconcileUnmatchedStripeWebhooks(assertLease)
-    const expired = await escalateExpiredUnmatchedStripeWebhooks(now)
-    return { ...expired, replay }
-}
-
 export async function cleanupExpiredAuditLogs(now = new Date()) {
     const retentionBefore = new Date(
         now.getTime() - env.auditLogRetentionDays * 24 * 60 * 60 * 1000,
@@ -663,33 +578,6 @@ export async function runMaintenanceCycle(
             () => reassessAutoCareTrustScores(),
             { scanned: 0, changed: 0 },
         )
-        const stripeWebhook = env.paymentsEnabled
-            ? await runPhase(
-                'stripe_webhook',
-                () => reconcileStripeWebhookEvents(now, lease?.assertHeld),
-                {
-                    unmatchedExpired: 0,
-                    replay: {
-                        checked: 0,
-                        applied: 0,
-                        unsupported: 0,
-                        retryable: 0,
-                        failed: 0,
-                        skipped: 0,
-                    },
-                },
-            )
-            : { unmatchedExpired: 0, replay: { checked: 0, applied: 0, unsupported: 0, retryable: 0, failed: 0, skipped: 0 } }
-        const payments = env.paymentsEnabled
-            ? await runPhase('payment_reconciliation', () => reconcileStripePayments(lease?.assertHeld), { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 })
-            : { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 }
-        const paymentRefunds = env.paymentsEnabled
-            ? await runPhase('payment_refund_reconciliation', () => reconcileStripePaymentRefunds(lease?.assertHeld), { checked: 0, repaired: 0, skipped: 0, errors: 0 })
-            : { checked: 0, repaired: 0, skipped: 0, errors: 0 }
-        const paymentInvoiceBackfill = env.paymentsEnabled
-            ? await runPhase('payment_invoice_backfill', () => backfillMissingPaymentInvoices(lease?.assertHeld), { checked: 0, created: 0, skipped: 0, errors: 0 })
-            : { checked: 0, created: 0, skipped: 0, errors: 0 }
-
         const outcome = phaseFailures.length > 0 ? 'partial' : 'success'
         metrics.increment('maintenance_cycles_completed_total', 1, { outcome })
         metrics.setGauge(
@@ -707,10 +595,6 @@ export async function runMaintenanceCycle(
             notificationCleanup,
             orphanImageCleanup,
             trustReassessment,
-            stripeWebhook,
-            payments,
-            paymentRefunds,
-            paymentInvoiceBackfill,
             phaseFailures,
         }
     } catch (error) {

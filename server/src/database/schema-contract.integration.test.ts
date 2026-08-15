@@ -97,11 +97,11 @@ describe('database schema contract integration', () => {
         await queryRunner.startTransaction()
 
         try {
-            await queryRunner.query('DROP TABLE "public"."booking_payment_disputes"')
+            await queryRunner.query('DROP TABLE "public"."security_events" CASCADE')
 
             const status = await getSchemaContractStatus(queryRunner)
 
-            expect(status.missingTables).toContain('booking_payment_disputes')
+            expect(status.missingTables).toContain('security_events')
             expect(status.missingMigrations).toEqual([])
         } finally {
             await queryRunner.rollbackTransaction()
@@ -116,12 +116,12 @@ describe('database schema contract integration', () => {
 
         try {
             await queryRunner.query(
-                'DROP INDEX "public"."IDX_booking_payments_booking"',
+                'DROP INDEX "public"."IDX_security_events_type_created_at_id"',
             )
 
             const status = await getSchemaContractStatus(queryRunner)
 
-            expect(status.missingIndexes).toContain('booking_payments.IDX_booking_payments_booking')
+            expect(status.missingIndexes).toContain('security_events.IDX_security_events_type_created_at_id')
         } finally {
             await queryRunner.rollbackTransaction()
             await queryRunner.release()

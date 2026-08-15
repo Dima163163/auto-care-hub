@@ -11,7 +11,6 @@ export enum SystemIncidentType {
     ServerError = 'server_error',
     HealthCheck = 'health_check',
     BackgroundJob = 'background_job',
-    PaymentWebhook = 'payment_webhook',
 }
 
 export enum SystemIncidentSeverity {

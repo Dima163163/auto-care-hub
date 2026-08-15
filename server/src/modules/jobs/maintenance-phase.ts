@@ -10,10 +10,6 @@ export type MaintenancePhase =
     | 'notification_cleanup'
     | 'orphan_image_cleanup'
     | 'trust_reassessment'
-    | 'stripe_webhook'
-    | 'payment_reconciliation'
-    | 'payment_refund_reconciliation'
-    | 'payment_invoice_backfill'
 
 export type MaintenancePhaseFailure = {
     phase: MaintenancePhase
@@ -29,9 +25,6 @@ const retryableMaintenancePhases = new Set<MaintenancePhase>([
     'auth_cleanup',
     'audit_cleanup',
     'notification_cleanup',
-    'payment_reconciliation',
-    'payment_refund_reconciliation',
-    'payment_invoice_backfill',
 ])
 
 export function getMaintenancePhaseRetryLimit(phase: MaintenancePhase) {
