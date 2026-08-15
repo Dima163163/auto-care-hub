@@ -13,6 +13,8 @@ import {
     AutoCareChatThreadType,
     AutoCareRepairEventEntity,
     AutoCareServiceQuoteEntity,
+    AutoCareRescheduleRequestEntity,
+    AutoCareRescheduleStatus,
     ServiceAttachmentEntity,
     ServiceAttachmentStatus,
     ServiceMessageEntity,
@@ -39,6 +41,7 @@ import type {
     CreateAutoCareServiceQuoteInput,
     CreateAutoCareServiceRequestInput,
     AutoCareServiceQuoteHistoryResponse,
+    AutoCareRescheduleResponse,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
@@ -127,6 +130,13 @@ const serviceRequestCancellableStates = new Set<ServiceRequestStatus>([
     ServiceRequestStatus.Accepted,
 ])
 
+const serviceRequestReschedulableStates = new Set<ServiceRequestStatus>([
+    ServiceRequestStatus.Open,
+    ServiceRequestStatus.AwaitingReply,
+    ServiceRequestStatus.EstimateShared,
+    ServiceRequestStatus.Accepted,
+])
+
 function sameServiceOffer(a: ServiceMessageOffer, b: ServiceMessageOffer, compareCoupon: boolean) {
     return a.type === b.type &&
         a.title === b.title &&
@@ -185,6 +195,7 @@ function requestResponse(
     definition: AutomotiveServiceDefinitionEntity,
     offering: AutomotiveServiceOfferingEntity | null,
     quoteHistory: AutoCareServiceQuoteHistoryResponse[] = [],
+    reschedule: AutoCareRescheduleResponse | null = null,
 ): AutoCareServiceRequestResponse {
     const snapshot = request.offeringSnapshot ?? (offering ? createOfferingSnapshot(definition, offering) : null)
     return {
@@ -225,6 +236,7 @@ function requestResponse(
         cancelledAt: request.cancelledAt?.toISOString() ?? null,
         cancelledById: request.cancelledById,
         cancellationReason: request.cancellationReason,
+        reschedule,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
     }
@@ -246,6 +258,20 @@ function messageResponse(message: ServiceMessageEntity): AutoCareServiceMessageR
         deliveredAt: message.deliveredAt?.toISOString() ?? null,
         readAt: message.readAt?.toISOString() ?? null,
         createdAt: message.createdAt.toISOString(),
+    }
+}
+
+function rescheduleResponse(request: AutoCareRescheduleRequestEntity): AutoCareRescheduleResponse {
+    return {
+        id: request.id,
+        proposedAt: request.proposedAt.toISOString(),
+        requestedById: request.requestedById,
+        status: request.status,
+        reason: request.reason,
+        resolvedById: request.resolvedById,
+        resolutionReason: request.resolutionReason,
+        createdAt: request.createdAt.toISOString(),
+        resolvedAt: request.resolvedAt?.toISOString() ?? null,
     }
 }
 
@@ -593,6 +619,10 @@ async function hydrateRequest(request: ServiceRequestEntity) {
         order: { version: 'ASC' },
         take: 50,
     })
+    const pendingReschedule = await AppDataSource.getRepository(AutoCareRescheduleRequestEntity).findOne({
+        where: { requestId: request.id, status: AutoCareRescheduleStatus.Pending },
+        order: { createdAt: 'DESC' },
+    })
     if (!provider || !location || !definition) notFound('Service request references missing service data.')
     return requestResponse(request, provider, location, definition, offering, quoteHistory.map((quote) => ({
         id: quote.id,
@@ -607,7 +637,7 @@ async function hydrateRequest(request: ServiceRequestEntity) {
         validUntil: quote.validUntil?.toISOString() ?? null,
         priceLocked: quote.snapshot.priceLocked === true,
         createdAt: quote.createdAt.toISOString(),
-    })))
+    })), pendingReschedule ? rescheduleResponse(pendingReschedule) : null)
 }
 
 async function getRequest(requestId: string) {
@@ -838,6 +868,70 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
     })
     const request = transactionResult.request
     return hydrateRequest(request)
+}
+
+export async function requestAutoCareServiceReschedule(user: UserEntity, requestId: string, input: { proposedAt: string; reason?: string | null }) {
+    ownerOnly(user)
+    const proposedAt = new Date(input.proposedAt)
+    if (Number.isNaN(proposedAt.getTime()) || proposedAt.getTime() <= Date.now()) conflict('The proposed visit time must be in the future.')
+    const created = await AppDataSource.transaction(async (manager) => {
+        const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!request) notFound('Service request not found.')
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
+        if (!serviceRequestReschedulableStates.has(request.status)) conflict('This service request cannot be rescheduled.')
+        if (request.preferredAt?.getTime() === proposedAt.getTime()) conflict('Choose a different visit time.')
+        const rescheduleRepository = manager.getRepository(AutoCareRescheduleRequestEntity)
+        const pending = await rescheduleRepository.findOne({ where: { requestId, status: AutoCareRescheduleStatus.Pending }, lock: { mode: 'pessimistic_write' } })
+        if (pending) conflict('This service request already has a pending reschedule request.')
+        const result = await rescheduleRepository.save(rescheduleRepository.create({
+            requestId,
+            requestedById: user.id,
+            proposedAt,
+            status: AutoCareRescheduleStatus.Pending,
+            reason: input.reason?.trim() || null,
+            resolvedById: null,
+            resolutionReason: null,
+            resolvedAt: null,
+        }))
+        await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'reschedule_requested', title: 'Сервис предложил новое время', notes: result.reason, metadata: { proposedAt: proposedAt.toISOString() } })
+        await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: `reschedule-requested-${result.id}`, role: 'client', title: 'Сервис предложил новое время', message: 'Проверьте новое время визита в заявке.' }, manager)
+        return result
+    })
+    return rescheduleResponse(created)
+}
+
+export async function decideAutoCareServiceReschedule(user: UserEntity, requestId: string, decision: 'accept' | 'reject', reason?: string | null) {
+    clientOnly(user)
+    const transactionResult = await AppDataSource.transaction(async (manager) => {
+        const requestRepository = manager.getRepository(ServiceRequestEntity)
+        const request = await requestRepository.findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!request) notFound('Service request not found.')
+        if (request.clientId !== user.id) forbidden('You do not have access to this service request.')
+        const rescheduleRepository = manager.getRepository(AutoCareRescheduleRequestEntity)
+        const pending = await rescheduleRepository.findOne({ where: { requestId }, order: { createdAt: 'DESC' }, lock: { mode: 'pessimistic_write' } })
+        if (!pending) notFound('Reschedule request not found.')
+        if (pending.status !== AutoCareRescheduleStatus.Pending) {
+            if ((decision === 'accept' && pending.status === AutoCareRescheduleStatus.Accepted) || (decision === 'reject' && pending.status === AutoCareRescheduleStatus.Rejected)) return { request, reschedule: pending, changed: false }
+            conflict('This reschedule request has already been resolved.')
+        }
+        pending.status = decision === 'accept' ? AutoCareRescheduleStatus.Accepted : AutoCareRescheduleStatus.Rejected
+        pending.resolvedById = user.id
+        pending.resolutionReason = reason?.trim() || null
+        pending.resolvedAt = new Date()
+        if (decision === 'accept') {
+            const conflicting = await requestRepository.find({ where: { providerId: request.providerId, locationId: request.locationId, preferredAt: pending.proposedAt } })
+            if (conflicting.some((item) => item.id !== request.id && ![ServiceRequestStatus.Declined, ServiceRequestStatus.Cancelled, ServiceRequestStatus.Closed].includes(item.status))) conflict('The proposed visit time is no longer available.')
+            request.preferredAt = pending.proposedAt
+        }
+        await rescheduleRepository.save(pending)
+        await requestRepository.save(request)
+        await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: decision === 'accept' ? 'reschedule_accepted' : 'reschedule_rejected', title: decision === 'accept' ? 'Клиент подтвердил новое время' : 'Клиент отклонил новое время', notes: pending.resolutionReason, metadata: { proposedAt: pending.proposedAt.toISOString() } })
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+        if (provider?.ownerId) await notifyAutoCareParticipant({ userId: provider.ownerId, requestId, event: `reschedule-${decision}-${pending.id}`, role: 'owner', title: decision === 'accept' ? 'Клиент подтвердил новое время' : 'Клиент отклонил новое время', message: decision === 'accept' ? 'Новое время визита подтверждено клиентом.' : 'Клиент отклонил предложенное время визита.' }, manager)
+        return { request, reschedule: pending, changed: true }
+    })
+    return hydrateRequest(transactionResult.request)
 }
 
 export async function cancelAutoCareServiceRequest(user: UserEntity, requestId: string, reason?: string | null) {

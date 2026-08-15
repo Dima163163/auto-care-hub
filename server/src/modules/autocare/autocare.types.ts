@@ -311,8 +311,21 @@ export type AutoCareServiceRequestResponse = {
     cancelledAt: string | null
     cancelledById: string | null
     cancellationReason: string | null
+    reschedule: AutoCareRescheduleResponse | null
     createdAt: string
     updatedAt: string
+}
+
+export type AutoCareRescheduleResponse = {
+    id: string
+    proposedAt: string
+    requestedById: string
+    status: 'pending' | 'accepted' | 'rejected'
+    reason: string | null
+    resolvedById: string | null
+    resolutionReason: string | null
+    createdAt: string
+    resolvedAt: string | null
 }
 
 export type AutoCareServiceQuoteResponse = {

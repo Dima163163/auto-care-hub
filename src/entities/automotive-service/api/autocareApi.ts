@@ -374,11 +374,17 @@ const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.stri
 const autoCareQuoteLineItemSchema = z.object({ kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']), title: z.string(), quantity: z.number().finite(), unitPriceMinor: z.number().finite(), totalMinor: z.number().finite() }).passthrough()
 const autoCareQuoteSchema = z.object({ amountMinor: z.number().finite(), currencyCode: z.string(), note: z.string().nullable(), createdAt: z.string(), lineItems: z.array(autoCareQuoteLineItemSchema).optional(), subtotalMinor: z.number().finite().optional(), taxMinor: z.number().finite().optional(), feesMinor: z.number().finite().optional(), validUntil: z.string().nullable().optional(), priceLocked: z.boolean().optional() }).passthrough()
 const autoCareQuoteHistorySchema = autoCareQuoteSchema.extend({ id: z.string().min(1), version: z.number().int().positive() }).passthrough()
+const autoCareRescheduleSchema = z.object({
+    id: z.string().min(1), proposedAt: z.string(), requestedById: z.string(),
+    status: z.enum(['pending', 'accepted', 'rejected']), reason: z.string().nullable(),
+    resolvedById: z.string().nullable(), resolutionReason: z.string().nullable(),
+    createdAt: z.string(), resolvedAt: z.string().nullable(),
+}).passthrough()
 const autoCareScalarRecordSchema = z.record(z.string(), z.union([z.string(), z.number(), z.null()]))
 const autoCareServiceRequestSchema = z.object({
     id: z.string().min(1), providerId: z.string().min(1), providerName: z.string(), locationId: z.string().min(1), address: z.string(), definitionId: z.string().min(1), serviceSlug: z.string(),
     serviceLabels: z.record(z.string(), z.string()), serviceDescription: z.string().nullable(), offeringId: z.string().nullable(), priceFromMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), preferredAt: z.string().nullable(),
-    vehicleSnapshot: autoCareScalarRecordSchema.nullable(), contactSnapshot: autoCareScalarRecordSchema.nullable(), note: z.string().nullable(), status: z.enum(['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted', 'declined', 'cancelled', 'closed']), clientConfirmedAt: z.string().nullable(), providerConfirmedAt: z.string().nullable(), cancelledAt: z.string().nullable().optional(), cancelledById: z.string().nullable().optional(), cancellationReason: z.string().nullable().optional(), createdAt: z.string(), updatedAt: z.string(), quote: autoCareQuoteSchema.nullable(), quoteHistory: z.array(autoCareQuoteHistorySchema).default([]),
+    vehicleSnapshot: autoCareScalarRecordSchema.nullable(), contactSnapshot: autoCareScalarRecordSchema.nullable(), note: z.string().nullable(), status: z.enum(['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted', 'declined', 'cancelled', 'closed']), clientConfirmedAt: z.string().nullable(), providerConfirmedAt: z.string().nullable(), cancelledAt: z.string().nullable().optional(), cancelledById: z.string().nullable().optional(), cancellationReason: z.string().nullable().optional(), reschedule: autoCareRescheduleSchema.nullable().default(null), createdAt: z.string(), updatedAt: z.string(), quote: autoCareQuoteSchema.nullable(), quoteHistory: z.array(autoCareQuoteHistorySchema).default([]),
 }).passthrough()
 const autoCareServiceRequestsSchema = z.array(autoCareServiceRequestSchema)
 const autoCareChatThreadSchema = z.object({ id: z.string().min(1), type: z.enum(['service_request', 'provider_inquiry', 'support', 'admin_escalation']), status: z.enum(['open', 'closed']), subject: z.string(), requestId: z.string().nullable(), providerId: z.string().nullable(), providerName: z.string().nullable(), clientId: z.string().nullable(), lastMessageAt: z.string().nullable(), unreadCount: z.number().int().nonnegative(), createdAt: z.string(), updatedAt: z.string() }).passthrough()
@@ -451,11 +457,14 @@ export type AutoCareServiceRequest = {
     cancelledAt?: string | null
     cancelledById?: string | null
     cancellationReason?: string | null
+    reschedule: AutoCareReschedule | null
     createdAt: string
     updatedAt: string
     quote: AutoCareServiceQuote | null
     quoteHistory: Array<AutoCareServiceQuote & { id: string; version: number }>
 }
+
+export type AutoCareReschedule = { id: string; proposedAt: string; requestedById: string; status: 'pending' | 'accepted' | 'rejected'; reason: string | null; resolvedById: string | null; resolutionReason: string | null; createdAt: string; resolvedAt: string | null }
 
 export type AutoCareQuoteLineItem = { kind: 'part' | 'labour' | 'consumable' | 'tax' | 'fee' | 'discount'; title: string; quantity: number; unitPriceMinor: number; totalMinor: number }
 export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; lineItems?: AutoCareQuoteLineItem[]; subtotalMinor?: number; taxMinor?: number; feesMinor?: number; validUntil?: string | null; priceLocked?: boolean }
@@ -893,6 +902,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
+        decideAutoCareServiceReschedule: build.mutation<AutoCareServiceRequest, { requestId: string; decision: 'accept' | 'reject'; reason?: string | null }>({
+            query: ({ requestId, decision, reason }) => ({ url: `/v1/service-requests/${requestId}/reschedule/decision`, method: 'POST', body: { decision, reason: reason ?? null } }),
+            transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
         acceptAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, string>({
             query: (requestId) => ({ url: `/v1/service-requests/${requestId}/quote/accept`, method: 'POST' }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
@@ -918,6 +932,11 @@ export const autoCareApi = baseApi.injectEndpoints({
         createAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, CreateAutoCareServiceQuoteInput>({
             query: ({ requestId, ...body }) => ({ url: `/owner/service-requests/${requestId}/quote`, method: 'POST', body }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
+        }),
+        requestAutoCareServiceReschedule: build.mutation<AutoCareReschedule, { requestId: string; proposedAt: string; reason?: string | null }>({
+            query: ({ requestId, ...body }) => ({ url: `/owner/service-requests/${requestId}/reschedule`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareRescheduleSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
         }),
     }),
@@ -983,9 +1002,11 @@ export const {
     useCreateAutoCareServiceAttachmentMutation,
     useConfirmAutoCareServiceRequestMutation,
     useCancelAutoCareServiceRequestMutation,
+    useDecideAutoCareServiceRescheduleMutation,
     useAcceptAutoCareServiceQuoteMutation,
     useDeclineAutoCareServiceQuoteMutation,
     useGetOwnerAutoCareServiceRequestsQuery,
     useConfirmOwnerAutoCareServiceRequestMutation,
     useCreateAutoCareServiceQuoteMutation,
+    useRequestAutoCareServiceRescheduleMutation,
 } = autoCareApi

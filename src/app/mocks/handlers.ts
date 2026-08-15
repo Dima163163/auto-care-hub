@@ -430,6 +430,17 @@ type MockAutoCareServiceRequest = {
     cancelledAt?: string | null
     cancelledById?: string | null
     cancellationReason?: string | null
+    reschedule?: {
+        id: string
+        proposedAt: string
+        requestedById: string
+        status: 'pending' | 'accepted' | 'rejected'
+        reason: string | null
+        resolvedById: string | null
+        resolutionReason: string | null
+        createdAt: string
+        resolvedAt: string | null
+    } | null
     createdAt: string
     updatedAt: string
 }
@@ -2564,6 +2575,48 @@ export const handlers = [
         item.cancellationReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
         item.updatedAt = now
         pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент отменил заявку', message: 'Клиент отменил заявку на услугу.' })
+        const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+        return HttpResponse.json(response)
+    }),
+
+    http.post('/api/owner/service-requests/:requestId/reschedule', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json().catch(() => ({})) as { proposedAt?: string; reason?: string | null }
+        const proposedAt = new Date(body.proposedAt ?? '')
+        if (Number.isNaN(proposedAt.getTime()) || proposedAt.getTime() <= Date.now()) return HttpResponse.json({ message: 'The proposed visit time must be in the future.' }, { status: 400 })
+        if (item.reschedule?.status === 'pending') return HttpResponse.json({ message: 'This service request already has a pending reschedule request.' }, { status: 409 })
+        const result = { id: `mock-reschedule-${Date.now()}`, proposedAt: proposedAt.toISOString(), requestedById: user.id, status: 'pending' as const, reason: typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null, resolvedById: null, resolutionReason: null, createdAt: new Date().toISOString(), resolvedAt: null }
+        item.reschedule = result
+        item.updatedAt = result.createdAt
+        pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Сервис предложил новое время', message: 'Проверьте новое время визита в заявке.' })
+        return HttpResponse.json(result, { status: 201 })
+    }),
+
+    http.post('/api/v1/service-requests/:requestId/reschedule/decision', async ({ params, request }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        if (!user || !item || item.clientId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const body = await request.json().catch(() => ({})) as { decision?: 'accept' | 'reject'; reason?: string | null }
+        const reschedule = item.reschedule
+        if (!reschedule) return HttpResponse.json({ message: 'Reschedule request not found.' }, { status: 404 })
+        if (reschedule.status !== 'pending') {
+            if ((body.decision === 'accept' && reschedule.status === 'accepted') || (body.decision === 'reject' && reschedule.status === 'rejected')) {
+                const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+                return HttpResponse.json(response)
+            }
+            return HttpResponse.json({ message: 'This reschedule request has already been resolved.' }, { status: 409 })
+        }
+        if (!body.decision) return HttpResponse.json({ message: 'Decision is required.' }, { status: 400 })
+        const now = new Date().toISOString()
+        reschedule.status = body.decision === 'accept' ? 'accepted' : 'rejected'
+        reschedule.resolvedById = user.id
+        reschedule.resolutionReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
+        reschedule.resolvedAt = now
+        if (body.decision === 'accept') item.preferredAt = reschedule.proposedAt
+        item.updatedAt = now
+        pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: body.decision === 'accept' ? 'Клиент подтвердил новое время' : 'Клиент отклонил новое время', message: body.decision === 'accept' ? 'Новое время визита подтверждено клиентом.' : 'Клиент отклонил предложенное время визита.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
     }),

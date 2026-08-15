@@ -76,6 +76,8 @@ export {
     useCreateAutoCareFleetMutation,
     useCreateAutoCareFleetVehicleMutation,
     useConfirmAutoCareServiceRequestMutation,
+    useCancelAutoCareServiceRequestMutation,
+    useDecideAutoCareServiceRescheduleMutation,
     useAcceptAutoCareServiceQuoteMutation,
     useDeclineAutoCareServiceQuoteMutation,
     useGetOwnerAutoCareServiceRequestsQuery,
@@ -87,6 +89,7 @@ export {
     useMarkAutoCareServiceConversationReadMutation,
     useCreateAutoCareServiceAttachmentMutation,
     useCreateAutoCareServiceQuoteMutation,
+    useRequestAutoCareServiceRescheduleMutation,
 } from './api/autocareApi'
 export type {
     AutoCareApiDiscoveryItem,
@@ -116,6 +119,7 @@ export type {
     AutoCareDiscoveryQuery,
     CreateOwnerAutoCareProviderInput,
     AutoCareServiceRequest,
+    AutoCareReschedule,
     AutoCareServiceQuote,
     AutoCareQuoteLineItem,
     AutoCarePriceBenchmark,

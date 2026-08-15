@@ -50,6 +50,7 @@ import {
     ServiceRequestEntity,
 } from './automotive/service-request.entity.js'
 import { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
+import { AutoCareRescheduleRequestEntity } from './automotive/autocare-reschedule-request.entity.js'
 import { PlatformReviewEntity } from './platform-review/platform-review.entity.js'
 import {
     AutoCareBroadcastOfferEntity,
@@ -108,6 +109,7 @@ export const entities = [
     AutomotiveProviderFavoriteEntity,
     ServiceRequestEntity,
     AutoCareServiceQuoteEntity,
+    AutoCareRescheduleRequestEntity,
     AutoCareChatThreadEntity,
     ServiceMessageEntity,
     ServiceAttachmentEntity,
@@ -232,6 +234,7 @@ export {
     ServiceRequestStatus,
 } from './automotive/service-request.entity.js'
 export { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
+export { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from './automotive/autocare-reschedule-request.entity.js'
 export { PlatformReviewEntity, PlatformReviewStatus } from './platform-review/platform-review.entity.js'
 export {
     AutoCareBroadcastOfferEntity,

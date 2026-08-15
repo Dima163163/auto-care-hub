@@ -181,6 +181,16 @@ export const cancelAutoCareServiceRequestSchema = z.object({
     reason: z.string().trim().max(1_000).nullable().optional(),
 })
 
+export const createAutoCareRescheduleSchema = z.object({
+    proposedAt: z.string().datetime({ offset: true }),
+    reason: z.string().trim().max(1_000).nullable().optional(),
+})
+
+export const decideAutoCareRescheduleSchema = z.object({
+    decision: z.enum(['accept', 'reject']),
+    reason: z.string().trim().max(1_000).nullable().optional(),
+})
+
 export const createAutoCareServiceMessageSchema = z.object({
     body: z.string().trim().min(1).max(4_000),
 })
