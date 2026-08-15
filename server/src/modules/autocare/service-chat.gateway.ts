@@ -13,6 +13,7 @@ type ChatEvent = {
 
 const connections = new Map<string, Set<WebSocket>>()
 const REDIS_CHANNEL_PREFIX = 'autocare:chat:'
+const MAX_CHAT_EVENT_BYTES = 256 * 1024
 const instanceId = randomUUID()
 let redisPublisher: ReturnType<typeof getRedisClient> | null = null
 let redisSubscriber: ReturnType<typeof getRedisClient> | null = null
@@ -27,6 +28,20 @@ function broadcastLocal(channelId: string, serialized: string) {
     if (!listeners) return
     for (const socket of listeners) {
         if (socket.readyState === 1) socket.send(serialized)
+    }
+}
+
+function serializeEvent(event: ChatEvent) {
+    try {
+        const serialized = JSON.stringify(event)
+        if (Buffer.byteLength(serialized, 'utf8') > MAX_CHAT_EVENT_BYTES) {
+            logError('AutoCare chat event exceeded realtime payload limit', new Error('Chat event is too large.'))
+            return null
+        }
+        return serialized
+    } catch (error) {
+        logError('AutoCare chat event could not be serialized', error)
+        return null
     }
 }
 
@@ -76,14 +91,19 @@ export function subscribeServiceChat(channelId: string, socket: WebSocket) {
 }
 
 export function broadcastServiceChat(channelId: string, event: ChatEvent) {
-    const serialized = JSON.stringify(event)
+    const serialized = serializeEvent(event)
+    if (!serialized) return
     broadcastLocal(channelId, serialized)
-    if (redisPublisher) {
+    // A message can be created immediately after the first subscription. Wait
+    // for the bridge setup so the first cross-process event is not lost while
+    // the Redis publisher is still being initialized.
+    void ensureRedisBridge().then(() => {
+        if (!redisPublisher) return
         const wire = JSON.stringify({ source: instanceId, event })
-        void redisPublisher.publish(channelName(channelId), wire).catch((error) => {
+        return redisPublisher.publish(channelName(channelId), wire).catch((error) => {
             logError('AutoCare chat Redis publish failed', error)
         })
-    }
+    })
 }
 
 export function sendServiceChatEvent(socket: WebSocket, event: ChatEvent) {
