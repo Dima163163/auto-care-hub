@@ -6,6 +6,7 @@ import { mapAutoCareDiscoveryItem, ProviderLogo, providerPreviews, type Provider
 import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type HomeSort = 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
 
@@ -90,6 +91,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     const sortedProviders = useMemo(() => sortProviders(sourceProviders, sort), [sort, sourceProviders])
     const pageCount = Math.ceil(sortedProviders.length / pageSize)
     const visibleProviders = sortedProviders.slice(page * pageSize, page * pageSize + pageSize)
+    const isInitialLoading = discovery.isLoading && sourceProviders.length === 0
 
     const handleSortChange = (value: HomeSort) => {
         setSort(value)
@@ -123,8 +125,10 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                     </label>
                 </div>
-                <div className="mt-5 grid gap-4 lg:grid-cols-4">
-                    {visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
+                <div className="mt-5 grid gap-4 lg:grid-cols-4" aria-busy={isInitialLoading}>
+                    {isInitialLoading
+                        ? <ProviderPreviewSkeleton label={t('common.loading')} />
+                        : visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
                 </div>
                 {!isFirstPage ? <button type="button" onClick={showPreviousPage} className="absolute -left-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('common.back')}>
                     <ChevronLeft className="size-7" />
@@ -134,6 +138,26 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                 </button> : null}
             </div>
         </section>
+    )
+}
+
+function ProviderPreviewSkeleton({ label }: { label: string }) {
+    return (
+        <div role="status" aria-label={label} className="contents">
+            {Array.from({ length: 4 }, (_, index) => (
+                <article key={index} aria-hidden="true" className="flex min-h-[352px] flex-col rounded-[9px] border border-border bg-card px-4 pb-4 pt-5">
+                    <div className="flex items-center gap-2"><Skeleton className="size-6 rounded-[6px]" /><Skeleton className="h-4 w-2/5" /></div>
+                    <Skeleton className="mt-3 h-3.5 w-4/5" />
+                    <Skeleton className="mt-3 h-3 w-full" />
+                    <Skeleton className="mt-6 h-5 w-2/5" />
+                    <Skeleton className="mt-2 h-3 w-1/2" />
+                    <Skeleton className="mt-5 h-3 w-28" />
+                    <Skeleton className="mt-2 h-4 w-2/5" />
+                    <Skeleton className="mt-auto h-[42px] w-full rounded-[6px]" />
+                    <Skeleton className="mx-auto mt-3 h-3 w-16" />
+                </article>
+            ))}
+        </div>
     )
 }
 
