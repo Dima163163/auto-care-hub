@@ -6,6 +6,7 @@ import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServic
 import { routePaths } from '@/shared/constants/routes'
 import { useGetMeQuery } from '@/features/auth'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { AutoCareRequestSkeleton } from '@/shared/ui/loading-skeleton'
 
 import { RequestForm, type RequestFormPayload } from './RequestForm'
 import { RequestOrderSummary, RequestSummary } from './RequestSummary'
@@ -30,7 +31,7 @@ export function AutoCareRequestPage() {
         [provider, searchParams],
     )
 
-    if (isLoading) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><p className="text-sm font-semibold text-muted-foreground">Loading provider…</p></main>
+    if (isLoading) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !offering || !data) {
         return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
     }

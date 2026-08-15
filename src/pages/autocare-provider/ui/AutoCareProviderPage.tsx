@@ -4,6 +4,7 @@ import { useParams } from 'react-router'
 
 import { AutomotiveAmenityIcon, automotiveAmenities, getAutomotiveAmenityLabel, mapAutoCareProviderProfile, type AutoCareTrustResponse, useGetAutoCareProviderProfileQuery, useGetAutoCareProviderTrustQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { ProviderProfileSkeleton } from '@/shared/ui/loading-skeleton'
 
 import { ProviderHero } from './ProviderHero'
 import { ProviderLocationMap } from './ProviderLocationMap'
@@ -21,7 +22,7 @@ export function AutoCareProviderPage() {
     const [selectedServiceId, setSelectedServiceId] = useState('')
     const selectedOffering = useMemo(() => provider?.offerings.find((item) => item.serviceId === selectedServiceId) ?? provider?.offerings[0], [provider, selectedServiceId])
 
-    if (isLoading) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><p className="text-sm font-semibold text-muted-foreground">Loading provider…</p></main>
+    if (isLoading) return <main className="min-h-full bg-background"><ProviderProfileSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !selectedOffering) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
 
     return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6"><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>

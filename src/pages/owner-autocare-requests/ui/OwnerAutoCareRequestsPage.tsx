@@ -16,6 +16,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { SplitListSkeleton } from '@/shared/ui/loading-skeleton'
 
 export function OwnerAutoCareRequestsPage() {
     const { t } = useTranslation()
@@ -40,7 +41,7 @@ export function OwnerAutoCareRequestsPage() {
                     <SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} />
                     <SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} />
                 </div>
-                {isLoading && <div className="rounded-[var(--radius-panel)] border border-border bg-card p-8 text-sm font-semibold text-muted-foreground">{t('common.loading')}</div>}
+                {isLoading && <SplitListSkeleton label={t('common.loading')} />}
                 {isError && <div className="rounded-[var(--radius-panel)] border border-destructive/30 bg-card p-6"><p className="font-semibold text-destructive">{getApiErrorMessage(error, t('common.failedToLoad'))}</p><RetryButton className="mt-4" onRetry={refetch} label={t('common.retry')} /></div>}
                 {!isLoading && !isError && requests.length === 0 && <div className="rounded-[var(--radius-panel)] border border-border bg-card p-8 text-sm text-muted-foreground">{t('autocare.ownerRequestsEmpty')}</div>}
                 {!isLoading && !isError && requests.length > 0 && <div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={requests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div>}

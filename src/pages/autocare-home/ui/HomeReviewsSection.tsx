@@ -5,6 +5,7 @@ import { Link } from 'react-router'
 import { useGetPlatformReviewsQuery, type PlatformReview } from '@/entities/platform-review'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function HomeReviewsSection() {
     return (
@@ -20,7 +21,7 @@ function ReviewsCard() {
     const { data: reviews = [], isLoading, isError } = useGetPlatformReviewsQuery(6)
     const reviewItems = useMemo(() => reviews.slice(0, 3), [reviews])
 
-    return <section className="rounded-[10px] border border-border bg-card p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><Link to={ROUTES.platformReviews} className="text-xs font-semibold text-primary hover:underline">{t('autocare.allReviews')}</Link></div>{isLoading ? <p className="mt-5 text-sm text-muted-foreground">{t('common.loading')}</p> : isError ? <p className="mt-5 text-sm text-muted-foreground">{t('common.failedToLoad')}</p> : <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3">{reviewItems.map((review) => <ReviewCard key={review.id} review={review} />)}</div>}</section>
+    return <section className="rounded-[10px] border border-border bg-card p-5" aria-busy={isLoading}><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><Link to={ROUTES.platformReviews} className="text-xs font-semibold text-primary hover:underline">{t('autocare.allReviews')}</Link></div>{isLoading ? <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3" aria-label={t('common.loading')} role="status">{Array.from({ length: 3 }, (_, index) => <div key={index} aria-hidden="true" className="rounded-[8px] border border-border p-4"><div className="flex items-center gap-3"><Skeleton className="size-11 rounded-full" /><div className="grid flex-1 gap-2"><Skeleton className="h-3.5 w-3/5" /><Skeleton className="h-3 w-2/5" /></div></div><Skeleton className="mt-4 h-3.5 w-24" /><Skeleton className="mt-4 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /><Skeleton className="mt-5 h-3 w-1/3" /></div>)}</div> : isError ? <p className="mt-5 text-sm text-muted-foreground">{t('common.failedToLoad')}</p> : <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3">{reviewItems.map((review) => <ReviewCard key={review.id} review={review} />)}</div>}</section>
 }
 
 function ReviewCard({ review }: { review: PlatformReview }) {

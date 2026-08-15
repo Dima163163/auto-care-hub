@@ -16,6 +16,7 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { ReviewsSkeleton } from '@/shared/ui/loading-skeleton'
 
 const ratingRows = [5, 4, 3, 2, 1] as const
 type RatingFilter = 'all' | `${typeof ratingRows[number]}`
@@ -64,7 +65,7 @@ export function OwnerAutoCareProviderReviewsPage() {
     const copy = getReviewsCopy(locale)
 
     if (reviews.isLoading) {
-        return <ReviewsShell><LoadingState label={t('common.loading')} /></ReviewsShell>
+        return <ReviewsShell><ReviewsSkeleton label={t('common.loading')} /></ReviewsShell>
     }
 
     if (reviews.error) {
@@ -164,7 +165,6 @@ function ReviewsShell({ children }: { children: ReactNode }) {
     return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl space-y-5">{children}</section></main>
 }
 
-function LoadingState({ label }: { label: string }) { return <div className="rounded-[var(--radius-panel)] border border-border bg-card p-8 text-sm font-semibold text-muted-foreground">{label}</div> }
 function EmptyState({ message, className = '' }: { message: string; className?: string }) { return <p className={`${className} rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-sm font-semibold text-muted-foreground`}>{message}</p> }
 function ErrorState({ error, copy, onRetry, t }: { error: unknown; copy: ReviewsCopy; onRetry: () => void; t: (key: 'common.failedToLoad' | 'common.retry') => string }) { return <div className="rounded-[var(--radius-panel)] border border-destructive/30 bg-card p-6"><p className="font-semibold text-destructive">{getApiErrorMessage(error, t('common.failedToLoad'))}</p><RetryButton className="mt-4" onRetry={onRetry} label={t('common.retry')} /><span className="sr-only">{copy.title}</span></div> }
 

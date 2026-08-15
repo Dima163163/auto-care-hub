@@ -6,6 +6,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
+import { CardsGridSkeleton } from '@/shared/ui/loading-skeleton'
 
 export function OwnerAutoCareProviderDetailsPage() {
     const { t } = useTranslation()
@@ -13,7 +14,7 @@ export function OwnerAutoCareProviderDetailsPage() {
     const { data: providers = [], isLoading } = useGetOwnerAutoCareProvidersQuery()
     const provider = providers.find((item) => item.id === id)
 
-    if (isLoading) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><p className="mx-auto max-w-6xl text-sm font-semibold text-muted-foreground">{t('common.loading')}</p></main>
+    if (isLoading) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><CardsGridSkeleton label={t('common.loading')} /></div></main>
     if (!provider) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><h1 className="mt-8 text-2xl font-black">{t('autocare.ownerProviderNotFound')}</h1></div></main>
 
     return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><ProviderOverview provider={provider} /></section></main>

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 
 import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { AutoCareResultsSkeleton } from '@/shared/ui/loading-skeleton'
 
 import { getAutoCareResultFilters, writeAutoCareResultFilters, type AutoCareResultFilters } from '../lib/autocareResultFilters'
 import { AutoCareMapPreview } from './AutoCareMapPreview'
@@ -164,16 +165,15 @@ export function AutoCareResultsPage() {
                     />
                 </div>
 
-                <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+                {isLoading ? <div className="mt-6"><AutoCareResultsSkeleton label={t('common.loading')} /></div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
                     <section className="flex flex-col gap-4">
                         <div className="flex shrink-0 items-center justify-between gap-3">
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
                             <span className="text-xs font-semibold text-muted-foreground">{t('autocare.compareDescription')}</span>
                         </div>
-                        {isLoading && <p className="shrink-0 rounded-[var(--radius-card)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">Loading available providers…</p>}
                         {isError && <p className="shrink-0 rounded-[var(--radius-card)] border border-status-danger-border bg-status-danger-surface p-6 text-sm font-semibold text-status-danger-foreground">Provider search is temporarily unavailable.</p>}
-                        {!isLoading && !isError && providers.length === 0 && <p className="shrink-0 rounded-[var(--radius-card)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">No providers match this search yet.</p>}
-                        {!isLoading && !isError && providers.length > 0 && (
+                        {!isError && providers.length === 0 && <p className="shrink-0 rounded-[var(--radius-card)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">No providers match this search yet.</p>}
+                        {!isError && providers.length > 0 && (
                             <ProviderResultsList
                                 key={searchParams.toString()}
                                 providers={pagedProviders}
@@ -196,7 +196,7 @@ export function AutoCareResultsPage() {
                             onRemove={toggleProvider}
                         />
                     </div>
-                </div>
+                </div>}
                 <div className="mt-6"><FairPriceBenchmarkCard serviceId={filters.serviceId || 'oil-change'} marketId={filters.marketId} /></div>
                 <div className="mt-4"><ExpertQuestionCard categorySlug={filters.serviceId || 'oil-change'} /></div>
                 <div className="mt-6"><MultiProviderRequestCard serviceDefinitionId={filters.serviceId || 'oil-change'} marketId={filters.marketId} /></div>

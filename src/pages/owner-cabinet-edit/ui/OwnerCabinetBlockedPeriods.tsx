@@ -7,6 +7,7 @@ import {
     useUpdateOwnerCabinetBlockedPeriodsMutation,
 } from '@/entities/cabinet'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 export function OwnerCabinetBlockedPeriods({ cabinetId }: { cabinetId: string }) {
@@ -137,7 +138,7 @@ export function OwnerCabinetBlockedPeriods({ cabinetId }: { cabinetId: string })
                     {t('cabinet.schedule.blockedPeriodsError')}
                 </p>
             )}
-            {isLoading && <p className="mt-3 text-sm text-muted-foreground">{t('common.loading')}</p>}
+            {isLoading && <div role="status" aria-label={t('common.loading')} className="mt-3 grid gap-2"><Skeleton className="h-14 w-full" /><Skeleton className="h-14 w-full" /></div>}
             {items.length > 0 && (
                 <div className="mt-3 space-y-2">
                     {items.map((item, index) => (
