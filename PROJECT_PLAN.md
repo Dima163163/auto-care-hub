@@ -365,6 +365,9 @@ monetization direction and are not part of the AutoCare product.
   AutoCare product. Customers always use AutoCare for free and pay the chosen
   provider directly; AutoCare does not collect repair payments or provider
   payouts.
+- [x] Disable the legacy Stripe route body parser and payment runtime by default
+  in development and every deployment profile. The owner readiness endpoint is
+  retained only as a read-only explanation that payouts are unavailable.
 - [ ] Prevent new AutoCare domain code from depending on legacy payment entities.
 - [ ] Preserve only provider-agnostic reliability patterns that are useful for
   future subscription billing: webhook verification, idempotency,

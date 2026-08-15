@@ -151,13 +151,18 @@ export async function buildApp() {
         requestStartedAt.delete(request)
     })
 
-    await app.register(rawBody, {
-        field: 'rawBody',
-        global: false,
-        encoding: false,
-        runFirst: true,
-        routes: ['/webhooks/stripe']
-    })
+    // AutoCare never processes repair payments. Keep the legacy Stripe webhook
+    // parser completely out of development/production processes unless an
+    // explicitly approved legacy payment test/runtime enables it.
+    if (env.paymentsEnabled) {
+        await app.register(rawBody, {
+            field: 'rawBody',
+            global: false,
+            encoding: false,
+            runFirst: true,
+            routes: ['/webhooks/stripe']
+        })
+    }
 
     const mailer = createMailer(env.mail, app.log)
     app.decorate('mailer', mailer)
