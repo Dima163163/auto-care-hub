@@ -223,6 +223,11 @@ export const autoCareServiceMessageParamsSchema = z.object({
     messageId: z.string().uuid(),
 })
 
+export const autoCareServiceConversationQuerySchema = z.object({
+    cursor: z.string().trim().max(2_048).optional(),
+    limit: z.coerce.number().int().positive().max(100).default(50),
+})
+
 export const serviceMessageOfferDecisionSchema = z.object({
     decision: z.enum(['accept', 'decline']),
 })

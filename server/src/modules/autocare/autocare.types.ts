@@ -550,6 +550,7 @@ export type AutoCareServiceRequestConversationResponse = {
     request: AutoCareServiceRequestResponse
     messages: AutoCareServiceMessageResponse[]
     attachments: AutoCareServiceAttachmentResponse[]
+    nextCursor: string | null
 }
 
 export type CreateAutoCareServiceMessageInput = {

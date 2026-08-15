@@ -2455,7 +2455,7 @@ export const handlers = [
         return HttpResponse.json(response)
     }),
 
-    http.get('/api/v1/service-requests/:requestId/conversation', ({ params }) => {
+    http.get('/api/v1/service-requests/:requestId/conversation', ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -2463,13 +2463,18 @@ export const handlers = [
         const allowed = Boolean(item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
         if (!allowed || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const now = new Date().toISOString()
-        const messages = mockAutoCareMessages.get(item.id) ?? []
+        const allMessages = mockAutoCareMessages.get(item.id) ?? []
+        const requestedLimit = Number(new URL(request.url).searchParams.get('limit') ?? 50)
+        const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 100) : 50
+        const requestedOffset = Number(new URL(request.url).searchParams.get('cursor') ?? 0)
+        const offset = Number.isInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0
+        const messages = allMessages.slice(offset, offset + limit)
         const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
         unread.forEach((message) => { message.readAt = now })
         if (unread.length) emitMockServiceChatEvent({ type: 'message.read', requestId: item.id, payload: { messageIds: unread.map((message) => message.id), readAt: now } })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         const attachments = (mockAutoCareAttachments.get(item.id) ?? []).map(({ contentBase64: _contentBase64, ...attachment }) => attachment)
-        return HttpResponse.json({ request: response, messages, attachments })
+        return HttpResponse.json({ request: response, messages, attachments, nextCursor: offset + messages.length < allMessages.length ? String(offset + messages.length) : null })
     }),
 
     http.post('/api/v1/service-requests/:requestId/messages', async ({ params, request }) => {

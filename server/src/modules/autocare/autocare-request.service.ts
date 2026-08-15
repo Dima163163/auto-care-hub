@@ -29,6 +29,7 @@ import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { enqueueNotification, enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
+import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import type {
     AutoCareAvailabilitySlotResponse,
     AutoCareServiceRequestResponse,
@@ -299,14 +300,32 @@ function rescheduleResponse(request: AutoCareRescheduleRequestEntity): AutoCareR
     }
 }
 
-export async function getAutoCareServiceRequestConversation(user: UserEntity, requestId: string): Promise<AutoCareServiceRequestConversationResponse> {
+export async function getAutoCareServiceRequestConversation(user: UserEntity, requestId: string, input: { cursor?: string; limit?: number } = {}): Promise<AutoCareServiceRequestConversationResponse> {
     const request = await getParticipantRequest(user, requestId)
     await ensureAutoCareRequestChatThread(request)
-    const [response, messages, attachments] = await Promise.all([
+    const limit = getCursorLimit(input.limit)
+    const cursor = input.cursor ? decodeCursor(input.cursor, ['createdAt', 'id']) : null
+    const cursorCreatedAt = cursor ? assertCursorDate(cursor, 'createdAt') : null
+    const messagesQuery = AppDataSource.getRepository(ServiceMessageEntity)
+        .createQueryBuilder('message')
+        .where('message.requestId = :requestId', { requestId })
+        .orderBy('message.createdAt', 'ASC')
+        .addOrderBy('message.id', 'ASC')
+        .take(limit + 1)
+    if (cursorCreatedAt && cursor) {
+        messagesQuery.andWhere('(message.createdAt > :cursorCreatedAt OR (message.createdAt = :cursorCreatedAt AND message.id > :cursorId))', {
+            cursorCreatedAt,
+            cursorId: cursor.id,
+        })
+    }
+    const [response, messagePage, attachments] = await Promise.all([
         hydrateRequest(request),
-        AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
+        messagesQuery.getMany(),
         AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
     ])
+    const hasMore = messagePage.length > limit
+    const messages = hasMore ? messagePage.slice(0, limit) : messagePage
+    const lastMessage = messages.at(-1)
     const unreadMessages = messages.filter((message) => message.senderId !== user.id && !message.readAt)
     if (unreadMessages.length > 0) {
         const readAt = new Date()
@@ -326,6 +345,9 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
             url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`,
             createdAt: attachment.createdAt.toISOString(),
         })),
+        nextCursor: hasMore && lastMessage
+            ? encodeCursor({ createdAt: lastMessage.createdAt.toISOString(), id: lastMessage.id })
+            : null,
     }
 }
 

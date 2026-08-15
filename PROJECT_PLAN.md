@@ -777,8 +777,9 @@ Goal: support complex services such as painting and body repair.
   and optional vehicle rather than forcing a request record.
 - [x] Limit participants to the customer and authorized provider members.
 - [~] Add durable messages with cursor pagination and idempotent sends. Durable
-  REST messages, reconnect-safe WebSocket invalidation and `Idempotency-Key`
-  replay protection are implemented; cursor pagination remains.
+  REST messages now expose bounded cursor/limit pages, reconnect-safe WebSocket
+  invalidation and `Idempotency-Key` replay protection; the workspace still
+  needs an explicit “load older” control and cursor state.
 - [~] Add secure image attachments: allowlisted formats, decode/re-encode,
   per-conversation size/count limits and orphan cleanup are implemented;
   private object storage, signed access, malware quarantine and retention
