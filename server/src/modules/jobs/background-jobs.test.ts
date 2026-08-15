@@ -39,6 +39,7 @@ function createMaintenanceResult() {
         auditCleanup: { auditLogs: 0, securityEvents: 0 },
         notificationCleanup: { notifications: 0 },
         orphanImageCleanup: { failed: 0, scanned: 0, removed: 0 },
+        trustReassessment: { scanned: 0, changed: 0 },
         phaseFailures: [],
         payments: { checked: 0, errors: 0 },
         paymentRefunds: { checked: 0, errors: 0 },

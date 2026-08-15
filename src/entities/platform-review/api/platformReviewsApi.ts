@@ -32,6 +32,7 @@ const platformReviewSchema = z.object({
 }) satisfies z.ZodType<PlatformReview>
 
 const platformReviewsSchema = z.array(platformReviewSchema)
+const platformReviewSuccessSchema = z.object({ success: z.literal(true) })
 
 export const platformReviewsApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
@@ -62,6 +63,7 @@ export const platformReviewsApi = baseApi.injectEndpoints({
         }),
         removePlatformReview: build.mutation<{ success: true }, string>({
             query: (reviewId) => ({ url: `/super-admin/platform-reviews/${reviewId}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => platformReviewSuccessSchema.parse(value),
             invalidatesTags: [{ type: 'PlatformReview', id: 'ADMIN_LIST' }, { type: 'PlatformReview', id: 'PUBLIC_LIST' }],
         }),
     }),

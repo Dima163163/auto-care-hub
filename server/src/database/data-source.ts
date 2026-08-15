@@ -39,6 +39,6 @@ export const AppDataSource = new DataSource({
     },
     ssl:
         env.nodeEnv === 'production'
-            ? { rejectUnauthorized: false } // Required for many cloud providers like Render/DigitalOcean
+            ? { rejectUnauthorized: env.database.sslRejectUnauthorized }
             : false,
     })

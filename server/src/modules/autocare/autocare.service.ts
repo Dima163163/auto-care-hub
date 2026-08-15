@@ -14,8 +14,11 @@ import {
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipRole,
 } from '../../entities/index.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
+import { ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
@@ -23,8 +26,10 @@ import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cu
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { saveAutoCareProviderMedia as persistAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
+import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
+import { getRecommendedScore } from './autocare-ranking.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -43,6 +48,38 @@ function getDistanceKm(latitude: number | null, longitude: number | null, market
     const latDistance = (latitude - marketLatitude) * 111
     const lngDistance = (longitude - marketLongitude) * 111 * Math.cos((marketLatitude * Math.PI) / 180)
     return Math.sqrt((latDistance ** 2) + (lngDistance ** 2))
+}
+
+type DiscoverySortMode = NonNullable<AutoCareDiscoveryQuery['sort']>
+type DiscoverySortValues = { primary: number; secondary: number; providerId: string; locationId: string }
+
+function discoverySortValues(row: { provider: AutomotiveProviderEntity; location: AutomotiveServiceLocationEntity; offer: AutomotiveServiceOfferingEntity; distanceKm: number }, sort: DiscoverySortMode): DiscoverySortValues {
+    if (sort === 'price_asc') return { primary: row.offer.priceFromMinor, secondary: Number(row.provider.rating), providerId: row.provider.id, locationId: row.location.id }
+    if (sort === 'rating_desc') return { primary: Number(row.provider.rating), secondary: row.offer.priceFromMinor, providerId: row.provider.id, locationId: row.location.id }
+    if (sort === 'distance_asc') return { primary: row.distanceKm, secondary: Number(row.provider.rating), providerId: row.provider.id, locationId: row.location.id }
+    return {
+        primary: getRecommendedScore({
+            rating: Number(row.provider.rating),
+            trustScore: Number(row.provider.trustScore),
+            reviewCount: Number(row.provider.reviewCount),
+            verified: row.provider.verified,
+            distanceKm: row.distanceKm,
+        }),
+        secondary: row.offer.priceFromMinor,
+        providerId: row.provider.id,
+        locationId: row.location.id,
+    }
+}
+
+function compareDiscoveryValues(left: DiscoverySortValues, right: DiscoverySortValues, sort: DiscoverySortMode) {
+    const primary = sort === 'rating_desc' || sort === 'recommended'
+        ? right.primary - left.primary
+        : left.primary - right.primary
+    if (primary !== 0) return primary
+    const secondary = sort === 'rating_desc' || sort === 'recommended'
+        ? left.secondary - right.secondary
+        : right.secondary - left.secondary
+    return secondary || left.providerId.localeCompare(right.providerId) || left.locationId.localeCompare(right.locationId)
 }
 
 function isReviewEditable(review: AutomotiveReviewEntity, now = new Date()) {
@@ -166,7 +203,17 @@ export async function getFeaturedAutoCareReviews(limit: number) {
 
 export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {
     const limit = getCursorLimit(input.limit)
-    const cursor = input.cursor ? decodeCursor(input.cursor, ['providerId']) : null
+    const sort = input.sort ?? 'recommended'
+    const cursor = input.cursor ? decodeCursor(input.cursor, ['sort', 'primary', 'secondary', 'providerId', 'locationId']) : null
+    if (cursor && cursor.sort !== sort) {
+        throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Cursor does not match the selected sort.' })
+    }
+    const cursorValues: DiscoverySortValues | null = cursor
+        ? { primary: Number(cursor.primary), secondary: Number(cursor.secondary), providerId: cursor.providerId ?? '', locationId: cursor.locationId ?? '' }
+        : null
+    if (cursorValues && (!cursorValues.providerId || !cursorValues.locationId || !Number.isFinite(cursorValues.primary) || !Number.isFinite(cursorValues.secondary))) {
+        throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Cursor is invalid or expired.' })
+    }
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
@@ -200,16 +247,19 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
         return matchesProvider && distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition }] : []
     })
-    const sorted = rows.sort((left, right) => {
-        if (input.sort === 'price_asc') return left.offer.priceFromMinor - right.offer.priceFromMinor
-        if (input.sort === 'rating_desc') return Number(right.provider.rating) - Number(left.provider.rating)
-        if (input.sort === 'distance_asc') return left.distanceKm - right.distanceKm
-        return (Number(right.provider.rating) - Number(left.provider.rating)) || (left.offer.priceFromMinor - right.offer.priceFromMinor)
-    }).filter((row) => !cursor || row.provider.id > (cursor.providerId ?? ''))
+    const sorted = rows.sort((left, right) => compareDiscoveryValues(discoverySortValues(left, sort), discoverySortValues(right, sort), sort))
+        .filter((row) => !cursorValues || compareDiscoveryValues(discoverySortValues(row, sort), cursorValues, sort) > 0)
     const page = sorted.slice(0, limit + 1)
     const hasMore = page.length > limit
     const items = page.slice(0, limit).map((row) => toDiscoveryResponse(row))
-    return { items, nextCursor: hasMore && items.at(-1) ? encodeCursor({ providerId: items.at(-1)!.provider.id }) : null }
+    const lastRow = page.at(limit - 1)
+    const lastValues = lastRow ? discoverySortValues(lastRow, sort) : null
+    return {
+        items,
+        nextCursor: hasMore && lastValues
+            ? encodeCursor({ sort, primary: String(lastValues.primary), secondary: String(lastValues.secondary), providerId: lastValues.providerId, locationId: lastValues.locationId })
+            : null,
+    }
 }
 
 export async function getAutoCareProviderProfile(providerId: string): Promise<AutoCareProviderProfileResponse> {
@@ -236,8 +286,8 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
 
 export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number }) {
     assertOwner(owner)
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: owner.id })
-    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    if (!provider || !(await canManageProvider(owner.id, providerId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
 
     const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findBy({ providerId: provider.id })
     if (locations.length === 0) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service location not found.' })
@@ -258,7 +308,10 @@ export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: st
 
 export async function getOwnerAutoCareProviders(owner: UserEntity) {
     assertOwner(owner)
-    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { ownerId: owner.id }, order: { createdAt: 'DESC' } })
+    const providerIds = await getManagedProviderIds(owner.id)
+    const providers = providerIds.length === 0
+        ? []
+        : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) }, order: { createdAt: 'DESC' } })
     if (providers.length === 0) return []
 
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
@@ -292,8 +345,8 @@ export async function getOwnerAutoCareProviders(owner: UserEntity) {
 
 export async function getOwnerAutoCareProviderReviews(owner: UserEntity, providerId: string): Promise<OwnerAutoCareProviderReviewsResponse> {
     assertOwner(owner)
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: owner.id })
-    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    if (!provider || !(await canManageProvider(owner.id, providerId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
 
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
         where: { providerId: provider.id, status: AutomotiveReviewStatus.Approved },
@@ -361,8 +414,8 @@ function makeReviewPromoCode() {
 
 export async function createOwnerAutoCareReviewPromo(owner: UserEntity, providerId: string, reviewId: string, input: CreateAutoCareReviewPromoInput): Promise<AutoCareReviewPromoResponse> {
     assertOwner(owner)
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: owner.id })
-    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    if (!provider || !(await canManageProvider(owner.id, providerId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     const review = await AppDataSource.getRepository(AutomotiveReviewEntity).findOneBy({ id: reviewId, providerId, status: AutomotiveReviewStatus.Approved })
     if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
     if (!review.clientId) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review is not linked to a client account yet.' })
@@ -428,6 +481,50 @@ export async function getMyAutoCareReviews(client: UserEntity) {
     return reviews.map((review) => toAutoCareReviewResponse(review, { exposeActions: true }))
 }
 
+/**
+ * Create exactly one verified review for a confirmed AutoCare request.
+ * The request row is locked so two browser retries cannot create duplicate reviews.
+ */
+export async function createAutoCareReview(client: UserEntity, input: CreateAutoCareReviewInput) {
+    assertClient(client)
+    const review = await AppDataSource.transaction(async (manager) => {
+        const requestRepository = manager.getRepository(ServiceRequestEntity)
+        const request = await requestRepository.findOne({
+            where: { id: input.requestId, clientId: client.id },
+            lock: { mode: 'pessimistic_write' },
+        })
+        if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service request not found.' })
+        const confirmed = request.clientConfirmedAt && request.providerConfirmedAt
+        if (!confirmed || (request.status !== ServiceRequestStatus.Accepted && request.status !== ServiceRequestStatus.Closed)) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A completed and confirmed visit is required before leaving a review.' })
+        }
+
+        const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
+        const existing = await reviewRepository.findOneBy({ serviceRequestId: request.id })
+        if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This service visit already has a review.' })
+
+        const vehicle = request.vehicleSnapshot ?? {}
+        const vehicleLabel = [vehicle.make, vehicle.model, vehicle.year]
+            .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+            .join(' ') || 'Автомобиль'
+        return reviewRepository.save(reviewRepository.create({
+            providerId: request.providerId,
+            authorName: client.name,
+            vehicleLabel,
+            rating: input.rating,
+            text: input.text,
+            avatarUrl: client.avatarUrl,
+            photoUrls: [],
+            clientId: client.id,
+            serviceRequestId: request.id,
+            verifiedVisit: true,
+            serviceSlug: request.offeringSnapshot?.serviceSlug ?? null,
+            status: AutomotiveReviewStatus.Pending,
+        }))
+    })
+    return toAutoCareReviewResponse(review, { exposeActions: true })
+}
+
 export async function updateClientAutoCareReview(client: UserEntity, reviewId: string, input: UpdateAutoCareReviewInput) {
     assertClient(client)
     const repository = AppDataSource.getRepository(AutomotiveReviewEntity)
@@ -480,8 +577,17 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             zoneId: zone?.id ?? null,
             address: input.address,
             hours: input.hours,
+            timezone: input.timezone ?? market.timezone,
+            weeklySchedule: input.weeklySchedule ?? undefined,
+            blackoutDates: input.blackoutDates ?? [],
             latitude: null,
             longitude: null,
+        }))
+        await manager.getRepository(AutomotiveProviderMembershipEntity).save(manager.getRepository(AutomotiveProviderMembershipEntity).create({
+            providerId: provider.id,
+            userId: owner.id,
+            locationId: null,
+            role: AutomotiveProviderMembershipRole.Owner,
         }))
 
         return toProviderResponse(provider, location)

@@ -238,8 +238,10 @@ async function checkRateLimitRedis(
         if (incrErr) throw incrErr
         if (ttlErr) throw ttlErr
 
-        // Set expiry on first request in window
-        if (count === 1) {
+        // Set expiry on the first request and repair buckets whose TTL was
+        // lost after a Redis failover/restart. Without this guard a bucket
+        // can remain immortal and permanently block a user.
+        if (count === 1 || pttl < 0) {
             await redis.pexpire(bucketKey, options.windowMs)
         }
 

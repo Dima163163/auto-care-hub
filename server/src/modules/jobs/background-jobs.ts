@@ -103,6 +103,7 @@ export function startBackgroundJobs(logger: FastifyBaseLogger, mailer: Mailer) {
                 result.auditCleanup.auditLogs > 0 ||
                 result.auditCleanup.securityEvents > 0 ||
                 result.orphanImageCleanup.removed > 0 ||
+                result.trustReassessment.changed > 0 ||
                 result.payments.checked > 0 ||
                 result.payments.errors > 0 ||
                 result.paymentRefunds.checked > 0 ||

@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { env } from '../../config/env.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { selectOrphanAutoCareMedia } from './orphan-media-policy.js'
 
 const MAX_LOGO_BYTES = 1024 * 1024
 const logoRoot = path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'logos')
@@ -66,4 +67,35 @@ export async function readAutoCareProviderLogo(fileName: string) {
         }
         throw error
     }
+}
+
+export async function cleanupOrphanedAutoCareProviderLogos(input: {
+    referencedUrls: readonly string[]
+    now?: Date
+    gracePeriodMs: number
+}) {
+    let names: string[]
+    try {
+        names = await readdir(logoRoot)
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { scanned: 0, removed: 0, failed: 0 }
+        throw error
+    }
+    const referenced = new Set(input.referencedUrls
+        .map(getAutoCareProviderLogoFileName)
+        .filter((value): value is string => Boolean(value)))
+    const entries = (await Promise.allSettled(names
+        .filter((fileName) => logoPattern.test(fileName))
+        .map(async (fileName) => ({ fileName, lastModifiedAt: (await stat(path.join(logoRoot, fileName))).mtimeMs }))))
+        .flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+    const candidates = selectOrphanAutoCareMedia({ entries, referencedFileNames: referenced, now: (input.now ?? new Date()).getTime(), gracePeriodMs: input.gracePeriodMs })
+    let failed = 0
+    for (const candidate of candidates) {
+        try {
+            await unlink(path.join(logoRoot, candidate.fileName))
+        } catch {
+            failed += 1
+        }
+    }
+    return { scanned: candidates.length, removed: candidates.length - failed, failed }
 }

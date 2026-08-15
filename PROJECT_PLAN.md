@@ -87,9 +87,10 @@ ready, while the remaining production workflow still needs its dedicated slice
   included work, warranty, and availability.
 - [~] The marketplace needs a transparent trust layer: reliable providers can
   earn a quality badge and additional organic visibility, while clients get
-  enough verified signals to avoid repeatedly poor or dishonest services. The
-  product copy, badge fields and help guidance exist; scoring, moderation
-  evidence, ranking boost and suspension rules are still pending.
+  enough verified signals to avoid repeatedly poor or dishonest services. A
+  deterministic score policy, persisted provider score/badge fields and a
+  bounded worker reassessment pass now exist; versioned snapshots, evidence
+  audit history, anomaly detection and ranking rollout remain pending.
 - [x] Providers can communicate with customers about a specific service.
 - [x] Customers can attach photos of damage or the vehicle to an inquiry.
 - [x] Providers can respond with a detailed estimate/quote.
@@ -173,7 +174,7 @@ irreversible product choices.
 
 ## 4. Current repository audit
 
-### 4.0 Implementation snapshot — 2026-08-14
+### 4.0 Implementation snapshot — 2026-08-15
 
 The repository is no longer at the planning-only stage. The following is the
 current, reviewed implementation state and is the source for the next slices of
@@ -185,13 +186,13 @@ work.
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. | Finish backend parity for every filter (availability, price type, inclusion, bonus, warranty, sort and radius), persisted ranking and one-query map/list loading. |
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, reviews and working date picker/modal gallery are implemented. | Connect real favorites, availability, service inquiries and provider-owned gallery/review media; remove fixed contact/vehicle demo values. |
-| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications and API-backed availability slots. | Add timezone-aware schedules, reminder delivery and overlap constraints before pilot. |
+| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications, transactional repair events, timezone-aware schedules and locked overlap checks. | Add reminder delivery and production resource-capacity scheduling before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
-| Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. | Add provider memberships/locations, offer editing, calendar, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
-| Backend | Fastify/TypeScript + TypeORM/PostgreSQL now covers every route used by the MSW handlers (150/150), including the previously missing `GET /cabinets/all`; OpenAPI and a parity check are kept in sync. Markets, canonical localized location zones for Moscow, Samara, Kaliningrad, Saint Petersburg and Transnistria, service definitions, discovery, provider profile/offers, request lifecycle, unified chat threads, conversation messages, image attachments, quote, idempotent request and availability routes are implemented with migrations and mock handlers. The mock and real zone APIs accept both market ids and city codes; the homepage requests four zones while the map can request the full hierarchy. Request/chat events enqueue notifications through the outbox. Local verification supports MSW mock mode or Docker PostgreSQL/Redis with idempotent demo and AutoCare seeds. | Add timezone-aware schedules, reminder delivery, PostGIS/geospatial indexes, provider memberships, trust/ranking evidence and deeper authorization/integration tests. Python rewrite is explicitly deferred until a later approved phase. |
+| Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. Provider memberships now support owner/manager/staff scope with optional branch assignment. | Add membership-management UI, offer editing, calendar/reminders, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
+| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 168 MSW routes used by the browser and 204 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers, request lifecycle, unified chat threads, image attachments, immutable quote history, verified-review submission, idempotent requests and availability routes are implemented with migrations and mock handlers. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. Legacy Stripe/payment code is quarantined behind `PAYMENTS_ENABLED`, disabled in every deployment manifest, removed from the server CLI/example configuration, and never queried by the owner readiness flow while disabled. | Add PostGIS/geospatial indexes, durable object storage/quarantine, versioned trust snapshots and ranking rollout, booking conversion and database-backed authorization/concurrency integration tests. Python rewrite is explicitly deferred until a later approved phase. |
 | Deployment configuration | Typed frontend and backend deployment profiles are now fail-closed. `GET /api/v1/deployment-capabilities` keeps mock/real capability negotiation in sync; OAuth buttons, profile linking and server OAuth routes use the deployment allow-list. | Add deployment smoke tests for every supported profile and extend the capability matrix with legal links, currencies and market-specific features. |
-| Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
+| Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. Dead legacy cabinet/owner/admin lazy imports were removed from the route manifest, reducing the production bundle without deleting compatibility source. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
 The remaining public pages use the AutoCare visual shell, but Blog, Partners,
 Contacts, Rules and Privacy still use a shared generic information composition;
@@ -251,7 +252,7 @@ request contract.
 ### 4.0.2 Backend contract parity — 2026-08-14
 
 - [x] Inventory all MSW handlers and compare method/path signatures with the
-  Fastify source (150 mock routes, 187 real routes including operational and
+  Fastify source (168 mock routes, 204 real routes including operational and
   WebSocket routes).
 - [x] Implement the only missing mock route, `GET /cabinets/all`, with the
   same active-only public behavior in MSW and PostgreSQL-backed mode.
@@ -261,13 +262,60 @@ request contract.
 - [x] Document mock mode, Docker PostgreSQL/Redis mode, idempotent demo and
   AutoCare seeds, migration and real-mode E2E verification in
   `docs/backend-api-parity.md`.
-- [ ] Run the Docker-backed migration/seed/E2E flow on a host with Docker
-  Desktop available. The current development environment reports an
-  unavailable Docker daemon; no application code is blocked by that local
-  prerequisite.
+- [x] Run the Docker-backed migration/seed/E2E flow with PostgreSQL and Redis;
+  migration smoke and the integration suite now pass locally.
 - [ ] Add response-schema and authorization integration coverage for the
-  remaining high-risk workflows (provider memberships, trust ranking,
+  remaining high-risk workflows (membership administration, trust ranking,
   schedules/reminders and subscription administration).
+
+### 4.0.3 Security and reliability hardening — 2026-08-15
+
+The audit was run against the current browser, Fastify, migration and
+deployment contracts. These items are now part of the delivery gate rather
+than informal follow-up notes.
+
+- [x] Scope owner client lists and broadcast reads/offers to an owned provider
+  or eligible location; add negative ownership tests.
+- [x] Make password reset/setup and email-verification tokens single-use under
+  a database lock; reject revoked/expired persisted sessions during JWT auth.
+- [x] Guard account deletion by the retention period and anonymize identity,
+  private AutoCare payloads, sessions, media references and free text in one
+  transaction while preserving required financial references.
+- [x] Validate uploaded attachment bytes and image signatures; apply scoped
+  mutation/upload limits and WebSocket Origin, subprotocol, frame-size and
+  event-rate checks.
+- [x] Make quote, service-offer and two-sided confirmation transitions use a
+  pessimistic request lock, explicit state allow-lists, expiry checks and
+  idempotent replay behavior.
+- [x] Add additive chat/review foreign keys and parent checks as `NOT VALID`
+  constraints so existing data can be repaired before validation.
+- [x] Separate Render API and worker runtime declarations and fail closed when
+  production Redis or PostgreSQL TLS verification is not configured.
+- [x] Add frontend route/auth boundaries, mock attachment reads, market/zone
+  filtering, Leaflet marker escaping, API response runtime boundaries and
+  identity-cache clearing on refresh failure.
+- [x] Add an integrity-check command for the expand-phase aggregate
+  invariants; it reports provider/location/offering/request/claim mismatches
+  and can validate the constraints after repair.
+- [x] Apply migrations `178594` and `178595` (aggregate invariants and quote
+  history) in Docker, repair/validate constraints, and run the new checks.
+- [ ] Add those AutoCare-specific database-backed authorization, concurrency,
+  migration-validation and anonymization scenarios to CI; production
+  readiness still needs deployment secrets and external evidence.
+- [ ] Replace in-process chat fan-out with the Redis pub/sub bridge validation
+  and reconnect/backfill tests; the bridge is present, but multi-replica
+  behavior still needs a two-process smoke run.
+- [x] Add provider memberships, timezone-aware schedules, blackout dates and
+  transactional slot-overlap checks; owner authorization accepts provider-wide
+  or branch-scoped active memberships while legacy ownerId remains compatible.
+- [x] Add expand-phase composite provider/location/offering/request/claim
+  invariants as `NOT VALID` foreign keys; repair and `VALIDATE CONSTRAINT`
+  remain a release-gated data migration.
+- [x] Composite provider/location invariants and immutable quote history now
+  have expand-phase migrations, Docker validation, zero-mismatch checks and
+  release commands; concurrent DB authorization tests remain.
+- [ ] Complete durable object storage/quarantine, resource-capacity
+  reservations, PostGIS/keyset discovery and trust-score policy before pilot.
 
 ### 4.1 Reuse as platform foundation
 
@@ -576,12 +624,12 @@ Goal: build the new automotive domain beside reusable platform services.
   with request status and two-sided confirmation timestamps.
 - [~] Extend the new TypeORM domain with:
   - service categories and definitions;
-  - providers, locations and memberships;
+  - [x] providers, locations and provider memberships;
   - [x] client-owned vehicle garage with dependent make/model selection and VIN metadata;
   - [x] versioned public vehicle catalog shared by mocks and the Fastify API, with 30+ makes, 100+ models, production ranges and fuel/engine metadata; native select arrows are globally disabled and replaced with one custom indicator;
   - provider vehicle compatibility rules;
   - service offerings and vehicle rules;
-  - schedules and location exceptions.
+  - [x] timezone-aware weekly schedules, blackout dates and location exceptions.
 - [~] Add PostGIS or an approved geospatial alternative with proper indexes;
   the current migration stores normalized coordinates and zone radii, while
   the production cutover must add geography columns/GiST indexes and SQL-side
@@ -605,23 +653,32 @@ Goal: deliver the core marketplace value in the browser.
 - [x] Use the versioned vehicle catalog for profile and results selectors instead of the former ten-brand fixture. Keep the normalized catalog in the backend and expose it through `GET /api/v1/vehicle-catalog`; schedule a production importer/refresh from the official vPIC dataset before launch.
 - [~] Implement radius, category, price type, price, rating, distance,
   availability, warranty, bonus and inclusion filters. The browser mock and
-  Fastify API now share the full filter contract; availability is wired in the
-  mock and remains pending real schedule/slot persistence on the backend.
+  Fastify API share the full filter contract; availability now reads persisted
+  timezone-aware schedules and locked slot reservations, while reminders and
+  resource-capacity constraints remain pending.
 - [x] Add vehicle-brand-aware discovery: providers declare their primary brand
   specializations or mark themselves as multibrand; selecting a brand returns
   matching specialists plus every multibrand provider in both mock and Fastify
   discovery responses.
 - [x] Ensure list/map results share one server query and stable pagination.
+- [x] Encode discovery cursors with the selected sort, complete numeric sort
+  tuple and provider/location tie-breakers so changing sort cannot skip or
+  duplicate results between pages.
 - [x] Keep the results page reliable with ordinary provider pagination (8 cards
   per page) so result cards stay in normal document flow, the map is bounded
   to the current page, and the shared footer remains reachable.
-- [ ] Add explicit labels for `FIXED`, `FROM`, `RANGE` and `QUOTE_REQUIRED`.
-- [ ] Define deterministic recommended-sort inputs and prevent paid plan status
-  from silently changing organic ranking.
-- [ ] Define the provider trust score and “Надёжный сервис” badge policy before
-  production ranking is enabled. The score must be explainable, versioned and
-  recalculated from completed platform interactions rather than manual awards.
-- [ ] Implement comparison for equivalent `ServiceDefinition` results only.
+- [x] Add explicit labels for `FIXED`, `FROM`, `RANGE` and `QUOTE_REQUIRED` in result cards, including range totals and quote-required copy.
+- [x] Define deterministic recommended-sort inputs and prevent paid plan status
+  from silently changing organic ranking. The score is explicit, reproducible,
+  auditable and uses only rating, trust, review confidence, verification and
+  distance signals.
+- [~] Define the provider trust score and “Надёжный сервис” badge policy before
+  production ranking is enabled. The explainable deterministic policy and
+  persisted score/badge recalculation are implemented; versioned snapshots,
+  completed-interaction evidence and ranking activation remain gated.
+- [x] Implement comparison for equivalent `ServiceDefinition` results only. The
+  results query scopes every card to one service definition and changing that
+  definition clears the comparison selection and map focus.
 - [~] Implement provider/location profiles, galleries, hours, contacts,
   offerings, amenities, verified reviews and policies. The data API and base
   screen exist; current work is matching the approved profile composition and
@@ -643,9 +700,10 @@ must be conservative: no provider receives a quality badge or ranking boost
 because of a subscription, promo code, payment, self-reported review count or
 an admin override without an auditable reason.
 
-- [ ] Define a versioned `ProviderTrustSnapshot` for each service location with
+- [~] Define a versioned `ProviderTrustSnapshot` for each service location with
   `score`, `badge`, `computed_at`, `valid_until`, input counters and reason
-  codes. Keep an audit trail for every recalculation and badge suspension.
+  codes. Provider score/badge fields and worker recalculation now exist; the
+  immutable snapshot/audit trail and location-level model are still pending.
 - [ ] Use only attributable signals: completed/confirmed requests, one review
   per eligible completed visit, Bayesian/sample-size-adjusted rating, recent
   rating trend, complaint/dispute and refund rate, cancellation/no-show rate,
@@ -683,9 +741,12 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
 - [ ] Update customer bookings dashboard and provider calendar/work queue.
 - [~] Connect AutoCare request notifications to the transactional outbox; booking
   reminders and localized service-request email/push templates remain open.
-- [ ] Implement verified review eligibility, rating aggregation and the trust
+- [~] Implement verified review eligibility, rating aggregation and the trust
   snapshot inputs described in the “Trust score, quality badges and organic
-  visibility” policy.
+  visibility” policy. Confirmed AutoCare requests can now create one pending
+  verified review through `POST /v1/autocare-reviews`; persisted score
+  reassessment is live, while trust snapshots and completed-visit evidence
+  remain.
 - [ ] Add concurrency, timezone, authorization and E2E tests.
 
 Exit gate:
@@ -708,11 +769,14 @@ Goal: support complex services such as painting and body repair.
   REST messages and reconnect-safe WebSocket invalidation are implemented;
   cursor pagination and message idempotency remain.
 - [~] Add secure image attachments: allowlisted formats, decode/re-encode,
-  dimensions/size/count limits, private storage, signed access and retention.
+  per-conversation size/count limits and orphan cleanup are implemented;
+  private object storage, signed access, malware quarantine and retention
+  backfill remain.
 - [x] Add read markers, today/yesterday timestamps and notification events;
   delivery/read/attachment events are broadcast to the active chat channel.
 - [~] Add quote versions with items, totals/ranges, currency, expiry, notes,
-  inclusions, exclusions and warranty.
+  inclusions, exclusions and warranty. Append-only quote history is now stored;
+  API history exposure and booking conversion remain.
 - [x] Add owner-to-customer chat offers for percentage coupons and alternative
   service options, with customer accept/decline decisions and immutable message
   history.

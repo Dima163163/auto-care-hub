@@ -63,10 +63,15 @@ export function getMvpReadinessChecks(environment = process.env, renderSource = 
         ? check('SMTP configuration', 'pass', 'SMTP mode and required non-placeholder settings are present')
         : check('SMTP configuration', 'blocked', `missing or placeholder values: ${missingSmtp.join(', ')}`))
 
-    const stripeIssues = getStripeConfigurationIssues(environment)
-    checks.push(stripeIssues.length === 0
-        ? check('Stripe configuration', 'pass', 'secret and webhook settings are present without printing their values')
-        : check('Stripe configuration', 'blocked', `missing, placeholder, or invalid production values: ${stripeIssues.join(', ')}`))
+    const paymentsEnabled = String(environment.PAYMENTS_ENABLED ?? 'false').trim().toLowerCase() === 'true'
+    if (paymentsEnabled) {
+        const stripeIssues = getStripeConfigurationIssues(environment)
+        checks.push(stripeIssues.length === 0
+            ? check('Stripe configuration', 'pass', 'secret and webhook settings are present without printing their values')
+            : check('Stripe configuration', 'blocked', `missing, placeholder, or invalid production values: ${stripeIssues.join(', ')}`))
+    } else {
+        checks.push(check('Stripe configuration', 'pass', 'legacy payments are disabled by PAYMENTS_ENABLED=false'))
+    }
 
     const provider = String(environment.CABINET_IMAGE_STORAGE_PROVIDER ?? 'filesystem').trim()
     if (provider === 's3') {
@@ -83,7 +88,9 @@ export function getMvpReadinessChecks(environment = process.env, renderSource = 
         ? check('Bootstrap super-admin', 'pass', 'bootstrap identity is explicitly configured')
         : check('Bootstrap super-admin', 'blocked', `missing or placeholder values: ${bootstrapMissing.join(', ')}`))
 
-    checks.push(check('External launch evidence', 'manual', 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, Stripe recovery, and privacy approval'))
+    checks.push(check('External launch evidence', 'manual', paymentsEnabled
+        ? 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, Stripe recovery, and privacy approval'
+        : 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, and privacy approval'))
 
     return checks
 }

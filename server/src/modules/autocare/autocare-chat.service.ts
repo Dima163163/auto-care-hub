@@ -1,4 +1,5 @@
-import { In, IsNull } from 'typeorm'
+import { In, IsNull, type EntityManager } from 'typeorm'
+import { createHash } from 'node:crypto'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -26,6 +27,8 @@ import type {
     CreateAutoCareChatMessageInput,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
+import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment } from './attachment-content.js'
+import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
 
 function fail(statusCode: number, message: string): never {
     const code = statusCode === 404 ? ERROR_CODES.NotFound : statusCode === 409 ? ERROR_CODES.Conflict : statusCode === 400 ? ERROR_CODES.BadRequest : ERROR_CODES.Forbidden
@@ -67,8 +70,8 @@ async function providerForThread(thread: AutoCareChatThreadEntity) {
         : null
 }
 
-export async function ensureAutoCareRequestChatThread(request: ServiceRequestEntity) {
-    const repository = AppDataSource.getRepository(AutoCareChatThreadEntity)
+export async function ensureAutoCareRequestChatThread(request: ServiceRequestEntity, manager?: EntityManager) {
+    const repository = manager?.getRepository(AutoCareChatThreadEntity) ?? AppDataSource.getRepository(AutoCareChatThreadEntity)
     const existing = await repository.findOneBy({ requestId: request.id, type: AutoCareChatThreadType.ServiceRequest })
     if (existing) return existing
     return repository.save(repository.create({
@@ -84,12 +87,15 @@ export async function ensureAutoCareRequestChatThread(request: ServiceRequestEnt
 }
 
 async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEntity) {
-    if (user.role === UserRole.SuperAdmin) return
-    if ((user.role === UserRole.Admin) && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return
+    // Support/admin escalation threads are the only private conversations that
+    // may be opened by platform staff. A service-request or provider-inquiry
+    // thread must remain visible only to its participants, even for a
+    // super-admin; staff access is granted through an explicit support thread.
+    if ((user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return
     if (thread.clientId === user.id) return
     if (user.role === UserRole.Owner && thread.providerId) {
         const provider = await providerForThread(thread)
-        if (provider?.ownerId === user.id) return
+        if (provider && await canManageProvider(user.id, provider.id)) return
     }
     fail(403, 'You do not have access to this chat.')
 }
@@ -126,8 +132,7 @@ export async function getMyAutoCareChats(user: UserEntity) {
     if (user.role === UserRole.Client) {
         threads = await repository.find({ where: { clientId: user.id }, order: { updatedAt: 'DESC' } })
     } else if (user.role === UserRole.Owner) {
-        const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { ownerId: user.id }, select: { id: true } })
-        const providerIds = providers.map((provider) => provider.id)
+        const providerIds = await getManagedProviderIds(user.id)
         threads = providerIds.length
             ? await repository.find({ where: [{ providerId: In(providerIds) }, { createdById: user.id }], order: { updatedAt: 'DESC' } })
             : await repository.find({ where: { createdById: user.id }, order: { updatedAt: 'DESC' } })
@@ -153,8 +158,8 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
         assertRole(user, [UserRole.Client, UserRole.Owner], 'Only clients and service owners can open a support chat.')
         if (input.providerId) {
             assertRole(user, [UserRole.Owner], 'Only service owners can link support to a service.')
-            const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId, ownerId: user.id })
-            if (!provider) fail(403, 'You do not manage this service.')
+            const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId })
+            if (!provider || !(await canManageProvider(user.id, input.providerId))) fail(403, 'You do not manage this service.')
         }
         const clientId = user.role === UserRole.Client ? user.id : null
         const existing = await repository.findOne({
@@ -214,9 +219,23 @@ export async function markAutoCareChatRead(user: UserEntity, chatId: string) {
 
 export async function createAutoCareChatAttachment(user: UserEntity, chatId: string, input: { fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }) {
     const thread = await getThread(user, chatId)
-    const content = Buffer.from(input.contentBase64, 'base64')
-    if (content.length !== input.size) fail(409, 'Attachment content does not match its declared size.')
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).save(AppDataSource.getRepository(ServiceAttachmentEntity).create({ threadId: thread.id, requestId: thread.requestId, uploadedById: user.id, objectKey: `autocare-chats/${thread.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, '-')}`, contentType: input.contentType, bytes: content.length, content, checksum: null, status: ServiceAttachmentStatus.Ready }))
+    const content = decodeAutoCareAttachment(input)
+    const attachment = await AppDataSource.transaction(async (manager) => {
+        const lockedThread = await manager.getRepository(AutoCareChatThreadEntity).findOne({ where: { id: thread.id }, lock: { mode: 'pessimistic_write' } })
+        if (!lockedThread) fail(404, 'Chat not found.')
+        const quota = await manager.getRepository(ServiceAttachmentEntity)
+            .createQueryBuilder('attachment')
+            .select('COUNT(DISTINCT attachment.id)', 'count')
+            .addSelect('COALESCE(SUM(attachment.bytes), 0)', 'bytes')
+            .where('attachment.threadId = :threadId', { threadId: lockedThread.id })
+            .getRawOne<{ count: string; bytes: string }>()
+        assertAutoCareAttachmentQuota({
+            existingCount: Number(quota?.count ?? 0),
+            existingBytes: Number(quota?.bytes ?? 0),
+            incomingBytes: content.length,
+        })
+        return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey: `autocare-chats/${lockedThread.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, '-')}`, contentType: input.contentType, bytes: content.length, content, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
+    })
     const result = attachmentResponse(attachment, thread.id)
     broadcastServiceChat(thread.id, { type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: result })
     return result
@@ -232,9 +251,9 @@ export async function getAutoCareChatAttachment(user: UserEntity, chatId: string
 export async function getAutoCareChatThreadForRequest(user: UserEntity, requestId: string) {
     const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: requestId })
     if (!request) fail(404, 'Service request not found.')
-    if (request.clientId !== user.id && user.role !== UserRole.Admin && user.role !== UserRole.SuperAdmin) {
+    if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (user.role !== UserRole.Owner || provider?.ownerId !== user.id) fail(403, 'You do not have access to this request chat.')
+        if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, request.locationId))) fail(403, 'You do not have access to this request chat.')
     }
     const thread = await ensureAutoCareRequestChatThread(request)
     return toThreadResponse(user, thread)

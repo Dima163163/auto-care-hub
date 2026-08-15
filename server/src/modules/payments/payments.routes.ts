@@ -65,6 +65,19 @@ const bookingPaymentParamsSchema = z.object({
 })
 
 export async function paymentsRoutes(app: FastifyInstance) {
+    app.addHook('onRequest', async (request) => {
+        if (!env.paymentsEnabled) {
+            // Keep the owner readiness read model available so the cabinet can
+            // explain why payouts are unavailable during the free launch phase.
+            if (request.url === '/owner/readiness') return
+            throw new AppError({
+                statusCode: 404,
+                code: ERROR_CODES.NotFound,
+                message: 'Payment features are disabled for this deployment.',
+            })
+        }
+    })
+
     app.get('/owner/readiness', async (request) => {
         const user = await requireAuth(request)
 

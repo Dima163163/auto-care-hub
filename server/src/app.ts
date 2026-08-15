@@ -49,6 +49,8 @@ import { ERROR_CODES } from './shared/errors/error-codes.js'
 import { getLocalizedErrorMessage } from './shared/i18n/error-message.js'
 import { getRequestLocale } from './shared/i18n/request-locale.js'
 import { recordSecurityActivitySafely } from './modules/auth/security-event-stream.js'
+import { assertTrustedRequestOrigin } from './shared/security/csrf-origin.js'
+import { assertValidCsrfToken } from './shared/security/csrf-token.js'
 import {
     SecurityEventAuthOutcome,
     SecurityEventRateLimitResult,
@@ -72,6 +74,7 @@ export async function buildApp() {
                 paths: [
                     'req.headers.authorization',
                     'req.headers.cookie',
+                    'req.headers.sec-websocket-protocol',
                     'res.headers.set-cookie',
                 ],
             },
@@ -192,6 +195,27 @@ export async function buildApp() {
     }
 
     await app.register(cookie)
+    app.addHook('preHandler', async (request) => {
+        if (env.nodeEnv !== 'production') return
+        if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return
+        if (request.url.startsWith('/webhooks/') || request.url.startsWith('/health')) return
+
+        // Native clients authenticate with a bearer token and do not receive
+        // browser cookies. Browser sessions do, so protect every mutation
+        // carrying the refresh/CSRF cookie instead of maintaining a route list
+        // that can silently drift as new AutoCare endpoints are added.
+        const hasBrowserSession = Boolean(
+            request.cookies[env.auth.refreshTokenCookieName]
+            || request.cookies[env.auth.csrfTokenCookieName],
+        )
+        if (!hasBrowserSession) return
+
+        assertTrustedRequestOrigin(request, {
+            allowedOrigins: env.corsOrigins,
+            isProduction: true,
+        })
+        assertValidCsrfToken(request)
+    })
     await app.register(
         helmet,
         getSecurityHeadersOptions({
@@ -200,7 +224,11 @@ export async function buildApp() {
     )
 
     await app.register(cors, getCorsOptions(env.corsOrigins))
-    await app.register(websocket)
+    await app.register(websocket, {
+        options: {
+            maxPayload: 64 * 1024,
+        },
+    })
 
     await app.register(healthRoutes)
     await app.register(metricsRoutes)

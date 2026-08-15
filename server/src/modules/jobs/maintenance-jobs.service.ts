@@ -3,6 +3,8 @@ import { Between, In, ObjectLiteral, Repository, type FindOptionsWhere } from 't
 import { AppDataSource } from '../../database/data-source.js'
 import { BookingEntity, BookingStatus } from '../../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
+import { AutomotiveProviderEntity } from '../../entities/automotive/automotive.entity.js'
+import { ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
@@ -25,8 +27,12 @@ import {
 import { NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { env } from '../../config/env.js'
 import { cleanupOrphanedCabinetImages } from '../cabinets/cabinet-image-storage.js'
+import { cleanupOrphanedAutoCareProviderLogos } from '../autocare/autocare-provider-logo-storage.js'
+import { cleanupOrphanedAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
 import { addDays, zonedDateTimeToInstant } from '../../shared/date-time/cabinet-timezone.js'
 import { enqueueOutboxEvent, processOutboxBatch } from '../outbox/outbox.service.js'
+import { enqueueNotification } from '../outbox/notification-outbox.service.js'
+import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import {
     reconcileStripePayments,
     type PaymentReconciliationResult,
@@ -66,6 +72,7 @@ import { getStripeUnmatchedWebhookExpiryCutoff } from '../payments/stripe-webhoo
 import { getAccountDeletionRetentionCutoff } from '../users/account-deletion-retention.js'
 import { getOutboxHealthSummary } from '../outbox/outbox-health.service.js'
 import { getMaintenanceBacklogAgeMs } from './maintenance-backlog-policy.js'
+import { reassessAutoCareTrustScores } from '../autocare/trust-score.service.js'
 import {
     runMaintenancePhaseWithFailurePolicy,
     type MaintenancePhase,
@@ -100,6 +107,10 @@ export type MaintenanceCycleResult = {
         scanned: number
         removed: number
     }
+    trustReassessment: {
+        scanned: number
+        changed: number
+    }
     stripeWebhook: {
         unmatchedExpired: number
         replay: StripeWebhookReconciliationResult
@@ -119,6 +130,7 @@ export function summarizeMaintenanceCycle(result: MaintenanceCycleResult) {
         auditCleanup: Object.fromEntries(Object.entries(result.auditCleanup).map(([key, value]) => [key, count(value)])),
         notificationCleanup: Object.fromEntries(Object.entries(result.notificationCleanup).map(([key, value]) => [key, count(value)])),
         orphanImageCleanup: Object.fromEntries(Object.entries(result.orphanImageCleanup).map(([key, value]) => [key, count(value)])),
+        trustReassessment: Object.fromEntries(Object.entries(result.trustReassessment).map(([key, value]) => [key, count(value)])),
         stripeWebhook: {
             unmatchedExpired: count(result.stripeWebhook.unmatchedExpired),
             replay: Object.fromEntries(
@@ -242,6 +254,43 @@ export async function scheduleBookingReminders(
     metrics.setGauge('maintenance_reminders_last_scheduled', scheduled)
     metrics.increment('maintenance_reminders_scheduled_total', scheduled)
 
+    return scheduled
+}
+
+export async function scheduleAutoCareReminders(
+    now = new Date(),
+    assertLease?: MaintenanceLease['assertHeld'],
+) {
+    const reminderWindowMs = getBookingReminderWindowMs(env.bookingReminderHours)
+    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({
+        where: {
+            preferredAt: Between(
+                new Date(now.getTime() + 60_000),
+                new Date(now.getTime() + reminderWindowMs),
+            ),
+            status: ServiceRequestStatus.Accepted,
+        },
+        take: MAX_MAINTENANCE_REMINDER_CANDIDATES,
+        order: { preferredAt: 'ASC', createdAt: 'ASC' },
+    })
+    let scheduled = 0
+
+    for (const request of requests) {
+        assertLease?.()
+        if (!request.preferredAt) continue
+        await enqueueNotification({
+            userId: request.clientId,
+            category: NotificationCategory.Booking,
+            title: 'Напоминание о визите',
+            message: 'Завтра у вас подтверждён визит в автосервис. Откройте заявку, чтобы проверить детали.',
+            link: `/requests/${request.id}`,
+            metadata: { requestId: request.id, preferredAt: request.preferredAt.toISOString(), domain: 'autocare' },
+        }, `autocare-reminder:${request.id}:${request.preferredAt.toISOString()}`)
+        scheduled += 1
+    }
+
+    metrics.setGauge('maintenance_autocare_reminders_last_scheduled', scheduled)
+    metrics.increment('maintenance_autocare_reminders_scheduled_total', scheduled)
     return scheduled
 }
 
@@ -519,6 +568,30 @@ export async function cleanupOrphanedCabinetImageFiles(now = new Date()) {
     metrics.increment('maintenance_orphan_image_cleanup_total', result.removed, { outcome: 'removed' })
     metrics.increment('maintenance_orphan_image_cleanup_total', result.failed, { outcome: 'failed' })
 
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({
+        select: { logoUrl: true, coverImageUrl: true, galleryImageUrls: true },
+    })
+    const providerReferences = providers.flatMap((provider) => [
+        provider.logoUrl,
+        provider.coverImageUrl,
+        ...provider.galleryImageUrls,
+    ].filter((value): value is string => Boolean(value)))
+    assertMaintenanceReferenceCount(providerReferences.length)
+    const gracePeriodMs = env.cabinetUploadOrphanGraceHours * 60 * 60 * 1000
+    const [logoCleanup, coverCleanup, galleryCleanup] = await Promise.all([
+        cleanupOrphanedAutoCareProviderLogos({ referencedUrls: providerReferences, now, gracePeriodMs }),
+        cleanupOrphanedAutoCareProviderMedia({ kind: 'cover', referencedUrls: providerReferences, now, gracePeriodMs }),
+        cleanupOrphanedAutoCareProviderMedia({ kind: 'gallery', referencedUrls: providerReferences, now, gracePeriodMs }),
+    ])
+    const autoCareScanned = logoCleanup.scanned + coverCleanup.scanned + galleryCleanup.scanned
+    const autoCareRemoved = logoCleanup.removed + coverCleanup.removed + galleryCleanup.removed
+    const autoCareFailed = logoCleanup.failed + coverCleanup.failed + galleryCleanup.failed
+    metrics.setGauge('maintenance_autocare_orphan_media_scanned', autoCareScanned)
+    metrics.setGauge('maintenance_autocare_orphan_media_removed', autoCareRemoved)
+    metrics.setGauge('maintenance_autocare_orphan_media_failed', autoCareFailed)
+    metrics.increment('maintenance_autocare_orphan_media_cleanup_total', autoCareRemoved, { outcome: 'removed' })
+    metrics.increment('maintenance_autocare_orphan_media_cleanup_total', autoCareFailed, { outcome: 'failed' })
+
     return result
 }
 
@@ -549,7 +622,11 @@ export async function runMaintenanceCycle(
         }
         const remindersScheduled = await runPhase(
             'reminders',
-            () => scheduleBookingReminders(now, lease?.assertHeld),
+            async () => {
+                const bookingReminders = await scheduleBookingReminders(now, lease?.assertHeld)
+                const autoCareReminders = await scheduleAutoCareReminders(now, lease?.assertHeld)
+                return bookingReminders + autoCareReminders
+            },
             0,
         )
         const outbox = await runPhase('outbox', async () => {
@@ -581,36 +658,37 @@ export async function runMaintenanceCycle(
             () => cleanupOrphanedCabinetImageFiles(now),
             { failed: 0, scanned: 0, removed: 0 },
         )
-        const stripeWebhook = await runPhase(
-            'stripe_webhook',
-            () => reconcileStripeWebhookEvents(now, lease?.assertHeld),
-            {
-                unmatchedExpired: 0,
-                replay: {
-                    checked: 0,
-                    applied: 0,
-                    unsupported: 0,
-                    retryable: 0,
-                    failed: 0,
-                    skipped: 0,
+        const trustReassessment = await runPhase(
+            'trust_reassessment',
+            () => reassessAutoCareTrustScores(),
+            { scanned: 0, changed: 0 },
+        )
+        const stripeWebhook = env.paymentsEnabled
+            ? await runPhase(
+                'stripe_webhook',
+                () => reconcileStripeWebhookEvents(now, lease?.assertHeld),
+                {
+                    unmatchedExpired: 0,
+                    replay: {
+                        checked: 0,
+                        applied: 0,
+                        unsupported: 0,
+                        retryable: 0,
+                        failed: 0,
+                        skipped: 0,
+                    },
                 },
-            },
-        )
-        const payments = await runPhase(
-            'payment_reconciliation',
-            () => reconcileStripePayments(lease?.assertHeld),
-            { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 },
-        )
-        const paymentRefunds = await runPhase(
-            'payment_refund_reconciliation',
-            () => reconcileStripePaymentRefunds(lease?.assertHeld),
-            { checked: 0, repaired: 0, skipped: 0, errors: 0 },
-        )
-        const paymentInvoiceBackfill = await runPhase(
-            'payment_invoice_backfill',
-            () => backfillMissingPaymentInvoices(lease?.assertHeld),
-            { checked: 0, created: 0, skipped: 0, errors: 0 },
-        )
+            )
+            : { unmatchedExpired: 0, replay: { checked: 0, applied: 0, unsupported: 0, retryable: 0, failed: 0, skipped: 0 } }
+        const payments = env.paymentsEnabled
+            ? await runPhase('payment_reconciliation', () => reconcileStripePayments(lease?.assertHeld), { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 })
+            : { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 }
+        const paymentRefunds = env.paymentsEnabled
+            ? await runPhase('payment_refund_reconciliation', () => reconcileStripePaymentRefunds(lease?.assertHeld), { checked: 0, repaired: 0, skipped: 0, errors: 0 })
+            : { checked: 0, repaired: 0, skipped: 0, errors: 0 }
+        const paymentInvoiceBackfill = env.paymentsEnabled
+            ? await runPhase('payment_invoice_backfill', () => backfillMissingPaymentInvoices(lease?.assertHeld), { checked: 0, created: 0, skipped: 0, errors: 0 })
+            : { checked: 0, created: 0, skipped: 0, errors: 0 }
 
         const outcome = phaseFailures.length > 0 ? 'partial' : 'success'
         metrics.increment('maintenance_cycles_completed_total', 1, { outcome })
@@ -628,6 +706,7 @@ export async function runMaintenanceCycle(
             auditCleanup,
             notificationCleanup,
             orphanImageCleanup,
+            trustReassessment,
             stripeWebhook,
             payments,
             paymentRefunds,

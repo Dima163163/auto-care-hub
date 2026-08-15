@@ -1,6 +1,7 @@
 type StripeConfigInput = {
     secretKey?: string
     webhookSecret?: string
+    requireProductionCredentials?: boolean
 }
 
 const PLACEHOLDER_VALUES = new Set([
@@ -30,7 +31,7 @@ export function getStripeConfig(nodeEnv: 'development' | 'test' | 'production', 
     const secretKey = normalize(input.secretKey)
     const webhookSecret = normalize(input.webhookSecret)
 
-    if (nodeEnv === 'production') {
+    if (nodeEnv === 'production' && input.requireProductionCredentials !== false) {
         assertConfiguredProductionValue('STRIPE_SECRET_KEY', secretKey)
         assertConfiguredProductionValue('STRIPE_WEBHOOK_SECRET', webhookSecret)
     }

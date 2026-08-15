@@ -79,6 +79,7 @@ export type EnvConfig = {
         slowQueryThresholdMs: number
         maxActiveRatio: number
         maxWaitingRequests: number
+        sslRejectUnauthorized: boolean
     }
     redis: {
         enabled: boolean
@@ -124,6 +125,7 @@ export type EnvConfig = {
         requestTimeoutMs: number
         maxNetworkRetries: number
     }
+    paymentsEnabled: boolean
     auditLogRetentionDays: number
     securityEventIpRetentionDays: number
     notificationRetentionDays: number
@@ -338,6 +340,7 @@ function getDatabaseConfig(): EnvConfig['database'] {
         slowQueryThresholdMs: getBoundedPositiveNumberEnv('DATABASE_SLOW_QUERY_THRESHOLD_MS', 750, 120_000),
         maxActiveRatio: getBoundedRatioEnv('DATABASE_MAX_ACTIVE_RATIO', 0.9, 1),
         maxWaitingRequests: getBoundedNonNegativeNumberEnv('DATABASE_MAX_WAITING_REQUESTS', 10, 10_000),
+        sslRejectUnauthorized: getBooleanEnv('DATABASE_SSL_REJECT_UNAUTHORIZED', true),
     }
 
     if (!isValidEnvString(databaseUrl)) {
@@ -365,11 +368,14 @@ function getDatabaseConfig(): EnvConfig['database'] {
     }
 }
 
-function getRedisConfig(): EnvConfig['redis'] {
+function getRedisConfig(nodeEnv: NodeEnv): EnvConfig['redis'] {
     const redisUrl = process.env.REDIS_URL
     const redisHost = process.env.REDIS_HOST
 
     if (!isValidEnvString(redisUrl) && !isValidEnvString(redisHost)) {
+        if (nodeEnv === 'production') {
+            throw new Error('Production requires REDIS_URL or REDIS_HOST for distributed rate limits and realtime coordination.')
+        }
         return {
             enabled: false,
             url: null,
@@ -502,18 +508,24 @@ const breachedPasswordCheckMode = resolveBreachedPasswordCheckMode({
     configuredMode: process.env.BREACHED_PASSWORD_CHECK_MODE,
 })
 const breachedPasswordClientPolicy = getBreachedPasswordClientPolicy(breachedPasswordCheckMode)
+// Keep legacy payment fixtures available to the isolated test suite, while
+// every development/production deployment starts with payments disabled.
+const paymentsEnabled = getBooleanEnv('PAYMENTS_ENABLED', nodeEnv === 'test')
 const stripeCredentials = getStripeConfig(nodeEnv, {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    requireProductionCredentials: paymentsEnabled,
 })
 const stripeRequestTimeoutMs = getBoundedPositiveNumberEnv('STRIPE_REQUEST_TIMEOUT_MS', 8_000, 120_000)
 const stripeMaxNetworkRetries = getBoundedNonNegativeNumberEnv('STRIPE_MAX_NETWORK_RETRIES', 2, 3)
-resolveExternalPaymentProviderConfig({
-    ...stripeCredentials,
-    nodeEnv,
-    requestTimeoutMs: stripeRequestTimeoutMs,
-    maxNetworkRetries: stripeMaxNetworkRetries,
-})
+if (paymentsEnabled) {
+    resolveExternalPaymentProviderConfig({
+        ...stripeCredentials,
+        nodeEnv,
+        requestTimeoutMs: stripeRequestTimeoutMs,
+        maxNetworkRetries: stripeMaxNetworkRetries,
+    })
+}
 const defaultFrontendOrigin = getOptionalEnv('CORS_ORIGIN', 'http://localhost:5173')
 const corsOrigins = getCorsOrigins(nodeEnv, defaultFrontendOrigin)
 const auditLogRetentionDays = normalizeAuditLogRetentionDays(
@@ -546,7 +558,7 @@ export const env: EnvConfig = {
     ),
     deployment: getDeploymentCapabilities(resolvedDeploymentMarket.market),
     database: getDatabaseConfig(),
-    redis: getRedisConfig(),
+    redis: getRedisConfig(nodeEnv),
     auth: {
         jwtAccessSecret:
             process.env.JWT_ACCESS_SECRET ?? getRequiredEnv('JWT_SECRET'),
@@ -610,6 +622,7 @@ export const env: EnvConfig = {
         requestTimeoutMs: stripeRequestTimeoutMs,
         maxNetworkRetries: stripeMaxNetworkRetries,
     },
+    paymentsEnabled,
     auditLogRetentionDays,
     securityEventIpRetentionDays,
     notificationRetentionDays: getBoundedPositiveNumberEnv('NOTIFICATION_RETENTION_DAYS', 180, 730),

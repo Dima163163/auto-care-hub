@@ -53,13 +53,12 @@ export function connectServiceChat(requestId: string, listener: Listener) {
     const base = API_BASE_URL.startsWith('http') ? API_BASE_URL : window.location.origin + API_BASE_URL
     const url = new URL(`${base}/v1/service-requests/${requestId}/ws`)
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-    url.searchParams.set('accessToken', token)
     let socket: WebSocket | null = null
     let reconnectTimer: number | undefined
     let stopped = false
     const connect = () => {
         if (stopped) return
-        socket = new WebSocket(url)
+        socket = new WebSocket(url, [`bearer.${token}`])
         socket.addEventListener('message', (message) => {
             try { listener(JSON.parse(String(message.data)) as ServiceChatEvent) } catch { /* ignore malformed server events */ }
         })
@@ -97,13 +96,12 @@ export function connectAutoCareChat(chatId: string, listener: Listener) {
     const base = API_BASE_URL.startsWith('http') ? API_BASE_URL : window.location.origin + API_BASE_URL
     const url = new URL(`${base}/v1/chats/${chatId}/ws`)
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-    url.searchParams.set('accessToken', token)
     let socket: WebSocket | null = null
     let reconnectTimer: number | undefined
     let stopped = false
     const connect = () => {
         if (stopped) return
-        socket = new WebSocket(url)
+        socket = new WebSocket(url, [`bearer.${token}`])
         socket.addEventListener('message', (message) => {
             try { listener(JSON.parse(String(message.data)) as ServiceChatEvent) } catch { /* ignore malformed server events */ }
         })

@@ -1,4 +1,5 @@
 import { baseApi } from '@/shared/api/baseApi'
+import { z } from 'zod'
 
 import type { OwnerClient, User, UserRole, UserStatus } from '../model/types'
 import type { ClientVehicle, CreateClientVehicleInput } from '../model/vehicles'
@@ -52,6 +53,7 @@ type RequestAccountDeletionRequest = {
 }
 
 type UpdateClientVehicleRequest = { id: string; patch: Partial<CreateClientVehicleInput> }
+const userSuccessSchema = z.object({ success: z.literal(true) })
 
 export type AdminUsersQuery = CursorQuery & {
     search?: string
@@ -229,6 +231,7 @@ export const usersApi = baseApi.injectEndpoints({
 
         deleteMyVehicle: build.mutation<{ success: true }, string>({
             query: (id) => ({ url: `/users/me/vehicles/${id}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => userSuccessSchema.parse(value),
             invalidatesTags: [{ type: 'UserVehicle', id: 'LIST' }],
         }),
 

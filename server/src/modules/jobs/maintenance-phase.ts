@@ -9,6 +9,7 @@ export type MaintenancePhase =
     | 'audit_cleanup'
     | 'notification_cleanup'
     | 'orphan_image_cleanup'
+    | 'trust_reassessment'
     | 'stripe_webhook'
     | 'payment_reconciliation'
     | 'payment_refund_reconciliation'

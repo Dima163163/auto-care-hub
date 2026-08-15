@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
@@ -46,10 +46,18 @@ export function AutoCareResultsPage() {
     const [selectedIds, setSelectedIds] = useState<readonly string[]>([])
     const [focusedProviderId, setFocusedProviderId] = useState<string | null>(null)
     const [page, setPage] = useState(1)
+    const comparedServiceId = useRef(filters.serviceId)
     const selectedProviders = useMemo(
         () => providers.filter((provider) => selectedIds.includes(provider.id)),
         [providers, selectedIds],
     )
+
+    useEffect(() => {
+        if (comparedServiceId.current === filters.serviceId) return
+        comparedServiceId.current = filters.serviceId
+        setSelectedIds([])
+        setFocusedProviderId(null)
+    }, [filters.serviceId])
 
     const toggleProvider = (id: string) => setSelectedIds((current) => (
         current.includes(id)
@@ -106,7 +114,7 @@ export function AutoCareResultsPage() {
         draftFilters.minRating ? { key: 'minRating', label: `${draftFilters.minRating}+ ★` } : null,
         draftFilters.minPrice ? { key: 'minPrice', label: `от ${draftFilters.minPrice}` } : null,
         draftFilters.maxPrice ? { key: 'maxPrice', label: `до ${draftFilters.maxPrice}` } : null,
-        draftFilters.priceType ? { key: 'priceType', label: draftFilters.priceType } : null,
+        draftFilters.priceType ? { key: 'priceType', label: t(`autocare.priceType.${draftFilters.priceType}`) } : null,
         draftFilters.availableToday ? { key: 'availableToday', label: t('autocare.availableTodayLabel') } : null,
         draftFilters.verifiedOnly ? { key: 'verifiedOnly', label: t('autocare.verifiedFilter') } : null,
         draftFilters.warrantyOnly ? { key: 'warrantyOnly', label: t('autocare.warrantyFilter') } : null,

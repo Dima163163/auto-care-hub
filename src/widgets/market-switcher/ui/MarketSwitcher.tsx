@@ -4,22 +4,12 @@ import { useLocation, useNavigate } from 'react-router'
 
 import { useGetAutoCareMarketsQuery, type AutoCareApiMarket } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
+import { AUTOCARE_MARKET_CHANGE_EVENT, readAutoCareMarketPreference, setAutoCareMarketPreference } from '@/shared/lib/market-preference'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type MarketSwitcherProps = {
     variant?: 'dark' | 'surface'
     compact?: boolean
-}
-
-const STORAGE_KEY = 'autocare.selected-market'
-
-function readStoredMarket() {
-    if (typeof window === 'undefined') return null
-    try {
-        return window.localStorage.getItem(STORAGE_KEY)
-    } catch {
-        return null
-    }
 }
 
 function groupMarkets(markets: readonly AutoCareApiMarket[]) {
@@ -37,7 +27,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
     const location = useLocation()
     const { data: markets = [], isLoading } = useGetAutoCareMarketsQuery()
     const [isOpen, setIsOpen] = useState(false)
-    const [storedMarketId, setStoredMarketId] = useState(() => readStoredMarket() ?? 'moscow')
+    const [storedMarketId, setStoredMarketId] = useState(() => readAutoCareMarketPreference())
     const rootRef = useRef<HTMLDivElement | null>(null)
     const queryMarketId = new URLSearchParams(location.search).get('market')
     const selectedMarketId = queryMarketId ?? storedMarketId
@@ -59,19 +49,22 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape) }
     }, [isOpen])
 
+    useEffect(() => {
+        const syncMarket = () => setStoredMarketId(readAutoCareMarketPreference())
+        window.addEventListener(AUTOCARE_MARKET_CHANGE_EVENT, syncMarket)
+        return () => window.removeEventListener(AUTOCARE_MARKET_CHANGE_EVENT, syncMarket)
+    }, [])
+
     const chooseMarket = (market: AutoCareApiMarket) => {
         setStoredMarketId(market.cityCode)
-        try {
-            window.localStorage.setItem(STORAGE_KEY, market.cityCode)
-        } catch {
-            // Private browsing may block storage; the URL remains the source of truth.
-        }
+        setAutoCareMarketPreference(market.cityCode)
         setIsOpen(false)
         const params = new URLSearchParams(location.search)
         params.set('market', market.cityCode)
         params.delete('zone')
         const query = params.toString()
-        navigate(`${ROUTES.serviceDiscovery}${query ? `?${query}` : ''}`)
+        const target = location.pathname === ROUTES.home ? ROUTES.home : ROUTES.serviceDiscovery
+        navigate(`${target}${query ? `?${query}` : ''}`)
     }
 
     return (

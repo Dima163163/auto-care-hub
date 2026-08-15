@@ -40,11 +40,15 @@ import {
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 import {
+    AutomotiveProviderMembershipEntity,
+} from './automotive/provider-membership.entity.js'
+import {
     AutoCareChatThreadEntity,
     ServiceAttachmentEntity,
     ServiceMessageEntity,
     ServiceRequestEntity,
 } from './automotive/service-request.entity.js'
+import { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
 import { PlatformReviewEntity } from './platform-review/platform-review.entity.js'
 import {
     AutoCareBroadcastOfferEntity,
@@ -98,7 +102,9 @@ export const entities = [
     AutomotiveReviewPromoEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
+    AutomotiveProviderMembershipEntity,
     ServiceRequestEntity,
+    AutoCareServiceQuoteEntity,
     AutoCareChatThreadEntity,
     ServiceMessageEntity,
     ServiceAttachmentEntity,
@@ -203,6 +209,11 @@ export {
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 export {
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipRole,
+    AutomotiveProviderMembershipStatus,
+} from './automotive/provider-membership.entity.js'
+export {
     AutoCareChatThreadEntity,
     AutoCareChatThreadStatus,
     AutoCareChatThreadType,
@@ -215,6 +226,7 @@ export {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from './automotive/service-request.entity.js'
+export { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
 export { PlatformReviewEntity, PlatformReviewStatus } from './platform-review/platform-review.entity.js'
 export {
     AutoCareBroadcastOfferEntity,

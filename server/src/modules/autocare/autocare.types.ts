@@ -79,6 +79,9 @@ export type AutoCareLocationResponse = {
     zoneId: string | null
     address: string
     hours: string
+    timezone: string
+    weeklySchedule: Record<string, { open: string; close: string; closed: boolean }>
+    blackoutDates: string[]
     latitude: number | null
     longitude: number | null
     supportsMobile: boolean
@@ -194,6 +197,7 @@ export type CreateAutoCareReviewPromoInput = {
 }
 
 export type RedeemAutoCareReviewPromoInput = { code: string }
+export type CreateAutoCareReviewInput = { requestId: string; rating: number; text: string }
 export type UpdateAutoCareReviewInput = { rating: number; text: string }
 
 export type OwnerAutoCareProviderReviewsResponse = {
@@ -228,6 +232,7 @@ export type AutoCareAvailabilitySlotResponse = {
 
 export type AutoCareAvailabilityResponse = {
     date: string
+    timezone: string
     durationMinutes: number
     slots: AutoCareAvailabilitySlotResponse[]
 }
@@ -239,6 +244,9 @@ export type OwnerAutoCareProviderInput = {
     zoneId?: string | null
     address: string
     hours: string
+    timezone?: string
+    weeklySchedule?: Record<string, { open: string; close: string; closed: boolean }>
+    blackoutDates?: string[]
     yearsActive: number
     staffCount: number
     workstationCount?: number
@@ -287,6 +295,7 @@ export type AutoCareServiceRequestResponse = {
     contactSnapshot: AutoCareRequestSnapshot | null
     note: string | null
     quote: AutoCareServiceQuoteResponse | null
+    quoteHistory: AutoCareServiceQuoteHistoryResponse[]
     status: ServiceRequestStatus
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null
@@ -305,6 +314,11 @@ export type AutoCareServiceQuoteResponse = {
     validUntil: string | null
     priceLocked: boolean
     createdAt: string
+}
+
+export type AutoCareServiceQuoteHistoryResponse = AutoCareServiceQuoteResponse & {
+    id: string
+    version: number
 }
 
 export type AutoCareQuoteLineItemResponse = {
@@ -380,6 +394,14 @@ export type AutoCareTrustEvidenceResponse = {
     status: string
     expiresAt: string | null
     verifiedAt: string | null
+}
+
+export type AutoCareTrustFactorsResponse = {
+    profile: number
+    reviews: number
+    evidence: number
+    reliability: number
+    claimsPenalty: number
 }
 
 export type AutoCareGuaranteeClaimResponse = {

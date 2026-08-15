@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">AutoCare Hub — монограмма A</title>
+  <desc id="desc">Премиальный строгий знак: кованое кольцо и геометрическая буква A с дорожной линией.</desc>
+  <defs>
+    <linearGradient id="metal" x1="54" y1="35" x2="204" y2="222" gradientUnits="userSpaceOnUse"><stop stop-color="#f0f7f8"/><stop offset=".22" stop-color="#94abb8"/><stop offset=".58" stop-color="#354b5d"/><stop offset="1" stop-color="#0c1c2c"/></linearGradient>
+    <linearGradient id="blue" x1="67" y1="61" x2="193" y2="204" gradientUnits="userSpaceOnUse"><stop stop-color="#78dcff"/><stop offset=".42" stop-color="#197fea"/><stop offset="1" stop-color="#0644ac"/></linearGradient>
+    <filter id="shadow" x="-24%" y="-24%" width="148%" height="158%"><feDropShadow dx="0" dy="9" stdDeviation="7" flood-color="#000" flood-opacity=".58"/></filter>
+  </defs>
+  <circle cx="128" cy="128" r="119" fill="#071729" stroke="#6c8594" stroke-opacity=".65" stroke-width="2"/>
+  <circle cx="128" cy="128" r="103" fill="none" stroke="#0d304e" stroke-width="13"/>
+  <path d="M128 25a103 103 0 0 1 89 51M217 155a103 103 0 0 1-21 42" fill="none" stroke="url(#blue)" stroke-width="13" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <path d="M83 177 117 75h22l34 102h-21l-7-24h-36l-7 24Zm32-42h25l-12-39Z" fill="url(#metal)"/>
+    <path d="M94 151h68" stroke="#091827" stroke-width="10" stroke-linecap="round"/>
+    <path d="M128 92v59" stroke="url(#blue)" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="128" cy="128" r="10" fill="#071a2c" stroke="#b7edff" stroke-width="2"/>
+    <circle cx="128" cy="128" r="3" fill="#75d8ff"/>
+  </g>
+  <path d="M49 205h34M173 205h34" stroke="#8bdfff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
+</svg>

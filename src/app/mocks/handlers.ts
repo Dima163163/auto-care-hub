@@ -353,6 +353,7 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
             id: `location-${provider.id}`,
             marketId: autoCareMarket.id,
             address: provider.id === 'proservice-moscow' ? 'Москва, ул. Льва Толстого, 18' : 'Москва, Комсомольский пр-т, 45',
+            zoneId: null,
             hours: 'Пн–Вс: 08:00–21:00',
             latitude: provider.mapPosition?.[0] ?? 55.75,
             longitude: provider.mapPosition?.[1] ?? 37.61,
@@ -416,6 +417,7 @@ type MockAutoCareServiceRequest = {
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
     quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string } | null
+    quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string }>
     idempotencyKey: string | null
     idempotencyFingerprint: string
     status: 'draft' | 'open' | 'awaiting_reply' | 'estimate_shared' | 'accepted' | 'declined' | 'closed'
@@ -428,10 +430,10 @@ type MockAutoCareServiceRequest = {
 
 const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
     {
-        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021 }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
+        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021 }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, quoteHistory: [], idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
     },
     {
-        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }, idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
+        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
     },
 ]
 const mockAutoCareMessages = new Map<string, ServiceChatMessage[]>()
@@ -2006,6 +2008,8 @@ export const handlers = [
         const hasBonus = url.searchParams.get('hasBonus') === 'true'
         const inclusion = url.searchParams.get('inclusion')
         const brandId = url.searchParams.get('brandId') ?? ''
+        const marketId = url.searchParams.get('marketId') ?? ''
+        const zoneId = url.searchParams.get('zoneId') ?? ''
         const definition = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
         const items = autoCareProviders.map((provider, index) => ({
             provider,
@@ -2019,10 +2023,14 @@ export const handlers = [
             const source = providerPreviews.find((preview) => `api-${preview.id}` === item.provider.id)
             const matchesInclusion = !inclusion || (source?.inclusions ?? []).some((value) => value.toLowerCase().includes(inclusion))
             const matchesBrand = !source || supportsVehicleBrand(source, brandId)
+            const requestedMarket = marketId.replace(/^api-/, '').replace(/^\w+-/, '')
+            const providerMarket = item.provider.location.marketId.replace(/^market-/, '')
+            const matchesMarket = !marketId || item.provider.location.marketId === marketId || providerMarket === requestedMarket
+            const matchesZone = !zoneId || item.provider.location.zoneId === zoneId
             const matchesWarranty = !warrantyOnly || (source?.warrantyMonths ?? 0) > 0
             const matchesPriceType = !priceType || source?.priceType === priceType
             const matchesProvider = !providerName || item.provider.name.toLowerCase().includes(providerName)
-            return matchesProvider && hasService && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
+            return matchesProvider && hasService && matchesMarket && matchesZone && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
         })
 
         if (sort === 'price_asc') items.sort((left, right) => left.offer.priceFromMinor - right.offer.priceFromMinor)
@@ -2243,6 +2251,7 @@ export const handlers = [
             contactSnapshot: body.contactSnapshot,
             note: body.note ?? null,
             quote: null,
+            quoteHistory: [],
             idempotencyKey,
             idempotencyFingerprint: fingerprint,
             status: 'awaiting_reply',
@@ -2446,11 +2455,25 @@ export const handlers = [
         if (!allowed || !user || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
         if (!body.fileName || !body.contentType || !body.size || !body.contentBase64) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
-        const attachment = { id: `mock-attachment-${Date.now()}`, uploadedById: user.id, contentType: body.contentType, bytes: body.size, status: 'ready' as const, url: `/v1/service-requests/${item.id}/attachments/mock`, createdAt: new Date().toISOString(), contentBase64: body.contentBase64 }
+        const attachmentId = `mock-attachment-${Date.now()}`
+        const attachment = { id: attachmentId, uploadedById: user.id, contentType: body.contentType, bytes: body.size, status: 'ready' as const, url: `/v1/service-requests/${item.id}/attachments/${attachmentId}`, createdAt: new Date().toISOString(), contentBase64: body.contentBase64 }
         mockAutoCareAttachments.set(item.id, [...(mockAutoCareAttachments.get(item.id) ?? []), attachment])
         emitMockServiceChatEvent({ type: 'attachment.created', requestId: item.id, payload: attachment })
         const { contentBase64: _contentBase64, ...response } = attachment
         return HttpResponse.json(response, { status: 201 })
+    }),
+
+    http.get('/api/v1/service-requests/:requestId/attachments/:attachmentId', ({ params }) => {
+        const user = currentMockUser()
+        const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
+        const attachment = mockAutoCareAttachments.get(String(params.requestId))?.find((candidate) => candidate.id === params.attachmentId)
+        const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
+        const allowed = Boolean(user && item && attachment && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
+        if (!allowed || !attachment) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })
+        const [, encoded] = attachment.contentBase64.split(',', 2)
+        const body = encoded ?? attachment.contentBase64
+        const bytes = Uint8Array.from(atob(body), (character) => character.charCodeAt(0))
+        return new HttpResponse(bytes, { headers: { 'Content-Type': attachment.contentType, 'Cache-Control': 'private, max-age=60' } })
     }),
 
     http.post('/api/v1/service-requests/:requestId/confirm', ({ params }) => {
@@ -2525,6 +2548,7 @@ export const handlers = [
         if (typeof amountMinor !== 'number' || !Number.isInteger(amountMinor) || amountMinor <= 0 || !/^[A-Z]{3}$/.test(currencyCode ?? '')) return invalidMockBodyResponse()
         const now = new Date().toISOString()
         item.quote = { amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now }
+        item.quoteHistory.push({ id: `mock-quote-${Date.now()}`, version: item.quoteHistory.length + 1, amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now })
         item.status = 'estimate_shared'
         item.updatedAt = now
         pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Сервис прислал предварительную смету', message: 'Проверьте предварительную стоимость услуги.' })
@@ -2645,6 +2669,34 @@ export const handlers = [
             canContact: false,
             canEdit: Boolean(review.revisionAllowedUntil && new Date(review.revisionAllowedUntil).getTime() > now && !review.revisionUsedAt),
         })))
+    }),
+
+    http.post('/api/v1/autocare-reviews', async ({ request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'client') return HttpResponse.json({ message: 'Only clients can create automotive reviews.' }, { status: 403 })
+        const body = await request.json() as { requestId?: unknown; rating?: unknown; text?: unknown }
+        const serviceRequest = typeof body.requestId === 'string' ? mockAutoCareServiceRequests.find((item) => item.id === body.requestId && item.clientId === currentUser.id) : undefined
+        if (!serviceRequest) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (!['accepted', 'closed'].includes(serviceRequest.status) || !serviceRequest.clientConfirmedAt || !serviceRequest.providerConfirmedAt) return HttpResponse.json({ message: 'A completed and confirmed visit is required before leaving a review.' }, { status: 409 })
+        if (mockFeaturedAutoCareReviews.some((review) => review.serviceRequestId === serviceRequest.id)) return HttpResponse.json({ message: 'This service visit already has a review.' }, { status: 409 })
+        if (typeof body.rating !== 'number' || !Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5 || typeof body.text !== 'string' || body.text.trim().length < 10 || body.text.trim().length > 1_000) return HttpResponse.json({ message: 'Invalid review.' }, { status: 400 })
+        const review: MockAutoCareReview = {
+            id: `autocare-review-${crypto.randomUUID()}`,
+            providerId: serviceRequest.providerId,
+            authorName: currentUser.name,
+            vehicleLabel: serviceRequest.vehicleSnapshot ? `${serviceRequest.vehicleSnapshot.make} ${serviceRequest.vehicleSnapshot.model}` : 'Автомобиль',
+            rating: body.rating,
+            text: body.text.trim(),
+            avatarUrl: currentUser.avatarUrl ?? null,
+            photoUrls: [],
+            createdAt: new Date().toISOString(),
+            clientId: currentUser.id,
+            serviceRequestId: serviceRequest.id,
+            serviceSlug: serviceRequest.serviceSlug,
+        }
+        mockFeaturedAutoCareReviews.unshift(review)
+        return HttpResponse.json({ ...review, canContact: true, canEdit: false }, { status: 201 })
     }),
 
     http.post('/api/v1/autocare-review-promos/redeem', async ({ request }) => {

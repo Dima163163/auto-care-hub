@@ -1,4 +1,4 @@
-import { In } from 'typeorm'
+import { In, IsNull, type QueryFailedError } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -13,6 +13,8 @@ import {
     AutoCareTrustEvidenceEntity,
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
@@ -35,6 +37,8 @@ import type {
     CreateAutoCareBroadcastOfferInput,
     CreateAutoCareBroadcastRequestInput,
 } from './autocare.types.js'
+import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
+import { reassessAutoCareProviderTrust } from './trust-score.service.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -54,6 +58,13 @@ function requireClient(user: UserEntity) {
 
 function requireOwner(user: UserEntity) {
     if (user.role !== UserRole.Owner) forbidden('Only service owners can use this workflow.')
+}
+
+function isBroadcastOfferUniqueError(error: unknown) {
+    const driverError = (error as QueryFailedError | undefined)?.driverError as
+        | { code?: unknown; constraint?: unknown }
+        | undefined
+    return driverError?.code === '23505' && driverError.constraint === 'UQ_autocare_broadcast_offers_provider'
 }
 
 async function findDefinition(value: string) {
@@ -133,13 +144,17 @@ export async function getAutoCareFairPrice(input: { serviceId: string; marketId?
 }
 
 export async function getAutoCareProviderTrust(providerId: string) {
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, status: AutomotiveProviderStatus.Active })
-    if (!provider) notFound('Automotive provider not found.')
-    const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({ where: { providerId }, order: { createdAt: 'DESC' } })
+    const result = await reassessAutoCareProviderTrust(providerId)
+    if (!result || result.provider.status !== AutomotiveProviderStatus.Active) notFound('Automotive provider not found.')
+    const provider = result.provider
+    const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
+        where: { providerId },
+        order: { createdAt: 'DESC' },
+    })
     return {
         providerId,
-        score: Number(provider.trustScore),
-        badge: provider.trustBadge,
+        score: result.trust.score,
+        badge: result.trust.badge,
         reassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
         evidence: evidence.map((item): AutoCareTrustEvidenceResponse => ({
             id: item.id,
@@ -150,7 +165,8 @@ export async function getAutoCareProviderTrust(providerId: string) {
             expiresAt: item.expiresAt?.toISOString() ?? null,
             verifiedAt: item.verifiedAt?.toISOString() ?? null,
         })),
-        explanation: 'Оценка доверия складывается из подтверждённых документов, качества обслуживания, отзывов и соблюдения заявленных условий.',
+        factors: result.trust.factors,
+        explanation: 'Оценка доверия складывается из заполненности профиля, подтверждённых документов, качества обслуживания, отзывов и соблюдения заявленных условий. Открытые гарантийные обращения снижают итоговый балл до их решения.',
     }
 }
 
@@ -168,7 +184,7 @@ export async function getAutoCareRepairTimeline(user: UserEntity, requestId: str
     if (!request) notFound('Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (user.role !== UserRole.Owner || provider?.ownerId !== user.id) forbidden('You do not have access to this repair timeline.')
+        if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, request.locationId))) forbidden('You do not have access to this repair timeline.')
     }
     return (await AppDataSource.getRepository(AutoCareRepairEventEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } })).map(toRepairEventResponse)
 }
@@ -203,12 +219,51 @@ async function getBroadcastOrThrow(id: string) {
     return request
 }
 
+export async function assertOwnerBroadcastAccess(user: UserEntity, request: AutoCareBroadcastRequestEntity) {
+    if (request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) return
+    if (user.role !== UserRole.Owner) forbidden('You do not have access to this broadcast request.')
+
+    const managedProviderIds = await getManagedProviderIds(user.id)
+    const providers = managedProviderIds.length === 0
+        ? []
+        : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(managedProviderIds), status: AutomotiveProviderStatus.Active } })
+    if (providers.length === 0) forbidden('You do not have access to this broadcast request.')
+
+    const providerIds = providers.map((provider) => provider.id)
+    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({
+        where: { providerId: In(providerIds) },
+    })
+    const locationIds = locations.map((location) => location.id)
+    if (locationIds.length === 0) forbidden('You do not have access to this broadcast request.')
+
+    // An owner may inspect a request only if their provider already submitted
+    // an offer, or while it is open and they publish the requested service at
+    // one of their own locations. This keeps the direct-ID endpoint from
+    // becoming a client/vehicle/offer directory.
+    const existingOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).findOne({
+        where: { broadcastRequestId: request.id, providerId: In(providerIds) },
+    })
+    if (existingOffer) return
+    if (request.status !== 'open' || request.expiresAt <= new Date()) forbidden('You do not have access to this broadcast request.')
+
+    const matchingOffering = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOne({
+        where: { definitionId: request.serviceDefinitionId, locationId: In(locationIds), active: true },
+    })
+    if (!matchingOffering) forbidden('You do not have access to this broadcast request.')
+}
+
 export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId: string): Promise<AutoCareBroadcastRequestResponse> {
     const request = await getBroadcastOrThrow(broadcastId)
-    if (request.clientId !== user.id && user.role !== UserRole.Owner && user.role !== UserRole.Admin && user.role !== UserRole.SuperAdmin) forbidden('You do not have access to this broadcast request.')
+    await assertOwnerBroadcastAccess(user, request)
     const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: request.serviceDefinitionId })
     if (!definition) notFound('Service definition not found.')
-    const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({ where: { broadcastRequestId: request.id }, order: { createdAt: 'ASC' } })
+    const ownedProviderIds = user.role === UserRole.Owner
+        ? await getManagedProviderIds(user.id)
+        : null
+    const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
+        where: ownedProviderIds ? { broadcastRequestId: request.id, providerId: In(ownedProviderIds) } : { broadcastRequestId: request.id },
+        order: { createdAt: 'ASC' },
+    })
     const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(offers.map((offer) => offer.providerId)) } })
     const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { id: In(offers.map((offer) => offer.locationId)) } })
     const providerById = new Map(providers.map((provider) => [provider.id, provider]))
@@ -241,7 +296,10 @@ export async function getMyAutoCareBroadcastRequests(user: UserEntity) {
 
 export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
     requireOwner(user)
-    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { ownerId: user.id } })
+    const providerIds = await getManagedProviderIds(user.id)
+    const providers = providerIds.length === 0
+        ? []
+        : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
     const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) } })
     const requests = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).find({ where: { status: 'open' }, order: { createdAt: 'DESC' }, take: 100 })
     if (locations.length === 0 || requests.length === 0) return []
@@ -255,25 +313,47 @@ export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
 
 export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId: string, input: CreateAutoCareBroadcastOfferInput) {
     requireOwner(user)
-    const request = await getBroadcastOrThrow(broadcastId)
-    if (request.status !== 'open' || request.expiresAt <= new Date()) conflict('This broadcast request is no longer accepting offers.')
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ ownerId: user.id, status: AutomotiveProviderStatus.Active })
-    if (!provider) forbidden('No active automotive provider is linked to this owner.')
-    const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId, providerId: provider.id })
-    if (!location) notFound('Provider location not found.')
-    const definitionOffer = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ locationId: location.id, definitionId: request.serviceDefinitionId, active: true })
-    if (!definitionOffer) conflict('This provider does not publish the requested service at this location.')
-    const repository = AppDataSource.getRepository(AutoCareBroadcastOfferEntity)
-    const existing = await repository.findOneBy({ broadcastRequestId: request.id, providerId: provider.id })
-    if (existing) conflict('This provider has already sent an offer.')
-    const offer = await repository.save(repository.create({
-        broadcastRequestId: request.id,
-        providerId: provider.id,
-        locationId: location.id,
-        offerSnapshot: { amountMinor: input.amountMinor, currencyCode: input.currencyCode, note: input.note ?? null, durationMinutes: input.durationMinutes ?? definitionOffer.durationMinutes, validUntil: input.validUntil ?? null },
-        status: 'pending',
-    }))
-    return toBroadcastOfferResponse(offer, provider, location)
+    try {
+        const result = await AppDataSource.transaction(async (manager) => {
+            const request = await manager.getRepository(AutoCareBroadcastRequestEntity).findOne({
+                where: { id: broadcastId },
+                lock: { mode: 'pessimistic_write' },
+            })
+            if (!request) notFound('Broadcast request not found.')
+            if (request.status !== 'open' || request.expiresAt <= new Date()) conflict('This broadcast request is no longer accepting offers.')
+
+            const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId })
+            if (!location) notFound('Provider location not found.')
+            const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: location.providerId, status: AutomotiveProviderStatus.Active })
+            const membership = provider
+                ? await manager.getRepository(AutomotiveProviderMembershipEntity).findOne({ where: [
+                    { providerId: provider.id, userId: user.id, locationId: IsNull(), status: AutomotiveProviderMembershipStatus.Active },
+                    { providerId: provider.id, userId: user.id, locationId: location.id, status: AutomotiveProviderMembershipStatus.Active },
+                ] })
+                : null
+            if (!provider || (provider.ownerId !== user.id && !membership)) forbidden('This location is not managed by the current owner.')
+            const definitionOffer = await manager.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ locationId: location.id, definitionId: request.serviceDefinitionId, active: true })
+            if (!definitionOffer) conflict('This provider does not publish the requested service at this location.')
+
+            const repository = manager.getRepository(AutoCareBroadcastOfferEntity)
+            const existing = await repository.findOneBy({ broadcastRequestId: request.id, providerId: provider.id })
+            if (existing) conflict('This provider has already sent an offer.')
+            const offerCount = await repository.countBy({ broadcastRequestId: request.id })
+            if (offerCount >= request.maxProviders) conflict('This broadcast request has reached its provider limit.')
+            const offer = await repository.save(repository.create({
+                broadcastRequestId: request.id,
+                providerId: provider.id,
+                locationId: location.id,
+                offerSnapshot: { amountMinor: input.amountMinor, currencyCode: input.currencyCode, note: input.note ?? null, durationMinutes: input.durationMinutes ?? definitionOffer.durationMinutes, validUntil: input.validUntil ?? null },
+                status: 'pending',
+            }))
+            return { offer, provider, location }
+        })
+        return toBroadcastOfferResponse(result.offer, result.provider, result.location)
+    } catch (error) {
+        if (isBroadcastOfferUniqueError(error)) conflict('This provider has already sent an offer.')
+        throw error
+    }
 }
 
 export async function createAutoCareGuaranteeClaim(user: UserEntity, input: { requestId: string; claimType: string; summary: string; evidenceUrls?: string[] }): Promise<AutoCareGuaranteeClaimResponse> {

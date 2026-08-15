@@ -1,4 +1,5 @@
 import { access, constants, mkdir } from 'node:fs/promises'
+import path from 'node:path'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { In } from 'typeorm'
 
@@ -178,8 +179,16 @@ async function probeRedis(): Promise<Probe> {
 
 async function probeStorage(): Promise<Probe> {
     return runProbe('storage', async () => {
-        await mkdir(CABINET_UPLOADS_DIR, { recursive: true })
-        await access(CABINET_UPLOADS_DIR, constants.R_OK | constants.W_OK)
+        const roots = [
+            CABINET_UPLOADS_DIR,
+            path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'logos'),
+            path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'media', 'cover'),
+            path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'media', 'gallery'),
+        ]
+        await Promise.all(roots.map(async (root) => {
+            await mkdir(root, { recursive: true })
+            await access(root, constants.R_OK | constants.W_OK)
+        }))
         return {}
     })
 }

@@ -26,6 +26,7 @@ describe('summarizeMaintenanceCycle', () => {
             auditCleanup: { auditLogs: 5, securityEvents: 2 },
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
+            trustReassessment: { scanned: 4, changed: 2 },
             stripeWebhook: {
                 unmatchedExpired: 2,
                 replay: { checked: 1, applied: 1, unsupported: 0, retryable: 0, failed: 0, skipped: 0 },
@@ -41,6 +42,7 @@ describe('summarizeMaintenanceCycle', () => {
             auditCleanup: { auditLogs: 5, securityEvents: 2 },
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
+            trustReassessment: { scanned: 4, changed: 2 },
             stripeWebhook: {
                 unmatchedExpired: 2,
                 replay: { checked: 1, applied: 1, unsupported: 0, retryable: 0, failed: 0, skipped: 0 },

@@ -28,13 +28,25 @@ function fallbackPosition(index: number): MapPosition {
     return [MOSCOW_CENTER[0] + (index - 1) * 0.012, MOSCOW_CENTER[1] + (index - 1) * 0.018]
 }
 
-function formatPrice(provider: ProviderPreview) {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(provider.price)
+function formatPrice(provider: ProviderPreview, labels: { from: string; quoteRequired: string }) {
+    const formatter = new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 })
+    const price = formatter.format(provider.price)
+    if (provider.priceType === 'fixed') return price
+    if (provider.priceType === 'quote_required') return labels.quoteRequired
+    if (provider.priceType === 'range') {
+        const priceTo = provider.priceTo ?? Math.round(provider.price * 1.2)
+        return `${price}–${formatter.format(priceTo)}`
+    }
+    return labels.from.replace('{{price}}', price)
 }
 
-function markerMarkup(provider: ProviderPreview, serviceId: string, focused: boolean, fromLabel: string) {
+function escapeHtml(value: string) {
+    return value.replace(/[&<>']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;' })[character] ?? character)
+}
+
+function markerMarkup(provider: ProviderPreview, serviceId: string, focused: boolean, priceLabel: string) {
     const tone = provider.verified ? 'success' : 'primary'
-    return `<div class="results-map-price-marker results-map-price-marker--${tone}${focused ? ' is-focused' : ''}"><span class="results-map-price-marker__pin" aria-hidden="true">${getServiceMarkerIcon(serviceId)}</span><span class="results-map-price-marker__copy"><strong>${fromLabel} ${formatPrice(provider)}</strong><span>★ ${provider.rating.toFixed(1)}</span></span></div>`
+    return `<div class="results-map-price-marker results-map-price-marker--${tone}${focused ? ' is-focused' : ''}"><span class="results-map-price-marker__pin" aria-hidden="true">${getServiceMarkerIcon(escapeHtml(serviceId))}</span><span class="results-map-price-marker__copy"><strong>${escapeHtml(priceLabel)}</strong><span>★ ${provider.rating.toFixed(1)}</span></span></div>`
 }
 
 export function AutoCareMapPreview({ providers, serviceId, selectedProviders, focusedProviderId, onFocusProvider, onRemove }: AutoCareMapPreviewProps) {
@@ -88,12 +100,12 @@ export function AutoCareMapPreview({ providers, serviceId, selectedProviders, fo
             const marker = L.marker(position, {
                 icon: L.divIcon({
                     className: 'results-map-marker-host',
-                    html: markerMarkup(provider, serviceId, isFocused, t('autocare.fromPrice', { price: '' }).replace(/\s+$/, '')),
+                    html: markerMarkup(provider, serviceId, isFocused, formatPrice(provider, { from: t('autocare.fromPrice', { price: '{{price}}' }), quoteRequired: t('autocare.quoteRequiredPrice') })),
                     iconSize: [144, 52],
                     iconAnchor: [72, 52],
                 }),
                 keyboard: true,
-                title: `${provider.name}, ${formatPrice(provider)}`,
+                title: `${provider.name}, ${formatPrice(provider, { from: t('autocare.fromPrice', { price: '{{price}}' }), quoteRequired: t('autocare.quoteRequiredPrice') })}`,
             })
             marker.on('click', () => onFocusProvider(provider.id))
             marker.addTo(markerLayer)
@@ -125,7 +137,7 @@ export function AutoCareMapPreview({ providers, serviceId, selectedProviders, fo
             </div>
             {tileError && <p className="absolute inset-x-4 top-20 z-[500] rounded-[var(--radius-control)] border border-status-warning-border bg-status-warning-surface px-3 py-2 text-xs font-semibold text-status-warning-foreground">{t('cabinet.publicList.mapTileError')}</p>}
             {locationStatus !== 'idle' && <p className="absolute right-4 top-40 z-[500] max-w-44 rounded-[var(--radius-control)] border border-primary-foreground/15 bg-hero-overlay/95 p-2 text-xs font-semibold text-primary-foreground/80 shadow-lg backdrop-blur">{locationStatus === 'loading' ? t('cabinet.publicList.mapLocationLoading') : locationStatus === 'success' ? t('cabinet.publicList.mapLocationFound') : t('cabinet.publicList.mapLocationError')}</p>}
-            {focusedProvider && <div className="absolute inset-x-4 bottom-4 z-[500] overflow-hidden rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-hero-overlay/95 text-primary-foreground shadow-xl shadow-black/30 backdrop-blur"><div className="flex items-start justify-between gap-3 border-b border-primary-foreground/15 px-4 py-3"><div><p className="text-xs font-bold text-primary">{t('autocare.trustedBadge')}</p><h2 className="mt-1 text-base font-black">{focusedProvider.name}</h2></div><button type="button" onClick={() => onFocusProvider(null)} className="rounded-md p-1 text-primary-foreground/70 hover:bg-primary-foreground/10" aria-label={t('common.close')}><X className="size-4" /></button></div><div className="flex items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-black">{formatPrice(focusedProvider)}</p><p className="mt-1 text-xs font-semibold text-primary-foreground/70">★ {focusedProvider.rating} · {focusedProvider.distance}</p></div><div className="flex gap-2"><button type="button" onClick={() => onRemove(focusedProvider.id)} className="inline-flex h-9 items-center rounded-[var(--radius-control)] border border-primary-foreground/20 px-3 text-xs font-bold text-primary-foreground hover:border-primary">{selectedProviders.some((provider) => provider.id === focusedProvider.id) ? t('autocare.clearCompare') : t('autocare.compareAction')}</button><Link to={routePaths.serviceProviderDetails(focusedProvider.id)} className="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-primary px-3 text-xs font-bold text-primary-foreground">{t('autocare.detailsAction')}</Link></div></div></div>}
+            {focusedProvider && <div className="absolute inset-x-4 bottom-4 z-[500] overflow-hidden rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-hero-overlay/95 text-primary-foreground shadow-xl shadow-black/30 backdrop-blur"><div className="flex items-start justify-between gap-3 border-b border-primary-foreground/15 px-4 py-3"><div><p className="text-xs font-bold text-primary">{t('autocare.trustedBadge')}</p><h2 className="mt-1 text-base font-black">{focusedProvider.name}</h2></div><button type="button" onClick={() => onFocusProvider(null)} className="rounded-md p-1 text-primary-foreground/70 hover:bg-primary-foreground/10" aria-label={t('common.close')}><X className="size-4" /></button></div><div className="flex items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-black">{formatPrice(focusedProvider, { from: t('autocare.fromPrice', { price: '{{price}}' }), quoteRequired: t('autocare.quoteRequiredPrice') })}</p><p className="mt-1 text-xs font-semibold text-primary-foreground/70">★ {focusedProvider.rating} · {focusedProvider.distance}</p></div><div className="flex gap-2"><button type="button" onClick={() => onRemove(focusedProvider.id)} className="inline-flex h-9 items-center rounded-[var(--radius-control)] border border-primary-foreground/20 px-3 text-xs font-bold text-primary-foreground hover:border-primary">{selectedProviders.some((provider) => provider.id === focusedProvider.id) ? t('autocare.clearCompare') : t('autocare.compareAction')}</button><Link to={routePaths.serviceProviderDetails(focusedProvider.id)} className="inline-flex h-9 items-center rounded-[var(--radius-control)] bg-primary px-3 text-xs font-bold text-primary-foreground">{t('autocare.detailsAction')}</Link></div></div></div>}
         </aside>
     )
 }

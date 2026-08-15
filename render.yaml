@@ -9,6 +9,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: RUNTIME_MODE
+        value: api
+      - key: PAYMENTS_ENABLED
+        value: "false"
       - key: PORT
         value: 10000
       - key: DATABASE_URL
@@ -21,14 +25,54 @@ services:
         sync: false
       - key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
       - key: CORS_ORIGINS
         value: https://autocare-hub.vercel.app,https://autocare-hub-client.onrender.com
       - key: FRONTEND_ORIGIN
         value: https://autocare-hub.vercel.app
+      - key: CABINET_UPLOADS_DIR
+        sync: false
+      - key: BOOTSTRAP_SUPER_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_SUPER_ADMIN_NAME
+        value: "Super Admin"
+      - key: MAIL_MODE
+        value: smtp
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+
+  - type: worker
+    name: autocare-hub-worker
+    env: node
+    rootDir: server
+    buildCommand: "npm install --include=dev && npm run build"
+    startCommand: "npm run start:server"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RUNTIME_MODE
+        value: worker
+      - key: PAYMENTS_ENABLED
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: OUTBOX_TOKEN_ENCRYPTION_KEY
+        sync: false
       - key: CABINET_UPLOADS_DIR
         sync: false
       - key: BOOTSTRAP_SUPER_ADMIN_EMAIL

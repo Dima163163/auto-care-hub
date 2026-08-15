@@ -25,6 +25,7 @@ import {
     parseCsrfTokenResponse,
 } from './security-response-schema'
 import { parseApiErrorData } from './api-error-shape'
+import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
 
 const AUTH_SECURITY_ERROR_CODES = new Set([
     'CSRF_ORIGIN_MISMATCH',
@@ -112,8 +113,11 @@ function needsCsrfToken(args: string | FetchArgs) {
 
     const method = args.method?.toUpperCase() ?? ''
     const isVehicleWrite = isVehicleMutation && ['POST', 'PATCH', 'DELETE'].includes(method)
-    const isExistingProtectedPost = method === 'POST' && (
-        CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition
+    const isMutationPath = args.url.startsWith('/v1/')
+        || args.url.startsWith('/owner/')
+        || args.url.startsWith('/users/me/')
+    const isExistingProtectedPost = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && (
+        CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition || isMutationPath
     )
 
     return isVehicleWrite || isExistingProtectedPost
@@ -179,6 +183,7 @@ function clearAuthenticatedClientState(
     clearAccessToken()
     clearCsrfToken()
     api.dispatch(baseApi.util.resetApiState())
+    void clearIdentityScopedPwaCaches()
 }
 
 const rawBaseQuery = fetchBaseQuery({

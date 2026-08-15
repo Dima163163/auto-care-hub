@@ -12,12 +12,6 @@ export const PlatformReviewsPage = lazy(() =>
     })),
 )
 
-export const CabinetsPage = lazy(() =>
-    import('@/pages/cabinets').then((module) => ({
-        default: module.CabinetsPage,
-    })),
-)
-
 export const AutoCareResultsPage = lazy(() =>
     import('@/pages/autocare-results').then((module) => ({
         default: module.AutoCareResultsPage,
@@ -105,12 +99,6 @@ export const AgreementPage = lazy(() =>
 export const PrivacyPage = lazy(() =>
     import('@/pages/info').then((module) => ({
         default: module.PrivacyPage,
-    })),
-)
-
-export const CabinetDetailsPage = lazy(() =>
-    import('@/pages/cabinet-details').then((module) => ({
-        default: module.CabinetDetailsPage,
     })),
 )
 
@@ -216,30 +204,6 @@ export const OwnerAutoCareProviderReviewsPage = lazy(() =>
     })),
 )
 
-export const OwnerCabinetsPage = lazy(() =>
-    import('@/pages/owner-cabinets').then((module) => ({
-        default: module.OwnerCabinetsPage,
-    })),
-)
-
-export const OwnerCabinetCreatePage = lazy(() =>
-    import('@/pages/owner-cabinet-create').then((module) => ({
-        default: module.OwnerCabinetCreatePage,
-    })),
-)
-
-export const OwnerCabinetEditPage = lazy(() =>
-    import('@/pages/owner-cabinet-edit').then((module) => ({
-        default: module.OwnerCabinetEditPage,
-    })),
-)
-
-export const OwnerBookingsPage = lazy(() =>
-    import('@/pages/owner-bookings').then((module) => ({
-        default: module.OwnerBookingsPage,
-    })),
-)
-
 export const OwnerAutoCareRequestsPage = lazy(() =>
     import('@/pages/owner-autocare-requests').then((module) => ({
         default: module.OwnerAutoCareRequestsPage,
@@ -279,12 +243,6 @@ export const AdminUsersPage = lazy(() =>
 export const AdminOwnersPage = lazy(() =>
     import('@/pages/admin-owners').then((module) => ({
         default: module.AdminOwnersPage,
-    })),
-)
-
-export const AdminCabinetsPage = lazy(() =>
-    import('@/pages/admin-cabinets').then((module) => ({
-        default: module.AdminCabinetsPage,
     })),
 )
 

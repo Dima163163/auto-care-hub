@@ -78,6 +78,12 @@ export const updateAutoCareReviewSchema = z.object({
     text: z.string().trim().min(10).max(1_000),
 })
 
+export const createAutoCareReviewSchema = z.object({
+    requestId: z.string().uuid(),
+    rating: z.number().int().min(1).max(5),
+    text: z.string().trim().min(10).max(1_000),
+})
+
 export const updateAutoCareOfferSchema = z.object({
     description: z.string().trim().max(2_000).nullable(),
     priceFromMinor: z.number().int().nonnegative().max(100_000_000_00),
@@ -258,6 +264,16 @@ export const createAutoCareFleetVehicleSchema = z.object({
 })
 
 const automotiveAmenityIds = ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment', 'electric_charging', 'pickup_delivery'] as const
+const scheduleDaySchema = z.object({
+    open: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    close: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    closed: z.boolean(),
+}).strict()
+const weeklyScheduleSchema = z.record(z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']), scheduleDaySchema).superRefine((value, context) => {
+    for (const [day, schedule] of Object.entries(value)) {
+        if (!schedule.closed && schedule.open >= schedule.close) context.addIssue({ code: 'custom', path: [day], message: 'Opening time must be earlier than closing time.' })
+    }
+})
 
 export const ownerAutoCareProviderSchema = z.object({
     name: z.string().trim().min(2).max(160),
@@ -266,6 +282,9 @@ export const ownerAutoCareProviderSchema = z.object({
     zoneId: z.string().uuid().nullable().optional(),
     address: z.string().trim().min(2).max(240),
     hours: z.string().trim().min(2).max(120),
+    timezone: z.string().trim().min(3).max(80).optional(),
+    weeklySchedule: weeklyScheduleSchema.optional(),
+    blackoutDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(366).optional(),
     yearsActive: z.coerce.number().int().min(0).max(150),
     staffCount: z.coerce.number().int().min(0).max(10_000),
     workstationCount: z.coerce.number().int().nonnegative().max(100_000).optional(),

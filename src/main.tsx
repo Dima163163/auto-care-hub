@@ -34,7 +34,14 @@ async function enableMocking() {
     const { worker } = await import('@/app/mocks/browser')
 
     return worker.start({
-        onUnhandledRequest: 'bypass',
+        onUnhandledRequest(request) {
+            // Mock mode must never silently fall through to a real backend. Keep
+            // static assets and navigation requests bypassed, but fail loudly
+            // for an API route missing from the mock contract.
+            if (new URL(request.url).pathname.startsWith('/api/')) {
+                throw new Error(`Unhandled mock API request: ${request.method} ${request.url}`)
+            }
+        },
     })
 }
 

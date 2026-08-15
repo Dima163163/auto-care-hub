@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { BadgeCheck, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
+import { BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { ProviderLogo, providerPreviews, type ProviderPreview } from '@/entities/automotive-service'
+import { mapAutoCareDiscoveryItem, ProviderLogo, providerPreviews, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -78,8 +79,11 @@ export function ProviderPreviewSection() {
     const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: 'ru-moscow', radius: 10 })
     const [sort, setSort] = useState<HomeSort>('recommended')
     const [page, setPage] = useState(0)
+    const discovery = useGetAutoCareDiscoveryQuery({ serviceId: 'brakes', marketId: 'ru-moscow', radiusKm: 10, limit: 16 })
     const pageSize = 4
-    const sortedProviders = useMemo(() => sortProviders(providers, sort), [sort])
+    const remoteProviders = useMemo(() => discovery.data?.items.map(mapAutoCareDiscoveryItem) ?? [], [discovery.data])
+    const sourceProviders = IS_MOCK_API ? providers : remoteProviders.map(toHomeProvider)
+    const sortedProviders = useMemo(() => sortProviders(sourceProviders, sort), [sort, sourceProviders])
     const pageCount = Math.ceil(sortedProviders.length / pageSize)
     const visibleProviders = sortedProviders.slice(page * pageSize, page * pageSize + pageSize)
 
@@ -112,6 +116,7 @@ export function ProviderPreviewSection() {
                             <option value="rating_desc">{t('autocare.ratingSort')}</option>
                             <option value="distance_asc">{t('autocare.distanceSort')}</option>
                         </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                     </label>
                 </div>
                 <div className="mt-5 grid gap-4 lg:grid-cols-4">

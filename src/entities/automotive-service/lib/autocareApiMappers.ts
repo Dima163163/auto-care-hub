@@ -1,5 +1,6 @@
 import type { ProviderOffering, ProviderPreview, ProviderProfile } from '../model/autocareMockData'
 import { automotiveAmenities } from '../model/automotiveAmenities'
+import { IS_MOCK_API } from '@/shared/config/api'
 import type { AutomotiveAmenityId } from '../model/automotiveAmenities'
 import type { AutoCareApiDiscoveryItem, AutoCareApiOffer, AutoCareApiProviderProfile } from '../api/autocareApi'
 
@@ -23,6 +24,7 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         reviewCount: item.provider.reviewCount,
         distance: formatDistance(item.distanceKm),
         price: item.offer.priceFromMinor / 100,
+        priceTo: item.offer.priceToMinor === null ? null : item.offer.priceToMinor / 100,
         currency: item.offer.currencyCode,
         nextSlot: item.nextSlot ?? '—',
         image: item.provider.coverImageUrl,
@@ -54,6 +56,7 @@ function mapOffer(offer: AutoCareApiOffer): ProviderOffering {
 export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile): ProviderProfile {
     return {
         id: profile.id,
+        locationId: profile.location.id,
         name: profile.name,
         rating: profile.rating,
         reviewCount: profile.reviewCount,
@@ -83,11 +86,11 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         about: profile.description ?? 'A verified automotive service provider with transparent offers and service support.',
         amenities: profile.amenityIds.filter((amenityId): amenityId is AutomotiveAmenityId => automotiveAmenities.some((amenity) => amenity.id === amenityId)),
         offerings: profile.offers.map(mapOffer),
-        reviews: [
+        reviews: IS_MOCK_API ? [
             { id: `${profile.id}-review-1`, author: 'Alex M.', rating: 5, date: '2 days ago', text: 'Clear estimate, fast work, and the final price matched the agreed scope.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-body-paint.png'] },
             { id: `${profile.id}-review-2`, author: 'Maria S.', rating: 5, date: '1 week ago', text: 'Convenient appointment time and detailed updates while the car was in service.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-tire-service.png'] },
             { id: `${profile.id}-review-3`, author: 'Igor P.', rating: 4, date: '2 weeks ago', text: 'The specialist explained the options before starting the repair.', serviceId: profile.offers[0]?.serviceSlug ?? '' },
-        ],
+        ] : [],
         mapPosition: profile.location.latitude !== null && profile.location.longitude !== null
             ? [profile.location.latitude, profile.location.longitude]
             : undefined,

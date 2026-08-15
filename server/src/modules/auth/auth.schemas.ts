@@ -14,7 +14,7 @@ export const loginSchema = z.object({
 })
 
 export const passwordSetupTokenSchema = z.object({
-    token: z.string().min(32, 'Password setup token is required.'),
+    token: z.string().min(32, 'Password setup token is required.').max(512),
 })
 
 export const completePasswordSetupSchema = passwordSetupTokenSchema.extend({
@@ -26,7 +26,7 @@ export const requestPasswordResetSchema = z.object({
 })
 
 export const passwordResetTokenSchema = z.object({
-    token: z.string().min(32, 'Password reset token is required.'),
+    token: z.string().min(32, 'Password reset token is required.').max(512),
 })
 
 export const completePasswordResetSchema = passwordResetTokenSchema.extend({
@@ -34,7 +34,7 @@ export const completePasswordResetSchema = passwordResetTokenSchema.extend({
 })
 
 export const emailVerificationTokenSchema = z.object({
-    token: z.string().min(32, 'Email verification token is required.'),
+    token: z.string().min(32, 'Email verification token is required.').max(512),
 })
 
 export const changePasswordSchema = z.object({

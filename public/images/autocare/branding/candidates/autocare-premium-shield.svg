@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">AutoCare Hub — щит качества</title>
+  <desc id="desc">Премиальный знак в форме щита с тонким кольцом и точной геометрией буквы A.</desc>
+  <defs>
+    <linearGradient id="shield" x1="67" y1="30" x2="191" y2="222" gradientUnits="userSpaceOnUse"><stop stop-color="#193a5a"/><stop offset=".48" stop-color="#0a1e36"/><stop offset="1" stop-color="#030b18"/></linearGradient>
+    <linearGradient id="edge" x1="76" y1="38" x2="187" y2="215" gradientUnits="userSpaceOnUse"><stop stop-color="#dce9ed"/><stop offset=".35" stop-color="#829aa8"/><stop offset=".72" stop-color="#1b8cef"/><stop offset="1" stop-color="#0648ae"/></linearGradient>
+    <filter id="shadow" x="-24%" y="-24%" width="148%" height="158%"><feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <path d="M128 11 216 43v70c0 61-37 101-88 132-51-31-88-71-88-132V43Z" fill="url(#shield)" stroke="url(#edge)" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M128 30 196 55v58c0 47-26 80-68 108-42-28-68-61-68-108V55Z" fill="none" stroke="#8ddfff" stroke-opacity=".35" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <circle cx="128" cy="118" r="59" fill="none" stroke="#142f49" stroke-width="16"/>
+    <path d="M128 59a59 59 0 0 1 52 30M179 157a59 59 0 0 1-15 14" fill="none" stroke="#1f91ee" stroke-width="16" stroke-linecap="round"/>
+    <path d="m91 164 29-76h16l29 76h-18l-6-18h-27l-6 18Zm28-34h17l-8-24Z" fill="#e9f4f6"/>
+    <path d="M105 145h46" stroke="#081a2d" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="128" cy="119" r="7" fill="#0d71d6" stroke="#c9f3ff" stroke-width="2"/>
+  </g>
+</svg>

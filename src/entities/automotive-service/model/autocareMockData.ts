@@ -16,6 +16,7 @@ export type ProviderPreview = {
     reviewCount: number
     distance: string
     price: number
+    priceTo?: number | null
     currency: string
     nextSlot: string
     image?: string | null
@@ -61,6 +62,7 @@ export type ProviderReview = {
 }
 
 export type ProviderProfile = ProviderPreview & {
+    locationId?: string
     address: string
     hours: string
     yearsActive: number

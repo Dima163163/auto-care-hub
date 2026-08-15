@@ -1,4 +1,4 @@
-import { IsNull } from 'typeorm'
+import { IsNull, type EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -100,6 +100,43 @@ export async function markSecurityTokenUsed(securityToken: SecurityTokenEntity) 
     securityToken.usedAt = new Date()
 
     return securityTokenRepository.save(securityToken)
+}
+
+/**
+ * Atomically consume a one-time token while running the state change that it
+ * authorizes. The row lock closes the double-submit window between a token
+ * lookup and the user update (password reset/setup or email verification).
+ */
+export async function consumeUsableSecurityToken<T>(
+    token: string,
+    purpose: SecurityTokenPurpose,
+    callback: (securityToken: SecurityTokenEntity, manager: EntityManager) => Promise<T>,
+): Promise<T | null> {
+    // Route schemas bound the token size; hash malformed values as a normal
+    // lookup miss so callers return the same 400 as an expired token.
+    const tokenHash = hashSecurityTokenValue(token)
+
+    return AppDataSource.transaction(async (manager) => {
+        const repository = manager.getRepository(SecurityTokenEntity)
+        const securityToken = await repository
+            .createQueryBuilder('securityToken')
+            .leftJoinAndSelect('securityToken.user', 'user')
+            .where('securityToken.tokenHash = :tokenHash', { tokenHash })
+            .andWhere('securityToken.purpose = :purpose', { purpose })
+            .andWhere('securityToken.usedAt IS NULL')
+            .setLock('pessimistic_write')
+            .getOne()
+
+        if (!securityToken || isSecurityTokenExpired(securityToken.expiresAt)) return null
+
+        const result = await callback(securityToken, manager)
+        const consumed = await repository.update(
+            { id: securityToken.id, usedAt: IsNull() },
+            { usedAt: new Date() },
+        )
+        if ((consumed.affected ?? 0) !== 1) return null
+        return result
+    })
 }
 
 export { SecurityTokenPurpose }

@@ -33,6 +33,14 @@ export enum AutomotiveLocationZoneType {
     ServiceArea = 'service_area',
 }
 
+export type AutomotiveWeeklyScheduleDay = {
+    open: string
+    close: string
+    closed: boolean
+}
+
+export type AutomotiveWeeklySchedule = Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', AutomotiveWeeklyScheduleDay>
+
 @Entity('autocare_markets')
 @Index(['countryCode', 'cityCode'], { unique: true })
 export class AutomotiveMarketEntity {
@@ -124,6 +132,9 @@ export class AutomotiveServiceLocationEntity {
     @Column({ type: 'uuid', nullable: true }) zoneId!: string | null
     @Column({ type: 'text' }) address!: string
     @Column({ type: 'text' }) hours!: string
+    @Column({ type: 'text', default: 'UTC' }) timezone!: string
+    @Column({ type: 'jsonb', default: () => "'{\"mon\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"tue\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"wed\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"thu\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"fri\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"sat\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"sun\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false}}'" }) weeklySchedule!: AutomotiveWeeklySchedule
+    @Column('date', { array: true, default: () => "'{}'" }) blackoutDates!: string[]
     @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) latitude!: number | null
     @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true }) longitude!: number | null
     @Column({ type: 'boolean', default: false }) supportsMobile!: boolean

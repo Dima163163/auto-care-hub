@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">AutoCare Hub — прецизионная шестерёнка</title>
+  <desc id="desc">Объёмная тёмная шестерёнка с обработанными гранями и синим технологичным сердечником.</desc>
+  <defs>
+    <radialGradient id="gear" cx="30%" cy="18%" r="85%"><stop stop-color="#607789"/><stop offset=".23" stop-color="#263b4c"/><stop offset=".64" stop-color="#071421"/><stop offset="1" stop-color="#02070e"/></radialGradient>
+    <linearGradient id="tooth" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6e6eb"/><stop offset=".28" stop-color="#597283"/><stop offset=".7" stop-color="#102334"/><stop offset="1" stop-color="#02070e"/></linearGradient>
+    <radialGradient id="core" cx="34%" cy="25%" r="80%"><stop stop-color="#59d6ff"/><stop offset=".28" stop-color="#1684db"/><stop offset=".7" stop-color="#063b86"/><stop offset="1" stop-color="#02162f"/></radialGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="16" stdDeviation="13" flood-color="#000" flood-opacity=".72"/></filter>
+  </defs>
+  <circle cx="256" cy="256" r="242" fill="#061526" stroke="#55b8ef" stroke-opacity=".35" stroke-width="4"/>
+  <g filter="url(#shadow)">
+    <path d="m228 53 28 22 28-22 23 27 34-10 13 33 34 9-2 36 31 18-18 31 21 29-29 22 8 35-35 12-7 36-36-1-18 31-32-19-28 24-27-28-35 14-12-34-36-6 3-36-31-18 18-32-22-28 29-23-9-35 36-12 7-36 36 2 18-32 32 19Z" fill="url(#tooth)" stroke="#e2f2f6" stroke-opacity=".5" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="256" cy="256" r="167" fill="url(#gear)" stroke="#9eb6c1" stroke-opacity=".58" stroke-width="5"/><circle cx="256" cy="256" r="131" fill="none" stroke="#01060b" stroke-width="26"/>
+    <g fill="#102638" stroke="#8bdcff" stroke-opacity=".64" stroke-width="3"><circle cx="256" cy="115" r="13"/><circle cx="356" cy="156" r="13"/><circle cx="377" cy="256" r="13"/><circle cx="356" cy="356" r="13"/><circle cx="256" cy="397" r="13"/><circle cx="156" cy="356" r="13"/><circle cx="135" cy="256" r="13"/><circle cx="156" cy="156" r="13"/></g>
+    <circle cx="256" cy="256" r="99" fill="url(#core)" stroke="#b7efff" stroke-opacity=".75" stroke-width="5"/>
+    <path d="M201 283c18-44 40-69 76-75 30-5 57 4 78 29l-21 34c-17-15-35-22-55-19-21 3-33 15-44 37h-34Z" fill="#061429" stroke="#a7eaff" stroke-opacity=".78" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M213 290h80c16 0 28 8 38 24h-139c5-14 12-21 21-24Z" fill="#071a30" stroke="#8bdcff" stroke-opacity=".72" stroke-width="3"/>
+    <circle cx="235" cy="316" r="13" fill="#050d18" stroke="#d5f5ff" stroke-opacity=".8" stroke-width="3"/><circle cx="312" cy="316" r="13" fill="#050d18" stroke="#d5f5ff" stroke-opacity=".8" stroke-width="3"/>
+    <path d="M217 217c17-19 36-28 59-31M145 398a166 166 0 0 0 53 18M357 98a170 170 0 0 1 38 31" fill="none" stroke="#b4edff" stroke-opacity=".58" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

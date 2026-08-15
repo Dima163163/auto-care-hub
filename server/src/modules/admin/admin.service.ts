@@ -104,6 +104,7 @@ export type SuperAdminPlatformOverview = {
 }
 
 export function getProviderTrustScore(provider: AutomotiveProviderEntity) {
+    if (provider.trustReassessedAt !== null) return Number(provider.trustScore)
     const reviewScore = Math.min(provider.reviewCount, 50) / 2
     const ratingScore = Math.min(Number(provider.rating), 5) * 8
     const experienceScore = Math.min(provider.yearsActive, 10)

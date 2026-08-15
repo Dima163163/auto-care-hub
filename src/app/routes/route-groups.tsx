@@ -78,7 +78,6 @@ export function renderPublicRoutes() {
             <Route path={ROUTES.cabinets} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
             <Route path={ROUTES.serviceDiscovery} element={<AutoCareResultsPage />} />
             <Route path={ROUTES.serviceProviderDetails} element={<AutoCareProviderPage />} />
-            <Route path={ROUTES.serviceRequest} element={<AutoCareRequestPage />} />
             <Route path={ROUTES.cabinetDetails} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
         </Route>
     )
@@ -117,6 +116,7 @@ export function renderClientRoutes() {
             <Route path={ROUTES.profileBookings} element={<ProfileBookingsPage />} />
             <Route path={ROUTES.profileReviews} element={<ProfileReviewsPage />} />
             <Route path={ROUTES.profileVehicles} element={<ProfileVehiclesPage />} />
+            <Route path={ROUTES.serviceRequest} element={<AutoCareRequestPage />} />
         </Route>
     )
 }

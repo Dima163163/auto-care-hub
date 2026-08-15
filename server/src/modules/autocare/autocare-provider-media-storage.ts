@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { env } from '../../config/env.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { selectOrphanAutoCareMedia } from './orphan-media-policy.js'
 
 export type AutoCareProviderMediaKind = 'cover' | 'gallery'
 
@@ -64,4 +65,39 @@ export async function readAutoCareProviderMedia(kind: AutoCareProviderMediaKind,
 export function createAutoCareProviderMediaReadStream(kind: AutoCareProviderMediaKind, fileName: string) {
     assertAutoCareProviderMediaFileName(fileName)
     return createReadStream(path.join(mediaRoot(kind), fileName))
+}
+
+export async function cleanupOrphanedAutoCareProviderMedia(input: {
+    kind: AutoCareProviderMediaKind
+    referencedUrls: readonly string[]
+    now?: Date
+    gracePeriodMs: number
+}) {
+    const root = mediaRoot(input.kind)
+    let names: string[]
+    try {
+        names = await readdir(root)
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { scanned: 0, removed: 0, failed: 0 }
+        throw error
+    }
+    const prefix = `/uploads/autocare/media/${input.kind}/`
+    const referenced = new Set(input.referencedUrls
+        .filter((value) => value.startsWith(prefix))
+        .map((value) => value.slice(prefix.length))
+        .filter((value) => mediaPattern.test(value)))
+    const entries = (await Promise.allSettled(names
+        .filter((fileName) => mediaPattern.test(fileName))
+        .map(async (fileName) => ({ fileName, lastModifiedAt: (await stat(path.join(root, fileName))).mtimeMs }))))
+        .flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+    const candidates = selectOrphanAutoCareMedia({ entries, referencedFileNames: referenced, now: (input.now ?? new Date()).getTime(), gracePeriodMs: input.gracePeriodMs })
+    let failed = 0
+    for (const candidate of candidates) {
+        try {
+            await unlink(path.join(root, candidate.fileName))
+        } catch {
+            failed += 1
+        }
+    }
+    return { scanned: candidates.length, removed: candidates.length - failed, failed }
 }

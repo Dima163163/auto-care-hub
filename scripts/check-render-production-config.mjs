@@ -8,8 +8,6 @@ const REQUIRED_FRAGMENTS = [
     ['SMTP delivery', 'key: MAIL_MODE\n        value: smtp'],
     ['explicit bootstrap email', 'key: BOOTSTRAP_SUPER_ADMIN_EMAIL\n        sync: false'],
     ['outbox encryption key', 'key: OUTBOX_TOKEN_ENCRYPTION_KEY\n        sync: false'],
-    ['Stripe secret key', 'key: STRIPE_SECRET_KEY\n        sync: false'],
-    ['Stripe webhook secret', 'key: STRIPE_WEBHOOK_SECRET\n        sync: false'],
     ['explicit cabinet uploads root', 'key: CABINET_UPLOADS_DIR\n        sync: false'],
 ]
 
@@ -17,6 +15,16 @@ export function assertRenderProductionConfig(source) {
     const missing = REQUIRED_FRAGMENTS
         .filter(([, fragment]) => !source.includes(fragment))
         .map(([name]) => name)
+
+    const paymentsDisabled = source.includes('key: PAYMENTS_ENABLED\n        value: "false"')
+    if (!paymentsDisabled) {
+        for (const [name, fragment] of [
+            ['Stripe secret key', 'key: STRIPE_SECRET_KEY\n        sync: false'],
+            ['Stripe webhook secret', 'key: STRIPE_WEBHOOK_SECRET\n        sync: false'],
+        ]) {
+            if (!source.includes(fragment)) missing.push(name)
+        }
+    }
 
     if (source.includes('key: MAIL_MODE\n        value: logger')) {
         missing.push('no production logger mail mode')

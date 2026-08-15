@@ -14,6 +14,7 @@ npm run check:mvp-readiness
 npm run test:server:unit
 npm run quality:backend
 npm --prefix server run check:migrations
+npm run check:autocare-integrity
 npm --prefix server run test:unit
 npm --prefix server run build
 npm run build
@@ -33,6 +34,10 @@ and use the test database settings from `.github/workflows/quality.yml`. The
 unit quality command remains runnable without services; integration failures
 must be reported with the dependency name and port rather than treated as a
 passing smoke test.
+
+For the free AutoCare launch, verify `PAYMENTS_ENABLED=false` in every
+deployment. Legacy Stripe routes and background reconciliation stay disabled
+until a separate product/legal approval explicitly reopens that boundary.
 
 ## Release review
 
@@ -57,6 +62,9 @@ passing smoke test.
   an allowed application role; malformed claims must fail verification.
 - Confirm trusted-proxy hops/CIDRs and CORS origins stay within their bounded,
   explicit configuration policy.
+- In production, verify browser mutations with a refresh/CSRF cookie are
+  rejected without a trusted Origin/Referer and matching CSRF header; verify
+  bearer-only native requests remain supported without browser cookies.
 - Confirm session metadata, outbox failure details, and Stripe webhook/checkout
   diagnostics are bounded and redacted before persistence.
 - Exercise payment success, retry, failure, refund, webhook replay, and
@@ -124,6 +132,10 @@ Phase Z checks:
 
 - Run `npm run check:migration-inventory` and record the checksum with the
   release artifact; investigate any unexpected migration source change.
+- Run `npm run check:autocare-integrity`. Repair any reported cross-aggregate
+  rows before promotion, then run `npm --prefix server run
+  check:autocare-integrity -- --validate` to promote the AutoCare constraints
+  from `NOT VALID`.
 - Confirm shared cursor limits, session metadata, OAuth subjects, booking
   cancellation reasons, notification content, and audit targets are bounded
   before persistence.
@@ -165,8 +177,8 @@ Phase Z checks:
 
 - Confirm `1785430000000-RepairBookingIdempotencyKey` is present in the built
   release artifact and that migration order/inventory checks report the
-  current production migration set. This baseline contains 67 files; always
-  record the command's checksum instead of relying on a copied count.
+  current production migration set. The 2026-08-15 baseline contains 93 files;
+  always record the command's checksum instead of relying on a copied count.
 - Run the release migration job before starting replicas. Verify both
   `bookings.idempotency_key` and `IDX_bookings_client_idempotency_key` through
   the production database or migration diagnostics; do not repair them with
@@ -178,6 +190,9 @@ Phase Z checks:
 - Confirm retention cleanup, availability previews, reminder scheduling,
   outbox dispatch, external OAuth responses, and data exports stay within
   their documented batch/body bounds.
+- Verify the provider trust endpoint exposes the deterministic score factors,
+  approved-review/evidence counts and open-guarantee-claim penalty; do not
+  promote a provider badge without the corresponding evidence policy.
 - Run `npm --prefix server run test:unit`, `npm --prefix server run build`,
   `npm run test:migration-check`, `npm run check:migration-inventory`, and
   `npm --prefix server run check:migrations` before promotion.

@@ -67,6 +67,7 @@ function createProvider(index: number): ProviderPreview {
     const servicePrices = createServicePrices(index)
     const distance = Number((1.4 + ((index * 17) % 230) / 10).toFixed(1))
     const rating = Number((4.1 + ((index * 13) % 9) / 10).toFixed(1))
+    const priceType = PRICE_TYPES[index % PRICE_TYPES.length]!
 
     return {
         id: `mock-service-${String(index + 1).padStart(3, '0')}`,
@@ -75,6 +76,7 @@ function createProvider(index: number): ProviderPreview {
         reviewCount: 18 + ((index * 47) % 640),
         distance: `${distance.toFixed(1)} km`,
         price: servicePrices['oil-change'] ?? SERVICE_BASE_PRICES['oil-change'],
+        priceTo: priceType === 'range' ? Math.round((servicePrices['oil-change'] ?? SERVICE_BASE_PRICES['oil-change']) * 1.2) : null,
         currency: 'RUB',
         nextSlot: index % 4 === 0 ? 'Tomorrow, 09:30' : `Today, ${String(10 + (index % 9)).padStart(2, '0')}:${index % 2 ? '30' : '00'}`,
         image: SERVICE_IMAGES[index % SERVICE_IMAGES.length],
@@ -84,7 +86,7 @@ function createProvider(index: number): ProviderPreview {
         serviceIds: SERVICE_IDS,
         servicePrices,
         address: `Москва, ${district}, ул. Автомобильная, ${10 + (index % 80)}`,
-        priceType: PRICE_TYPES[index % PRICE_TYPES.length],
+        priceType,
         inclusions: INCLUSION_SETS[index % INCLUSION_SETS.length],
         warrantyMonths: index % 9 === 0 ? null : 6 + (index % 3) * 6,
         brandSpecializations: getBrandSpecializations(index),

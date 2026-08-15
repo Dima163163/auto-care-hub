@@ -318,6 +318,9 @@ export function getOpenApiDocument() {
             '/v1/autocare-reviews/my': {
                 get: { operationId: 'listMyAutoCareReviews', responses: { '200': { description: 'Authenticated client automotive reviews and revision eligibility.' } } },
             },
+            '/v1/autocare-reviews': {
+                post: { operationId: 'createAutoCareReview', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['requestId', 'rating', 'text'], properties: { requestId: { type: 'string', format: 'uuid' }, rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Verified visit review submitted for moderation.' } } },
+            },
             '/v1/autocare-review-promos/redeem': {
                 post: { operationId: 'redeemAutoCareReviewPromo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['code'], properties: { code: { type: 'string', pattern: '^CARE-[A-Z0-9]{8}$' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Redeemed service promo and opened a one-time review revision window.' } } },
             },
@@ -370,7 +373,7 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareServiceOffer', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'title'], properties: { type: { type: 'string', enum: ['discount', 'alternative'] }, title: { type: 'string', minLength: 2, maxLength: 160 }, description: { type: ['string', 'null'], maxLength: 4_000 }, discountPercent: { type: ['integer', 'null'], minimum: 1, maximum: 100 }, couponCode: { type: ['string', 'null'], pattern: '^[A-Z0-9_-]{4,32}$' }, amountMinor: { type: ['integer', 'null'], minimum: 1 }, currencyCode: { type: ['string', 'null'], pattern: '^[A-Z]{3}$' }, expiresAt: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a service offer message.' } } },
             },
             '/v1/service-requests/{requestId}/ws': {
-                get: { operationId: 'connectAutoCareServiceChat', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'accessToken', in: 'query', required: false, schema: { type: 'string' } }], responses: { '101': { description: 'WebSocket upgrade for the service request chat.' } } },
+                get: { operationId: 'connectAutoCareServiceChat', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], description: 'WebSocket upgrade. Authenticate with the bearer.<access-token> subprotocol; access tokens are never accepted in the URL.', responses: { '101': { description: 'WebSocket upgrade for the service request chat.' } } },
             },
             '/v1/chats': {
                 get: { operationId: 'listMyAutoCareChats', responses: { '200': { description: 'Chats available to the authenticated client, service owner or administrator.' } } },
@@ -392,7 +395,7 @@ export function getOpenApiDocument() {
                 get: { operationId: 'getAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Private general chat attachment bytes.' } } },
             },
             '/v1/chats/{chatId}/ws': {
-                get: { operationId: 'connectAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'accessToken', in: 'query', required: false, schema: { type: 'string' } }], responses: { '101': { description: 'WebSocket upgrade for a general chat thread.' } } },
+                get: { operationId: 'connectAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], description: 'WebSocket upgrade. Authenticate with the bearer.<access-token> subprotocol; access tokens are never accepted in the URL.', responses: { '101': { description: 'WebSocket upgrade for a general chat thread.' } } },
             },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },

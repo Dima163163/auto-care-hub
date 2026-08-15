@@ -19,6 +19,7 @@
     "test:server:unit": "npm --prefix server run test:unit",
     "test:migration-check": "node --test scripts/check-migration-order.test.mjs",
     "check:migration-inventory": "node scripts/check-migration-inventory.mjs",
+    "check:autocare-integrity": "npm --prefix server run check:autocare-integrity --",
     "check:render-production-config": "node scripts/check-render-production-config.mjs",
     "test:integration-prerequisites": "node --test scripts/check-integration-prerequisites.test.mjs",
     "check:integration-prerequisites": "node scripts/check-integration-prerequisites.mjs",

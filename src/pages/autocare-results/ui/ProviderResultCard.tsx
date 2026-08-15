@@ -20,6 +20,17 @@ export function ProviderResultCard({ provider, selected, highlight, onToggle, on
     const { isFavorite, toggle } = useAutoCareFavorites()
     const favorite = isFavorite(provider.id)
     const price = new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(provider.price)
+    const priceType = provider.priceType ?? 'from'
+    const priceTo = provider.priceTo ?? (priceType === 'range' ? Math.round(provider.price * 1.2) : null)
+    const formattedPriceTo = priceTo === null ? null : new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(priceTo)
+    const displayPrice = priceType === 'fixed'
+        ? price
+        : priceType === 'range' && formattedPriceTo
+            ? `${price}–${formattedPriceTo}`
+            : priceType === 'quote_required'
+                ? t('autocare.quoteRequiredPrice')
+                : t('autocare.fromPrice', { price })
+    const priceFormatLabel = t(`autocare.priceType.${priceType}`)
     const isBestValue = highlight === 'best-value'
     const isHighestRating = highlight === 'highest-rating'
     const hasPhoto = Boolean(provider.image?.trim())
@@ -36,7 +47,7 @@ export function ProviderResultCard({ provider, selected, highlight, onToggle, on
             <div className="min-w-0">
                 <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><ProviderLogo logoUrl={provider.logoUrl} name={provider.name} /><Link to={routePaths.serviceProviderDetails(provider.id)} className="font-black text-foreground hover:text-primary">{provider.name}</Link>{provider.verified && <BadgeCheck className="size-4 text-primary" aria-label={t('autocare.trustedBadge')} />}</div><div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold"><span className="inline-flex items-center gap-1 text-rating-foreground"><Star className="size-3.5 fill-rating-fill" />{provider.rating.toFixed(1)}</span><span className="font-medium text-muted-foreground">({t('autocare.reviews', { count: provider.reviewCount })})</span></div></div><button type="button" onClick={onToggle} aria-pressed={selected} className={`flex size-8 shrink-0 items-center justify-center rounded-md border ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`} aria-label={t('autocare.compareAction')}><Check className="size-4" /></button></div>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground"><span>{provider.distance}</span><span>·</span><span>{provider.address ?? 'Москва, ул. Льва Толстого, 18'}</span></div>
-                <div className="mt-3 flex flex-wrap items-end justify-between gap-3"><div><div className="flex items-center gap-2"><p className="text-base font-black text-foreground">{t('autocare.fromPrice', { price })}</p>{isBestValue && <><span className="text-xs font-medium text-muted-foreground line-through">{oldPrice}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs font-bold text-status-danger-foreground">-17%</span></>}</div><p className="text-xs font-medium text-muted-foreground">{t('autocare.partsIncluded')}</p></div></div>
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="text-base font-black text-foreground">{displayPrice}</p><span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">{priceFormatLabel}</span>{isBestValue && <><span className="text-xs font-medium text-muted-foreground line-through">{oldPrice}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs font-bold text-status-danger-foreground">-17%</span></>}</div><p className="text-xs font-medium text-muted-foreground">{t('autocare.partsIncluded')}</p></div></div>
             </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-xs font-semibold text-muted-foreground"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-status-success-foreground" />{originalParts ? t('autocare.originalParts') : t('autocare.partsIncluded')}</span><span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-status-success-foreground" />{hasWarranty ? t('autocare.warrantyMonths', { count: warrantyMonths ?? 12 }) : t('autocare.qualityGuarantee')}</span><button type="button" onClick={onFocus} className="inline-flex items-center gap-1.5 text-primary hover:underline"><LocateFixed className="size-3.5" />{t('autocare.bookingToday')}</button></div>

@@ -15,7 +15,8 @@ foundation and replace the legacy domain in reviewed vertical slices.
 
 The supplied `PROJECT_PLAN.md` and `ARCHITECTURE.md` described a greenfield
 Next.js/FastAPI/SQLAlchemy/Alembic/PostGIS monorepo. The copied repository is
-instead a React/Vite and Fastify/TypeORM project with 67 TypeORM migration files,
+instead a React/Vite and Fastify/TypeORM project. The historical audit snapshot
+contained 67 TypeORM migration files; the current repository contains 93,
 hundreds of frontend/backend TypeScript files, existing production checks and
 deployed AutoCare Hub assumptions. The greenfield documents were useful for the
 AutoCare domain model, but not as executable instructions for this repository.
@@ -25,8 +26,9 @@ AutoCare domain model, but not as executable instructions for this repository.
 - The inherited AutoCare Hub `.git` directory is no longer active.
 - It is preserved for recovery at
   `/Users/a1/Desktop/my-projects/AutoCareHub/.legacy-git/legacy-booking.git-2026-08-12`.
-- `/Users/a1/Desktop/my-projects/AutoCareHub/autocare-hub` is now a new empty Git
-  repository on `main` with no commits and no remotes.
+- `/Users/a1/Desktop/my-projects/AutoCareHub/autocare-hub` is now maintained on
+  the `dev` integration branch; `main` remains production-only and the remote
+  is `git@github.com:Dima163163/auto-care-hub.git`.
 - A new `origin` must not be added until the product owner supplies and approves
   the new AutoCare Hub repository URL.
 - Real `.env.*` files are ignored; `.env.example` templates remain eligible for
@@ -182,6 +184,8 @@ that changes the corresponding runtime behavior.
 
 ## Immediate next action
 
-Review the documentation diff, answer the decision register, then prepare the
-design/mock phase. No legacy deletion or backend implementation is required for
-the documentation commit.
+Apply migrations through `178595` in the disposable Docker PostgreSQL instance,
+run `npm run check:autocare-integrity`, repair any existing mismatches, and
+validate the `NOT VALID` aggregate constraints. Then add the AutoCare-specific
+database integration cases to CI before enabling a pilot. No legacy deletion or
+Python backend rewrite is authorized in this phase.

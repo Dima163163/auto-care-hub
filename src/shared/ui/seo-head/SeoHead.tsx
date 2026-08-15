@@ -75,7 +75,7 @@ export function SeoHead() {
         const canonical = new URL(pathname, window.location.origin)
         if (locale !== 'en') canonical.searchParams.set('lang', locale)
         const canonicalUrl = canonical.href
-        const isPrivate = pathname.startsWith('/profile') || pathname.startsWith('/owner') || pathname.startsWith('/admin') || pathname === ROUTES.notifications
+        const isPrivate = pathname.startsWith('/profile') || pathname.startsWith('/owner') || pathname.startsWith('/admin') || pathname.startsWith('/chats') || pathname.startsWith('/onboarding') || pathname === ROUTES.notifications
         const isSearch = pathname === ROUTES.serviceDiscovery
 
         document.title = copy.title

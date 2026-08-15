@@ -1,6 +1,6 @@
 # Backend/API parity
 
-Updated: 2026-08-14
+Updated: 2026-08-15
 
 ## Decision
 
@@ -17,8 +17,8 @@ The inventory compares the route signatures declared in
 
 | Set | Count | Meaning |
 | --- | ---: | --- |
-| MSW mock routes | 150 | Requests the browser can exercise without a server |
-| Fastify routes | 187 | Mock routes plus auth, health, admin, uploads, payment, chat and WebSocket support |
+| MSW mock routes | 168 | Requests the browser can exercise without a server |
+| Fastify routes | 204 | Mock routes plus auth, health, admin, uploads, payment, chat and WebSocket support |
 | Missing mock routes | 0 | Every mock request has a real backend route |
 
 The check is executable with `npm run check:api-parity`. It intentionally
@@ -32,7 +32,7 @@ implemented as a flat public catalog of active cabinets and declared in
 OpenAPI. The mock uses the same active-only rule; drafts and blocked records
 remain owner/admin state and are never exposed through a public catalog.
 
-The 150 mock routes are distributed across these top-level API groups:
+The 168 mock routes are distributed across these top-level API groups:
 
 | Prefix | Routes | Contract role |
 | --- | ---: | --- |
@@ -112,7 +112,10 @@ against a shared or production instance.
 
 ## Next backend slices
 
-The endpoint parity work is complete. The next production slices are timezone-
-aware provider schedules/reminders, PostGIS distance indexes, provider
-memberships and the trust/ranking evidence model. Python migration remains a
-separate future decision and must not be started without explicit approval.
+The endpoint parity work is complete. Timezone-aware provider schedules,
+provider memberships, locked overlap checks, attachment quotas/orphan media
+cleanup and append-only quote history are now persisted. The next production
+slices are reminder/resource-capacity scheduling, PostGIS distance indexes,
+durable object storage/quarantine, quote-history moderation/review evidence and
+the trust/ranking model. Python migration remains a separate future decision
+and must not be started without explicit approval.

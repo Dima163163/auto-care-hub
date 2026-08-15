@@ -45,8 +45,8 @@ function MobileAppCard() {
 }
 
 const mobileArtworkMask = {
-    maskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, #000 29%, #000 100%)',
-    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, #000 29%, #000 100%)',
+    maskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, var(--foreground) 29%, var(--foreground) 100%)',
+    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, var(--foreground) 29%, var(--foreground) 100%)',
 } as const
 
 function StoreBadge({ store, label }: { store: 'apple' | 'google'; label: string }) {

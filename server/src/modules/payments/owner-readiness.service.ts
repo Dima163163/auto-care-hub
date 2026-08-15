@@ -7,6 +7,7 @@ import { CabinetEntity, CabinetStatus } from '../../entities/cabinet/cabinet.ent
 import { ServiceEntity } from '../../entities/service/service.entity.js'
 import { stripe } from '../../shared/stripe/stripe.js'
 import { getPayoutCapabilityDecision } from './payout-capability.js'
+import { env } from '../../config/env.js'
 
 export type OwnerPayoutReadiness = 'ready' | 'not_connected' | 'pending' | 'unavailable'
 
@@ -53,8 +54,12 @@ export async function getOwnerReadiness(
         ])
         : [0, 0]
 
-    let payoutAccount: OwnerPayoutReadiness = 'not_connected'
-    if (owner.stripeConnectAccountId) {
+    // Customer repair payment and provider payouts are intentionally not part
+    // of the free AutoCare launch.  Keep the legacy read model available for
+    // compatibility, but never make a disabled Stripe payout a blocker or
+    // call the provider API from the normal owner dashboard.
+    let payoutAccount: OwnerPayoutReadiness = env.paymentsEnabled ? 'not_connected' : 'unavailable'
+    if (env.paymentsEnabled && owner.stripeConnectAccountId) {
         try {
             const account = await stripeClient.accounts.retrieve(owner.stripeConnectAccountId)
             const capability = getPayoutCapabilityDecision({
@@ -81,7 +86,7 @@ export async function getOwnerReadiness(
     if (!checks.activeCabinet) blockers.push('active_cabinet')
     if (!checks.activeService) blockers.push('active_service')
     if (!checks.scheduleConfigured) blockers.push('schedule')
-    if (checks.payoutAccount !== 'ready') blockers.push('payout_account')
+    if (env.paymentsEnabled && checks.payoutAccount !== 'ready') blockers.push('payout_account')
 
     return {
         ready: blockers.length === 0,

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
-import { Link, useParams, useSearchParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
-import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareRepairTimelineQuery, useGetAutoCareServiceConversationQuery } from '@/entities/automotive-service'
+import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareRepairTimelineQuery, useGetAutoCareServiceConversationQuery } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
+import { useGetMeQuery } from '@/features/auth'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { RequestForm, type RequestFormPayload } from './RequestForm'
@@ -15,10 +16,14 @@ export function AutoCareRequestPage() {
     const { id = '' } = useParams()
     const [searchParams] = useSearchParams()
     const { t } = useTranslation()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const { data: user } = useGetMeQuery()
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
     const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
     const [createRequest, { isLoading: isSubmitting, error: submitError }] = useCreateAutoCareServiceRequestMutation()
+    const [createAttachment] = useCreateAutoCareServiceAttachmentMutation()
     const provider = data ? mapAutoCareProviderProfile(data) : undefined
     const offering = useMemo(
         () => provider?.offerings.find((item) => item.serviceId === searchParams.get('service')) ?? provider?.offerings[0],
@@ -31,20 +36,29 @@ export function AutoCareRequestPage() {
     }
 
     const handleSubmit = async (payload: RequestFormPayload) => {
+        if (!user?.emailVerifiedAt) {
+            navigate('/verify-email', { state: { from: location } })
+            return
+        }
         const requestKey = idempotencyKey ?? crypto.randomUUID()
         if (!idempotencyKey) setIdempotencyKey(requestKey)
-        const result = await createRequest({
-            providerId: data.id,
-            locationId: data.location.id,
-            offeringId: offering.id,
-            preferredAt: payload.preferredAt,
-            vehicleSnapshot: payload.vehicleSnapshot,
-            contactSnapshot: payload.contactSnapshot,
-            note: payload.note,
-            idempotencyKey: requestKey,
-        }).unwrap()
-        setSubmittedRequestId(result.id)
-        setIdempotencyKey(null)
+        try {
+            const result = await createRequest({
+                providerId: data.id,
+                locationId: data.location.id,
+                offeringId: offering.id,
+                preferredAt: payload.preferredAt,
+                vehicleSnapshot: payload.vehicleSnapshot,
+                contactSnapshot: payload.contactSnapshot,
+                note: payload.note,
+                idempotencyKey: requestKey,
+            }).unwrap()
+            await Promise.all(payload.files.map(async (file) => createAttachment({ requestId: result.id, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()))
+            setSubmittedRequestId(result.id)
+            setIdempotencyKey(null)
+        } catch {
+            // RTK Query exposes the mutation error to the form; retain the key for a safe retry.
+        }
     }
 
     return (
@@ -66,6 +80,15 @@ export function AutoCareRequestPage() {
             </div>
         </main>
     )
+}
+
+function readFileAsBase64(file: File) {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(file)
+    })
 }
 
 function RequestFollowUp({ providerId, requestId }: { providerId: string; requestId: string }) {

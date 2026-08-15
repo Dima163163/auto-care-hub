@@ -98,7 +98,8 @@ const failures = checks.filter(([, actual, limit]) => actual > limit)
 
 if (failures.length > 0) {
     for (const [name, actual, limit] of failures) {
-        console.error(`Budget exceeded: ${name} is ${formatBytes(actual)}, limit is ${formatBytes(limit)}`)
+        const format = name === 'JS chunk count' ? (value) => String(value) : formatBytes
+        console.error(`Budget exceeded: ${name} is ${format(actual)}, limit is ${format(limit)}`)
     }
 
     process.exitCode = 1
