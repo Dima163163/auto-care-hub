@@ -206,6 +206,11 @@ and cache isolation in desktop and mobile Chromium. A one-time cache migration
 removes the retired Bookly public cache without touching private identity
 caches. Final release/device smoke testing against the deployed real API
 remains.
+Locale loading is also split by active language: the initial entry no longer
+ships the complete translation catalog, and each locale family is emitted as a
+separate deferred chunk. The largest shared locale module and aggregate
+deferred assets remain tracked for a later split pass; the runtime must remain
+cycle-free and the English entry must render without waiting for every language.
 
 Current page delivery order:
 

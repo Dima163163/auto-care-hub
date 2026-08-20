@@ -3,27 +3,19 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react'
 
 import {
-    getStoredLocale,
+    getInitialLocale,
     getLocaleOption,
     LOCALE_STORAGE_KEY,
-    normalizeLocale,
     type SupportedLocale,
 } from '@/shared/config/i18n'
+import { loadTranslations } from '@/shared/config/translations'
 import { t as translate } from '@/shared/lib/i18n'
 import { I18nContext, type I18nContextValue } from '@/shared/lib/i18n-context'
-
-function getInitialLocale(): SupportedLocale {
-    if (typeof window !== 'undefined') {
-        const urlLocale = normalizeLocale(new URLSearchParams(window.location.search).get('lang') ?? undefined)
-        if (urlLocale) return urlLocale
-    }
-
-    return getStoredLocale()
-}
 
 type I18nProviderProps = {
     children: ReactNode
@@ -31,19 +23,31 @@ type I18nProviderProps = {
 
 export function I18nProvider({ children }: I18nProviderProps) {
     const [locale, setLocaleState] = useState<SupportedLocale>(getInitialLocale)
+    const localeRequestRef = useRef(0)
 
     const setLocale = useCallback((nextLocale: SupportedLocale) => {
-        setLocaleState(nextLocale)
+        const requestId = localeRequestRef.current + 1
+        localeRequestRef.current = requestId
 
-        if (typeof window === 'undefined') return
+        void loadTranslations(nextLocale)
+            .then(() => {
+                if (localeRequestRef.current !== requestId) return
 
-        const url = new URL(window.location.href)
-        if (nextLocale === 'en') {
-            url.searchParams.delete('lang')
-        } else {
-            url.searchParams.set('lang', nextLocale)
-        }
-        window.history.replaceState(window.history.state, '', url)
+                setLocaleState(nextLocale)
+
+                if (typeof window === 'undefined') return
+
+                const url = new URL(window.location.href)
+                if (nextLocale === 'en') {
+                    url.searchParams.delete('lang')
+                } else {
+                    url.searchParams.set('lang', nextLocale)
+                }
+                window.history.replaceState(window.history.state, '', url)
+            })
+            .catch((error: unknown) => {
+                console.error('Failed to load selected locale', error)
+            })
     }, [])
 
     useEffect(() => {

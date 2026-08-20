@@ -5,6 +5,8 @@ import { BrowserRouter } from 'react-router'
 import './index.css'
 import { App } from '@/app/App'
 import { StoreProvider } from '@/app/store'
+import { getInitialLocale } from '@/shared/config/i18n'
+import { loadTranslations } from '@/shared/config/translations'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
 import {
     applyTheme,
@@ -46,7 +48,10 @@ async function enableMocking() {
 }
 
 
-enableMocking().then(() => {
+Promise.all([
+    enableMocking(),
+    loadTranslations(getInitialLocale()),
+]).then(() => {
     createRoot(document.getElementById('root')!).render(
         <StrictMode>
             <StoreProvider>

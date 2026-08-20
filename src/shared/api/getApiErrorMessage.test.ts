@@ -1,11 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
+import { loadAllTranslations } from '@/shared/config/translations'
 import {
     getApiErrorCode,
     getApiErrorMessage,
 } from './getApiErrorMessage'
 
 describe('getApiErrorMessage', () => {
+    beforeAll(async () => {
+        await loadAllTranslations()
+    })
+
     it('returns API message when error contains non-empty string message', () => {
         const error = {
             data: {

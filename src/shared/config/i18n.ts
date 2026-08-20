@@ -88,3 +88,12 @@ export function getStoredLocale(): SupportedLocale {
 
     return browserLocale ?? DEFAULT_LOCALE
 }
+
+export function getInitialLocale(): SupportedLocale {
+    if (typeof window !== 'undefined') {
+        const urlLocale = normalizeLocale(new URLSearchParams(window.location.search).get('lang') ?? undefined)
+        if (urlLocale) return urlLocale
+    }
+
+    return getStoredLocale()
+}

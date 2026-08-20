@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import { translations } from './index'
+import type { SupportedLocale } from '@/shared/config/i18n'
+import { loadAllTranslations, type TranslationSchema } from './index'
+
+let translations: Record<SupportedLocale, TranslationSchema>
 
 function getLeafPaths(value: unknown, prefix = ''): string[] {
     if (typeof value !== 'object' || value === null) {
@@ -23,6 +26,10 @@ function getValue(value: unknown, path: string): unknown {
 }
 
 describe('translation coverage', () => {
+    beforeAll(async () => {
+        translations = await loadAllTranslations()
+    })
+
     it('keeps every locale compatible with the English translation schema', () => {
         const englishKeys = getLeafPaths(translations.en)
 

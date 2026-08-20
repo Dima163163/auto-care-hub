@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
+import { loadAllTranslations } from '@/shared/config/translations'
 import { t } from './i18n'
 
 describe('t', () => {
+    beforeAll(async () => {
+        await loadAllTranslations()
+    })
+
     it('returns english translation by default', () => {
         expect(t('common.loadingPage')).toBe('Loading page...')
     })

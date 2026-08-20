@@ -3,7 +3,7 @@ import {
     type SupportedLocale,
 } from '@/shared/config/i18n'
 import {
-    translations,
+    getTranslations,
     type TranslationSchema,
 } from '@/shared/config/translations'
 
@@ -25,7 +25,7 @@ function getTranslationValue(
 ) {
     const path = key.split('.')
 
-    let currentValue: unknown = translations[locale]
+    let currentValue: unknown = getTranslations(locale)
 
     for (const pathItem of path) {
         if (

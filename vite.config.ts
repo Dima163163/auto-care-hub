@@ -117,11 +117,6 @@ export default defineConfig({
               priority: 2,
             },
             {
-              name: 'i18n-runtime',
-              test: /src[\\/]shared[\\/]config[\\/]translations[\\/]/,
-              priority: 2,
-            },
-            {
               name: 'ui-runtime',
               test: /node_modules[\\/](?:@base-ui|framer-motion|lucide-react)[\\/]/,
               priority: 2,

@@ -210,6 +210,10 @@ universal multibrand providers in every selected-brand result.
   production-preview suite verifies this contract offline in desktop and mobile
   Chromium. The retired legacy public cache is removed automatically after an
   app update, without touching private identity-scoped caches.
+- Translation bundles are loaded for the active locale only; the production
+  entry remains independent from the full world-language catalog and each
+  locale family is emitted as a separate deferred chunk. The largest shared
+  locale module remains tracked for a later split pass.
 - The former Git metadata is recoverable only at
   `/Users/a1/Desktop/my-projects/AutoCareHub/.legacy-git/legacy-booking.git-2026-08-12`.
 - `src/pages/cabinets`, `src/entities/cabinet`, `server/src/modules/cabinets`,
