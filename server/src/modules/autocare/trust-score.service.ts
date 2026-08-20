@@ -10,6 +10,8 @@ import {
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
     AutomotiveServiceLocationEntity,
+    ServiceRequestEntity,
+    ServiceRequestStatus,
 } from '../../entities/index.js'
 import { calculateAutoCareTrustScore, type AutoCareTrustScore } from './trust-score.js'
 
@@ -39,10 +41,11 @@ export async function reassessAutoCareProviderTrust(
     const provider = await providerRepository.findOneBy({ id: providerId })
     if (!provider) return null
 
-    const [evidence, reviews, claims] = await Promise.all([
+    const [evidence, reviews, claims, interactions] = await Promise.all([
         manager.getRepository(AutoCareTrustEvidenceEntity).find({ where: { providerId } }),
-        manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved } }),
+        manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved, verifiedVisit: true } }),
         manager.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { providerId } }),
+        manager.getRepository(ServiceRequestEntity).find({ where: { providerId }, select: { status: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
     ])
     const nowMs = Date.now()
     const verifiedEvidenceCount = evidence.filter((item) =>
@@ -53,6 +56,11 @@ export async function reassessAutoCareProviderTrust(
         ? reviews.reduce((total, review) => total + review.rating, 0) / reviewCount
         : Number(provider.rating)
     const activeGuaranteeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status)).length
+    const completedInteractionCount = interactions.filter((request) =>
+        request.status === ServiceRequestStatus.Closed && Boolean(request.clientConfirmedAt && request.providerConfirmedAt),
+    ).length
+    const cancelledInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.Cancelled).length
+    const noShowInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.NoShow).length
     const profileFields = getProfileFieldCount(provider)
     const trust = calculateAutoCareTrustScore({
         verified: provider.verified,
@@ -62,6 +70,9 @@ export async function reassessAutoCareProviderTrust(
         profileFields,
         verifiedEvidenceCount,
         activeGuaranteeClaims,
+        completedInteractionCount,
+        cancelledInteractionCount,
+        noShowInteractionCount,
     })
     const now = new Date()
     const inputCounters = {
@@ -69,6 +80,9 @@ export async function reassessAutoCareProviderTrust(
         reviewCount,
         verifiedEvidenceCount,
         activeGuaranteeClaims,
+        completedInteractionCount,
+        cancelledInteractionCount,
+        noShowInteractionCount,
         rating: Math.round(rating * 100) / 100,
     }
     const reasonCodes = [
@@ -76,6 +90,8 @@ export async function reassessAutoCareProviderTrust(
         reviewCount < 10 ? 'small_review_sample' : null,
         verifiedEvidenceCount === 0 ? 'no_verified_evidence' : null,
         activeGuaranteeClaims > 0 ? 'open_guarantee_claims' : null,
+        completedInteractionCount === 0 ? 'no_completed_interactions' : null,
+        (cancelledInteractionCount + noShowInteractionCount) > completedInteractionCount && completedInteractionCount > 0 ? 'reliability_below_threshold' : null,
     ].filter((code): code is string => code !== null)
     const locations = await manager.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId } })
     const previousSnapshots = await manager.getRepository(AutoCareTrustSnapshotEntity).find({

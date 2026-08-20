@@ -12,6 +12,7 @@ describe('calculateAutoCareTrustScore', () => {
             profileFields: 5,
             verifiedEvidenceCount: 4,
             activeGuaranteeClaims: 0,
+            completedInteractionCount: 20,
         })
 
         expect(result.score).toBeGreaterThanOrEqual(80)
@@ -27,9 +28,24 @@ describe('calculateAutoCareTrustScore', () => {
             profileFields: 5,
             verifiedEvidenceCount: 5,
             activeGuaranteeClaims: 5,
+            completedInteractionCount: 20,
         })
 
         expect(result.score).toBeLessThan(100)
         expect(result.factors.claimsPenalty).toBe(25)
+    })
+
+    it('does not award a quality badge before a confirmed visit is completed', () => {
+        const result = calculateAutoCareTrustScore({
+            verified: true,
+            rating: 5,
+            reviewCount: 20,
+            yearsActive: 5,
+            profileFields: 5,
+            verifiedEvidenceCount: 5,
+            activeGuaranteeClaims: 0,
+        })
+
+        expect(result.badge).toBeNull()
     })
 })

@@ -688,7 +688,11 @@ Goal: deliver the core marketplace value in the browser.
 - [~] Define the provider trust score and “Надёжный сервис” badge policy before
   production ranking is enabled. The explainable deterministic policy and
   persisted score/badge recalculation are implemented; versioned snapshots,
-  completed-interaction evidence and ranking activation remain gated.
+  completed-interaction evidence and ranking activation remain gated. The
+  recalculation now uses only approved verified-visit reviews and counts
+  confirmed completed visits, cancellations and no-shows; badges require real
+  completed interactions, while the remaining policy thresholds and ranking
+  activation stay gated.
 - [x] Implement comparison for equivalent `ServiceDefinition` results only. The
   results query scopes every card to one service definition and changing that
   definition clears the comparison selection and map focus.

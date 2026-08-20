@@ -116,6 +116,7 @@ export default defineConfig({
       'src/modules/users/data-export-integrity.test.ts',
       'src/modules/autocare/autocare-mock-catalog.test.ts',
       'src/modules/autocare/autocare-ranking.test.ts',
+      'src/modules/autocare/trust-score.test.ts',
       'src/modules/vehicles/vehicle-catalog.test.ts',
       'src/modules/autocare/autocare-request-schema.test.ts',
       'src/modules/autocare/attachment-content.test.ts',

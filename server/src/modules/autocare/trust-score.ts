@@ -6,6 +6,9 @@ export type AutoCareTrustScoreInput = {
     profileFields: number
     verifiedEvidenceCount: number
     activeGuaranteeClaims: number
+    completedInteractionCount?: number
+    cancelledInteractionCount?: number
+    noShowInteractionCount?: number
 }
 
 export type AutoCareTrustScore = {
@@ -32,15 +35,19 @@ export function calculateAutoCareTrustScore(input: AutoCareTrustScoreInput): Aut
     const profile = clamp(input.profileFields, 0, 5) / 5 * 20
     const reviews = clamp(input.rating, 0, 5) / 5 * 30 + Math.min(Math.max(input.reviewCount, 0), 100) / 100 * 15
     const evidence = Math.min(Math.max(input.verifiedEvidenceCount, 0), 5) / 5 * 20
-    const reliability = (input.verified ? 10 : 0) + Math.min(Math.max(input.yearsActive, 0), 10) / 10 * 5
+    const completedInteractions = Math.max(input.completedInteractionCount ?? 0, 0)
+    const failedInteractions = Math.max(input.cancelledInteractionCount ?? 0, 0) + Math.max(input.noShowInteractionCount ?? 0, 0)
+    const interactionCount = completedInteractions + failedInteractions
+    const completionRate = interactionCount > 0 ? completedInteractions / interactionCount : 0
+    const reliability = (input.verified ? 7 : 0) + Math.min(Math.max(input.yearsActive, 0), 10) / 10 * 3 + completionRate * 5
     const claimsPenalty = Math.min(Math.max(input.activeGuaranteeClaims, 0), 5) * 5
     const score = Math.round(clamp(profile + reviews + evidence + reliability - claimsPenalty, 0, 100) * 10) / 10
 
     return {
         score,
-        badge: input.verified && input.reviewCount >= 10 && score >= 80
+        badge: input.verified && completedInteractions >= 10 && input.reviewCount >= 10 && score >= 80
             ? 'trusted'
-            : input.verified && score >= 65
+            : input.verified && completedInteractions >= 1 && score >= 65
                 ? 'quality'
                 : input.reviewCount < 3
                     ? 'new'
