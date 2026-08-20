@@ -198,8 +198,14 @@ The remaining public pages use the AutoCare visual shell, but Blog, Partners,
 Contacts, Rules and Privacy still use a shared generic information composition;
 their final policy/content pass is not complete. The responsive pass covers
 the main stacked layouts, but full 360/390/768/1024 visual QA is still open.
-PWA install prompting and the service-worker contract exist; offline discovery
-cache, deep-link fallback and release smoke tests still need completion.
+PWA install prompting and the service-worker contract exist. Anonymous AutoCare
+markets, zones, service definitions, provider search, provider profiles and
+platform reviews are cached for offline use; the production preview verifies
+offline search, offline provider details, deep-link fallback, mutation safety
+and cache isolation in desktop and mobile Chromium. A one-time cache migration
+removes the retired Bookly public cache without touching private identity
+caches. Final release/device smoke testing against the deployed real API
+remains.
 
 Current page delivery order:
 
@@ -215,9 +221,10 @@ Delivery order for the remaining client-facing work:
 1. finalize public information/legal copy and run footer/header route QA;
 2. run a responsive pass at mobile (360/390), tablet (768/1024) and desktop
    widths, including long translated labels, maps, galleries and forms;
-3. close the PWA release slice: install prompt, offline shell and cached public
-   discovery, safe update prompt, manifest/icons, deep-link fallback and PWA
-   smoke tests;
+3. finish the PWA release slice with deployed real-API/device smoke testing and
+   release evidence; the install prompt, offline shell, cached public AutoCare
+   discovery, safe update prompt, manifest/icons, deep-link fallback and local
+   Chromium smoke tests are implemented;
 4. only after these gates, start native iOS/Android implementation from the
    versioned API and shared domain contracts.
 

@@ -204,6 +204,12 @@ universal multibrand providers in every selected-brand result.
 - Root package names are `autocare-hub-web` and `autocare-hub-api`.
 - Runtime service, cookie, storage, PWA cache, mock-account, and deployment
   namespaces use the AutoCare Hub identity.
+- PWA runtime caching is limited to anonymous public AutoCare discovery data
+  (`markets`, zones, service definitions, provider search/profile and platform
+  reviews); authenticated and mutating requests never enter that cache. The
+  production-preview suite verifies this contract offline in desktop and mobile
+  Chromium. The retired legacy public cache is removed automatically after an
+  app update, without touching private identity-scoped caches.
 - The former Git metadata is recoverable only at
   `/Users/a1/Desktop/my-projects/AutoCareHub/.legacy-git/legacy-booking.git-2026-08-12`.
 - `src/pages/cabinets`, `src/entities/cabinet`, `server/src/modules/cabinets`,

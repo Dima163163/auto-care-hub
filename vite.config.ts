@@ -36,8 +36,14 @@ export default defineConfig({
           {
             // Workbox serializes this matcher into sw.js; keep it self-contained.
             urlPattern: ({ url, request }) => {
+              const publicAutoCareStaticPaths = new Set([
+                '/api/v1/markets',
+                '/api/v1/service-definitions',
+                '/api/v1/reviews/featured',
+                '/api/v1/platform-reviews',
+              ])
               const publicProviderDetailPath = /^\/api\/v1\/providers\/[^/]+$/i
-              const legacyCabinetDetailPath = /^\/api\/cabinets\/(?:cabinet-[^/]+|[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+              const publicLocationZonesPath = /^\/api\/v1\/markets\/[^/]+\/zones$/i
 
               if (
                 request.method.toUpperCase() !== 'GET' ||
@@ -46,14 +52,14 @@ export default defineConfig({
                 return false
               }
 
-              return url.pathname === '/api/v1/discovery/providers'
+              return publicAutoCareStaticPaths.has(url.pathname)
+                || url.pathname === '/api/v1/discovery/providers'
                 || publicProviderDetailPath.test(url.pathname)
-                || url.pathname === '/api/cabinets'
-                || legacyCabinetDetailPath.test(url.pathname)
+                || publicLocationZonesPath.test(url.pathname)
             },
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'autocare-hub-public-providers',
+              cacheName: 'autocare-hub-public-discovery',
               networkTimeoutSeconds: 3,
               cacheableResponse: {
                 statuses: [0, 200],
@@ -113,7 +119,6 @@ export default defineConfig({
             {
               name: 'i18n-runtime',
               test: /src[\\/]shared[\\/]config[\\/]translations[\\/]/,
-              maxSize: 250_000,
               priority: 2,
             },
             {

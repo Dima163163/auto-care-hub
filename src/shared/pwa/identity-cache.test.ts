@@ -11,7 +11,7 @@ describe('identity-scoped PWA cache cleanup', () => {
         const deleteCache = vi.fn().mockResolvedValue(true)
         const cachesApi = {
             keys: vi.fn().mockResolvedValue([
-                'autocare-hub-public-providers',
+                'autocare-hub-public-discovery',
                 'autocare-hub-private-client-1',
                 'autocare-hub-private-owner-2',
             ]),
@@ -24,7 +24,7 @@ describe('identity-scoped PWA cache cleanup', () => {
         expect(deleteCache).toHaveBeenCalledTimes(2)
         expect(deleteCache).toHaveBeenCalledWith('autocare-hub-private-client-1')
         expect(deleteCache).toHaveBeenCalledWith('autocare-hub-private-owner-2')
-        expect(deleteCache).not.toHaveBeenCalledWith('autocare-hub-public-providers')
+        expect(deleteCache).not.toHaveBeenCalledWith('autocare-hub-public-discovery')
     })
 
     it('swallows cache API failures so auth cleanup can continue', async () => {

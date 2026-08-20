@@ -4,6 +4,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react'
 
 import { Button } from '@/components/ui/button'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { clearRetiredPublicPwaCaches } from '@/shared/pwa/retired-public-cache'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 import { reloadApplication } from '../lib/reload-application'
 import { useOperationSafety } from '@/shared/lib/operation-safety'
@@ -20,6 +21,10 @@ export function PwaLifecycle() {
     const [isInstalling, setIsInstalling] = useState(false)
     const reloadTimerRef = useRef<number | null>(null)
     const { dirtyForms, pendingMutations } = useOperationSafety()
+
+    useEffect(() => {
+        void clearRetiredPublicPwaCaches()
+    }, [])
 
     useEffect(() => {
         const handleInstallPrompt = (event: Event) => {

@@ -4,9 +4,18 @@ type PublicCacheRequest = {
     hasAuthorization: boolean
 }
 
-const PUBLIC_CABINET_DETAIL_PATH = /^\/api\/cabinets\/(?:cabinet-[^/]+|[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+export const PUBLIC_DISCOVERY_CACHE_NAME = 'autocare-hub-public-discovery'
 
-export function isPublicCatalogRequest({
+const PUBLIC_AUTOCARE_STATIC_PATHS = new Set([
+    '/api/v1/markets',
+    '/api/v1/service-definitions',
+    '/api/v1/reviews/featured',
+    '/api/v1/platform-reviews',
+])
+const PUBLIC_AUTOCARE_PROVIDER_DETAIL_PATH = /^\/api\/v1\/providers\/[^/]+$/i
+const PUBLIC_AUTOCARE_LOCATION_ZONES_PATH = /^\/api\/v1\/markets\/[^/]+\/zones$/i
+
+export function isPublicDiscoveryRequest({
     method,
     pathname,
     hasAuthorization,
@@ -15,6 +24,8 @@ export function isPublicCatalogRequest({
         return false
     }
 
-    return pathname === '/api/cabinets'
-        || PUBLIC_CABINET_DETAIL_PATH.test(pathname)
+    return PUBLIC_AUTOCARE_STATIC_PATHS.has(pathname)
+        || pathname === '/api/v1/discovery/providers'
+        || PUBLIC_AUTOCARE_PROVIDER_DETAIL_PATH.test(pathname)
+        || PUBLIC_AUTOCARE_LOCATION_ZONES_PATH.test(pathname)
 }

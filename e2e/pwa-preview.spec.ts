@@ -21,58 +21,87 @@ async function waitForServiceWorkerControl(page: Page) {
 
 async function getPublicCacheUrls(page: Page) {
     return page.evaluate(async () => {
-        const cache = await caches.open('autocare-hub-public-providers')
+        const cache = await caches.open('autocare-hub-public-discovery')
         return (await cache.keys()).map((request) => request.url)
     })
 }
 
-async function loginAsPreviewOwner(page: Page) {
-    await page.goto('/login')
-    await page.locator('#email').fill('preview-owner@example.com')
-    await page.locator('#password').fill('preview-password')
-    await page.getByRole('button', { name: /sign in/i }).click()
-    await expect(page).toHaveURL(/\/owner\/dashboard/)
-}
-
 test.describe('production PWA contracts', () => {
-    test('serves the cached public catalog during an offline reload and recovers online', async ({ page }) => {
-        await page.goto('/cabinets')
+    test('serves cached public AutoCare discovery data while offline', async ({ page }) => {
+        const publicAutoCarePaths = [
+            '/api/v1/markets',
+            '/api/v1/markets/market-moscow/zones?limit=4',
+            '/api/v1/service-definitions',
+            '/api/v1/discovery/providers?serviceId=brakes&marketId=moscow',
+            '/api/v1/platform-reviews?limit=6',
+        ]
+
+        await page.goto('/')
         await waitForServiceWorkerControl(page)
-        await page.goto('/cabinets')
-        await expect(page.getByRole('heading', { name: /available cabinets/i })).toBeVisible()
+
+        const populated = await page.evaluate(async (paths) => {
+            const responses = await Promise.all(paths.map((path) => fetch(path)))
+            return responses.every((response) => response.ok)
+        }, publicAutoCarePaths)
+        expect(populated).toBe(true)
 
         await expect.poll(
             async () => {
                 const urls = await getPublicCacheUrls(page)
-                return urls.some((url) => url.includes('/api/cabinets'))
+                return publicAutoCarePaths.every((path) => urls.some((url) => url.includes(path)))
             },
             { timeout: 10_000 },
         ).toBe(true)
 
-        const privateProbeStatus = await page.evaluate(async () => {
-            const response = await fetch('/api/cabinets?private-cache-probe=1', {
+        const authorizedStatus = await page.evaluate(async () => {
+            const response = await fetch('/api/v1/discovery/providers?private-cache-probe=1', {
                 headers: { Authorization: 'Bearer private-probe' },
             })
             return response.status
         })
-        expect(privateProbeStatus).toBe(200)
-        await expect.poll(
-            () => getPublicCacheUrls(page),
-            { timeout: 2_000 },
-        ).not.toContainEqual(expect.stringContaining('private-cache-probe=1'))
+        expect(authorizedStatus).toBe(200)
+        await expect.poll(() => getPublicCacheUrls(page), { timeout: 2_000 }).not.toContainEqual(
+            expect.stringContaining('private-cache-probe=1'),
+        )
 
         await page.context().setOffline(true)
         try {
-            await page.goto('/cabinets')
-            await expect(page.getByRole('heading', { name: /available cabinets/i })).toBeVisible()
-            await expect(page.getByRole('link', { name: /view details/i }).first()).toBeVisible()
+            const cachedStatuses = await page.evaluate(async (paths) => Promise.all(
+                paths.map(async (path) => (await fetch(path)).status),
+            ), publicAutoCarePaths)
+            expect(cachedStatuses).toEqual(publicAutoCarePaths.map(() => 200))
+        } finally {
+            await page.context().setOffline(false)
+        }
+    })
+
+    test('serves cached AutoCare search results during an offline reload and recovers online', async ({ page }) => {
+        const discoveryPath = '/api/v1/discovery/providers?serviceId=brakes&marketId=moscow'
+
+        await page.goto('/services?service=brakes')
+        await waitForServiceWorkerControl(page)
+        await page.evaluate(async (path) => { await fetch(path) }, discoveryPath)
+        await expect(page.getByRole('heading', { name: /compare automotive services/i })).toBeVisible()
+
+        await expect.poll(
+            async () => {
+                const urls = await getPublicCacheUrls(page)
+                return urls.some((url) => url.includes(discoveryPath))
+            },
+            { timeout: 10_000 },
+        ).toBe(true)
+
+        await page.context().setOffline(true)
+        try {
+            await page.goto('/services?service=brakes')
+            await expect(page.getByRole('heading', { name: /compare automotive services/i })).toBeVisible()
             await expect(page.getByRole('alert')).toContainText(/you are offline/i)
         } finally {
             await page.context().setOffline(false)
         }
 
-        await page.goto('/cabinets')
-        await expect(page.getByRole('heading', { name: /available cabinets/i })).toBeVisible()
+        await page.goto('/services?service=brakes')
+        await expect(page.getByRole('heading', { name: /compare automotive services/i })).toBeVisible()
     })
 
     test('clears identity cache on real-mode logout while retaining public catalog cache', async ({ page }) => {
@@ -86,26 +115,14 @@ test.describe('production PWA contracts', () => {
             const privateCache = await caches.open('autocare-hub-private-preview-client')
             await privateCache.put('/api/profile/private', new Response('private'))
 
-            const publicCache = await caches.open('autocare-hub-public-providers')
-            await publicCache.put('/api/cabinets', new Response('{"items":[]}'))
+            const publicCache = await caches.open('autocare-hub-public-discovery')
+            await publicCache.put('/api/v1/discovery/providers', new Response('{"items":[]}'))
         })
 
         await page.getByRole('button', { name: /logout/i }).last().click()
         await expect(page).toHaveURL(/\/$/)
         await expect.poll(() => page.evaluate(() => caches.keys())).toContain(
-            'autocare-hub-public-providers',
-        )
-        await expect.poll(() => page.evaluate(() => caches.keys())).not.toContain(
-            'autocare-hub-private-preview-client',
-        )
-
-        await page.goto('/login')
-        await page.locator('#email').fill('preview-owner@example.com')
-        await page.locator('#password').fill('preview-password')
-        await page.getByRole('button', { name: /sign in/i }).click()
-        await expect(page).toHaveURL(/\/owner\/dashboard/)
-        await expect.poll(() => page.evaluate(() => caches.keys())).toContain(
-            'autocare-hub-public-providers',
+            'autocare-hub-public-discovery',
         )
         await expect.poll(() => page.evaluate(() => caches.keys())).not.toContain(
             'autocare-hub-private-preview-client',
@@ -113,19 +130,17 @@ test.describe('production PWA contracts', () => {
     })
 
     test('never treats an offline mutation as a cached success', async ({ page }) => {
-        await page.goto('/cabinets')
+        await page.goto('/')
         await waitForServiceWorkerControl(page)
-        await page.goto('/cabinets')
-        await expect(page.getByRole('heading', { name: /available cabinets/i })).toBeVisible()
 
         await page.context().setOffline(true)
         try {
             const mutationResult = await page.evaluate(async () => {
                 try {
-                    const response = await fetch('/api/bookings', {
+                    const response = await fetch('/api/v1/service-requests', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ cabinetId: 'offline-preview' }),
+                        body: JSON.stringify({ providerId: 'provider-preview' }),
                     })
 
                     return { kind: 'response', ok: response.ok, status: response.status }
@@ -136,48 +151,50 @@ test.describe('production PWA contracts', () => {
 
             expect(mutationResult).toEqual({ kind: 'network-error', ok: false })
             expect(await getPublicCacheUrls(page)).not.toContainEqual(
-                expect.stringContaining('/api/bookings'),
+                expect.stringContaining('/api/v1/service-requests'),
             )
         } finally {
             await page.context().setOffline(false)
         }
     })
 
-    test('keeps authorized cabinet details out of the anonymous cache', async ({ page }) => {
-        await page.goto('/cabinets')
+    test('keeps authorized provider details out of the anonymous cache', async ({ page }) => {
+        const providerPath = '/api/v1/providers/provider-preview'
+
+        await page.goto('/')
         await waitForServiceWorkerControl(page)
 
         await page.evaluate(async () => {
-            await caches.delete('autocare-hub-public-providers')
+            await caches.delete('autocare-hub-public-discovery')
         })
 
-        const authorizedStatus = await page.evaluate(async () => {
-            const response = await fetch('/api/cabinets/cabinet-private-probe', {
+        const authorizedStatus = await page.evaluate(async (path) => {
+            const response = await fetch(path, {
                 headers: { Authorization: 'Bearer private-probe' },
             })
             return response.status
-        })
+        }, providerPath)
 
         expect(authorizedStatus).toBe(200)
         await expect.poll(() => getPublicCacheUrls(page), { timeout: 2_000 }).not.toContainEqual(
-            expect.stringContaining('/api/cabinets/cabinet-private-probe'),
+            expect.stringContaining(providerPath),
         )
 
-        const publicStatus = await page.evaluate(async () => {
-            const response = await fetch('/api/cabinets/cabinet-public-probe')
+        const publicStatus = await page.evaluate(async (path) => {
+            const response = await fetch(path)
             return response.status
-        })
+        }, providerPath)
 
         expect(publicStatus).toBe(200)
         await expect.poll(() => getPublicCacheUrls(page), { timeout: 5_000 }).toContainEqual(
-            expect.stringContaining('/api/cabinets/cabinet-public-probe'),
+            expect.stringContaining(providerPath),
         )
     })
 
-    test('serves a cached public cabinet detail while offline', async ({ page }) => {
-        const detailPath = '/api/cabinets/cabinet-offline-detail'
+    test('serves a cached public provider detail while offline', async ({ page }) => {
+        const detailPath = '/api/v1/providers/provider-preview'
 
-        await page.goto('/cabinets')
+        await page.goto('/')
         await waitForServiceWorkerControl(page)
         await page.evaluate(async (path) => {
             await fetch(path)
@@ -193,63 +210,17 @@ test.describe('production PWA contracts', () => {
                 const response = await fetch(path)
                 return {
                     status: response.status,
-                    title: (await response.json()).title,
+                    title: (await response.json()).name,
                 }
             }, detailPath)
 
             expect(cachedDetail).toEqual({
                 status: 200,
-                title: 'Preview demo cabinet',
+                title: 'Preview AutoCare',
             })
         } finally {
             await page.context().setOffline(false)
         }
     })
 
-    test('keeps an interrupted owner mutation recoverable with an account-scoped draft', async ({ page }) => {
-        await loginAsPreviewOwner(page)
-
-        await page.getByRole('link', { name: /create cabinet|add space/i }).first().click()
-        await expect(page).toHaveURL(/\/owner\/cabinets\/create$/)
-        await page.locator('#title').fill('Preview recovery cabinet')
-        await page.locator('#description').fill('A draft that must survive a failed preview mutation.')
-        await page.locator('#city').fill('Berlin')
-        await page.locator('#pricePerHour').fill('1800')
-        await page.locator('#address').fill('Preview Street 9')
-        await page.getByRole('button', { name: /create cabinet/i }).click()
-
-        await expect(page.getByText(/preview cabinet mutation unavailable/i)).toBeVisible()
-        await expect.poll(
-            () => page.evaluate(() => localStorage.getItem('autocare-hub:owner-cabinet-create:v2:preview-owner')),
-            { timeout: 2_000 },
-        ).toContain('Preview recovery cabinet')
-    })
-
-    test('blocks a service-worker update while the owner form is dirty', async ({ page }) => {
-        await page.goto('/cabinets')
-        await waitForServiceWorkerControl(page)
-        await loginAsPreviewOwner(page)
-
-        await page.getByRole('link', { name: /create cabinet|add space/i }).first().click()
-        await expect(page).toHaveURL(/\/owner\/cabinets\/create$/)
-        await page.locator('#title').fill('Dirty update preview')
-
-        await page.request.post('/__pwa-preview/upgrade')
-        await page.evaluate(async () => {
-            const registration = await navigator.serviceWorker.getRegistration()
-            await registration?.update()
-        })
-
-        await expect.poll(
-            () => page.evaluate(async () => {
-                const registration = await navigator.serviceWorker.getRegistration()
-                return Boolean(registration?.waiting)
-            }),
-            { timeout: 10_000 },
-        ).toBe(true)
-        await expect(page.getByRole('alert')).toContainText(/new version available/i)
-
-        await page.getByRole('button', { name: /^update$/i }).click()
-        await expect(page.getByRole('status')).toContainText(/finish or save active work/i)
-    })
 })

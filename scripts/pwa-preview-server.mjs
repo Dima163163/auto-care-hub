@@ -5,28 +5,101 @@ import { fileURLToPath } from 'node:url'
 
 const port = Number(process.env.PWA_PORT ?? 4182)
 const distDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')
-let serviceWorkerPreviewVersion = 0
 
-const cabinetResponse = JSON.stringify({
-    items: [
-        {
-            id: 'preview-cabinet',
-            ownerId: 'preview-owner',
-            title: 'Preview demo cabinet',
-            description: 'Production PWA preview fixture.',
-            address: 'Preview Street 1',
-            city: 'Berlin',
-            pricePerHour: 1200,
+const autoCareMarketResponse = [{
+    id: 'market-moscow',
+    countryCode: 'RU',
+    countryName: 'Russia',
+    cityCode: 'moscow',
+    cityName: 'Moscow',
+    regionCode: null,
+    regionName: null,
+    centerLatitude: 55.7558,
+    centerLongitude: 37.6173,
+    currencyCode: 'RUB',
+    defaultLocale: 'ru',
+    supportedLocales: ['ru', 'en'],
+    timezone: 'Europe/Moscow',
+    launchReady: true,
+}]
+
+const autoCareZoneResponse = [{
+    id: 'zone-preview-center',
+    marketId: 'market-moscow',
+    parentId: null,
+    slug: 'preview-center',
+    zoneType: 'district',
+    names: { en: 'Central Moscow', ru: 'Центр Москвы' },
+    centerLatitude: 55.7558,
+    centerLongitude: 37.6173,
+    radiusKm: 5,
+    imageUrl: null,
+    serviceCount: 1,
+}]
+
+const autoCareDiscoveryResponse = {
+    items: [{
+        provider: {
+            id: 'provider-preview',
+            name: 'Preview AutoCare',
+            description: null,
             status: 'active',
-            photos: ['/images/cabinets/cabinet-beauty-bright-01.webp'],
-            createdAt: '2026-01-01T00:00:00.000Z',
-            availabilityPreview: null,
+            verified: true,
+            yearsActive: 8,
+            staffCount: 12,
+            rating: 4.8,
+            reviewCount: 42,
+            bonusSummary: null,
+            logoUrl: null,
+            coverImageUrl: null,
+            galleryImageUrls: [],
+            amenityIds: [],
+            brandSpecializations: [],
+            isMultibrand: true,
+            location: {
+                id: 'location-preview',
+                marketId: 'market-moscow',
+                address: 'Preview Street 1',
+                hours: 'Mon-Sun 09:00–21:00',
+                latitude: 55.7558,
+                longitude: 37.6173,
+            },
         },
-    ],
-    total: 1,
-    page: 1,
-    totalPages: 1,
-})
+        offer: {
+            id: 'offering-preview',
+            serviceDefinitionId: 'definition-brakes',
+            serviceSlug: 'brakes',
+            serviceLabels: { en: 'Brake service', ru: 'Тормозная система' },
+            description: null,
+            priceFromMinor: 290000,
+            priceToMinor: null,
+            currencyCode: 'RUB',
+            durationMinutes: 60,
+            inclusions: [],
+            warrantyText: null,
+            active: true,
+            priceType: 'from',
+        },
+        distanceKm: 2.5,
+        nextSlot: null,
+    }],
+    nextCursor: null,
+}
+
+const autoCareServiceDefinitionsResponse = [{
+    id: 'definition-brakes',
+    slug: 'brakes',
+    categorySlug: 'maintenance',
+    labels: { en: 'Brake service', ru: 'Тормозная система' },
+    priceType: 'from',
+    comparisonAttributes: [],
+    active: true,
+}]
+
+const autoCareProviderProfileResponse = {
+    ...autoCareDiscoveryResponse.items[0].provider,
+    offers: [autoCareDiscoveryResponse.items[0].offer],
+}
 
 const previewUser = {
     id: 'preview-client',
@@ -46,17 +119,8 @@ const previewUser = {
     createdAt: '2026-01-01T00:00:00.000Z',
 }
 
-const previewOwner = {
-    ...previewUser,
-    id: 'preview-owner',
-    name: 'Preview Owner',
-    email: 'preview-owner@example.com',
-    role: 'owner',
-}
-
 const previewSessions = new Map([
     ['preview-access-token', previewUser],
-    ['preview-owner-access-token', previewOwner],
 ])
 
 function sendJson(response, statusCode, body) {
@@ -99,12 +163,6 @@ async function serveStatic(pathname, response) {
 
     try {
         let body = await readFile(filePath)
-        if (pathname === '/sw.js') {
-            body = Buffer.concat([
-                body,
-                Buffer.from(`\n// deterministic preview version ${serviceWorkerPreviewVersion}\n`),
-            ])
-        }
         response.writeHead(200, {
             'Content-Type': contentTypes[path.extname(filePath)] ?? 'application/octet-stream',
         })
@@ -119,14 +177,38 @@ async function serveStatic(pathname, response) {
 const server = createServer(async (request, response) => {
     const requestUrl = new URL(request.url ?? '/', `http://127.0.0.1:${port}`)
 
-    if (request.method === 'POST' && requestUrl.pathname === '/__pwa-preview/upgrade') {
-        serviceWorkerPreviewVersion += 1
-        sendJson(response, 200, { version: serviceWorkerPreviewVersion })
+    if (request.method === 'GET' && requestUrl.pathname === '/api/auth/csrf') {
+        sendJson(response, 200, { csrfToken: 'preview-csrf-token' })
         return
     }
 
-    if (request.method === 'GET' && requestUrl.pathname === '/api/auth/csrf') {
-        sendJson(response, 200, { csrfToken: 'preview-csrf-token' })
+    if (request.method === 'GET' && requestUrl.pathname === '/api/v1/markets') {
+        sendJson(response, 200, autoCareMarketResponse)
+        return
+    }
+
+    if (request.method === 'GET' && /^\/api\/v1\/markets\/[^/]+\/zones$/.test(requestUrl.pathname)) {
+        sendJson(response, 200, autoCareZoneResponse)
+        return
+    }
+
+    if (request.method === 'GET' && requestUrl.pathname === '/api/v1/service-definitions') {
+        sendJson(response, 200, autoCareServiceDefinitionsResponse)
+        return
+    }
+
+    if (request.method === 'GET' && requestUrl.pathname === '/api/v1/discovery/providers') {
+        sendJson(response, 200, autoCareDiscoveryResponse)
+        return
+    }
+
+    if (request.method === 'GET' && /^\/api\/v1\/providers\/[^/]+$/.test(requestUrl.pathname)) {
+        sendJson(response, 200, autoCareProviderProfileResponse)
+        return
+    }
+
+    if (request.method === 'GET' && requestUrl.pathname === '/api/v1/platform-reviews') {
+        sendJson(response, 200, [])
         return
     }
 
@@ -144,65 +226,13 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === 'POST' && requestUrl.pathname === '/api/auth/login') {
-        const body = await readJson(request)
-        const isOwner = body?.email === previewOwner.email
-        const accessToken = isOwner
-            ? 'preview-owner-access-token'
-            : 'preview-access-token'
-        const user = isOwner ? previewOwner : previewUser
-        sendJson(response, 200, { accessToken, user })
+        await readJson(request)
+        sendJson(response, 200, { accessToken: 'preview-access-token', user: previewUser })
         return
     }
 
     if (request.method === 'POST' && requestUrl.pathname === '/api/auth/logout') {
         sendJson(response, 200, { success: true })
-        return
-    }
-
-    if (request.method === 'POST' && requestUrl.pathname === '/api/cabinets') {
-        const user = previewSessions.get(
-            request.headers.authorization?.replace(/^Bearer\s+/, ''),
-        )
-        if (user?.role !== 'owner') {
-            sendJson(response, 403, { message: 'Owner access required.' })
-            return
-        }
-
-        sendJson(response, 503, { message: 'Preview cabinet mutation unavailable.' })
-        return
-    }
-
-    if (
-        request.method === 'GET'
-        && ['/api/owner/cabinets', '/api/owner/services', '/api/owner/bookings'].includes(requestUrl.pathname)
-    ) {
-        const user = previewSessions.get(
-            request.headers.authorization?.replace(/^Bearer\s+/, ''),
-        )
-        if (user?.role !== 'owner') {
-            sendJson(response, 403, { message: 'Owner access required.' })
-            return
-        }
-
-        if (requestUrl.pathname === '/api/owner/cabinets') {
-            sendJson(response, 200, JSON.parse(cabinetResponse).items)
-            return
-        }
-
-        sendJson(response, 200, [])
-        return
-    }
-
-    if (request.method === 'GET' && requestUrl.pathname === '/api/cabinets') {
-        sendJson(response, 200, JSON.parse(cabinetResponse))
-        return
-    }
-
-    if (
-        request.method === 'GET'
-        && /^\/api\/cabinets\/cabinet-[^/]+$/.test(requestUrl.pathname)
-    ) {
-        sendJson(response, 200, JSON.parse(cabinetResponse).items[0])
         return
     }
 
