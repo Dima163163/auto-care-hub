@@ -145,6 +145,7 @@ export const providerProfiles: readonly ProviderProfile[] = providerPreviews.map
     staffCount: provider.id === 'proservice-moscow' ? 24 : 12,
     workstationCount: provider.id === 'proservice-moscow' ? 12 : 8,
     phone: '+7 (495) 645-35-35',
+    phones: ['+7 (495) 645-35-35'],
     email: 'service@example.com',
     websiteUrl: null,
     metroStation: 'м. Парк культуры',

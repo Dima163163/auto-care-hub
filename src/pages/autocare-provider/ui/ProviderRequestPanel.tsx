@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
-import { automotiveServices, getServiceLabel, useCreateAutoCareChatAttachmentMutation, useCreateAutoCareChatMessageMutation, useCreateAutoCareChatMutation, useGetAutoCareAvailabilityQuery } from '@/entities/automotive-service'
+import { automotiveServices, getServiceLabel, useCreateAutoCareChatAttachmentMutation, useCreateAutoCareChatMessageMutation, useCreateAutoCareChatMutation, useGetAutoCareAvailabilityQuery, useGetMyAutoCareFleetsQuery } from '@/entities/automotive-service'
 import { useGetMeQuery } from '@/features/auth'
 import type { ProviderOffering, ProviderProfile } from '@/entities/automotive-service'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
@@ -47,7 +47,16 @@ function BookingService({ label, value, price }: { label: string; value: string;
 
 function BookingVehicle() {
     const { t } = useTranslation()
-    return <div className="border-y border-border py-4"><p className="text-xs font-black text-foreground">{t('autocare.providerVehicleLabel')}</p><div className="mt-2 flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hero-overlay text-xs font-black text-primary-foreground">BMW</span><p className="min-w-0 flex-1 text-xs font-bold leading-5"><span className="block text-foreground">{t('autocare.providerVehicleValue')}</span><span className="text-muted-foreground">{t('autocare.providerVehicleDetails')}</span></p><button type="button" className="text-xs font-bold text-primary">{t('autocare.providerChangeVehicle')}</button></div></div>
+    const { data: user } = useGetMeQuery()
+    const { data: fleets } = useGetMyAutoCareFleetsQuery(undefined, { skip: !user })
+    const vehicle = fleets?.flatMap((fleet) => fleet.vehicles)[0]
+    const snapshot = vehicle?.vehicleSnapshot
+    const make = String(snapshot?.makeLabel ?? snapshot?.make ?? snapshot?.brand ?? '').trim()
+    const model = String(snapshot?.modelLabel ?? snapshot?.model ?? '').trim()
+    const year = String(snapshot?.year ?? '').trim()
+    const title = [make, model].filter(Boolean).join(' ') || t('autocare.providerVehicleValue')
+    const details = [year, snapshot?.fuelType].filter(Boolean).join(' · ') || t('autocare.providerVehicleDetails')
+    return <div className="border-y border-border py-4"><p className="text-xs font-black text-foreground">{t('autocare.providerVehicleLabel')}</p><div className="mt-2 flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hero-overlay text-xs font-black text-primary-foreground">{make.slice(0, 3).toUpperCase() || 'AUTO'}</span><p className="min-w-0 flex-1 text-xs font-bold leading-5"><span className="block text-foreground">{title}</span><span className="text-muted-foreground">{details}</span></p><Link to={ROUTES.profileVehicles} className="text-xs font-bold text-primary">{t('autocare.providerChangeVehicle')}</Link></div></div>
 }
 
 function EstimatePanel({ provider, offering }: ProviderRequestPanelProps) {
