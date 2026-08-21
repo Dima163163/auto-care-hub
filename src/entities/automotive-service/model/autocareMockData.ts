@@ -71,6 +71,7 @@ export type ProviderProfile = ProviderPreview & {
     staffCount: number
     workstationCount: number
     phone: string | null
+    phones: readonly string[]
     email: string | null
     websiteUrl: string | null
     metroStation: string | null
