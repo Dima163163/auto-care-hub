@@ -28,6 +28,7 @@ import { saveAutoCareProviderMedia as persistAutoCareProviderMedia, type AutoCar
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
 import { getRecommendedScore } from './autocare-ranking.js'
+import { getDiscoverySlot } from './autocare-discovery.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
@@ -249,12 +250,14 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
         const matchesRating = input.minRating === undefined || Number(provider.rating) >= input.minRating
         const matchesType = input.priceType === undefined || definition.priceType === input.priceType
+        const discoverySlot = getDiscoverySlot(location, market)
+        const matchesAvailableToday = !input.availableToday || discoverySlot.availableToday
         const matchesVerified = !input.verifiedOnly || provider.verified
         const matchesWarranty = !input.warrantyOnly || Boolean(offer.warrantyText)
         const matchesBonus = !input.hasBonus || Boolean(provider.bonusSummary)
         const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
         const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
-        return matchesProvider && distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition }] : []
+        return matchesProvider && distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesAvailableToday && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition, nextSlot: discoverySlot.nextSlot }] : []
     })
     const sorted = rows.sort((left, right) => compareDiscoveryValues(discoverySortValues(left, sort), discoverySortValues(right, sort), sort))
         .filter((row) => !cursorValues || compareDiscoveryValues(discoverySortValues(row, sort), cursorValues, sort) > 0)

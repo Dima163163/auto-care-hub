@@ -121,6 +121,7 @@ export default defineConfig({
       'src/modules/autocare/autocare-request-schema.test.ts',
       'src/modules/autocare/attachment-content.test.ts',
       'src/modules/autocare/autocare-marketplace.service.test.ts',
+      'src/modules/autocare/autocare-discovery.test.ts',
       'src/modules/autocare/availability.test.ts',
       'src/modules/autocare/service-chat.gateway.test.ts',
       'src/modules/users/users.routes.test.ts',
