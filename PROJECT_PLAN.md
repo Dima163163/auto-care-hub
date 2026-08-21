@@ -261,10 +261,10 @@ Real schedules, notifications, bonuses and
 subscriptions are the following slices and should not be mixed into this
 request contract.
 
-### 4.0.2 Backend contract parity — 2026-08-14
+### 4.0.2 Backend contract parity — 2026-08-21
 
 - [x] Inventory all MSW handlers and compare method/path signatures with the
-  Fastify source (172 mock routes, 202 real routes including operational and
+  Fastify source (173 mock routes, 203 real routes including operational and
   WebSocket routes).
 - [x] Implement the only missing mock route, `GET /cabinets/all`, with the
   same active-only public behavior in MSW and PostgreSQL-backed mode.
@@ -441,30 +441,31 @@ of the AutoCare product.
 
 ### Customer journey
 
-- [ ] Choose a standardized service.
-- [ ] Optionally choose/save a vehicle.
+- [x] Choose a standardized service.
+- [x] Optionally choose/save a vehicle and carry the selected vehicle snapshot
+  into the service request created from a provider profile.
 - [ ] Set location or use consented geolocation and search radius.
-- [ ] See list and map results from the same query.
-- [ ] Filter/sort by relevant attributes.
-- [ ] Select 2–4 equivalent offers for side-by-side comparison.
-- [ ] Open a provider/service-location page.
-- [ ] Book an available slot or start an inquiry for a quote.
-- [ ] Exchange messages and photos for the selected service.
-- [ ] Receive, accept or decline a versioned quote.
+- [x] See list and map results from the same query.
+- [x] Filter/sort by relevant attributes.
+- [x] Select 2–4 equivalent offers for side-by-side comparison.
+- [x] Open a provider/service-location page.
+- [x] Book an available slot or start an inquiry for a quote.
+- [x] Exchange messages and photos for the selected service.
+- [x] Receive, accept or decline a versioned quote.
 - [ ] View booking/conversation status and notifications.
 - [ ] Complete the visit and leave a verified review.
 - [ ] See provider bonus balance and immutable bonus history.
 
 ### Provider journey
 
-- [ ] Apply as a provider and pass moderation.
-- [ ] Create organization and one or more service locations.
+- [x] Apply as a provider and pass the initial provider profile workflow.
+- [x] Create an organization and one or more service locations.
 - [ ] Invite staff with scoped permissions.
 - [ ] Configure hours, blocked periods and booking mode.
 - [ ] Activate standardized offerings with comparable price data.
-- [ ] Handle inquiries, photos, messages and quotes.
-- [ ] Confirm/decline/reschedule/complete bookings.
-- [ ] Respond to reviews when policy permits.
+- [x] Handle inquiries, photos, messages and quotes.
+- [x] Confirm/decline/reschedule/complete bookings.
+- [x] Respond to reviews when policy permits.
 - [ ] Configure the initial simple bonus program.
 - [ ] See acquisition/booking/response metrics that demonstrate platform value.
 
