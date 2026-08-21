@@ -16,6 +16,7 @@ export default defineConfig({
             'src/modules/oauth/oauth-link-callback.integration.test.ts',
             'src/modules/users/account-deletion.service.integration.test.ts',
             'src/modules/users/users.routes.integration.test.ts',
+            'src/modules/autocare/autocare.routes.integration.test.ts',
         'src/database/schema-contract.integration.test.ts',
         ],
         fileParallelism: false,

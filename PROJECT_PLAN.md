@@ -290,7 +290,8 @@ request contract.
   table is seeded, and persisted database rows remain the source of truth once
   available.
 - [x] Run the Docker-backed migration/seed/E2E flow with PostgreSQL and Redis;
-  migration smoke and the integration suite now pass locally.
+  migration smoke and the integration suite (9 files / 22 tests, including
+  market/zone/discovery/request-auth smoke) now pass locally.
 - [ ] Add response-schema and authorization integration coverage for the
   remaining high-risk workflows (membership administration, trust ranking,
   schedules/reminders and subscription administration).
