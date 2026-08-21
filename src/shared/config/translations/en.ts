@@ -999,6 +999,8 @@ export const enTranslations = {
         addFavorite: 'Add to favorites',
         nearestBooking: 'Nearest booking',
         noProvidersInRegion: 'There are currently no available services in your region',
+        discoverySelectCity: 'Choose a city to see available auto services',
+        discoveryLoadError: 'We could not load services. Please try again',
         exploreLocations: 'Explore by location',
         viewOnMap: 'View on map',
         noLocations: 'No published service areas for this city yet',

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
+import { AlertCircle, BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { mapAutoCareDiscoveryItem, ProviderLogo, providerPreviews, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
@@ -82,7 +82,10 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: marketId, radius: 10 })
     const [sort, setSort] = useState<HomeSort>('recommended')
     const [pageState, setPageState] = useState({ marketId, page: 0 })
-    const discovery = useGetAutoCareDiscoveryQuery({ serviceId: 'brakes', marketId, radiusKm: 10, limit: 16 })
+    const discovery = useGetAutoCareDiscoveryQuery(
+        { serviceId: 'brakes', marketId, radiusKm: 10, limit: 16 },
+        { skip: !marketId },
+    )
     const pageSize = 4
     const remoteProviders = useMemo(() => discovery.data?.items.map(mapAutoCareDiscoveryItem) ?? [], [discovery.data])
     const sourceProviders = IS_MOCK_API
@@ -93,7 +96,12 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     const pageCount = Math.ceil(sortedProviders.length / pageSize)
     const visibleProviders = sortedProviders.slice(page * pageSize, page * pageSize + pageSize)
     const isInitialLoading = discovery.isLoading && sourceProviders.length === 0
-    const hasNoProviders = !isInitialLoading && !discovery.isError && sourceProviders.length === 0
+    const hasNoProviders = !isInitialLoading && sourceProviders.length === 0
+    const emptyStateMessage = !marketId
+        ? t('autocare.discoverySelectCity')
+        : discovery.isError
+            ? t('autocare.discoveryLoadError')
+            : t('autocare.noProvidersInRegion')
 
     const setActivePage = (nextPage: (currentPage: number) => number) => {
         setPageState((current) => ({
@@ -138,7 +146,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                     {isInitialLoading
                         ? <ProviderPreviewSkeleton label={t('common.loading')} />
                         : hasNoProviders
-                            ? <ProviderPreviewEmptyState message={t('autocare.noProvidersInRegion')} />
+                            ? <ProviderPreviewEmptyState message={emptyStateMessage} isError={discovery.isError} />
                         : visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
                 </div>
                 {!isFirstPage ? <button type="button" onClick={showPreviousPage} className="absolute -left-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('common.back')}>
@@ -152,12 +160,12 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     )
 }
 
-function ProviderPreviewEmptyState({ message }: { message: string }) {
+function ProviderPreviewEmptyState({ message, isError = false }: { message: string; isError?: boolean }) {
     return (
         <div role="status" aria-live="polite" className="flex min-h-[352px] items-center justify-center rounded-[9px] border border-border bg-card p-6 text-center lg:col-span-4">
             <div className="max-w-md">
                 <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <MapPin className="size-6" aria-hidden="true" />
+                    {isError ? <AlertCircle className="size-6" aria-hidden="true" /> : <MapPin className="size-6" aria-hidden="true" />}
                 </span>
                 <p className="mt-4 text-base font-black text-foreground">{message}</p>
             </div>

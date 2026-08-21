@@ -223,7 +223,16 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         : (await definitionRepository.find({ where: { active: true }, take: 1 }))[0]
     if (!definition) return { items: [], nextCursor: null }
     const market = input.marketId ? await findMarket(input.marketId) : null
-    const locations = await locationRepository.find({ where: market ? { marketId: market.id, ...(input.zoneId ? { zoneId: input.zoneId } : {}) } : undefined, order: { id: 'ASC' } })
+    // A selected market is a hard scope. Returning all locations when an unknown
+    // market code is supplied would leak another region's providers and diverge
+    // from the mock discovery contract, which returns an empty result instead.
+    if (input.marketId && !market) return { items: [], nextCursor: null }
+    const locationWhere = market
+        ? { marketId: market.id, ...(input.zoneId ? { zoneId: input.zoneId } : {}) }
+        : input.zoneId
+            ? { zoneId: input.zoneId }
+            : undefined
+    const locations = await locationRepository.find({ where: locationWhere, order: { id: 'ASC' } })
     const locationIds = locations.map((location) => location.id)
     if (locationIds.length === 0) return { items: [], nextCursor: null }
     const offers = await offerRepository.find({ where: { definitionId: definition.id, active: true } })
