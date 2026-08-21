@@ -12,6 +12,7 @@ import { NavLink } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { isChatNavigationVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type ProfileNavigationProps = {
@@ -28,7 +29,7 @@ export function ProfileNavigation({ desktopHidden = true }: ProfileNavigationPro
         ...(user?.role === 'client'
             ? [
                   { to: ROUTES.profileBookings, label: t('navigation.myBookings'), icon: CalendarDays },
-                  { to: ROUTES.chats, label: t('navigation.chats'), icon: MessageSquare },
+                  ...(isChatNavigationVisible ? [{ to: ROUTES.chats, label: t('navigation.chats'), icon: MessageSquare }] : []),
                   { to: ROUTES.profileVehicles, label: t('navigation.myVehicles'), icon: CarFront },
                   { to: ROUTES.profileReviews, label: t('navigation.myReviews'), icon: MessageSquare },
                   { to: ROUTES.favorites, label: t('navigation.favorites'), icon: Heart },

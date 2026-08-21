@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 
 import { ROUTES } from '@/shared/constants/routes'
+import { isChatNavigationVisible } from '@/shared/config/features'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
 import type { WorkspaceRole } from './WorkspaceHeader'
@@ -133,5 +134,13 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
 }
 
 export function getWorkspaceNavigationGroups(role: WorkspaceRole) {
-    return groupsByRole[role]
+    const groups = groupsByRole[role]
+    if (isChatNavigationVisible) return groups
+
+    return groups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter((item) => item.labelKey !== 'navigation.chats'),
+        }))
+        .filter((group) => group.items.length > 0)
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { isChatNavigationVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { AutoCareRequestsPanel } from './AutoCareRequestsPanel'
@@ -17,7 +18,7 @@ function ClientAccountPanel() {
     const { t } = useTranslation()
     const { data: user } = useGetMeQuery()
     const initials = user?.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() ?? 'AC'
-    const links = [{ to: ROUTES.profileBookings, icon: Wrench, label: t('autocare.clientRequestsTitle') }, { to: ROUTES.chats, icon: MessageCircle, label: t('navigation.chats') }, { to: ROUTES.favorites, icon: Heart, label: t('navigation.favorites') }, { to: ROUTES.notifications, icon: MessageCircle, label: t('navigation.notifications') }, { to: ROUTES.profile, icon: CarFront, label: t('navigation.profile') }]
+    const links = [{ to: ROUTES.profileBookings, icon: Wrench, label: t('autocare.clientRequestsTitle') }, ...(isChatNavigationVisible ? [{ to: ROUTES.chats, icon: MessageCircle, label: t('navigation.chats') }] : []), { to: ROUTES.favorites, icon: Heart, label: t('navigation.favorites') }, { to: ROUTES.notifications, icon: MessageCircle, label: t('navigation.notifications') }, { to: ROUTES.profile, icon: CarFront, label: t('navigation.profile') }]
     return <aside className="h-fit rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex items-center gap-3 border-b border-border pb-4"><span className="flex size-11 items-center justify-center rounded-full bg-hero-overlay text-sm font-black text-primary-foreground">{initials}</span><div className="min-w-0"><p className="truncate text-sm font-black text-foreground">{user?.name ?? 'AutoCare клиент'}</p><p className="truncate text-[11px] font-medium text-muted-foreground">{user?.email}</p></div></div><p className="mt-3 inline-flex items-center gap-1.5 text-xs font-black text-status-success-foreground"><Star className="size-3.5 fill-current" />4.9 <span className="font-medium text-muted-foreground">(128 отзывов)</span></p><nav className="mt-4 grid gap-1">{links.map(({ to, icon: Icon, label }) => <Link key={to} to={to} className={to === ROUTES.profileBookings ? 'flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary/10 px-3 text-xs font-black text-primary' : 'flex h-10 items-center gap-2 rounded-[var(--radius-control)] px-3 text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground'}><Icon className="size-4" />{label}</Link>)}</nav></aside>
 }
 
