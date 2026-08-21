@@ -20,7 +20,7 @@ function getDateInputValue(offset = 0) {
 }
 
 export function ProviderRequestPanel({ provider, offering }: ProviderRequestPanelProps) {
-    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5"><BookingPanel provider={provider} offering={offering} /><EstimatePanel provider={provider} offering={offering} /><TrustPanel /><SupportPanel /></aside>
+    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5"><BookingPanel provider={provider} offering={offering} /><EstimatePanel provider={provider} offering={offering} /><TrustPanel /><SupportPanel provider={provider} /></aside>
 }
 
 function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {
@@ -71,9 +71,10 @@ function TrustPanel() {
     return <section className="grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><TrustItem icon={<ShieldCheck className="size-5" />} title={t('autocare.providerWarrantyTitle')} description={t('autocare.providerWarrantyDescription')} /><TrustItem icon={<LockKeyhole className="size-5" />} title={t('autocare.providerSecureBooking')} description={t('autocare.providerSecureBookingDescription')} /></section>
 }
 
-function SupportPanel() {
+function SupportPanel({ provider }: { provider: ProviderProfile }) {
     const { t } = useTranslation()
-    return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary"><Phone className="size-4" /></span><div><h2 className="text-xs font-black text-foreground">{t('autocare.providerSupportTitle')}</h2><a href="tel:+74956453535" className="mt-1.5 inline-flex text-xs font-bold text-primary">+7 (495) 645-35-35</a><p className="mt-1 text-[10px] font-medium text-muted-foreground">{t('autocare.providerSupportHours')}</p></div></div></section>
+    const phones = provider.phones.length ? provider.phones : provider.phone ? [provider.phone] : []
+    return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary"><Phone className="size-4" /></span><div><h2 className="text-xs font-black text-foreground">{t('autocare.providerSupportTitle')}</h2>{phones.length ? phones.map((phone) => <a key={phone} href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="mt-1.5 block text-xs font-bold text-primary">{phone}</a>) : <p className="mt-1.5 text-xs font-semibold text-muted-foreground">{t('common.notProvided')}</p>}<p className="mt-1 text-[10px] font-medium text-muted-foreground">{t('autocare.providerSupportHours')}</p></div></div></section>
 }
 
 function TrustItem({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
