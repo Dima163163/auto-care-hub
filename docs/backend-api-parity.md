@@ -92,6 +92,12 @@ npm run server:dev
 npm run dev:real
 ```
 
+`npm run server:dev` runs the forward-only TypeORM migrations before starting
+the watcher. This keeps a local Docker database aligned with the checked-in
+API contract even when the backend is started without the `dev:full` wrapper.
+Production commands remain migration-free; deployment applies migrations in
+the release step before serving the API.
+
 The compose file exposes PostgreSQL on `localhost:5433` and Redis on
 `localhost:6379`. `server/.env.example` contains the matching values. The
 seed commands are idempotent and provide both stable auth/booking smoke data
