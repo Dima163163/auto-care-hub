@@ -26,7 +26,7 @@ function ClientAccountPanel() {
 function ClientSidebar() {
     const { t } = useTranslation()
     const { data: user } = useGetMeQuery()
-    const { data: fleets } = useGetMyAutoCareFleetsQuery(undefined, { skip: !user })
+    const { data: fleets } = useGetMyAutoCareFleetsQuery(undefined, { skip: user?.role !== 'client' })
     const vehicle = fleets?.flatMap((fleet) => fleet.vehicles)[0]
     const snapshot = vehicle?.vehicleSnapshot
     const vehicleTitle = [snapshot?.makeLabel ?? snapshot?.make ?? snapshot?.brand, snapshot?.modelLabel ?? snapshot?.model].filter(Boolean).join(' ')

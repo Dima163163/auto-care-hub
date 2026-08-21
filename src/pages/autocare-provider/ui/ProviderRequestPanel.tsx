@@ -26,7 +26,7 @@ export function ProviderRequestPanel({ provider, offering }: ProviderRequestPane
 function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {
     const { t, locale } = useTranslation()
     const { data: user } = useGetMeQuery()
-    const { data: fleets } = useGetMyAutoCareFleetsQuery(undefined, { skip: !user })
+    const { data: fleets } = useGetMyAutoCareFleetsQuery(undefined, { skip: user?.role !== 'client' })
     const [selectedTime, setSelectedTime] = useState('')
     const [selectedDayIndex, setSelectedDayIndex] = useState(0)
     const [customDate, setCustomDate] = useState('')

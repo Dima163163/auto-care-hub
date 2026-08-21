@@ -21,7 +21,7 @@ export function AutoCareRequestPage() {
     const location = useLocation()
     const { data: user } = useGetMeQuery()
     const requestedVehicleId = searchParams.get('vehicleId')
-    const { data: fleets, isFetching: isFleetsFetching } = useGetMyAutoCareFleetsQuery(undefined, { skip: !user || !requestedVehicleId })
+    const { data: fleets, isFetching: isFleetsFetching } = useGetMyAutoCareFleetsQuery(undefined, { skip: user?.role !== 'client' || !requestedVehicleId })
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
     const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
