@@ -174,7 +174,7 @@ irreversible product choices.
 
 ## 4. Current repository audit
 
-### 4.0 Implementation snapshot — 2026-08-15
+### 4.0 Implementation snapshot — 2026-08-21
 
 The repository is no longer at the planning-only stage. The following is the
 current, reviewed implementation state and is the source for the next slices of
@@ -182,7 +182,7 @@ work.
 
 | Area | Current state | Next required work |
 | --- | --- | --- |
-| Public shell | AutoCare SVG logo, responsive header with grouped help/client/provider navigation, locale selector, shared footer, SEO foundation, role-aware Help Center, themed registration and non-duplicated footer navigation are implemented. Legal links now resolve to detailed `/agreement`, `/rules` and `/privacy` pages with client/provider sections, table of contents, stable anchors and SEO metadata. The provider pricing route/components remain preserved but pricing navigation and promotional blocks are hidden during the free MVP launch. | Have the legal entity review and approve the draft texts for Russia, Spain and Moldova/Transnistria; then test every footer route at all maintained locales and publish the final controller/contact/retention details. Enable provider pricing only after the monetization gate is approved. |
+| Public shell | AutoCare SVG logo, responsive header with grouped help/client/provider navigation, locale selector, shared footer, SEO foundation, role-aware Help Center, themed registration and non-duplicated footer navigation are implemented. Public and workspace headers now switch to a compact tablet layout before controls can overlap; navigation remains available from the menu. Legal links now resolve to detailed `/agreement`, `/rules` and `/privacy` pages with client/provider sections, table of contents, stable anchors and SEO metadata. The provider pricing route/components remain preserved but pricing navigation and promotional blocks are hidden during the free MVP launch. | Have the legal entity review and approve the draft texts for Russia, Spain and Moldova/Transnistria; then test every footer route at all maintained locales and publish the final controller/contact/retention details. Enable provider pricing only after the monetization gate is approved. |
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. | Do not redesign desktop home; only make functional/accessibility fixes. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. Real discovery now applies market/zone scope, radius, price/rating/type, availability-by-schedule, warranty, bonus, inclusion, verification and multibrand filters with stable cursor sorting. | Finish persisted ranking and one-query map/list loading; add model/year compatibility once provider specialization data is persisted. |
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, live availability, public approved review aggregates/media, provider inquiry chat with image attachments and authenticated provider favorites are implemented. Contact data now preserves all provider phone numbers. | Finish provider-owned gallery moderation and replace remaining demo vehicle/contact fallbacks. |
@@ -190,14 +190,15 @@ work.
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering, aggregate rating distribution and a shared resolution-chat/promo flow; service cards link to this same screen to avoid duplicate review logic. Provider memberships now support owner/manager/staff scope with optional branch assignment. | Add membership-management UI, offer editing, calendar/reminders, completed-visit trust evidence, moderation reasons/appeals, provider analytics and the super-admin grant/promo workflows. |
-| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 173 MSW routes used by the browser and 203 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers/reviews, request lifecycle, unified chat threads, image attachments, immutable quote history, accepted-quote booking snapshots, verified-review submission, idempotent requests and availability routes are implemented with migrations and mock handlers. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. The legacy financial-provider runtime is fully removed: dependencies, routes, UI, configuration, jobs, tests and active documentation are gone; only immutable historical migrations remain for existing databases. | Add PostGIS/geospatial indexes, durable object storage/quarantine, versioned trust snapshots and ranking rollout, and database-backed authorization/concurrency integration tests. Python rewrite is explicitly deferred until a later approved phase. |
+| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 173 MSW routes used by the browser and 203 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers/reviews, request lifecycle, unified chat threads, image attachments, immutable quote history, accepted-quote booking snapshots, verified-review submission, idempotent requests and availability routes are implemented with migrations and mock handlers. Clean local databases now expose the same read-only market/zone/service catalog fallback as mock mode until optional seed data is present; persisted PostgreSQL rows take precedence. Docker migration, seed, real-mode endpoint checks and the integration suite (8 files / 19 tests) pass locally. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. The legacy financial-provider runtime is fully removed: dependencies, routes, UI, configuration, jobs, tests and active documentation are gone; only immutable historical migrations remain for existing databases. | Add PostGIS/geospatial indexes, durable object storage/quarantine, versioned trust snapshots and ranking rollout, and database-backed authorization/concurrency integration tests. Python rewrite is explicitly deferred until a later approved phase. |
 | Deployment configuration | Typed frontend and backend deployment profiles are now fail-closed. `GET /api/v1/deployment-capabilities` keeps mock/real capability negotiation in sync; OAuth buttons, profile linking and server OAuth routes use the deployment allow-list. | Add deployment smoke tests for every supported profile and extend the capability matrix with legal links, currencies and market-specific features. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. Dead legacy cabinet/owner/admin lazy imports were removed from the route manifest, reducing the production bundle without deleting compatibility source. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
 The remaining public pages use the AutoCare visual shell, but Blog, Partners,
 Contacts, Rules and Privacy still use a shared generic information composition;
 their final policy/content pass is not complete. The responsive pass covers
-the main stacked layouts, but full 360/390/768/1024 visual QA is still open.
+the main stacked layouts, and public/workspace header tablet overlap handling is
+implemented; full 360/390/768/1024 visual QA is still open.
 PWA install prompting and the service-worker contract exist. Anonymous AutoCare
 markets, zones, service definitions, provider search, provider profiles and
 platform reviews are cached for offline use; the production preview verifies
@@ -211,6 +212,14 @@ ships the complete translation catalog, and each locale family is emitted as a
 separate deferred chunk. The largest shared locale module and aggregate
 deferred assets remain tracked for a later split pass; the runtime must remain
 cycle-free and the English entry must render without waiting for every language.
+
+Quality baseline for this snapshot: frontend lint, unit tests and production
+build pass; backend build and unit tests pass; API parity, contract shape,
+migration inventory and Docker-backed integration checks pass. The performance
+budget is still intentionally red (current bundle is about 2.16 MB raw / 626 KB
+gzip JavaScript and 182 KB CSS against the configured 2.0 MB / 568 KB / 150 KB
+limits), so the next optimization slice must split the inherited translation
+payload further without changing the AutoCare locale contract.
 
 Current page delivery order:
 
@@ -286,7 +295,7 @@ request contract.
   remaining high-risk workflows (membership administration, trust ranking,
   schedules/reminders and subscription administration).
 
-### 4.0.3 Security and reliability hardening — 2026-08-15
+### 4.0.3 Security and reliability hardening — 2026-08-21
 
 The audit was run against the current browser, Fastify, migration and
 deployment contracts. These items are now part of the delivery gate rather
@@ -358,16 +367,17 @@ than informal follow-up notes.
 - [~] Provider-owned free-text `Service` -> platform `ServiceDefinition` plus
   provider `ServiceOffering`: catalog foundations and discovery fixtures exist;
   moderation and provider editing are pending.
-- [ ] Hourly cabinet price -> automotive price types and explicit inclusions.
-- [ ] Cabinet owner role assumptions -> provider memberships and location roles.
+- [x] Hourly cabinet price -> automotive price types and explicit inclusions.
+- [x] Cabinet owner role assumptions -> provider memberships and location roles.
 - [~] Cabinet search -> vehicle-aware geospatial offering search: browser/API
   discovery contract, filters and brand specializations are implemented; real
   geospatial indexes and schedule availability are pending.
 - [~] Cabinet details -> service-location public profile: `/services/:id`
   exists with gallery, offers, amenities, map, reviews and request CTA; visual
   polish and real availability remain.
-- [ ] Existing booking snapshot -> immutable AutoCare offer/quote snapshot.
-- [ ] Existing cabinet uploads -> provider, location, inquiry, and message media.
+- [x] Existing booking snapshot -> immutable AutoCare offer/quote snapshot.
+- [~] Existing cabinet uploads -> provider, location, inquiry, and message media;
+  validation and private-storage migration are still release-gated.
 - [x] Existing generic favorites -> authenticated automotive provider favorites with canonical location/offer snapshots and guest local fallback.
 - [~] Legacy mock data, translations, route names, tests, and assets: public
   AutoCare routes, provider owner profiles, client favorites/bookings/reviews,
@@ -760,10 +770,14 @@ an admin override without an auditable reason.
 
 Goal: replace the cabinet booking flow with automotive booking workflows.
 
-- [ ] Create an immutable booking offer/quote snapshot.
+- [x] Create an immutable AutoCare quote history and accepted-quote snapshot;
+  converting an accepted quote into a booking remains a separate pending step.
 - [ ] Implement hybrid booking modes: request confirmation and instant slot.
 - [x] Implement idempotent AutoCare request creation; retain overlap protection for the scheduling slice.
-- [ ] Implement explicit state transitions and actor permissions.
+- [~] Implement explicit state transitions and actor permissions. Request,
+  quote, service-offer and two-sided confirmation transitions now use locked
+  allow-lists and idempotent replay; the complete booking transition matrix
+  and its database-backed authorization tests remain open.
 - [~] Implement transactional cancellation, reschedule, no-show and completion
   workflows: client cancellation, provider-proposed time changes, client
   accept/reject decisions, confirmed missed visits and post-visit completion are
