@@ -10,6 +10,7 @@ type RequestFormProps = {
     locationId: string
     offeringId: string
     initialVehicle?: RequestFormPayload['vehicleSnapshot']
+    initialContact?: RequestFormPayload['contactSnapshot']
     onSubmit: (payload: RequestFormPayload) => void
     isSubmitting?: boolean
     errorMessage?: string
@@ -27,14 +28,14 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, initialVehicle, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, initialVehicle, initialContact, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
     const initialDate = searchParams.get('date') ?? ''
     const [selectedDate, setSelectedDate] = useState(initialDate ? '' : 'today')
     const [customDate, setCustomDate] = useState(initialDate)
     const [selectedTime, setSelectedTime] = useState(searchParams.get('time') ?? '')
-    const [contactSnapshot, setContactSnapshot] = useState({ name: '', phone: '', email: '' })
+    const [contactSnapshot, setContactSnapshot] = useState(initialContact ?? { name: '', phone: '', email: '' })
     const [vehicleSnapshot, setVehicleSnapshot] = useState<EditableVehicle>(initialVehicle ?? { make: '', model: '', year: new Date().getFullYear() })
     const [files, setFiles] = useState<File[]>([])
     const [note, setNote] = useState('')

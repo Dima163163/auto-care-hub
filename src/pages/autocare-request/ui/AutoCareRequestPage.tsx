@@ -79,7 +79,7 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <RequestFollowUp providerId={provider.id} requestId={submittedRequestId} /> : requestedVehicleId && isFleetsFetching ? <div className="rounded-[var(--radius-panel)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">{t('common.loading')}</div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
+                    <div>{submittedRequestId ? <RequestFollowUp providerId={provider.id} requestId={submittedRequestId} /> : requestedVehicleId && isFleetsFetching ? <div className="rounded-[var(--radius-panel)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">{t('common.loading')}</div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
                     <RequestOrderSummary provider={provider} offering={offering} />
                 </div>
             </div>
