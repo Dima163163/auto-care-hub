@@ -17,7 +17,7 @@ export function AutoCareProviderPage() {
     const { id = '' } = useParams()
     const { t } = useTranslation()
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
-    const { data: reviewSummary } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 20 }, { skip: !id })
+    const { data: reviewSummary } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 50 }, { skip: !id })
     const { data: trust } = useGetAutoCareProviderTrustQuery(id, { skip: !id })
     const provider = data ? mapAutoCareProviderProfile(data, reviewSummary) : undefined
     const [selectedServiceId, setSelectedServiceId] = useState('')
