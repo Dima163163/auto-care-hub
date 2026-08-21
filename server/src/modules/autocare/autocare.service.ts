@@ -29,6 +29,8 @@ import { enqueueNotificationSafely } from '../outbox/notification-outbox.service
 import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
 import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
+import { findFallbackMarket, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
+import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
@@ -143,12 +145,22 @@ async function findMarket(value: string) {
 }
 
 export async function getAutoCareMarkets() {
-    return (await AppDataSource.getRepository(AutomotiveMarketEntity).find({ order: { countryName: 'ASC', cityName: 'ASC' } })).map(toMarketResponse)
+    const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({ order: { countryName: 'ASC', cityName: 'ASC' } })
+    // Keep the real API usable before the optional demo seed has been run. The
+    // fallback is read-only and is only used when the table is empty; once the
+    // database has catalog data it remains the sole source of truth.
+    return markets.length > 0
+        ? markets.map(toMarketResponse)
+        : AUTOMOTIVE_MOCK_MARKETS.map(toFallbackMarketResponse)
 }
 
 export async function getAutoCareLocationZones(marketValue: string, parentId?: string, coordinates?: { latitude: number; longitude: number }, limit = 24) {
     const market = await findMarket(marketValue)
-    if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+    if (!market) {
+        const fallbackMarket = findFallbackMarket(marketValue)
+        if (!fallbackMarket) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+        return getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !parentId || zone.parentId === parentId)
+    }
 
     const zoneRepository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
@@ -158,7 +170,12 @@ export async function getAutoCareLocationZones(marketValue: string, parentId?: s
         order: { displayOrder: 'ASC', slug: 'ASC' },
         take: coordinates ? undefined : limit,
     })
-    if (zones.length === 0) return []
+    if (zones.length === 0) {
+        const fallbackMarket = findFallbackMarket(market.cityCode)
+        return fallbackMarket
+            ? getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !parentId || zone.parentId === parentId)
+            : []
+    }
 
     const locations = await locationRepository.find({ where: { marketId: market.id } })
     const providers = await providerRepository.find({ where: { status: AutomotiveProviderStatus.Active } })

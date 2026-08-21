@@ -274,6 +274,10 @@ request contract.
 - [x] Document mock mode, Docker PostgreSQL/Redis mode, idempotent demo and
   AutoCare seeds, migration and real-mode E2E verification in
   `docs/backend-api-parity.md`.
+- [x] Keep the real market and zone selectors usable on a clean local database:
+  when the catalog tables are empty, the API exposes the same read-only
+  country/city/zone registry as the mock catalog until the optional seed is
+  run; persisted database rows remain the source of truth once available.
 - [x] Run the Docker-backed migration/seed/E2E flow with PostgreSQL and Redis;
   migration smoke and the integration suite now pass locally.
 - [ ] Add response-schema and authorization integration coverage for the
