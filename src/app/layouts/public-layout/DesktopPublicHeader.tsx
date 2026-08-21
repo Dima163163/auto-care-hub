@@ -46,12 +46,12 @@ export function DesktopPublicHeader() {
     ]
 
     return (
-        <header className="sticky top-0 z-50 hidden h-[84px] shrink-0 border-b border-primary-foreground/10 bg-hero-overlay/95 text-primary-foreground backdrop-blur-md md:block">
-            <div className="mx-auto flex h-full max-w-[1416px] items-center px-[clamp(1.5rem,3.2vw,3.5rem)]">
-                <Link to={ROUTES.home} className="shrink-0" aria-label={t('navigation.home')}>
+        <header className="public-desktop-header sticky top-0 z-50 hidden h-[84px] shrink-0 border-b border-primary-foreground/10 bg-hero-overlay/95 text-primary-foreground backdrop-blur-md md:block">
+            <div className="public-desktop-header__inner mx-auto flex h-full max-w-[1416px] items-center px-[clamp(1.5rem,3.2vw,3.5rem)]">
+                <Link to={ROUTES.home} className="public-desktop-header__logo shrink-0" aria-label={t('navigation.home')}>
                     <BrandLogo size="lg" />
                 </Link>
-                <nav className="ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold lg:flex">
+                <nav className="public-desktop-header__nav ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold lg:flex">
                     <NavLink to={ROUTES.serviceDiscovery} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
                         {t('navigation.services')}
                     </NavLink>
@@ -60,13 +60,13 @@ export function DesktopPublicHeader() {
                     </NavLink>
                     <HeaderInfoMenu variant="dark" />
                 </nav>
-                <div ref={menuRef} className="relative ml-auto flex items-center gap-3 xl:gap-4">
+                <div ref={menuRef} className="public-desktop-header__actions relative ml-auto flex items-center gap-3 xl:gap-4">
                     <MarketSwitcher compact />
                     <LanguageSwitcher compact />
                     <ThemeSwitcher />
                     <button
                         type="button"
-                        className="flex size-10 shrink-0 items-center justify-center rounded-[9px] border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors hover:border-primary hover:bg-primary-foreground/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+                        className="public-desktop-header__menu-trigger flex size-10 shrink-0 items-center justify-center rounded-[9px] border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors hover:border-primary hover:bg-primary-foreground/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
                         aria-label={t('common.menu')}
                         aria-expanded={isMobileMenuOpen}
                         aria-controls="desktop-public-mobile-menu"
@@ -76,7 +76,7 @@ export function DesktopPublicHeader() {
                         {isMobileMenuOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
                     </button>
                     {!isLoading && !user && (
-                        <Link to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
+                        <Link className="public-desktop-header__favorite" to={ROUTES.favorites} aria-label={t('navigation.favorites')}>
                             <Heart className="size-7 stroke-[1.7]" />
                         </Link>
                     )}
@@ -84,9 +84,9 @@ export function DesktopPublicHeader() {
                     {!isLoading && (isError || !user) ? (
                         <Link
                             to={ROUTES.login}
-                            className="inline-flex h-[45px] items-center gap-2 rounded-[9px] border border-primary-foreground/25 px-4 text-sm font-bold"
+                            className="public-desktop-header__sign-in inline-flex h-[45px] items-center gap-2 rounded-[9px] border border-primary-foreground/25 px-4 text-sm font-bold"
                         >
-                            <UserRound className="size-[19px]" />{t('auth.signIn')}
+                            <UserRound className="size-[19px]" /><span>{t('auth.signIn')}</span>
                         </Link>
                     ) : null}
                     {!isLoading && user ? <CurrentUserMenu user={user} variant="dark" /> : null}
@@ -126,6 +126,16 @@ export function DesktopPublicHeader() {
                                     </NavLink>
                                 ))}
                             </div>
+                            {!isLoading && !user && (
+                                <div className="mt-2 grid gap-1 border-t border-border pt-2">
+                                    <NavLink to={ROUTES.favorites} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">
+                                        <Heart className="size-4 text-primary" aria-hidden="true" />{t('navigation.favorites')}
+                                    </NavLink>
+                                    <NavLink to={ROUTES.login} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">
+                                        <UserRound className="size-4 text-primary" aria-hidden="true" />{t('auth.signIn')}
+                                    </NavLink>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -11,6 +11,7 @@ export function ThemeSwitcher() {
 
     return (
         <button
+            data-theme-switcher
             type="button"
             onClick={toggleTheme}
             role="switch"

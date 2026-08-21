@@ -68,7 +68,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
     }
 
     return (
-        <div ref={rootRef} className="relative shrink-0">
+        <div ref={rootRef} data-market-switcher className="relative shrink-0">
             <button
                 type="button"
                 disabled={isLoading}
