@@ -16,8 +16,39 @@ import type {
     AutoCareServiceDefinitionResponse,
 } from './autocare.types.js'
 
+/**
+ * PostgreSQL returns NUMERIC columns as strings. Keep that database detail out
+ * of the public API contract, which is intentionally numeric for both the
+ * mock and real clients.
+ */
+function toNumber(value: unknown, fallback = 0) {
+    const parsed = typeof value === 'number' ? value : Number(value)
+    return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function toNullableNumber(value: unknown) {
+    if (value === null || value === undefined || value === '') return null
+    const parsed = typeof value === 'number' ? value : Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+}
+
 export function toMarketResponse(entity: AutomotiveMarketEntity): AutoCareMarketResponse {
-    return { ...entity }
+    return {
+        id: entity.id,
+        countryCode: entity.countryCode,
+        countryName: entity.countryName,
+        cityCode: entity.cityCode,
+        cityName: entity.cityName,
+        regionCode: entity.regionCode,
+        regionName: entity.regionName,
+        centerLatitude: toNullableNumber(entity.centerLatitude),
+        centerLongitude: toNullableNumber(entity.centerLongitude),
+        currencyCode: entity.currencyCode,
+        defaultLocale: entity.defaultLocale,
+        supportedLocales: entity.supportedLocales,
+        timezone: entity.timezone,
+        launchReady: entity.launchReady,
+    }
 }
 
 export function toServiceDefinitionResponse(entity: AutomotiveServiceDefinitionEntity): AutoCareServiceDefinitionResponse {
@@ -25,11 +56,39 @@ export function toServiceDefinitionResponse(entity: AutomotiveServiceDefinitionE
 }
 
 export function toLocationResponse(entity: AutomotiveServiceLocationEntity): AutoCareLocationResponse {
-    return { ...entity }
+    return {
+        id: entity.id,
+        marketId: entity.marketId,
+        zoneId: entity.zoneId,
+        address: entity.address,
+        hours: entity.hours,
+        timezone: entity.timezone,
+        weeklySchedule: entity.weeklySchedule,
+        blackoutDates: entity.blackoutDates,
+        latitude: toNullableNumber(entity.latitude),
+        longitude: toNullableNumber(entity.longitude),
+        supportsMobile: entity.supportsMobile,
+        supportsPickup: entity.supportsPickup,
+        coverageRadiusKm: toNullableNumber(entity.coverageRadiusKm),
+        dispatchBasePriceMinor: toNumber(entity.dispatchBasePriceMinor),
+        etaMinutes: entity.etaMinutes === null ? null : toNumber(entity.etaMinutes),
+    }
 }
 
 export function toLocationZoneResponse(entity: AutomotiveLocationZoneEntity, serviceCount: number): AutoCareLocationZoneResponse {
-    return { ...entity, serviceCount }
+    return {
+        id: entity.id,
+        marketId: entity.marketId,
+        parentId: entity.parentId,
+        slug: entity.slug,
+        zoneType: entity.zoneType,
+        names: entity.names,
+        centerLatitude: toNullableNumber(entity.centerLatitude),
+        centerLongitude: toNullableNumber(entity.centerLongitude),
+        radiusKm: toNullableNumber(entity.radiusKm),
+        imageUrl: entity.imageUrl,
+        serviceCount: toNumber(serviceCount),
+    }
 }
 
 export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definition?: AutomotiveServiceDefinitionEntity): AutoCareOfferResponse {
@@ -39,10 +98,10 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
         serviceSlug: definition?.slug,
         serviceLabels: definition?.labels,
         description: entity.description,
-        priceFromMinor: entity.priceFromMinor,
-        priceToMinor: entity.priceToMinor,
+        priceFromMinor: toNumber(entity.priceFromMinor),
+        priceToMinor: entity.priceToMinor === null ? null : toNumber(entity.priceToMinor),
         currencyCode: entity.currencyCode,
-        durationMinutes: entity.durationMinutes,
+        durationMinutes: toNumber(entity.durationMinutes),
         inclusions: entity.inclusions,
         warrantyText: entity.warrantyText,
         active: entity.active,
@@ -66,17 +125,17 @@ export function toProviderResponse(
         description: provider.description,
         status: provider.status,
         verified: provider.verified,
-        yearsActive: provider.yearsActive,
-        staffCount: provider.staffCount,
-        rating: Number(provider.rating),
-        reviewCount: provider.reviewCount,
+        yearsActive: toNumber(provider.yearsActive),
+        staffCount: toNumber(provider.staffCount),
+        rating: toNumber(provider.rating),
+        reviewCount: toNumber(provider.reviewCount),
         bonusSummary: provider.bonusSummary,
         phone: provider.phone,
         phones,
         email: provider.email,
         websiteUrl: provider.websiteUrl,
         metroStation: provider.metroStation,
-        workstationCount: provider.workstationCount,
+        workstationCount: toNumber(provider.workstationCount),
         warrantyText: provider.warrantyText,
         logoUrl: provider.logoUrl,
         coverImageUrl: provider.coverImageUrl,
@@ -86,7 +145,7 @@ export function toProviderResponse(
         amenityIds: provider.amenityIds,
         brandSpecializations: provider.brandSpecializations,
         isMultibrand: provider.isMultibrand,
-        trustScore: Number(provider.trustScore),
+        trustScore: toNumber(provider.trustScore),
         trustBadge: provider.trustBadge,
         trustReassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
         location: toLocationResponse(location),

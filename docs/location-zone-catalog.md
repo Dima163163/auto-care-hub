@@ -45,6 +45,8 @@ for cities that do not yet have registered services.
 1. Add the market to `AUTOMOTIVE_MOCK_MARKETS` and the frontend mock market list.
 2. Add canonical zones to `AUTOMOTIVE_MOCK_LOCATION_ZONES` and the equivalent
    MSW fixture.
-3. Run `npm --prefix server run autocare:seed` against local PostgreSQL.
+3. Start the local API with `npm run server:dev`; migrations and the
+   idempotent AutoCare seed run automatically. For a standalone database
+   refresh, `npm --prefix server run autocare:seed` remains available.
 4. Verify `npm run check:api-parity`, the backend unit suite and the homepage
    at the new city code.

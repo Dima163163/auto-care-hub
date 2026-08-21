@@ -8,6 +8,8 @@ import {
     AUTOCARE_MOCK_FALLBACK_IMAGE,
     resolveMockAssetUrl,
 } from './autocare-mock-catalog.js'
+import { toLocationZoneResponse, toMarketResponse } from './autocare.mappers.js'
+import type { AutomotiveLocationZoneEntity, AutomotiveMarketEntity } from '../../entities/index.js'
 
 describe('AutoCare mock catalog assets', () => {
     it('ships a data-driven market and location hierarchy', () => {
@@ -47,5 +49,41 @@ describe('AutoCare mock catalog assets', () => {
 
     it('rejects traversal outside the public asset root', () => {
         expect(resolveMockAssetUrl('/../private/image.webp', '/tmp/public')).toBe(AUTOCARE_MOCK_FALLBACK_IMAGE)
+    })
+
+    it('normalizes PostgreSQL numeric values for the real API contract', () => {
+        const market = {
+            id: 'market-1',
+            countryCode: 'RU',
+            countryName: 'Россия',
+            cityCode: 'samara',
+            cityName: 'Самара',
+            regionCode: 'samara-oblast',
+            regionName: 'Самарская область',
+            centerLatitude: '53.1959000',
+            centerLongitude: '50.1002000',
+            currencyCode: 'RUB',
+            defaultLocale: 'ru',
+            supportedLocales: ['ru', 'en'],
+            timezone: 'Europe/Samara',
+            launchReady: true,
+        } as unknown as AutomotiveMarketEntity
+        const zone = {
+            id: 'zone-1',
+            marketId: 'market-1',
+            parentId: null,
+            slug: 'central',
+            zoneType: 'district',
+            names: { ru: 'Центральный район' },
+            centerLatitude: '53.1959000',
+            centerLongitude: '50.1002000',
+            radiusKm: '5.00',
+            imageUrl: null,
+        } as unknown as AutomotiveLocationZoneEntity
+
+        expect(toMarketResponse(market).centerLatitude).toBe(53.1959)
+        expect(toMarketResponse(market).centerLongitude).toBe(50.1002)
+        expect(toLocationZoneResponse(zone, 3).radiusKm).toBe(5)
+        expect(toLocationZoneResponse(zone, 3).serviceCount).toBe(3)
     })
 })

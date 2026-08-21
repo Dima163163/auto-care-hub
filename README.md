@@ -155,7 +155,6 @@ Or run components separately:
 
 ```bash
 npm run server:db:up
-npm run server:migrate
 npm run server:dev
 npm run dev:real
 ```
