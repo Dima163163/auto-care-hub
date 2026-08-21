@@ -210,13 +210,15 @@ export type RedeemAutoCareReviewPromoInput = { code: string }
 export type CreateAutoCareReviewInput = { requestId: string; rating: number; text: string }
 export type UpdateAutoCareReviewInput = { rating: number; text: string }
 
-export type OwnerAutoCareProviderReviewsResponse = {
+export type AutoCareProviderReviewsResponse = {
     providerId: string
     totalReviews: number
     averageRating: number
     distribution: Record<'1' | '2' | '3' | '4' | '5', number>
     reviews: AutoCareReviewResponse[]
 }
+
+export type OwnerAutoCareProviderReviewsResponse = AutoCareProviderReviewsResponse
 
 export type OwnerAutoCareReviewsProviderResponse = {
     id: string

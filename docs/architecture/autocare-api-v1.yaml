@@ -36,6 +36,11 @@ resources:
     read: public
     route: /api/v1/providers/{providerId}
     includes: [verification, locations, offers, amenities, reviewSummary, contact, warrantyText, workstationCount, logoUrl, coverImageUrl, galleryImageUrls]
+  provider_reviews:
+    read: public
+    route: /api/v1/providers/{providerId}/reviews
+    query: [limit]
+    projection: [providerId, totalReviews, averageRating, distribution, reviews]
   provider_favorites:
     read: authenticated_client
     route: /api/v1/favorites/providers

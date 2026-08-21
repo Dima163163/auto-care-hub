@@ -2227,6 +2227,19 @@ export const handlers = [
         return HttpResponse.json({ ...provider, offers })
     }),
 
+    http.get('/api/v1/providers/:providerId/reviews', ({ params, request }) => {
+        const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
+        if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
+
+        const providerReviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === provider.id)
+        const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+        providerReviews.forEach((review) => { distribution[String(review.rating) as keyof typeof distribution] += 1 })
+        const averageRating = providerReviews.length === 0 ? 0 : Number((providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerReviews.length).toFixed(1))
+        const rawLimit = Number(new URL(request.url).searchParams.get('limit') ?? 20)
+        const limit = Number.isFinite(rawLimit) ? Math.min(50, Math.max(1, Math.floor(rawLimit))) : 20
+        return HttpResponse.json({ providerId: provider.id, totalReviews: providerReviews.length, averageRating, distribution, reviews: providerReviews.slice(0, limit) })
+    }),
+
     http.get('/api/v1/providers/:providerId/availability', ({ params, request }) => {
         const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
         const url = new URL(request.url)

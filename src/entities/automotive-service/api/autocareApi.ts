@@ -641,6 +641,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareProviderProfileSchema.parse(value),
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: providerId }],
         }),
+        getAutoCareProviderReviews: build.query<AutoCareApiProviderReviews, { providerId: string; limit?: number }>({
+            query: ({ providerId, limit = 20 }) => ({ url: `/v1/providers/${encodeURIComponent(providerId)}/reviews`, params: { limit } }),
+            transformResponse: (value: unknown) => ownerProviderReviewsSchema.parse(value),
+            providesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareReview', id: `PUBLIC_${providerId}` }],
+        }),
         getAutoCareFavorites: build.query<AutoCareFavorite[], void>({
             query: () => '/v1/favorites/providers',
             transformResponse: (value: unknown) => autoCareFavoritesSchema.parse(value),
@@ -988,6 +993,7 @@ export const {
     useUploadOwnerAutoCareProviderLogoMutation,
     useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
+    useGetAutoCareProviderReviewsQuery,
     useGetAutoCareFavoritesQuery,
     useAddAutoCareFavoriteMutation,
     useRemoveAutoCareFavoriteMutation,

@@ -2,7 +2,7 @@ import { BadgeCheck, Clock3, Globe2, Mail, MapPinned, Phone, ShieldCheck } from 
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 
-import { AutomotiveAmenityIcon, automotiveAmenities, getAutomotiveAmenityLabel, mapAutoCareProviderProfile, type AutoCareTrustResponse, useGetAutoCareProviderProfileQuery, useGetAutoCareProviderTrustQuery } from '@/entities/automotive-service'
+import { AutomotiveAmenityIcon, automotiveAmenities, getAutomotiveAmenityLabel, mapAutoCareProviderProfile, type AutoCareTrustResponse, useGetAutoCareProviderProfileQuery, useGetAutoCareProviderReviewsQuery, useGetAutoCareProviderTrustQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ProviderProfileSkeleton } from '@/shared/ui/loading-skeleton'
 
@@ -17,8 +17,9 @@ export function AutoCareProviderPage() {
     const { id = '' } = useParams()
     const { t } = useTranslation()
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
+    const { data: reviewSummary } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 20 }, { skip: !id })
     const { data: trust } = useGetAutoCareProviderTrustQuery(id, { skip: !id })
-    const provider = data ? mapAutoCareProviderProfile(data) : undefined
+    const provider = data ? mapAutoCareProviderProfile(data, reviewSummary) : undefined
     const [selectedServiceId, setSelectedServiceId] = useState('')
     const selectedOffering = useMemo(() => provider?.offerings.find((item) => item.serviceId === selectedServiceId) ?? provider?.offerings[0], [provider, selectedServiceId])
 

@@ -42,6 +42,7 @@ export {
     useUploadOwnerAutoCareProviderLogoMutation,
     useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
+    useGetAutoCareProviderReviewsQuery,
     useGetAutoCareFavoritesQuery,
     useAddAutoCareFavoriteMutation,
     useRemoveAutoCareFavoriteMutation,

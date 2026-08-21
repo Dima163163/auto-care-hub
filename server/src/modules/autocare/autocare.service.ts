@@ -30,7 +30,7 @@ import { canManageProvider, getManagedProviderIds } from './provider-access.serv
 import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -375,6 +375,28 @@ export async function getOwnerAutoCareProviderReviews(owner: UserEntity, provide
         averageRating,
         distribution,
         reviews: reviews.map((review) => toAutoCareReviewResponse(review, { exposeActions: true })),
+    }
+}
+
+export async function getAutoCareProviderReviews(providerId: string, limit = 20): Promise<AutoCareProviderReviewsResponse> {
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    assertProviderActive(provider)
+
+    const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
+        where: { providerId: provider.id, status: AutomotiveReviewStatus.Approved },
+        order: { createdAt: 'DESC' },
+    })
+    const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+    for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
+    const totalReviews = reviews.length
+    const averageRating = totalReviews === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1))
+
+    return {
+        providerId: provider.id,
+        totalReviews,
+        averageRating,
+        distribution,
+        reviews: reviews.slice(0, limit).map((review) => toAutoCareReviewResponse(review)),
     }
 }
 

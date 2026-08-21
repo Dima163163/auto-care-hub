@@ -2,7 +2,7 @@ import type { ProviderOffering, ProviderPreview, ProviderProfile } from '../mode
 import { automotiveAmenities } from '../model/automotiveAmenities'
 import { IS_MOCK_API } from '@/shared/config/api'
 import type { AutomotiveAmenityId } from '../model/automotiveAmenities'
-import type { AutoCareApiDiscoveryItem, AutoCareApiOffer, AutoCareApiProviderProfile } from '../api/autocareApi'
+import type { AutoCareApiDiscoveryItem, AutoCareApiOffer, AutoCareApiProviderProfile, AutoCareApiProviderReviews } from '../api/autocareApi'
 
 function formatDistance(distanceKm: number) {
     return `${distanceKm.toFixed(1)} km`
@@ -55,13 +55,33 @@ function mapOffer(offer: AutoCareApiOffer): ProviderOffering {
     }
 }
 
-export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile): ProviderProfile {
+function mapReview(review: AutoCareApiProviderReviews['reviews'][number]): ProviderProfile['reviews'][number] {
+    return {
+        id: review.id,
+        author: review.authorName,
+        vehicleLabel: review.vehicleLabel,
+        avatarUrl: review.avatarUrl,
+        rating: review.rating,
+        date: formatReviewDate(review.createdAt),
+        text: review.text,
+        serviceId: review.serviceSlug ?? '',
+        photos: review.photoUrls,
+    }
+}
+
+function formatReviewDate(value: string) {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date)
+}
+
+export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile, reviewSummary?: AutoCareApiProviderReviews): ProviderProfile {
     return {
         id: profile.id,
         locationId: profile.location.id,
         name: profile.name,
-        rating: profile.rating,
-        reviewCount: profile.reviewCount,
+        rating: reviewSummary?.averageRating ?? profile.rating,
+        reviewCount: reviewSummary?.totalReviews ?? profile.reviewCount,
+        reviewDistribution: reviewSummary?.distribution,
         distance: '—',
         price: profile.offers[0]?.priceFromMinor ? profile.offers[0].priceFromMinor / 100 : 0,
         currency: profile.offers[0]?.currencyCode ?? 'RUB',
@@ -88,7 +108,7 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile):
         about: profile.description ?? 'A verified automotive service provider with transparent offers and service support.',
         amenities: profile.amenityIds.filter((amenityId): amenityId is AutomotiveAmenityId => automotiveAmenities.some((amenity) => amenity.id === amenityId)),
         offerings: profile.offers.map(mapOffer),
-        reviews: IS_MOCK_API ? [
+        reviews: reviewSummary ? reviewSummary.reviews.map(mapReview) : IS_MOCK_API ? [
             { id: `${profile.id}-review-1`, author: 'Alex M.', rating: 5, date: '2 days ago', text: 'Clear estimate, fast work, and the final price matched the agreed scope.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-body-paint.png'] },
             { id: `${profile.id}-review-2`, author: 'Maria S.', rating: 5, date: '1 week ago', text: 'Convenient appointment time and detailed updates while the car was in service.', serviceId: profile.offers[0]?.serviceSlug ?? '', photos: ['/images/autocare/providers/generated/service-tire-service.png'] },
             { id: `${profile.id}-review-3`, author: 'Igor P.', rating: 4, date: '2 weeks ago', text: 'The specialist explained the options before starting the repair.', serviceId: profile.offers[0]?.serviceSlug ?? '' },

@@ -54,6 +54,8 @@ export type ProviderOffering = {
 export type ProviderReview = {
     id: string
     author: string
+    vehicleLabel?: string
+    avatarUrl?: string | null
     rating: number
     date: string
     text: string
@@ -78,6 +80,7 @@ export type ProviderProfile = ProviderPreview & {
     amenities: readonly AutomotiveAmenityId[]
     offerings: readonly ProviderOffering[]
     reviews: readonly ProviderReview[]
+    reviewDistribution?: Record<'1' | '2' | '3' | '4' | '5', number>
     supportsMobile?: boolean
     supportsPickup?: boolean
     coverageRadiusKm?: number | null

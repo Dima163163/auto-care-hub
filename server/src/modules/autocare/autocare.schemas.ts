@@ -109,6 +109,10 @@ export const autoCareFeaturedReviewsQuerySchema = z.object({
     limit: z.coerce.number().int().positive().max(12).default(6),
 })
 
+export const autoCareProviderReviewsQuerySchema = z.object({
+    limit: z.coerce.number().int().positive().max(50).default(20),
+})
+
 export const autoCareFairPriceQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120),
     marketId: z.string().trim().min(1).max(120).optional(),

@@ -197,6 +197,9 @@ export function getOpenApiDocument() {
             '/v1/providers/{providerId}': {
                 get: { operationId: 'getAutoCareProviderProfile', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Public provider profile with offers and image fallbacks.' } } },
             },
+            '/v1/providers/{providerId}/reviews': {
+                get: { operationId: 'getAutoCareProviderReviews', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } }], responses: { '200': { description: 'Approved provider reviews with aggregate rating distribution.' } } },
+            },
             '/v1/providers/{providerId}/trust': {
                 get: { operationId: 'getAutoCareProviderTrust', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Trust score and evidence used for the verified-service badge.' } } },
             },
