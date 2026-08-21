@@ -1147,6 +1147,7 @@ export const ruTranslations = {
         providerMessagePlaceholder: 'Опишите проблему или добавьте детали',
         providerAttachPhoto: 'Добавить фото',
         providerSendRequest: 'Отправить запрос',
+        providerRequestError: 'Не удалось открыть чат. Попробуйте ещё раз.',
         providerRequestSent: 'Запрос отправлен. Сервис подтвердит следующий шаг.',
         providerDirectPayment: 'Оплата согласуется напрямую с сервисом.',
         providerWarranty: 'Гарантия и состав работ видны до подтверждения.',

@@ -1,11 +1,12 @@
 import { CalendarDays, Camera, ChevronDown, Clock3, LockKeyhole, Phone, Send, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 
-import { automotiveServices, getServiceLabel, useGetAutoCareAvailabilityQuery } from '@/entities/automotive-service'
+import { automotiveServices, getServiceLabel, useCreateAutoCareChatAttachmentMutation, useCreateAutoCareChatMessageMutation, useCreateAutoCareChatMutation, useGetAutoCareAvailabilityQuery } from '@/entities/automotive-service'
+import { useGetMeQuery } from '@/features/auth'
 import type { ProviderOffering, ProviderProfile } from '@/entities/automotive-service'
-import { routePaths } from '@/shared/constants/routes'
+import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ServiceWrenchIcon } from '@/shared/ui/icons/service-wrench-icon'
 
@@ -69,4 +70,53 @@ function TrustItem({ icon, title, description }: { icon: ReactNode; title: strin
     return <div className="flex items-start gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary">{icon}</span><p className="text-xs font-bold leading-4"><span className="block text-foreground">{title}</span><span className="block text-[10px] font-semibold text-muted-foreground">{description}</span></p></div>
 }
 
-function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) { const { t } = useTranslation(); return <div className="mt-5 grid gap-3"><textarea required rows={3} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.providerMessagePlaceholder')} /><label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{t('autocare.providerAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" /></label><Link to={routePaths.serviceRequest(provider.id, offering.serviceId)} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90"><Send className="size-4" />{t('autocare.providerSendRequest')}</Link></div> }
+function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) {
+    const { t } = useTranslation()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const { data: user } = useGetMeQuery()
+    const [message, setMessage] = useState('')
+    const [files, setFiles] = useState<File[]>([])
+    const [createChat, chatState] = useCreateAutoCareChatMutation()
+    const [sendMessage, messageState] = useCreateAutoCareChatMessageMutation()
+    const [uploadAttachment, uploadState] = useCreateAutoCareChatAttachmentMutation()
+    const isSending = chatState.isLoading || messageState.isLoading || uploadState.isLoading
+
+    const selectFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selected = Array.from(event.target.files ?? []).filter((file) => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && file.size <= 10 * 1024 * 1024)
+        setFiles(selected.slice(0, 6))
+        event.target.value = ''
+    }
+
+    const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!message.trim()) return
+        if (!user) {
+            navigate(ROUTES.login, { state: { from: location } })
+            return
+        }
+        if (!user.emailVerifiedAt) {
+            navigate(ROUTES.verifyEmail, { state: { from: location } })
+            return
+        }
+        try {
+            const thread = await createChat({ type: 'provider_inquiry', providerId: provider.id, subject: `${t('autocare.providerRequestTitle')}: ${offering.serviceId}` }).unwrap()
+            await sendMessage({ chatId: thread.id, body: message.trim() }).unwrap()
+            await Promise.all(files.map(async (file) => uploadAttachment({ chatId: thread.id, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()))
+            navigate(`${ROUTES.chats}?chat=${encodeURIComponent(thread.id)}`)
+        } catch {
+            // Keep the form available so the client can retry.
+        }
+    }
+
+    return <form className="mt-5 grid gap-3" onSubmit={(event) => void submit(event)}><textarea required rows={3} value={message} onChange={(event) => setMessage(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.providerMessagePlaceholder')} /><label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{t('autocare.providerAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>{files.length > 0 ? <p className="text-[11px] font-semibold text-muted-foreground">{files.length} {t('autocare.providerAttachPhoto')}</p> : null}<button type="submit" disabled={isSending || !message.trim()} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"><Send className="size-4" />{t('autocare.providerSendRequest')}</button>{chatState.isError || messageState.isError || uploadState.isError ? <p role="alert" className="text-xs font-bold text-destructive">{t('autocare.providerRequestError')}</p> : null}</form>
+}
+
+function readFileAsBase64(file: File) {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(file)
+    })
+}

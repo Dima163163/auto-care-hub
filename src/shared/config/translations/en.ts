@@ -1143,6 +1143,7 @@ export const enTranslations = {
         providerMessagePlaceholder: 'Describe the issue or add important details',
         providerAttachPhoto: 'Add photos',
         providerSendRequest: 'Send request',
+        providerRequestError: 'Could not open the chat. Please try again.',
         providerRequestSent: 'Request sent. The service will confirm the next step.',
         providerDirectPayment: 'Payment is arranged directly with the service.',
         providerWarranty: 'Warranty and inclusions are shown before confirmation.',
