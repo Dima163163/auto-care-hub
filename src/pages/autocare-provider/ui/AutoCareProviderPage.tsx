@@ -17,7 +17,7 @@ export function AutoCareProviderPage() {
     const { id = '' } = useParams()
     const { t } = useTranslation()
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
-    const { data: reviewSummary } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 50 }, { skip: !id })
+    const { data: reviewSummary, isLoading: isReviewsLoading } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 50 }, { skip: !id })
     const { data: trust } = useGetAutoCareProviderTrustQuery(id, { skip: !id })
     const provider = data ? mapAutoCareProviderProfile(data, reviewSummary) : undefined
     const [selectedServiceId, setSelectedServiceId] = useState('')
@@ -26,7 +26,7 @@ export function AutoCareProviderPage() {
     if (isLoading) return <main className="min-h-full bg-background"><ProviderProfileSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !selectedOffering) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
 
-    return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6"><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>
+    return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6"><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} isLoading={isReviewsLoading} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>
 }
 
 function ProviderAbout({ provider, trust }: { provider: NonNullable<ReturnType<typeof mapAutoCareProviderProfile>>; trust?: AutoCareTrustResponse }) {
