@@ -1190,6 +1190,7 @@ export const ruTranslations = {
         clientVehiclesTitle: 'Мои автомобили',
         clientVehiclesAll: 'Все мои автомобили',
         clientVehiclesAdd: 'Добавить авто',
+        clientVehiclesEmpty: 'Автомобиль ещё не добавлен',
         clientQuickActions: 'Быстрые действия',
         clientNewRequest: 'Новая заявка',
         clientNewRequestText: 'Найти сервис и записаться',

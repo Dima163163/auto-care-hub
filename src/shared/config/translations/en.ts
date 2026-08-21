@@ -1186,6 +1186,7 @@ export const enTranslations = {
         clientVehiclesTitle: 'My vehicles',
         clientVehiclesAll: 'All my vehicles',
         clientVehiclesAdd: 'Add vehicle',
+        clientVehiclesEmpty: 'No vehicle added yet',
         clientQuickActions: 'Quick actions',
         clientNewRequest: 'New request',
         clientNewRequestText: 'Find a service and book a visit',
