@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
-import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareRepairTimelineQuery, useGetAutoCareServiceConversationQuery } from '@/entities/automotive-service'
+import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareRepairTimelineQuery, useGetAutoCareServiceConversationQuery, useGetMyAutoCareFleetsQuery } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 import { useGetMeQuery } from '@/features/auth'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -20,6 +20,8 @@ export function AutoCareRequestPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const { data: user } = useGetMeQuery()
+    const requestedVehicleId = searchParams.get('vehicleId')
+    const { data: fleets, isFetching: isFleetsFetching } = useGetMyAutoCareFleetsQuery(undefined, { skip: !user || !requestedVehicleId })
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
     const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
@@ -30,6 +32,8 @@ export function AutoCareRequestPage() {
         () => provider?.offerings.find((item) => item.serviceId === searchParams.get('service')) ?? provider?.offerings[0],
         [provider, searchParams],
     )
+    const selectedVehicle = fleets?.flatMap((fleet) => fleet.vehicles).find((vehicle) => vehicle.id === requestedVehicleId)
+    const initialVehicle = toRequestVehicleSnapshot(selectedVehicle?.vehicleSnapshot)
 
     if (isLoading) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !offering || !data) {
@@ -75,12 +79,20 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <RequestFollowUp providerId={provider.id} requestId={submittedRequestId} /> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
+                    <div>{submittedRequestId ? <RequestFollowUp providerId={provider.id} requestId={submittedRequestId} /> : requestedVehicleId && isFleetsFetching ? <div className="rounded-[var(--radius-panel)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">{t('common.loading')}</div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
                     <RequestOrderSummary provider={provider} offering={offering} />
                 </div>
             </div>
         </main>
     )
+}
+
+function toRequestVehicleSnapshot(snapshot: Record<string, unknown> | undefined): RequestFormPayload['vehicleSnapshot'] {
+    if (!snapshot) return null
+    const make = String(snapshot.makeLabel ?? snapshot.make ?? snapshot.brand ?? '').trim()
+    const model = String(snapshot.modelLabel ?? snapshot.model ?? '').trim()
+    const year = Number(snapshot.year)
+    return make && model && Number.isInteger(year) && year > 0 ? { make, model, year } : null
 }
 
 function readFileAsBase64(file: File) {

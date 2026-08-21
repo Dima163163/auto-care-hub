@@ -9,10 +9,13 @@ type RequestFormProps = {
     providerId: string
     locationId: string
     offeringId: string
+    initialVehicle?: RequestFormPayload['vehicleSnapshot']
     onSubmit: (payload: RequestFormPayload) => void
     isSubmitting?: boolean
     errorMessage?: string
 }
+
+type EditableVehicle = { make: string; model: string; year: number }
 
 export type RequestFormPayload = {
     preferredAt: string
@@ -24,7 +27,7 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, initialVehicle, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
     const initialDate = searchParams.get('date') ?? ''
@@ -32,7 +35,7 @@ export function RequestForm({ providerId, locationId, offeringId, onSubmit, isSu
     const [customDate, setCustomDate] = useState(initialDate)
     const [selectedTime, setSelectedTime] = useState(searchParams.get('time') ?? '')
     const [contactSnapshot, setContactSnapshot] = useState({ name: '', phone: '', email: '' })
-    const [vehicleSnapshot, setVehicleSnapshot] = useState({ make: '', model: '', year: new Date().getFullYear() })
+    const [vehicleSnapshot, setVehicleSnapshot] = useState<EditableVehicle>(initialVehicle ?? { make: '', model: '', year: new Date().getFullYear() })
     const [files, setFiles] = useState<File[]>([])
     const [note, setNote] = useState('')
     const availabilityDate = customDate || toDateInputValue(getFutureDate(Math.max(appointmentDates.indexOf(selectedDate), 0)))
