@@ -338,6 +338,7 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonus ?? null,
         phone: '+7 (495) 645-35-35',
+        phones: ['+7 (495) 645-35-35'],
         email: 'service@example.com',
         websiteUrl: null,
         metroStation: 'м. Парк культуры',
@@ -2972,6 +2973,7 @@ export const handlers = [
             staffCount?: number
             workstationCount?: number
             phone?: string | null
+            phones?: string[]
             email?: string | null
             websiteUrl?: string | null
             metroStation?: string | null
@@ -3000,6 +3002,7 @@ export const handlers = [
             staffCount: Math.max(0, Number(body.staffCount) || 0),
             workstationCount: Math.max(0, Number(body.workstationCount) || 0),
             phone: body.phone?.trim() || null,
+            phones: [...new Set([body.phone?.trim() ?? '', ...(body.phones ?? [])].map((phone) => phone.trim()).filter(Boolean))],
             email: body.email?.trim() || null,
             websiteUrl: body.websiteUrl?.trim() || null,
             metroStation: body.metroStation?.trim() || null,

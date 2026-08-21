@@ -77,6 +77,7 @@ export type AutoCareApiProvider = {
     reviewCount: number
     bonusSummary: string | null
     phone?: string | null
+    phones: string[]
     email?: string | null
     websiteUrl?: string | null
     metroStation?: string | null
@@ -307,6 +308,7 @@ const autoCareProviderSchema = z.object({
     reviewCount: z.number().int().nonnegative(),
     bonusSummary: z.string().nullable(),
     phone: z.string().nullable().optional(),
+    phones: z.array(z.string().trim().min(5).max(32)).max(5).default([]),
     email: z.string().nullable().optional(),
     websiteUrl: z.string().nullable().optional(),
     metroStation: z.string().nullable().optional(),
@@ -555,6 +557,7 @@ export type CreateOwnerAutoCareProviderInput = {
     staffCount: number
     workstationCount?: number
     phone?: string | null
+    phones?: string[]
     email?: string | null
     websiteUrl?: string | null
     metroStation?: string | null

@@ -55,6 +55,7 @@ export type AutoCareProviderResponse = {
     reviewCount: number
     bonusSummary: string | null
     phone: string | null
+    phones: string[]
     email: string | null
     websiteUrl: string | null
     metroStation: string | null
@@ -260,6 +261,7 @@ export type OwnerAutoCareProviderInput = {
     staffCount: number
     workstationCount?: number
     phone?: string | null
+    phones?: string[]
     email?: string | null
     websiteUrl?: string | null
     metroStation?: string | null

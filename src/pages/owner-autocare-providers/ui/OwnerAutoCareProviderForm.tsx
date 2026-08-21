@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
     const [isMultibrand, setIsMultibrand] = useState(true)
     const [selectedBrands, setSelectedBrands] = useState<string[]>([])
     const [selectedAmenities, setSelectedAmenities] = useState<AutomotiveAmenityId[]>([...defaultAutomotiveAmenityIds])
+    const [additionalPhones, setAdditionalPhones] = useState<number[]>([])
+    const nextPhoneId = useRef(0)
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [coverPreview, setCoverPreview] = useState<string | null>(null)
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
@@ -64,6 +66,10 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 : null
             const galleryUrls = await Promise.all(galleryFiles.slice(0, 12).map(async (file) => (await uploadMedia({ ...(await prepareProviderMedia(file)), kind: 'gallery' }).unwrap()).url))
             const optionalText = (value: FormDataEntryValue | null) => String(value ?? '').trim() || null
+            const phones = [...new Set([
+                optionalText(formData.get('phone')),
+                ...formData.getAll('additionalPhone').map((value) => optionalText(value)),
+            ].filter((phone): phone is string => Boolean(phone)))]
             const body: CreateOwnerAutoCareProviderInput = {
                 name: String(formData.get('name') ?? '').trim(),
                 description: String(formData.get('description') ?? '').trim() || undefined,
@@ -73,7 +79,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 yearsActive: Number(formData.get('yearsActive') ?? 0),
                 staffCount: Number(formData.get('staffCount') ?? 0),
                 workstationCount: Number(formData.get('workstationCount') ?? 0),
-                phone: optionalText(formData.get('phone')),
+                phone: phones[0] ?? null,
+                phones,
                 email: optionalText(formData.get('email')),
                 websiteUrl: optionalText(formData.get('websiteUrl')),
                 metroStation: optionalText(formData.get('metroStation')),
@@ -91,6 +98,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             setIsMultibrand(true)
             setSelectedBrands([])
             setSelectedAmenities([...defaultAutomotiveAmenityIds])
+            setAdditionalPhones([])
             setLogoPreview(null)
             setCoverPreview(null)
             setGalleryPreviews([])
@@ -137,7 +145,40 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 </Field>
 
                 <div className="grid gap-4 border-t pt-5 md:grid-cols-2">
-                    <Field label={t('autocare.ownerProviderPhoneLabel')}><input name="phone" type="tel" className={inputClassName} placeholder={t('autocare.ownerProviderPhonePlaceholder')} /></Field>
+                    <div className="md:col-span-2">
+                        <div className="flex items-end gap-3">
+                            <div className="min-w-0 flex-1">
+                                <Field label={t('autocare.ownerProviderPhoneLabel')}><input name="phone" type="tel" className={inputClassName} placeholder={t('autocare.ownerProviderPhonePlaceholder')} /></Field>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="shrink-0"
+                                disabled={additionalPhones.length >= 4}
+                                onClick={() => setAdditionalPhones((phones) => [...phones, nextPhoneId.current++])}
+                            >
+                                {t('autocare.ownerProviderAddPhone')}
+                            </Button>
+                        </div>
+                        {additionalPhones.map((phoneId, index) => (
+                            <div key={`additional-phone-${phoneId}`} className="mt-3 flex items-end gap-3">
+                                <div className="min-w-0 flex-1">
+                                    <Field label={`${t('autocare.ownerProviderPhoneLabel')} ${index + 2}`}>
+                                        <input name="additionalPhone" type="tel" className={inputClassName} placeholder={t('autocare.ownerProviderPhonePlaceholder')} />
+                                    </Field>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    aria-label={`${t('autocare.ownerProviderRemovePhone')} ${index + 2}`}
+                                    onClick={() => setAdditionalPhones((phones) => phones.filter((id) => id !== phoneId))}
+                                >
+                                    {t('autocare.ownerProviderRemovePhone')}
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
                     <Field label={t('autocare.ownerProviderEmailLabel')}><input name="email" type="email" className={inputClassName} placeholder={t('autocare.ownerProviderEmailPlaceholder')} /></Field>
                     <Field label={t('autocare.ownerProviderWebsiteLabel')}><input name="websiteUrl" type="url" className={inputClassName} placeholder={t('autocare.ownerProviderWebsitePlaceholder')} /></Field>
                     <Field label={t('autocare.ownerProviderMetroLabel')}><input name="metroStation" className={inputClassName} placeholder={t('autocare.ownerProviderMetroPlaceholder')} /></Field>

@@ -891,6 +891,8 @@ export const ruTranslations = {
         ownerProviderWorkstationsLabel: 'Постов обслуживания',
         ownerProviderPhoneLabel: 'Телефон сервиса',
         ownerProviderPhonePlaceholder: '+7 (900) 000-00-00',
+        ownerProviderAddPhone: 'Добавить номер',
+        ownerProviderRemovePhone: 'Удалить',
         ownerProviderEmailLabel: 'Email сервиса',
         ownerProviderEmailPlaceholder: 'hello@service.ru',
         ownerProviderWebsiteLabel: 'Сайт сервиса',

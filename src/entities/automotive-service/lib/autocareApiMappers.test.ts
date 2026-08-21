@@ -13,6 +13,7 @@ const provider = {
     rating: 4.7,
     reviewCount: 256,
     bonusSummary: '5% back',
+    phones: ['+7 (495) 645-35-35'],
     logoUrl: '/uploads/autocare/logos/provider-1.webp',
     coverImageUrl: '/images/autocare/providers/proservice.webp',
     galleryImageUrls: ['/images/autocare/providers/proservice.webp'],

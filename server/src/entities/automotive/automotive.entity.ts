@@ -106,6 +106,7 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'integer', default: 0 }) reviewCount!: number
     @Column({ type: 'text', nullable: true }) bonusSummary!: string | null
     @Column({ type: 'text', nullable: true }) phone!: string | null
+    @Column('text', { array: true, default: () => "'{}'" }) phones!: string[]
     @Column({ type: 'text', nullable: true }) email!: string | null
     @Column({ type: 'text', nullable: true }) websiteUrl!: string | null
     @Column({ type: 'text', nullable: true }) metroStation!: string | null

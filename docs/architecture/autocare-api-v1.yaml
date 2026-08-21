@@ -46,7 +46,7 @@ resources:
   provider_profile_create:
     create: verified_owner
     route: /api/owner/autocare-providers
-    fields: [name, description, marketId, zoneId, address, hours, yearsActive, staffCount, workstationCount, phone, email, websiteUrl, metroStation, warrantyText, bonusSummary, isMultibrand, brandSpecializations, amenityIds, logoUrl, coverImageUrl, galleryImageUrls]
+    fields: [name, description, marketId, zoneId, address, hours, yearsActive, staffCount, workstationCount, phone, phones, email, websiteUrl, metroStation, warrantyText, bonusSummary, isMultibrand, brandSpecializations, amenityIds, logoUrl, coverImageUrl, galleryImageUrls]
   provider_logo:
     create: verified_owner
     route: /api/owner/autocare-providers/logo

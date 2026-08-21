@@ -328,6 +328,7 @@ export const ownerAutoCareProviderSchema = z.object({
     staffCount: z.coerce.number().int().min(0).max(10_000),
     workstationCount: z.coerce.number().int().nonnegative().max(100_000).optional(),
     phone: z.string().trim().min(5).max(32).nullable().optional(),
+    phones: z.array(z.string().trim().min(5).max(32)).max(5).optional(),
     email: z.string().trim().email().max(320).nullable().optional(),
     websiteUrl: z.string().trim().url().max(500).nullable().optional(),
     metroStation: z.string().trim().max(120).nullable().optional(),

@@ -54,6 +54,12 @@ export function toProviderResponse(
     provider: AutomotiveProviderEntity,
     location: AutomotiveServiceLocationEntity,
 ): AutoCareProviderResponse {
+    const phones = provider.phones?.length
+        ? provider.phones
+        : provider.phone
+            ? [provider.phone]
+            : []
+
     return {
         id: provider.id,
         name: provider.name,
@@ -66,6 +72,7 @@ export function toProviderResponse(
         reviewCount: provider.reviewCount,
         bonusSummary: provider.bonusSummary,
         phone: provider.phone,
+        phones,
         email: provider.email,
         websiteUrl: provider.websiteUrl,
         metroStation: provider.metroStation,

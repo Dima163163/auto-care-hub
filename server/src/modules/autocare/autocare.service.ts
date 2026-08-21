@@ -548,6 +548,9 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
         : null
     if (input.zoneId && !zone) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'The selected service zone does not belong to this market.' })
 
+    const phones = [...new Set((input.phones ?? []).map((phone) => phone.trim()).filter(Boolean))]
+    if (phones.length === 0 && input.phone?.trim()) phones.push(input.phone.trim())
+
     return AppDataSource.transaction(async (manager) => {
         const provider = await manager.getRepository(AutomotiveProviderEntity).save(manager.getRepository(AutomotiveProviderEntity).create({
             ownerId: owner.id,
@@ -558,7 +561,8 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             yearsActive: input.yearsActive,
             staffCount: input.staffCount,
             workstationCount: input.workstationCount ?? 0,
-            phone: input.phone ?? null,
+            phone: phones[0] ?? input.phone ?? null,
+            phones,
             email: input.email ?? null,
             websiteUrl: input.websiteUrl ?? null,
             metroStation: input.metroStation ?? null,

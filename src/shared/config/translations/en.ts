@@ -887,6 +887,8 @@ export const enTranslations = {
         ownerProviderWorkstationsLabel: 'Service bays',
         ownerProviderPhoneLabel: 'Service phone',
         ownerProviderPhonePlaceholder: '+1 555 000 00 00',
+        ownerProviderAddPhone: 'Add phone',
+        ownerProviderRemovePhone: 'Remove',
         ownerProviderEmailLabel: 'Service email',
         ownerProviderEmailPlaceholder: 'hello@service.example',
         ownerProviderWebsiteLabel: 'Website',
