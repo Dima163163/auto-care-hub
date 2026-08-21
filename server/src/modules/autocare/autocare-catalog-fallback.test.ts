@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
-import { findFallbackMarket, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
+import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
 
 describe('AutoCare catalog fallback', () => {
     it('resolves city codes and API-style market ids', () => {
@@ -27,5 +27,16 @@ describe('AutoCare catalog fallback', () => {
         expect(zones.length).toBeGreaterThanOrEqual(5)
         expect(zones.every((zone) => zone.marketId === 'market-samara')).toBe(true)
         expect(nearest[0]?.slug).toBe('leninsky')
+    })
+
+    it('keeps the service picker populated before the database seed', () => {
+        const definitions = getFallbackServiceDefinitions()
+
+        expect(definitions.length).toBeGreaterThanOrEqual(18)
+        expect(definitions.find((item) => item.slug === 'oil-change')).toMatchObject({
+            id: 'definition-oil-change',
+            categorySlug: 'maintenance',
+            active: true,
+        })
     })
 })

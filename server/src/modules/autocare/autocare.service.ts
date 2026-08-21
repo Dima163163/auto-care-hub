@@ -29,7 +29,7 @@ import { enqueueNotificationSafely } from '../outbox/notification-outbox.service
 import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
 import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
-import { findFallbackMarket, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
+import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
@@ -191,7 +191,8 @@ export async function getAutoCareLocationZones(marketValue: string, parentId?: s
 }
 
 export async function getAutoCareServiceDefinitions() {
-    return (await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })).map(toServiceDefinitionResponse)
+    const definitions = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { active: true }, order: { categorySlug: 'ASC', slug: 'ASC' } })
+    return definitions.length > 0 ? definitions.map(toServiceDefinitionResponse) : getFallbackServiceDefinitions()
 }
 
 export async function getAutoCareProviderLogo(fileName: string) {

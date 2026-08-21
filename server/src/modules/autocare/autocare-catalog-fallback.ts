@@ -1,7 +1,9 @@
 import type { AutoCareLocationZoneResponse, AutoCareMarketResponse } from './autocare.types.js'
+import { AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
 import {
     AUTOMOTIVE_MOCK_LOCATION_ZONES,
     AUTOMOTIVE_MOCK_MARKETS,
+    AUTOMOTIVE_MOCK_SERVICES,
     type AutomotiveMockLocationZone,
 } from './autocare-mock-catalog.js'
 
@@ -30,6 +32,23 @@ export function toFallbackMarketResponse(market: MockMarket): AutoCareMarketResp
         timezone: market.timezone,
         launchReady: market.launchReady,
     }
+}
+
+/**
+ * Keep the public service picker useful before the optional catalog seed runs.
+ * IDs are deliberately namespaced so they cannot be mistaken for persisted
+ * UUIDs; once definitions exist in PostgreSQL they remain the source of truth.
+ */
+export function getFallbackServiceDefinitions() {
+    return AUTOMOTIVE_MOCK_SERVICES.map((service) => ({
+        id: `definition-${service.slug}`,
+        slug: service.slug,
+        categorySlug: service.categorySlug,
+        labels: { ...service.labels },
+        priceType: AutomotivePriceType.From,
+        comparisonAttributes: ['price', 'rating', 'distance', 'nextSlot'],
+        active: true,
+    }))
 }
 
 function zoneDistance(zone: AutomotiveMockLocationZone, coordinates: { latitude: number; longitude: number }) {

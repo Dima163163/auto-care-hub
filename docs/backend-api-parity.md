@@ -1,6 +1,6 @@
 # Backend/API parity
 
-Updated: 2026-08-15
+Updated: 2026-08-21
 
 ## Decision
 
@@ -17,8 +17,8 @@ The inventory compares the route signatures declared in
 
 | Set | Count | Meaning |
 | --- | ---: | --- |
-| MSW mock routes | 172 | Requests the browser can exercise without a server |
-| Fastify routes | 202 | Mock routes plus auth, health, admin, uploads, chat and WebSocket support |
+| MSW mock routes | 173 | Requests the browser can exercise without a server |
+| Fastify routes | 203 | Mock routes plus auth, health, admin, uploads, chat and WebSocket support |
 | Missing mock routes | 0 | Every mock request has a real backend route |
 
 The check is executable with `npm run check:api-parity`. It intentionally
@@ -32,7 +32,7 @@ implemented as a flat public catalog of active cabinets and declared in
 OpenAPI. The mock uses the same active-only rule; drafts and blocked records
 remain owner/admin state and are never exposed through a public catalog.
 
-The 172 mock routes are distributed across these top-level API groups:
+The 173 mock routes are distributed across these top-level API groups:
 
 | Prefix | Routes | Contract role |
 | --- | ---: | --- |
@@ -41,7 +41,7 @@ The 172 mock routes are distributed across these top-level API groups:
 | `/notifications` | 4 | List, unread count, mark one/read all |
 | `/admin` | 28 | Users, providers, reviews, audit, security and incidents |
 | `/cabinets` + `/cabinet-images` | 9 | Legacy-compatible catalog and owner cabinet/media contracts |
-| `/v1` | 50 | AutoCare discovery, markets, providers, offers, reviews, requests and chats |
+| `/v1` | 51 | AutoCare discovery, markets, providers, offers, reviews, requests and chats |
 | `/owner` | 28 | Provider workspace, locations, services, clients, requests and reviews |
 | `/uploads` | 2 | AutoCare image delivery |
 | `/super-admin` | 2 | Platform overview and platform review controls |
@@ -94,6 +94,11 @@ demo/AutoCare catalog seeds before starting the watcher. This keeps a local
 Docker database aligned with the checked-in API contract and makes the real
 server expose the same markets, zones, definitions and providers as mock mode
 without a separate seed command.
+
+For a clean database where the watcher is started before the optional seed
+finishes, the public `GET /v1/markets`, `GET /v1/markets/:marketId/zones` and
+`GET /v1/service-definitions` reads expose a read-only catalog fallback. It is
+limited to empty catalog tables; persisted rows always win once available.
 Production commands remain migration-free and never run demo seeds; deployment
 applies migrations in the release step before serving the API.
 
