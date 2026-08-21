@@ -1113,6 +1113,7 @@ export const enTranslations = {
         providerSeatCount: '{{count}} spots',
         providerAllRatings: 'All ratings',
         providerAllServices: 'All services',
+        providerSortRecommended: 'Recommended',
         providerSortByDate: 'By date',
         providerShowAllReviews: 'Show all reviews ({{count}})',
         providerReviewService: 'Brake pad replacement',

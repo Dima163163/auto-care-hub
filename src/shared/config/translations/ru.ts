@@ -1117,6 +1117,7 @@ export const ruTranslations = {
         providerSeatCount: '{{count}} места',
         providerAllRatings: 'Все оценки',
         providerAllServices: 'Все услуги',
+        providerSortRecommended: 'Рекомендуемые',
         providerSortByDate: 'По дате',
         providerShowAllReviews: 'Показать все отзывы ({{count}})',
         providerReviewService: 'Замена тормозных колодок',
