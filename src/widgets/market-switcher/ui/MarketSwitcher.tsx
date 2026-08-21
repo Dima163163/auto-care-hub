@@ -25,7 +25,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
     const { t } = useTranslation()
     const navigate = useNavigate()
     const location = useLocation()
-    const { data: markets = [], isLoading } = useGetAutoCareMarketsQuery()
+    const { data: markets = [], isLoading, isError, refetch } = useGetAutoCareMarketsQuery()
     const [isOpen, setIsOpen] = useState(false)
     const [storedMarketId, setStoredMarketId] = useState(() => readAutoCareMarketPreference())
     const rootRef = useRef<HTMLDivElement | null>(null)
@@ -88,7 +88,14 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
                     aria-label={t('autocare.selectCity')}
                     className={`absolute right-0 top-12 z-[70] max-h-[min(28rem,calc(100vh-6rem))] w-72 overflow-y-auto rounded-xl border p-2 shadow-2xl ${variant === 'dark' ? 'border-primary-foreground/15 bg-hero-overlay text-primary-foreground' : 'border-border bg-popover text-foreground'}`}
                 >
-                    {groups.map((group) => (
+                    {isError ? (
+                        <div className="grid gap-2 px-2 py-3 text-xs text-muted-foreground">
+                            <p>{t('common.failedToLoad')}</p>
+                            <button type="button" onClick={() => void refetch()} className="justify-self-start rounded-md bg-primary px-2.5 py-1.5 font-bold text-primary-foreground hover:bg-primary/90">
+                                {t('common.retry')}
+                            </button>
+                        </div>
+                    ) : groups.map((group) => (
                         <div key={group.country} className="pb-2 last:pb-0">
                             <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{group.country}</p>
                             {group.markets.map((market) => (
