@@ -610,6 +610,82 @@ button:disabled[type="submit"][aria-label] {
     }
 }
 
+/* Workspace headers use the same compact contract, because authenticated
+   layouts are still desktop-rendered from the md breakpoint upward. */
+.workspace-header__logo {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+.workspace-header__logo > svg {
+    width: 190px;
+    max-width: 100%;
+}
+
+.workspace-header__actions {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+@media (max-width: 1100px) {
+    .workspace-header {
+        gap: 0.5rem;
+        padding-inline: 1rem;
+    }
+
+    .workspace-header__logo > svg {
+        width: 150px !important;
+    }
+
+    .workspace-header__actions {
+        gap: 0.4rem;
+    }
+
+    .workspace-header__actions [data-language-switcher] {
+        width: 104px;
+    }
+
+    .workspace-header__actions [data-market-switcher] button {
+        max-width: 96px;
+    }
+
+    .workspace-header__create-provider {
+        display: none !important;
+    }
+}
+
+@media (max-width: 860px) {
+    .workspace-header {
+        padding-inline: 0.75rem;
+    }
+
+    .workspace-header__logo > svg {
+        width: 132px !important;
+    }
+
+    .workspace-header__compact-nav {
+        gap: 0.6rem;
+    }
+
+    .workspace-header__compact-nav > a,
+    .workspace-header__compact-nav button {
+        font-size: 0.6875rem;
+    }
+
+    .workspace-header__actions {
+        gap: 0.3rem;
+    }
+
+    .workspace-header__actions [data-language-switcher] {
+        width: 84px;
+    }
+
+    .workspace-header__actions [data-market-switcher] button {
+        max-width: 84px;
+        padding-inline: 0.45rem;
+    }
+}
+
 :where(h1, h2, h3, h4, h5, h6)[class*="tracking-"] {
     letter-spacing: 0;
 }

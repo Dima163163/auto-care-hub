@@ -23,7 +23,7 @@ const workspaceLabelKeys: Record<WorkspaceRole, TranslationKey> = {
 
 function Logo() {
     return (
-        <Link to={ROUTES.home} className="flex shrink-0 items-center gap-2">
+        <Link to={ROUTES.home} className="workspace-header__logo flex shrink-0 items-center gap-2">
             <BrandLogo />
         </Link>
     )
@@ -45,10 +45,10 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
     ]
 
     return (
-        <header className="sticky top-0 z-50 hidden h-[72px] items-center gap-3 border-b border-primary-foreground/10 bg-hero-overlay px-3 text-primary-foreground md:flex lg:gap-7 lg:px-8">
+        <header className="workspace-header sticky top-0 z-50 hidden h-[72px] items-center gap-3 border-b border-primary-foreground/10 bg-hero-overlay px-3 text-primary-foreground md:flex lg:gap-7 lg:px-8">
             <Logo />
 
-            <nav aria-label={t('navigation.mainNavigation')} className="hidden h-full items-center gap-5 lg:flex">
+            <nav aria-label={t('navigation.mainNavigation')} className="workspace-header__desktop-nav hidden h-full items-center gap-5 lg:flex">
                 {links.map((link) => (
                     <NavLink
                         key={link.to}
@@ -63,7 +63,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                 <HeaderInfoMenu variant="dark" />
             </nav>
 
-            <nav aria-label={t('navigation.mainNavigation')} className="flex h-full items-center gap-3 lg:hidden">
+            <nav aria-label={t('navigation.mainNavigation')} className="workspace-header__compact-nav flex h-full items-center gap-3 lg:hidden">
                 {links.slice(0, 2).map((link, index) => (
                     <NavLink
                         key={link.to}
@@ -106,7 +106,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                 <HeaderInfoMenu variant="dark" />
             </nav>
 
-            <div className="ml-auto flex items-center gap-1.5 lg:gap-3">
+            <div className="workspace-header__actions ml-auto flex items-center gap-1.5 lg:gap-3">
                 <div className="hidden items-center gap-2 border-l pl-5 text-xs font-bold text-muted-foreground xl:flex">
                     <span className="rounded-md bg-primary-foreground/10 px-2 py-1 text-primary-foreground/85">{t(workspaceLabelKeys[role])}</span>
                 </div>
@@ -123,7 +123,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                 {showCreateProvider && (
                     <Link
                         to={ROUTES.ownerAutoCareProviders}
-                        className="hidden h-10 items-center gap-2 rounded-md bg-primary px-3 text-xs font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 md:flex xl:px-4"
+                        className="workspace-header__create-provider hidden h-10 items-center gap-2 rounded-md bg-primary px-3 text-xs font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 md:flex xl:px-4"
                         aria-label={t('autocare.ownerProvidersCreate')}
                     >
                         <Plus className="size-4" />
