@@ -92,7 +92,7 @@ export function DesktopPublicHeader() {
                     {!isLoading && user ? <CurrentUserMenu user={user} variant="dark" /> : null}
 
                     {isMobileMenuOpen && (
-                        <div id="desktop-public-mobile-menu" className="absolute right-0 top-[calc(100%+0.6rem)] z-[70] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl shadow-black/30 lg:hidden">
+                        <div id="desktop-public-mobile-menu" className="public-desktop-header__mobile-menu absolute right-0 top-[calc(100%+0.6rem)] z-[70] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl shadow-black/30">
                             <nav className="grid gap-1" aria-label={t('navigation.mainNavigation')}>
                                 {mobileLinks.map((link, index) => (
                                     <NavLink

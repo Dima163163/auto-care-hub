@@ -528,6 +528,12 @@ button:disabled[type="submit"][aria-label] {
     flex: 0 1 auto;
 }
 
+/* The mobile menu is rendered only while open, but remains hidden by default
+   so a resized desktop header never leaves an orphaned popover visible. */
+.public-desktop-header__mobile-menu {
+    display: none;
+}
+
 @media (max-width: 1100px) {
     .public-desktop-header__inner {
         padding-inline: 1rem;
@@ -631,11 +637,11 @@ button:disabled[type="submit"][aria-label] {
     }
 }
 
-/* Keep the narrow tablet navigation deterministic. At 790px and below the
-   regular links are replaced by the burger; below 768px the dedicated mobile
-   header owns navigation, so this rule remains harmless if the desktop shell
-   is kept mounted by a host layout. */
-@media (max-width: 790px) {
+/* Keep the compact header deterministic. At 1120px and below the regular
+   links are replaced by the burger; below 768px the dedicated mobile header
+   owns navigation, so this rule remains harmless if the desktop shell is
+   kept mounted by a host layout. */
+@media (max-width: 1120px) {
     .public-desktop-header__actions {
         gap: 0.5rem;
     }
@@ -647,6 +653,10 @@ button:disabled[type="submit"][aria-label] {
     .public-desktop-header .public-desktop-header__menu-trigger {
         display: inline-flex !important;
         visibility: visible !important;
+    }
+
+    .public-desktop-header__mobile-menu {
+        display: block !important;
     }
 
     .public-desktop-header__actions [data-market-switcher] button {
