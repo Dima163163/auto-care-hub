@@ -610,6 +610,21 @@ button:disabled[type="submit"][aria-label] {
     }
 }
 
+/* Keep the tablet navigation deterministic. Tailwind's `lg:flex` utility and
+   the compact trigger share the same element, so this explicit range wins
+   regardless of generated utility order at 768–1023px. The desktop shell is
+   still used in this range; only its primary links move into the menu. */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .public-desktop-header .public-desktop-header__nav {
+        display: none !important;
+    }
+
+    .public-desktop-header .public-desktop-header__menu-trigger {
+        display: inline-flex !important;
+        visibility: visible !important;
+    }
+}
+
 /* Workspace headers use the same compact contract, because authenticated
    layouts are still desktop-rendered from the md breakpoint upward. */
 .workspace-header__logo {
