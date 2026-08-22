@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { AutoCareResultsSkeleton, CardsGridSkeleton, ProviderProfileSkeleton } from './index'
+import { I18nProvider } from '@/shared/lib/i18n-provider'
+
+import { AutoCareResultsRouteSkeleton, AutoCareResultsSkeleton, CardsGridSkeleton, ProviderProfileSkeleton } from './index'
 
 describe('loading skeletons', () => {
     it('announces a results loading region without exposing placeholder content', () => {
@@ -11,6 +13,27 @@ describe('loading skeletons', () => {
 
         expect(region).toHaveAttribute('aria-busy', 'true')
         expect(region.querySelectorAll('.animate-pulse')).not.toHaveLength(0)
+    })
+
+    it('keeps the map fallback as one shimmering surface', () => {
+        render(<AutoCareResultsSkeleton label="Loading services" />)
+
+        const map = screen.getByTestId('autocare-results-map-skeleton')
+
+        expect(map).toHaveClass('autocare-map-skeleton')
+        expect(map.children).toHaveLength(0)
+    })
+
+    it('keeps discovery filters visible while the route is loading', () => {
+        render(<I18nProvider><AutoCareResultsRouteSkeleton label="Loading services" /></I18nProvider>)
+
+        const region = screen.getByRole('status', { name: 'Loading services' })
+        const controls = screen.getAllByRole('combobox')
+
+        expect(region).toHaveAttribute('aria-busy', 'true')
+        expect(controls.length).toBeGreaterThanOrEqual(5)
+        expect(controls.every((control) => (control as HTMLSelectElement).disabled)).toBe(true)
+        expect(screen.getByRole('button', { name: /Начать поиск|Start search/i })).toBeDisabled()
     })
 
     it('keeps the provider profile skeleton accessible', () => {

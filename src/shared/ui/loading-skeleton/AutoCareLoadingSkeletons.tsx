@@ -1,18 +1,62 @@
 import { Skeleton } from '@/components/ui/skeleton'
+import { ChevronDown, Search, ShieldCheck } from 'lucide-react'
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { LoadingRegion, SkeletonCard, SkeletonText } from './SkeletonPrimitives'
 
 export function AutoCareResultsSkeleton({ label }: { label: string }) {
+    return <LoadingRegion label={label}><AutoCareResultsSkeletonContent /></LoadingRegion>
+}
+
+/** Keep the discovery controls visible while the lazy route module is loading. */
+export function AutoCareResultsRouteSkeleton({ label }: { label: string }) {
+    const { t } = useTranslation()
+
     return (
-        <LoadingRegion label={label} className="grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+        <LoadingRegion label={label} contentAriaHidden={false} className="min-h-[min(720px,calc(100vh-9rem))] px-[var(--layout-gutter)] py-6 sm:py-10">
+            <div className="mx-auto w-full max-w-[var(--layout-operational-max)]">
+                <section className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-hero-overlay p-3 text-primary-foreground shadow-lg shadow-black/10 sm:p-4">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
+                        <DisabledFilterField label={t('autocare.serviceLabel')} value={t('autocare.servicePlaceholder')} className="lg:col-span-6" />
+                        <DisabledFilterField label={t('autocare.searchPointLabel')} value={t('autocare.currentLocation')} className="lg:col-span-6" />
+                        <DisabledFilterField label={t('autocare.vehicleMakeLabel')} value={t('autocare.anyBrand')} className="lg:col-span-3" />
+                        <DisabledFilterField label={t('autocare.vehicleModelLabel')} value={t('autocare.anyModel')} className="lg:col-span-3" />
+                        <DisabledFilterField label={t('autocare.vehicleYearLabel')} value={t('autocare.anyYear')} className="lg:col-span-2" />
+                        <DisabledFilterField label={t('autocare.radiusLabel')} value={t('autocare.radiusValue')} className="lg:col-span-2" />
+                        <button type="button" disabled className="inline-flex h-10 items-center justify-center gap-1.5 self-end rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground opacity-60 lg:col-span-2"><Search className="size-3.5" />{t('autocare.startSearch')}</button>
+                    </div>
+                    <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-primary-foreground/15 pt-4">
+                        {[t('autocare.filterPrice'), t('autocare.filterRating'), t('autocare.filterDistance'), t('autocare.availableTodayLabel'), t('autocare.filtersTitle')].map((item) => <button key={item} type="button" disabled className="h-9 rounded-[var(--radius-control)] border border-primary-foreground/15 bg-primary-foreground/[0.08] px-3 text-xs font-bold text-primary-foreground/60">{item}</button>)}
+                    </div>
+                </section>
+                <div className="mt-6"><AutoCareResultsSkeletonContent /></div>
+            </div>
+        </LoadingRegion>
+    )
+}
+
+function AutoCareResultsSkeletonContent() {
+    return (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
             <div className="grid gap-4">
                 <Skeleton className="h-5 w-44" />
                 {Array.from({ length: 4 }, (_, index) => <ProviderCardSkeleton key={index} />)}
             </div>
-            <SkeletonCard className="min-h-[420px] overflow-hidden p-0 lg:min-h-[min(70vh,720px)]">
-                <Skeleton className="h-full min-h-[420px] w-full rounded-none" />
-            </SkeletonCard>
-        </LoadingRegion>
+            <div data-testid="autocare-results-map-skeleton" className="autocare-map-skeleton min-h-[420px] rounded-[var(--radius-panel)] border border-border lg:min-h-[min(70vh,720px)]" />
+        </div>
+    )
+}
+
+function DisabledFilterField({ label, value, className = '' }: { label: string; value: string; className?: string }) {
+    return (
+        <label className={`relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 ${className}`}>
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{label}</span>
+            <select disabled defaultValue="loading" aria-label={label} className="select-with-icon h-5 w-full appearance-none bg-transparent pr-5 text-sm font-black text-primary-foreground/60 outline-none">
+                <option value="loading">{value}</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/45" aria-hidden="true" />
+        </label>
     )
 }
 

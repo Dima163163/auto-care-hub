@@ -7,6 +7,7 @@ interface LoadingRegionProps {
     label: string
     children: ReactNode
     className?: string
+    contentAriaHidden?: boolean
 }
 
 interface SkeletonTextProps {
@@ -14,7 +15,7 @@ interface SkeletonTextProps {
     className?: string
 }
 
-export function LoadingRegion({ label, children, className }: LoadingRegionProps) {
+export function LoadingRegion({ label, children, className, contentAriaHidden = true }: LoadingRegionProps) {
     return (
         <section
             role="status"
@@ -22,7 +23,7 @@ export function LoadingRegion({ label, children, className }: LoadingRegionProps
             aria-busy="true"
             className={cn('animate-in fade-in-0 duration-200', className)}
         >
-            <div aria-hidden="true">{children}</div>
+            <div aria-hidden={contentAriaHidden}>{children}</div>
         </section>
     )
 }

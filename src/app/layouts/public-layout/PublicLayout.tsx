@@ -4,7 +4,7 @@ import { Outlet, useLocation } from 'react-router'
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { SeoHead } from '@/shared/ui/seo-head'
-import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
+import { AutoCareResultsRouteSkeleton, PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AppHeader } from '@/widgets/app-header'
 import { BottomNav } from '@/widgets/bottom-nav'
@@ -47,7 +47,7 @@ export function PublicLayout() {
             <div className={isWorkspaceRoute ? 'flex min-h-0 flex-1' : 'flex min-h-0 flex-1 flex-col'}>
                 {isWorkspaceRoute && <WorkspaceSidebar role={workspaceRole} />}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    <main className="min-h-0 flex-1"><div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} />}><Outlet /></Suspense></div></main>
+                    <main className="min-h-0 flex-1"><div className="autocare-page-content"><Suspense fallback={pathname === ROUTES.serviceDiscovery ? <AutoCareResultsRouteSkeleton label={t('common.loadingPage')} /> : <PageContentSkeleton label={t('common.loadingPage')} />}><Outlet /></Suspense></div></main>
                     <Footer />
                 </div>
             </div>

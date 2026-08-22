@@ -772,6 +772,20 @@ button:disabled[type="submit"][aria-label] {
     50% { transform: translate(-120px, 120px); }
 }
 
+.autocare-map-skeleton {
+    background: linear-gradient(110deg, var(--muted) 20%, var(--card) 38%, var(--muted) 56%);
+    background-size: 220% 100%;
+    animation: autocarehub-skeleton-shimmer 1.8s linear infinite;
+}
+
+@keyframes autocarehub-skeleton-shimmer {
+    to { background-position-x: -220%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .autocare-map-skeleton { animation: none; }
+}
+
 .autocarehub-motion-fade-in { animation: autocarehub-motion-fade-in var(--motion-duration-slow) var(--motion-ease-standard) both; }
 .autocarehub-motion-fade-up { animation: autocarehub-motion-fade-up var(--motion-duration-slow) var(--motion-ease-standard) 300ms both; }
 .autocarehub-motion-fade-down { animation: autocarehub-motion-fade-down var(--motion-duration-slow) var(--motion-ease-standard) both; }
