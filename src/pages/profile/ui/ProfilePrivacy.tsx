@@ -12,6 +12,7 @@ import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { formatDateTime } from '@/shared/lib/formatDateTime'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function ProfilePrivacy() {
     const { t } = useTranslation()
@@ -87,7 +88,11 @@ export function ProfilePrivacy() {
                     <p className="mt-2 text-sm text-muted-foreground">{t('profile.privacy.deletionDescription')}</p>
 
                     {isLoadingDeletion ? (
-                        <p className="mt-4 text-sm text-muted-foreground">{t('common.loading')}</p>
+                        <div role="status" aria-label={t('common.loading')} className="mt-4 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-48" />
+                            <Skeleton className="h-9 w-36 rounded-md" />
+                        </div>
                     ) : deletionRequest ? (
                         <div className="mt-4 rounded-md border bg-background p-3 text-sm">
                             <p className="font-semibold">{t('profile.privacy.requestPending')}</p>

@@ -1,10 +1,14 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { BottomNav } from '@/widgets/bottom-nav'
 import { WorkspaceFooter, WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 export function AdminLayout() {
+    const { t } = useTranslation()
     const { data: user } = useGetMeQuery()
     const role = user?.role === 'super_admin' ? 'super_admin' : 'admin'
 
@@ -16,7 +20,7 @@ export function AdminLayout() {
                 <div className="flex min-w-0 flex-1 flex-col">
                     <WorkspaceMobileHeader role={role} />
 
-                    <div className="autocare-page-content"><Outlet /></div>
+                    <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
                     <WorkspaceFooter />
                 </div>
             </div>

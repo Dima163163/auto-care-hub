@@ -4,6 +4,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useGetMeQuery } from '@/features/auth'
 import { getDefaultRouteByRole } from '@/features/auth/lib/getDefaultRouteByRole'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function LoginCallbackPage() {
     const navigate = useNavigate()
@@ -25,12 +26,11 @@ export function LoginCallbackPage() {
     }, [isError, navigate])
 
     return (
-        <div className="flex min-h-[420px] items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-4 rounded-xl border bg-card px-10 py-12 text-center shadow-sm">
-                <div className="size-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="text-sm font-medium text-muted-foreground">
-                    {t('auth.completingSignIn')}
-                </p>
+        <div role="status" aria-label={t('auth.completingSignIn')} className="flex min-h-[420px] items-center justify-center bg-background">
+            <div className="w-full max-w-sm rounded-xl border bg-card px-10 py-12 text-center shadow-sm">
+                <Skeleton className="mx-auto h-7 w-40" />
+                <Skeleton className="mx-auto mt-4 h-4 w-56" />
+                <Skeleton className="mx-auto mt-8 h-10 w-32 rounded-md" />
             </div>
         </div>
     )

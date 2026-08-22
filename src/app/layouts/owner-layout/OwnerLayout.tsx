@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
@@ -5,6 +6,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BottomNav } from '@/widgets/bottom-nav'
 import { WorkspaceFooter, WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 
 export function OwnerLayout() {
     const { t } = useTranslation()
@@ -27,7 +29,7 @@ export function OwnerLayout() {
                         </div>
                     )}
 
-                    <div className="autocare-page-content"><Outlet /></div>
+                    <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
                     <WorkspaceFooter />
                 </div>
             </div>

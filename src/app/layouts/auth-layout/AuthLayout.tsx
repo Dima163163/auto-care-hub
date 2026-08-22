@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router'
 
 import { APP_CONFIG } from '@/shared/config/app'
@@ -5,6 +6,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { BrandLogo } from '@/shared/ui/brand-logo'
+import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 
 export function AuthLayout() {
     const { t } = useTranslation()
@@ -39,7 +41,7 @@ export function AuthLayout() {
                             <Link to={ROUTES.home} className="mb-8 flex items-center gap-2 text-foreground">
                                 <BrandLogo size="sm" />
                             </Link>
-                            <Outlet />
+                            <Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="auth" />}><Outlet /></Suspense>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import { Loader2, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
@@ -101,11 +101,21 @@ export function CabinetsFetchingNext() {
     const { t } = useTranslation()
 
     return (
-        <div role="status" aria-live="polite" className="flex flex-col items-center justify-center gap-3">
-            <Loader2 className="size-6 animate-spin text-primary" />
-            <p className="text-sm font-medium text-muted-foreground animate-pulse">
-                {t('common.loading')}
-            </p>
+        <div role="status" aria-live="polite" aria-label={t('common.loading')} className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} aria-hidden="true" className="flex min-h-40 flex-col gap-3 rounded-xl border border-border bg-card/60 p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="size-10 rounded-full" />
+                        <div className="min-w-0 flex-1 space-y-2">
+                            <Skeleton className="h-4 w-3/5" />
+                            <Skeleton className="h-3 w-2/5" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-4/5" />
+                    <Skeleton className="mt-auto h-9 w-full rounded-lg" />
+                </div>
+            ))}
         </div>
     )
 }
