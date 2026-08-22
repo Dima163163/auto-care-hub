@@ -1,13 +1,15 @@
-import { ArrowLeft, BarChart3, CarFront, Check, ChevronDown, Copy, Gift, MessageCircle, MessageSquare, Star, Tag, X } from 'lucide-react'
+import { ArrowLeft, BarChart3, CarFront, Check, ChevronDown, Copy, Gift, MessageSquare, Phone, Star, Tag, X } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import {
     useGetOwnerAutoCareReviewsQuery,
+    useGetOwnerAutoCareServiceRequestsQuery,
     type OwnerAutoCareReviewsProvider,
     type OwnerAutoCareReviews,
     type AutoCareApiReview,
+    type AutoCareServiceRequest,
 } from '@/entities/automotive-service'
 import { useIssueOwnerAutoCareReviewPromoMutation } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
@@ -37,6 +39,10 @@ type ReviewsCopy = {
     noProvider: string
     contact: string
     contactUnavailable: string
+    contactNote: string
+    clientFallback: string
+    phoneUnavailable: string
+    call: string
     issueDiscount: string
     discountPercent: string
     serviceOptional: string
@@ -56,6 +62,7 @@ export function OwnerAutoCareProviderReviewsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const selectedProviderId = searchParams.get('provider') ?? id ?? undefined
     const reviews = useGetOwnerAutoCareReviewsQuery(selectedProviderId)
+    const requests = useGetOwnerAutoCareServiceRequestsQuery()
     const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
     const provider = reviews.data?.providers.find((item) => item.id === selectedProviderId)
     const filteredReviews = useMemo(
@@ -87,7 +94,7 @@ export function OwnerAutoCareProviderReviewsPage() {
             <PageHeader eyebrow={copy.eyebrow} title={copy.title} description={copy.description} />
             <LocationFilter providers={reviews.data.providers} value={selectedProviderId ?? ''} label={copy.locationFilterLabel} allLabel={copy.allLocations} onChange={(value) => setSearchParams(value ? { provider: value } : {})} />
             <ProviderReviewOverview provider={provider} stats={reviews.data} copy={copy} />
-            <ReviewsList reviews={filteredReviews} ratingFilter={ratingFilter} onRatingFilterChange={setRatingFilter} copy={copy} locale={locale} />
+            <ReviewsList reviews={filteredReviews} requests={requests.data ?? []} ratingFilter={ratingFilter} onRatingFilterChange={setRatingFilter} copy={copy} locale={locale} />
         </ReviewsShell>
     )
 }
@@ -113,18 +120,31 @@ function ProviderReviewOverview({ provider, stats, copy }: { provider?: OwnerAut
     )
 }
 
-function ReviewsList({ reviews, ratingFilter, onRatingFilterChange, copy, locale }: { reviews: AutoCareApiReview[]; ratingFilter: RatingFilter; onRatingFilterChange: (value: RatingFilter) => void; copy: ReviewsCopy; locale: string }) {
+function ReviewsList({ reviews, requests, ratingFilter, onRatingFilterChange, copy, locale }: { reviews: AutoCareApiReview[]; requests: AutoCareServiceRequest[]; ratingFilter: RatingFilter; onRatingFilterChange: (value: RatingFilter) => void; copy: ReviewsCopy; locale: string }) {
     return (
         <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black text-foreground">{copy.title}</h2><RatingFilterSelect value={ratingFilter} onChange={onRatingFilterChange} label={copy.all} /></div>
-            {reviews.length === 0 ? <EmptyState message={copy.empty} className="mt-5" /> : <div className="mt-5 grid gap-4 lg:grid-cols-2">{reviews.map((review) => <ReviewCard key={review.id} review={review} copy={copy} locale={locale} />)}</div>}
+            {reviews.length === 0 ? <EmptyState message={copy.empty} className="mt-5" /> : <div className="mt-5 grid gap-4 lg:grid-cols-2">{reviews.map((review) => <ReviewCard key={review.id} review={review} request={requests.find((item) => item.id === review.serviceRequestId)} copy={copy} locale={locale} />)}</div>}
         </section>
     )
 }
 
-function ReviewCard({ review, copy, locale }: { review: AutoCareApiReview; copy: ReviewsCopy; locale: string }) {
+function ReviewCard({ review, request, copy, locale }: { review: AutoCareApiReview; request?: AutoCareServiceRequest; copy: ReviewsCopy; locale: string }) {
     const publishedAt = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(review.createdAt))
-    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{review.providerName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{review.providerName} · {review.providerAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt="Фото выполненной работы" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><Link to={review.serviceRequestId ? `${ROUTES.ownerChats}?request=${review.serviceRequestId}` : '#'} aria-disabled={!review.serviceRequestId} onClick={(event) => { if (!review.serviceRequestId) event.preventDefault() }} className={`inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border px-3 py-2 text-xs font-black transition ${review.serviceRequestId ? 'border-primary/30 text-primary hover:bg-primary/10' : 'cursor-not-allowed border-border text-muted-foreground'}`}><MessageCircle className="size-3.5" />{review.serviceRequestId ? copy.contact : copy.contactUnavailable}</Link><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
+    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{review.providerName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{review.providerName} · {review.providerAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt="Фото выполненной работы" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><ContactClientDialog request={request} copy={copy} /><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
+}
+
+function ContactClientDialog({ request, copy }: { request?: AutoCareServiceRequest; copy: ReviewsCopy }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const clientName = readContactValue(request, 'name')
+    const phone = readContactValue(request, 'phone')
+    if (!request?.id) return <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 py-2 text-xs font-black text-muted-foreground">{copy.contactUnavailable}</span>
+    return <><button type="button" onClick={() => setIsOpen(true)} className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border border-primary/30 px-3 py-2 text-xs font-black text-primary transition hover:bg-primary/10"><Phone className="size-3.5" />{copy.contact}</button><Dialog isOpen={isOpen} onOpenChange={setIsOpen} className="max-w-md"><DialogContent><DialogHeader><DialogTitle className="flex items-center gap-2"><Phone className="size-5 text-primary" />{copy.contact}</DialogTitle><DialogDescription>{copy.contactNote}</DialogDescription></DialogHeader><div className="mt-5 rounded-[var(--radius-card)] border border-border bg-background p-4"><p className="font-black text-foreground">{clientName ?? copy.clientFallback}</p>{phone ? <a href={`tel:${phone}`} className="mt-3 inline-flex items-center gap-2 text-lg font-black text-primary hover:underline"><Phone className="size-4" />{phone}</a> : <p className="mt-3 text-sm font-semibold text-muted-foreground">{copy.phoneUnavailable}</p>}</div><DialogFooter><button type="button" onClick={() => setIsOpen(false)} className="inline-flex h-10 items-center justify-center rounded-[var(--radius-control)] border border-border px-4 text-sm font-black text-foreground">{copy.close}</button>{phone ? <a href={`tel:${phone}`} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground"><Phone className="size-4" />{copy.call}</a> : null}</DialogFooter></DialogContent></Dialog></>
+}
+
+function readContactValue(request: AutoCareServiceRequest | undefined, key: 'name' | 'phone') {
+    const value = request?.contactSnapshot?.[key]
+    return typeof value === 'string' && value.trim() ? value.trim() : null
 }
 
 function ReviewResolutionDialog({ providerId, review, copy }: { providerId: string; review: AutoCareApiReview; copy: ReviewsCopy }) {
@@ -174,6 +194,6 @@ function filterReviews(reviews: AutoCareApiReview[], filter: RatingFilter) {
 
 function getReviewsCopy(locale: string): ReviewsCopy {
         return locale === 'ru'
-        ? { eyebrow: 'Рабочая область сервиса', title: 'Отзывы клиентов', description: 'Изучайте отзывы по всем филиалам, выбирайте адрес и сразу переходите к решению вопроса с клиентом.', back: 'Вернуться к услугам и ценам', average: 'Средняя оценка', total: 'Всего отзывов', allLocations: 'Все филиалы', locationFilterLabel: 'Филиал и адрес', distribution: 'Распределение оценок', all: 'Все оценки', review: 'отзывов', empty: 'По выбранному фильтру пока нет опубликованных отзывов.', published: 'Опубликован', noProvider: 'Филиал не найден.', contact: 'Открыть чат', contactUnavailable: 'Контакт недоступен', issueDiscount: 'Предложить скидку', discountPercent: 'Скидка на следующий визит, %', serviceOptional: 'Услуга (необязательно)', expiresInDays: 'Срок действия, дней', issue: 'Выпустить промокод', cancel: 'Отмена', promoCreated: 'Промокод выпущен', promoNote: 'Предложите клиенту скидку от 1 до 100% после обращения по конкретной заявке. Код одноразовый.', copyCode: 'Скопировать код', copied: 'Скопировано', close: 'Готово' }
-        : { eyebrow: 'Service workspace', title: 'Customer reviews', description: 'Review every branch, filter by address and open a direct resolution chat with the customer.', back: 'Back to services and pricing', average: 'Average rating', total: 'Total reviews', allLocations: 'All service locations', locationFilterLabel: 'Service location', distribution: 'Rating distribution', all: 'All ratings', review: 'reviews', empty: 'No published reviews match this filter.', published: 'Published', noProvider: 'Service location not found.', contact: 'Open chat', contactUnavailable: 'Contact unavailable', issueDiscount: 'Offer discount', discountPercent: 'Discount for next visit, %', serviceOptional: 'Service (optional)', expiresInDays: 'Valid for, days', issue: 'Issue promo code', cancel: 'Cancel', promoCreated: 'Promo code issued', promoNote: 'Offer a 1–100% discount after discussing the issue with the client. The code can be used once.', copyCode: 'Copy code', copied: 'Copied', close: 'Done' }
+        ? { eyebrow: 'Рабочая область сервиса', title: 'Отзывы клиентов', description: 'Изучайте отзывы по всем филиалам, выбирайте адрес и связывайтесь с клиентом по телефону, если нужно обсудить решение.', back: 'Вернуться к услугам и ценам', average: 'Средняя оценка', total: 'Всего отзывов', allLocations: 'Все филиалы', locationFilterLabel: 'Филиал и адрес', distribution: 'Распределение оценок', all: 'Все оценки', review: 'отзывов', empty: 'По выбранному фильтру пока нет опубликованных отзывов.', published: 'Опубликован', noProvider: 'Филиал не найден.', contact: 'Связаться с клиентом', contactUnavailable: 'Контакт недоступен', contactNote: 'Позвоните клиенту, чтобы обсудить решение. После разговора можно выпустить персональную скидку отдельной кнопкой в карточке.', clientFallback: 'Клиент AutoCare', phoneUnavailable: 'Номер телефона не указан в заявке.', call: 'Позвонить', issueDiscount: 'Предложить скидку', discountPercent: 'Скидка на следующий визит, %', serviceOptional: 'Услуга (необязательно)', expiresInDays: 'Срок действия, дней', issue: 'Выпустить промокод', cancel: 'Отмена', promoCreated: 'Промокод выпущен', promoNote: 'Предложите клиенту скидку от 1 до 100% после обращения по конкретной заявке. Код одноразовый.', copyCode: 'Скопировать код', copied: 'Скопировано', close: 'Готово' }
+        : { eyebrow: 'Service workspace', title: 'Customer reviews', description: 'Review every branch and call the customer when you need to discuss a resolution.', back: 'Back to services and pricing', average: 'Average rating', total: 'Total reviews', allLocations: 'All service locations', locationFilterLabel: 'Service location', distribution: 'Rating distribution', all: 'All ratings', review: 'reviews', empty: 'No published reviews match this filter.', published: 'Published', noProvider: 'Service location not found.', contact: 'Contact customer', contactUnavailable: 'Contact unavailable', contactNote: 'Call the customer to discuss a resolution. You can issue a personal discount with the separate action on the review card.', clientFallback: 'AutoCare customer', phoneUnavailable: 'No phone number was provided in the request.', call: 'Call customer', issueDiscount: 'Offer discount', discountPercent: 'Discount for next visit, %', serviceOptional: 'Service (optional)', expiresInDays: 'Valid for, days', issue: 'Issue promo code', cancel: 'Cancel', promoCreated: 'Promo code issued', promoNote: 'Offer a 1–100% discount after discussing the issue with the client. The code can be used once.', copyCode: 'Copy code', copied: 'Copied', close: 'Done' }
 }
