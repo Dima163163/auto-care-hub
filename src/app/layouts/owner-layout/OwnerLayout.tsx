@@ -5,7 +5,7 @@ import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BottomNav } from '@/widgets/bottom-nav'
-import { WorkspaceFooter, WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
 import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 
 export function OwnerLayout() {
@@ -32,8 +32,6 @@ export function OwnerLayout() {
                     <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
                 </div>
             </div>
-            <WorkspaceFooter />
-
             <BottomNav />
         </div>
     )

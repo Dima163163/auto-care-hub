@@ -3,7 +3,7 @@ import { Outlet } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { BottomNav } from '@/widgets/bottom-nav'
-import { WorkspaceFooter, WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
 import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -23,7 +23,6 @@ export function AdminLayout() {
                     <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
                 </div>
             </div>
-            <WorkspaceFooter />
             <BottomNav />
         </div>
     )

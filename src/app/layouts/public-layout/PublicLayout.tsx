@@ -51,7 +51,6 @@ export function PublicLayout() {
                     {!isWorkspaceRoute && <Footer />}
                 </div>
             </div>
-            {isWorkspaceRoute && <Footer />}
             <BottomNav />
         </div>
     )
