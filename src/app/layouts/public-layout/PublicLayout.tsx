@@ -17,18 +17,21 @@ import {
 
 import { DesktopPublicHeader } from './DesktopPublicHeader'
 
+const PUBLIC_WORKSPACE_PATHS = new Set<string>([
+    ROUTES.profile,
+    ROUTES.profileVehicles,
+    ROUTES.profileBookings,
+    ROUTES.profileReviews,
+    ROUTES.notifications,
+])
+
 export function PublicLayout() {
     const { t } = useTranslation()
     const { pathname } = useLocation()
     const { data: user } = useGetMeQuery()
-    const workspacePaths = new Set<string>([
-            ROUTES.profile,
-            ROUTES.profileVehicles,
-            ROUTES.profileBookings,
-            ROUTES.profileReviews,
-            ROUTES.notifications,
-        ])
-    const isWorkspaceRoute = Boolean(user && workspacePaths.has(pathname))
+    // Protected profile routes must use the workspace shell immediately. Waiting
+    // for /me here briefly rendered the public footer before auth resolved.
+    const isWorkspaceRoute = PUBLIC_WORKSPACE_PATHS.has(pathname)
     const workspaceRole: WorkspaceRole = user?.role === 'owner'
         ? 'owner'
         : user?.role === 'super_admin'
