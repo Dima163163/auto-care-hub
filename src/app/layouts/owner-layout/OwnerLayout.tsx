@@ -30,9 +30,9 @@ export function OwnerLayout() {
                     )}
 
                     <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
-                    <WorkspaceFooter />
                 </div>
             </div>
+            <WorkspaceFooter />
 
             <BottomNav />
         </div>
