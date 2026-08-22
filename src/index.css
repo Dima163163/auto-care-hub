@@ -608,7 +608,7 @@ button:disabled[type="submit"][aria-label] {
     }
 
     /* Keep the regular navigation usable immediately after the burger
-       boundary. The compact typography gives the 791px edge enough room for
+       boundary. The compact typography gives the 1121px edge enough room for
        the locale, theme and account actions without clipping the right side. */
     .public-desktop-header__nav {
         gap: 0.75rem;
