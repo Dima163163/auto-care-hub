@@ -13,11 +13,11 @@ export function OwnerLayout() {
     const { data: user } = useGetMeQuery()
 
     return (
-        <div className="autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col md:pb-0">
+        <div className="autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden md:pb-0">
             <WorkspaceHeader role="owner" showCreateProvider />
-            <div className="flex min-h-[calc(100vh-72px)] flex-1">
+            <div className="flex min-h-0 flex-1 overflow-hidden">
                 <WorkspaceSidebar role="owner" />
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div data-workspace-scroll-container className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
                     <WorkspaceMobileHeader role="owner" />
 
                     {user && !user.emailVerifiedAt && (

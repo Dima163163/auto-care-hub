@@ -13,11 +13,11 @@ export function AdminLayout() {
     const role = user?.role === 'super_admin' ? 'super_admin' : 'admin'
 
     return (
-        <div className="autocare-app-surface min-h-screen">
+        <div className="autocare-app-surface flex h-dvh min-h-0 flex-col overflow-hidden">
             <WorkspaceHeader role={role} />
-            <div className="mobile-admin-bottom-safe flex min-h-[calc(100vh-72px)] md:pb-0">
+            <div className="mobile-admin-bottom-safe flex min-h-0 flex-1 overflow-hidden md:pb-0">
                 <WorkspaceSidebar role={role} />
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div data-workspace-scroll-container className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
                     <WorkspaceMobileHeader role={role} />
 
                     <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
