@@ -51,7 +51,7 @@ export function DesktopPublicHeader() {
                 <Link to={ROUTES.home} className="public-desktop-header__logo shrink-0" aria-label={t('navigation.home')}>
                     <BrandLogo size="lg" />
                 </Link>
-                <nav className="public-desktop-header__nav ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold lg:flex">
+                <nav className="public-desktop-header__nav ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold md:flex">
                     <NavLink to={ROUTES.serviceDiscovery} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
                         {t('navigation.services')}
                     </NavLink>
@@ -66,7 +66,7 @@ export function DesktopPublicHeader() {
                     <ThemeSwitcher />
                     <button
                         type="button"
-                        className="public-desktop-header__menu-trigger flex size-10 shrink-0 items-center justify-center rounded-[9px] border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors hover:border-primary hover:bg-primary-foreground/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+                        className="public-desktop-header__menu-trigger flex size-10 shrink-0 items-center justify-center rounded-[9px] border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors hover:border-primary hover:bg-primary-foreground/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
                         aria-label={t('common.menu')}
                         aria-expanded={isMobileMenuOpen}
                         aria-controls="desktop-public-mobile-menu"

@@ -538,14 +538,6 @@ button:disabled[type="submit"][aria-label] {
         width: 168px !important;
     }
 
-    .public-desktop-header__nav {
-        display: none !important;
-    }
-
-    .public-desktop-header__menu-trigger {
-        display: inline-flex !important;
-    }
-
     .public-desktop-header__actions {
         gap: 0.45rem;
     }
@@ -610,11 +602,11 @@ button:disabled[type="submit"][aria-label] {
     }
 }
 
-/* Keep the tablet navigation deterministic. Tailwind's `lg:flex` utility and
-   the compact trigger share the same element, so this explicit range wins
-   regardless of generated utility order at 768–1023px. The desktop shell is
-   still used in this range; only its primary links move into the menu. */
-@media (min-width: 768px) and (max-width: 1023px) {
+/* Keep the narrow tablet navigation deterministic. The desktop shell remains
+   active from 768px, while only the 768–796px band uses its compact burger.
+   From 797px the regular desktop links are available again; below 768px the
+   dedicated mobile header owns navigation. */
+@media (min-width: 768px) and (max-width: 796px) {
     .public-desktop-header .public-desktop-header__nav {
         display: none !important;
     }
