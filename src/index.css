@@ -631,11 +631,11 @@ button:disabled[type="submit"][aria-label] {
     }
 }
 
-/* Keep the narrow tablet navigation deterministic. The desktop shell remains
-   active from 768px, while only the 768–790px band uses its compact burger.
-   From 791px the regular desktop links are available again; below 768px the
-   dedicated mobile header owns navigation. */
-@media (min-width: 768px) and (max-width: 790px) {
+/* Keep the narrow tablet navigation deterministic. At 790px and below the
+   regular links are replaced by the burger; below 768px the dedicated mobile
+   header owns navigation, so this rule remains harmless if the desktop shell
+   is kept mounted by a host layout. */
+@media (max-width: 790px) {
     .public-desktop-header .public-desktop-header__nav {
         display: none !important;
     }
