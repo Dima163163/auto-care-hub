@@ -216,8 +216,8 @@ cycle-free and the English entry must render without waiting for every language.
 Quality baseline for this snapshot: frontend lint, unit tests and production
 build pass; backend build and unit tests pass; API parity, contract shape,
 migration inventory and Docker-backed integration checks pass. The performance
-budget is still intentionally red (current bundle is about 2.16 MB raw / 626 KB
-gzip JavaScript and 182 KB CSS against the configured 2.0 MB / 568 KB / 150 KB
+budget is still intentionally red (current bundle is about 2.17 MB raw / 630 KB
+gzip JavaScript and 186 KB CSS against the configured 2.0 MB / 568 KB / 150 KB
 limits), so the next optimization slice must split the inherited translation
 payload further without changing the AutoCare locale contract.
 
