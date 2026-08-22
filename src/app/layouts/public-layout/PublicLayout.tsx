@@ -16,14 +16,7 @@ import {
 } from '@/widgets/workspace-shell'
 
 import { DesktopPublicHeader } from './DesktopPublicHeader'
-
-const PUBLIC_WORKSPACE_PATHS = new Set<string>([
-    ROUTES.profile,
-    ROUTES.profileVehicles,
-    ROUTES.profileBookings,
-    ROUTES.profileReviews,
-    ROUTES.notifications,
-])
+import { isPublicWorkspaceRoute } from './lib/publicWorkspaceRoute'
 
 export function PublicLayout() {
     const { t } = useTranslation()
@@ -31,7 +24,7 @@ export function PublicLayout() {
     const { data: user } = useGetMeQuery()
     // Protected profile routes must use the workspace shell immediately. Waiting
     // for /me here briefly rendered the public footer before auth resolved.
-    const isWorkspaceRoute = PUBLIC_WORKSPACE_PATHS.has(pathname)
+    const isWorkspaceRoute = isPublicWorkspaceRoute(pathname)
     const workspaceRole: WorkspaceRole = user?.role === 'owner'
         ? 'owner'
         : user?.role === 'super_admin'
