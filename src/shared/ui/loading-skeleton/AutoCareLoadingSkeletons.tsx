@@ -39,11 +39,11 @@ export function AutoCareResultsRouteSkeleton({ label }: { label: string }) {
 function AutoCareResultsSkeletonContent() {
     return (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
-            <div className="grid gap-4">
+            <div className="order-2 grid gap-4 lg:order-1">
                 <Skeleton className="h-5 w-44" />
                 {Array.from({ length: 4 }, (_, index) => <ProviderCardSkeleton key={index} />)}
             </div>
-            <div data-testid="autocare-results-map-skeleton" className="autocare-map-skeleton min-h-[420px] rounded-[var(--radius-panel)] border border-border lg:min-h-[min(70vh,720px)]" />
+            <div data-testid="autocare-results-map-skeleton" className="autocare-map-skeleton order-1 min-h-[420px] rounded-[var(--radius-panel)] border border-border lg:order-2 lg:min-h-[min(70vh,720px)]" />
         </div>
     )
 }

@@ -166,7 +166,7 @@ export function AutoCareResultsPage() {
                 </div>
 
                 {isLoading ? <div className="mt-6"><AutoCareResultsSkeleton label={t('common.loading')} /></div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
-                    <section className="flex flex-col gap-4">
+                    <section className="order-2 flex flex-col gap-4 lg:order-1">
                         <div className="flex shrink-0 items-center justify-between gap-3">
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
                             <span className="text-xs font-semibold text-muted-foreground">{t('autocare.compareDescription')}</span>
@@ -186,7 +186,7 @@ export function AutoCareResultsPage() {
                         <ComparisonTray providers={selectedProviders} onRemove={toggleProvider} onCompare={compareSelected} />
                     </section>
 
-                    <div id="comparison-map" className="min-h-0 lg:h-[min(70vh,720px)] lg:self-start">
+                    <div id="comparison-map" className="order-1 min-h-0 lg:order-2 lg:h-[min(70vh,720px)] lg:self-start">
                         <AutoCareMapPreview
                             providers={pagedProviders}
                             serviceId={filters.serviceId}
