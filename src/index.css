@@ -636,6 +636,10 @@ button:disabled[type="submit"][aria-label] {
    header owns navigation, so this rule remains harmless if the desktop shell
    is kept mounted by a host layout. */
 @media (max-width: 790px) {
+    .public-desktop-header__actions {
+        gap: 0.5rem;
+    }
+
     .public-desktop-header .public-desktop-header__nav {
         display: none !important;
     }
@@ -643,6 +647,51 @@ button:disabled[type="submit"][aria-label] {
     .public-desktop-header .public-desktop-header__menu-trigger {
         display: inline-flex !important;
         visibility: visible !important;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button {
+        width: 94px;
+        max-width: 94px;
+        justify-content: center;
+        gap: 0.35rem;
+        padding-inline: 0.5rem;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button > svg {
+        flex: 0 0 auto;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] {
+        width: 72px;
+        flex: 0 0 72px;
+        gap: 0.1rem;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__icon {
+        display: none;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__select {
+        min-width: 0;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__value {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding-inline: 0.35rem;
+        text-align: center;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__chevron {
+        margin-right: 0.45rem;
+        width: 0.75rem;
     }
 }
 
