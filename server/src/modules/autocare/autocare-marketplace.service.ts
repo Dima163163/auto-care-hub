@@ -11,6 +11,7 @@ import {
     AutoCarePriceBenchmarkEntity,
     AutoCareRepairEventEntity,
     AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderMembershipEntity,
@@ -39,7 +40,7 @@ import type {
     CreateAutoCareBroadcastRequestInput,
 } from './autocare.types.js'
 import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
-import { reassessAutoCareProviderTrust } from './trust-score.service.js'
+import { calculateAutoCareTrustScore } from './trust-score.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -145,17 +146,49 @@ export async function getAutoCareFairPrice(input: { serviceId: string; marketId?
 }
 
 export async function getAutoCareProviderTrust(providerId: string) {
-    const result = await reassessAutoCareProviderTrust(providerId)
-    if (!result || result.provider.status !== AutomotiveProviderStatus.Active) notFound('Automotive provider not found.')
-    const provider = result.provider
+    // Public reads stay read-only. A worker refreshes snapshots through
+    // reassessAutoCareTrustScores; serving the latest persisted snapshot keeps
+    // this endpoint bounded even when a provider has a large request history.
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    if (!provider || provider.status !== AutomotiveProviderStatus.Active) notFound('Automotive provider not found.')
     const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
         where: { providerId },
         order: { createdAt: 'DESC' },
     })
+    const snapshots = await AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({
+        where: { providerId },
+        order: { computedAt: 'DESC' },
+        take: 100,
+    })
+    const latestByLocation = new Map<string, AutoCareTrustSnapshotEntity>()
+    for (const snapshot of snapshots) {
+        if (!latestByLocation.has(snapshot.locationId)) latestByLocation.set(snapshot.locationId, snapshot)
+    }
+    const latestSnapshots = [...latestByLocation.values()]
+    const latestSnapshot = latestSnapshots[0]
+    const counters = latestSnapshot?.inputCounters ?? {}
+    const trust = latestSnapshot ? calculateAutoCareTrustScore({
+        verified: provider.verified,
+        rating: counters.rating ?? Number(provider.rating),
+        reviewCount: counters.reviewCount ?? provider.reviewCount,
+        yearsActive: provider.yearsActive,
+        profileFields: counters.profileFields ?? 0,
+        verifiedEvidenceCount: counters.verifiedEvidenceCount ?? 0,
+        activeGuaranteeClaims: counters.activeGuaranteeClaims ?? 0,
+        completedInteractionCount: counters.completedInteractionCount ?? 0,
+        cancelledInteractionCount: counters.cancelledInteractionCount ?? 0,
+        noShowInteractionCount: counters.noShowInteractionCount ?? 0,
+        recentRatingTrend: counters.recentRatingTrend,
+        complaintRate: counters.complaintRate,
+        responseTimeMinutes: counters.responseTimeMinutes !== undefined && counters.responseTimeMinutes >= 0
+            ? counters.responseTimeMinutes
+            : undefined,
+        moderationViolationCount: counters.moderationViolationCount ?? 0,
+    }) : null
     return {
         providerId,
-        score: result.trust.score,
-        badge: result.trust.badge,
+        score: latestSnapshot?.score ?? Number(provider.trustScore),
+        badge: latestSnapshot?.badge ?? provider.trustBadge,
         reassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
         evidence: evidence.map((item): AutoCareTrustEvidenceResponse => ({
             id: item.id,
@@ -166,7 +199,7 @@ export async function getAutoCareProviderTrust(providerId: string) {
             expiresAt: item.expiresAt?.toISOString() ?? null,
             verifiedAt: item.verifiedAt?.toISOString() ?? null,
         })),
-        snapshots: result.snapshots.map((item): AutoCareTrustSnapshotResponse => ({
+        snapshots: latestSnapshots.map((item): AutoCareTrustSnapshotResponse => ({
             id: item.id,
             providerId: item.providerId,
             locationId: item.locationId,
@@ -178,7 +211,16 @@ export async function getAutoCareProviderTrust(providerId: string) {
             inputCounters: item.inputCounters,
             reasonCodes: item.reasonCodes,
         })),
-        factors: result.trust.factors,
+        factors: trust?.factors ?? {
+            profile: 0,
+            reviews: 0,
+            evidence: 0,
+            reliability: provider.verified ? 7 : 0,
+            claimsPenalty: 0,
+            qualitySignals: 0,
+            moderationPenalty: 0,
+            confidence: 0,
+        },
         explanation: 'Оценка доверия складывается из заполненности профиля, подтверждённых документов, качества обслуживания, отзывов и соблюдения заявленных условий. Открытые гарантийные обращения снижают итоговый балл до их решения.',
     }
 }
