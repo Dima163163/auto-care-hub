@@ -4,7 +4,7 @@ import { AppDataSource } from '../../database/data-source.js'
 import { BookingEntity, BookingStatus } from '../../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
 import { AutomotiveProviderEntity } from '../../entities/automotive/automotive.entity.js'
-import { ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
+import { ServiceAttachmentEntity, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
@@ -20,6 +20,7 @@ import { env } from '../../config/env.js'
 import { cleanupOrphanedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { cleanupOrphanedAutoCareProviderLogos } from '../autocare/autocare-provider-logo-storage.js'
 import { cleanupOrphanedAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
+import { cleanupOrphanedAutoCareAttachmentObjects } from '../autocare/autocare-attachment-storage.js'
 import { addDays, zonedDateTimeToInstant } from '../../shared/date-time/cabinet-timezone.js'
 import { enqueueOutboxEvent, processOutboxBatch } from '../outbox/outbox.service.js'
 import { enqueueNotification } from '../outbox/notification-outbox.service.js'
@@ -506,6 +507,21 @@ export async function cleanupOrphanedCabinetImageFiles(now = new Date()) {
     metrics.setGauge('maintenance_autocare_orphan_media_failed', autoCareFailed)
     metrics.increment('maintenance_autocare_orphan_media_cleanup_total', autoCareRemoved, { outcome: 'removed' })
     metrics.increment('maintenance_autocare_orphan_media_cleanup_total', autoCareFailed, { outcome: 'failed' })
+
+    const attachmentReferences = await AppDataSource.getRepository(ServiceAttachmentEntity).find({
+        select: { objectKey: true },
+    })
+    assertMaintenanceReferenceCount(attachmentReferences.length)
+    const attachmentCleanup = await cleanupOrphanedAutoCareAttachmentObjects({
+        referencedKeys: attachmentReferences.map((attachment) => attachment.objectKey),
+        now,
+        gracePeriodMs,
+    })
+    metrics.setGauge('maintenance_autocare_attachment_objects_scanned', attachmentCleanup.scanned)
+    metrics.setGauge('maintenance_autocare_attachment_objects_removed', attachmentCleanup.removed)
+    metrics.setGauge('maintenance_autocare_attachment_objects_failed', attachmentCleanup.failed)
+    metrics.increment('maintenance_autocare_attachment_cleanup_total', attachmentCleanup.removed, { outcome: 'removed' })
+    metrics.increment('maintenance_autocare_attachment_cleanup_total', attachmentCleanup.failed, { outcome: 'failed' })
 
     return result
 }

@@ -1,5 +1,5 @@
 import { In, IsNull, type EntityManager } from 'typeorm'
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -33,6 +33,7 @@ import type {
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
+import { createAutoCareAttachmentObjectKey, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 
@@ -432,32 +433,39 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
     const thread = await getThread(user, chatId)
     const rawContent = decodeAutoCareAttachment(input)
     const content = await normalizeAutoCareAttachment(rawContent, input.contentType)
-    const attachment = await AppDataSource.transaction(async (manager) => {
-        const lockedThread = await manager.getRepository(AutoCareChatThreadEntity).findOne({ where: { id: thread.id }, lock: { mode: 'pessimistic_write' } })
-        if (!lockedThread) fail(404, 'Chat not found.')
-        const quota = await manager.getRepository(ServiceAttachmentEntity)
-            .createQueryBuilder('attachment')
-            .select('COUNT(DISTINCT attachment.id)', 'count')
-            .addSelect('COALESCE(SUM(attachment.bytes), 0)', 'bytes')
-            .where('attachment.threadId = :threadId', { threadId: lockedThread.id })
-            .getRawOne<{ count: string; bytes: string }>()
-        assertAutoCareAttachmentQuota({
-            existingCount: Number(quota?.count ?? 0),
-            existingBytes: Number(quota?.bytes ?? 0),
-            incomingBytes: content.length,
+    const objectKey = createAutoCareAttachmentObjectKey('chats', thread.id, randomUUID())
+    await saveAutoCareAttachmentObject(objectKey, content)
+    try {
+        const attachment = await AppDataSource.transaction(async (manager) => {
+            const lockedThread = await manager.getRepository(AutoCareChatThreadEntity).findOne({ where: { id: thread.id }, lock: { mode: 'pessimistic_write' } })
+            if (!lockedThread) fail(404, 'Chat not found.')
+            const quota = await manager.getRepository(ServiceAttachmentEntity)
+                .createQueryBuilder('attachment')
+                .select('COUNT(DISTINCT attachment.id)', 'count')
+                .addSelect('COALESCE(SUM(attachment.bytes), 0)', 'bytes')
+                .where('attachment.threadId = :threadId', { threadId: lockedThread.id })
+                .getRawOne<{ count: string; bytes: string }>()
+            assertAutoCareAttachmentQuota({
+                existingCount: Number(quota?.count ?? 0),
+                existingBytes: Number(quota?.bytes ?? 0),
+                incomingBytes: content.length,
+            })
+            return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey, contentType: input.contentType, bytes: content.length, content: null, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
         })
-        return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey: `autocare-chats/${lockedThread.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, '-')}`, contentType: input.contentType, bytes: content.length, content, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
-    })
-    const result = attachmentResponse(attachment, thread.id)
-    broadcastServiceChat(thread.id, { type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: result })
-    return result
+        const result = attachmentResponse(attachment, thread.id)
+        broadcastServiceChat(thread.id, { type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: result })
+        return result
+    } catch (error) {
+        await removeAutoCareAttachmentObject(objectKey).catch(() => undefined)
+        throw error
+    }
 }
 
 export async function getAutoCareChatAttachment(user: UserEntity, chatId: string, attachmentId: string) {
     const thread = await getThread(user, chatId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id }, { id: attachmentId, requestId: thread.requestId }] : { id: attachmentId, threadId: thread.id }, select: { id: true, contentType: true, content: true } })
-    if (!attachment?.content) fail(404, 'Chat attachment not found.')
-    return attachment
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id }, { id: attachmentId, requestId: thread.requestId }] : { id: attachmentId, threadId: thread.id }, select: { id: true, objectKey: true, contentType: true, content: true } })
+    if (!attachment) fail(404, 'Chat attachment not found.')
+    return { ...attachment, content: await readAutoCareAttachmentObject(attachment.objectKey) }
 }
 
 export async function getAutoCareChatThreadForRequest(user: UserEntity, requestId: string) {

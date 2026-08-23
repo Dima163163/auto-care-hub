@@ -49,6 +49,7 @@ import type {
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
+import { createAutoCareAttachmentObjectKey, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { canManageProvider, canManageProviderWithManager, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts } from './availability.js'
 import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
@@ -550,49 +551,56 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
     const request = await getParticipantRequest(user, requestId)
     const rawContent = decodeAutoCareAttachment(input)
     const content = await normalizeAutoCareAttachment(rawContent, input.contentType)
-    const attachment = await AppDataSource.transaction(async (manager) => {
-        const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
-        if (!lockedRequest) notFound('Service request not found.')
-        if (lockedRequest.clientId !== user.id) {
-            const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-            if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, lockedRequest.locationId))) {
-                forbidden('You do not have access to this service request.')
+    const objectKey = createAutoCareAttachmentObjectKey('requests', request.id, randomUUID())
+    await saveAutoCareAttachmentObject(objectKey, content)
+    try {
+        const attachment = await AppDataSource.transaction(async (manager) => {
+            const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
+            if (!lockedRequest) notFound('Service request not found.')
+            if (lockedRequest.clientId !== user.id) {
+                const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
+                if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, lockedRequest.locationId))) {
+                    forbidden('You do not have access to this service request.')
+                }
             }
-        }
-        const thread = await ensureAutoCareRequestChatThread(lockedRequest, manager)
-        const quota = await manager.getRepository(ServiceAttachmentEntity)
-            .createQueryBuilder('attachment')
-            .select('COUNT(DISTINCT attachment.id)', 'count')
-            .addSelect('COALESCE(SUM(attachment.bytes), 0)', 'bytes')
-            .where('attachment.requestId = :requestId', { requestId: lockedRequest.id })
-            .getRawOne<{ count: string; bytes: string }>()
-        assertAutoCareAttachmentQuota({
-            existingCount: Number(quota?.count ?? 0),
-            existingBytes: Number(quota?.bytes ?? 0),
-            incomingBytes: content.length,
+            const thread = await ensureAutoCareRequestChatThread(lockedRequest, manager)
+            const quota = await manager.getRepository(ServiceAttachmentEntity)
+                .createQueryBuilder('attachment')
+                .select('COUNT(DISTINCT attachment.id)', 'count')
+                .addSelect('COALESCE(SUM(attachment.bytes), 0)', 'bytes')
+                .where('attachment.requestId = :requestId', { requestId: lockedRequest.id })
+                .getRawOne<{ count: string; bytes: string }>()
+            assertAutoCareAttachmentQuota({
+                existingCount: Number(quota?.count ?? 0),
+                existingBytes: Number(quota?.bytes ?? 0),
+                incomingBytes: content.length,
+            })
+            return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({
+                requestId: lockedRequest.id,
+                threadId: thread.id,
+                uploadedById: user.id,
+                objectKey,
+                contentType: input.contentType,
+                bytes: content.length,
+                content: null,
+                checksum: createHash('sha256').update(content).digest('hex'),
+                status: ServiceAttachmentStatus.Ready,
+            }))
         })
-        return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({
-            requestId: lockedRequest.id,
-            threadId: thread.id,
-            uploadedById: user.id,
-            objectKey: `autocare-requests/${lockedRequest.id}/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, '-')}`,
-            contentType: input.contentType,
-            bytes: content.length,
-            content,
-            checksum: createHash('sha256').update(content).digest('hex'),
-            status: ServiceAttachmentStatus.Ready,
-        }))
-    })
-    const result = { id: attachment.id, uploadedById: attachment.uploadedById, contentType: attachment.contentType, bytes: attachment.bytes, status: attachment.status, url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`, createdAt: attachment.createdAt.toISOString() }
-    broadcastServiceChat(requestId, { type: 'attachment.created', requestId, payload: result })
-    return result
+        const result = { id: attachment.id, uploadedById: attachment.uploadedById, contentType: attachment.contentType, bytes: attachment.bytes, status: attachment.status, url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`, createdAt: attachment.createdAt.toISOString() }
+        broadcastServiceChat(requestId, { type: 'attachment.created', requestId, payload: result })
+        return result
+    } catch (error) {
+        await removeAutoCareAttachmentObject(objectKey).catch(() => undefined)
+        throw error
+    }
 }
 
 export async function getAutoCareServiceAttachment(user: UserEntity, requestId: string, attachmentId: string) {
     await getParticipantRequest(user, requestId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId }, select: { id: true, contentType: true, content: true } })
-    if (!attachment?.content) notFound('Service attachment not found.')
-    return attachment
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId }, select: { id: true, objectKey: true, contentType: true, content: true } })
+    if (!attachment) notFound('Service attachment not found.')
+    return { ...attachment, content: await readAutoCareAttachmentObject(attachment.objectKey) }
 }
 
 export async function createAutoCareServiceQuote(user: UserEntity, requestId: string, input: CreateAutoCareServiceQuoteInput) {
