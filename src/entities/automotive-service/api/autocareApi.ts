@@ -128,6 +128,10 @@ export type AutoCareApiDiscoveryResponse = {
 
 export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
+    locations?: Array<{
+        location: AutoCareApiProvider['location']
+        offers: AutoCareApiOffer[]
+    }>
 }
 
 export type AutoCareProviderAnalytics = {
@@ -567,7 +571,10 @@ const autoCareProviderSchema = z.object({
     offers: z.array(autoCareOfferSchema).optional(),
 }).passthrough() satisfies z.ZodType<AutoCareApiProvider>
 
-const autoCareProviderProfileSchema = autoCareProviderSchema.extend({ offers: z.array(autoCareOfferSchema) }).passthrough() satisfies z.ZodType<AutoCareApiProviderProfile>
+const autoCareProviderProfileSchema = autoCareProviderSchema.extend({
+    offers: z.array(autoCareOfferSchema),
+    locations: z.array(z.object({ location: autoCareProviderSchema.shape.location, offers: z.array(autoCareOfferSchema) })).optional(),
+}).passthrough() satisfies z.ZodType<AutoCareApiProviderProfile>
 const autoCareFavoriteSchema = z.object({
     id: z.string(),
     providerId: z.string(),

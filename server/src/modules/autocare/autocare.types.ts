@@ -177,6 +177,12 @@ export type AutoCareDiscoveryQuery = {
 
 export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {
     offers: AutoCareOfferResponse[]
+    /** Every public branch, with its own published catalog. `location` and
+     * `offers` remain the first-branch compatibility fields for existing clients. */
+    locations: Array<{
+        location: AutoCareLocationResponse
+        offers: AutoCareOfferResponse[]
+    }>
 }
 
 export type AutoCareProviderAnalyticsResponse = {

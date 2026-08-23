@@ -377,23 +377,32 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
 export async function getAutoCareProviderProfile(providerId: string): Promise<AutoCareProviderProfileResponse> {
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     assertProviderActive(provider)
-    const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ providerId: provider.id })
-    if (!location) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider location not found.' })
-    const offers = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({ where: { locationId: location.id, active: true }, order: { priceFromMinor: 'ASC' } })
+    const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
+    const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
+    const locations = await locationRepository.find({ where: { providerId: provider.id }, order: { id: 'ASC' } })
+    if (locations.length === 0) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider location not found.' })
+    const offers = await offeringRepository.find({ where: { locationId: In(locations.map((item) => item.id)), active: true }, order: { priceFromMinor: 'ASC' } })
     const definitions = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findByIds(offers.map((offer) => offer.definitionId))
     const definitionById = new Map(definitions.map((definition) => [definition.id, definition]))
+    const offersByLocation = new Map<string, ReturnType<typeof toOfferResponse>[]>()
+    for (const location of locations) {
+        offersByLocation.set(location.id, offers.filter((offer) => offer.locationId === location.id).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))))
+    }
+    const firstLocation = locations[0]!
     return {
-        ...toProviderResponse(provider, location),
+        ...toProviderResponse(provider, firstLocation),
         coverImageUrl: provider.coverImageUrl,
-        offers: offers.map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
+        offers: offersByLocation.get(firstLocation.id) ?? [],
+        locations: locations.map((location) => ({ location: toProviderResponse(provider, location).location, offers: offersByLocation.get(location.id) ?? [] })),
     }
 }
 
 export async function getAutoCareProviderOffers(providerId: string, serviceId?: string) {
     const profile = await getAutoCareProviderProfile(providerId)
-    if (!serviceId) return profile.offers
+    const offers = profile.locations.flatMap((location) => location.offers)
+    if (!serviceId) return offers
     const definition = await findServiceDefinition(serviceId)
-    return definition ? profile.offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
+    return definition ? offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
 }
 
 export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number; bookingMode?: 'request' | 'instant' }) {
