@@ -71,6 +71,11 @@ function getBoundingBox(centerLatitude: number, centerLongitude: number, radiusK
     }
 }
 
+// Keep the public discovery endpoint bounded even when a market contains a
+// very large number of service points. All user-facing filters are applied in
+// SQL before this guard; the remaining ranking step only sees a bounded set.
+const MAX_DISCOVERY_CANDIDATES = 5_000
+
 type DiscoverySortMode = NonNullable<AutoCareDiscoveryQuery['sort']>
 type DiscoverySortValues = { primary: number; secondary: number; providerId: string; locationId: string }
 
@@ -282,7 +287,22 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     const marketLatitude = Number(market?.centerLatitude ?? 55.7558)
     const marketLongitude = Number(market?.centerLongitude ?? 37.6173)
     const box = market ? getBoundingBox(marketLatitude, marketLongitude, input.radiusKm) : null
-    const locationQuery = locationRepository.createQueryBuilder('location').orderBy('location.id', 'ASC')
+    const distanceExpression = '6371 * acos(least(1, greatest(-1, cos(radians(:marketLatitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:marketLongitude)) + sin(radians(:marketLatitude)) * sin(radians(location.latitude)))))'
+    if (input.priceType && definition.priceType !== input.priceType) return { items: [], nextCursor: null }
+
+    const candidateQuery = locationRepository
+        .createQueryBuilder('location')
+        .innerJoin(AutomotiveProviderEntity, 'provider', 'provider.id = location.providerId AND provider.status = :providerStatus', { providerStatus: AutomotiveProviderStatus.Active })
+        .innerJoin(AutomotiveServiceOfferingEntity, 'offer', 'offer.locationId = location.id AND offer.definitionId = :definitionId AND offer.active = true', { definitionId: definition.id })
+        .select('location.id', 'locationId')
+        .addSelect('offer.priceFromMinor', 'priceFromMinor')
+        .addSelect('provider.rating', 'providerRating')
+        .addSelect('location.latitude', 'latitude')
+        .addSelect('location.longitude', 'longitude')
+        .orderBy(sort === 'price_asc' ? 'offer.priceFromMinor' : sort === 'rating_desc' ? 'provider.rating' : sort === 'distance_asc' && market ? distanceExpression : 'provider.rating', sort === 'rating_desc' ? 'DESC' : 'ASC')
+        .addOrderBy('location.id', 'ASC')
+        .take(MAX_DISCOVERY_CANDIDATES)
+    const locationQuery = candidateQuery
     if (market) locationQuery.andWhere('location.marketId = :marketId', { marketId: market.id })
     if (input.zoneId) locationQuery.andWhere('location.zoneId = :zoneId', { zoneId: input.zoneId })
     if (box) {
@@ -295,19 +315,29 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         // great-circle distance in SQL so pagination never materializes rows
         // outside the requested radius. The JS check below mirrors this for
         // deterministic response mapping and non-Postgres test doubles.
-        const distanceExpression = '6371 * acos(least(1, greatest(-1, cos(radians(:marketLatitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:marketLongitude)) + sin(radians(:marketLatitude)) * sin(radians(location.latitude)))))'
         locationQuery.andWhere(`${distanceExpression} <= :radiusKm`, {
             marketLatitude,
             marketLongitude,
             radiusKm: input.radiusKm,
         })
     }
-    const locations = await locationQuery.getMany()
-    const locationIds = locations.map((location) => location.id)
+    if (input.providerName) locationQuery.andWhere('LOWER(provider.name) LIKE :providerName', { providerName: `%${input.providerName.toLowerCase()}%` })
+    if (input.minPrice !== undefined) locationQuery.andWhere('offer.priceFromMinor >= :minPriceMinor', { minPriceMinor: Math.round(input.minPrice * 100) })
+    if (input.maxPrice !== undefined) locationQuery.andWhere('offer.priceFromMinor <= :maxPriceMinor', { maxPriceMinor: Math.round(input.maxPrice * 100) })
+    if (input.minRating !== undefined) locationQuery.andWhere('provider.rating >= :minRating', { minRating: input.minRating })
+    if (input.verifiedOnly) locationQuery.andWhere('provider.verified = true')
+    if (input.warrantyOnly) locationQuery.andWhere('offer."warrantyText" IS NOT NULL')
+    if (input.hasBonus) locationQuery.andWhere('provider."bonusSummary" IS NOT NULL')
+    if (input.brandId) locationQuery.andWhere('(provider."isMultibrand" = true OR provider."brandSpecializations" @> ARRAY[:brandId]::text[])', { brandId: input.brandId })
+    const candidates = await locationQuery.getRawMany<{ locationId: string }>()
+    const locationIds = candidates.map((candidate) => candidate.locationId)
     if (locationIds.length === 0) return { items: [], nextCursor: null }
-    const offers = await offerRepository.find({ where: { definitionId: definition.id, active: true } })
-    const offerByLocation = new Map(offers.filter((offer) => locationIds.includes(offer.locationId)).map((offer) => [offer.locationId, offer]))
-    const providers = await providerRepository.find({ where: { status: AutomotiveProviderStatus.Active }, order: { id: 'ASC' } })
+    const locations = await locationRepository.find({ where: { id: In(locationIds) } })
+    const [offers, providers] = await Promise.all([
+        offerRepository.find({ where: { definitionId: definition.id, active: true, locationId: In(locationIds) } }),
+        providerRepository.find({ where: { status: AutomotiveProviderStatus.Active, id: In([...new Set(locations.map((location) => location.providerId))]) }, order: { id: 'ASC' } }),
+    ])
+    const offerByLocation = new Map(offers.map((offer) => [offer.locationId, offer]))
     const providerById = new Map(providers.map((provider) => [provider.id, provider]))
     const rows = locations.flatMap((location) => {
         const provider = providerById.get(location.providerId)
