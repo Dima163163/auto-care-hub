@@ -51,15 +51,20 @@ describe('AutoCare public catalog and request route integration', () => {
     })
 
     it('protects owner membership administration and schedule mutations before reaching the database', async () => {
-        const providerId = '00000000-0000-0000-0000-000000000001'
-        const cabinetId = '00000000-0000-0000-0000-000000000002'
+        // Use RFC 4122 UUIDs so route validation reaches the authentication guard.
+        // The previous all-zero fixtures were rejected as malformed params (400),
+        // masking the intended unauthenticated (401) contract.
+        const providerId = '00000000-0000-4000-8000-000000000001'
+        const cabinetId = '00000000-0000-4000-8000-000000000002'
 
-        const [members, invitation, scheduleRead, scheduleWrite] = await Promise.all([
-            request(app.server).get(`/owner/autocare-providers/${providerId}/members`),
-            request(app.server).post(`/owner/autocare-providers/${providerId}/members/invitations`).send({ email: 'staff@example.com', role: 'staff' }),
-            request(app.server).get(`/owner/cabinets/${cabinetId}/schedule`),
-            request(app.server).put(`/owner/cabinets/${cabinetId}/schedule`).send({ items: [] }),
-        ])
+        const members = await request(app.server).get(`/owner/autocare-providers/${providerId}/members`)
+        const invitation = await request(app.server)
+            .post(`/owner/autocare-providers/${providerId}/members/invitations`)
+            .send({ email: 'staff@example.com', role: 'staff' })
+        const scheduleRead = await request(app.server).get(`/owner/cabinets/${cabinetId}/schedule`)
+        const scheduleWrite = await request(app.server)
+            .put(`/owner/cabinets/${cabinetId}/schedule`)
+            .send({ items: [] })
 
         expect(members.status).toBe(401)
         expect(invitation.status).toBe(401)

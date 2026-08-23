@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router'
 
 import { useGetAutoCareAvailabilityQuery, type AutoCareAvailability } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { DateInputTrigger } from '@/shared/ui/date-input-trigger'
 
 type RequestFormProps = {
     providerId: string
@@ -106,7 +107,7 @@ function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, ava
                     <div className="mt-3 grid grid-cols-4 gap-1.5">
                         {days.map(({ id, label, date }) => <button key={id} type="button" onClick={() => onDateChange(id)} className={!customDate && selectedDate === id ? 'min-h-14 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-1 text-[10px] font-black text-primary' : 'min-h-14 rounded-[var(--radius-control)] border border-border px-1 text-[10px] font-bold text-muted-foreground transition hover:border-primary hover:text-primary'}><span className="block">{label}</span><span className="mt-1 block text-[9px] font-medium">{date}</span></button>)}
                     </div>
-                    <label className="relative mt-4 inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground hover:border-primary hover:text-primary"><CalendarDays className="size-4 text-primary" />{t('autocare.providerOtherDateTime')}<input type="date" value={customDate} onChange={(event) => onCustomDateChange(event.target.value)} className="absolute inset-0 cursor-pointer opacity-0" /></label>
+                    <DateInputTrigger className="mt-4" label={t('autocare.providerOtherDateTime')} min={toDateInputValue(new Date())} value={customDate} onChange={onCustomDateChange} />
                 </div>
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestTimeLabel')}</p>
