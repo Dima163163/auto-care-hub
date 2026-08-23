@@ -582,7 +582,6 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
                 objectKey,
                 contentType: input.contentType,
                 bytes: content.length,
-                content: null,
                 checksum: createHash('sha256').update(content).digest('hex'),
                 status: ServiceAttachmentStatus.Ready,
             }))
@@ -598,7 +597,7 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
 
 export async function getAutoCareServiceAttachment(user: UserEntity, requestId: string, attachmentId: string) {
     await getParticipantRequest(user, requestId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId }, select: { id: true, objectKey: true, contentType: true, content: true } })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
     if (!attachment) notFound('Service attachment not found.')
     return { ...attachment, content: await readAutoCareAttachmentObject(attachment.objectKey) }
 }

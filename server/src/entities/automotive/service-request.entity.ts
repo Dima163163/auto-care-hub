@@ -160,7 +160,6 @@ export class ServiceAttachmentEntity {
     @Column({ type: 'text' }) objectKey!: string
     @Column({ type: 'text' }) contentType!: string
     @Column({ type: 'integer' }) bytes!: number
-    @Column({ type: 'bytea', nullable: true, select: false }) content!: Buffer | null
     @Column({ type: 'text', nullable: true }) checksum!: string | null
     @Column({ type: 'enum', enum: ServiceAttachmentStatus, enumName: 'autocare_service_attachment_status', default: ServiceAttachmentStatus.Pending }) status!: ServiceAttachmentStatus
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date

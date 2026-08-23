@@ -1,5 +1,6 @@
 import type { WebSocket } from 'ws'
 import { randomUUID } from 'node:crypto'
+import { z } from 'zod'
 
 import { getRedisClient, isRedisEnabled } from '../../shared/redis/redis.js'
 import { logError } from '../../shared/observability/logger.js'
@@ -8,8 +9,15 @@ type ChatEvent = {
     type: 'message.created' | 'message.read' | 'offer.updated' | 'attachment.created' | 'presence'
     requestId?: string
     threadId?: string
-    payload: unknown
+    payload: Record<string, unknown>
 }
+
+const chatEventSchema = z.object({
+    type: z.enum(['message.created', 'message.read', 'offer.updated', 'attachment.created', 'presence']),
+    requestId: z.string().uuid().optional(),
+    threadId: z.string().uuid().optional(),
+    payload: z.record(z.string(), z.unknown()),
+})
 
 const connections = new Map<string, Set<WebSocket>>()
 const REDIS_CHANNEL_PREFIX = 'autocare:chat:'
@@ -33,7 +41,12 @@ function broadcastLocal(channelId: string, serialized: string) {
 
 function serializeEvent(event: ChatEvent) {
     try {
-        const serialized = JSON.stringify(event)
+        const parsed = chatEventSchema.safeParse(event)
+        if (!parsed.success) {
+            logError('AutoCare chat event failed runtime validation', new Error('Invalid chat event payload.'))
+            return null
+        }
+        const serialized = JSON.stringify(parsed.data)
         if (Buffer.byteLength(serialized, 'utf8') > MAX_CHAT_EVENT_BYTES) {
             logError('AutoCare chat event exceeded realtime payload limit', new Error('Chat event is too large.'))
             return null
@@ -58,9 +71,10 @@ async function ensureRedisBridge() {
                 if (!channel.startsWith(REDIS_CHANNEL_PREFIX)) return
                 const channelId = channel.slice(REDIS_CHANNEL_PREFIX.length)
                 try {
-                    const wire = JSON.parse(serialized) as { source?: unknown; event?: ChatEvent }
-                    if (wire.source === instanceId || !wire.event) return
-                    broadcastLocal(channelId, JSON.stringify(wire.event))
+                    const wire = JSON.parse(serialized) as { source?: unknown; event?: unknown }
+                    const event = chatEventSchema.safeParse(wire.event)
+                    if (wire.source === instanceId || !event.success) return
+                    broadcastLocal(channelId, JSON.stringify(event.data))
                 } catch {
                     // Ignore malformed cross-process events instead of sending
                     // untrusted data to every connected browser.
@@ -107,7 +121,8 @@ export function broadcastServiceChat(channelId: string, event: ChatEvent) {
 }
 
 export function sendServiceChatEvent(socket: WebSocket, event: ChatEvent) {
-    if (socket.readyState === 1) socket.send(JSON.stringify(event))
+    const serialized = serializeEvent(event)
+    if (serialized && socket.readyState === 1) socket.send(serialized)
 }
 
 export async function closeServiceChatGateway() {

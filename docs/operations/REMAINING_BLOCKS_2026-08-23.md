@@ -27,7 +27,8 @@ still requires a real environment, product decision or a later UI slice.
 
 - Real provider/customer pilot, catalog/price/supply validation and response
   SLO evidence require recruited participants and a selected environment.
-- Production PostGIS decision, private object storage/quarantine/retention,
+- Production PostGIS decision, external durable object storage/AV quarantine/
+  signed access,
   multi-process Redis chat smoke, resource capacity reservations and full
   PostgreSQL concurrency/E2E matrix remain release gates.
 - Appeal moderation now has an admin queue and client appeal history with

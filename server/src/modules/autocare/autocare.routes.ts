@@ -233,6 +233,8 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return reply
             .header('cache-control', 'private, no-store')
             .header('x-content-type-options', 'nosniff')
+            .header('content-disposition', 'inline')
+            .header('etag', attachment.checksum ? `"${attachment.checksum}"` : undefined)
             .type(attachment.contentType)
             .send(attachment.content)
     })
@@ -337,6 +339,8 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return reply
             .header('cache-control', 'private, no-store')
             .header('x-content-type-options', 'nosniff')
+            .header('content-disposition', 'inline')
+            .header('etag', attachment.checksum ? `"${attachment.checksum}"` : undefined)
             .type(attachment.contentType)
             .send(attachment.content)
     })

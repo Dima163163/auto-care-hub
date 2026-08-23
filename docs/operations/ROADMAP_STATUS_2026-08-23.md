@@ -29,8 +29,12 @@ product decision or a larger follow-up slice.
 - ✅ Quote snapshots, booking conversion, idempotent request transitions,
   review integrity policy, reminder outbox and cursor-based chat APIs.
 - ✅ Review/photo moderation contracts and appeal evidence identifiers.
-- ❌ Private object storage/quarantine/signed access, capacity reservations,
-  Redis multi-process WebSocket smoke and full PostgreSQL concurrency E2E.
+- ✅ Private normalized attachments are stored outside PostgreSQL in a private
+  filesystem area, served only after participant authorization, and removed by
+  orphan/retention cleanup.
+- ❌ External durable object storage with AV quarantine and signed URLs,
+  capacity reservations, Redis multi-process WebSocket smoke and full
+  PostgreSQL concurrency E2E.
 
 ## 5. Service-owner workspace
 

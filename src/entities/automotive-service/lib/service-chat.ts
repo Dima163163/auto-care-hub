@@ -30,13 +30,14 @@ const serviceChatEventSchema = z.object({
     type: z.enum(['message.created', 'message.read', 'offer.updated', 'attachment.created', 'presence']),
     requestId: z.string().optional(),
     threadId: z.string().optional(),
-    payload: z.unknown(),
+    payload: z.record(z.string(), z.unknown()),
 })
 
 export type ServiceChatEvent = z.infer<typeof serviceChatEventSchema>
 type Listener = (event: ServiceChatEvent) => void
 const mockListeners = new Map<string, Set<Listener>>()
 const reconnectDelays = [1_000, 2_000, 5_000, 15_000, 30_000]
+const MAX_RECONNECT_ATTEMPTS = 8
 
 export function emitMockServiceChatEvent(event: ServiceChatEvent) {
     const channelId = event.requestId ?? event.threadId
@@ -77,7 +78,7 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
     }
 
     const scheduleReconnect = () => {
-        if (stopped || !navigator.onLine || document.visibilityState === 'hidden') return
+        if (stopped || !navigator.onLine || document.visibilityState === 'hidden' || attempt >= MAX_RECONNECT_ATTEMPTS) return
         clearReconnect()
         const delay = reconnectDelays[Math.min(attempt, reconnectDelays.length - 1)]!
         attempt += 1

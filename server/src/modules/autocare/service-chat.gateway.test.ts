@@ -24,9 +24,10 @@ describe('AutoCare service chat gateway', () => {
 
     it('delivers a bounded event to listeners in the same process', () => {
         const socket = createSocket()
-        const unsubscribe = subscribeServiceChat('thread-1', socket as never)
+        const threadId = '11111111-1111-4111-8111-111111111111'
+        const unsubscribe = subscribeServiceChat(threadId, socket as never)
 
-        broadcastServiceChat('thread-1', { type: 'presence', threadId: 'thread-1', payload: { online: true } })
+        broadcastServiceChat(threadId, { type: 'presence', threadId, payload: { online: true } })
 
         expect(socket.send).toHaveBeenCalledWith(expect.stringContaining('"online":true'))
         unsubscribe()
@@ -34,9 +35,10 @@ describe('AutoCare service chat gateway', () => {
 
     it('does not emit oversized realtime payloads', () => {
         const socket = createSocket()
-        subscribeServiceChat('thread-1', socket as never)
+        const threadId = '22222222-2222-4222-8222-222222222222'
+        subscribeServiceChat(threadId, socket as never)
 
-        broadcastServiceChat('thread-1', { type: 'message.created', payload: { body: 'x'.repeat(256 * 1024) } })
+        broadcastServiceChat(threadId, { type: 'message.created', threadId, payload: { body: 'x'.repeat(256 * 1024) } })
 
         expect(socket.send).not.toHaveBeenCalled()
     })

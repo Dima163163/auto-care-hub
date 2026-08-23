@@ -450,7 +450,7 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
                 existingBytes: Number(quota?.bytes ?? 0),
                 incomingBytes: content.length,
             })
-            return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey, contentType: input.contentType, bytes: content.length, content: null, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
+            return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey, contentType: input.contentType, bytes: content.length, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
         })
         const result = attachmentResponse(attachment, thread.id)
         broadcastServiceChat(thread.id, { type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: result })
@@ -463,7 +463,7 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
 
 export async function getAutoCareChatAttachment(user: UserEntity, chatId: string, attachmentId: string) {
     const thread = await getThread(user, chatId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id }, { id: attachmentId, requestId: thread.requestId }] : { id: attachmentId, threadId: thread.id }, select: { id: true, objectKey: true, contentType: true, content: true } })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id }, { id: attachmentId, requestId: thread.requestId }] : { id: attachmentId, threadId: thread.id }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
     if (!attachment) fail(404, 'Chat attachment not found.')
     return { ...attachment, content: await readAutoCareAttachmentObject(attachment.objectKey) }
 }

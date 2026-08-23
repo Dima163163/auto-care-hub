@@ -117,8 +117,11 @@ function formatChatDate(value: string, locale: string) {
     const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
     const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
-    if (day === today) return locale === 'ru' ? `Сегодня, ${time}` : `Today, ${time}`
-    if (day === today - 86_400_000) return locale === 'ru' ? `Вчера, ${time}` : `Yesterday, ${time}`
+    const dayDelta = Math.round((day - today) / 86_400_000)
+    if (dayDelta === 0 || dayDelta === -1) {
+        const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(dayDelta, 'day')
+        return `${relative.slice(0, 1).toLocaleUpperCase(locale)}${relative.slice(1)}, ${time}`
+    }
     return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
