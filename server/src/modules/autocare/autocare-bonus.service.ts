@@ -166,7 +166,17 @@ export async function awardAutoCareBonusForCompletedVisit(manager: EntityManager
     const accountRepository = manager.getRepository(AutoCareBonusAccountEntity)
     const ledgerRepository = manager.getRepository(AutoCareBonusLedgerEntity)
     let account = await accountRepository.findOne({ where: { clientId: request.clientId, providerId: request.providerId }, lock: { mode: 'pessimistic_write' } })
-    if (!account) account = await accountRepository.save(accountRepository.create({ clientId: request.clientId, providerId: request.providerId }))
+    if (!account) {
+        // The unique client/provider key serializes concurrent first awards.
+        // Upsert avoids a unique-violation race between the read and insert;
+        // the second read obtains the row lock before its balance is changed.
+        await accountRepository.upsert(
+            { clientId: request.clientId, providerId: request.providerId },
+            ['clientId', 'providerId'],
+        )
+        account = await accountRepository.findOne({ where: { clientId: request.clientId, providerId: request.providerId }, lock: { mode: 'pessimistic_write' } })
+    }
+    if (!account) throw new AppError({ statusCode: 500, code: ERROR_CODES.InternalServerError, message: 'Bonus account could not be created.' })
     const idempotencyKey = `request:${request.id}:earn`
     const existing = await ledgerRepository.findOne({ where: { accountId: account.id, idempotencyKey } })
     if (existing) return existing

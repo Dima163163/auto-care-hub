@@ -9,16 +9,20 @@ describe('sensitive log metadata', () => {
     it('recognizes common credential-bearing keys', () => {
         expect(isSensitiveLogKey('password')).toBe(true)
         expect(isSensitiveLogKey('refreshToken')).toBe(true)
+        expect(isSensitiveLogKey('email')).toBe(true)
+        expect(isSensitiveLogKey('vin')).toBe(true)
         expect(isSensitiveLogKey('requestId')).toBe(false)
     })
 
     it('redacts credential values while preserving operational metadata', () => {
         expect(sanitizeLogMetadata({
             password: 'secret-value',
+            email: 'private@example.com',
             requestId: 'request-123',
             retries: 2,
         })).toEqual({
             password: '[REDACTED]',
+            email: '[REDACTED]',
             requestId: 'request-123',
             retries: 2,
         })

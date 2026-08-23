@@ -1,6 +1,7 @@
 import { AppDataSource } from '../database/data-source.js'
 
 type IntegrityCheck = { name: string; sql: string }
+type UnvalidatedConstraint = { tableName: string; constraintName: string }
 
 const checks: IntegrityCheck[] = [
     {
@@ -37,6 +38,20 @@ const checks: IntegrityCheck[] = [
     },
 ]
 
+async function getUnvalidatedAutoCareConstraints(): Promise<UnvalidatedConstraint[]> {
+    return AppDataSource.query(`
+        SELECT relation.relname AS "tableName", constraint_row.conname AS "constraintName"
+        FROM pg_constraint constraint_row
+        JOIN pg_class relation ON relation.oid = constraint_row.conrelid
+        JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+        WHERE namespace.nspname = current_schema()
+          AND relation.relname LIKE 'autocare_%'
+          AND constraint_row.contype IN ('f', 'c')
+          AND NOT constraint_row.convalidated
+        ORDER BY relation.relname, constraint_row.conname
+    `) as Promise<UnvalidatedConstraint[]>
+}
+
 async function run() {
     await AppDataSource.initialize()
     try {
@@ -51,17 +66,13 @@ async function run() {
             throw new Error(`AutoCare integrity checks failed: ${failures.map(({ name, count }) => `${name}=${count}`).join(', ')}`)
         }
         if (process.argv.includes('--validate')) {
-            for (const [table, constraint] of [
-                ['autocare_service_requests', 'FK_autocare_requests_provider_location'],
-                ['autocare_service_requests', 'FK_autocare_requests_offering_context'],
-                ['autocare_broadcast_offers', 'FK_autocare_broadcast_offers_provider_location'],
-                ['autocare_guarantee_claims', 'FK_autocare_guarantee_claims_request_context'],
-                ['autocare_service_quotes', 'FK_autocare_service_quotes_request'],
-                ['autocare_service_quotes', 'FK_autocare_service_quotes_provider'],
-            ] as const) {
-                await AppDataSource.query(`ALTER TABLE "${table}" VALIDATE CONSTRAINT "${constraint}"`)
-                console.log(`[autocare-integrity] validated ${constraint}`)
+            const constraints = await getUnvalidatedAutoCareConstraints()
+            for (const { tableName, constraintName } of constraints) {
+                const quoteIdentifier = (value: string) => `"${value.replaceAll('"', '""')}"`
+                await AppDataSource.query(`ALTER TABLE ${quoteIdentifier(tableName)} VALIDATE CONSTRAINT ${quoteIdentifier(constraintName)}`)
+                console.log(`[autocare-integrity] validated ${tableName}.${constraintName}`)
             }
+            console.log(`[autocare-integrity] validated ${constraints.length} pending constraints`)
         }
     } finally {
         await AppDataSource.destroy()

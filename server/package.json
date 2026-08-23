@@ -18,7 +18,7 @@
     "db:backup": "./scripts/backup.sh",
     "db:restore": "./scripts/restore.sh",
     "typeorm": "tsx ./node_modules/typeorm/cli.js",
-    "release:migrate": "npm run migration:run",
+    "release:migrate": "npm run migration:run && npm run check:autocare-integrity -- --validate",
     "schema:check": "tsx src/scripts/check-schema-contract.ts",
     "check:autocare-integrity": "tsx src/scripts/check-autocare-integrity.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/database/data-source.ts",

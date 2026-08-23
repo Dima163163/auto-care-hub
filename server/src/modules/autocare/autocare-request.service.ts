@@ -943,6 +943,49 @@ function formatClock(totalMinutes: number) {
     return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`
 }
 
+async function assertAutoCareRescheduleSlot(
+    manager: EntityManager,
+    request: ServiceRequestEntity,
+    proposedAt: Date,
+) {
+    const locationRepository = manager.getRepository(AutomotiveServiceLocationEntity)
+    const offeringRepository = manager.getRepository(AutomotiveServiceOfferingEntity)
+    const location = await locationRepository.findOneBy({ id: request.locationId, providerId: request.providerId })
+    const offering = request.offeringId
+        ? await offeringRepository.findOneBy({ id: request.offeringId, locationId: request.locationId, active: true })
+        : null
+    if (!location) conflict('The service location for this request is no longer available.')
+
+    const timezone = isValidTimeZone(location.timezone) ? location.timezone : 'UTC'
+    const localVisit = localDateTimeParts(proposedAt, timezone)
+    const schedule = getScheduleForDate(localVisit.date, location.hours, location.weeklySchedule)
+    const durationMinutes = offering?.durationMinutes
+        ?? (typeof request.offeringSnapshot?.durationMinutes === 'number' ? request.offeringSnapshot.durationMinutes : 60)
+    const visitEndMinutes = localVisit.minutes + durationMinutes
+    const scheduleOpenMinutes = Number(schedule.open.slice(0, 2)) * 60 + Number(schedule.open.slice(3))
+    const scheduleCloseMinutes = Number(schedule.close.slice(0, 2)) * 60 + Number(schedule.close.slice(3))
+    const dayRange = localDateRangeToUtc(localVisit.date, timezone)
+    if (location.blackoutDates.includes(localVisit.date) || schedule.closed || !dayRange || localVisit.minutes < scheduleOpenMinutes || visitEndMinutes > scheduleCloseMinutes) {
+        conflict('The proposed visit time is outside the service schedule.')
+    }
+
+    const activeRequests = await manager.getRepository(ServiceRequestEntity).find({
+        where: { providerId: request.providerId, locationId: request.locationId, preferredAt: Between(dayRange.start, dayRange.end) },
+    })
+    const active = activeRequests.filter((item) => item.id !== request.id && ![ServiceRequestStatus.Declined, ServiceRequestStatus.Cancelled, ServiceRequestStatus.Closed].includes(item.status))
+    const occupiedOfferings = await Promise.all(active.map((item) => item.offeringId
+        ? offeringRepository.findOneBy({ id: item.offeringId })
+        : null))
+    const overlaps = active.some((item, index) => {
+        if (!item.preferredAt) return false
+        const local = localDateTimeParts(item.preferredAt, timezone)
+        if (local.date !== localVisit.date) return false
+        const itemEnd = local.minutes + (occupiedOfferings[index]?.durationMinutes ?? 60)
+        return localVisit.minutes < itemEnd && visitEndMinutes > local.minutes
+    })
+    if (overlaps) conflict('The proposed visit time is no longer available.')
+}
+
 export async function getAutoCareAvailability(providerId: string, locationId: string, offeringId: string, date: string) {
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, status: AutomotiveProviderStatus.Active })
     const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: locationId, providerId })
@@ -1037,6 +1080,7 @@ export async function requestAutoCareServiceReschedule(user: UserEntity, request
         if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
         if (!serviceRequestReschedulableStates.has(request.status)) conflict('This service request cannot be rescheduled.')
         if (request.preferredAt?.getTime() === proposedAt.getTime()) conflict('Choose a different visit time.')
+        await assertAutoCareRescheduleSlot(manager, request, proposedAt)
         const rescheduleRepository = manager.getRepository(AutoCareRescheduleRequestEntity)
         const pending = await rescheduleRepository.findOne({ where: { requestId, status: AutoCareRescheduleStatus.Pending }, lock: { mode: 'pessimistic_write' } })
         if (pending) conflict('This service request already has a pending reschedule request.')
@@ -1076,8 +1120,7 @@ export async function decideAutoCareServiceReschedule(user: UserEntity, requestI
         pending.resolutionReason = reason?.trim() || null
         pending.resolvedAt = new Date()
         if (decision === 'accept') {
-            const conflicting = await requestRepository.find({ where: { providerId: request.providerId, locationId: request.locationId, preferredAt: pending.proposedAt } })
-            if (conflicting.some((item) => item.id !== request.id && ![ServiceRequestStatus.Declined, ServiceRequestStatus.Cancelled, ServiceRequestStatus.Closed].includes(item.status))) conflict('The proposed visit time is no longer available.')
+            await assertAutoCareRescheduleSlot(manager, request, pending.proposedAt)
             request.preferredAt = pending.proposedAt
         }
         await rescheduleRepository.save(pending)

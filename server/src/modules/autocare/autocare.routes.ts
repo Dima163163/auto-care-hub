@@ -30,6 +30,7 @@ const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequest
 const autoCareMutationRateLimit = createRateLimitPreHandler({ maxRequests: 20, scope: 'autocare:mutation', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const autoCareUploadRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:upload', windowMs: 60 * 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const autoCareDiscoveryRateLimit = createRateLimitPreHandler({ maxRequests: 120, scope: 'autocare:discovery', windowMs: 60 * 1000 })
+const autoCareTrustRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:trust', windowMs: 60 * 1000 })
 const MAX_WEBSOCKET_MESSAGE_BYTES = 64 * 1024
 const MAX_WEBSOCKET_EVENTS_PER_MINUTE = 120
 
@@ -112,7 +113,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const query = validateQuery(autoCareProviderReviewsQuerySchema, request.query)
         return getAutoCareProviderReviews(params.providerId, query.limit)
     })
-    app.get('/v1/providers/:providerId/trust', async (request) => getAutoCareProviderTrust(validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/v1/providers/:providerId/trust', { preHandler: autoCareTrustRateLimit }, async (request) => getAutoCareProviderTrust(validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.get('/v1/providers/:providerId/availability', async (request) => {
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const query = validateQuery(autoCareAvailabilityQuerySchema, request.query)

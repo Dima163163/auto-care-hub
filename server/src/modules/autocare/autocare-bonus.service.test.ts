@@ -75,4 +75,42 @@ describe('calculateAutoCareBonusPoints', () => {
         expect(result).toBe(existing)
         expect(accountRepository.save).not.toHaveBeenCalled()
     })
+
+    it('atomically creates a missing account before awarding the first visit', async () => {
+        const account = { id: 'account-1', balancePoints: 0, earnedPoints: 0 }
+        const existing = { id: 'ledger-1', type: AutoCareBonusLedgerType.Earn, points: 5 }
+        const accountRepository = {
+            findOne: vi.fn()
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce(account),
+            upsert: vi.fn().mockResolvedValue(undefined),
+            save: vi.fn(),
+        }
+        const ledgerRepository = { findOne: vi.fn().mockResolvedValue(existing) }
+        const manager = {
+            getRepository: vi.fn()
+                .mockReturnValueOnce({ findOne: vi.fn().mockResolvedValue({ earnPercent: 5, maxEarnPointsPerVisit: null, expiresAfterDays: null }) })
+                .mockReturnValueOnce(accountRepository)
+                .mockReturnValueOnce(ledgerRepository),
+        }
+
+        const result = await awardAutoCareBonusForCompletedVisit(
+            manager as never,
+            {
+                id: 'request-1',
+                status: ServiceRequestStatus.Closed,
+                clientId: 'client-1',
+                providerId: 'provider-1',
+                bookingSnapshot: { amountMinor: 10_000 },
+                acceptedQuoteSnapshot: null,
+            } as never,
+            'owner-1',
+        )
+
+        expect(result).toBe(existing)
+        expect(accountRepository.upsert).toHaveBeenCalledWith(
+            { clientId: 'client-1', providerId: 'provider-1' },
+            ['clientId', 'providerId'],
+        )
+    })
 })
