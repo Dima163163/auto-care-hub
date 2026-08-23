@@ -56,7 +56,11 @@ export function assertValidCsrfToken(
 ) {
     const cookieToken = request.cookies[env.auth.csrfTokenCookieName]
     const headerValue = request.headers[CSRF_HEADER_NAME]
-    const headerToken = Array.isArray(headerValue) ? headerValue[0] : headerValue
+    // Duplicate header values are ambiguous through proxies; never accept a
+    // valid first value when another value is present.
+    const headerToken = Array.isArray(headerValue)
+        ? headerValue.length === 1 ? headerValue[0] : undefined
+        : headerValue
 
     if (
         !cookieToken ||

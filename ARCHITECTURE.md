@@ -24,7 +24,9 @@ modular monolith, not a greenfield FastAPI/Next.js rewrite.
 Current baseline (the public AutoCare discovery/profile slices and the first
 owner/client workspace slices are already running on `dev`):
 
-- React 19 + TypeScript + Vite + React Router frontend;
+- React 19 + TypeScript with a Next.js App Router production shell. The
+  existing React Router feature tree is mounted behind a catch-all route during
+  the incremental migration; Vite remains a tested PWA/compatibility fallback;
 - Redux Toolkit/RTK Query, MSW, Tailwind and Base UI primitives;
 - Fastify + TypeScript backend;
 - PostgreSQL + TypeORM migrations;
@@ -877,9 +879,12 @@ back/forward navigation is correct.
 
 ### 9.1 Web rendering and SEO
 
-The current app is a Vite SPA. That is compatible with the first authenticated
-application and product pilot, but public discovery pages need an explicit SEO
-decision.
+The production web entrypoint is now a Next.js App Router shell. During the
+incremental migration the existing React Router feature tree is mounted behind
+`src/app/[[...slug]]/page.page.tsx`, preserving every approved route while
+public pages move to server-aware route segments. Vite remains a compatibility
+and PWA build, not the production entrypoint. Public discovery pages still
+need an explicit SEO implementation.
 
 Options to evaluate in an ADR after routes/data stabilize:
 
@@ -888,8 +893,8 @@ Options to evaluate in an ADR after routes/data stabilize:
 3. move only the public discovery surface to an SSR frontend while keeping the
    provider/admin app as the current SPA.
 
-A wholesale Next.js rewrite is not the default. The chosen option must preserve
-the Fastify API boundary and be justified by crawl/indexing measurements.
+The chosen option must preserve the Fastify API boundary and be justified by
+crawl/indexing measurements; a second backend rewrite is out of scope.
 
 ### 9.2 Design system
 

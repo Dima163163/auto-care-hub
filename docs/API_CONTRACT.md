@@ -2,8 +2,9 @@
 
 This document is the human-readable contract shared by the Fastify backend,
 the React real API client, and the MSW mock handlers. All paths below are
-relative to the configured API base URL and include the `/api` prefix when the
-frontend uses the Vite same-origin proxy.
+relative to the configured API base URL and include the `/api` prefix. The
+Next.js web shell uses the same-origin `/api` rewrite (the Vite build keeps
+the equivalent proxy for compatibility checks).
 
 The machine-readable foundation is available at `GET /openapi.json`. It covers
 the shared error/cursor schemas and the main health, catalog, booking,

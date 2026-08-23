@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment } from './attachment-content.js'
+import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+const onePixelPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
 
 describe('AutoCare attachment content validation', () => {
     it('accepts content whose declared type and byte length match', () => {
@@ -38,5 +39,16 @@ describe('AutoCare attachment quotas', () => {
     it('allows the exact aggregate byte boundary and rejects only the next byte', () => {
         expect(() => assertAutoCareAttachmentQuota({ existingCount: 19, existingBytes: 50 * 1024 * 1024 - 1, incomingBytes: 1 })).not.toThrow()
         expect(() => assertAutoCareAttachmentQuota({ existingCount: 19, existingBytes: 50 * 1024 * 1024 - 1, incomingBytes: 2 })).toThrow('storage limit')
+    })
+})
+
+describe('AutoCare attachment normalization', () => {
+    it('normalizes a decodable image before storage', async () => {
+        const normalized = await normalizeAutoCareAttachment(onePixelPng, 'image/png')
+        await expect(import('sharp').then(({ default: sharp }) => sharp(normalized).metadata())).resolves.toMatchObject({ width: 1, height: 1, format: 'png' })
+    })
+
+    it('rejects a magic-header payload that is not decodable', async () => {
+        await expect(normalizeAutoCareAttachment(pngHeader, 'image/png')).rejects.toThrow('decodable image')
     })
 })

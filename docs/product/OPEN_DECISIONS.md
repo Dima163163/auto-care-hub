@@ -173,8 +173,10 @@ The evidence and threshold policy is recorded in
 
 Status: product baseline resolved on 2026-08-22.
 
-Decision: keep the Vite SPA for authenticated workspaces and add selected
-prerendered HTML for crawlable public routes before the production web gate.
+Decision: use the Next.js App Router shell for authenticated and public
+workspaces while migrating the existing React Router feature tree behind a
+catch-all route. Add selected prerendered HTML for crawlable public routes
+before the production web gate. Vite remains a PWA/compatibility fallback.
 Runtime `SeoHead`, canonical links, locale alternates, robots and sitemap stay
 the source of truth for the route contract. The exact route list and noindex
 boundaries are recorded in `docs/product/MVP_POLICY_BASELINE.md`; the

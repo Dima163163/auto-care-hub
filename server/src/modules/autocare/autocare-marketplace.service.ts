@@ -38,7 +38,7 @@ import type {
     CreateAutoCareBroadcastOfferInput,
     CreateAutoCareBroadcastRequestInput,
 } from './autocare.types.js'
-import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
+import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { reassessAutoCareProviderTrust } from './trust-score.service.js'
 
 function forbidden(message: string): never {
@@ -236,7 +236,8 @@ export async function assertOwnerBroadcastAccess(user: UserEntity, request: Auto
     if (request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) return
     if (user.role !== UserRole.Owner) forbidden('You do not have access to this broadcast request.')
 
-    const managedProviderIds = await getManagedProviderIds(user.id)
+    const managedScopes = await getManagedProviderScopes(user.id)
+    const managedProviderIds = managedScopes.map(({ providerId }) => providerId)
     const providers = managedProviderIds.length === 0
         ? []
         : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(managedProviderIds), status: AutomotiveProviderStatus.Active } })
@@ -246,7 +247,9 @@ export async function assertOwnerBroadcastAccess(user: UserEntity, request: Auto
     const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({
         where: { providerId: In(providerIds) },
     })
-    const locationIds = locations.map((location) => location.id)
+    const locationIds = locations
+        .filter((location) => isManagedProviderLocationAllowed(managedScopes, location.providerId, location.id))
+        .map((location) => location.id)
     if (locationIds.length === 0) forbidden('You do not have access to this broadcast request.')
 
     // An owner may inspect a request only if their provider already submitted
@@ -270,15 +273,17 @@ export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId:
     await assertOwnerBroadcastAccess(user, request)
     const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: request.serviceDefinitionId })
     if (!definition) notFound('Service definition not found.')
-    const ownedProviderIds = user.role === UserRole.Owner
-        ? await getManagedProviderIds(user.id)
-        : null
+    const ownedScopes = user.role === UserRole.Owner ? await getManagedProviderScopes(user.id) : null
+    const ownedProviderIds = ownedScopes?.map(({ providerId }) => providerId) ?? null
     const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
         where: ownedProviderIds ? { broadcastRequestId: request.id, providerId: In(ownedProviderIds) } : { broadcastRequestId: request.id },
         order: { createdAt: 'ASC' },
     })
-    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(offers.map((offer) => offer.providerId)) } })
-    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { id: In(offers.map((offer) => offer.locationId)) } })
+    const visibleOffers = ownedScopes
+        ? offers.filter((offer) => isManagedProviderLocationAllowed(ownedScopes, offer.providerId, offer.locationId))
+        : offers
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(visibleOffers.map((offer) => offer.providerId)) } })
+    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { id: In(visibleOffers.map((offer) => offer.locationId)) } })
     const providerById = new Map(providers.map((provider) => [provider.id, provider]))
     const locationById = new Map(locations.map((location) => [location.id, location]))
     return {
@@ -293,7 +298,7 @@ export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId:
         maxProviders: request.maxProviders,
         expiresAt: request.expiresAt.toISOString(),
         createdAt: request.createdAt.toISOString(),
-        offers: offers.flatMap((offer) => {
+        offers: visibleOffers.flatMap((offer) => {
             const provider = providerById.get(offer.providerId)
             const location = locationById.get(offer.locationId)
             return provider && location ? [toBroadcastOfferResponse(offer, provider, location)] : []
@@ -309,11 +314,13 @@ export async function getMyAutoCareBroadcastRequests(user: UserEntity) {
 
 export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
     requireOwner(user)
-    const providerIds = await getManagedProviderIds(user.id)
+    const scopes = await getManagedProviderScopes(user.id)
+    const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
         : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
-    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) } })
+    const locations = (await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) } }))
+        .filter((location) => isManagedProviderLocationAllowed(scopes, location.providerId, location.id))
     const requests = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).find({ where: { status: 'open' }, order: { createdAt: 'DESC' }, take: 100 })
     if (locations.length === 0 || requests.length === 0) return []
     const definitionIds = new Set(requests.map((request) => request.serviceDefinitionId))

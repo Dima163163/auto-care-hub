@@ -29,6 +29,7 @@ const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, sco
 const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:request-transition', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const autoCareMutationRateLimit = createRateLimitPreHandler({ maxRequests: 20, scope: 'autocare:mutation', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const autoCareUploadRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:upload', windowMs: 60 * 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
+const autoCareDiscoveryRateLimit = createRateLimitPreHandler({ maxRequests: 120, scope: 'autocare:discovery', windowMs: 60 * 1000 })
 const MAX_WEBSOCKET_MESSAGE_BYTES = 64 * 1024
 const MAX_WEBSOCKET_EVENTS_PER_MINUTE = 120
 
@@ -97,7 +98,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const image = await readAutoCareProviderMedia(params.kind, params.fileName)
         return reply.header('cache-control', 'public, max-age=31536000, immutable').type('image/webp').send(image)
     })
-    app.get('/v1/discovery/providers', async (request) => getAutoCareDiscovery(validateQuery(autoCareDiscoveryQuerySchema, request.query)))
+    app.get('/v1/discovery/providers', { preHandler: autoCareDiscoveryRateLimit }, async (request) => getAutoCareDiscovery(validateQuery(autoCareDiscoveryQuerySchema, request.query)))
     app.get('/v1/favorites/providers', async (request) => getMyAutoCareFavorites(await requireAuth(request)))
     app.post('/v1/favorites/providers/sync', { preHandler: autoCareMutationRateLimit }, async (request) => syncAutoCareFavorites(await requireAuth(request), validateBody(syncAutoCareFavoritesSchema, request.body).providerIds))
     app.post('/v1/favorites/providers/:providerId', { preHandler: autoCareMutationRateLimit }, async (request) => {

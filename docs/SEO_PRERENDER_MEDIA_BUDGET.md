@@ -13,7 +13,9 @@
 
 ## Rendering strategy
 
-The current Vite SPA uses route-level metadata and lazy chunks. Before launch,
+The Next.js App Router shell now hosts the web release and keeps route-level
+metadata/lazy chunks while the React Router feature tree migrates incrementally.
+Before launch,
 choose either selected static prerender for public routes or an SSR migration;
 do not introduce browser-only business logic into the API contract. Validate
 title, description, canonical, Open Graph and JSON-LD with a production-like

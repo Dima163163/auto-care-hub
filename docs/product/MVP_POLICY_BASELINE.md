@@ -72,9 +72,11 @@ are shown in reason codes rather than silently treated as positive evidence.
 
 ## SEO baseline
 
-The web release keeps the Vite SPA for authenticated workspaces and uses the
-existing `SeoHead` contract for runtime metadata. The public release gate adds
-selected prerendered HTML for these crawlable routes:
+The web release uses the Next.js App Router shell for authenticated and public
+workspaces. The existing `SeoHead` contract remains the runtime metadata
+source while the React Router feature tree is migrated incrementally behind the
+Next catch-all route. The public release gate adds selected prerendered HTML
+for these crawlable routes:
 
 - `/`, `/services`, `/for-owners`, `/about`, `/help`, `/agreement`, `/rules`,
   `/privacy`, `/reviews`;

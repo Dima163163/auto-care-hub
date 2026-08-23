@@ -22,7 +22,7 @@ export default defineConfig({
     webServer: {
         command: usePreviewServer
             ? 'npm run preview -- --host 127.0.0.1 --port 5174'
-            : 'VITE_API_MODE=real VITE_API_BASE_URL=/api npm run dev -- --host 127.0.0.1 --port 5174',
+            : 'NEXT_PUBLIC_API_MODE=real NEXT_PUBLIC_API_BASE_URL=/api npm run dev -- --hostname 127.0.0.1 --port 5174',
         url: 'http://127.0.0.1:5174',
         reuseExistingServer: usePreviewServer ? false : !process.env.CI,
     },

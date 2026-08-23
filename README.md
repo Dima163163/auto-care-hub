@@ -59,7 +59,10 @@ Read before making changes:
 ### Frontend
 
 - React 19 and TypeScript;
-- Vite and React Router;
+- Next.js App Router as the production web entrypoint, with the existing React
+  Router feature tree mounted behind a catch-all route during migration;
+- Vite remains available as `dev:vite`/`build:vite` for the PWA fallback and
+  compatibility checks;
 - Redux Toolkit and RTK Query;
 - React Hook Form and Zod;
 - Tailwind CSS and Base UI primitives;
@@ -88,6 +91,7 @@ Read before making changes:
 .
 ├── src/                       # React application
 │   ├── app/                   # bootstrap, routing, layouts, mocks, store
+│   │   └── next/              # Next.js client shell and App Router entrypoint
 │   ├── pages/                 # route composition
 │   ├── widgets/               # large UI sections
 │   ├── features/              # user actions/workflows

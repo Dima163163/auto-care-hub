@@ -11,7 +11,7 @@ import {
     AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
 } from '../../entities/index.js'
-import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
+import { canManageProvider, getManagedProviderIds, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 
 function membershipQuery(getOne: () => Promise<unknown>) {
     const query = {
@@ -72,5 +72,27 @@ describe('provider access boundary', () => {
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
 
         await expect(getManagedProviderIds('owner-1')).resolves.toEqual(['provider-1', 'provider-2', 'provider-3'])
+    })
+
+    it('limits a branch membership to its assigned location', async () => {
+        const providerRepository = { find: vi.fn().mockResolvedValue([]) }
+        const membershipRepository = { find: vi.fn().mockResolvedValue([{ providerId: 'provider-1', locationId: 'location-a' }]) }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        const scopes = await getManagedProviderScopes('staff-1')
+        expect(scopes).toEqual([{ providerId: 'provider-1', locationIds: ['location-a'] }])
+        expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-a')).toBe(true)
+        expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-b')).toBe(false)
+    })
+
+    it('keeps a direct owner authorized across every provider branch', async () => {
+        const providerRepository = { find: vi.fn().mockResolvedValue([{ id: 'provider-1' }]) }
+        const membershipRepository = { find: vi.fn().mockResolvedValue([]) }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        const scopes = await getManagedProviderScopes('owner-1')
+        expect(scopes).toEqual([{ providerId: 'provider-1', locationIds: null }])
+        expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-a')).toBe(true)
+        expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-b')).toBe(true)
     })
 })

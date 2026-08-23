@@ -30,7 +30,7 @@ export default defineConfig({
             : undefined,
     },
     webServer: {
-        command: `VITE_API_MODE=mock npm run dev -- --host 127.0.0.1 --port ${testPort}`,
+        command: `NEXT_PUBLIC_API_MODE=mock npm run dev -- --hostname 127.0.0.1 --port ${testPort}`,
         url: testBaseUrl,
         reuseExistingServer: !process.env.CI,
     },

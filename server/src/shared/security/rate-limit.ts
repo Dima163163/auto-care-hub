@@ -253,9 +253,19 @@ async function checkRateLimitRedis(
             resetAt,
         }
     } catch (error) {
-        logError('Redis rate limit error; falling back to memory', error, {
+        logError('Redis rate limit error', error, {
             scope: options.scope,
         })
+        // A process-local bucket is not a security boundary in a multi-replica
+        // deployment. Keep the developer/test fallback, but fail closed in
+        // production until the distributed limiter is healthy again.
+        if (env.nodeEnv === 'production') {
+            throw new AppError({
+                statusCode: 503,
+                code: ERROR_CODES.InternalServerError,
+                message: 'Rate limiting is temporarily unavailable. Please try again later.',
+            })
+        }
         return checkRateLimit(identifier, options)
     }
 }

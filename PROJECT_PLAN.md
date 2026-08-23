@@ -165,8 +165,11 @@ irreversible product choices.
   standardized offer or require confirmation/quote for complex work.
 - A fresh AutoCare Hub database is preferred over importing AutoCare Hub cabinet
   data. If legacy data must be preserved, a separate backfill plan is required.
-- The existing React/Vite and Fastify/TypeScript stack remains the baseline.
-  Rewriting to Next.js/FastAPI is not justified by the current requirements.
+- The existing React/TypeScript and Fastify/TypeScript domain remains the
+  baseline, but the web entrypoint is being migrated to Next.js App Router.
+  The current React Router feature tree is mounted behind a catch-all route so
+  approved UI and API contracts stay stable; Vite remains the PWA fallback.
+  A FastAPI rewrite is still out of scope.
 - Russian, Spanish, Romanian and English are the maintained launch language
   packs; the country set is Russia, Spain and Moldova/Transnistria. The exact
   first million-plus pilot city, legal entity, exchange-rate provider and
@@ -362,7 +365,11 @@ than informal follow-up notes.
 
 ### 4.1 Reuse as platform foundation
 
-- [x] React 19, TypeScript, Vite, React Router, Redux Toolkit/RTK Query.
+- [x] React 19, TypeScript, Vite compatibility build, React Router, Redux
+  Toolkit/RTK Query.
+- [x] Next.js App Router production shell with a catch-all migration route and
+  `/api` rewrite to Fastify; route-by-route server-aware migration remains in
+  the SEO gate.
 - [x] Responsive layouts, custom i18n, light/dark themes, PWA support.
 - [x] Fastify, TypeScript, PostgreSQL, TypeORM migrations, Zod validation.
 - [x] Email/password and Google/Yandex authentication foundations.

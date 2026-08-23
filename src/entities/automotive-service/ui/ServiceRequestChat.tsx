@@ -17,6 +17,7 @@ import { connectServiceChat } from '@/entities/automotive-service/lib/service-ch
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogTitle } from '@/shared/ui/dialog'
+import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
 
 type ServiceRequestChatProps = { requestId: string; ownerMode?: boolean }
 
@@ -82,11 +83,15 @@ export function ServiceRequestChat({ requestId, ownerMode = false }: ServiceRequ
 
     const upload = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
-        if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return
+        const contentType = file ? getSupportedImageMimeType(file) : undefined
+        if (!file || !contentType) {
+            setActionError(t('autocare.chatUploadError'))
+            return
+        }
         setActionError(null)
         try {
             const contentBase64 = await readFileAsBase64(file)
-            await uploadAttachment({ requestId, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64 }).unwrap()
+            await uploadAttachment({ requestId, fileName: file.name, contentType, size: file.size, contentBase64 }).unwrap()
             event.target.value = ''
         } catch {
             setActionError(t('autocare.chatUploadError'))

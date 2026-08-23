@@ -11,6 +11,7 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import { ServiceWrenchIcon } from '@/shared/ui/icons/service-wrench-icon'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateInputTrigger } from '@/shared/ui/date-input-trigger'
+import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
 
 type ProviderRequestPanelProps = { provider: ProviderProfile; offering: ProviderOffering }
 
@@ -90,13 +91,14 @@ function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) 
     const { data: user } = useGetMeQuery()
     const [message, setMessage] = useState('')
     const [files, setFiles] = useState<File[]>([])
+    const [attachmentUploadErrorCount, setAttachmentUploadErrorCount] = useState(0)
     const [createChat, chatState] = useCreateAutoCareChatMutation()
     const [sendMessage, messageState] = useCreateAutoCareChatMessageMutation()
     const [uploadAttachment, uploadState] = useCreateAutoCareChatAttachmentMutation()
     const isSending = chatState.isLoading || messageState.isLoading || uploadState.isLoading
 
     const selectFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selected = Array.from(event.target.files ?? []).filter((file) => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && file.size <= 10 * 1024 * 1024)
+        const selected = Array.from(event.target.files ?? []).filter((file) => getSupportedImageMimeType(file))
         setFiles(selected.slice(0, 6))
         event.target.value = ''
     }
@@ -115,14 +117,20 @@ function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) 
         try {
             const thread = await createChat({ type: 'provider_inquiry', providerId: provider.id, subject: `${t('autocare.providerRequestTitle')}: ${offering.serviceId}` }).unwrap()
             await sendMessage({ chatId: thread.id, body: message.trim() }).unwrap()
-            await Promise.all(files.map(async (file) => uploadAttachment({ chatId: thread.id, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()))
+            const uploadResults = await Promise.allSettled(files.map(async (file) => {
+                const contentType = getSupportedImageMimeType(file)
+                if (!contentType) throw new Error(`Unsupported image: ${file.name}`)
+
+                return uploadAttachment({ chatId: thread.id, fileName: file.name, contentType, size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()
+            }))
+            setAttachmentUploadErrorCount(uploadResults.filter((item) => item.status === 'rejected').length)
             navigate(`${ROUTES.chats}?chat=${encodeURIComponent(thread.id)}`)
         } catch {
             // Keep the form available so the client can retry.
         }
     }
 
-    return <form className="mt-5 grid gap-3" onSubmit={(event) => void submit(event)}><textarea required rows={3} value={message} onChange={(event) => setMessage(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.providerMessagePlaceholder')} /><label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{t('autocare.providerAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>{files.length > 0 ? <p className="text-[11px] font-semibold text-muted-foreground">{files.length} {t('autocare.providerAttachPhoto')}</p> : null}<button type="submit" disabled={isSending || !message.trim()} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"><Send className="size-4" />{t('autocare.providerSendRequest')}</button>{chatState.isError || messageState.isError || uploadState.isError ? <p role="alert" className="text-xs font-bold text-destructive">{t('autocare.providerRequestError')}</p> : null}</form>
+    return <form className="mt-5 grid gap-3" onSubmit={(event) => void submit(event)}><textarea required rows={3} value={message} onChange={(event) => setMessage(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.providerMessagePlaceholder')} /><label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{t('autocare.providerAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>{files.length > 0 ? <p className="text-[11px] font-semibold text-muted-foreground">{files.length} {t('autocare.providerAttachPhoto')}</p> : null}<button type="submit" disabled={isSending || !message.trim()} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"><Send className="size-4" />{t('autocare.providerSendRequest')}</button>{attachmentUploadErrorCount > 0 ? <p role="status" className="text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}{chatState.isError || messageState.isError || uploadState.isError ? <p role="alert" className="text-xs font-bold text-destructive">{t('autocare.providerRequestError')}</p> : null}</form>
 }
 
 function readFileAsBase64(file: File) {

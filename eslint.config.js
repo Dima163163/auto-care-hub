@@ -10,6 +10,9 @@ export default defineConfig([
   globalIgnores([
     'dist',
     '**/dist',
+    '.next',
+    '.next/**',
+    'next-env.d.ts',
     'test-results',
     'test-results/**',
     'playwright-report',

@@ -8,6 +8,7 @@ import { useGetMeQuery } from '@/features/auth'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareRequestSkeleton } from '@/shared/ui/loading-skeleton'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
 
 import { RequestForm, type RequestFormPayload } from './RequestForm'
 import { RequestOrderSummary, RequestSummary } from './RequestSummary'
@@ -24,6 +25,7 @@ export function AutoCareRequestPage() {
     const requestedVehicleId = searchParams.get('vehicleId')
     const { data: fleets, isFetching: isFleetsFetching } = useGetMyAutoCareFleetsQuery(undefined, { skip: user?.role !== 'client' || !requestedVehicleId })
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
+    const [attachmentUploadErrorCount, setAttachmentUploadErrorCount] = useState(0)
     const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
     const [createRequest, { isLoading: isSubmitting, error: submitError }] = useCreateAutoCareServiceRequestMutation()
@@ -59,9 +61,23 @@ export function AutoCareRequestPage() {
                 note: payload.note,
                 idempotencyKey: requestKey,
             }).unwrap()
-            await Promise.all(payload.files.map(async (file) => createAttachment({ requestId: result.id, fileName: file.name, contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp', size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()))
             setSubmittedRequestId(result.id)
             setIdempotencyKey(null)
+            const uploadResults = await Promise.allSettled(payload.files.map(async (file) => {
+                const contentType = getSupportedImageMimeType(file)
+                if (!contentType) {
+                    throw new Error(`Unsupported image: ${file.name}`)
+                }
+
+                return createAttachment({
+                    requestId: result.id,
+                    fileName: file.name,
+                    contentType,
+                    size: file.size,
+                    contentBase64: await readFileAsBase64(file),
+                }).unwrap()
+            }))
+            setAttachmentUploadErrorCount(uploadResults.filter((item) => item.status === 'rejected').length)
         } catch {
             // RTK Query exposes the mutation error to the form; retain the key for a safe retry.
         }
@@ -80,7 +96,7 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <RequestFollowUp providerId={provider.id} requestId={submittedRequestId} /> : requestedVehicleId && isFleetsFetching ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
+                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && isFleetsFetching ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? 'Не удалось отправить заявку. Проверьте авторизацию и данные формы.' : undefined} />}</div>
                     <RequestOrderSummary provider={provider} offering={offering} />
                 </div>
             </div>

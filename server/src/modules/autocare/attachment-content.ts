@@ -1,5 +1,6 @@
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import sharp from 'sharp'
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 export const MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD = 20
@@ -50,4 +51,35 @@ export function decodeAutoCareAttachment(input: AttachmentContentInput) {
         invalidAttachment('Attachment content does not match its declared image type.')
     }
     return content
+}
+
+/**
+ * Decode and normalize an attachment before it becomes publicly readable.
+ * This strips metadata, rejects oversized/decompression-bomb payloads and
+ * animated images, and makes the stored bytes match the declared content type.
+ */
+export async function normalizeAutoCareAttachment(content: Buffer, contentType: AttachmentContentInput['contentType']) {
+    try {
+        const metadata = await sharp(content, { failOn: 'error', limitInputPixels: 40_000_000 }).metadata()
+        const width = metadata.width ?? 0
+        const height = metadata.height ?? 0
+        if (!width || !height || width * height > 40_000_000) {
+            invalidAttachment('Attachment dimensions are invalid.')
+        }
+        if ((metadata.pages ?? 1) > 1) {
+            invalidAttachment('Animated images are not supported.')
+        }
+
+        const transformer = sharp(content, { failOn: 'error', limitInputPixels: 40_000_000 }).rotate()
+        const normalized = contentType === 'image/jpeg'
+            ? await transformer.jpeg({ quality: 88, progressive: true }).toBuffer()
+            : contentType === 'image/png'
+                ? await transformer.png({ compressionLevel: 9 }).toBuffer()
+                : await transformer.webp({ quality: 84 }).toBuffer()
+        if (normalized.length > MAX_ATTACHMENT_BYTES) invalidAttachment('Attachment is too large after normalization.')
+        return normalized
+    } catch (error) {
+        if (error instanceof AppError) throw error
+        invalidAttachment('Attachment must be a valid decodable image.')
+    }
 }

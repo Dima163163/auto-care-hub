@@ -7,6 +7,12 @@ import {
     AutomotiveProviderStatus,
 } from '../../entities/index.js'
 
+export type ManagedProviderScope = {
+    providerId: string
+    /** null means that the membership is allowed to manage every branch. */
+    locationIds: string[] | null
+}
+
 /**
  * Central provider authorization boundary. Direct ownerId checks remain in
  * place during the migration window, while active memberships can already
@@ -38,14 +44,45 @@ export async function canManageProviderWithManager(manager: EntityManager, userI
     return canManageProviderWithRepository(manager.getRepository.bind(manager), userId, providerId, locationId)
 }
 
-export async function getManagedProviderIds(userId: string) {
+/**
+ * Returns the effective branch scope for every provider managed by a user.
+ * Direct owners and provider-wide memberships are represented by a null
+ * locationIds value; branch memberships are merged into one bounded list.
+ */
+export async function getManagedProviderScopes(userId: string): Promise<ManagedProviderScope[]> {
     const directProviders = await AppDataSource.getRepository(AutomotiveProviderEntity).find({
         where: { ownerId: userId },
         select: { id: true },
     })
     const memberships = await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({
         where: { userId, status: AutomotiveProviderMembershipStatus.Active },
-        select: { providerId: true },
+        select: { providerId: true, locationId: true },
     })
-    return [...new Set([...directProviders.map(({ id }) => id), ...memberships.map(({ providerId }) => providerId)])]
+    const scopes = new Map<string, Set<string> | null>()
+    for (const provider of directProviders) scopes.set(provider.id, null)
+    for (const membership of memberships) {
+        if (scopes.get(membership.providerId) === null && scopes.has(membership.providerId)) continue
+        const locations = scopes.get(membership.providerId) ?? new Set<string>()
+        if (membership.locationId === null) scopes.set(membership.providerId, null)
+        else if (scopes.get(membership.providerId) !== null) {
+            locations.add(membership.locationId)
+            scopes.set(membership.providerId, locations)
+        }
+    }
+    return [...scopes.entries()].map(([providerId, locationIds]) => ({
+        providerId,
+        locationIds: locationIds === null ? null : [...locationIds],
+    }))
+}
+
+export function isManagedProviderLocationAllowed(scopes: ManagedProviderScope[], providerId: string, locationId: string | null | undefined) {
+    const scope = scopes.find((item) => item.providerId === providerId)
+    if (!scope) return false
+    return scope.locationIds === null
+        ? true
+        : Boolean(locationId && scope.locationIds.includes(locationId))
+}
+
+export async function getManagedProviderIds(userId: string) {
+    return (await getManagedProviderScopes(userId)).map(({ providerId }) => providerId)
 }

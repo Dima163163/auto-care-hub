@@ -48,8 +48,8 @@ import type {
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment } from './attachment-content.js'
-import { canManageProvider, canManageProviderWithManager, getManagedProviderIds } from './provider-access.service.js'
+import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
+import { canManageProvider, canManageProviderWithManager, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts } from './availability.js'
 import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
 import { awardAutoCareBonusForCompletedVisit, refundAutoCareBonusForCancelledRequest } from './autocare-bonus.service.js'
@@ -461,7 +461,7 @@ export async function createAutoCareServiceOffer(user: UserEntity, requestId: st
         const lockedRequest = await requestRepository.findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!lockedRequest) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
         if (!serviceRequestOfferableStates.has(lockedRequest.status)) conflict('This service request cannot receive a new offer.')
 
         const messageRepository = manager.getRepository(ServiceMessageEntity)
@@ -548,7 +548,8 @@ export async function markAutoCareServiceConversationRead(user: UserEntity, requ
 
 export async function createAutoCareServiceAttachment(user: UserEntity, requestId: string, input: CreateAutoCareServiceAttachmentInput) {
     const request = await getParticipantRequest(user, requestId)
-    const content = decodeAutoCareAttachment(input)
+    const rawContent = decodeAutoCareAttachment(input)
+    const content = await normalizeAutoCareAttachment(rawContent, input.contentType)
     const attachment = await AppDataSource.transaction(async (manager) => {
         const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
         if (!lockedRequest) notFound('Service request not found.')
@@ -622,7 +623,7 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
         })
         if (!lockedRequest) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
         if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed, ServiceRequestStatus.Accepted].includes(lockedRequest.status)) conflict('This service request cannot receive a new estimate.')
         lockedRequest.estimateSnapshot = {
             amountMinor: input.amountMinor,
@@ -921,13 +922,15 @@ export async function getMyAutoCareServiceRequests(user: UserEntity) {
 
 export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
     ownerOnly(user)
-    const providerIds = await getManagedProviderIds(user.id)
+    const scopes = await getManagedProviderScopes(user.id)
+    const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
         : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
     if (providers.length === 0) return []
     const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) }, order: { createdAt: 'DESC' } })
-    return Promise.all(requests.map(hydrateRequest))
+    const visibleRequests = requests.filter((request) => isManagedProviderLocationAllowed(scopes, request.providerId, request.locationId))
+    return Promise.all(visibleRequests.map(hydrateRequest))
 }
 
 export async function getAutoCareServiceRequest(user: UserEntity, requestId: string) {
