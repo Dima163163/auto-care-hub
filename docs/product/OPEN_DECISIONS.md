@@ -1,6 +1,6 @@
 # AutoCare Hub — Open Product Decisions
 
-> Updated: 2026-08-14
+> Updated: 2026-08-22
 >
 > Rule: decisions affecting money, privacy, ranking, legal behavior, schema or
 > destructive migration must be approved explicitly.
@@ -58,16 +58,39 @@ subscriptions are a separate future billing product.
 
 ## D-004 Booking modes
 
-Proposed model:
+Status: product baseline resolved on 2026-08-22; remaining work is delivery of
+the API/UI states and release tests.
+
+Baseline model:
 
 - instant slot for standardized predictable services;
 - request/provider confirmation for less predictable work;
 - inquiry/quote for body repair, painting and other photo-assessed work.
 
-Need the P0 service list and mode allowed for each definition.
+The complete service/mode/attribute matrix is recorded in
+`docs/product/MVP_POLICY_BASELINE.md`.
 
 The two-sided provider/customer confirmation is required in the booking
 contract, including quote-based services.
+
+## D-004a Cancellation, reschedule and no-show
+
+Status: product baseline resolved on 2026-08-22.
+
+The baseline is free platform cancellation up to 24 hours before the visit,
+provider-proposed time changes requiring an explicit client decision, and an
+audited provider no-show action only after the scheduled time. AutoCare Hub
+does not invent repair fees because payment is made directly to the provider.
+The complete state and audit rules are in `docs/product/MVP_POLICY_BASELINE.md`.
+
+## D-004b Review eligibility and edit rules
+
+Status: product baseline resolved on 2026-08-22.
+
+Only the client attached to a completed request may publish one verified
+review. One edit is allowed within 14 days, providers may add one response,
+and reports create a moderation case without silently deleting the history.
+The full policy is in `docs/product/MVP_POLICY_BASELINE.md`.
 
 ## D-005 Bonus program v1
 
@@ -129,27 +152,33 @@ voice/video/documents, durable REST delivery before realtime extras.
 
 ## D-009 Provider verification
 
-Need:
+Status: product baseline resolved on 2026-08-22; legal/entity review remains
+required before the badge is presented as a public guarantee.
+
+Baseline:
 
 - required business/contact/location documents;
 - what the verified badge promises;
 - re-verification triggers;
 - suspension and appeal process;
-- whether public phone/email is shown.
+- the badge is location-scoped, expires with stale evidence and never depends
+  on subscription or paid placement;
+- public phone/email visibility follows the provider's published contact
+  settings.
+
+The evidence and threshold policy is recorded in
+`docs/product/MVP_POLICY_BASELINE.md`.
 
 ## D-010 Public SEO
 
-Question: how important is Google/Yandex organic discovery for the first public
-launch?
+Status: product baseline resolved on 2026-08-22.
 
-Options:
-
-1. current SPA plus selected prerendered public routes;
-2. React Router server/framework rendering;
-3. separate SSR public surface using the same Fastify API.
-
-Recommended: decide after the public route/data contract is stable, but before
-the public web release gate.
+Decision: keep the Vite SPA for authenticated workspaces and add selected
+prerendered HTML for crawlable public routes before the production web gate.
+Runtime `SeoHead`, canonical links, locale alternates, robots and sitemap stay
+the source of truth for the route contract. The exact route list and noindex
+boundaries are recorded in `docs/product/MVP_POLICY_BASELINE.md`; the
+prerender build step remains a release-gate implementation task.
 
 ## D-011 Map/geocoding provider
 
@@ -159,17 +188,17 @@ choice is not yet final.
 
 ## D-012 New Git repository
 
-Need:
+Status: resolved on 2026-08-12.
 
-- repository URL;
-- organization/user owner;
-- private/public visibility;
-- whether old commit history is retained;
-- required default branch/protection/CI secrets.
+Resolved configuration:
 
-The new repository currently has no `origin`. The inherited legacy Git
-metadata is archived outside the new repository root. Add a new remote only
-after the target is provided and the user approves it.
+- repository: `git@github.com:Dima163163/auto-care-hub.git`;
+- integration branch: `dev`;
+- production branch: `main`;
+- inherited history is archived outside the active repository;
+- branch-protection requirements are recorded in
+  `docs/REPOSITORY_PROTECTION.md` and still need to be toggled by a GitHub
+  repository administrator.
 
 ## D-013 Design direction
 

@@ -18,11 +18,25 @@ describe('AutoCare attachment content validation', () => {
     it('rejects malformed base64 instead of silently decoding it', () => {
         expect(() => decodeAutoCareAttachment({ contentBase64: '%%%=', contentType: 'image/png', size: 1 })).toThrow('base64')
     })
+
+    it('rejects declared payloads above the per-file abuse limit before decoding', () => {
+        expect(() => decodeAutoCareAttachment({ contentBase64: 'AAAA', contentType: 'image/png', size: 10 * 1024 * 1024 + 1 })).toThrow('size is invalid')
+    })
+
+    it('rejects padding and byte-length mismatches', () => {
+        const contentBase64 = pngHeader.toString('base64')
+        expect(() => decodeAutoCareAttachment({ contentBase64, contentType: 'image/png', size: pngHeader.length - 1 })).toThrow('declared size')
+    })
 })
 
 describe('AutoCare attachment quotas', () => {
     it('rejects too many attachments or too much aggregate content', () => {
         expect(() => assertAutoCareAttachmentQuota({ existingCount: 20, existingBytes: 0, incomingBytes: 1 })).toThrow('attachment limit')
         expect(() => assertAutoCareAttachmentQuota({ existingCount: 1, existingBytes: 50 * 1024 * 1024, incomingBytes: 1 })).toThrow('storage limit')
+    })
+
+    it('allows the exact aggregate byte boundary and rejects only the next byte', () => {
+        expect(() => assertAutoCareAttachmentQuota({ existingCount: 19, existingBytes: 50 * 1024 * 1024 - 1, incomingBytes: 1 })).not.toThrow()
+        expect(() => assertAutoCareAttachmentQuota({ existingCount: 19, existingBytes: 50 * 1024 * 1024 - 1, incomingBytes: 2 })).toThrow('storage limit')
     })
 })

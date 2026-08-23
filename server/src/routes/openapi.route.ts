@@ -153,6 +153,18 @@ export function getOpenApiDocument() {
             '/v1/service-definitions': {
                 get: { operationId: 'listAutoCareServiceDefinitions', security: [], responses: { '200': { description: 'Active standardized automotive services.' } } },
             },
+            '/v1/bonuses/my': {
+                get: { operationId: 'getMyAutoCareBonusAccounts', responses: { '200': { description: 'Client bonus accounts and immutable ledger history.' } } },
+            },
+            '/v1/bonuses/redeem': {
+                post: { operationId: 'redeemAutoCareBonus', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['providerId', 'requestId', 'points'], properties: { providerId: { type: 'string', format: 'uuid' }, requestId: { type: 'string', format: 'uuid' }, points: { type: 'integer', minimum: 1 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Redeemed client bonus points for a confirmed service request.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/bonus-accounts/{clientId}/grants': {
+                post: { operationId: 'grantAutoCareBonus', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'clientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['points', 'reason'], properties: { points: { type: 'integer', minimum: 1, maximum: 100000 }, reason: { type: 'string', minLength: 10, maxLength: 500 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Granted provider-funded bonus points with an audit record.' } } },
+            },
+            '/v1/catalog-gap-requests': {
+                post: { operationId: 'createAutoCareCatalogGapRequest', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['proposedSlug', 'categorySlug', 'labels', 'priceType', 'comparisonAttributes', 'rationale'], additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a request for a missing standardized automotive service.' } } },
+            },
             '/v1/fair-price': {
                 get: { operationId: 'getAutoCareFairPrice', security: [], parameters: [{ name: 'serviceId', in: 'query', required: true, schema: { type: 'string' } }, { name: 'marketId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'makeId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'modelId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'fuelType', in: 'query', required: false, schema: { type: 'string' } }, { name: 'engineLiters', in: 'query', required: false, schema: { type: 'number', minimum: 0 } }], responses: { '200': { description: 'Fair-price benchmark derived from market data and comparable provider offers.' } } },
             },
@@ -168,6 +180,34 @@ export function getOpenApiDocument() {
             },
             '/v1/platform-reviews/my': {
                 get: { operationId: 'listMyPlatformReviews', responses: { '200': { description: 'Authenticated client platform reviews.' } } },
+            },
+            '/v1/autocare-appeals': {
+                post: {
+                    operationId: 'createAutoCareAppeal',
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['subject', 'subjectId', 'reason'],
+                                    properties: {
+                                        subject: { type: 'string', enum: ['provider', 'review', 'suspension', 'catalog'] },
+                                        subjectId: { type: 'string', format: 'uuid' },
+                                        providerId: { type: ['string', 'null'], format: 'uuid' },
+                                        reason: { type: 'string', minLength: 20, maxLength: 4_000 },
+                                        evidenceIds: { type: 'array', maxItems: 20, items: { type: 'string', format: 'uuid' } },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '201': { description: 'Appeal submitted for moderation.' } },
+                },
+            },
+            '/v1/autocare-appeals/my': {
+                get: { operationId: 'listMyAutoCareAppeals', responses: { '200': { description: 'Appeals submitted by the authenticated user.' } } },
             },
             '/v1/discovery/providers': {
                 get: {
@@ -208,6 +248,86 @@ export function getOpenApiDocument() {
             },
             '/owner/autocare-providers/{providerId}/reviews': {
                 get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/analytics': {
+                get: { operationId: 'getOwnerAutoCareProviderAnalytics', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Owner-safe operational, booking, review and bonus-liability metrics.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members': {
+                get: { operationId: 'listOwnerAutoCareProviderMembers', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider-scoped memberships and pending staff invitations.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members/invitations': {
+                post: { operationId: 'inviteAutoCareProviderMember', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['email', 'role'], properties: { email: { type: 'string', format: 'email' }, role: { type: 'string', enum: ['manager', 'staff'] }, locationId: { type: ['string', 'null'], format: 'uuid' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a scoped provider staff invitation.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members/invitations/{invitationId}': {
+                delete: { operationId: 'revokeAutoCareProviderInvitation', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'invitationId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked a pending provider staff invitation.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members/{membershipId}': {
+                delete: { operationId: 'revokeAutoCareProviderMembership', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'membershipId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked an active provider staff membership.' } } },
+            },
+            '/owner/autocare-provider-invitations/accept': {
+                post: { operationId: 'acceptAutoCareProviderInvitation', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['token'], properties: { token: { type: 'string', minLength: 32, maxLength: 512 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Accepted an invitation and created a scoped provider membership.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/change-requests': {
+                get: { operationId: 'listOwnerAutoCareProviderChangeRequests', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Owner-visible provider verification and profile change requests.' } } },
+                post: { operationId: 'createOwnerAutoCareProviderChangeRequest', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['kind'], properties: { kind: { type: 'string', enum: ['verification', 'profile_update'] }, payload: { type: 'object', additionalProperties: true } }, additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a provider verification or profile change request.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/change-requests/{requestId}': {
+                delete: { operationId: 'cancelOwnerAutoCareProviderChangeRequest', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Cancelled a pending provider change request.' } } },
+            },
+            '/admin/autocare-provider-change-requests': {
+                get: { operationId: 'listAdminAutoCareProviderChangeRequests', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'approved', 'rejected', 'cancelled'] } }, { name: 'kind', in: 'query', required: false, schema: { type: 'string', enum: ['verification', 'profile_update'] } }], responses: { '200': { description: 'Admin queue of provider verification and profile-change requests.' } } },
+            },
+            '/admin/autocare-provider-change-requests/{id}/decision': {
+                patch: { operationId: 'decideAdminAutoCareProviderChangeRequest', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: ['string', 'null'], maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Approved or rejected a provider change request with an audit record.' } } },
+            },
+            '/admin/autocare-quality-monitoring': {
+                get: { operationId: 'getAdminAutoCareQualityMonitoring', responses: { '200': { description: 'Aggregate provider, review, request and ranking-quality telemetry for administrators.' } } },
+            },
+            '/admin/autocare-appeals': {
+                get: {
+                    operationId: 'listAdminAutoCareAppeals',
+                    parameters: [
+                        { name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'accepted', 'rejected', 'withdrawn'] } },
+                        { name: 'subject', in: 'query', required: false, schema: { type: 'string', enum: ['provider', 'review', 'suspension', 'catalog'] } },
+                        ...cursorParameters,
+                    ],
+                    responses: { '200': { description: 'Admin moderation queue of provider, review and catalog appeals.' } },
+                },
+            },
+            '/admin/autocare-appeals/{id}/decision': {
+                patch: {
+                    operationId: 'decideAdminAutoCareAppeal',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['status', 'reason'],
+                                    properties: {
+                                        status: { type: 'string', enum: ['accepted', 'rejected'] },
+                                        reason: { type: 'string', minLength: 1, maxLength: 2_000 },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '200': { description: 'Appeal decision recorded with an audit event.' } },
+                },
+            },
+            '/admin/catalog-gap-requests': {
+                get: { operationId: 'listAdminCatalogGapRequests', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'approved', 'rejected'] } }], responses: { '200': { description: 'Admin queue of requested catalog additions.' } } },
+            },
+            '/admin/catalog-gap-requests/{id}/decision': {
+                patch: { operationId: 'decideAdminCatalogGapRequest', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: ['string', 'null'] } }, additionalProperties: false } } } }, responses: { '200': { description: 'Approved request creates an active standardized service definition.' } } },
+            },
+            '/admin/chat-reports': {
+                get: { operationId: 'listAdminAutoCareChatReports', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'resolved', 'dismissed'] } }], responses: { '200': { description: 'Admin moderation metadata for reported chats; private message bodies are not returned.' } } },
+            },
+            '/admin/chat-reports/{id}/decision': {
+                patch: { operationId: 'decideAdminAutoCareChatReport', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['resolved', 'dismissed'] }, reason: { type: ['string', 'null'], maxLength: 2000 }, blockUser: { type: 'boolean' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Resolved or dismissed a chat report and optionally blocked the reported participant.' } } },
             },
             '/owner/autocare-reviews': {
                 get: { operationId: 'getOwnerAutoCareReviews', parameters: [{ name: 'providerId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Aggregated approved reviews for all owner-managed service locations or one selected location.' } } },
@@ -377,10 +497,19 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareChat', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'subject'], properties: { type: { type: 'string', enum: ['provider_inquiry', 'support', 'admin_escalation'] }, providerId: { type: 'string', format: 'uuid' }, requestId: { type: 'string', format: 'uuid' }, subject: { type: 'string', minLength: 2, maxLength: 160 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a general question, support or escalation chat.' } } },
             },
             '/v1/chats/{chatId}': {
-                get: { operationId: 'getAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Messages and attachments for a chat thread.' } } },
+                get: { operationId: 'getAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'cursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } }], responses: { '200': { description: 'Bounded messages and attachments for a chat thread with a nextCursor for the following page.' } } },
             },
             '/v1/chats/{chatId}/messages': {
                 post: { operationId: 'createAutoCareChatMessage', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a message in a general chat thread.' } } },
+            },
+            '/v1/chats/{chatId}/reports': {
+                post: { operationId: 'createAutoCareChatReport', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['category'], properties: { category: { type: 'string', enum: ['spam', 'harassment', 'fraud', 'unsafe', 'other'] }, description: { type: ['string', 'null'], maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a report without exposing message content to moderators.' } } },
+            },
+            '/v1/chats/{chatId}/blocks': {
+                post: { operationId: 'createAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: false, content: { 'application/json': { schema: { type: 'object', properties: { blockedUserId: { type: 'string', format: 'uuid' }, reason: { type: ['string', 'null'], maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Blocked another participant in the chat.' } } },
+            },
+            '/v1/chats/{chatId}/blocks/{blockId}': {
+                delete: { operationId: 'revokeAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'blockId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked a participant or moderation block.' } } },
             },
             '/v1/chats/{chatId}/read': {
                 post: { operationId: 'markAutoCareChatRead', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked chat messages as read.' } } },

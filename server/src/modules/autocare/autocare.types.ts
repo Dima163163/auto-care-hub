@@ -1,6 +1,24 @@
 import type { AutomotivePriceType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import type { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
+import type { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import type { ServiceMessageOffer, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import type { AutoCareChatThreadStatus, AutoCareChatThreadType } from '../../entities/automotive/service-request.entity.js'
+import type { AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
+
+export type AutoCareAppealResponse = {
+    id: string
+    subject: AutoCareAppealSubject
+    subjectId: string
+    submittedById: string
+    providerId: string | null
+    reason: string
+    evidenceIds: string[]
+    status: AutoCareAppealStatus
+    decidedById: string | null
+    decisionReason: string | null
+    createdAt: string
+    decidedAt: string | null
+}
 
 export type AutoCareMarketResponse = {
     id: string
@@ -106,6 +124,7 @@ export type AutoCareOfferResponse = {
     warrantyText: string | null
     active: boolean
     priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+    bookingMode: 'request' | 'instant'
 }
 
 export type AutoCareProviderResultResponse = {
@@ -158,6 +177,29 @@ export type AutoCareDiscoveryQuery = {
 
 export type AutoCareProviderProfileResponse = AutoCareProviderResponse & {
     offers: AutoCareOfferResponse[]
+}
+
+export type AutoCareProviderAnalyticsResponse = {
+    providerId: string
+    generatedAt: string
+    inquiries: number
+    openRequests: number
+    confirmedBookings: number
+    completedVisits: number
+    cancelledRequests: number
+    noShowRequests: number
+    completionRate: number
+    quoteConversionRate: number
+    averageResponseMinutes: number | null
+    repeatCustomers: number
+    reviewCount: number
+    averageRating: number
+    bonusLiabilityPoints: number
+    tracking: {
+        impressions: number
+        profileOpens: number
+        available: boolean
+    }
 }
 
 export type AutoCareFavoriteResponse = {
@@ -216,6 +258,58 @@ export type AutoCareProviderReviewsResponse = {
     averageRating: number
     distribution: Record<'1' | '2' | '3' | '4' | '5', number>
     reviews: AutoCareReviewResponse[]
+}
+
+export type AutoCareBonusProgramResponse = {
+    id: string
+    providerId: string
+    name: string
+    earnPercent: number
+    maxEarnPointsPerVisit: number | null
+    expiresAfterDays: number | null
+    active: boolean
+    createdAt: string
+    updatedAt: string
+}
+
+export type AutoCareBonusLedgerEntryResponse = {
+    id: string
+    type: 'earn' | 'redeem' | 'expire' | 'adjustment'
+    points: number
+    reason: string
+    requestId: string | null
+    expiresAt: string | null
+    createdAt: string
+}
+
+export type AutoCareBonusAccountResponse = {
+    id: string
+    providerId: string
+    balancePoints: number
+    earnedPoints: number
+    redeemedPoints: number
+    entries: AutoCareBonusLedgerEntryResponse[]
+}
+
+export type OwnerAutoCareBonusProgramInput = {
+    name: string
+    earnPercent: number
+    maxEarnPointsPerVisit?: number | null
+    expiresAfterDays?: number | null
+    active?: boolean
+}
+
+export type RedeemAutoCareBonusInput = {
+    providerId: string
+    requestId: string
+    points: number
+}
+
+export type GrantAutoCareBonusInput = {
+    providerId: string
+    clientId: string
+    points: number
+    reason: string
 }
 
 export type OwnerAutoCareProviderReviewsResponse = AutoCareProviderReviewsResponse
@@ -277,6 +371,55 @@ export type OwnerAutoCareProviderInput = {
     galleryImageUrls?: string[]
 }
 
+export type AutoCareProviderChangeRequestPayload = Record<string, unknown>
+
+export type CreateAutoCareProviderChangeRequestInput = {
+    kind: AutomotiveProviderChangeRequestKind
+    payload?: AutoCareProviderChangeRequestPayload
+}
+
+export type AutoCareProviderChangeRequestResponse = {
+    id: string
+    providerId: string
+    requestedById: string
+    kind: AutomotiveProviderChangeRequestKind
+    status: AutomotiveProviderChangeRequestStatus
+    payload: AutoCareProviderChangeRequestPayload
+    reviewedById: string | null
+    reviewReason: string | null
+    reviewedAt: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export type CreateAutoCareCatalogGapRequestInput = {
+    providerId?: string | null
+    proposedSlug: string
+    categorySlug: string
+    labels: Record<string, string>
+    priceType: AutomotivePriceType
+    comparisonAttributes: string[]
+    rationale: string
+}
+
+export type AutoCareCatalogGapRequestResponse = {
+    id: string
+    requestedById: string
+    providerId: string | null
+    proposedSlug: string
+    categorySlug: string
+    labels: Record<string, string>
+    priceType: AutomotivePriceType
+    comparisonAttributes: string[]
+    rationale: string
+    status: AutomotiveCatalogGapRequestStatus
+    reviewedById: string | null
+    reviewReason: string | null
+    reviewedAt: string | null
+    createdAt: string
+    updatedAt: string
+}
+
 export type AutoCareRequestSnapshot = Record<string, string | number | null>
 
 export type CreateAutoCareServiceRequestInput = {
@@ -312,6 +455,7 @@ export type AutoCareServiceRequestResponse = {
     acceptedQuoteVersion: number | null
     acceptedQuoteSnapshot: Record<string, unknown> | null
     acceptedQuoteAt: string | null
+    booking: AutoCareBookingSnapshotResponse | null
     status: ServiceRequestStatus
     clientConfirmedAt: string | null
     providerConfirmedAt: string | null
@@ -327,6 +471,21 @@ export type AutoCareServiceRequestResponse = {
     reschedule: AutoCareRescheduleResponse | null
     createdAt: string
     updatedAt: string
+}
+
+export type AutoCareBookingSnapshotResponse = {
+    requestId: string
+    quoteVersion: number
+    amountMinor: number
+    currencyCode: string
+    lineItems: AutoCareQuoteLineItemResponse[]
+    scheduledAt: string
+    timezone: string
+    serviceSlug: string
+    providerId: string
+    locationId: string
+    status: 'confirmed'
+    createdAt: string
 }
 
 export type AutoCareRescheduleResponse = {
@@ -499,6 +658,26 @@ export type AutoCareFleetResponse = {
 export type CreateAutoCareFleetInput = { name: string; notes?: string | null }
 export type CreateAutoCareFleetVehicleInput = { label: string; vehicleSnapshot: Record<string, unknown>; approvalPolicy?: string | null }
 
+export type CreateAutoCareProviderInvitationInput = {
+    email: string
+    role: 'manager' | 'staff'
+    locationId?: string | null
+}
+
+export type AutoCareProviderInvitationResponse = {
+    id: string
+    providerId: string
+    email: string
+    locationId: string | null
+    role: 'manager' | 'staff'
+    status: 'pending' | 'accepted' | 'revoked' | 'expired'
+    expiresAt: string
+    acceptedAt: string | null
+    revokedAt: string | null
+    createdAt: string
+    inviteToken: string | null
+}
+
 export type AutoCareServiceMessageResponse = {
     id: string
     senderId: string
@@ -539,6 +718,7 @@ export type AutoCareChatConversationResponse = {
     thread: AutoCareChatThreadResponse
     messages: AutoCareServiceMessageResponse[]
     attachments: AutoCareServiceAttachmentResponse[]
+    nextCursor: string | null
 }
 
 export type CreateAutoCareChatInput = {

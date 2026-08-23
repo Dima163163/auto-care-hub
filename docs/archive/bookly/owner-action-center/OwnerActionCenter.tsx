@@ -58,7 +58,7 @@ export function OwnerActionCenter({ summary }: OwnerActionCenterProps) {
     ].filter((item) => item.count > 0)
 
     return (
-        <section className="mb-6 rounded-2xl border bg-card p-4 shadow-sm md:p-5" aria-labelledby="owner-action-center-title">
+        <section role="region" className="mb-6 rounded-2xl border bg-card p-4 shadow-sm md:p-5" aria-labelledby="owner-action-center-title">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">{t('ownerDashboard.actionCenter.eyebrow')}</p>

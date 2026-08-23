@@ -1,0 +1,65 @@
+# Stable web release evidence
+
+This is the evidence register for Phase 9 of `PROJECT_PLAN.md`. A repository
+check is not a production sign-off: items marked **external** require a named
+staging/production environment, participants, or an operational owner.
+
+Use `RELEASE_EVIDENCE_TEMPLATE.md` for each release candidate and attach only
+redacted artifacts.
+
+## Repository-complete evidence
+
+- [x] Catalog, supply and reliability aggregate metrics are exposed by the
+  admin quality-monitoring response and covered by unit tests.
+- [x] Mock and backend API contracts are checked by the existing parity,
+  OpenAPI and response-schema scripts.
+- [x] `npm run check:staging-api` runs all local compatibility checks and probes
+  a configured `STAGING_API_BASE_URL` when supplied.
+- [x] Translation payloads are split by locale; the performance gate measures
+  the initial entry, largest route chunk, largest locale chunk, CSS and chunk
+  count rather than falsely summing mutually exclusive locales.
+- [x] The active Playwright directory contains AutoCare-only release checks;
+  cabinet-rental/Bookly browser specs and snapshots are retained under
+  `docs/archive/bookly/e2e/`.
+- [x] The workspace layout has one page landmark per route and the shared
+  light-theme primary/rating tokens meet the intended text contrast target.
+
+## External sign-off still required
+
+- [ ] Select a launch market and named provider/customer participants; record
+  consent, test IDs, dates and support owner using the pilot runbook and the
+  release evidence template.
+- [ ] Run fixed-price and quote-required customer journeys with real providers;
+  attach booking IDs, screenshots and issue outcomes.
+- [ ] Export catalog/price review and supply-density observations for the
+  selected city; agree thresholds for missing prices, stale offers and zero
+  coverage.
+- [ ] Measure provider first-response and booking-confirmation SLOs from real
+  traffic and record p50/p95, conflict and cancellation rates.
+- [ ] Run an independent production security review, a data export/deletion
+  rehearsal and a retention purge rehearsal; attach redacted evidence.
+- [ ] Capture responsive, keyboard, screen-reader and locale evidence on the
+  maintained device matrix.
+- [ ] Publish the prerendered route list and record Lighthouse/CrUX, map tile,
+  image and video budgets from the production build.
+- [ ] Configure alert destinations, verify backups and complete a timed restore
+  rehearsal with an owner and incident ticket.
+- [ ] Run `STAGING_API_BASE_URL=... npm run check:staging-api` against staging
+  and retain the OpenAPI hash/compatibility result for the release.
+
+## Release command set
+
+```bash
+npm run lint
+npm run build
+npm run test
+npm run check:performance
+npm run check:staging-api
+npm run test:e2e
+npm --prefix server run test:unit
+npm --prefix server run build
+```
+
+Do not mark the external rows complete from local mocks. The branch may be
+reviewed and merged to `dev` only after the repository checks are green; the
+production gate remains blocked until the external evidence is attached.

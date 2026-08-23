@@ -49,4 +49,35 @@ describe('AutoCare public catalog and request route integration', () => {
 
         expect(response.status).toBe(401)
     })
+
+    it('protects owner membership administration and schedule mutations before reaching the database', async () => {
+        const providerId = '00000000-0000-0000-0000-000000000001'
+        const cabinetId = '00000000-0000-0000-0000-000000000002'
+
+        const [members, invitation, scheduleRead, scheduleWrite] = await Promise.all([
+            request(app.server).get(`/owner/autocare-providers/${providerId}/members`),
+            request(app.server).post(`/owner/autocare-providers/${providerId}/members/invitations`).send({ email: 'staff@example.com', role: 'staff' }),
+            request(app.server).get(`/owner/cabinets/${cabinetId}/schedule`),
+            request(app.server).put(`/owner/cabinets/${cabinetId}/schedule`).send({ items: [] }),
+        ])
+
+        expect(members.status).toBe(401)
+        expect(invitation.status).toBe(401)
+        expect(scheduleRead.status).toBe(401)
+        expect(scheduleWrite.status).toBe(401)
+    })
+
+    it('protects chat moderation mutations and exposes a bounded public trust route', async () => {
+        const chatId = '00000000-0000-0000-0000-000000000003'
+        const report = await request(app.server)
+            .post(`/v1/chats/${chatId}/reports`)
+            .send({ category: 'spam' })
+
+        expect(report.status).toBe(401)
+
+        const trust = await request(app.server)
+            .get('/v1/providers/not-a-uuid/trust')
+
+        expect(trust.status).toBe(400)
+    })
 })

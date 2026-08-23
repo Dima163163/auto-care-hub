@@ -56,6 +56,7 @@ export type AutoCareApiOffer = {
     warrantyText: string | null
     active: boolean
     priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
+    bookingMode?: 'request' | 'instant'
 }
 
 export type UpdateAutoCareOfferInput = {
@@ -63,6 +64,7 @@ export type UpdateAutoCareOfferInput = {
     offerId: string
     description: string | null
     priceFromMinor: number
+    bookingMode?: 'request' | 'instant'
 }
 
 export type AutoCareApiProvider = {
@@ -128,6 +130,25 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
     offers: AutoCareApiOffer[]
 }
 
+export type AutoCareProviderAnalytics = {
+    providerId: string
+    generatedAt: string
+    inquiries: number
+    openRequests: number
+    confirmedBookings: number
+    completedVisits: number
+    cancelledRequests: number
+    noShowRequests: number
+    completionRate: number
+    quoteConversionRate: number
+    averageResponseMinutes: number | null
+    repeatCustomers: number
+    reviewCount: number
+    averageRating: number
+    bonusLiabilityPoints: number
+    tracking: { impressions: number; profileOpens: number; available: boolean }
+}
+
 export type AutoCareFavorite = {
     id: string
     providerId: string
@@ -148,6 +169,21 @@ export type SuperAdminPlatformOverview = {
     users: { clients: number; owners: number; admins: number; superAdmins: number }
     billing: { phase: 'launch'; subscriptionsEnabled: boolean; promoCodesEnabled: boolean }
 }
+
+export type AutoCareQualityMonitoring = {
+    generatedAt: string
+    providers: { total: number; active: number; verified: number; trusted: number; suspended: number }
+    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number }
+    requests: { total: number; completed: number; cancelled: number; noShows: number }
+    ranking: { trustSnapshots: number; reassessedProviders: number; evidenceCoveragePercent: number }
+    catalog: { activeDefinitions: number; activeOffers: number; providersWithOffers: number; offerCoveragePercent: number; offersWithDescription: number; offersWithPrice: number; priceCoveragePercent: number }
+    supply: { activeMarkets: number; averageLocationsPerProvider: number; markets: Array<{ marketId: string; providers: number; locations: number; activeOffers: number }> }
+    reliability: { responseSamples: number; averageResponseMinutes: number | null; p95ResponseMinutes: number | null; confirmedBookings: number; confirmationSamples: number; confirmationReliabilityPercent: number; bookingConflicts: number }
+    appeals: { available: true; pending: number }
+}
+
+export type AutoCareAppeal = { id: string; subject: 'provider' | 'review' | 'suspension' | 'catalog'; subjectId: string; submittedById: string; providerId: string | null; reason: string; evidenceIds: string[]; status: 'pending' | 'accepted' | 'rejected' | 'withdrawn'; decidedById: string | null; decisionReason: string | null; createdAt: string; decidedAt: string | null }
+export type CreateAutoCareAppealInput = { subject: AutoCareAppeal['subject']; subjectId: string; providerId?: string | null; reason: string; evidenceIds?: string[] }
 
 export type AutoCareApiReview = {
     id: string
@@ -181,6 +217,137 @@ export type AutoCareReviewPromo = {
     expiresAt: string
     redeemedAt: string | null
 }
+
+export type AutoCareBonusProgram = {
+    id: string
+    providerId: string
+    name: string
+    earnPercent: number
+    maxEarnPointsPerVisit: number | null
+    expiresAfterDays: number | null
+    active: boolean
+    createdAt: string
+    updatedAt: string
+}
+
+export type AutoCareBonusLedgerEntry = {
+    id: string
+    type: 'earn' | 'redeem' | 'expire' | 'adjustment'
+    points: number
+    reason: string
+    requestId: string | null
+    expiresAt: string | null
+    createdAt: string
+}
+
+export type AutoCareBonusAccount = {
+    id: string
+    providerId: string
+    balancePoints: number
+    earnedPoints: number
+    redeemedPoints: number
+    entries: AutoCareBonusLedgerEntry[]
+}
+
+export type OwnerAutoCareBonusProgramInput = {
+    providerId: string
+    name: string
+    earnPercent: number
+    maxEarnPointsPerVisit?: number | null
+    expiresAfterDays?: number | null
+    active?: boolean
+}
+
+export type AutoCareProviderMember = {
+    id: string
+    providerId: string
+    userId: string
+    locationId: string | null
+    role: 'owner' | 'manager' | 'staff'
+    status: 'active' | 'revoked'
+    createdAt: string
+}
+
+export type AutoCareProviderInvitation = {
+    id: string
+    providerId: string
+    email: string
+    locationId: string | null
+    role: 'manager' | 'staff'
+    status: 'pending' | 'accepted' | 'revoked' | 'expired'
+    expiresAt: string
+    acceptedAt: string | null
+    revokedAt: string | null
+    createdAt: string
+    inviteToken: string | null
+}
+
+export type AutoCareProviderMembersResponse = {
+    memberships: AutoCareProviderMember[]
+    invitations: AutoCareProviderInvitation[]
+}
+
+export type RedeemAutoCareBonusInput = { providerId: string; requestId: string; points: number }
+export type GrantAutoCareBonusInput = { providerId: string; clientId: string; points: number; reason: string }
+
+export type AutoCareProviderChangeRequest = {
+    id: string
+    providerId: string
+    requestedById: string
+    kind: 'verification' | 'profile_update'
+    status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+    payload: Record<string, unknown>
+    reviewedById: string | null
+    reviewReason: string | null
+    reviewedAt: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export type CreateAutoCareProviderChangeRequestInput = {
+    providerId: string
+    kind: AutoCareProviderChangeRequest['kind']
+    payload?: Record<string, unknown>
+}
+
+export type DecideAutoCareProviderChangeRequestInput = {
+    id: string
+    status: 'approved' | 'rejected'
+    reason?: string | null
+}
+
+export type CreateAutoCareCatalogGapRequestInput = {
+    providerId?: string | null
+    proposedSlug: string
+    categorySlug: string
+    labels: Record<string, string>
+    priceType: 'fixed' | 'from' | 'range' | 'quote_required'
+    comparisonAttributes: string[]
+    rationale: string
+}
+
+export type AutoCareCatalogGapRequest = {
+    id: string
+    requestedById: string
+    providerId: string | null
+    proposedSlug: string
+    categorySlug: string
+    labels: Record<string, string>
+    priceType: 'fixed' | 'from' | 'range' | 'quote_required'
+    comparisonAttributes: string[]
+    rationale: string
+    status: 'pending' | 'approved' | 'rejected'
+    reviewedById: string | null
+    reviewReason: string | null
+    reviewedAt: string | null
+    createdAt: string
+    updatedAt: string
+}
+
+export type DecideAutoCareCatalogGapRequestInput = { id: string; status: 'approved' | 'rejected'; reason?: string | null }
+
+export type CreateAutoCareProviderInvitationInput = { providerId: string; email: string; role: 'manager' | 'staff'; locationId?: string | null }
+export type AcceptAutoCareProviderInvitationInput = { token: string }
 
 export type IssueAutoCareReviewPromoInput = {
     providerId: string
@@ -257,6 +424,62 @@ const reviewPromoSchema = z.object({
     redeemedAt: z.string().datetime({ offset: true }).nullable(),
 }) satisfies z.ZodType<AutoCareReviewPromo>
 
+const autoCareBonusProgramSchema = z.object({
+    id: z.string(), providerId: z.string(), name: z.string(), earnPercent: z.number().finite().min(0).max(100),
+    maxEarnPointsPerVisit: z.number().int().positive().nullable(), expiresAfterDays: z.number().int().positive().nullable(), active: z.boolean(),
+    createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }),
+}).passthrough() satisfies z.ZodType<AutoCareBonusProgram>
+
+const autoCareBonusAccountSchema = z.object({
+    id: z.string(), providerId: z.string(), balancePoints: z.number().int().nonnegative(), earnedPoints: z.number().int().nonnegative(), redeemedPoints: z.number().int().nonnegative(),
+    entries: z.array(z.object({ id: z.string(), type: z.enum(['earn', 'redeem', 'expire', 'adjustment']), points: z.number().int(), reason: z.string(), requestId: z.string().nullable(), expiresAt: z.string().datetime({ offset: true }).nullable(), createdAt: z.string().datetime({ offset: true }) }).passthrough()),
+}).passthrough() satisfies z.ZodType<AutoCareBonusAccount>
+const autoCareBonusAccountsSchema = z.array(autoCareBonusAccountSchema)
+
+const autoCareProviderAnalyticsSchema = z.object({
+    providerId: z.string(), generatedAt: z.string().datetime({ offset: true }),
+    inquiries: z.number().int().nonnegative(), openRequests: z.number().int().nonnegative(),
+    confirmedBookings: z.number().int().nonnegative(), completedVisits: z.number().int().nonnegative(),
+    cancelledRequests: z.number().int().nonnegative(), noShowRequests: z.number().int().nonnegative(),
+    completionRate: z.number().min(0).max(100), quoteConversionRate: z.number().min(0).max(100),
+    averageResponseMinutes: z.number().nonnegative().nullable(), repeatCustomers: z.number().int().nonnegative(),
+    reviewCount: z.number().int().nonnegative(), averageRating: z.number().min(0).max(5),
+    bonusLiabilityPoints: z.number().int().nonnegative(),
+    tracking: z.object({ impressions: z.number().int().nonnegative(), profileOpens: z.number().int().nonnegative(), available: z.boolean() }),
+}).passthrough() satisfies z.ZodType<AutoCareProviderAnalytics>
+
+const autoCareProviderInvitationSchema = z.object({
+    id: z.string(), providerId: z.string(), email: z.string().email(), locationId: z.string().nullable(),
+    role: z.enum(['manager', 'staff']), status: z.enum(['pending', 'accepted', 'revoked', 'expired']),
+    expiresAt: z.string().datetime({ offset: true }), acceptedAt: z.string().datetime({ offset: true }).nullable(),
+    revokedAt: z.string().datetime({ offset: true }).nullable(), createdAt: z.string().datetime({ offset: true }),
+    inviteToken: z.string().nullable(),
+}).passthrough() satisfies z.ZodType<AutoCareProviderInvitation>
+const autoCareProviderMembersSchema = z.object({
+    memberships: z.array(z.object({ id: z.string(), providerId: z.string(), userId: z.string(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']), createdAt: z.string().datetime({ offset: true }) }).passthrough()),
+    invitations: z.array(autoCareProviderInvitationSchema),
+}).passthrough() satisfies z.ZodType<AutoCareProviderMembersResponse>
+
+const autoCareProviderChangeRequestSchema = z.object({
+    id: z.string(),
+    providerId: z.string(),
+    requestedById: z.string(),
+    kind: z.enum(['verification', 'profile_update']),
+    status: z.enum(['pending', 'approved', 'rejected', 'cancelled']),
+    payload: z.record(z.string(), z.unknown()),
+    reviewedById: z.string().nullable(),
+    reviewReason: z.string().nullable(),
+    reviewedAt: z.string().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+}).passthrough() satisfies z.ZodType<AutoCareProviderChangeRequest>
+
+const autoCareCatalogGapRequestSchema = z.object({
+    id: z.string(), requestedById: z.string(), providerId: z.string().nullable(), proposedSlug: z.string(), categorySlug: z.string(),
+    labels: z.record(z.string(), z.string()), priceType: z.enum(['fixed', 'from', 'range', 'quote_required']), comparisonAttributes: z.array(z.string()), rationale: z.string(),
+    status: z.enum(['pending', 'approved', 'rejected']), reviewedById: z.string().nullable(), reviewReason: z.string().nullable(), reviewedAt: z.string().nullable(), createdAt: z.string(), updatedAt: z.string(),
+}).passthrough() satisfies z.ZodType<AutoCareCatalogGapRequest>
+
 const ownerProviderReviewsSchema = z.object({
     providerId: z.string(),
     totalReviews: z.number().int().nonnegative(),
@@ -294,6 +517,7 @@ const autoCareOfferSchema = z.object({
     warrantyText: z.string().nullable(),
     active: z.boolean(),
     priceType: z.enum(['fixed', 'from', 'range', 'quote_required']).optional(),
+    bookingMode: z.enum(['request', 'instant']).optional(),
 }).passthrough() satisfies z.ZodType<AutoCareApiOffer>
 
 const autoCareProviderSchema = z.object({
@@ -376,6 +600,11 @@ const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.stri
 const autoCareQuoteLineItemSchema = z.object({ kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']), title: z.string(), quantity: z.number().finite(), unitPriceMinor: z.number().finite(), totalMinor: z.number().finite() }).passthrough()
 const autoCareQuoteSchema = z.object({ amountMinor: z.number().finite(), currencyCode: z.string(), note: z.string().nullable(), createdAt: z.string(), lineItems: z.array(autoCareQuoteLineItemSchema).optional(), subtotalMinor: z.number().finite().optional(), taxMinor: z.number().finite().optional(), feesMinor: z.number().finite().optional(), validUntil: z.string().nullable().optional(), priceLocked: z.boolean().optional() }).passthrough()
 const autoCareQuoteHistorySchema = autoCareQuoteSchema.extend({ id: z.string().min(1), version: z.number().int().positive() }).passthrough()
+const autoCareBookingSnapshotSchema = z.object({
+    requestId: z.string(), quoteVersion: z.number().int().nonnegative(), amountMinor: z.number().finite(), currencyCode: z.string(),
+    lineItems: z.array(autoCareQuoteLineItemSchema), scheduledAt: z.string(), timezone: z.string(), serviceSlug: z.string(),
+    providerId: z.string(), locationId: z.string(), status: z.literal('confirmed'), createdAt: z.string(),
+}).passthrough()
 const autoCareRescheduleSchema = z.object({
     id: z.string().min(1), proposedAt: z.string(), requestedById: z.string(),
     status: z.enum(['pending', 'accepted', 'rejected']), reason: z.string().nullable(),
@@ -386,7 +615,7 @@ const autoCareScalarRecordSchema = z.record(z.string(), z.union([z.string(), z.n
 const autoCareServiceRequestSchema = z.object({
     id: z.string().min(1), providerId: z.string().min(1), providerName: z.string(), locationId: z.string().min(1), address: z.string(), definitionId: z.string().min(1), serviceSlug: z.string(),
     serviceLabels: z.record(z.string(), z.string()), serviceDescription: z.string().nullable().default(null), offeringId: z.string().nullable(), priceFromMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), preferredAt: z.string().nullable(),
-    vehicleSnapshot: autoCareScalarRecordSchema.nullable(), contactSnapshot: autoCareScalarRecordSchema.nullable(), note: z.string().nullable(), status: z.enum(['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted', 'declined', 'cancelled', 'no_show', 'closed']), clientConfirmedAt: z.string().nullable(), providerConfirmedAt: z.string().nullable(), cancelledAt: z.string().nullable().optional(), cancelledById: z.string().nullable().optional(), cancellationReason: z.string().nullable().optional(), noShowAt: z.string().nullable().optional(), noShowById: z.string().nullable().optional(), noShowReason: z.string().nullable().optional(), completedAt: z.string().nullable().optional(), completedById: z.string().nullable().optional(), completionNote: z.string().nullable().optional(), acceptedQuoteVersion: z.number().int().positive().nullable().optional(), acceptedQuoteSnapshot: z.record(z.string(), z.unknown()).nullable().optional(), acceptedQuoteAt: z.string().nullable().optional(), reschedule: autoCareRescheduleSchema.nullable().default(null), createdAt: z.string(), updatedAt: z.string(), quote: autoCareQuoteSchema.nullable(), quoteHistory: z.array(autoCareQuoteHistorySchema).default([]),
+    vehicleSnapshot: autoCareScalarRecordSchema.nullable(), contactSnapshot: autoCareScalarRecordSchema.nullable(), note: z.string().nullable(), status: z.enum(['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted', 'declined', 'cancelled', 'no_show', 'closed']), clientConfirmedAt: z.string().nullable(), providerConfirmedAt: z.string().nullable(), cancelledAt: z.string().nullable().optional(), cancelledById: z.string().nullable().optional(), cancellationReason: z.string().nullable().optional(), noShowAt: z.string().nullable().optional(), noShowById: z.string().nullable().optional(), noShowReason: z.string().nullable().optional(), completedAt: z.string().nullable().optional(), completedById: z.string().nullable().optional(), completionNote: z.string().nullable().optional(), acceptedQuoteVersion: z.number().int().positive().nullable().optional(), acceptedQuoteSnapshot: z.record(z.string(), z.unknown()).nullable().optional(), acceptedQuoteAt: z.string().nullable().optional(), booking: autoCareBookingSnapshotSchema.nullable().optional(), reschedule: autoCareRescheduleSchema.nullable().default(null), createdAt: z.string(), updatedAt: z.string(), quote: autoCareQuoteSchema.nullable(), quoteHistory: z.array(autoCareQuoteHistorySchema).default([]),
 }).passthrough()
 const autoCareServiceRequestsSchema = z.array(autoCareServiceRequestSchema)
 const autoCareChatThreadSchema = z.object({ id: z.string().min(1), type: z.enum(['service_request', 'provider_inquiry', 'support', 'admin_escalation']), status: z.enum(['open', 'closed']), subject: z.string(), requestId: z.string().nullable(), providerId: z.string().nullable(), providerName: z.string().nullable(), clientId: z.string().nullable(), lastMessageAt: z.string().nullable(), unreadCount: z.number().int().nonnegative(), createdAt: z.string(), updatedAt: z.string() }).passthrough()
@@ -395,7 +624,10 @@ const autoCareServiceMessageOfferSchema = z.object({ type: z.enum(['discount', '
 const autoCareServiceMessageSchema = z.object({ id: z.string().min(1), senderId: z.string().min(1), kind: z.enum(['text', 'system', 'offer']), body: z.string().nullable(), offer: autoCareServiceMessageOfferSchema.nullable(), deliveredAt: z.string().nullable(), readAt: z.string().nullable(), createdAt: z.string() }).passthrough()
 const autoCareServiceAttachmentSchema = z.object({ id: z.string().min(1), uploadedById: z.string().min(1), contentType: z.string(), bytes: z.number().int().positive(), status: z.enum(['pending', 'ready', 'rejected']), url: z.string(), createdAt: z.string() }).passthrough()
 const autoCareServiceConversationSchema = z.object({ request: autoCareServiceRequestSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null) }).passthrough()
-const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema) }).passthrough()
+const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null) }).passthrough()
+const autoCareChatReportSchema = z.object({ id: z.string(), threadId: z.string(), reporterId: z.string(), reportedUserId: z.string().nullable(), category: z.enum(['spam', 'harassment', 'fraud', 'unsafe', 'other']), description: z.string().nullable(), status: z.enum(['pending', 'resolved', 'dismissed']), reviewedById: z.string().nullable(), resolutionReason: z.string().nullable(), createdAt: z.string(), reviewedAt: z.string().nullable() }).passthrough()
+const autoCareChatReportsSchema = z.array(autoCareChatReportSchema)
+const autoCareChatBlockSchema = z.object({ id: z.string(), threadId: z.string(), blockerId: z.string(), blockedUserId: z.string(), status: z.enum(['active', 'revoked']), reason: z.string().nullable(), createdAt: z.string(), revokedAt: z.string().nullable() }).passthrough()
 const autoCarePriceBenchmarkSchema = z.object({ serviceDefinitionId: z.string(), serviceSlug: z.string(), marketId: z.string().nullable(), makeId: z.string().nullable(), modelId: z.string().nullable(), minPriceMinor: z.number().finite(), medianPriceMinor: z.number().finite(), maxPriceMinor: z.number().finite(), currencyCode: z.string(), methodology: z.record(z.string(), z.unknown()), source: z.string(), generatedAt: z.string() }).passthrough()
 const autoCareTrustEvidenceSchema = z.object({ id: z.string(), providerId: z.string(), kind: z.string(), label: z.string(), status: z.string(), expiresAt: z.string().nullable(), verifiedAt: z.string().nullable() }).passthrough()
 const autoCareTrustSnapshotSchema = z.object({
@@ -420,6 +652,9 @@ const autoCareTrustSchema = z.object({
 }).passthrough()
 const adminProviderSchema = autoCareProviderSchema.extend({ ownerName: z.string().nullable(), trustScore: z.number().finite() }).passthrough()
 const platformOverviewSchema = z.object({ markets: z.array(z.object({ id: z.string(), countryCode: z.string(), countryName: z.string(), cityCode: z.string(), cityName: z.string(), currencyCode: z.string(), launchReady: z.boolean(), supportedLocales: z.array(z.string()) }).passthrough()), providers: z.object({ total: z.number().int().nonnegative(), active: z.number().int().nonnegative(), draft: z.number().int().nonnegative(), suspended: z.number().int().nonnegative(), verified: z.number().int().nonnegative() }).passthrough(), users: z.object({ clients: z.number().int().nonnegative(), owners: z.number().int().nonnegative(), admins: z.number().int().nonnegative(), superAdmins: z.number().int().nonnegative() }).passthrough(), billing: z.object({ phase: z.literal('launch'), subscriptionsEnabled: z.boolean(), promoCodesEnabled: z.boolean() }).passthrough() }).passthrough()
+const autoCareQualityMonitoringSchema = z.object({ generatedAt: z.string(), providers: z.object({ total: z.number().int().nonnegative(), active: z.number().int().nonnegative(), verified: z.number().int().nonnegative(), trusted: z.number().int().nonnegative(), suspended: z.number().int().nonnegative() }), reviews: z.object({ approved: z.number().int().nonnegative(), pending: z.number().int().nonnegative(), rejected: z.number().int().nonnegative(), anomalyCandidates: z.number().int().nonnegative() }), requests: z.object({ total: z.number().int().nonnegative(), completed: z.number().int().nonnegative(), cancelled: z.number().int().nonnegative(), noShows: z.number().int().nonnegative() }), ranking: z.object({ trustSnapshots: z.number().int().nonnegative(), reassessedProviders: z.number().int().nonnegative(), evidenceCoveragePercent: z.number().nonnegative() }), catalog: z.object({ activeDefinitions: z.number().int().nonnegative(), activeOffers: z.number().int().nonnegative(), providersWithOffers: z.number().int().nonnegative(), offerCoveragePercent: z.number().nonnegative(), offersWithDescription: z.number().int().nonnegative(), offersWithPrice: z.number().int().nonnegative(), priceCoveragePercent: z.number().nonnegative() }), supply: z.object({ activeMarkets: z.number().int().nonnegative(), averageLocationsPerProvider: z.number().nonnegative(), markets: z.array(z.object({ marketId: z.string(), providers: z.number().int().nonnegative(), locations: z.number().int().nonnegative(), activeOffers: z.number().int().nonnegative() })) }), reliability: z.object({ responseSamples: z.number().int().nonnegative(), averageResponseMinutes: z.number().nullable(), p95ResponseMinutes: z.number().nullable(), confirmedBookings: z.number().int().nonnegative(), confirmationSamples: z.number().int().nonnegative(), confirmationReliabilityPercent: z.number().nonnegative(), bookingConflicts: z.number().int().nonnegative() }), appeals: z.object({ available: z.literal(true), pending: z.number().int().nonnegative() }) })
+const autoCareAppealSchema = z.object({ id: z.string(), subject: z.enum(['provider', 'review', 'suspension', 'catalog']), subjectId: z.string(), submittedById: z.string(), providerId: z.string().nullable(), reason: z.string(), evidenceIds: z.array(z.string()), status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']), decidedById: z.string().nullable(), decisionReason: z.string().nullable(), createdAt: z.string(), decidedAt: z.string().nullable() }).passthrough()
+const autoCareAppealsSchema = z.array(autoCareAppealSchema)
 const uploadResponseSchema = z.object({ url: z.string().min(1) }).passthrough()
 const autoCareRepairEventsSchema = z.array(z.object({ id: z.string(), requestId: z.string(), eventType: z.string(), actorId: z.string().nullable(), title: z.string(), notes: z.string().nullable(), metadata: z.record(z.string(), z.unknown()), createdAt: z.string() }).passthrough())
 const autoCareBroadcastOfferSchema = z.object({ id: z.string(), broadcastRequestId: z.string(), providerId: z.string(), providerName: z.string(), locationId: z.string(), address: z.string(), offerSnapshot: z.record(z.string(), z.unknown()), status: z.string(), createdAt: z.string() }).passthrough()
@@ -468,11 +703,27 @@ export type AutoCareServiceRequest = {
     acceptedQuoteVersion?: number | null
     acceptedQuoteSnapshot?: Record<string, unknown> | null
     acceptedQuoteAt?: string | null
+    booking?: AutoCareBookingSnapshot | null
     reschedule: AutoCareReschedule | null
     createdAt: string
     updatedAt: string
     quote: AutoCareServiceQuote | null
     quoteHistory: Array<AutoCareServiceQuote & { id: string; version: number }>
+}
+
+export type AutoCareBookingSnapshot = {
+    requestId: string
+    quoteVersion: number
+    amountMinor: number
+    currencyCode: string
+    lineItems: AutoCareQuoteLineItem[]
+    scheduledAt: string
+    timezone: string
+    serviceSlug: string
+    providerId: string
+    locationId: string
+    status: 'confirmed'
+    createdAt: string
 }
 
 export type AutoCareReschedule = { id: string; proposedAt: string; requestedById: string; status: 'pending' | 'accepted' | 'rejected'; reason: string | null; resolvedById: string | null; resolutionReason: string | null; createdAt: string; resolvedAt: string | null }
@@ -485,7 +736,13 @@ export type AutoCareServiceAttachment = { id: string; uploadedById: string; cont
 export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null }
 export type AutoCareChatThreadType = 'service_request' | 'provider_inquiry' | 'support' | 'admin_escalation'
 export type AutoCareChatThread = { id: string; type: AutoCareChatThreadType; status: 'open' | 'closed'; subject: string; requestId: string | null; providerId: string | null; providerName: string | null; clientId: string | null; lastMessageAt: string | null; unreadCount: number; createdAt: string; updatedAt: string }
-export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[] }
+export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null }
+export type AutoCareChatReport = { id: string; threadId: string; reporterId: string; reportedUserId: string | null; category: 'spam' | 'harassment' | 'fraud' | 'unsafe' | 'other'; description: string | null; status: 'pending' | 'resolved' | 'dismissed'; reviewedById: string | null; resolutionReason: string | null; createdAt: string; reviewedAt: string | null }
+export type AutoCareChatBlock = { id: string; threadId: string; blockerId: string; blockedUserId: string; status: 'active' | 'revoked'; reason: string | null; createdAt: string; revokedAt: string | null }
+export type CreateAutoCareChatReportInput = { chatId: string; category: AutoCareChatReport['category']; description?: string | null }
+export type CreateAutoCareChatBlockInput = { chatId: string; blockedUserId?: string; reason?: string | null }
+export type RevokeAutoCareChatBlockInput = { chatId: string; blockId: string }
+export type DecideAutoCareChatReportInput = { id: string; status: 'resolved' | 'dismissed'; reason?: string | null; blockUser?: boolean }
 export type CreateAutoCareChatInput = { type: Exclude<AutoCareChatThreadType, 'service_request'>; providerId?: string; requestId?: string; subject: string }
 export type CreateAutoCareChatMessageInput = { chatId: string; body: string }
 export type CreateAutoCareChatAttachmentInput = { chatId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
@@ -616,6 +873,31 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(z.object({ id: z.string(), slug: z.string(), categorySlug: z.string(), labels: z.record(z.string(), z.string()), priceType: z.enum(['fixed', 'from', 'range', 'quote_required']), comparisonAttributes: z.array(z.string()), active: z.boolean() }).passthrough()).parse(value),
             providesTags: [{ type: 'AutoCareServiceDefinition', id: 'LIST' }],
         }),
+        createAutoCareCatalogGapRequest: build.mutation<AutoCareCatalogGapRequest, CreateAutoCareCatalogGapRequestInput>({
+            query: (body) => ({ url: '/v1/catalog-gap-requests', method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareCatalogGapRequestSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareServiceDefinition', id: 'LIST' }],
+        }),
+        getAdminCatalogGapRequests: build.query<AutoCareCatalogGapRequest[], { status?: AutoCareCatalogGapRequest['status'] } | void>({
+            query: (params) => ({ url: '/admin/catalog-gap-requests', params: params ?? undefined }),
+            transformResponse: (value: unknown) => z.array(autoCareCatalogGapRequestSchema).parse(value),
+            providesTags: [{ type: 'AutoCareServiceDefinition', id: 'GAP_QUEUE' }],
+        }),
+        decideAdminCatalogGapRequest: build.mutation<AutoCareCatalogGapRequest, DecideAutoCareCatalogGapRequestInput>({
+            query: ({ id, ...body }) => ({ url: `/admin/catalog-gap-requests/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareCatalogGapRequestSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareServiceDefinition', id: 'GAP_QUEUE' }, { type: 'AutoCareServiceDefinition', id: 'LIST' }],
+        }),
+        getAdminAutoCareChatReports: build.query<AutoCareChatReport[], { status?: AutoCareChatReport['status'] } | void>({
+            query: (params) => ({ url: '/admin/chat-reports', params: params ?? undefined }),
+            transformResponse: (value: unknown) => autoCareChatReportsSchema.parse(value),
+            providesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }],
+        }),
+        decideAdminAutoCareChatReport: build.mutation<AutoCareChatReport, DecideAutoCareChatReportInput>({
+            query: ({ id, ...body }) => ({ url: `/admin/chat-reports/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareChatReportSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }],
+        }),
         getVehicleCatalog: build.query<AutoCareVehicleBrand[], string | void>({
             query: (brandId) => ({ url: '/v1/vehicle-catalog', params: brandId ? { brandId } : undefined }),
             transformResponse: (value: unknown) => z.array(z.object({ id: z.string(), labels: z.record(z.string(), z.string()), models: z.array(z.object({ id: z.string(), label: z.string(), yearsFrom: z.number().int(), yearsTo: z.number().int(), engines: z.array(z.object({ id: z.string(), fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other']), displacementL: z.number().finite().nullable(), horsepower: z.number().finite().nullable() }).passthrough()) }).passthrough()) }).passthrough()).parse(value),
@@ -685,6 +967,89 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(autoCareProviderSchema).parse(value),
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        getOwnerAutoCareProviderAnalytics: build.query<AutoCareProviderAnalytics, string>({
+            query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/analytics`,
+            transformResponse: (value: unknown) => autoCareProviderAnalyticsSchema.parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `ANALYTICS_${providerId}` }],
+        }),
+        getOwnerAutoCareProviderMembers: build.query<AutoCareProviderMembersResponse, string>({
+            query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/members`,
+            transformResponse: (value: unknown) => autoCareProviderMembersSchema.parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `MEMBERS_${providerId}` }],
+        }),
+        inviteAutoCareProviderMember: build.mutation<AutoCareProviderInvitation, CreateAutoCareProviderInvitationInput>({
+            query: ({ providerId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/members/invitations`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareProviderInvitationSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `MEMBERS_${providerId}` }],
+        }),
+        revokeAutoCareProviderInvitation: build.mutation<AutoCareProviderInvitation, { providerId: string; invitationId: string }>({
+            query: ({ providerId, invitationId }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/members/invitations/${encodeURIComponent(invitationId)}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => autoCareProviderInvitationSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `MEMBERS_${providerId}` }],
+        }),
+        revokeAutoCareProviderMembership: build.mutation<AutoCareProviderMember, { providerId: string; membershipId: string }>({
+            query: ({ providerId, membershipId }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/members/${encodeURIComponent(membershipId)}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => autoCareProviderMembersSchema.shape.memberships.element.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `MEMBERS_${providerId}` }],
+        }),
+        acceptAutoCareProviderInvitation: build.mutation<unknown, AcceptAutoCareProviderInvitationInput>({
+            query: (body) => ({ url: '/owner/autocare-provider-invitations/accept', method: 'POST', body }),
+            transformResponse: (value: unknown) => z.object({
+                membership: z.object({ id: z.string(), providerId: z.string(), userId: z.string(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']) }).passthrough(),
+                invitation: autoCareProviderInvitationSchema,
+            }).parse(value),
+            invalidatesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
+        }),
+        getOwnerAutoCareProviderChangeRequests: build.query<AutoCareProviderChangeRequest[], string>({
+            query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/change-requests`,
+            transformResponse: (value: unknown) => z.array(autoCareProviderChangeRequestSchema).parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `CHANGES_${providerId}` }],
+        }),
+        createOwnerAutoCareProviderChangeRequest: build.mutation<AutoCareProviderChangeRequest, CreateAutoCareProviderChangeRequestInput>({
+            query: ({ providerId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/change-requests`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareProviderChangeRequestSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `CHANGES_${providerId}` }],
+        }),
+        cancelOwnerAutoCareProviderChangeRequest: build.mutation<AutoCareProviderChangeRequest, { providerId: string; requestId: string }>({
+            query: ({ providerId, requestId }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/change-requests/${encodeURIComponent(requestId)}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => autoCareProviderChangeRequestSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `CHANGES_${providerId}` }],
+        }),
+        getAdminAutoCareProviderChangeRequests: build.query<AutoCareProviderChangeRequest[], { status?: AutoCareProviderChangeRequest['status']; kind?: AutoCareProviderChangeRequest['kind'] } | void>({
+            query: (params) => ({ url: '/admin/autocare-provider-change-requests', params: params ?? undefined }),
+            transformResponse: (value: unknown) => z.array(autoCareProviderChangeRequestSchema).parse(value),
+            providesTags: [{ type: 'AutoCareProvider', id: 'CHANGE_QUEUE' }],
+        }),
+        decideAdminAutoCareProviderChangeRequest: build.mutation<AutoCareProviderChangeRequest, DecideAutoCareProviderChangeRequestInput>({
+            query: ({ id, ...body }) => ({ url: `/admin/autocare-provider-change-requests/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareProviderChangeRequestSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareProvider', id: 'CHANGE_QUEUE' }],
+        }),
+        getMyAutoCareBonusAccounts: build.query<AutoCareBonusAccount[], void>({
+            query: () => '/v1/bonuses/my',
+            transformResponse: (value: unknown) => autoCareBonusAccountsSchema.parse(value),
+            providesTags: [{ type: 'AutoCareMarketplace', id: 'BONUSES_MY' }],
+        }),
+        redeemAutoCareBonus: build.mutation<AutoCareBonusAccount, RedeemAutoCareBonusInput>({
+            query: (body) => ({ url: '/v1/bonuses/redeem', method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareBonusAccountSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'BONUSES_MY' }],
+        }),
+        grantAutoCareBonus: build.mutation<AutoCareBonusAccount, GrantAutoCareBonusInput>({
+            query: ({ providerId, clientId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-accounts/${encodeURIComponent(clientId)}/grants`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareBonusAccountSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `BONUS_${providerId}` }],
+        }),
+        getOwnerAutoCareBonusProgram: build.query<AutoCareBonusProgram | null, string>({
+            query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-program`,
+            transformResponse: (value: unknown) => value === null ? null : autoCareBonusProgramSchema.parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `BONUS_${providerId}` }],
+        }),
+        upsertOwnerAutoCareBonusProgram: build.mutation<AutoCareBonusProgram, OwnerAutoCareBonusProgramInput>({
+            query: ({ providerId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-program`, method: 'PUT', body }),
+            transformResponse: (value: unknown) => autoCareBonusProgramSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `BONUS_${providerId}` }, { type: 'AutoCareProvider', id: providerId }],
+        }),
         updateOwnerAutoCareOffer: build.mutation<AutoCareApiOffer, UpdateAutoCareOfferInput>({
             query: ({ providerId, offerId, ...body }) => ({ url: `/owner/autocare-providers/${providerId}/offers/${offerId}`, method: 'PATCH', body }),
             transformResponse: (value: unknown) => autoCareOfferSchema.parse(value),
@@ -714,6 +1079,16 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(featuredReviewSchema).parse(value),
             providesTags: [{ type: 'AutoCareReview', id: 'CLIENT_LIST' }],
         }),
+        getMyAutoCareAppeals: build.query<AutoCareAppeal[], void>({
+            query: () => '/v1/autocare-appeals/my',
+            transformResponse: (value: unknown) => autoCareAppealsSchema.parse(value),
+            providesTags: [{ type: 'AutoCareReview', id: 'APPEALS' }],
+        }),
+        createAutoCareAppeal: build.mutation<AutoCareAppeal, CreateAutoCareAppealInput>({
+            query: (body) => ({ url: '/v1/autocare-appeals', method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareReview', id: 'APPEALS' }],
+        }),
         createAutoCareReview: build.mutation<AutoCareApiReview, CreateAutoCareReviewInput>({
             query: (body) => ({ url: '/v1/autocare-reviews', method: 'POST', body }),
             transformResponse: (value: unknown) => featuredReviewSchema.parse(value),
@@ -738,6 +1113,21 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: ({ id, status }) => ({ url: `/admin/autocare-providers/${id}/status`, method: 'PATCH', body: { status } }),
             transformResponse: (value: unknown) => adminProviderSchema.parse(value),
             invalidatesTags: (_result, _error, { id }) => [{ type: 'AutoCareProvider', id }, { type: 'AutoCareProvider', id: 'ADMIN_LIST' }],
+        }),
+        getAdminAutoCareQualityMonitoring: build.query<AutoCareQualityMonitoring, void>({
+            query: () => '/admin/autocare-quality-monitoring',
+            transformResponse: (value: unknown) => autoCareQualityMonitoringSchema.parse(value),
+            providesTags: [{ type: 'AutoCareProvider', id: 'QUALITY_MONITORING' }],
+        }),
+        getAdminAutoCareAppeals: build.query<AutoCareAppeal[], { status?: AutoCareAppeal['status']; subject?: AutoCareAppeal['subject'] } | void>({
+            query: (params) => ({ url: '/admin/autocare-appeals', params: params ?? undefined }),
+            transformResponse: (value: unknown) => autoCareAppealsSchema.parse(value),
+            providesTags: [{ type: 'AutoCareReview', id: 'ADMIN_APPEALS' }],
+        }),
+        decideAdminAutoCareAppeal: build.mutation<AutoCareAppeal, { id: string; status: 'accepted' | 'rejected'; reason: string }>({
+            query: ({ id, ...body }) => ({ url: `/admin/autocare-appeals/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareReview', id: 'ADMIN_APPEALS' }, { type: 'AutoCareProvider', id: 'QUALITY_MONITORING' }],
         }),
         getSuperAdminPlatformOverview: build.query<SuperAdminPlatformOverview, void>({
             query: () => '/super-admin/platform-overview',
@@ -791,15 +1181,33 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareChatThreadSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
         }),
-        getAutoCareChat: build.query<AutoCareChatConversation, string>({
-            query: (chatId) => `/v1/chats/${chatId}`,
+        getAutoCareChat: build.query<AutoCareChatConversation, string | { chatId: string; cursor?: string; limit?: number }>({
+            query: (input) => {
+                const chatId = typeof input === 'string' ? input : input.chatId
+                const query = typeof input === 'string' ? '' : new URLSearchParams({ ...(input.cursor ? { cursor: input.cursor } : {}), ...(input.limit ? { limit: String(input.limit) } : {}) }).toString()
+                return `/v1/chats/${chatId}${query ? `?${query}` : ''}`
+            },
             transformResponse: (value: unknown) => autoCareChatConversationSchema.parse(value),
-            providesTags: (_result, _error, chatId) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }],
+            providesTags: (_result, _error, input) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${typeof input === 'string' ? input : input.chatId}` }],
         }),
         createAutoCareChatMessage: build.mutation<AutoCareServiceMessage, CreateAutoCareChatMessageInput>({
             query: ({ chatId, body }) => ({ url: `/v1/chats/${chatId}/messages`, method: 'POST', body: { body } }),
             transformResponse: (value: unknown) => autoCareServiceMessageSchema.parse(value),
             invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }, { type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
+        }),
+        createAutoCareChatReport: build.mutation<AutoCareChatReport, CreateAutoCareChatReportInput>({
+            query: ({ chatId, ...body }) => ({ url: `/v1/chats/${chatId}/reports`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareChatReportSchema.parse(value),
+        }),
+        createAutoCareChatBlock: build.mutation<AutoCareChatBlock, CreateAutoCareChatBlockInput>({
+            query: ({ chatId, ...body }) => ({ url: `/v1/chats/${chatId}/blocks`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareChatBlockSchema.parse(value),
+            invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }],
+        }),
+        revokeAutoCareChatBlock: build.mutation<AutoCareChatBlock, RevokeAutoCareChatBlockInput>({
+            query: ({ chatId, blockId }) => ({ url: `/v1/chats/${chatId}/blocks/${blockId}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => autoCareChatBlockSchema.parse(value),
+            invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }],
         }),
         markAutoCareChatRead: build.mutation<{ updated: number }, string>({
             query: (chatId) => ({ url: `/v1/chats/${chatId}/read`, method: 'POST' }),
@@ -979,16 +1387,38 @@ export const {
     useGetAutoCareMarketsQuery,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useGetOwnerAutoCareProviderAnalyticsQuery,
+    useGetOwnerAutoCareProviderMembersQuery,
+    useInviteAutoCareProviderMemberMutation,
+    useRevokeAutoCareProviderInvitationMutation,
+    useAcceptAutoCareProviderInvitationMutation,
+    useGetOwnerAutoCareProviderChangeRequestsQuery,
+    useCreateOwnerAutoCareProviderChangeRequestMutation,
+    useCancelOwnerAutoCareProviderChangeRequestMutation,
+    useGetAdminAutoCareProviderChangeRequestsQuery,
+    useDecideAdminAutoCareProviderChangeRequestMutation,
+    useCreateAutoCareCatalogGapRequestMutation,
+    useGetAdminCatalogGapRequestsQuery,
+    useDecideAdminCatalogGapRequestMutation,
+    useGetAdminAutoCareChatReportsQuery,
+    useDecideAdminAutoCareChatReportMutation,
+    useGetMyAutoCareBonusAccountsQuery,
+    useGetOwnerAutoCareBonusProgramQuery,
+    useUpsertOwnerAutoCareBonusProgramMutation,
     useUpdateOwnerAutoCareOfferMutation,
     useGetOwnerAutoCareProviderReviewsQuery,
     useGetOwnerAutoCareReviewsQuery,
     useIssueOwnerAutoCareReviewPromoMutation,
     useGetMyAutoCareReviewsQuery,
+    useGetMyAutoCareAppealsQuery,
+    useCreateAutoCareAppealMutation,
     useCreateAutoCareReviewMutation,
     useRedeemAutoCareReviewPromoMutation,
     useUpdateAutoCareReviewMutation,
     useGetAdminAutoCareProvidersQuery,
     useUpdateAdminAutoCareProviderStatusMutation,
+    useGetAdminAutoCareAppealsQuery,
+    useDecideAdminAutoCareAppealMutation,
     useGetSuperAdminPlatformOverviewQuery,
     useUploadOwnerAutoCareProviderLogoMutation,
     useUploadOwnerAutoCareProviderMediaMutation,
@@ -1011,6 +1441,9 @@ export const {
     useCreateAutoCareChatMutation,
     useGetAutoCareChatQuery,
     useCreateAutoCareChatMessageMutation,
+    useCreateAutoCareChatReportMutation,
+    useCreateAutoCareChatBlockMutation,
+    useRevokeAutoCareChatBlockMutation,
     useMarkAutoCareChatReadMutation,
     useCreateAutoCareChatAttachmentMutation,
     useGetAutoCareServiceRequestQuery,
@@ -1039,6 +1472,9 @@ export const {
     useAcceptAutoCareServiceQuoteMutation,
     useDeclineAutoCareServiceQuoteMutation,
     useGetOwnerAutoCareServiceRequestsQuery,
+    useRevokeAutoCareProviderMembershipMutation,
+    useRedeemAutoCareBonusMutation,
+    useGrantAutoCareBonusMutation,
     useConfirmOwnerAutoCareServiceRequestMutation,
     useCreateAutoCareServiceQuoteMutation,
     useRequestAutoCareServiceRescheduleMutation,

@@ -31,7 +31,7 @@ export function WorkspaceMobileMenu({ role, onClose }: WorkspaceMobileMenuProps)
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex size-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         aria-label={t('common.close')}
                     >
                         <X className="size-4" aria-hidden="true" />
@@ -52,7 +52,7 @@ export function WorkspaceMobileMenu({ role, onClose }: WorkspaceMobileMenuProps)
                                     to={to}
                                     {...(end === undefined ? {} : { end })}
                                     onClick={onClose}
-                                    className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
+                                    className={({ isActive }) => `flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
                                 >
                                     <Icon className="size-4 shrink-0" aria-hidden="true" />
                                     <span className="truncate">{t(labelKey)}</span>

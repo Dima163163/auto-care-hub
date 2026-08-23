@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema } from './autocare.schemas.js'
+import { createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
 
 const validRequest = {
     providerId: '11111111-1111-4111-8111-111111111111',
@@ -42,5 +42,10 @@ describe('AutoCare service request schema', () => {
         expect(offer.success).toBe(true)
         expect(createAutoCareServiceOfferSchema.safeParse({ type: 'discount', title: 'Без процента' }).success).toBe(false)
         expect(serviceMessageOfferDecisionSchema.parse({ decision: 'accept' })).toEqual({ decision: 'accept' })
+    })
+
+    it('accepts only the two supported booking modes for provider offerings', () => {
+        expect(updateAutoCareOfferSchema.parse({ description: null, priceFromMinor: 2_900_00, bookingMode: 'instant' }).bookingMode).toBe('instant')
+        expect(updateAutoCareOfferSchema.safeParse({ description: null, priceFromMinor: 2_900_00, bookingMode: 'manual' }).success).toBe(false)
     })
 })

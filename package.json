@@ -34,6 +34,7 @@
     "check:interaction-contract": "node scripts/check-interaction-state-contract.mjs",
     "check:pwa-update": "node scripts/check-pwa-update-contract.mjs",
     "check:api-runtime-boundaries": "node scripts/check-api-runtime-boundaries.mjs",
+    "check:staging-api": "node scripts/check-staging-api-compatibility.mjs",
     "check:openapi-shape": "node scripts/check-openapi-shape.mjs",
     "check:openapi-structure": "node scripts/check-openapi-structure.mjs",
     "test:openapi-structure": "node --test scripts/check-openapi-structure.test.mjs",
@@ -45,7 +46,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:real": "npm --prefix server run demo:reset && npm --prefix server run demo:seed && playwright test -c playwright.real.config.ts",
+    "test:e2e:real": "npm --prefix server run demo:reset && npm --prefix server run demo:seed && npm --prefix server run autocare:seed && playwright test -c playwright.real.config.ts",
     "test:e2e:pwa": "playwright test -c playwright.pwa.config.ts",
     "test:e2e:visual": "playwright test -c playwright.visual.config.ts",
     "test:e2e:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots"

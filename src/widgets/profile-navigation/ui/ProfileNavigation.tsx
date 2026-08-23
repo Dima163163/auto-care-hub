@@ -52,7 +52,7 @@ export function ProfileNavigation({ desktopHidden = true }: ProfileNavigationPro
                         key={to}
                         to={to}
                         {...(end === undefined ? {} : { end })}
-                        className={({ isActive }) => `flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors lg:w-full ${
+                        className={({ isActive }) => `flex h-10 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors lg:w-full ${
                             isActive
                             ? 'bg-primary/10 text-foreground'
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'

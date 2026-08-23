@@ -52,10 +52,10 @@ export function DesktopPublicHeader() {
                     <BrandLogo size="lg" />
                 </Link>
                 <nav className="public-desktop-header__nav ml-auto hidden h-full items-center gap-[clamp(1rem,2.25vw,2.6rem)] whitespace-nowrap text-sm font-semibold md:flex">
-                    <NavLink to={ROUTES.serviceDiscovery} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
+                    <NavLink to={ROUTES.serviceDiscovery} className="flex h-full cursor-pointer items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
                         {t('navigation.services')}
                     </NavLink>
-                    <NavLink to={ROUTES.platformReviews} className="flex h-full items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
+                    <NavLink to={ROUTES.platformReviews} className="flex h-full cursor-pointer items-center text-primary-foreground/90 transition-colors hover:text-primary-foreground">
                         {t('autocare.footerReviews')}
                     </NavLink>
                     <HeaderInfoMenu variant="dark" />
@@ -66,7 +66,7 @@ export function DesktopPublicHeader() {
                     <ThemeSwitcher />
                     <button
                         type="button"
-                        className="public-desktop-header__menu-trigger flex size-10 shrink-0 items-center justify-center rounded-[9px] border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors hover:border-primary hover:bg-primary-foreground/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+                        className="public-desktop-header__menu-trigger flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors hover:border-primary hover:bg-primary-foreground/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
                         aria-label={t('common.menu')}
                         aria-expanded={isMobileMenuOpen}
                         aria-controls="desktop-public-mobile-menu"
@@ -100,7 +100,7 @@ export function DesktopPublicHeader() {
                                         to={link.to}
                                         end={link.end}
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className={({ isActive }) => `rounded-lg px-3 py-3 text-sm font-bold transition-colors ${index === 1 ? 'mt-1 border-t border-border pt-3' : ''} ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
+                                        className={({ isActive }) => `cursor-pointer rounded-lg px-3 py-3 text-sm font-bold transition-colors ${index === 1 ? 'mt-1 border-t border-border pt-3' : ''} ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
                                     >
                                         <span className="flex items-center justify-between gap-3">
                                             {link.label}
@@ -116,7 +116,7 @@ export function DesktopPublicHeader() {
                                         key={to}
                                         to={to}
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
+                                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
                                     >
                                         <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
                                         <span>
@@ -128,10 +128,10 @@ export function DesktopPublicHeader() {
                             </div>
                             {!isLoading && !user && (
                                 <div className="mt-2 grid gap-1 border-t border-border pt-2">
-                                    <NavLink to={ROUTES.favorites} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">
+                                    <NavLink to={ROUTES.favorites} onClick={() => setIsMobileMenuOpen(false)} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">
                                         <Heart className="size-4 text-primary" aria-hidden="true" />{t('navigation.favorites')}
                                     </NavLink>
-                                    <NavLink to={ROUTES.login} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">
+                                    <NavLink to={ROUTES.login} onClick={() => setIsMobileMenuOpen(false)} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted">
                                         <UserRound className="size-4 text-primary" aria-hidden="true" />{t('auth.signIn')}
                                     </NavLink>
                                 </div>

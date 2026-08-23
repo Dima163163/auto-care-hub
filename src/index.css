@@ -126,7 +126,8 @@
     --card-foreground: oklch(0.15 0.02 260);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.15 0.02 260);
-    --primary: oklch(0.52 0.23 250);
+    /* 7.1:1 against white for buttons and links that carry meaning. */
+    --primary: #0057b8;
     --primary-foreground: oklch(0.99 0 0);
     --secondary: oklch(0.95 0.025 245);
     --secondary-foreground: oklch(0.35 0.15 265);
@@ -154,7 +155,8 @@
     --map-marker-primary-foreground: #ffffff;
     --map-rating: #fbbf24;
     --rating-fill: #fbbf24;
-    --rating-foreground: #f59e0b;
+    /* Amber text needs a darker tone on white (WCAG AA). */
+    --rating-foreground: #a15c00;
     --radius: 0.625rem;
     --status-danger-surface: #fef3f2;
     --status-danger-border: #fecdca;

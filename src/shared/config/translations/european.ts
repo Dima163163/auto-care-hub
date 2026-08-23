@@ -1,4 +1,4 @@
-import { esTranslations } from './popular'
+import { esTranslations } from './popular-es'
 
 type EuropeanLocaleOverrides = {
     common: Partial<typeof esTranslations.common>

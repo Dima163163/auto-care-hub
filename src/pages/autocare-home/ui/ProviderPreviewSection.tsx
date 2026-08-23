@@ -7,6 +7,7 @@ import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
 
 type HomeSort = 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
 
@@ -146,7 +147,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                     {isInitialLoading
                         ? <ProviderPreviewSkeleton label={t('common.loading')} />
                         : hasNoProviders
-                            ? <ProviderPreviewEmptyState message={emptyStateMessage} isError={discovery.isError} />
+                            ? <ProviderPreviewEmptyState message={emptyStateMessage} isError={discovery.isError} onRetry={discovery.refetch} retryLabel={t('common.retry')} />
                         : visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
                 </div>
                 {!isFirstPage ? <button type="button" onClick={showPreviousPage} className="absolute -left-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('common.back')}>
@@ -160,14 +161,15 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     )
 }
 
-function ProviderPreviewEmptyState({ message, isError = false }: { message: string; isError?: boolean }) {
+function ProviderPreviewEmptyState({ message, isError = false, onRetry, retryLabel }: { message: string; isError?: boolean; onRetry?: () => void; retryLabel: string }) {
     return (
-        <div role="status" aria-live="polite" className="flex min-h-[352px] items-center justify-center rounded-[9px] border border-border bg-card p-6 text-center lg:col-span-4">
+        <div role={isError ? 'alert' : 'status'} aria-live={isError ? 'assertive' : 'polite'} className="flex min-h-[352px] items-center justify-center rounded-[9px] border border-border bg-card p-6 text-center lg:col-span-4">
             <div className="max-w-md">
                 <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {isError ? <AlertCircle className="size-6" aria-hidden="true" /> : <MapPin className="size-6" aria-hidden="true" />}
                 </span>
                 <p className="mt-4 text-base font-black text-foreground">{message}</p>
+                {isError && onRetry ? <RetryButton className="mt-4" size="sm" onRetry={onRetry} label={retryLabel} /> : null}
             </div>
         </div>
     )

@@ -21,6 +21,11 @@ export enum AutomotivePriceType {
     QuoteRequired = 'quote_required',
 }
 
+export enum AutomotiveBookingMode {
+    Request = 'request',
+    Instant = 'instant',
+}
+
 export enum AutomotiveReviewStatus {
     Approved = 'approved',
     Pending = 'pending',
@@ -126,6 +131,8 @@ export class AutomotiveProviderEntity {
 
 @Entity('autocare_service_locations')
 @Index(['marketId', 'providerId'])
+@Index(['marketId', 'latitude'])
+@Index(['marketId', 'longitude'])
 export class AutomotiveServiceLocationEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) providerId!: string
@@ -160,10 +167,12 @@ export class AutomotiveServiceOfferingEntity {
     @Column({ type: 'jsonb', default: () => "'[]'" }) inclusions!: string[]
     @Column({ type: 'text', nullable: true }) warrantyText!: string | null
     @Column({ type: 'boolean', default: true }) active!: boolean
+    @Column({ type: 'enum', enum: AutomotiveBookingMode, enumName: 'autocare_booking_mode', default: AutomotiveBookingMode.Request }) bookingMode!: AutomotiveBookingMode
 }
 
 @Entity('autocare_reviews')
 @Index(['providerId', 'status', 'createdAt'])
+@Index('UQ_autocare_reviews_service_request', ['serviceRequestId'], { unique: true, where: '"serviceRequestId" IS NOT NULL' })
 export class AutomotiveReviewEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) providerId!: string

@@ -61,7 +61,7 @@ export function AppHeader() {
                     <ThemeSwitcher />
                     <button
                         type="button"
-                        className="flex size-10 items-center justify-center rounded-md border bg-card text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+                        className="flex size-10 cursor-pointer items-center justify-center rounded-md border bg-card text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
                         aria-label={t('common.menu')}
                         aria-expanded={isMenuOpen}
                         aria-controls="public-mobile-menu"
@@ -84,7 +84,7 @@ export function AppHeader() {
                                         to={link.to}
                                         {...('end' in link ? { end: link.end } : {})}
                                         onClick={() => setIsMenuOpen(false)}
-                                        className={({ isActive }) => `rounded-md px-3 py-3 text-sm font-semibold transition-colors ${index === primaryLinks.length ? 'mt-1 border-t pt-3' : ''} ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
+                                        className={({ isActive }) => `cursor-pointer rounded-md px-3 py-3 text-sm font-semibold transition-colors ${index === primaryLinks.length ? 'mt-1 border-t pt-3' : ''} ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
                                     >
                                         <span className="flex items-center justify-between gap-3">
                                             {link.label}
@@ -96,7 +96,7 @@ export function AppHeader() {
                             <div className="mt-2 border-t border-border pt-2">
                                 <p className="px-3 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">{t('navigation.helpAndInfo')}</p>
                                 {headerInfoLinks.map(({ to, labelKey, descriptionKey, icon: Icon }) => (
-                                    <NavLink key={to} to={to} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+                                    <NavLink key={to} to={to} onClick={() => setIsMenuOpen(false)} className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
                                         <Icon className="size-4 text-primary" />
                                         <span><span className="block">{t(labelKey)}</span><span className="block text-xs font-medium text-muted-foreground">{t(descriptionKey)}</span></span>
                                     </NavLink>

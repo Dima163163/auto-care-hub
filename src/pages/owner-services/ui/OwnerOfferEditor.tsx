@@ -10,6 +10,9 @@ type OwnerOfferEditorLabels = {
     offerDescription: string
     descriptionPlaceholder: string
     price: string
+    bookingMode: string
+    bookingModeRequest: string
+    bookingModeInstant: string
     priceInvalid: string
     editError: string
     priceSnapshotNotice: string
@@ -49,6 +52,7 @@ export function OwnerOfferDialog({ title, isOpen, onOpenChange, ...editorProps }
 export function OwnerOfferEditor({ providerId, offer, labels, onCancel, onSaved }: OwnerOfferEditorProps) {
     const [description, setDescription] = useState(offer.description ?? '')
     const [price, setPrice] = useState(String(offer.priceFromMinor / 100))
+    const [bookingMode, setBookingMode] = useState<'request' | 'instant'>(offer.bookingMode ?? 'request')
     const [validationError, setValidationError] = useState<string | null>(null)
     const [updateOffer, updateState] = useUpdateOwnerAutoCareOfferMutation()
 
@@ -62,7 +66,7 @@ export function OwnerOfferEditor({ providerId, offer, labels, onCancel, onSaved 
 
         setValidationError(null)
         try {
-            await updateOffer({ providerId, offerId: offer.id, description: description.trim() || null, priceFromMinor }).unwrap()
+            await updateOffer({ providerId, offerId: offer.id, description: description.trim() || null, priceFromMinor, bookingMode }).unwrap()
             onSaved()
         } catch {
             setValidationError(labels.editError)
@@ -78,6 +82,13 @@ export function OwnerOfferEditor({ providerId, offer, labels, onCancel, onSaved 
             <label className="grid gap-1.5 text-xs font-bold text-muted-foreground">
                 <span>{labels.price}</span>
                 <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" min="0" max="100000000" step="1" inputMode="decimal" className="h-10 w-full rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm font-black text-foreground outline-none transition focus:border-primary" />
+            </label>
+            <label className="grid gap-1.5 text-xs font-bold text-muted-foreground">
+                <span>{labels.bookingMode}</span>
+                <select value={bookingMode} onChange={(event) => setBookingMode(event.target.value as 'request' | 'instant')} className="h-10 w-full rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm font-black text-foreground outline-none transition focus:border-primary">
+                    <option value="request">{labels.bookingModeRequest}</option>
+                    <option value="instant">{labels.bookingModeInstant}</option>
+                </select>
             </label>
             <p className="text-[11px] font-semibold leading-4 text-muted-foreground">{labels.priceSnapshotNotice}</p>
             {validationError ? <p className="text-xs font-bold text-destructive">{updateState.error ? getApiErrorMessage(updateState.error, validationError) : validationError}</p> : null}

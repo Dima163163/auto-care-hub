@@ -8,7 +8,7 @@ const testBaseUrl = `http://127.0.0.1:${testPort}`
 export default defineConfig({
     testDir: './e2e',
     testIgnore: [
-        '**/real-mode.smoke.spec.ts',
+        '**/autocare-real-mode.smoke.spec.ts',
         '**/pwa-preview.spec.ts',
         '**/visual-regression.spec.ts',
     ],

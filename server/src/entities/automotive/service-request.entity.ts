@@ -61,6 +61,7 @@ export type AutomotiveOfferingSnapshot = {
     inclusions: string[]
     warrantyText: string | null
     priceType: string
+    bookingMode: 'request' | 'instant'
 }
 
 @Entity('autocare_service_requests')
@@ -86,6 +87,9 @@ export class ServiceRequestEntity {
     @Column({ type: 'integer', nullable: true }) acceptedQuoteVersion!: number | null
     @Column({ type: 'jsonb', nullable: true }) acceptedQuoteSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) acceptedQuoteAt!: Date | null
+    /** Immutable booking contract derived from the accepted quote. */
+    @Column({ type: 'jsonb', nullable: true }) bookingSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'timestamptz', nullable: true }) bookingCreatedAt!: Date | null
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) providerConfirmedAt!: Date | null

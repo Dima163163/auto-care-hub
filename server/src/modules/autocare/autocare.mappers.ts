@@ -106,6 +106,7 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
         warrantyText: entity.warrantyText,
         active: entity.active,
         priceType: definition?.priceType,
+        bookingMode: entity.bookingMode,
     }
 }
 

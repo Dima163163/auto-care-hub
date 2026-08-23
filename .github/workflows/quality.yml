@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - dev
       - main
 
 permissions:
@@ -14,6 +15,20 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  production-promotion-policy:
+    name: Production promotion policy
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require dev as the production promotion source
+        env:
+          SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if [ "$SOURCE_BRANCH" != "dev" ]; then
+            echo "Production main can only be promoted from dev; received $SOURCE_BRANCH."
+            exit 1
+          fi
+
   security:
     name: Dependency and secret scanning
     runs-on: ubuntu-latest
@@ -87,6 +102,9 @@ jobs:
 
       - name: Check frontend API runtime boundaries
         run: npm run check:api-runtime-boundaries
+
+      - name: Check staging/API compatibility contract
+        run: npm run check:staging-api
 
       - name: Check OpenAPI shape
         run: npm run check:openapi-shape
@@ -358,7 +376,7 @@ jobs:
           exit 1
 
       - name: Reset and seed demo data
-        run: npm run demo:reset && npm run demo:seed
+        run: npm run demo:reset && npm run demo:seed && npm run autocare:seed
         working-directory: server
 
       - name: Install Chromium

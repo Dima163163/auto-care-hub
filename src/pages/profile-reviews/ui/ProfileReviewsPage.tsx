@@ -12,6 +12,7 @@ import { buttonVariants } from '@/components/ui/button-variants'
 
 import { ProfileReviewCard } from './ProfileReviewCard'
 import { AutoCareReviewResolutionPanel } from './AutoCareReviewResolutionPanel'
+import { AutoCareAppealsHistory } from './AutoCareAppealsHistory'
 
 export function ProfileReviewsPage() {
     const { t } = useTranslation()
@@ -75,6 +76,7 @@ export function ProfileReviewsPage() {
             />
 
             <AutoCareReviewResolutionPanel />
+            <AutoCareAppealsHistory />
 
             {reviews.length === 0 ? (
                 <StateCard

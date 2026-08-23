@@ -16,4 +16,41 @@ describe('getRecommendedScore', () => {
         expect(getRecommendedScore(input)).toBe(getRecommendedScore(input))
         expect(getRecommendedScore(input)).toBeCloseTo(85, 5)
     })
+
+    it('rewards explicit service, vehicle, availability and reliability signals', () => {
+        const complete = getRecommendedScore({
+            rating: 4.5,
+            trustScore: 70,
+            reviewCount: 40,
+            verified: true,
+            distanceKm: 8,
+            serviceRelevance: 1,
+            vehicleRelevance: 1,
+            availabilityScore: 1,
+            priceCompleteness: 1,
+            responseReliability: 0.95,
+            bookingReliability: 0.95,
+        })
+        const incomplete = getRecommendedScore({
+            rating: 4.5,
+            trustScore: 70,
+            reviewCount: 40,
+            verified: true,
+            distanceKm: 8,
+            serviceRelevance: 0.4,
+            vehicleRelevance: 0.3,
+            availabilityScore: 0,
+            priceCompleteness: 0,
+            responseReliability: 0.2,
+            bookingReliability: 0.2,
+        })
+
+        expect(complete).toBeGreaterThan(incomplete)
+    })
+
+    it('keeps legacy records neutral when operational evidence is unavailable', () => {
+        const base = { rating: 4.6, trustScore: 76, reviewCount: 80, verified: true, distanceKm: 5 }
+
+        expect(getRecommendedScore(base)).toBe(getRecommendedScore({ ...base, serviceRelevance: undefined }))
+    })
 })

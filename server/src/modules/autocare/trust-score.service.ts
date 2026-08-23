@@ -1,3 +1,4 @@
+import { In } from 'typeorm'
 import type { EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
@@ -10,6 +11,7 @@ import {
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
     AutomotiveServiceLocationEntity,
+    ServiceMessageEntity,
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
@@ -45,7 +47,7 @@ export async function reassessAutoCareProviderTrust(
         manager.getRepository(AutoCareTrustEvidenceEntity).find({ where: { providerId } }),
         manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved, verifiedVisit: true } }),
         manager.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { providerId } }),
-        manager.getRepository(ServiceRequestEntity).find({ where: { providerId }, select: { status: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
+        manager.getRepository(ServiceRequestEntity).find({ where: { providerId } }),
     ])
     const nowMs = Date.now()
     const verifiedEvidenceCount = evidence.filter((item) =>
@@ -61,6 +63,32 @@ export async function reassessAutoCareProviderTrust(
     ).length
     const cancelledInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.Cancelled).length
     const noShowInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.NoShow).length
+    const requestIds = interactions.map((request) => request.id)
+    const messages = requestIds.length === 0
+        ? []
+        : await manager.getRepository(ServiceMessageEntity).find({
+            where: { requestId: In(requestIds) },
+            order: { createdAt: 'ASC' },
+        })
+    const firstResponseMinutes = interactions.flatMap((request) => {
+        const response = messages.find((message) => message.requestId === request.id && message.senderId !== request.clientId)
+        return response ? [(response.createdAt.getTime() - request.createdAt.getTime()) / 60_000] : []
+    })
+    const responseTimeMinutes = firstResponseMinutes.length > 0
+        ? firstResponseMinutes.reduce((sum, value) => sum + value, 0) / firstResponseMinutes.length
+        : undefined
+    const activeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status))
+    const complaintRate = completedInteractionCount > 0 ? activeClaims.length / completedInteractionCount : 0
+    const criticalViolationCount = activeClaims.filter((claim) => /critical|safety|fraud|identity/i.test(claim.claimType)).length
+    const orderedReviews = [...reviews].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    const recentReviews = orderedReviews.slice(-5)
+    const priorReviews = orderedReviews.slice(0, -5)
+    const average = (items: AutomotiveReviewEntity[]) => items.length === 0
+        ? null
+        : items.reduce((sum, review) => sum + review.rating, 0) / items.length
+    const recentAverage = average(recentReviews)
+    const priorAverage = average(priorReviews)
+    const recentRatingTrend = recentAverage === null || priorAverage === null ? undefined : recentAverage - priorAverage
     const profileFields = getProfileFieldCount(provider)
     const trust = calculateAutoCareTrustScore({
         verified: provider.verified,
@@ -73,6 +101,10 @@ export async function reassessAutoCareProviderTrust(
         completedInteractionCount,
         cancelledInteractionCount,
         noShowInteractionCount,
+        recentRatingTrend,
+        complaintRate,
+        responseTimeMinutes,
+        moderationViolationCount: criticalViolationCount,
     })
     const now = new Date()
     const inputCounters = {
@@ -84,14 +116,20 @@ export async function reassessAutoCareProviderTrust(
         cancelledInteractionCount,
         noShowInteractionCount,
         rating: Math.round(rating * 100) / 100,
+        complaintRate: Math.round(complaintRate * 1000) / 1000,
+        responseTimeMinutes: responseTimeMinutes === undefined ? -1 : Math.round(responseTimeMinutes * 10) / 10,
+        recentRatingTrend: recentRatingTrend === undefined ? 0 : Math.round(recentRatingTrend * 100) / 100,
+        moderationViolationCount: criticalViolationCount,
     }
     const reasonCodes = [
         !provider.verified ? 'provider_not_verified' : null,
-        reviewCount < 10 ? 'small_review_sample' : null,
+        reviewCount < 5 ? 'small_review_sample' : null,
         verifiedEvidenceCount === 0 ? 'no_verified_evidence' : null,
         activeGuaranteeClaims > 0 ? 'open_guarantee_claims' : null,
         completedInteractionCount === 0 ? 'no_completed_interactions' : null,
         (cancelledInteractionCount + noShowInteractionCount) > completedInteractionCount && completedInteractionCount > 0 ? 'reliability_below_threshold' : null,
+        responseTimeMinutes === undefined ? 'response_time_signal_unavailable' : null,
+        criticalViolationCount > 0 ? 'critical_moderation_violation' : null,
     ].filter((code): code is string => code !== null)
     const locations = await manager.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId } })
     const previousSnapshots = await manager.getRepository(AutoCareTrustSnapshotEntity).find({

@@ -6,7 +6,7 @@ const usePreviewServer = process.env.REAL_E2E_PREVIEW === 'true'
 
 export default defineConfig({
     testDir: './e2e',
-    testMatch: 'real-mode.smoke.spec.ts',
+    testMatch: 'autocare-real-mode.smoke.spec.ts',
     fullyParallel: false,
     workers: 1,
     reporter: 'list',

@@ -5,6 +5,7 @@ import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
+    AutomotiveBookingMode,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
@@ -42,6 +43,7 @@ import type {
     CreateAutoCareServiceQuoteInput,
     CreateAutoCareServiceRequestInput,
     AutoCareServiceQuoteHistoryResponse,
+    AutoCareBookingSnapshotResponse,
     AutoCareRescheduleResponse,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
@@ -49,6 +51,8 @@ import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment } from './attachment-content.js'
 import { canManageProvider, canManageProviderWithManager, getManagedProviderIds } from './provider-access.service.js'
 import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts } from './availability.js'
+import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
+import { awardAutoCareBonusForCompletedVisit, refundAutoCareBonusForCancelledRequest } from './autocare-bonus.service.js'
 
 function clientOnly(user: UserEntity) {
     if (user.role !== UserRole.Client) {
@@ -177,6 +181,7 @@ function createOfferingSnapshot(definition: AutomotiveServiceDefinitionEntity, o
         inclusions: offering.inclusions,
         warrantyText: offering.warrantyText,
         priceType: definition.priceType,
+        bookingMode: offering.bookingMode,
     }
 }
 
@@ -249,6 +254,7 @@ function requestResponse(
         acceptedQuoteVersion: request.acceptedQuoteVersion,
         acceptedQuoteSnapshot: request.acceptedQuoteSnapshot,
         acceptedQuoteAt: request.acceptedQuoteAt?.toISOString() ?? null,
+        booking: toBookingSnapshotResponse(request.bookingSnapshot),
         status: request.status,
         clientConfirmedAt: request.clientConfirmedAt?.toISOString() ?? null,
         providerConfirmedAt: request.providerConfirmedAt?.toISOString() ?? null,
@@ -264,6 +270,29 @@ function requestResponse(
         reschedule,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
+    }
+}
+
+function toBookingSnapshotResponse(snapshot: Record<string, unknown> | null): AutoCareBookingSnapshotResponse | null {
+    if (!snapshot || typeof snapshot.requestId !== 'string' || typeof snapshot.quoteVersion !== 'number' ||
+        typeof snapshot.amountMinor !== 'number' || typeof snapshot.currencyCode !== 'string' ||
+        typeof snapshot.scheduledAt !== 'string' || typeof snapshot.timezone !== 'string' ||
+        typeof snapshot.serviceSlug !== 'string' || typeof snapshot.providerId !== 'string' ||
+        typeof snapshot.locationId !== 'string' || typeof snapshot.createdAt !== 'string') return null
+    const lineItems = Array.isArray(snapshot.lineItems) ? snapshot.lineItems : []
+    return {
+        requestId: snapshot.requestId,
+        quoteVersion: snapshot.quoteVersion,
+        amountMinor: snapshot.amountMinor,
+        currencyCode: snapshot.currencyCode,
+        lineItems: lineItems as AutoCareBookingSnapshotResponse['lineItems'],
+        scheduledAt: snapshot.scheduledAt,
+        timezone: snapshot.timezone,
+        serviceSlug: snapshot.serviceSlug,
+        providerId: snapshot.providerId,
+        locationId: snapshot.locationId,
+        status: 'confirmed',
+        createdAt: snapshot.createdAt,
     }
 }
 
@@ -668,6 +697,23 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
             }
             : null
         lockedRequest.acceptedQuoteAt = accepted ? acceptedAt : null
+        const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: lockedRequest.locationId, providerId: lockedRequest.providerId })
+        lockedRequest.bookingSnapshot = accepted && lockedRequest.preferredAt && latestQuote
+            ? createAutoCareBookingSnapshot({
+                requestId: lockedRequest.id,
+                quoteVersion: latestQuote.version,
+                amountMinor: latestQuote.amountMinor,
+                currencyCode: latestQuote.currencyCode,
+                lineItems: Array.isArray(latestQuote.snapshot.lineItems) ? latestQuote.snapshot.lineItems as AutoCareQuoteLineItemResponse[] : [],
+                scheduledAt: lockedRequest.preferredAt.toISOString(),
+                timezone: location?.timezone ?? 'UTC',
+                serviceSlug: typeof lockedRequest.offeringSnapshot?.serviceSlug === 'string' ? lockedRequest.offeringSnapshot.serviceSlug : 'automotive-service',
+                providerId: lockedRequest.providerId,
+                locationId: lockedRequest.locationId,
+                createdAt: acceptedAt.toISOString(),
+            })
+            : null
+        lockedRequest.bookingCreatedAt = accepted ? acceptedAt : null
         const request = await manager.getRepository(ServiceRequestEntity).save(lockedRequest)
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: accepted ? 'estimate_accepted' : 'estimate_declined', title: accepted ? 'Клиент принял смету' : 'Клиент отклонил смету' })
@@ -793,7 +839,10 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
                 return local.date === localVisit.date && visitStartMinutes < itemEnd && visitEndMinutes > itemStart
             })
             if (overlaps) conflict('The selected visit time is no longer available.')
+            const requestId = randomUUID()
+            const confirmationAt = new Date()
             const createdRequest = await manager.getRepository(ServiceRequestEntity).save(manager.getRepository(ServiceRequestEntity).create({
+                id: requestId,
                 clientId: user.id,
                 providerId: provider.id,
                 locationId: location.id,
@@ -805,9 +854,25 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
                 preferredAt,
                 note: input.note ?? null,
                 idempotencyKey: input.idempotencyKey ?? null,
-                status: ServiceRequestStatus.AwaitingReply,
-                clientConfirmedAt: new Date(),
-                providerConfirmedAt: null,
+                status: offering.bookingMode === AutomotiveBookingMode.Instant ? ServiceRequestStatus.Accepted : ServiceRequestStatus.AwaitingReply,
+                clientConfirmedAt: confirmationAt,
+                providerConfirmedAt: offering.bookingMode === AutomotiveBookingMode.Instant ? confirmationAt : null,
+                bookingSnapshot: offering.bookingMode === AutomotiveBookingMode.Instant
+                    ? createAutoCareBookingSnapshot({
+                        requestId,
+                        quoteVersion: 0,
+                        amountMinor: offering.priceFromMinor,
+                        currencyCode: offering.currencyCode,
+                        lineItems: [],
+                        scheduledAt: preferredAt.toISOString(),
+                        timezone,
+                        serviceSlug: definition.slug,
+                        providerId: provider.id,
+                        locationId: location.id,
+                        createdAt: confirmationAt.toISOString(),
+                    })
+                    : null,
+                bookingCreatedAt: offering.bookingMode === AutomotiveBookingMode.Instant ? confirmationAt : null,
             }))
             await appendRepairEventWithManager(manager, {
                 requestId: createdRequest.id,
@@ -1062,6 +1127,7 @@ export async function completeAutoCareServiceRequest(user: UserEntity, requestId
         request.completedById = user.id
         request.completionNote = note?.trim() || null
         await manager.getRepository(ServiceRequestEntity).save(request)
+        await awardAutoCareBonusForCompletedVisit(manager, request, user.id)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'completed', title: 'Сервис отметил визит завершённым', notes: request.completionNote })
         await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'completed', role: 'client', title: 'Визит завершён', message: 'Сервис отметил услугу завершённой. Теперь можно оставить отзыв.' }, manager)
         return { request, changed: true }
@@ -1082,6 +1148,7 @@ export async function cancelAutoCareServiceRequest(user: UserEntity, requestId: 
         request.cancelledById = user.id
         request.cancellationReason = reason?.trim() || null
         await manager.getRepository(ServiceRequestEntity).save(request)
+        await refundAutoCareBonusForCancelledRequest(manager, request, user.id)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'cancelled', title: 'Клиент отменил заявку', notes: request.cancellationReason })
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
         if (provider?.ownerId) {

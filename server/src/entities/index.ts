@@ -36,7 +36,13 @@ import {
 import {
     AutomotiveProviderMembershipEntity,
 } from './automotive/provider-membership.entity.js'
+import { AutomotiveProviderInvitationEntity } from './automotive/provider-invitation.entity.js'
+import { AutomotiveProviderChangeRequestEntity } from './automotive/provider-change-request.entity.js'
+import { AutomotiveCatalogGapRequestEntity } from './automotive/catalog-gap-request.entity.js'
 import { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
+import { AutoCareBonusAccountEntity, AutoCareBonusLedgerEntity, AutoCareBonusProgramEntity } from './automotive/bonus.entity.js'
+import { AutoCareChatBlockEntity, AutoCareChatReportEntity } from './automotive/chat-moderation.entity.js'
+import { AutoCareAppealEntity } from './automotive/appeal.entity.js'
 import {
     AutoCareChatThreadEntity,
     ServiceAttachmentEntity,
@@ -94,7 +100,16 @@ export const entities = [
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
     AutomotiveProviderMembershipEntity,
+    AutomotiveProviderInvitationEntity,
+    AutomotiveProviderChangeRequestEntity,
+    AutomotiveCatalogGapRequestEntity,
     AutomotiveProviderFavoriteEntity,
+    AutoCareBonusProgramEntity,
+    AutoCareBonusAccountEntity,
+    AutoCareBonusLedgerEntity,
+    AutoCareChatReportEntity,
+    AutoCareChatBlockEntity,
+    AutoCareAppealEntity,
     ServiceRequestEntity,
     AutoCareServiceQuoteEntity,
     AutoCareRescheduleRequestEntity,
@@ -116,6 +131,24 @@ export const entities = [
 
 export { BookingEntity } from './booking/booking.entity.js'
 export { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
+export {
+    AutomotiveProviderChangeRequestEntity,
+    AutomotiveProviderChangeRequestKind,
+    AutomotiveProviderChangeRequestStatus,
+} from './automotive/provider-change-request.entity.js'
+export {
+    AutomotiveCatalogGapRequestEntity,
+    AutomotiveCatalogGapRequestStatus,
+} from './automotive/catalog-gap-request.entity.js'
+export { AutoCareBonusAccountEntity, AutoCareBonusLedgerEntity, AutoCareBonusProgramEntity, AutoCareBonusLedgerType } from './automotive/bonus.entity.js'
+export {
+    AutoCareChatBlockEntity,
+    AutoCareChatBlockStatus,
+    AutoCareChatReportCategory,
+    AutoCareChatReportEntity,
+    AutoCareChatReportStatus,
+} from './automotive/chat-moderation.entity.js'
+export { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from './automotive/appeal.entity.js'
 export { CabinetEntity } from './cabinet/cabinet.entity.js'
 export { ReviewEntity } from './review/review.entity.js'
 export { SecurityTokenEntity } from './security-token/security-token.entity.js'
@@ -178,6 +211,7 @@ export {
     AutomotiveReviewStatus,
     AutomotiveReviewPromoEntity,
     AutomotiveReviewPromoStatus,
+    AutomotiveBookingMode,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
@@ -187,6 +221,11 @@ export {
     AutomotiveProviderMembershipRole,
     AutomotiveProviderMembershipStatus,
 } from './automotive/provider-membership.entity.js'
+export {
+    AutomotiveProviderInvitationEntity,
+    AutomotiveProviderInvitationRole,
+    AutomotiveProviderInvitationStatus,
+} from './automotive/provider-invitation.entity.js'
 export {
     AutoCareChatThreadEntity,
     AutoCareChatThreadStatus,

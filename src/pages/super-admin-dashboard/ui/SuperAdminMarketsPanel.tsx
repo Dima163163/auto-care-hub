@@ -1,0 +1,32 @@
+import { useState } from 'react'
+import { CheckCircle2, Globe2, MapPin, RadioTower } from 'lucide-react'
+
+import { useGetAutoCareLocationZonesQuery, useGetAutoCareMarketsQuery, type AutoCareApiMarket } from '@/entities/automotive-service'
+import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { StateCard } from '@/shared/ui/state-card'
+
+type Props = { locale: string }
+type Copy = { title: string; description: string; select: string; locales: string; timezone: string; currency: string; zones: string; services: string; ready: string; draft: string; loading: string; error: string; empty: string }
+const copy: Record<'ru' | 'en', Copy> = {
+    ru: { title: 'Рынки и зоны', description: 'Проверяйте города запуска, локали и плотность зон. Новые рынки добавляются через API без изменения интерфейса.', select: 'Выберите город', locales: 'Локали', timezone: 'Часовой пояс', currency: 'Валюта', zones: 'Зоны поиска', services: 'сервисов', ready: 'Готов к запуску', draft: 'Требует настройки', loading: 'Загрузка рынков…', error: 'Не удалось загрузить рынки.', empty: 'Рынки пока не настроены.' },
+    en: { title: 'Markets and zones', description: 'Review launch cities, locales and zone coverage. New markets are added through the API without changing the UI.', select: 'Choose a city', locales: 'Locales', timezone: 'Timezone', currency: 'Currency', zones: 'Search zones', services: 'services', ready: 'Launch ready', draft: 'Needs setup', loading: 'Loading markets…', error: 'Could not load markets.', empty: 'No markets configured yet.' },
+} as const
+
+export function SuperAdminMarketsPanel({ locale }: Props) {
+    const text = locale === 'ru' ? copy.ru : copy.en
+    const markets = useGetAutoCareMarketsQuery()
+    const [selectedId, setSelectedId] = useState('')
+    const selected = markets.data?.find((market) => market.id === (selectedId || markets.data?.[0]?.id))
+    const zones = useGetAutoCareLocationZonesQuery({ marketId: selected?.id ?? '', limit: 50 }, { skip: !selected?.id })
+    if (markets.isLoading) return <StateCard variant="loading" title={text.loading} />
+    if (markets.error) return <StateCard variant="error" title={text.error} description={getApiErrorMessage(markets.error, text.error)} action={<RetryButton onRetry={markets.refetch} label="Retry" />} />
+    if (!markets.data?.length) return <StateCard variant="empty" title={text.empty} />
+    return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div><h2 className="flex items-center gap-2 text-lg font-black text-foreground"><Globe2 className="size-5 text-primary" />{text.title}</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{text.description}</p></div><label className="min-w-56 text-xs font-black text-foreground"><span className="mb-1.5 block">{text.select}</span><select value={selected?.id ?? ''} onChange={(event) => setSelectedId(event.target.value)} className="h-10 w-full rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary">{markets.data.map((market) => <option key={market.id} value={market.id}>{market.cityName}, {market.countryName}</option>)}</select></label></div>{selected && <MarketSummary market={selected} text={text} />}<div className="mt-5"><h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground"><MapPin className="size-4 text-primary" />{text.zones}</h3>{zones.isLoading && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><div className="h-20 animate-pulse rounded-[var(--radius-card)] bg-secondary" /><div className="h-20 animate-pulse rounded-[var(--radius-card)] bg-secondary" /></div>}{zones.error && <p className="mt-3 rounded-[var(--radius-card)] bg-destructive/10 p-3 text-sm text-destructive">{getApiErrorMessage(zones.error, text.error)}</p>}{!zones.isLoading && !zones.error && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{(zones.data ?? []).map((zone) => <article key={zone.id} className="rounded-[var(--radius-card)] border border-border bg-background p-3"><p className="truncate text-sm font-black text-foreground">{zone.names[locale] ?? zone.names.en ?? zone.slug}</p><p className="mt-1 text-xs text-muted-foreground">{zone.serviceCount} {text.services} · {zone.radiusKm ?? '—'} km</p></article>)}</div>}</div></section>
+}
+
+function MarketSummary({ market, text }: { market: AutoCareApiMarket; text: typeof copy.ru }) {
+    return <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Info icon={CheckCircle2} label={market.launchReady ? text.ready : text.draft} value={market.launchReady ? '✓' : '—'} /><Info icon={Globe2} label={text.locales} value={market.supportedLocales.join(', ').toUpperCase()} /><Info icon={RadioTower} label={text.timezone} value={market.timezone} /><Info icon={MapPin} label={text.currency} value={market.currencyCode} /></div>
+}
+
+function Info({ icon: Icon, label, value }: { icon: typeof Globe2; label: string; value: string }) { return <div className="rounded-[var(--radius-card)] border border-border bg-background p-3"><Icon className="size-4 text-primary" /><p className="mt-2 text-xs font-bold text-muted-foreground">{label}</p><p className="mt-1 truncate text-sm font-black text-foreground">{value}</p></div> }

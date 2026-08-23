@@ -18,12 +18,15 @@ const pendingTranslations = new Map<SupportedLocale, Promise<TranslationSchema>>
 const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     en: async () => enTranslations,
     ru: async () => {
-        const [{ ruTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./ru'),
+        const [{ ruPart1 }, { ruPart2 }, { ruPart3 }, { ruPart4 }, { withAutoCareTranslations }] = await Promise.all([
+            import('./ru-part-1'),
+            import('./ru-part-2'),
+            import('./ru-part-3'),
+            import('./ru-part-4'),
             import('./autocare-popular'),
         ])
 
-        return withAutoCareTranslations('ru', ruTranslations)
+        return withAutoCareTranslations('ru', { ...enTranslations, ...ruPart1, ...ruPart2, ...ruPart3, ...ruPart4 })
     },
     ro: async () => {
         const [{ roTranslations }, { withAutoCareTranslations }] = await Promise.all([
@@ -35,7 +38,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     es: async () => {
         const [{ esTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-es'),
             import('./autocare-popular'),
         ])
 
@@ -43,7 +46,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     de: async () => {
         const [{ deTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-de'),
             import('./autocare-popular'),
         ])
 
@@ -51,7 +54,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     fr: async () => {
         const [{ frTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-fr'),
             import('./autocare-popular'),
         ])
 
@@ -59,7 +62,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     pt: async () => {
         const [{ ptTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-pt'),
             import('./autocare-popular'),
         ])
 
@@ -74,7 +77,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     sv: async () => (await import('./european')).svTranslations,
     zh: async () => {
         const [{ zhTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-zh'),
             import('./autocare-popular'),
         ])
 
@@ -82,7 +85,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     ja: async () => {
         const [{ jaTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-ja'),
             import('./autocare-popular'),
         ])
 
@@ -90,7 +93,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     ko: async () => {
         const [{ koTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-ko'),
             import('./autocare-popular'),
         ])
 
@@ -98,7 +101,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     ar: async () => {
         const [{ arTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-ar'),
             import('./autocare-popular'),
         ])
 
@@ -106,7 +109,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     tr: async () => {
         const [{ trTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-tr'),
             import('./autocare-popular'),
         ])
 
@@ -114,7 +117,7 @@ const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     },
     hi: async () => {
         const [{ hiTranslations }, { withAutoCareTranslations }] = await Promise.all([
-            import('./popular'),
+            import('./popular-hi'),
             import('./autocare-popular'),
         ])
 

@@ -5,6 +5,7 @@ import { useGetAutoCareLocationZonesQuery, useGetAutoCareMarketsQuery } from '@/
 import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
 
 import { ServiceCategoryGrid } from './ServiceCategoryGrid'
 
@@ -24,7 +25,7 @@ function LocationCard({ marketId }: { marketId: string }) {
     const selectedMarket = markets.find((market) => market.cityCode === marketId || market.id === marketId)
     const apiMarketId = selectedMarket?.id ?? marketId
     const routeMarket = selectedMarket?.cityCode ?? marketId
-    const { data: zones = [], isLoading, isError } = useGetAutoCareLocationZonesQuery({ marketId: apiMarketId, limit: 4 }, { skip: !apiMarketId || isMarketsLoading })
+    const { data: zones = [], isLoading, isError, refetch } = useGetAutoCareLocationZonesQuery({ marketId: apiMarketId, limit: 4 }, { skip: !apiMarketId || isMarketsLoading })
     const getZoneName = (names: Record<string, string>) => names[locale] ?? names[locale.split('-')[0] ?? ''] ?? names.en ?? names.ru ?? Object.values(names)[0] ?? ''
     const countLabel = (count: number) => {
         if (!locale.startsWith('ru')) return `${count.toLocaleString(locale)} services`
@@ -40,10 +41,11 @@ function LocationCard({ marketId }: { marketId: string }) {
     return (
         <section className="h-full rounded-[10px] bg-card p-5">
             <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">{t('autocare.exploreLocations')}</h2><Link to={routePaths.serviceDiscovery({ market: routeMarket })} className="text-xs font-semibold text-primary">{t('autocare.viewOnMap')}</Link></div>
-            <div className="mt-4 grid gap-2">
+            <div className="mt-4 grid gap-2" aria-busy={isMarketsLoading || isLoading}>
                 {(isMarketsLoading || isLoading) && [1, 2, 3, 4].map((item) => <div key={item} className="flex h-[52px] items-center gap-3" aria-hidden="true"><Skeleton className="h-[52px] w-[73px] rounded-[7px]" /><div className="grid flex-1 gap-2"><Skeleton className="h-3.5 w-3/5" /><Skeleton className="h-3 w-2/5" /></div></div>)}
                 {!isMarketsLoading && !isLoading && !isError && zones.map((zone) => <Link key={zone.id} to={routePaths.serviceDiscovery({ market: routeMarket, zone: zone.id })} className="group flex items-center gap-3"><img src={zone.imageUrl ?? '/images/autocare/locations/center.webp'} alt="" className="h-[52px] w-[73px] rounded-[7px] object-cover" /><span><strong className="block text-sm group-hover:text-primary">{getZoneName(zone.names)}</strong><span className="mt-0.5 block text-xs text-muted-foreground">{countLabel(zone.serviceCount)}</span></span></Link>)}
-                {!isLoading && (isError || zones.length === 0) && <p className="py-4 text-sm text-muted-foreground">{t('autocare.noLocations')}</p>}
+                {!isMarketsLoading && !isLoading && isError && <div role="alert" className="rounded-[var(--radius-control)] border border-status-danger-border bg-status-danger-surface p-3"><p className="text-sm font-semibold text-status-danger-foreground">{t('common.failedToLoad')}</p><RetryButton className="mt-3" size="sm" onRetry={refetch} label={t('common.retry')} /></div>}
+                {!isMarketsLoading && !isLoading && !isError && zones.length === 0 && <p className="rounded-[var(--radius-control)] border border-dashed border-border bg-secondary/40 px-3 py-4 text-sm text-muted-foreground">{t('autocare.noLocations')}</p>}
             </div>
         </section>
     )

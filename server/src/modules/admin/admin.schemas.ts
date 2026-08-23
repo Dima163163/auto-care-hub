@@ -2,6 +2,10 @@ import { z } from 'zod'
 
 import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
 import { AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
+import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
+import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { AccountDeletionRequestStatus } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import {
@@ -176,6 +180,60 @@ export const adminAutoCareProviderParamsSchema = z.object({
 
 export const updateAdminAutoCareProviderStatusSchema = z.object({
     status: z.nativeEnum(AutomotiveProviderStatus),
+})
+
+export const adminProviderChangeRequestsQuerySchema = z.object({
+    status: z.nativeEnum(AutomotiveProviderChangeRequestStatus).optional(),
+    kind: z.nativeEnum(AutomotiveProviderChangeRequestKind).optional(),
+})
+
+export const adminProviderChangeRequestParamsSchema = z.object({
+    id: z.string().uuid('Provider change request id must be a valid UUID.'),
+})
+
+export const decideAdminProviderChangeRequestSchema = z.object({
+    status: z.enum([AutomotiveProviderChangeRequestStatus.Approved, AutomotiveProviderChangeRequestStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000).nullable().optional(),
+})
+
+export const adminCatalogGapRequestsQuerySchema = z.object({
+    status: z.nativeEnum(AutomotiveCatalogGapRequestStatus).optional(),
+})
+
+export const adminCatalogGapRequestParamsSchema = z.object({
+    id: z.string().uuid('Catalog gap request id must be a valid UUID.'),
+})
+
+export const decideAdminCatalogGapRequestSchema = z.object({
+    status: z.enum([AutomotiveCatalogGapRequestStatus.Approved, AutomotiveCatalogGapRequestStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000).nullable().optional(),
+})
+
+export const adminChatReportsQuerySchema = z.object({
+    status: z.nativeEnum(AutoCareChatReportStatus).optional(),
+})
+
+export const adminChatReportParamsSchema = z.object({
+    id: z.string().uuid('Chat report id must be a valid UUID.'),
+})
+
+export const decideAdminChatReportSchema = z.object({
+    status: z.enum([AutoCareChatReportStatus.Resolved, AutoCareChatReportStatus.Dismissed]),
+    reason: z.string().trim().min(1).max(2_000).nullable().optional(),
+    blockUser: z.boolean().default(false),
+})
+
+export const adminAutoCareAppealsQuerySchema = z.object({
+    ...cursorPaginationFields,
+    status: z.nativeEnum(AutoCareAppealStatus).optional(),
+    subject: z.nativeEnum(AutoCareAppealSubject).optional(),
+})
+
+export const adminAutoCareAppealParamsSchema = z.object({ id: z.string().uuid() })
+
+export const decideAdminAutoCareAppealSchema = z.object({
+    status: z.enum([AutoCareAppealStatus.Accepted, AutoCareAppealStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000),
 })
 
 export const updateUserStatusSchema = z.object({

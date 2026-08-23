@@ -19,6 +19,7 @@ import { PageHeader } from '@/shared/ui/page-header'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 import { ReviewsSkeleton } from '@/shared/ui/loading-skeleton'
+import { StateCard } from '@/shared/ui/state-card'
 
 const ratingRows = [5, 4, 3, 2, 1] as const
 type RatingFilter = 'all' | `${typeof ratingRows[number]}`
@@ -186,7 +187,7 @@ function ReviewsShell({ children }: { children: ReactNode }) {
 }
 
 function EmptyState({ message, className = '' }: { message: string; className?: string }) { return <p className={`${className} rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-sm font-semibold text-muted-foreground`}>{message}</p> }
-function ErrorState({ error, copy, onRetry, t }: { error: unknown; copy: ReviewsCopy; onRetry: () => void; t: (key: 'common.failedToLoad' | 'common.retry') => string }) { return <div className="rounded-[var(--radius-panel)] border border-destructive/30 bg-card p-6"><p className="font-semibold text-destructive">{getApiErrorMessage(error, t('common.failedToLoad'))}</p><RetryButton className="mt-4" onRetry={onRetry} label={t('common.retry')} /><span className="sr-only">{copy.title}</span></div> }
+function ErrorState({ error, copy, onRetry, t }: { error: unknown; copy: ReviewsCopy; onRetry: () => void; t: (key: 'common.failedToLoad' | 'common.retry') => string }) { return <StateCard variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(error, t('common.failedToLoad'))} action={<RetryButton onRetry={onRetry} label={t('common.retry')} />}><span className="sr-only">{copy.title}</span></StateCard> }
 
 function filterReviews(reviews: AutoCareApiReview[], filter: RatingFilter) {
     return filter === 'all' ? reviews : reviews.filter((review) => review.rating === Number(filter))

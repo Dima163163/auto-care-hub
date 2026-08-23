@@ -6,6 +6,11 @@ import {
     AutoCareChatThreadEntity,
     AutoCareChatThreadStatus,
     AutoCareChatThreadType,
+    AutoCareChatBlockEntity,
+    AutoCareChatBlockStatus,
+    AutoCareChatReportCategory,
+    AutoCareChatReportEntity,
+    AutoCareChatReportStatus,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     ServiceAttachmentEntity,
@@ -29,6 +34,7 @@ import type {
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment } from './attachment-content.js'
 import { canManageProvider, getManagedProviderIds } from './provider-access.service.js'
+import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 
 function fail(statusCode: number, message: string): never {
     const code = statusCode === 404 ? ERROR_CODES.NotFound : statusCode === 409 ? ERROR_CODES.Conflict : statusCode === 400 ? ERROR_CODES.BadRequest : ERROR_CODES.Forbidden
@@ -107,6 +113,25 @@ async function getThread(user: UserEntity, chatId: string) {
     return thread
 }
 
+async function chatParticipantIds(thread: AutoCareChatThreadEntity) {
+    const ids = new Set<string>()
+    if (thread.clientId) ids.add(thread.clientId)
+    const provider = await providerForThread(thread)
+    if (provider?.ownerId) ids.add(provider.ownerId)
+    if (thread.createdById) ids.add(thread.createdById)
+    return ids
+}
+
+async function assertChatMessagingAllowed(user: UserEntity, thread: AutoCareChatThreadEntity) {
+    const blocks = await AppDataSource.getRepository(AutoCareChatBlockEntity).find({
+        where: [
+            { threadId: thread.id, blockedUserId: user.id, status: AutoCareChatBlockStatus.Active },
+            { threadId: thread.id, blockerId: user.id, status: AutoCareChatBlockStatus.Active },
+        ],
+    })
+    if (blocks.length > 0) fail(403, 'Messaging is unavailable because this chat is blocked.')
+}
+
 async function toThreadResponse(user: UserEntity, thread: AutoCareChatThreadEntity): Promise<AutoCareChatThreadResponse> {
     const provider = await providerForThread(thread)
     const messages = await AppDataSource.getRepository(ServiceMessageEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id } })
@@ -181,18 +206,50 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
     return toThreadResponse(user, thread)
 }
 
-export async function getAutoCareChat(user: UserEntity, chatId: string): Promise<AutoCareChatConversationResponse> {
+export async function getAutoCareChat(user: UserEntity, chatId: string, input: { cursor?: string; limit?: number } = {}): Promise<AutoCareChatConversationResponse> {
     const thread = await getThread(user, chatId)
+    const limit = getCursorLimit(input.limit)
+    const cursor = input.cursor ? decodeCursor(input.cursor, ['createdAt', 'id']) : null
+    const cursorCreatedAt = cursor ? assertCursorDate(cursor, 'createdAt') : null
+    const messageWhere = thread.requestId ? '(message.threadId = :threadId OR message.requestId = :requestId)' : 'message.threadId = :threadId'
+    const messageQuery = AppDataSource.getRepository(ServiceMessageEntity)
+        .createQueryBuilder('message')
+        .where(messageWhere, { threadId: thread.id, requestId: thread.requestId })
+        .orderBy('message.createdAt', 'ASC')
+        .addOrderBy('message.id', 'ASC')
+        .take(limit + 1)
+    if (cursorCreatedAt && cursor) {
+        messageQuery.andWhere('(message.createdAt > :cursorCreatedAt OR (message.createdAt = :cursorCreatedAt AND message.id > :cursorId))', {
+            cursorCreatedAt,
+            cursorId: cursor.id,
+        })
+    }
     const [messages, attachments] = await Promise.all([
-        AppDataSource.getRepository(ServiceMessageEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id }, order: { createdAt: 'ASC' } }),
+        messageQuery.getMany(),
         AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id }, order: { createdAt: 'ASC' } }),
     ])
-    return { thread: await toThreadResponse(user, thread), messages: messages.map(messageResponse), attachments: attachments.map((attachment) => attachmentResponse(attachment, thread.id)) }
+    const hasMore = messages.length > limit
+    const page = hasMore ? messages.slice(0, limit) : messages
+    const lastMessage = page.at(-1)
+    const unread = page.filter((message) => message.senderId !== user.id && !message.readAt)
+    if (unread.length > 0) {
+        const readAt = new Date()
+        unread.forEach((message) => { message.readAt = readAt })
+        await AppDataSource.getRepository(ServiceMessageEntity).save(unread)
+        broadcastServiceChat(thread.id, { type: 'message.read', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: { messageIds: unread.map((message) => message.id), readAt: readAt.toISOString() } })
+    }
+    return {
+        thread: await toThreadResponse(user, thread),
+        messages: page.map(messageResponse),
+        attachments: attachments.map((attachment) => attachmentResponse(attachment, thread.id)),
+        nextCursor: hasMore && lastMessage ? encodeCursor({ createdAt: lastMessage.createdAt.toISOString(), id: lastMessage.id }) : null,
+    }
 }
 
 export async function createAutoCareChatMessage(user: UserEntity, chatId: string, input: CreateAutoCareChatMessageInput) {
     const thread = await getThread(user, chatId)
     if (thread.status === AutoCareChatThreadStatus.Closed) fail(409, 'This chat is closed.')
+    await assertChatMessagingAllowed(user, thread)
     const provider = await providerForThread(thread)
     const recipientId = thread.clientId === user.id ? provider?.ownerId : thread.clientId
     const now = new Date()
@@ -202,6 +259,144 @@ export async function createAutoCareChatMessage(user: UserEntity, chatId: string
     const result = messageResponse(message)
     broadcastServiceChat(thread.id, { type: 'message.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: result })
     return result
+}
+
+export type CreateAutoCareChatReportInput = {
+    category: AutoCareChatReportCategory
+    description?: string | null
+}
+
+export type AutoCareChatReportResponse = {
+    id: string
+    threadId: string
+    reporterId: string
+    reportedUserId: string | null
+    category: AutoCareChatReportCategory
+    description: string | null
+    status: AutoCareChatReportStatus
+    reviewedById: string | null
+    resolutionReason: string | null
+    createdAt: string
+    reviewedAt: string | null
+}
+
+export type AutoCareChatBlockResponse = {
+    id: string
+    threadId: string
+    blockerId: string
+    blockedUserId: string
+    status: AutoCareChatBlockStatus
+    reason: string | null
+    createdAt: string
+    revokedAt: string | null
+}
+
+function reportResponse(report: AutoCareChatReportEntity): AutoCareChatReportResponse {
+    return {
+        id: report.id,
+        threadId: report.threadId,
+        reporterId: report.reporterId,
+        reportedUserId: report.reportedUserId,
+        category: report.category,
+        description: report.description,
+        status: report.status,
+        reviewedById: report.reviewedById,
+        resolutionReason: report.resolutionReason,
+        createdAt: report.createdAt.toISOString(),
+        reviewedAt: report.reviewedAt?.toISOString() ?? null,
+    }
+}
+
+function blockResponse(block: AutoCareChatBlockEntity): AutoCareChatBlockResponse {
+    return {
+        id: block.id,
+        threadId: block.threadId,
+        blockerId: block.blockerId,
+        blockedUserId: block.blockedUserId,
+        status: block.status,
+        reason: block.reason,
+        createdAt: block.createdAt.toISOString(),
+        revokedAt: block.revokedAt?.toISOString() ?? null,
+    }
+}
+
+export async function createAutoCareChatReport(user: UserEntity, chatId: string, input: CreateAutoCareChatReportInput) {
+    const thread = await getThread(user, chatId)
+    const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
+    const existing = await reports.findOneBy({ threadId: thread.id, reporterId: user.id })
+    if (existing) return reportResponse(existing)
+    const participants = await chatParticipantIds(thread)
+    const reportedUserId = [...participants].find((id) => id !== user.id) ?? null
+    const report = await reports.save(reports.create({
+        threadId: thread.id,
+        reporterId: user.id,
+        reportedUserId,
+        category: input.category,
+        description: input.description?.trim() || null,
+        status: AutoCareChatReportStatus.Pending,
+        reviewedById: null,
+        resolutionReason: null,
+        reviewedAt: null,
+    }))
+    return reportResponse(report)
+}
+
+export async function createAutoCareChatBlock(user: UserEntity, chatId: string, blockedUserId?: string, reason?: string | null) {
+    const thread = await getThread(user, chatId)
+    const participants = await chatParticipantIds(thread)
+    const target = blockedUserId ?? [...participants].find((id) => id !== user.id)
+    if (!target || target === user.id || !participants.has(target)) fail(400, 'The blocked user must be another chat participant.')
+    const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
+    const existing = await blocks.findOneBy({ threadId: thread.id, blockerId: user.id, blockedUserId: target })
+    const block = existing
+        ? await blocks.save({ ...existing, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || existing.reason, revokedAt: null })
+        : await blocks.save(blocks.create({ threadId: thread.id, blockerId: user.id, blockedUserId: target, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || null, revokedAt: null }))
+    return blockResponse(block)
+}
+
+export async function revokeAutoCareChatBlock(user: UserEntity, chatId: string, blockId: string) {
+    const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: chatId })
+    if (!thread) fail(404, 'Chat not found.')
+    const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
+    const block = await blocks.findOneBy({ id: blockId, threadId: chatId })
+    if (!block) fail(404, 'Chat block not found.')
+    if (![UserRole.Admin, UserRole.SuperAdmin].includes(user.role) && block.blockerId !== user.id) fail(403, 'You can only revoke your own chat block.')
+    block.status = AutoCareChatBlockStatus.Revoked
+    block.revokedAt = new Date()
+    return blockResponse(await blocks.save(block))
+}
+
+export async function listAdminAutoCareChatReports(user: UserEntity, status?: AutoCareChatReportStatus) {
+    assertRole(user, [UserRole.Admin, UserRole.SuperAdmin], 'Only administrators can review chat reports.')
+    const reports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({
+        where: status ? { status } : undefined,
+        order: { createdAt: 'DESC' },
+        take: 100,
+    })
+    return reports.map((report) => reportResponse(report))
+}
+
+export async function decideAdminAutoCareChatReport(user: UserEntity, reportId: string, status: AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, reason?: string | null, blockUser = false) {
+    assertRole(user, [UserRole.Admin, UserRole.SuperAdmin], 'Only administrators can review chat reports.')
+    const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
+    const report = await reports.findOneBy({ id: reportId })
+    if (!report) fail(404, 'Chat report not found.')
+    if (report.status !== AutoCareChatReportStatus.Pending) return reportResponse(report)
+    report.status = status
+    report.reviewedById = user.id
+    report.resolutionReason = reason?.trim() || null
+    report.reviewedAt = new Date()
+    const result = await reports.save(report)
+    if (blockUser && report.reportedUserId) {
+        const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
+        const existing = await blocks.findOneBy({ threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId })
+        if (existing) {
+            await blocks.save({ ...existing, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || 'Moderation decision', revokedAt: null })
+        } else {
+            await blocks.save(blocks.create({ threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || 'Moderation decision', revokedAt: null }))
+        }
+    }
+    return reportResponse(result)
 }
 
 export async function markAutoCareChatRead(user: UserEntity, chatId: string) {

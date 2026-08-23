@@ -1,0 +1,8 @@
+# Production and policy changes require the repository owner/release maintainer.
+* @Dima163163
+
+# Domain policy, legal drafts and schema changes need explicit owner review.
+/docs/product/ @Dima163163
+/docs/ @Dima163163
+/server/src/database/ @Dima163163
+/server/src/modules/autocare/ @Dima163163

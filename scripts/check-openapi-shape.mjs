@@ -29,6 +29,10 @@ const requiredOperations = [
     ['GET', '/users/me/deletion-request', 'getMyDeletionRequest'],
     ['POST', '/users/me/deletion-request', 'requestAccountDeletion'],
     ['DELETE', '/users/me/deletion-request', 'cancelAccountDeletion'],
+    ['POST', '/v1/autocare-appeals', 'createAutoCareAppeal'],
+    ['GET', '/v1/autocare-appeals/my', 'listMyAutoCareAppeals'],
+    ['GET', '/admin/autocare-appeals', 'listAdminAutoCareAppeals'],
+    ['PATCH', '/admin/autocare-appeals/{id}/decision', 'decideAdminAutoCareAppeal'],
 ]
 
 function quote(value) {

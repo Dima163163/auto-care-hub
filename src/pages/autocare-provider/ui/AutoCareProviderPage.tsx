@@ -5,6 +5,9 @@ import { useParams } from 'react-router'
 import { AutomotiveAmenityIcon, automotiveAmenities, getAutomotiveAmenityLabel, mapAutoCareProviderProfile, type AutoCareTrustResponse, useGetAutoCareProviderProfileQuery, useGetAutoCareProviderReviewsQuery, useGetAutoCareProviderTrustQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ProviderProfileSkeleton } from '@/shared/ui/loading-skeleton'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
+import { StateCard } from '@/shared/ui/state-card'
 
 import { ProviderHero } from './ProviderHero'
 import { ProviderLocationMap } from './ProviderLocationMap'
@@ -16,17 +19,18 @@ import { ProviderSectionNavigation } from './ProviderSectionNavigation'
 export function AutoCareProviderPage() {
     const { id = '' } = useParams()
     const { t } = useTranslation()
-    const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
-    const { data: reviewSummary, isLoading: isReviewsLoading } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 50 }, { skip: !id })
+    const { data, isLoading, isError, isFetching, refetch } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
+    const { data: reviewSummary, isLoading: isReviewsLoading, isError: isReviewsError, refetch: refetchReviews } = useGetAutoCareProviderReviewsQuery({ providerId: id, limit: 50 }, { skip: !id })
     const { data: trust } = useGetAutoCareProviderTrustQuery(id, { skip: !id })
     const provider = data ? mapAutoCareProviderProfile(data, reviewSummary) : undefined
     const [selectedServiceId, setSelectedServiceId] = useState('')
     const selectedOffering = useMemo(() => provider?.offerings.find((item) => item.serviceId === selectedServiceId) ?? provider?.offerings[0], [provider, selectedServiceId])
 
     if (isLoading) return <main className="min-h-full bg-background"><ProviderProfileSkeleton label={t('common.loading')} /></main>
-    if (isError || !provider || !selectedOffering) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
+    if (isError || !provider) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><StateCard variant="error" title={t('autocare.providerNotFound')} description={t('common.tryAgainLater')} action={<RetryButton onRetry={refetch} label={t('common.retry')} />} /></main>
+    if (!selectedOffering) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><StateCard variant="empty" title={t('autocare.providerNoOffersTitle')} description={t('autocare.providerNoOffersDescription')} /></main>
 
-    return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6"><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} isLoading={isReviewsLoading} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>
+    return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6"><QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} /><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} isLoading={isReviewsLoading} isError={isReviewsError} onRetry={refetchReviews} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>
 }
 
 function ProviderAbout({ provider, trust }: { provider: NonNullable<ReturnType<typeof mapAutoCareProviderProfile>>; trust?: AutoCareTrustResponse }) {

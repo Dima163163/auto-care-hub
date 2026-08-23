@@ -53,6 +53,16 @@ const REQUIRED_COLUMNS_QUERY = `
         OR (table_name = 'security_events' AND column_name IN ('type', 'correlation_id', 'createdAt', 'severity', 'route', 'status_code', 'metadata', 'actor_role', 'auth_outcome', 'rate_limit_result', 'request_size_bytes', 'reason_code', 'proxy_provenance'))
         OR (table_name = 'security_event_actions' AND column_name IN ('security_event_id', 'actor_id', 'assignee_id', 'status', 'created_at'))
         OR (table_name = 'outbox_events' AND column_name IN ('idempotencyKey', 'status', 'attempts', 'availableAt', 'createdAt'))
+        OR (table_name = 'autocare_service_requests' AND column_name IN ('bookingSnapshot', 'bookingCreatedAt'))
+        OR (table_name = 'autocare_service_offerings' AND column_name = 'bookingMode')
+        OR (table_name = 'autocare_bonus_programs' AND column_name = 'providerId')
+        OR (table_name = 'autocare_bonus_accounts' AND column_name IN ('clientId', 'providerId'))
+        OR (table_name = 'autocare_bonus_ledger' AND column_name IN ('accountId', 'idempotencyKey'))
+        OR (table_name = 'autocare_provider_invitations' AND column_name IN ('tokenHash', 'expiresAt'))
+        OR (table_name = 'autocare_provider_change_requests' AND column_name IN ('providerId', 'kind', 'status', 'payload'))
+        OR (table_name = 'autocare_catalog_gap_requests' AND column_name IN ('proposedSlug', 'status', 'rationale'))
+        OR (table_name = 'autocare_chat_reports' AND column_name IN ('threadId', 'reporterId', 'status'))
+        OR (table_name = 'autocare_chat_blocks' AND column_name IN ('threadId', 'blockedUserId', 'status'))
       )
 `
 
@@ -80,7 +90,7 @@ const REQUIRED_INDEXES_QUERY = `
       ON attribute.attrelid = table_info.oid
      AND attribute.attnum = indexed_column.attnum
     WHERE table_namespace.nspname = 'public'
-      AND table_info.relname IN ('bookings', 'security_events', 'security_event_actions', 'outbox_events')
+      AND table_info.relname IN ('bookings', 'autocare_reviews', 'security_events', 'security_event_actions', 'outbox_events', 'autocare_bonus_programs', 'autocare_bonus_accounts', 'autocare_bonus_ledger', 'autocare_provider_invitations', 'autocare_provider_change_requests', 'autocare_catalog_gap_requests', 'autocare_chat_reports', 'autocare_chat_blocks')
     GROUP BY table_info.relname, index_table.relname, index_info.indisunique
 `
 
@@ -88,7 +98,7 @@ const REQUIRED_CONSTRAINTS_QUERY = `
     SELECT table_name, constraint_name, NULL::text AS on_delete
     FROM information_schema.table_constraints
     WHERE constraint_schema = 'public'
-      AND table_name IN ('bookings', 'security_events', 'security_event_actions', 'outbox_events')
+      AND table_name IN ('bookings', 'autocare_bonus_accounts', 'autocare_bonus_ledger', 'autocare_provider_invitations', 'autocare_provider_change_requests', 'autocare_catalog_gap_requests', 'autocare_chat_reports', 'autocare_chat_blocks', 'security_events', 'security_event_actions', 'outbox_events')
     UNION ALL
     SELECT
         table_info.relname AS table_name,
@@ -107,7 +117,7 @@ const REQUIRED_CONSTRAINTS_QUERY = `
     JOIN pg_namespace AS table_namespace
       ON table_namespace.oid = table_info.relnamespace
     WHERE table_namespace.nspname = 'public'
-      AND table_info.relname IN ('bookings', 'security_events', 'security_event_actions', 'outbox_events')
+      AND table_info.relname IN ('bookings', 'autocare_bonus_accounts', 'autocare_bonus_ledger', 'autocare_provider_invitations', 'autocare_provider_change_requests', 'autocare_catalog_gap_requests', 'autocare_chat_reports', 'autocare_chat_blocks', 'security_events', 'security_event_actions', 'outbox_events')
       AND schema_constraint.contype IN ('f', 'x')
 `
 

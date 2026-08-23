@@ -37,7 +37,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
                                         to={to}
                                         {...(end === undefined ? {} : { end })}
                                         title={isCollapsed ? t(labelKey) : undefined}
-                                        className={({ isActive }) => `flex h-10 items-center gap-3 rounded-md px-3 text-sm font-semibold transition-colors ${
+                                        className={({ isActive }) => `flex h-10 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-semibold transition-colors ${
                                             isActive
                                                 ? 'bg-primary/10 text-primary'
                                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -55,7 +55,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
                 <button
                     type="button"
                     onClick={() => setIsCollapsed((value) => !value)}
-                    className="flex h-10 items-center gap-3 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="flex h-10 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     aria-label={isCollapsed ? t('workspace.expandSidebar') : t('workspace.collapseSidebar')}
                     title={isCollapsed ? t('workspace.expandSidebar') : t('workspace.collapseSidebar')}
                 >

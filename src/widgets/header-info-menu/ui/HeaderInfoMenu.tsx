@@ -39,7 +39,7 @@ export function HeaderInfoMenu({ variant }: HeaderInfoMenuProps) {
                 onClick={() => setIsOpen((value) => !value)}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                className={`inline-flex h-full items-center gap-1.5 whitespace-nowrap text-sm font-semibold transition-colors ${dark ? 'text-primary-foreground/90 hover:text-primary-foreground' : 'text-foreground hover:text-primary'}`}
+                className={`inline-flex h-full cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm font-semibold transition-colors ${dark ? 'text-primary-foreground/90 hover:text-primary-foreground' : 'text-foreground hover:text-primary'}`}
             >
                 {t('navigation.helpAndInfo')}
                 <ChevronDown className={`size-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -54,7 +54,7 @@ export function HeaderInfoMenu({ variant }: HeaderInfoMenuProps) {
                                 to={to}
                                 role="menuitem"
                                 onClick={() => setIsOpen(false)}
-                                className={({ isActive }) => `flex items-start gap-3 rounded-xl px-3 py-3 transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                                className={({ isActive }) => `flex cursor-pointer items-start gap-3 rounded-xl px-3 py-3 transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
                             >
                                 <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="size-4" /></span>
                                 <span className="min-w-0"><span className="block text-sm font-black">{t(labelKey)}</span><span className="mt-0.5 block text-xs font-medium leading-5 text-muted-foreground">{t(descriptionKey)}</span></span>

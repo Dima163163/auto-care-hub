@@ -2,22 +2,28 @@ import { ArrowLeft, BarChart3, CalendarCheck2, MapPin, MessageSquareText, Star, 
 import { Link, useParams } from 'react-router'
 
 import { useGetOwnerAutoCareProvidersQuery, type AutoCareApiProvider } from '@/entities/automotive-service'
+import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
 import { CardsGridSkeleton } from '@/shared/ui/loading-skeleton'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { StateCard } from '@/shared/ui/state-card'
+
+import { OwnerProviderMembersPanel } from './OwnerProviderMembersPanel'
 
 export function OwnerAutoCareProviderDetailsPage() {
-    const { t } = useTranslation()
+    const { locale, t } = useTranslation()
     const { id } = useParams<{ id: string }>()
-    const { data: providers = [], isLoading } = useGetOwnerAutoCareProvidersQuery()
+    const { data: providers = [], isLoading, isError, error, refetch } = useGetOwnerAutoCareProvidersQuery()
     const provider = providers.find((item) => item.id === id)
 
     if (isLoading) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><CardsGridSkeleton label={t('common.loading')} /></div></main>
-    if (!provider) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><h1 className="mt-8 text-2xl font-black">{t('autocare.ownerProviderNotFound')}</h1></div></main>
+    if (isError) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><StateCard className="mt-8" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(error, t('common.failedToLoad'))} action={<RetryButton onRetry={refetch} label={t('common.retry')} />} /></div></main>
+    if (!provider) return <main className="min-h-full bg-background px-4 py-10 lg:px-8"><div className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><StateCard className="mt-8" variant="empty" title={t('autocare.ownerProviderNotFound')} description={t('autocare.ownerProvidersDescription')} /></div></main>
 
-    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><ProviderOverview provider={provider} /></section></main>
+    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><div className="space-y-5"><ProviderOverview provider={provider} /><OwnerProviderMembersPanel provider={provider} locale={locale} /></div></section></main>
 }
 
 function ProviderOverview({ provider }: { provider: AutoCareApiProvider }) {

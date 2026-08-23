@@ -53,7 +53,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                     <NavLink
                         key={link.to}
                         to={link.to}
-                        className={({ isActive }) => `flex h-full items-center border-b-2 px-1 text-[13px] font-semibold transition-colors hover:text-primary ${
+                        className={({ isActive }) => `flex h-full cursor-pointer items-center border-b-2 px-1 text-[13px] font-semibold transition-colors hover:text-primary ${
                             isActive ? 'border-primary text-primary' : 'border-transparent text-primary-foreground/90'
                         }`}
                     >
@@ -68,7 +68,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                     <NavLink
                         key={link.to}
                         to={link.to}
-                        className={({ isActive }) => `${index === 1 ? 'hidden lg:flex' : 'flex'} h-full items-center border-b-2 px-1 text-xs font-semibold transition-colors hover:text-primary ${
+                        className={({ isActive }) => `${index === 1 ? 'hidden lg:flex' : 'flex'} h-full cursor-pointer items-center border-b-2 px-1 text-xs font-semibold transition-colors hover:text-primary ${
                             isActive ? 'border-primary text-primary' : 'border-transparent text-primary-foreground/90'
                         }`}
                     >
@@ -78,7 +78,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                 <div className="relative flex h-full items-center">
                     <button
                         type="button"
-                        className="flex items-center gap-1 text-xs font-semibold text-primary-foreground/90 transition-colors hover:text-primary"
+                        className="flex cursor-pointer items-center gap-1 text-xs font-semibold text-primary-foreground/90 transition-colors hover:text-primary"
                         title={t('common.more')}
                         aria-expanded={isMoreOpen}
                         onClick={() => setIsMoreOpen((value) => !value)}
@@ -93,7 +93,7 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
                                     key={link.to}
                                     to={link.to}
                                     onClick={() => setIsMoreOpen(false)}
-                                    className={({ isActive }) => `block rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+                                    className={({ isActive }) => `block cursor-pointer rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
                                         isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
                                     }`}
                                 >

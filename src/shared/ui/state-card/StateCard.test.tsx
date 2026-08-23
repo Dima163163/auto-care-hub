@@ -38,6 +38,8 @@ describe('StateCard', () => {
     it.each([
         ['offline', 'No connection', 'offline'],
         ['permission denied', 'Access denied', 'permission-denied'],
+        ['suspended', 'Service suspended', 'suspended'],
+        ['stale error', 'Saved results shown', 'stale-error'],
     ] as const)('announces %s as a recoverable alert', (_label, title, variant) => {
         render(
             <StateCard
@@ -49,5 +51,15 @@ describe('StateCard', () => {
 
         expect(screen.getByRole('alert')).toHaveAttribute('data-state', variant)
         expect(screen.getByRole('alert')).toHaveAttribute('aria-live', 'assertive')
+    })
+
+    it.each([
+        ['empty', 'Nothing here yet'],
+        ['stale', 'Showing saved results'],
+    ] as const)('renders %s as a non-blocking status', (variant, title) => {
+        render(<StateCard variant={variant} title={title} />)
+
+        expect(screen.getByRole('status')).toHaveAttribute('data-state', variant)
+        expect(screen.getByRole('status')).toHaveTextContent(title)
     })
 })

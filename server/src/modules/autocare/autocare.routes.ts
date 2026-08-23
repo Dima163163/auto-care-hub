@@ -5,16 +5,25 @@ import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
 import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
 import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
-import { autoCareAvailabilityQuerySchema, autoCareBroadcastParamsSchema, autoCareChatParamsSchema, autoCareDiscoveryQuerySchema, autoCareFairPriceQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareFavoriteParamsSchema, autoCareFleetParamsSchema, autoCareLocationZonesQuerySchema, autoCareMarketParamsSchema, autoCareOfferParamsSchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareProviderReviewsQuerySchema, autoCareReviewOnlyParamsSchema, autoCareReviewParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceConversationQuerySchema, autoCareServiceMessageParamsSchema, autoCareServiceRequestParamsSchema, cancelAutoCareServiceRequestSchema, completeAutoCareServiceRequestSchema, createAutoCareBroadcastOfferSchema, createAutoCareBroadcastRequestSchema, createAutoCareChatSchema, createAutoCareExpertQuestionSchema, createAutoCareFavoriteSchema, createAutoCareFleetSchema, createAutoCareFleetVehicleSchema, createAutoCareGuaranteeClaimSchema, createAutoCareReviewPromoSchema, createAutoCareReviewSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceOfferSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, createAutoCareRescheduleSchema, decideAutoCareRescheduleSchema, markAutoCareNoShowSchema, ownerAutoCareProviderSchema, ownerAutoCareReviewsQuerySchema, redeemAutoCareReviewPromoSchema, serviceMessageOfferDecisionSchema, syncAutoCareFavoritesSchema, updateAutoCareOfferSchema, updateAutoCareReviewSchema, uploadAutoCareProviderLogoSchema, uploadAutoCareProviderMediaSchema } from './autocare.schemas.js'
+import { acceptAutoCareProviderInvitationSchema, autoCareAvailabilityQuerySchema, autoCareBroadcastParamsSchema, autoCareChatBlockParamsSchema, autoCareChatConversationQuerySchema, autoCareChatParamsSchema, autoCareDiscoveryQuerySchema, autoCareFairPriceQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareFavoriteParamsSchema, autoCareFleetParamsSchema, autoCareLocationZonesQuerySchema, autoCareMarketParamsSchema, autoCareOfferParamsSchema, autoCareProviderInvitationParamsSchema, autoCareProviderMembershipParamsSchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareProviderReviewsQuerySchema, autoCareReviewOnlyParamsSchema, autoCareReviewParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceConversationQuerySchema, autoCareServiceMessageParamsSchema, autoCareServiceRequestParamsSchema, cancelAutoCareServiceRequestSchema, completeAutoCareServiceRequestSchema, createAutoCareAppealSchema, createAutoCareBroadcastOfferSchema, createAutoCareBroadcastRequestSchema, createAutoCareChatBlockSchema, createAutoCareChatReportSchema, createAutoCareChatSchema, createAutoCareExpertQuestionSchema, createAutoCareFavoriteSchema, createAutoCareFleetSchema, createAutoCareFleetVehicleSchema, createAutoCareGuaranteeClaimSchema, createAutoCareCatalogGapRequestSchema, createAutoCareProviderChangeRequestSchema, createAutoCareProviderInvitationSchema, createAutoCareReviewPromoSchema, createAutoCareReviewSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceOfferSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, createAutoCareRescheduleSchema, decideAutoCareRescheduleSchema, grantAutoCareBonusSchema, markAutoCareNoShowSchema, ownerAutoCareBonusProgramSchema, ownerAutoCareProviderChangeRequestParamsSchema, ownerAutoCareProviderSchema, ownerAutoCareReviewsQuerySchema, redeemAutoCareBonusSchema, redeemAutoCareReviewPromoSchema, serviceMessageOfferDecisionSchema, syncAutoCareFavoritesSchema, updateAutoCareOfferSchema, updateAutoCareReviewSchema, uploadAutoCareProviderLogoSchema, uploadAutoCareProviderMediaSchema } from './autocare.schemas.js'
 import { createAutoCareReview, createOwnerAutoCareProvider, createOwnerAutoCareReviewPromo, getAutoCareDiscovery, getAutoCareLocationZones, getAutoCareMarkets, getAutoCareProviderLogo, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareProviderReviews, getAutoCareServiceDefinitions, getFeaturedAutoCareReviews, getMyAutoCareReviews, getOwnerAutoCareProviderReviews, getOwnerAutoCareProviders, getOwnerAutoCareReviews, redeemAutoCareReviewPromo, saveAutoCareProviderLogo, saveAutoCareProviderMedia, updateClientAutoCareReview, updateOwnerAutoCareOffer } from './autocare.service.js'
 import { vehicleCatalogRoutes } from './vehicle-catalog.routes.js'
 import { decodeAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { decodeAutoCareProviderMedia, readAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
 import { acceptAutoCareServiceQuote, cancelAutoCareServiceRequest, completeAutoCareServiceRequest, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceOffer, createAutoCareServiceQuote, createAutoCareServiceRequest, decideAutoCareServiceOffer, decideAutoCareServiceReschedule, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequests, markAutoCareServiceConversationRead, markAutoCareServiceRequestNoShow, requestAutoCareServiceReschedule } from './autocare-request.service.js'
 import { closeServiceChatGateway, sendServiceChatEvent, subscribeServiceChat } from './service-chat.gateway.js'
-import { createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatMessage, getAutoCareChat, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, getMyAutoCareChats, markAutoCareChatRead } from './autocare-chat.service.js'
+import { createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatBlock, createAutoCareChatMessage, createAutoCareChatReport, getAutoCareChat, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, getMyAutoCareChats, markAutoCareChatRead, revokeAutoCareChatBlock } from './autocare-chat.service.js'
 import { createAutoCareBroadcastOffer, createAutoCareBroadcastRequest, createAutoCareExpertQuestion, createAutoCareFleet, createAutoCareFleetVehicle, createAutoCareGuaranteeClaim, getAutoCareFairPrice, getAutoCareProviderTrust, getAutoCareRepairTimeline, getMyAutoCareBroadcastRequests, getMyAutoCareExpertQuestions, getMyAutoCareFleets, getMyAutoCareGuaranteeClaims, getOwnerAutoCareBroadcastRequests, getAutoCareBroadcastRequest } from './autocare-marketplace.service.js'
 import { addAutoCareFavorite, getMyAutoCareFavorites, removeAutoCareFavorite, syncAutoCareFavorites } from './autocare-favorites.service.js'
+import { getMyAutoCareBonusAccounts, getOwnerAutoCareBonusProgram, grantAutoCareBonus, redeemAutoCareBonus, upsertOwnerAutoCareBonusProgram } from './autocare-bonus.service.js'
+import { recordAuditLog } from '../admin/audit-log.service.js'
+import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
+import { AutoCareChatReportCategory } from '../../entities/automotive/chat-moderation.entity.js'
+import { getOwnerAutoCareProviderAnalytics } from './autocare-analytics.service.js'
+import { acceptProviderInvitation, createOwnerProviderInvitation, listOwnerProviderMemberships, revokeOwnerProviderInvitation, revokeOwnerProviderMembership } from './provider-membership.service.js'
+import { cancelOwnerProviderChangeRequest, createOwnerProviderChangeRequest, listOwnerProviderChangeRequests } from './provider-change-request.service.js'
+import { createAutoCareCatalogGapRequest } from './catalog-gap.service.js'
+import { createAutoCareAppeal, getMyAutoCareAppeals } from './appeal.service.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:request-transition', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -73,8 +82,11 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return getAutoCareLocationZones(params.marketId, query.parentId, coordinates, query.limit)
     })
     app.get('/v1/service-definitions', async () => getAutoCareServiceDefinitions())
+    app.post('/v1/catalog-gap-requests', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareCatalogGapRequest(await requireVerifiedEmail(request), validateBody(createAutoCareCatalogGapRequestSchema, request.body)))
     app.get('/v1/fair-price', async (request) => getAutoCareFairPrice(validateQuery(autoCareFairPriceQuerySchema, request.query)))
     app.get('/v1/reviews/featured', async (request) => getFeaturedAutoCareReviews(validateQuery(autoCareFeaturedReviewsQuerySchema, request.query).limit))
+    app.post('/v1/autocare-appeals', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareAppeal(await requireVerifiedEmail(request), validateBody(createAutoCareAppealSchema, request.body)))
+    app.get('/v1/autocare-appeals/my', async (request) => getMyAutoCareAppeals(await requireAuth(request)))
     app.get('/uploads/autocare/logos/:fileName', async (request, reply) => {
         const logo = await getAutoCareProviderLogo(String((request.params as { fileName: string }).fileName))
         return reply.header('cache-control', 'public, max-age=31536000, immutable').type('image/webp').send(logo)
@@ -110,7 +122,52 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const query = validateQuery(autoCareProviderOffersQuerySchema, request.query)
         return getAutoCareProviderOffers(params.providerId, query.serviceId)
     })
+    app.get('/v1/bonuses/my', async (request) => getMyAutoCareBonusAccounts(await requireAuth(request)))
+    app.post('/v1/bonuses/redeem', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const user = await requireVerifiedEmail(request)
+        return redeemAutoCareBonus(user, validateBody(redeemAutoCareBonusSchema, request.body), getOptionalIdempotencyKey(request.headers) ?? null)
+    })
     app.get('/owner/autocare-providers', async (request) => getOwnerAutoCareProviders(await requireVerifiedEmail(request)))
+    app.get('/owner/autocare-providers/:providerId/members', async (request) => listOwnerProviderMemberships(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.post('/owner/autocare-providers/:providerId/members/invitations', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
+        return createOwnerProviderInvitation(await requireVerifiedEmail(request), providerId, validateBody(createAutoCareProviderInvitationSchema, request.body))
+    })
+    app.delete('/owner/autocare-providers/:providerId/members/invitations/:invitationId', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const params = validateParams(autoCareProviderInvitationParamsSchema, request.params)
+        return revokeOwnerProviderInvitation(await requireVerifiedEmail(request), params.providerId, params.invitationId)
+    })
+    app.delete('/owner/autocare-providers/:providerId/members/:membershipId', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const params = validateParams(autoCareProviderMembershipParamsSchema, request.params)
+        return revokeOwnerProviderMembership(await requireVerifiedEmail(request), params.providerId, params.membershipId)
+    })
+    app.post('/owner/autocare-provider-invitations/accept', { preHandler: autoCareMutationRateLimit }, async (request) => acceptProviderInvitation(await requireVerifiedEmail(request), validateBody(acceptAutoCareProviderInvitationSchema, request.body).token))
+    app.get('/owner/autocare-providers/:providerId/change-requests', async (request) => {
+        const providerId = validateParams(ownerAutoCareProviderChangeRequestParamsSchema, request.params).providerId
+        return listOwnerProviderChangeRequests(await requireVerifiedEmail(request), providerId)
+    })
+    app.post('/owner/autocare-providers/:providerId/change-requests', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const providerId = validateParams(ownerAutoCareProviderChangeRequestParamsSchema, request.params).providerId
+        return createOwnerProviderChangeRequest(await requireVerifiedEmail(request), providerId, validateBody(createAutoCareProviderChangeRequestSchema, request.body))
+    })
+    app.delete('/owner/autocare-providers/:providerId/change-requests/:requestId', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const params = validateParams(ownerAutoCareProviderChangeRequestParamsSchema.extend({ requestId: autoCareProviderParamsSchema.shape.providerId }), request.params)
+        return cancelOwnerProviderChangeRequest(await requireVerifiedEmail(request), params.providerId, params.requestId)
+    })
+    app.get('/owner/autocare-providers/:providerId/analytics', async (request) => getOwnerAutoCareProviderAnalytics(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/owner/autocare-providers/:providerId/bonus-program', async (request) => getOwnerAutoCareBonusProgram(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.put('/owner/autocare-providers/:providerId/bonus-program', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
+        return upsertOwnerAutoCareBonusProgram(await requireVerifiedEmail(request), providerId, validateBody(ownerAutoCareBonusProgramSchema, request.body))
+    })
+    app.post('/owner/autocare-providers/:providerId/bonus-accounts/:clientId/grants', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const user = await requireVerifiedEmail(request)
+        const params = validateParams(autoCareProviderParamsSchema.extend({ clientId: autoCareProviderParamsSchema.shape.providerId }), request.params)
+        const body = validateBody(grantAutoCareBonusSchema, request.body)
+        const result = await grantAutoCareBonus(user, { ...body, providerId: params.providerId, clientId: params.clientId }, getOptionalIdempotencyKey(request.headers) ?? null)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareBonusGranted, targetId: params.clientId, targetType: 'autocare_bonus_account', metadata: { providerId: params.providerId, points: body.points, reason: body.reason }, request })
+        return result
+    })
     app.patch('/owner/autocare-providers/:providerId/offers/:offerId', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const params = validateParams(autoCareOfferParamsSchema, request.params)
         const body = validateBody(updateAutoCareOfferSchema, request.body)
@@ -151,8 +208,21 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/chats', async (request) => getMyAutoCareChats(await requireAuth(request)))
     app.post('/v1/chats', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareChat(await requireVerifiedEmail(request), validateBody(createAutoCareChatSchema, request.body)))
     app.get('/v1/service-requests/:requestId/chat-thread', async (request) => getAutoCareChatThreadForRequest(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
-    app.get('/v1/chats/:chatId', async (request) => getAutoCareChat(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId))
+    app.get('/v1/chats/:chatId', async (request) => getAutoCareChat(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateQuery(autoCareChatConversationQuerySchema, request.query)))
     app.post('/v1/chats/:chatId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareChatMessage(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceMessageSchema, request.body)))
+    app.post('/v1/chats/:chatId/reports', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const body = validateBody(createAutoCareChatReportSchema, request.body)
+        return createAutoCareChatReport(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, { ...body, category: body.category as AutoCareChatReportCategory })
+    })
+    app.post('/v1/chats/:chatId/blocks', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const params = validateParams(autoCareChatParamsSchema, request.params)
+        const body = validateBody(createAutoCareChatBlockSchema, request.body)
+        return createAutoCareChatBlock(await requireVerifiedEmail(request), params.chatId, body.blockedUserId, body.reason)
+    })
+    app.delete('/v1/chats/:chatId/blocks/:blockId', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const params = validateParams(autoCareChatBlockParamsSchema, request.params)
+        return revokeAutoCareChatBlock(await requireAuth(request), params.chatId, params.blockId)
+    })
     app.post('/v1/chats/:chatId/read', async (request) => markAutoCareChatRead(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId))
     app.post('/v1/chats/:chatId/attachments', { preHandler: serviceRequestTransitionRateLimit, bodyLimit: 14 * 1024 * 1024 }, async (request) => createAutoCareChatAttachment(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceAttachmentSchema, request.body)))
     app.get('/v1/chats/:chatId/attachments/:attachmentId', async (request, reply) => {

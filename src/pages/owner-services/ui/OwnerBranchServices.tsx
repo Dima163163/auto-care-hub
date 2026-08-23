@@ -25,6 +25,9 @@ type OwnerBranchServicesProps = {
         offerDescription: string
         descriptionPlaceholder: string
         price: string
+        bookingMode: string
+        bookingModeRequest: string
+        bookingModeInstant: string
         priceInvalid: string
         editError: string
         priceSnapshotNotice: string

@@ -68,7 +68,7 @@ export function ProfilePage() {
                                     onClick={() => handleTabChange(tab.id)}
                                     onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
                                     className={cn(
-                                        'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[2px] whitespace-nowrap',
+                                        'cursor-pointer px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[2px] whitespace-nowrap',
                                         isActive
                                             ? 'border-primary text-primary'
                                             : 'border-transparent text-muted-foreground hover:text-foreground'

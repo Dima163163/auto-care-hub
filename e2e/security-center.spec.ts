@@ -6,7 +6,7 @@ test.describe('Security Center investigation details', () => {
         await page.locator('#email').fill('admin@autocarehub.test')
         await page.locator('#password').fill('password123')
         await page.getByRole('button', { name: /sign in/i }).click()
-        await expect(page).toHaveURL(/\/admin\/dashboard$/)
+    await expect(page).toHaveURL(/\/(?:admin|super-admin)\/dashboard$/)
 
         await page.goto('/admin/security-center', { waitUntil: 'networkidle' })
         await expect(page.getByRole('heading', { name: 'Security center' })).toBeVisible()

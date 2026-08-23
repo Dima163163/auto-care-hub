@@ -4,11 +4,15 @@ import { useSearchParams } from 'react-router'
 import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareResultsSkeleton } from '@/shared/ui/loading-skeleton'
+import { StateCard } from '@/shared/ui/state-card'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
 
 import { getAutoCareResultFilters, writeAutoCareResultFilters, type AutoCareResultFilters } from '../lib/autocareResultFilters'
 import { AutoCareMapPreview } from './AutoCareMapPreview'
 import { AutoCareResultsFilters } from './AutoCareResultsFilters'
 import { ComparisonTray } from './ComparisonTray'
+import { ComparisonTable } from './ComparisonTable'
 import { ResultsToolbar } from './ResultsToolbar'
 import type { ActiveFilter } from './ResultsToolbar'
 import { ProviderResultsList } from './ProviderResultsList'
@@ -25,7 +29,7 @@ export function AutoCareResultsPage() {
     const filters = useMemo(() => getAutoCareResultFilters(searchParams), [searchParams])
     const [draftState, setDraftState] = useState(() => ({ key: searchParams.toString(), filters }))
     const draftFilters = draftState.key === searchParams.toString() ? draftState.filters : filters
-    const { data, isLoading, isError } = useGetAutoCareDiscoveryQuery({
+    const { data, isLoading, isFetching, isError, refetch } = useGetAutoCareDiscoveryQuery({
         serviceId: filters.serviceId || undefined,
         providerName: filters.providerName || undefined,
         marketId: filters.marketId,
@@ -163,6 +167,7 @@ export function AutoCareResultsPage() {
                             onToggleRating: () => updateDraftFilters({ minRating: draftFilters.minRating === '4.5' ? '' : '4.5' }),
                         }}
                     />
+                    <QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} />
                 </div>
 
                 {isLoading ? <div className="mt-6"><AutoCareResultsSkeleton label={t('common.loading')} /></div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
@@ -171,8 +176,8 @@ export function AutoCareResultsPage() {
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
                             <span className="text-xs font-semibold text-muted-foreground">{t('autocare.compareDescription')}</span>
                         </div>
-                        {isError && <p className="shrink-0 rounded-[var(--radius-card)] border border-status-danger-border bg-status-danger-surface p-6 text-sm font-semibold text-status-danger-foreground">Provider search is temporarily unavailable.</p>}
-                        {!isError && providers.length === 0 && <p className="shrink-0 rounded-[var(--radius-card)] border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">No providers match this search yet.</p>}
+                        {isError && <StateCard variant="error" title={t('autocare.discoveryLoadError')} description={t('common.tryAgainLater')} action={<RetryButton onRetry={refetch} label={t('common.retry')} />} />}
+                        {!isError && providers.length === 0 && <StateCard variant="empty" title={filters.marketId ? t('autocare.noProvidersInRegion') : t('autocare.discoverySelectCity')} description={t('autocare.discoveryEmptyDescription')} />}
                         {!isError && providers.length > 0 && (
                             <ProviderResultsList
                                 key={searchParams.toString()}
@@ -184,6 +189,7 @@ export function AutoCareResultsPage() {
                         )}
                         <ResultsPagination page={currentPage} totalPages={totalPages} onChange={changePage} />
                         <ComparisonTray providers={selectedProviders} onRemove={toggleProvider} onCompare={compareSelected} />
+                        <ComparisonTable providers={selectedProviders} />
                     </section>
 
                     <div id="comparison-map" className="order-1 min-h-0 lg:order-2 lg:h-[min(70vh,720px)] lg:self-start">

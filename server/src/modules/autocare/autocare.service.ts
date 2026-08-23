@@ -7,6 +7,7 @@ import {
     AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
+    AutomotiveBookingMode,
     AutomotiveReviewEntity,
     AutomotiveReviewPromoEntity,
     AutomotiveReviewPromoStatus,
@@ -46,6 +47,11 @@ function assertOwner(user: UserEntity) {
     }
 }
 
+function isAutoCareReviewUniqueError(error: unknown) {
+    const driverError = (error as { driverError?: { code?: unknown; constraint?: unknown } }).driverError
+    return driverError?.code === '23505' && driverError.constraint === 'UQ_autocare_reviews_service_request'
+}
+
 function getDistanceKm(latitude: number | null, longitude: number | null, marketLatitude = 55.7558, marketLongitude = 37.6173) {
     if (latitude === null || longitude === null) return Number.MAX_SAFE_INTEGER
     const latDistance = (latitude - marketLatitude) * 111
@@ -53,10 +59,22 @@ function getDistanceKm(latitude: number | null, longitude: number | null, market
     return Math.sqrt((latDistance ** 2) + (lngDistance ** 2))
 }
 
+function getBoundingBox(centerLatitude: number, centerLongitude: number, radiusKm: number) {
+    const latDelta = radiusKm / 111
+    const longitudeScale = Math.max(0.01, Math.cos((centerLatitude * Math.PI) / 180))
+    const longitudeDelta = radiusKm / (111 * longitudeScale)
+    return {
+        minLatitude: centerLatitude - latDelta,
+        maxLatitude: centerLatitude + latDelta,
+        minLongitude: centerLongitude - longitudeDelta,
+        maxLongitude: centerLongitude + longitudeDelta,
+    }
+}
+
 type DiscoverySortMode = NonNullable<AutoCareDiscoveryQuery['sort']>
 type DiscoverySortValues = { primary: number; secondary: number; providerId: string; locationId: string }
 
-function discoverySortValues(row: { provider: AutomotiveProviderEntity; location: AutomotiveServiceLocationEntity; offer: AutomotiveServiceOfferingEntity; distanceKm: number }, sort: DiscoverySortMode): DiscoverySortValues {
+function discoverySortValues(row: { provider: AutomotiveProviderEntity; location: AutomotiveServiceLocationEntity; offer: AutomotiveServiceOfferingEntity; distanceKm: number; nextSlot: string | null }, sort: DiscoverySortMode): DiscoverySortValues {
     if (sort === 'price_asc') return { primary: row.offer.priceFromMinor, secondary: Number(row.provider.rating), providerId: row.provider.id, locationId: row.location.id }
     if (sort === 'rating_desc') return { primary: Number(row.provider.rating), secondary: row.offer.priceFromMinor, providerId: row.provider.id, locationId: row.location.id }
     if (sort === 'distance_asc') return { primary: row.distanceKm, secondary: Number(row.provider.rating), providerId: row.provider.id, locationId: row.location.id }
@@ -67,6 +85,17 @@ function discoverySortValues(row: { provider: AutomotiveProviderEntity; location
             reviewCount: Number(row.provider.reviewCount),
             verified: row.provider.verified,
             distanceKm: row.distanceKm,
+            // The selected definition and brand filter already guarantee a
+            // compatible match. The remaining signals come from the offer and
+            // the location schedule so organic ranking stays observable.
+            serviceRelevance: 1,
+            vehicleRelevance: 1,
+            availabilityScore: row.nextSlot ? 1 : 0.25,
+            priceCompleteness: row.offer.priceToMinor !== null
+                ? 1
+                : row.offer.inclusions.length > 0 || Boolean(row.offer.description)
+                    ? 0.75
+                    : 0.5,
         }),
         secondary: row.offer.priceFromMinor,
         providerId: row.provider.id,
@@ -246,12 +275,34 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     // market code is supplied would leak another region's providers and diverge
     // from the mock discovery contract, which returns an empty result instead.
     if (input.marketId && !market) return { items: [], nextCursor: null }
-    const locationWhere = market
-        ? { marketId: market.id, ...(input.zoneId ? { zoneId: input.zoneId } : {}) }
-        : input.zoneId
-            ? { zoneId: input.zoneId }
-            : undefined
-    const locations = await locationRepository.find({ where: locationWhere, order: { id: 'ASC' } })
+    // Stock postgres is used in local and staging Docker, so use the
+    // portable indexed bounding-box strategy here. The exact distance check
+    // below remains the source of truth and PostGIS can replace this query
+    // without changing the API contract later.
+    const marketLatitude = Number(market?.centerLatitude ?? 55.7558)
+    const marketLongitude = Number(market?.centerLongitude ?? 37.6173)
+    const box = market ? getBoundingBox(marketLatitude, marketLongitude, input.radiusKm) : null
+    const locationQuery = locationRepository.createQueryBuilder('location').orderBy('location.id', 'ASC')
+    if (market) locationQuery.andWhere('location.marketId = :marketId', { marketId: market.id })
+    if (input.zoneId) locationQuery.andWhere('location.zoneId = :zoneId', { zoneId: input.zoneId })
+    if (box) {
+        locationQuery
+            .andWhere('location.latitude BETWEEN :minLatitude AND :maxLatitude', box)
+            .andWhere('location.longitude BETWEEN :minLongitude AND :maxLongitude', box)
+    }
+    if (market) {
+        // Keep the broad bbox index-friendly prefilter, then apply the exact
+        // great-circle distance in SQL so pagination never materializes rows
+        // outside the requested radius. The JS check below mirrors this for
+        // deterministic response mapping and non-Postgres test doubles.
+        const distanceExpression = '6371 * acos(least(1, greatest(-1, cos(radians(:marketLatitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:marketLongitude)) + sin(radians(:marketLatitude)) * sin(radians(location.latitude)))))'
+        locationQuery.andWhere(`${distanceExpression} <= :radiusKm`, {
+            marketLatitude,
+            marketLongitude,
+            radiusKm: input.radiusKm,
+        })
+    }
+    const locations = await locationQuery.getMany()
     const locationIds = locations.map((location) => location.id)
     if (locationIds.length === 0) return { items: [], nextCursor: null }
     const offers = await offerRepository.find({ where: { definitionId: definition.id, active: true } })
@@ -263,7 +314,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const offer = offerByLocation.get(location.id)
         if (!provider || !offer) return []
         const matchesProvider = !input.providerName || provider.name.toLowerCase().includes(input.providerName.toLowerCase())
-        const distanceKm = getDistanceKm(location.latitude, location.longitude, Number(market?.centerLatitude ?? 55.7558), Number(market?.centerLongitude ?? 37.6173))
+        const distanceKm = market ? getDistanceKm(location.latitude, location.longitude, marketLatitude, marketLongitude) : 0
         const price = offer.priceFromMinor / 100
         const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
         const matchesRating = input.minRating === undefined || Number(provider.rating) >= input.minRating
@@ -275,7 +326,8 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const matchesBonus = !input.hasBonus || Boolean(provider.bonusSummary)
         const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
         const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
-        return matchesProvider && distanceKm <= input.radiusKm && matchesPrice && matchesRating && matchesType && matchesAvailableToday && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition, nextSlot: discoverySlot.nextSlot }] : []
+        const matchesDistance = !market || distanceKm <= input.radiusKm
+        return matchesProvider && matchesDistance && matchesPrice && matchesRating && matchesType && matchesAvailableToday && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition, nextSlot: discoverySlot.nextSlot }] : []
     })
     const sorted = rows.sort((left, right) => compareDiscoveryValues(discoverySortValues(left, sort), discoverySortValues(right, sort), sort))
         .filter((row) => !cursorValues || compareDiscoveryValues(discoverySortValues(row, sort), cursorValues, sort) > 0)
@@ -314,7 +366,7 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
     return definition ? profile.offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
 }
 
-export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number }) {
+export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number; bookingMode?: 'request' | 'instant' }) {
     assertOwner(owner)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     if (!provider || !(await canManageProvider(owner.id, providerId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
@@ -331,6 +383,7 @@ export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: st
 
     offering.description = input.description
     offering.priceFromMinor = input.priceFromMinor
+    if (input.bookingMode) offering.bookingMode = input.bookingMode === 'instant' ? AutomotiveBookingMode.Instant : AutomotiveBookingMode.Request
     if (offering.priceToMinor !== null && offering.priceToMinor < input.priceFromMinor) offering.priceToMinor = input.priceFromMinor
     const savedOffering = await offeringRepository.save(offering)
     return toOfferResponse(savedOffering, definition)
@@ -539,41 +592,49 @@ export async function getMyAutoCareReviews(client: UserEntity) {
  */
 export async function createAutoCareReview(client: UserEntity, input: CreateAutoCareReviewInput) {
     assertClient(client)
-    const review = await AppDataSource.transaction(async (manager) => {
-        const requestRepository = manager.getRepository(ServiceRequestEntity)
-        const request = await requestRepository.findOne({
-            where: { id: input.requestId, clientId: client.id },
-            lock: { mode: 'pessimistic_write' },
+    let review: AutomotiveReviewEntity
+    try {
+        review = await AppDataSource.transaction(async (manager) => {
+            const requestRepository = manager.getRepository(ServiceRequestEntity)
+            const request = await requestRepository.findOne({
+                where: { id: input.requestId, clientId: client.id },
+                lock: { mode: 'pessimistic_write' },
+            })
+            if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service request not found.' })
+            const confirmed = request.clientConfirmedAt && request.providerConfirmedAt
+            if (!confirmed || request.status !== ServiceRequestStatus.Closed) {
+                throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A completed and confirmed visit is required before leaving a review.' })
+            }
+
+            const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
+            const existing = await reviewRepository.findOneBy({ serviceRequestId: request.id })
+            if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This service visit already has a review.' })
+
+            const vehicle = request.vehicleSnapshot ?? {}
+            const vehicleLabel = [vehicle.make, vehicle.model, vehicle.year]
+                .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+                .join(' ') || 'Автомобиль'
+            return reviewRepository.save(reviewRepository.create({
+                providerId: request.providerId,
+                authorName: client.name,
+                vehicleLabel,
+                rating: input.rating,
+                text: input.text,
+                avatarUrl: client.avatarUrl,
+                photoUrls: [],
+                clientId: client.id,
+                serviceRequestId: request.id,
+                verifiedVisit: true,
+                serviceSlug: request.offeringSnapshot?.serviceSlug ?? null,
+                status: AutomotiveReviewStatus.Pending,
+            }))
         })
-        if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service request not found.' })
-        const confirmed = request.clientConfirmedAt && request.providerConfirmedAt
-        if (!confirmed || request.status !== ServiceRequestStatus.Closed) {
-            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A completed and confirmed visit is required before leaving a review.' })
+    } catch (error) {
+        if (isAutoCareReviewUniqueError(error)) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This service visit already has a review.' })
         }
-
-        const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
-        const existing = await reviewRepository.findOneBy({ serviceRequestId: request.id })
-        if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This service visit already has a review.' })
-
-        const vehicle = request.vehicleSnapshot ?? {}
-        const vehicleLabel = [vehicle.make, vehicle.model, vehicle.year]
-            .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
-            .join(' ') || 'Автомобиль'
-        return reviewRepository.save(reviewRepository.create({
-            providerId: request.providerId,
-            authorName: client.name,
-            vehicleLabel,
-            rating: input.rating,
-            text: input.text,
-            avatarUrl: client.avatarUrl,
-            photoUrls: [],
-            clientId: client.id,
-            serviceRequestId: request.id,
-            verifiedVisit: true,
-            serviceSlug: request.offeringSnapshot?.serviceSlug ?? null,
-            status: AutomotiveReviewStatus.Pending,
-        }))
-    })
+        throw error
+    }
     return toAutoCareReviewResponse(review, { exposeActions: true })
 }
 

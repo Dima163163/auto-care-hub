@@ -198,6 +198,11 @@ const rawBaseQuery = fetchBaseQuery({
 
     headers.set('Accept-Language', getStoredLocale())
 
+    if (!IS_REAL_API && typeof window !== 'undefined') {
+        const mockState = window.localStorage.getItem('autocare-mock-state')
+        if (mockState) headers.set('X-AutoCare-Mock-State', mockState)
+    }
+
     return headers
     },
 })

@@ -35,6 +35,18 @@ import {
     updateUserRoleSchema,
     updateUserStatusSchema,
     updateAdminDeletionRequestStatusSchema,
+    adminProviderChangeRequestsQuerySchema,
+    adminProviderChangeRequestParamsSchema,
+    decideAdminProviderChangeRequestSchema,
+    adminCatalogGapRequestsQuerySchema,
+    adminCatalogGapRequestParamsSchema,
+    decideAdminCatalogGapRequestSchema,
+    adminChatReportsQuerySchema,
+    adminChatReportParamsSchema,
+    decideAdminChatReportSchema,
+    adminAutoCareAppealsQuerySchema,
+    adminAutoCareAppealParamsSchema,
+    decideAdminAutoCareAppealSchema,
 } from './admin.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
 import {
@@ -89,8 +101,16 @@ import type { SystemIncidentEntity } from '../../entities/system-incident/system
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
 import type { AdminCabinet, AdminUser, CreateAdminResponse } from './admin.types.js'
 import type { AdminAutoCareProvider, SuperAdminPlatformOverview } from './admin.service.js'
+import { decideAdminProviderChangeRequest, listAdminProviderChangeRequests } from '../autocare/provider-change-request.service.js'
+import { AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
+import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
+import { decideAdminCatalogGapRequest, listAdminCatalogGapRequests } from '../autocare/catalog-gap.service.js'
+import { decideAdminAutoCareChatReport, listAdminAutoCareChatReports } from '../autocare/autocare-chat.service.js'
+import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
 import { env } from '../../config/env.js'
 import { getRequestLocale } from '../../shared/i18n/request-locale.js'
+import { getAutoCareQualityMonitoring, type AutoCareQualityMonitoringResponse } from '../autocare/autocare-quality-monitoring.service.js'
+import { decideAdminAutoCareAppeal, listAdminAutoCareAppeals } from '../autocare/appeal.service.js'
 import {
     getAdminDeletionRequests,
     updateAdminDeletionRequestStatus,
@@ -195,6 +215,24 @@ export async function adminRoutes(
         return getAdminAutoCareProviders(await requireAuth(request))
     })
 
+    app.get<{ Reply: AutoCareQualityMonitoringResponse }>('/admin/autocare-quality-monitoring', async (request) => {
+        return getAutoCareQualityMonitoring(await requireAuth(request))
+    })
+
+    app.get('/admin/autocare-appeals', async (request) => {
+        const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
+        return listAdminAutoCareAppeals(await requireAuth(request), query)
+    })
+
+    app.patch('/admin/autocare-appeals/:id/decision', async (request) => {
+        const params = validateParams(adminAutoCareAppealParamsSchema, request.params)
+        const body = validateBody(decideAdminAutoCareAppealSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminAutoCareAppeal(user, params.id, body)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareAppealDecided, targetId: result.id, targetType: 'autocare_appeal', metadata: { status: result.status, subject: result.subject }, request })
+        return result
+    })
+
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminAutoCareProvider }>(
         '/admin/autocare-providers/:id/status',
         async (request) => {
@@ -213,6 +251,69 @@ export async function adminRoutes(
             return result.provider
         },
     )
+
+    app.get('/admin/autocare-provider-change-requests', async (request) => {
+        const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
+        return listAdminProviderChangeRequests(await requireAuth(request), query.status, query.kind)
+    })
+
+    app.patch('/admin/autocare-provider-change-requests/:id/decision', async (request) => {
+        const params = validateParams(adminProviderChangeRequestParamsSchema, request.params)
+        const body = validateBody(decideAdminProviderChangeRequestSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminProviderChangeRequest(user, params.id, body.status as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, body.reason)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareProviderChangeRequestDecided,
+            targetId: params.id,
+            targetType: 'autocare_provider_change_request',
+            metadata: { status: body.status, reason: body.reason ?? null, providerId: result.providerId },
+            request,
+        })
+        return result
+    })
+
+    app.get('/admin/catalog-gap-requests', async (request) => {
+        const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
+        return listAdminCatalogGapRequests(await requireAuth(request), query.status)
+    })
+
+    app.patch('/admin/catalog-gap-requests/:id/decision', async (request) => {
+        const params = validateParams(adminCatalogGapRequestParamsSchema, request.params)
+        const body = validateBody(decideAdminCatalogGapRequestSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminCatalogGapRequest(user, params.id, body.status as AutomotiveCatalogGapRequestStatus.Approved | AutomotiveCatalogGapRequestStatus.Rejected, body.reason)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareCatalogGapRequestDecided,
+            targetId: params.id,
+            targetType: 'autocare_catalog_gap_request',
+            metadata: { status: body.status, reason: body.reason ?? null, proposedSlug: result.proposedSlug },
+            request,
+        })
+        return result
+    })
+
+    app.get('/admin/chat-reports', async (request) => {
+        const query = validateQuery(adminChatReportsQuerySchema, request.query)
+        return listAdminAutoCareChatReports(await requireAuth(request), query.status)
+    })
+
+    app.patch('/admin/chat-reports/:id/decision', async (request) => {
+        const params = validateParams(adminChatReportParamsSchema, request.params)
+        const body = validateBody(decideAdminChatReportSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.ChatReportModerated,
+            targetId: params.id,
+            targetType: 'autocare_chat_report',
+            metadata: { status: body.status, blockUser: body.blockUser, reason: body.reason ?? null },
+            request,
+        })
+        return result
+    })
 
     app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {
         return getSuperAdminPlatformOverview(await requireAuth(request))

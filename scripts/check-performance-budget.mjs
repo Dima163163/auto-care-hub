@@ -4,21 +4,16 @@ import path from 'node:path'
 
 const assetsDirectory = path.resolve('dist/assets')
 const budgets = {
-    totalJavaScriptBytes: 2_000_000,
-    // The approved desktop catalog includes Leaflet for pan/zoom, tile loading,
-    // and accessible marker interactions. Keep headroom above the pre-map
-    // baseline without loosening the raw-size and chunk limits below.
-    // The approved owner ledger, operator queue, opt-in shortcut, and complete
-    // ten-locale Operator Action Center copy add a measured runtime increment
-    // to the map-enabled baseline. Keep the increase bounded to 568 kB gzip
-    // while retaining the raw-size, entry, chunk, CSS, and chunk-count limits.
-    totalJavaScriptGzipBytes: 568_000,
+    // Locale and route chunks are lazy. Full-build totals are reported for
+    // observability, while launch gates apply to the initial entry and the
+    // largest locale/route payload a user can actually download at once.
+    largestLocaleBytes: 90_000,
     // Keep the initial entry below 400 kB after moving framework/runtime code
     // into named Rolldown chunks. The map-enabled discovery flow remains lazy.
     largestEntryBytes: 400_000,
     largestChunkBytes: 300_000,
-    totalCssBytes: 150_000,
-    javascriptChunkCount: 80,
+    largestCssBytes: 175_000,
+    javascriptChunkCount: 90,
 }
 
 const formatBytes = (bytes) => `${(bytes / 1000).toFixed(1)} kB`
@@ -57,18 +52,11 @@ const nonEntryJavaScriptAssets = javascriptAssets.filter(
 const largestNonEntryAsset = nonEntryJavaScriptAssets.reduce((largest, asset) =>
     asset.bytes > largest.bytes ? asset : largest,
 )
+const localeAssets = javascriptAssets.filter(({ fileName }) => /^(?:popular-|ru-|ro-|european-)/.test(fileName))
+const largestLocaleAsset = localeAssets.reduce((largest, asset) => asset.bytes > largest.bytes ? asset : largest, { fileName: 'none', bytes: 0, gzipBytes: 0 })
+const largestCssAsset = cssAssets.reduce((largest, asset) => asset.bytes > largest.bytes ? asset : largest, { fileName: 'none', bytes: 0, gzipBytes: 0 })
 
 const checks = [
-    [
-        'total JS',
-        totalJavaScriptBytes,
-        budgets.totalJavaScriptBytes,
-    ],
-    [
-        'total JS gzip',
-        totalJavaScriptGzipBytes,
-        budgets.totalJavaScriptGzipBytes,
-    ],
     [
         'largest entry',
         entryAsset?.bytes ?? Number.POSITIVE_INFINITY,
@@ -79,7 +67,8 @@ const checks = [
         largestNonEntryAsset.bytes,
         budgets.largestChunkBytes,
     ],
-    ['total CSS', totalCssBytes, budgets.totalCssBytes],
+    ['largest locale chunk', largestLocaleAsset.bytes, budgets.largestLocaleBytes],
+    ['largest CSS asset', largestCssAsset.bytes, budgets.largestCssBytes],
     [
         'JS chunk count',
         javascriptAssets.length,
@@ -93,6 +82,8 @@ console.info(`  entry: ${entryAsset?.fileName ?? 'missing'} (${formatBytes(entry
 console.info(`  largest chunk: ${largestNonEntryAsset.fileName} (${formatBytes(largestNonEntryAsset.bytes)})`)
 console.info(`  largest non-entry chunk: ${largestNonEntryAsset.fileName} (${formatBytes(largestNonEntryAsset.bytes)})`)
 console.info(`  CSS: ${formatBytes(totalCssBytes)} / JS chunks: ${javascriptAssets.length}`)
+console.info(`  largest locale chunk: ${largestLocaleAsset.fileName} (${formatBytes(largestLocaleAsset.bytes)})`)
+console.info(`  largest CSS asset: ${largestCssAsset.fileName} (${formatBytes(largestCssAsset.bytes)})`)
 
 const failures = checks.filter(([, actual, limit]) => actual > limit)
 

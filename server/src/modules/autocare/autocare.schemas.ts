@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { AutomotiveProviderChangeRequestKind } from '../../entities/automotive/provider-change-request.entity.js'
+import { AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
+import { AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 
 const autoCareVehicleSnapshotSchema = z.object({
     make: z.string().trim().min(1).max(80),
@@ -47,6 +50,49 @@ export const autoCareLocationZonesQuerySchema = z.object({
 
 export const autoCareProviderParamsSchema = z.object({
     providerId: z.string().uuid(),
+})
+
+export const autoCareProviderInvitationParamsSchema = z.object({
+    providerId: z.string().uuid(),
+    invitationId: z.string().uuid(),
+})
+
+export const autoCareProviderMembershipParamsSchema = z.object({
+    providerId: z.string().uuid(),
+    membershipId: z.string().uuid(),
+})
+
+export const createAutoCareProviderInvitationSchema = z.object({
+    email: z.string().trim().email().max(320),
+    role: z.enum(['manager', 'staff']),
+    locationId: z.string().uuid().nullable().optional(),
+})
+
+export const acceptAutoCareProviderInvitationSchema = z.object({
+    token: z.string().trim().min(32).max(512).regex(/^[A-Za-z0-9_-]+$/),
+})
+
+export const createAutoCareProviderChangeRequestSchema = z.object({
+    kind: z.nativeEnum(AutomotiveProviderChangeRequestKind),
+    payload: z.record(z.string(), z.unknown()).default({}),
+}).superRefine((value, context) => {
+    if (value.kind === AutomotiveProviderChangeRequestKind.Verification && Object.keys(value.payload).length > 0) {
+        context.addIssue({ code: 'custom', path: ['payload'], message: 'Verification requests do not accept profile changes.' })
+    }
+})
+
+export const ownerAutoCareProviderChangeRequestParamsSchema = z.object({
+    providerId: z.string().uuid(),
+})
+
+export const createAutoCareCatalogGapRequestSchema = z.object({
+    providerId: z.string().uuid().nullable().optional(),
+    proposedSlug: z.string().trim().regex(/^[a-z0-9][a-z0-9_-]{1,119}$/),
+    categorySlug: z.string().trim().min(2).max(80),
+    labels: z.record(z.string(), z.string().trim().min(1).max(160)).refine((value) => Object.keys(value).length > 0, 'At least one localized label is required.'),
+    priceType: z.nativeEnum(AutomotivePriceType),
+    comparisonAttributes: z.array(z.string().trim().min(1).max(80)).max(30),
+    rationale: z.string().trim().min(10).max(2_000),
 })
 
 export const autoCareFavoriteParamsSchema = z.object({
@@ -99,6 +145,26 @@ export const createAutoCareReviewSchema = z.object({
 export const updateAutoCareOfferSchema = z.object({
     description: z.string().trim().max(2_000).nullable(),
     priceFromMinor: z.number().int().nonnegative().max(100_000_000_00),
+    bookingMode: z.enum(['request', 'instant']).optional(),
+})
+
+export const ownerAutoCareBonusProgramSchema = z.object({
+    name: z.string().trim().min(2).max(120),
+    earnPercent: z.number().finite().min(0).max(100),
+    maxEarnPointsPerVisit: z.number().int().positive().max(1_000_000).nullable().optional(),
+    expiresAfterDays: z.number().int().positive().max(3_650).nullable().optional(),
+    active: z.boolean().default(true),
+})
+
+export const redeemAutoCareBonusSchema = z.object({
+    providerId: z.string().uuid(),
+    requestId: z.string().uuid(),
+    points: z.number().int().positive().max(1_000_000),
+})
+
+export const grantAutoCareBonusSchema = z.object({
+    points: z.number().int().positive().max(100_000),
+    reason: z.string().trim().min(10).max(500),
 })
 
 export const autoCareProviderOffersQuerySchema = z.object({
@@ -107,6 +173,14 @@ export const autoCareProviderOffersQuerySchema = z.object({
 
 export const autoCareFeaturedReviewsQuerySchema = z.object({
     limit: z.coerce.number().int().positive().max(12).default(6),
+})
+
+export const createAutoCareAppealSchema = z.object({
+    subject: z.nativeEnum(AutoCareAppealSubject),
+    subjectId: z.string().uuid(),
+    providerId: z.string().uuid().nullable().optional(),
+    reason: z.string().trim().min(20).max(4_000),
+    evidenceIds: z.array(z.string().uuid()).max(20).optional(),
 })
 
 export const autoCareProviderReviewsQuerySchema = z.object({
@@ -152,6 +226,21 @@ export const autoCareServiceAttachmentParamsSchema = z.object({
 
 export const autoCareChatParamsSchema = z.object({
     chatId: z.string().uuid(),
+})
+
+export const createAutoCareChatReportSchema = z.object({
+    category: z.enum(['spam', 'harassment', 'fraud', 'unsafe', 'other']),
+    description: z.string().trim().max(2_000).nullable().optional(),
+})
+
+export const createAutoCareChatBlockSchema = z.object({
+    blockedUserId: z.string().uuid().optional(),
+    reason: z.string().trim().max(1_000).nullable().optional(),
+})
+
+export const autoCareChatBlockParamsSchema = z.object({
+    chatId: z.string().uuid(),
+    blockId: z.string().uuid(),
 })
 
 export const ownerAutoCareReviewsQuerySchema = z.object({
@@ -231,6 +320,11 @@ export const autoCareServiceConversationQuerySchema = z.object({
     cursor: z.string().trim().max(2_048).optional(),
     limit: z.coerce.number().int().positive().max(100).default(50),
 })
+
+// Generic support/provider-inquiry chats use the same keyset contract as
+// service-request conversations. Keeping one query shape means the browser
+// can progressively load older messages without knowing the thread type.
+export const autoCareChatConversationQuerySchema = autoCareServiceConversationQuerySchema
 
 export const serviceMessageOfferDecisionSchema = z.object({
     decision: z.enum(['accept', 'decline']),
