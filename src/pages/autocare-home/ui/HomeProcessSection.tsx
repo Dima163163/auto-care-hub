@@ -14,7 +14,9 @@ export function HomeProcessSection() {
 
     return (
         <section className="mx-auto w-full max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] pb-7">
-            <h2 className="text-[1.35rem] font-black">{t('autocare.howItWorks')}</h2>
+            <div className="inline-block rounded-[var(--radius-control)] bg-card/95 px-4 py-3 shadow-sm backdrop-blur-sm">
+                <h2 className="text-[1.35rem] font-black">{t('autocare.howItWorks')}</h2>
+            </div>
             <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
                 {steps.map((step, index) => (
                     <article key={step.titleKey} className="flex min-h-[132px] gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm">

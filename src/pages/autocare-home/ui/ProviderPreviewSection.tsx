@@ -125,7 +125,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
         <section className="py-[22px]">
             <div className="relative mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)]">
                 <div className="flex items-end justify-between gap-6">
-                    <div>
+                    <div className="min-w-0 rounded-[var(--radius-control)] bg-card/95 px-4 py-3 shadow-sm backdrop-blur-sm">
                         <h2 className="text-[1.5rem] font-black tracking-[-0.025em]">{t('autocare.compareHomeTitle')}</h2>
                         <p className="mt-2 text-sm text-muted-foreground">
                             {t('autocare.compareHomeDescription')}
