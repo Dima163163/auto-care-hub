@@ -47,7 +47,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
-        <section className="bg-hero-overlay text-primary-foreground">
+        <section className="relative left-1/2 w-screen -translate-x-1/2 bg-hero-overlay text-primary-foreground">
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
                 <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:p-4">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
