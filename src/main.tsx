@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router'
 import './index.css'
 import { App } from '@/app/App'
 import { StoreProvider } from '@/app/store'
+import { IS_MOCK_API } from '@/shared/config/api'
 import { getInitialLocale } from '@/shared/config/i18n'
 import { loadTranslations } from '@/shared/config/translations'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
@@ -15,7 +16,7 @@ import {
 } from '@/shared/lib/theme'
 
 const SHOULD_ENABLE_MSW =
-    import.meta.env.VITE_API_MODE === 'mock'
+    IS_MOCK_API
     && import.meta.env.VITE_ENABLE_MSW !== 'false'
 
 applyTheme(

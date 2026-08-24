@@ -7,6 +7,8 @@ import { NextApp } from '@/app/next/NextApp'
 import { StoreProvider } from '@/app/store'
 import { getInitialLocale } from '@/shared/config/i18n'
 import { loadTranslations } from '@/shared/config/translations'
+import { IS_MOCK_API } from '@/shared/config/api'
+import { readPublicEnv } from '@/shared/config/runtime-env'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
 import {
     applyTheme,
@@ -15,8 +17,8 @@ import {
 } from '@/shared/lib/theme'
 
 const shouldEnableMocking =
-    process.env.NEXT_PUBLIC_API_MODE === 'mock'
-    && process.env.NEXT_PUBLIC_ENABLE_MSW !== 'false'
+    IS_MOCK_API
+    && readPublicEnv('VITE_ENABLE_MSW') !== 'false'
 
 function NextShellSkeleton() {
     return (

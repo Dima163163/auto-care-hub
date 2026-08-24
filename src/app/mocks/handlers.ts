@@ -2154,12 +2154,13 @@ export const handlers = [
         const market = autoCareMarkets.find((item) => item.id === params.id || item.cityCode === params.id)
         if (!market) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive market not found.' }, { status: 404 })
         const body = await request.json() as Partial<{ defaultLocale: string; supportedLocales: string[]; timezone: string; currencyCode: string; launchReady: boolean }>
+        const currencyCode = body.currencyCode
         const locales = Array.isArray(body.supportedLocales) ? body.supportedLocales.filter((locale): locale is string => typeof locale === 'string' && locale.trim().length > 0).map((locale) => locale.trim()) : []
-        if (typeof body.defaultLocale !== 'string' || locales.length === 0 || !locales.includes(body.defaultLocale) || typeof body.timezone !== 'string' || !/^[A-Z]{3}$/.test(body.currencyCode ?? '') || typeof body.launchReady !== 'boolean') return invalidMockBodyResponse()
+        if (typeof body.defaultLocale !== 'string' || locales.length === 0 || !locales.includes(body.defaultLocale) || typeof body.timezone !== 'string' || typeof currencyCode !== 'string' || !/^[A-Z]{3}$/.test(currencyCode) || typeof body.launchReady !== 'boolean') return invalidMockBodyResponse()
         market.defaultLocale = body.defaultLocale.trim()
         market.supportedLocales = [...new Set(locales)]
         market.timezone = body.timezone.trim()
-        market.currencyCode = body.currencyCode
+        market.currencyCode = currencyCode
         market.launchReady = body.launchReady
         return HttpResponse.json(market)
     }),
