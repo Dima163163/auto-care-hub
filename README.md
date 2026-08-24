@@ -59,10 +59,10 @@ Read before making changes:
 ### Frontend
 
 - React 19 and TypeScript;
-- Next.js App Router as the production web entrypoint, with the existing React
-  Router feature tree mounted behind a catch-all route during migration;
-- Vite remains available as `dev:vite`/`build:vite` for the PWA fallback and
-  compatibility checks;
+- Next.js App Router as the only production web runtime, with the existing
+  React Router feature tree mounted behind a catch-all route;
+- Vite remains available only as an explicitly named local compatibility build
+  (`dev:vite`/`build:vite`) while the feature tree is incrementally decomposed;
 - Redux Toolkit and RTK Query;
 - React Hook Form and Zod;
 - Tailwind CSS and Base UI primitives;
@@ -143,11 +143,15 @@ invalidate sessions or point at the wrong database/storage.
 
 ## Run modes
 
-Frontend mock mode:
+Frontend mock mode (Next.js):
 
 ```bash
 npm run dev
 ```
+
+The production frontend is built with `npm run build` and served with
+`npm run start`. The Render web service runs this Next.js server directly;
+`dist/` is no longer a production publish target.
 
 Real frontend/backend mode with local PostgreSQL/Redis:
 

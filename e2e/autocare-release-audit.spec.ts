@@ -1,7 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 
-const guestWidths = [375, 768, 1280] as const
+const guestWidths = [375, 390, 768, 820, 1024, 1120, 1280] as const
+const supportedLocales = ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
 
 async function expectNoHorizontalOverflow(page: Page) {
     await expect.poll(() => page.evaluate(() =>
@@ -19,6 +20,12 @@ async function expectStableShell(page: Page) {
         return !/(?:landing|navigation|common|errors)\.[A-Za-z0-9_.-]+/.test(text)
             && !/\b(?:undefined|null|TODO|FIXME)\b/i.test(text)
     })).toBe(true)
+}
+
+async function expectWorkspaceShell(page: Page) {
+    await expect(page.getByRole('main')).toHaveCount(1)
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible()
+    await expectNoHorizontalOverflow(page)
 }
 
 test.describe('AutoCare stable-web release gate', () => {
@@ -49,6 +56,24 @@ test.describe('AutoCare stable-web release gate', () => {
         await expectNoHorizontalOverflow(page)
     })
 
+    test('public header exposes the correct navigation mode at the burger boundary', async ({ page }) => {
+        for (const width of [768, 790, 1120] as const) {
+            await page.setViewportSize({ width, height: 900 })
+            await page.goto('/')
+            await expect(page.getByTestId('desktop-public-mobile-menu-trigger')).toBeVisible()
+            await expect(page.locator('.public-desktop-header__nav')).toBeHidden()
+            await page.getByTestId('desktop-public-mobile-menu-trigger').press('Enter')
+            await expect(page.locator('#desktop-public-mobile-menu')).toBeVisible()
+            await page.keyboard.press('Escape')
+            await expect(page.locator('#desktop-public-mobile-menu')).toBeHidden()
+        }
+
+        await page.setViewportSize({ width: 1280, height: 900 })
+        await page.goto('/')
+        await expect(page.locator('.public-desktop-header__nav')).toBeVisible()
+        await expect(page.getByTestId('desktop-public-mobile-menu-trigger')).toBeHidden()
+    })
+
     test('public discovery satisfies the automated accessibility contract', async ({ page }) => {
         await page.addInitScript(() => {
             window.localStorage.setItem('autocare-hub-locale', 'en')
@@ -60,6 +85,21 @@ test.describe('AutoCare stable-web release gate', () => {
         expect(results.violations).toEqual([])
     })
 
+    test('all supported locales render without missing keys or horizontal overflow', async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 900 })
+
+        for (const locale of supportedLocales) {
+            await page.goto(`/?lang=${locale}`)
+            await expect(page.locator('html')).toHaveAttribute('lang', locale)
+            await expectNoHorizontalOverflow(page)
+            await expect.poll(() => page.evaluate(() => {
+                const text = document.body.innerText
+                return !/(?:landing|navigation|common|errors)\.[A-Za-z0-9_.-]+/.test(text)
+                    && !/\b(?:undefined|null|TODO|FIXME)\b/i.test(text)
+            })).toBe(true)
+        }
+    })
+
     test('owner workspace exposes AutoCare services and privacy controls', async ({ page }) => {
         await page.goto('/login')
         await page.locator('#email').fill('sophia.miller@example.com')
@@ -68,7 +108,7 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(page).toHaveURL(/\/owner\/dashboard$/)
 
         await page.goto('/owner/services')
-        await expectStableShell(page)
+        await expectWorkspaceShell(page)
         await expect(page.getByRole('heading', { name: /services and pricing|услуги и цены/i })).toBeVisible()
         await expect(page.getByText(/automotive service catalogue|каталог автоуслуг/i)).toBeVisible()
 

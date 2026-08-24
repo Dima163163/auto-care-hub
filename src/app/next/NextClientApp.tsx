@@ -19,6 +19,8 @@ import {
 const shouldEnableMocking =
     IS_MOCK_API
     && readPublicEnv('VITE_ENABLE_MSW') !== 'false'
+const strictMocking = readPublicEnv('VITE_MSW_STRICT') === 'true'
+let mockingPromise: Promise<void> | null = null
 
 function NextShellSkeleton() {
     return (
@@ -37,15 +39,27 @@ async function enableMocking() {
         return
     }
 
-    const { worker } = await import('@/app/mocks/browser')
+    if (mockingPromise) {
+        return mockingPromise
+    }
 
-    await worker.start({
-        onUnhandledRequest(request) {
-            if (new URL(request.url).pathname.startsWith('/api/')) {
-                throw new Error(`Unhandled mock API request: ${request.method} ${request.url}`)
-            }
-        },
-    })
+    mockingPromise = (async () => {
+        const { worker } = await import('@/app/mocks/browser')
+
+        await worker.start({
+            onUnhandledRequest(request) {
+                if (new URL(request.url).pathname.startsWith('/api/')) {
+                    const message = `Unhandled mock API request: ${request.method} ${request.url}`
+                    if (strictMocking) {
+                        throw new Error(message)
+                    }
+                    console.warn(`[MSW] ${message}`)
+                }
+            },
+        })
+    })()
+
+    return mockingPromise
 }
 
 export function NextClientApp() {

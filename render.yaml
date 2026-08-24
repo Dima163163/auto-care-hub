@@ -92,14 +92,18 @@ services:
 
   - type: web
     name: autocare-hub-client
-    env: static
+    env: node
     rootDir: .
-    buildCommand: "npm install --include=dev && npm run build"
-    staticPublishPath: ./dist
+    buildCommand: "npm ci && npm run build"
+    startCommand: "npm run start"
     envVars:
       - key: NODE_ENV
         value: production
-      - key: VITE_API_MODE
+      - key: NEXT_PUBLIC_API_MODE
         value: real
-      - key: VITE_API_BASE_URL
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: /api
+      - key: NEXT_PUBLIC_API_ORIGIN
         value: https://autocare-hub-api.onrender.com
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://autocarehub.app

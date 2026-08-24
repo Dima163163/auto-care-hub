@@ -34,7 +34,7 @@ export function PublicLayout() {
                 : 'client'
 
     return (
-        <div className={isWorkspaceRoute ? 'autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden md:pb-0' : 'autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col md:pb-0'}>
+        <div className={isWorkspaceRoute ? 'autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden overflow-x-clip md:pb-0' : 'autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col overflow-x-clip md:pb-0'}>
             <SeoHead />
             <DesktopPublicHeader />
             <div className="md:hidden">

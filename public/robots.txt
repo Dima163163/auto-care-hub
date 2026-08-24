@@ -6,3 +6,5 @@ Disallow: /owner/
 Disallow: /profile/
 Disallow: /chats/
 Disallow: /onboarding/
+
+Sitemap: https://autocarehub.app/sitemap.xml
