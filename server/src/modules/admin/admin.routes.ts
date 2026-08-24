@@ -9,6 +9,8 @@ import {
 import {
     adminCabinetParamsSchema,
     adminAutoCareProviderParamsSchema,
+    adminAutoCareMarketParamsSchema,
+    updateSuperAdminAutoCareMarketSchema,
     adminAuditLogsQuerySchema,
     auditLogsExportQuerySchema,
     adminUserParamsSchema,
@@ -57,6 +59,7 @@ import {
     getAdminAutoCareProviders,
     getSuperAdminPlatformOverview,
     updateAdminAutoCareProviderStatus,
+    updateSuperAdminAutoCareMarket,
     updateAdminUserRole,
     updateAdminUserStatus,
 } from './admin.service.js'
@@ -317,6 +320,27 @@ export async function adminRoutes(
 
     app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {
         return getSuperAdminPlatformOverview(await requireAuth(request))
+    })
+
+    app.patch('/super-admin/markets/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const body = validateBody(updateSuperAdminAutoCareMarketSchema, request.body)
+        const result = await updateSuperAdminAutoCareMarket(user, params.id, body)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareMarketUpdated,
+            targetId: params.id,
+            targetType: 'autocare_market',
+            metadata: {
+                cityCode: result.cityCode,
+                launchReady: result.launchReady,
+                defaultLocale: result.defaultLocale,
+                supportedLocales: result.supportedLocales,
+            },
+            request,
+        })
+        return result
     })
 
     app.get<{ Querystring: unknown; Reply: AdminUsersListResponse }>(

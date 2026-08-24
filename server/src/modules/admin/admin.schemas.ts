@@ -178,6 +178,26 @@ export const adminAutoCareProviderParamsSchema = z.object({
     id: z.string().uuid('Automotive provider id must be a valid UUID.'),
 })
 
+export const adminAutoCareMarketParamsSchema = z.object({
+    id: z.string().uuid('Automotive market id must be a valid UUID.'),
+})
+
+export const updateSuperAdminAutoCareMarketSchema = z.object({
+    defaultLocale: z.string().trim().min(2).max(16),
+    supportedLocales: z.array(z.string().trim().min(2).max(16)).min(1).max(20),
+    timezone: z.string().trim().min(3).max(80),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
+    launchReady: z.boolean(),
+}).superRefine((value, context) => {
+    const uniqueLocales = new Set(value.supportedLocales.map((locale) => locale.toLowerCase()))
+    if (uniqueLocales.size !== value.supportedLocales.length) {
+        context.addIssue({ code: 'custom', path: ['supportedLocales'], message: 'supportedLocales must not contain duplicates.' })
+    }
+    if (!uniqueLocales.has(value.defaultLocale.toLowerCase())) {
+        context.addIssue({ code: 'custom', path: ['defaultLocale'], message: 'defaultLocale must be included in supportedLocales.' })
+    }
+})
+
 export const updateAdminAutoCareProviderStatusSchema = z.object({
     status: z.nativeEnum(AutomotiveProviderStatus),
 })

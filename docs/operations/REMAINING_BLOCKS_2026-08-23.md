@@ -40,8 +40,10 @@ still requires a real environment, product decision or a later UI slice.
 - Admin catalog-gap requests now have a queue UI with decision reasons. A full
   ServiceDefinition editor and evidence-detail workflow remain open.
 - Super-admin market readouts now include locales, timezone, currency and
-  zones. Mutating country/city/zone rules still requires a write API and policy
-  approval.
+  zones. The protected market settings editor now updates launch readiness,
+  default/supported locales, timezone and currency through the same contract in
+  mock and real modes. Country/city/zone creation and hierarchy rules remain
+  open.
 - Full responsive/accessibility/locale/screen-reader audit, SEO/prerender and
   production map/media measurements need real-device and staging evidence.
 - Browser release-audit specs are present but require the Playwright Chromium

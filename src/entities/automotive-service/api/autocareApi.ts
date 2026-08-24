@@ -18,6 +18,15 @@ export type AutoCareApiMarket = {
     launchReady: boolean
 }
 
+export type UpdateSuperAdminAutoCareMarketInput = {
+    id: string
+    defaultLocale: string
+    supportedLocales: string[]
+    timezone: string
+    currencyCode: string
+    launchReady: boolean
+}
+
 export type AutoCareApiLocationZone = {
     id: string
     marketId: string
@@ -870,6 +879,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareMarketsSchema.parse(value),
             providesTags: [{ type: 'AutoCareMarket', id: 'LIST' }],
         }),
+        updateSuperAdminAutoCareMarket: build.mutation<AutoCareApiMarket, UpdateSuperAdminAutoCareMarketInput>({
+            query: ({ id, ...body }) => ({ url: `/super-admin/markets/${encodeURIComponent(id)}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareMarketsSchema.element.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarket', id: 'LIST' }],
+        }),
         getAutoCareLocationZones: build.query<AutoCareApiLocationZone[], { marketId: string; parentId?: string; limit?: number }>({
             query: ({ marketId, ...params }) => ({ url: `/v1/markets/${encodeURIComponent(marketId)}/zones`, params }),
             transformResponse: (value: unknown) => autoCareLocationZonesSchema.parse(value),
@@ -1392,6 +1406,7 @@ export const autoCareApi = baseApi.injectEndpoints({
 export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
+    useUpdateSuperAdminAutoCareMarketMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,

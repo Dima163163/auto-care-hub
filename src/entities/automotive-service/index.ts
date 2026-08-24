@@ -27,6 +27,7 @@ export { ServiceRequestChat } from './ui/ServiceRequestChat'
 export {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
+    useUpdateSuperAdminAutoCareMarketMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,

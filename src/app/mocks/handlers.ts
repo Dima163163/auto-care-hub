@@ -2147,6 +2147,22 @@ export const handlers = [
     }),
 
     http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : autoCareMarkets)),
+    http.patch('/api/super-admin/markets/:id', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'super_admin') return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can update markets.' }, { status: 403 })
+        const market = autoCareMarkets.find((item) => item.id === params.id || item.cityCode === params.id)
+        if (!market) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive market not found.' }, { status: 404 })
+        const body = await request.json() as Partial<{ defaultLocale: string; supportedLocales: string[]; timezone: string; currencyCode: string; launchReady: boolean }>
+        const locales = Array.isArray(body.supportedLocales) ? body.supportedLocales.filter((locale): locale is string => typeof locale === 'string' && locale.trim().length > 0).map((locale) => locale.trim()) : []
+        if (typeof body.defaultLocale !== 'string' || locales.length === 0 || !locales.includes(body.defaultLocale) || typeof body.timezone !== 'string' || !/^[A-Z]{3}$/.test(body.currencyCode ?? '') || typeof body.launchReady !== 'boolean') return invalidMockBodyResponse()
+        market.defaultLocale = body.defaultLocale.trim()
+        market.supportedLocales = [...new Set(locales)]
+        market.timezone = body.timezone.trim()
+        market.currencyCode = body.currencyCode
+        market.launchReady = body.launchReady
+        return HttpResponse.json(market)
+    }),
     http.get('/api/v1/deployment-capabilities', () => HttpResponse.json(STATIC_DEPLOYMENT_CAPABILITIES)),
     http.get('/api/v1/markets/:marketId/zones', ({ params, request }) => {
         const scenario = mockScenarioResponse(request)

@@ -60,8 +60,11 @@ product decision or a larger follow-up slice.
 - ✅ Role-protected platform overview and backend market/capability contracts.
 - ✅ Super-admin dashboard exposes market, locale, timezone, currency and zone
   coverage readouts from the backend catalog.
-- ❌ Complete country/city/zone rule editor and future subscription/promo
-  controls (monetization remains disabled for the free client MVP).
+- ✅ Super-admin can edit launch readiness, default/supported locales, timezone
+  and currency through a protected API with mock parity and audit logging.
+- 🟡 Country/city/zone creation and hierarchy editor plus future
+  subscription/promo controls remain open (monetization remains disabled for
+  the free client MVP).
 
 ## 8. Bonuses
 

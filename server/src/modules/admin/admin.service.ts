@@ -44,8 +44,10 @@ import { normalizeAdminSearch } from './admin-query-policy.js'
 import { getAdminLegacyListLimit } from './admin-list-policy.js'
 import { normalizeAuthEmail } from '../auth/email-policy.js'
 import { normalizeAuthUserName } from '../auth/user-input-policy.js'
-import { toProviderResponse } from '../autocare/autocare.mappers.js'
-import type { AutoCareProviderResponse } from '../autocare/autocare.types.js'
+import { toMarketResponse, toProviderResponse } from '../autocare/autocare.mappers.js'
+import type { AutoCareMarketResponse, AutoCareProviderResponse } from '../autocare/autocare.types.js'
+import type { z } from 'zod'
+import type { updateSuperAdminAutoCareMarketSchema } from './admin.schemas.js'
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) {
@@ -161,6 +163,29 @@ export async function getSuperAdminPlatformOverview(actor: UserEntity): Promise<
         },
         billing: { phase: 'launch', subscriptionsEnabled: false, promoCodesEnabled: false },
     }
+}
+
+export type UpdateSuperAdminAutoCareMarketInput = z.infer<typeof updateSuperAdminAutoCareMarketSchema>
+
+export async function updateSuperAdminAutoCareMarket(
+    actor: UserEntity,
+    marketId: string,
+    input: UpdateSuperAdminAutoCareMarketInput,
+): Promise<AutoCareMarketResponse> {
+    assertSuperAdmin(actor)
+    const repository = AppDataSource.getRepository(AutomotiveMarketEntity)
+    const market = await repository.findOneBy({ id: marketId })
+    if (!market) {
+        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+    }
+
+    market.defaultLocale = input.defaultLocale
+    market.supportedLocales = [...new Set(input.supportedLocales.map((locale) => locale.trim()))]
+    market.timezone = input.timezone
+    market.currencyCode = input.currencyCode
+    market.launchReady = input.launchReady
+
+    return toMarketResponse(await repository.save(market))
 }
 
 export async function getAdminUsers(
