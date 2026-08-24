@@ -1,4 +1,4 @@
-import type { EntityManager } from 'typeorm'
+import { In, type EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -15,7 +15,11 @@ import { UserRole } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { canManageProvider, canManageProviderWithManager } from './provider-access.service.js'
-import type { AutoCareBonusAccountResponse, AutoCareBonusLedgerEntryResponse, AutoCareBonusProgramResponse, GrantAutoCareBonusInput, OwnerAutoCareBonusProgramInput, RedeemAutoCareBonusInput } from './autocare.types.js'
+import type { AutoCareBonusAccountResponse, AutoCareBonusLedgerEntryResponse, AutoCareBonusProgramResponse, GrantAutoCareBonusInput, OwnerAutoCareBonusLiabilityResponse, OwnerAutoCareBonusProgramInput, RedeemAutoCareBonusInput } from './autocare.types.js'
+
+/** Launch markets use two-decimal currencies. One bonus point therefore
+ * represents one major currency unit, stored in integer minor units. */
+export const AUTOCARE_BONUS_POINT_VALUE_MINOR = 100
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -126,6 +130,39 @@ export async function getOwnerAutoCareBonusProgram(user: UserEntity, providerId:
     return program ? toProgramResponse(program) : null
 }
 
+/** Owner-safe bonus liability view. It exposes customer names needed for
+ * support, but never balance data of another provider. */
+export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerId: string): Promise<OwnerAutoCareBonusLiabilityResponse> {
+    assertOwner(user)
+    if (!(await canManageProvider(user.id, providerId))) forbidden('You do not manage this automotive service.')
+    const accountRepository = AppDataSource.getRepository(AutoCareBonusAccountEntity)
+    const accounts = await accountRepository.find({ where: { providerId } })
+    const entries = await AppDataSource.getRepository(AutoCareBonusLedgerEntity).find({
+        where: { providerId }, order: { createdAt: 'DESC' }, take: 100,
+    })
+    const clientIds = [...new Set(entries.map((entry) => entry.clientId))]
+    const clients = clientIds.length === 0 ? [] : await AppDataSource.getRepository(UserEntity).find({
+        where: { id: In(clientIds) }, select: { id: true, name: true },
+    })
+    const names = new Map(clients.map((client) => [client.id, client.name]))
+    return {
+        providerId,
+        activeAccounts: accounts.filter((account) => account.balancePoints > 0).length,
+        liabilityPoints: accounts.reduce((total, account) => total + account.balancePoints, 0),
+        entries: entries.map((entry) => ({
+            id: entry.id,
+            clientId: entry.clientId,
+            clientName: names.get(entry.clientId) ?? 'Клиент AutoCare',
+            type: entry.type,
+            points: entry.points,
+            reason: entry.reason,
+            requestId: entry.requestId,
+            expiresAt: entry.expiresAt?.toISOString() ?? null,
+            createdAt: entry.createdAt.toISOString(),
+        })),
+    }
+}
+
 export async function upsertOwnerAutoCareBonusProgram(user: UserEntity, providerId: string, input: OwnerAutoCareBonusProgramInput) {
     assertOwner(user)
     const program = await AppDataSource.transaction(async (manager) => {
@@ -146,11 +183,19 @@ export async function upsertOwnerAutoCareBonusProgram(user: UserEntity, provider
 }
 
 function requestAmountMinor(request: ServiceRequestEntity) {
+    const payableAmount = request.bookingSnapshot?.payableAmountMinor
+    if (typeof payableAmount === 'number' && Number.isInteger(payableAmount)) return payableAmount
     const bookingAmount = request.bookingSnapshot?.amountMinor
     if (typeof bookingAmount === 'number' && Number.isInteger(bookingAmount)) return bookingAmount
     const quoteAmount = request.acceptedQuoteSnapshot?.amountMinor
     if (typeof quoteAmount === 'number' && Number.isInteger(quoteAmount)) return quoteAmount
     return null
+}
+
+export function getMaximumAutoCareBonusRedemptionPoints(request: ServiceRequestEntity) {
+    const amountMinor = requestAmountMinor(request)
+    if (!amountMinor || amountMinor <= 0) return 0
+    return Math.floor(amountMinor / AUTOCARE_BONUS_POINT_VALUE_MINOR)
 }
 
 /**
@@ -204,7 +249,7 @@ export async function redeemAutoCareBonus(user: UserEntity, input: RedeemAutoCar
     return AppDataSource.transaction(async (manager) => {
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: input.requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request || request.providerId !== input.providerId || request.clientId !== user.id) notFound('Service request not found.')
-        if (![ServiceRequestStatus.Accepted, ServiceRequestStatus.Closed].includes(request.status)) {
+        if (request.status !== ServiceRequestStatus.Accepted) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Bonuses can be redeemed only for a confirmed service request.' })
         }
         const accountRepository = manager.getRepository(AutoCareBonusAccountEntity)
@@ -219,6 +264,10 @@ export async function redeemAutoCareBonus(user: UserEntity, input: RedeemAutoCar
         if (previousRequestRedemption) return accountResponse(account, manager)
         await reconcileExpiredBonusEntries(manager, account)
         if (account.balancePoints < input.points) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'The bonus balance is too low for this redemption.' })
+        const maximumPoints = getMaximumAutoCareBonusRedemptionPoints(request)
+        if (maximumPoints === 0 || input.points > maximumPoints) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'The bonus redemption exceeds the confirmed service amount.' })
+        }
 
         await ledgerRepository.save(ledgerRepository.create({
             accountId: account.id,
@@ -235,6 +284,15 @@ export async function redeemAutoCareBonus(user: UserEntity, input: RedeemAutoCar
         account.balancePoints -= input.points
         account.redeemedPoints += input.points
         await accountRepository.save(account)
+        const bookingAmount = request.bookingSnapshot?.amountMinor
+        if (typeof bookingAmount === 'number' && Number.isInteger(bookingAmount)) {
+            request.bookingSnapshot = {
+                ...request.bookingSnapshot,
+                bonusDiscountMinor: input.points * AUTOCARE_BONUS_POINT_VALUE_MINOR,
+                payableAmountMinor: bookingAmount - input.points * AUTOCARE_BONUS_POINT_VALUE_MINOR,
+            }
+            await manager.getRepository(ServiceRequestEntity).save(request)
+        }
         return accountResponse(account, manager)
     })
 }
@@ -247,9 +305,16 @@ export async function grantAutoCareBonus(user: UserEntity, input: GrantAutoCareB
         if (!client) notFound('Client not found.')
         const accountRepository = manager.getRepository(AutoCareBonusAccountEntity)
         const ledgerRepository = manager.getRepository(AutoCareBonusLedgerEntity)
-        const account = await accountRepository.findOne({ where: { clientId: input.clientId, providerId: input.providerId }, lock: { mode: 'pessimistic_write' } })
-            ?? await accountRepository.save(accountRepository.create({ clientId: input.clientId, providerId: input.providerId }))
-        const key = idempotencyKey?.trim() || `grant:${user.id}:${Date.now()}`
+        let account = await accountRepository.findOne({ where: { clientId: input.clientId, providerId: input.providerId }, lock: { mode: 'pessimistic_write' } })
+        if (!account) {
+            await accountRepository.upsert({ clientId: input.clientId, providerId: input.providerId }, ['clientId', 'providerId'])
+            account = await accountRepository.findOne({ where: { clientId: input.clientId, providerId: input.providerId }, lock: { mode: 'pessimistic_write' } })
+        }
+        if (!account) throw new AppError({ statusCode: 500, code: ERROR_CODES.InternalServerError, message: 'Bonus account could not be created.' })
+        if (!idempotencyKey?.trim()) {
+            throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Idempotency-Key is required when granting bonus points.' })
+        }
+        const key = idempotencyKey.trim()
         const existing = await ledgerRepository.findOne({ where: { accountId: account.id, idempotencyKey: key } })
         if (existing) return accountResponse(account, manager)
         await ledgerRepository.save(ledgerRepository.create({
@@ -286,7 +351,7 @@ export async function refundAutoCareBonusForCancelledRequest(manager: EntityMana
         clientId: request.clientId,
         providerId: request.providerId,
         requestId: request.id,
-        type: AutoCareBonusLedgerType.Adjustment,
+        type: AutoCareBonusLedgerType.Refund,
         points,
         reason: 'Возврат бонусов после отмены записи',
         idempotencyKey,

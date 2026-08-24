@@ -8,6 +8,7 @@ import {
     assertValidRateLimitOptions,
     getRateLimitHeaders,
     getAuthenticatedUserRateLimitIdentifier,
+    mustFailClosedForRedisRateLimitFailure,
     MAX_RATE_LIMIT_REQUESTS,
     MAX_RATE_LIMIT_WINDOW_MS,
     MAX_RATE_LIMIT_SCOPE_LENGTH,
@@ -96,6 +97,14 @@ describe('rate limit configuration', () => {
         expect(() => assertValidRateLimitOptions({ ...options, windowMs: MAX_RATE_LIMIT_WINDOW_MS + 1 })).toThrow()
         expect(() => assertValidRateLimitOptions({ ...options, scope: 'x'.repeat(MAX_RATE_LIMIT_SCOPE_LENGTH + 1) })).toThrow()
         expect(() => assertValidRateLimitOptions({ ...options, scope: 'scope with spaces' })).toThrow()
+    })
+})
+
+describe('Redis outage policy', () => {
+    it('fails closed only in production because process-local buckets are not a distributed boundary', () => {
+        expect(mustFailClosedForRedisRateLimitFailure('production')).toBe(true)
+        expect(mustFailClosedForRedisRateLimitFailure('development')).toBe(false)
+        expect(mustFailClosedForRedisRateLimitFailure('test')).toBe(false)
     })
 })
 

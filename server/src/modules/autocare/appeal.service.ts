@@ -12,6 +12,8 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { canManageProvider } from './provider-access.service.js'
 import { canTransitionAppeal, validateAppealInput } from './appeal-policy.js'
+import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
+import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareAppealResponse } from './autocare.types.js'
 
 function error(statusCode: number, message: string): never {
@@ -108,7 +110,26 @@ export async function decideAdminAutoCareAppeal(user: User, appealId: string, in
         appeal.decisionReason = input.reason.trim()
         appeal.decidedById = user.id
         appeal.decidedAt = new Date()
-        return toResponse(await repository.save(appeal))
+        const saved = await repository.save(appeal)
+        await enqueueNotificationSafely({
+            userId: saved.submittedById,
+            category: NotificationCategory.Moderation,
+            template: {
+                key: 'moderation.appeal_decided',
+                params: {
+                    subject: saved.subject,
+                    status: saved.status,
+                },
+            },
+            metadata: {
+                appealId: saved.id,
+                subject: saved.subject,
+                subjectId: saved.subjectId,
+                status: saved.status,
+                decisionReason: saved.decisionReason,
+            },
+        }, `notification:autocare-appeal:${saved.id}:${saved.status}`, manager)
+        return toResponse(saved)
     })
 }
 

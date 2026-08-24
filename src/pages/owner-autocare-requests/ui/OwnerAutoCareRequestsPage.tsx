@@ -19,10 +19,12 @@ import { RetryButton } from '@/shared/ui/query-refresh-error'
 import { SplitListSkeleton } from '@/shared/ui/loading-skeleton'
 import { StateCard } from '@/shared/ui/state-card'
 
+import { OwnerCapacityCalendar } from './OwnerCapacityCalendar'
+
 const emptyRequests: AutoCareServiceRequest[] = []
 
 export function OwnerAutoCareRequestsPage() {
-    const { t } = useTranslation()
+    const { locale, t } = useTranslation()
     const [searchParams] = useSearchParams()
     const query = useGetOwnerAutoCareServiceRequestsQuery()
     const requests = query.data ?? emptyRequests
@@ -35,7 +37,7 @@ export function OwnerAutoCareRequestsPage() {
         confirmed: requests.filter((item) => item.status === 'accepted').length,
     }), [requests])
 
-    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} /></div>{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={requests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div>}</section></main>
+    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} /></div>{!query.isLoading && !query.error && <OwnerCapacityCalendar requests={requests} locale={locale} />}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={requests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div>}</section></main>
 }
 
 function SummaryCard({ icon: Icon, label, value }: { icon: typeof Clock3; label: string; value: number }) {

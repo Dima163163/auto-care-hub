@@ -30,3 +30,20 @@ message text, VINs or photo contents.
 
 The repository includes health/incident and outbox inspection surfaces; actual
 provider alert routing and the restore rehearsal remain deployment work.
+
+## Encrypted database scripts
+
+`npm --prefix server run db:backup` now requires
+`BACKUP_ENCRYPTION_PASSWORD_FILE` by default. It produces an encrypted
+`*.sql.gz.enc` archive using AES-256-CBC with PBKDF2 and a separate SHA-256
+checksum. Keep the password in the deployment secret manager, separate from
+the archive storage and with an audited recovery owner. Store the checksum in
+an access-controlled, immutable backup manifest; an archive and its checksum
+must never be modifiable by the same untrusted principal.
+
+`npm --prefix server run db:restore -- <archive> <isolated-db>` verifies the
+checksum first and requires the same password file. It refuses restoring a
+plain gzip archive unless `ALLOW_UNENCRYPTED_LOCAL_RESTORE=true` is supplied
+for a deliberately local-only exercise. Likewise, an unencrypted backup needs
+the explicit `ALLOW_UNENCRYPTED_LOCAL_BACKUP=true` opt-out. Neither opt-out is
+allowed in staging or production.

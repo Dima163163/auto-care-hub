@@ -150,45 +150,45 @@ layout. The first isolated backend schema slice is in
 `server/src/database/migrations/1785700000000-CreateAutoCareCatalogFoundation.ts`
 with `autocare_` entities for markets, definitions, providers, locations, and
 offerings. A second migration adds service requests, messages and private photo
-attachment metadata. These are not yet wired to production routes or seeded
-data.
+attachment metadata. The foundation has since been expanded into routed,
+seeded AutoCare services with requests, booking snapshots, reviews, bonuses,
+membership scopes and moderation evidence.
 
 ## Current open decisions
 
 - Exact first Russian pilot city and pilot locations in Spain and
   Moldova/Transnistria.
 - Whether legacy customer data must be preserved.
-- Bonus model, expiry, cancellation/reversal and manual-grant rules.
 - Exact subscription periods, permanent Free plan and grace/downgrade behavior.
 - Conversation/photo retention and whether all authenticated customers may
   start a pre-booking inquiry.
 - Provider verification documents/badge meaning.
-- Public SEO strategy for the current Vite SPA.
-- New Git repository URL and visibility/organization.
+- Final legal retention terms and notification wording per launch jurisdiction.
 
 Do not guess an open decision if it changes schema, legal behavior, money,
 privacy, ranking or destructive migration.
 
 ## Next approved work sequence
 
-1. User reviews the current local design/mock diff.
-2. Resolve remaining Phase 1 product decisions and ADRs.
-3. Add the AutoCare API contract and fresh-domain backend migrations.
-4. Replace the mock results flow with `/api/v1` search and comparison data.
-5. Complete provider profile, booking confirmation, messenger/quote and
-   customer/provider workspace mocks.
-6. Stabilize the responsive web product before native work.
+1. Configure staging credentials and run the strict API compatibility probe.
+2. Configure S3-compatible private storage, ClamAV and signed-media access in
+   a staging environment; record quarantine and deletion evidence.
+3. Configure alert routing and encrypted off-site backup storage, then perform
+   a timed isolated restore rehearsal.
+4. Run the selected-market pilot with real providers and customers, evaluating
+   price quality, supply density, response time and booking reliability.
+5. Obtain the jurisdiction-specific legal/retention sign-off and production
+   security review before the stable-web gate.
 
 The mock catalog asset contract is now explicit: `server/src/scripts/seed-autocare-mock-data.ts`
 inserts generated provider images when the corresponding public asset exists and
 uses the placeholder path otherwise. The frontend `AutoCareImage` component
 keeps the same fallback for runtime load failures.
 
-The first public AutoCare API slice is now implemented at `/v1/*` inside the
-backend (exposed as `/api/v1/*` through the existing proxy). RTK Query and MSW
-use the same typed resources for markets, service definitions, discovery, and
-provider profiles, so `VITE_API_MODE=mock` and `VITE_API_MODE=real` share the
-same screen-level data flow.
+The public AutoCare API is implemented at `/v1/*` inside the backend (exposed
+as `/api/v1/*` through the Next.js proxy). RTK Query and MSW use the same typed
+resources for markets, service definitions, discovery and provider profiles,
+so mock and real mode share the same screen-level data flow.
 
 The results screen keeps the public flex shell and footer in normal document
 flow. Provider results now use ordinary client pagination (8 cards per page)
@@ -197,6 +197,26 @@ rendered in normal flow with no artificial virtual spacer rows.
 Provider previews and discovery responses also carry `brandSpecializations`
 and `isMultibrand`; the brand filter uses stable vehicle-brand codes and keeps
 universal multibrand providers in every selected-brand result.
+
+## Current implementation baseline
+
+- Next.js App Router is the production web runtime. The retained Vite command
+  is a temporary development compatibility path only and must not be deployed.
+- The bonus policy is fixed in `docs/product/BONUS_POLICY.md`: a provider-funded,
+  non-cash, provider-scoped ledger supports typed earn/redeem/expire/refund and
+  audited adjustments. PostgreSQL concurrency tests protect redemption,
+  cancellation refunds and expiry.
+- Production media is private by design: S3-compatible storage, quarantine and
+  ClamAV are mandatory under production configuration; signed attachment access
+  and deletion retention are enforced by the backend. Real credentials and
+  operational evidence remain deployment gates.
+- Account deletion removes private attachment objects and metadata, automotive
+  bonus accounts/ledger, provider memberships and invitations; owned providers
+  are suspended/detached for super-admin review.
+- Release-mode staging compatibility uses
+  `REQUIRE_STAGING_API=true STAGING_API_BASE_URL=… npm run check:staging-api`;
+  backups require an encryption password file and external alert routing,
+  managed backup storage and restore evidence remain production requirements.
 
 ## Identity and legacy naming boundary
 

@@ -6,8 +6,12 @@ const ignoredDirectories = new Set([
     '.git',
     '.agents',
     '.codex',
+    '.next',
+    'coverage',
     'dist',
     'node_modules',
+    'playwright-report',
+    'test-results',
 ])
 const historicalMigrationDirectory = join('server', 'src', 'database', 'migrations')
 const prohibitedProvider = ['st', 'ri', 'pe'].join('')

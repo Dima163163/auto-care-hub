@@ -11,6 +11,8 @@ describe('sensitive log metadata', () => {
         expect(isSensitiveLogKey('refreshToken')).toBe(true)
         expect(isSensitiveLogKey('email')).toBe(true)
         expect(isSensitiveLogKey('vin')).toBe(true)
+        expect(isSensitiveLogKey('contactSnapshot')).toBe(true)
+        expect(isSensitiveLogKey('licensePlate')).toBe(true)
         expect(isSensitiveLogKey('requestId')).toBe(false)
     })
 
@@ -49,6 +51,20 @@ describe('sensitive log metadata', () => {
         })).toEqual({
             message: 'https://autocarehub.example/password/setup?token=[REDACTED]&source=email',
             authorizationHeader: '[REDACTED]',
+        })
+    })
+
+    it('redacts automotive and contact PII without hiding operational fields', () => {
+        expect(sanitizeLogMetadata({
+            phoneNumber: '+7 999 123-45-67',
+            vinNumber: 'JTM1234567890ABCD',
+            contactSnapshot: { name: 'Private client', phone: '+7 999 123-45-67' },
+            serviceRequestId: 'request-123',
+        })).toEqual({
+            phoneNumber: '[REDACTED]',
+            vinNumber: '[REDACTED]',
+            contactSnapshot: '[REDACTED]',
+            serviceRequestId: 'request-123',
         })
     })
 })

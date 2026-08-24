@@ -3,6 +3,7 @@ import { In } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutoCareBonusAccountEntity,
+    AutoCareProviderDailyMetricEntity,
     AutoCareServiceQuoteEntity,
     AutomotiveProviderEntity,
     AutomotiveReviewEntity,
@@ -11,10 +12,11 @@ import {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
-import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
+import type { UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { canManageProvider } from './provider-access.service.js'
+import { logError } from '../../shared/observability/logger.js'
+import { getManagedProviderScopes, hasProviderWorkspacePermission } from './provider-access.service.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
 
 function forbidden(message: string): never {
@@ -35,20 +37,43 @@ function percent(value: number, total: number) {
  * client identity or private message content.
  */
 export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, providerId: string): Promise<AutoCareProviderAnalyticsResponse> {
-    if (owner.role !== UserRole.Owner) forbidden('Only service owners can view automotive analytics.')
-    if (!(await canManageProvider(owner.id, providerId))) forbidden('You do not manage this automotive service.')
+    const scope = (await getManagedProviderScopes(owner.id)).find((item) => item.providerId === providerId)
+    if (!scope) forbidden('You do not manage this automotive service.')
+    if (!(await hasProviderWorkspacePermission(owner.id, providerId, 'analytics'))) {
+        forbidden('You do not have permission to view service analytics.')
+    }
 
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     if (!provider) notFound('Automotive service not found.')
 
-    const [requests, quotes, reviews, accounts] = await Promise.all([
-        AppDataSource.getRepository(ServiceRequestEntity).find({ where: { providerId }, order: { createdAt: 'ASC' } }),
-        AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({ where: { providerId } }),
-        AppDataSource.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved } }),
-        AppDataSource.getRepository(AutoCareBonusAccountEntity).find({ where: { providerId }, select: { balancePoints: true } }),
-    ])
+    const scopedLocationIds = scope.locationIds
+    const isProviderWide = scopedLocationIds === null
+    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({
+        where: isProviderWide ? { providerId } : { providerId, locationId: In(scopedLocationIds ?? []) },
+        order: { createdAt: 'ASC' },
+    })
 
     const requestIds = requests.map((request) => request.id)
+    const requestIdSet = new Set(requestIds)
+    const [quotes, allReviews, accounts, metrics] = await Promise.all([
+        requestIds.length === 0
+            ? Promise.resolve([])
+            : AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({ where: { requestId: In(requestIds) } }),
+        AppDataSource.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved } }),
+        isProviderWide
+            ? AppDataSource.getRepository(AutoCareBonusAccountEntity).find({ where: { providerId }, select: { balancePoints: true } })
+            : Promise.resolve([]),
+        isProviderWide
+            ? AppDataSource.getRepository(AutoCareProviderDailyMetricEntity).createQueryBuilder('metric')
+                .select('COALESCE(SUM(metric.impressions), 0)', 'impressions')
+                .addSelect('COALESCE(SUM(metric.profileOpens), 0)', 'profileOpens')
+                .where('metric.providerId = :providerId', { providerId })
+                .getRawOne<{ impressions: string; profileOpens: string }>()
+            : Promise.resolve(null),
+    ])
+    const reviews = isProviderWide
+        ? allReviews
+        : allReviews.filter((review) => review.serviceRequestId !== null && requestIdSet.has(review.serviceRequestId))
     const messages = requestIds.length === 0
         ? []
         : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, order: { createdAt: 'ASC' } })
@@ -94,6 +119,45 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
         reviewCount: reviews.length,
         averageRating: reviews.length === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)),
         bonusLiabilityPoints: accounts.reduce((sum, account) => sum + account.balancePoints, 0),
-        tracking: { impressions: 0, profileOpens: 0, available: false },
+        tracking: {
+            impressions: Number(metrics?.impressions ?? 0),
+            profileOpens: Number(metrics?.profileOpens ?? 0),
+            available: isProviderWide,
+        },
+    }
+}
+
+type DailyMetricField = 'impressions' | 'profileOpens'
+
+function currentMetricDay() {
+    return new Date().toISOString().slice(0, 10)
+}
+
+async function incrementDailyMetric(providerId: string, field: DailyMetricField, amount: number) {
+    if (amount <= 0) return
+    const day = currentMetricDay()
+    await AppDataSource.query(`INSERT INTO "autocare_provider_daily_metrics" ("id", "providerId", "day", "${field}")
+        VALUES (uuid_generate_v4(), $1, $2, $3)
+        ON CONFLICT ("providerId", "day") DO UPDATE
+        SET "${field}" = "autocare_provider_daily_metrics"."${field}" + EXCLUDED."${field}",
+            "updatedAt" = now()`, [providerId, day, amount])
+}
+
+/** Best-effort public activity counters. They never affect discovery/profile availability. */
+export async function recordAutoCareProviderDiscoveryImpressions(providerIds: readonly string[]) {
+    const counts = new Map<string, number>()
+    for (const providerId of providerIds) counts.set(providerId, (counts.get(providerId) ?? 0) + 1)
+    try {
+        await Promise.all([...counts].map(([providerId, amount]) => incrementDailyMetric(providerId, 'impressions', amount)))
+    } catch (error) {
+        logError('Could not record AutoCare discovery impressions', error, { providerCount: counts.size })
+    }
+}
+
+export async function recordAutoCareProviderProfileOpen(providerId: string) {
+    try {
+        await incrementDailyMetric(providerId, 'profileOpens', 1)
+    } catch (error) {
+        logError('Could not record AutoCare profile open', error, { providerId })
     }
 }

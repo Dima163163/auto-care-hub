@@ -58,8 +58,16 @@ function requireClient(user: UserEntity) {
     if (user.role !== UserRole.Client) forbidden('Only clients can use this workflow.')
 }
 
-function requireOwner(user: UserEntity) {
-    if (user.role !== UserRole.Owner) forbidden('Only service owners can use this workflow.')
+async function requireProviderWorkspace(user: UserEntity) {
+    if ((await getManagedProviderScopes(user.id)).length === 0) {
+        forbidden('Only service workspace members can use this workflow.')
+    }
+}
+
+function requireFleetOwner(user: UserEntity) {
+    if (user.role !== UserRole.Owner) {
+        forbidden('Only fleet owners can use this workflow.')
+    }
 }
 
 function isBroadcastOfferUniqueError(error: unknown) {
@@ -239,7 +247,7 @@ export async function getAutoCareRepairTimeline(user: UserEntity, requestId: str
     if (!request) notFound('Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, request.locationId))) forbidden('You do not have access to this repair timeline.')
+        if (!provider || !(await canManageProvider(user.id, provider.id, request.locationId))) forbidden('You do not have access to this repair timeline.')
     }
     return (await AppDataSource.getRepository(AutoCareRepairEventEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } })).map(toRepairEventResponse)
 }
@@ -276,9 +284,8 @@ async function getBroadcastOrThrow(id: string) {
 
 export async function assertOwnerBroadcastAccess(user: UserEntity, request: AutoCareBroadcastRequestEntity) {
     if (request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) return
-    if (user.role !== UserRole.Owner) forbidden('You do not have access to this broadcast request.')
-
     const managedScopes = await getManagedProviderScopes(user.id)
+    if (managedScopes.length === 0) forbidden('You do not have access to this broadcast request.')
     const managedProviderIds = managedScopes.map(({ providerId }) => providerId)
     const providers = managedProviderIds.length === 0
         ? []
@@ -315,7 +322,9 @@ export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId:
     await assertOwnerBroadcastAccess(user, request)
     const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: request.serviceDefinitionId })
     if (!definition) notFound('Service definition not found.')
-    const ownedScopes = user.role === UserRole.Owner ? await getManagedProviderScopes(user.id) : null
+    const ownedScopes = request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin
+        ? null
+        : await getManagedProviderScopes(user.id)
     const ownedProviderIds = ownedScopes?.map(({ providerId }) => providerId) ?? null
     const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
         where: ownedProviderIds ? { broadcastRequestId: request.id, providerId: In(ownedProviderIds) } : { broadcastRequestId: request.id },
@@ -355,7 +364,7 @@ export async function getMyAutoCareBroadcastRequests(user: UserEntity) {
 }
 
 export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
-    requireOwner(user)
+    await requireProviderWorkspace(user)
     const scopes = await getManagedProviderScopes(user.id)
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
@@ -374,7 +383,7 @@ export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
 }
 
 export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId: string, input: CreateAutoCareBroadcastOfferInput) {
-    requireOwner(user)
+    await requireProviderWorkspace(user)
     try {
         const result = await AppDataSource.transaction(async (manager) => {
             const request = await manager.getRepository(AutoCareBroadcastRequestEntity).findOne({
@@ -451,7 +460,7 @@ function toFleetVehicleResponse(vehicle: AutoCareFleetVehicleEntity): AutoCareFl
 }
 
 export async function getMyAutoCareFleets(user: UserEntity): Promise<AutoCareFleetResponse[]> {
-    requireOwner(user)
+    requireFleetOwner(user)
     const fleets = await AppDataSource.getRepository(AutoCareFleetAccountEntity).find({ where: { ownerId: user.id }, order: { createdAt: 'DESC' } })
     const vehicles = fleets.length === 0 ? [] : await AppDataSource.getRepository(AutoCareFleetVehicleEntity).find({ where: { fleetId: In(fleets.map((fleet) => fleet.id)) }, order: { createdAt: 'ASC' } })
     const vehiclesByFleet = new Map<string, AutoCareFleetVehicleResponse[]>()
@@ -460,13 +469,13 @@ export async function getMyAutoCareFleets(user: UserEntity): Promise<AutoCareFle
 }
 
 export async function createAutoCareFleet(user: UserEntity, input: { name: string; notes?: string | null }): Promise<AutoCareFleetResponse> {
-    requireOwner(user)
+    requireFleetOwner(user)
     const fleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).save(AppDataSource.getRepository(AutoCareFleetAccountEntity).create({ ownerId: user.id, name: input.name, notes: input.notes ?? null }))
     return { id: fleet.id, name: fleet.name, notes: fleet.notes, vehicles: [], createdAt: fleet.createdAt.toISOString(), updatedAt: fleet.updatedAt.toISOString() }
 }
 
 export async function createAutoCareFleetVehicle(user: UserEntity, fleetId: string, input: { label: string; vehicleSnapshot: Record<string, unknown>; approvalPolicy?: string | null }): Promise<AutoCareFleetVehicleResponse> {
-    requireOwner(user)
+    requireFleetOwner(user)
     const fleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).findOneBy({ id: fleetId, ownerId: user.id })
     if (!fleet) notFound('Fleet account not found.')
     const vehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).save(AppDataSource.getRepository(AutoCareFleetVehicleEntity).create({ fleetId, label: input.label, vehicleSnapshot: input.vehicleSnapshot, approvalPolicy: input.approvalPolicy ?? null }))

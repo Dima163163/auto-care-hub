@@ -74,6 +74,33 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
         },
         { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
     ],
+    manager: [
+        { labelKey: 'workspace.overview', items: [{ labelKey: 'navigation.ownerDashboard', to: ROUTES.ownerDashboard, icon: LayoutDashboard, end: true }] },
+        {
+            labelKey: 'workspace.manage',
+            items: [
+                { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
+                { labelKey: 'navigation.ownerAutoCareRequests', to: ROUTES.ownerAutoCareRequests, icon: MessageSquare },
+                { labelKey: 'navigation.ownerReviews', to: ROUTES.ownerReviews, icon: Star },
+                { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
+                { labelKey: 'navigation.ownerServices', to: ROUTES.ownerServices, icon: ClipboardList },
+            ],
+        },
+        { labelKey: 'workspace.configure', items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }, { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+    ],
+    staff: [
+        {
+            labelKey: 'workspace.manage',
+            items: [
+                { labelKey: 'navigation.ownerAutoCareProviders', to: ROUTES.ownerAutoCareProviders, icon: CarFront },
+                { labelKey: 'navigation.ownerAutoCareRequests', to: ROUTES.ownerAutoCareRequests, icon: MessageSquare },
+                { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
+            ],
+        },
+        { labelKey: 'workspace.configure', items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }, { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+    ],
     admin: [
         {
             labelKey: 'workspace.monitor',

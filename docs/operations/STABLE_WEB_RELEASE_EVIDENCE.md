@@ -13,8 +13,10 @@ redacted artifacts.
   admin quality-monitoring response and covered by unit tests.
 - [x] Mock and backend API contracts are checked by the existing parity,
   OpenAPI and response-schema scripts.
-- [x] `npm run check:staging-api` runs all local compatibility checks and probes
-  a configured `STAGING_API_BASE_URL` when supplied.
+- [x] `npm run check:staging-api` runs all local compatibility checks. Release
+  automation must use `REQUIRE_STAGING_API=true` together with
+  `STAGING_API_BASE_URL`; it then fails closed if the staging target is absent
+  or incompatible.
 - [x] Translation payloads are split by locale; the performance gate measures
   the initial entry, largest route chunk, largest locale chunk, CSS and chunk
   count rather than falsely summing mutually exclusive locales.
@@ -44,8 +46,9 @@ redacted artifacts.
   image and video budgets from the production build.
 - [ ] Configure alert destinations, verify backups and complete a timed restore
   rehearsal with an owner and incident ticket.
-- [ ] Run `STAGING_API_BASE_URL=... npm run check:staging-api` against staging
-  and retain the OpenAPI hash/compatibility result for the release.
+- [ ] Run `REQUIRE_STAGING_API=true STAGING_API_BASE_URL=... npm run
+  check:staging-api` against staging and retain the OpenAPI
+  hash/compatibility result for the release.
 
 ## Release command set
 
@@ -55,6 +58,8 @@ npm run build
 npm run test
 npm run check:performance
 npm run check:staging-api
+# Required in a release job that has staging credentials/network access:
+REQUIRE_STAGING_API=true STAGING_API_BASE_URL=https://staging.example.com npm run check:staging-api
 npm run test:e2e
 npm --prefix server run test:unit
 npm --prefix server run build

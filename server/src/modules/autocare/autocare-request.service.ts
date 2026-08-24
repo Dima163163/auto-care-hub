@@ -62,12 +62,6 @@ function clientOnly(user: UserEntity) {
     }
 }
 
-function ownerOnly(user: UserEntity) {
-    if (user.role !== UserRole.Owner) {
-        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only service owners can confirm service requests.' })
-    }
-}
-
 function notFound(message: string): never {
     throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message })
 }
@@ -295,6 +289,8 @@ function toBookingSnapshotResponse(snapshot: Record<string, unknown> | null): Au
         locationId: snapshot.locationId,
         status: 'confirmed',
         createdAt: snapshot.createdAt,
+        ...(typeof snapshot.bonusDiscountMinor === 'number' ? { bonusDiscountMinor: snapshot.bonusDiscountMinor } : {}),
+        ...(typeof snapshot.payableAmountMinor === 'number' ? { payableAmountMinor: snapshot.payableAmountMinor } : {}),
     }
 }
 
@@ -445,7 +441,6 @@ export async function createAutoCareServiceMessage(user: UserEntity, requestId: 
 }
 
 export async function createAutoCareServiceOffer(user: UserEntity, requestId: string, input: CreateAutoCareServiceOfferInput) {
-    ownerOnly(user)
     if (input.type === 'discount' && !input.discountPercent) conflict('A discount offer requires a percentage.')
     const offerInput: ServiceMessageOffer = {
         type: input.type,
@@ -560,7 +555,7 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
             if (!lockedRequest) notFound('Service request not found.')
             if (lockedRequest.clientId !== user.id) {
                 const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-                if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, lockedRequest.locationId))) {
+                if (!provider || !(await canManageProvider(user.id, provider.id, lockedRequest.locationId))) {
                     forbidden('You do not have access to this service request.')
                 }
             }
@@ -609,7 +604,6 @@ export async function getAutoCareServiceAttachment(user: UserEntity, requestId: 
 }
 
 export async function createAutoCareServiceQuote(user: UserEntity, requestId: string, input: CreateAutoCareServiceQuoteInput) {
-    ownerOnly(user)
     const lineItems = (input.lineItems ?? []).map((item) => ({
         kind: item.kind,
         title: item.title,
@@ -808,7 +802,7 @@ async function getRequest(requestId: string) {
 async function assertParticipant(user: UserEntity, request: ServiceRequestEntity) {
     if (request.clientId === user.id) return
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-    if (user.role === UserRole.Owner && provider && await canManageProvider(user.id, provider.id, request.locationId)) return
+    if (provider && await canManageProvider(user.id, provider.id, request.locationId)) return
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service request.' })
 }
 
@@ -930,7 +924,6 @@ export async function getMyAutoCareServiceRequests(user: UserEntity) {
 }
 
 export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
-    ownerOnly(user)
     const scopes = await getManagedProviderScopes(user.id)
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
@@ -1114,7 +1107,6 @@ export async function confirmAutoCareServiceRequest(user: UserEntity, requestId:
 }
 
 export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, requestId: string) {
-    ownerOnly(user)
     const transactionResult = await AppDataSource.transaction(async (manager) => {
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
@@ -1145,7 +1137,6 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
 }
 
 export async function requestAutoCareServiceReschedule(user: UserEntity, requestId: string, input: { proposedAt: string; reason?: string | null }) {
-    ownerOnly(user)
     const proposedAt = new Date(input.proposedAt)
     if (Number.isNaN(proposedAt.getTime()) || proposedAt.getTime() <= Date.now()) conflict('The proposed visit time must be in the future.')
     const created = await AppDataSource.transaction(async (manager) => {
@@ -1209,7 +1200,6 @@ export async function decideAutoCareServiceReschedule(user: UserEntity, requestI
 }
 
 export async function markAutoCareServiceRequestNoShow(user: UserEntity, requestId: string, reason?: string | null) {
-    ownerOnly(user)
     const transactionResult = await AppDataSource.transaction(async (manager) => {
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
@@ -1231,7 +1221,6 @@ export async function markAutoCareServiceRequestNoShow(user: UserEntity, request
 }
 
 export async function completeAutoCareServiceRequest(user: UserEntity, requestId: string, note?: string | null) {
-    ownerOnly(user)
     const transactionResult = await AppDataSource.transaction(async (manager) => {
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')

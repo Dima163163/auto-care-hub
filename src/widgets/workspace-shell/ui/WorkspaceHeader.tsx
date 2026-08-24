@@ -12,11 +12,13 @@ import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { HeaderInfoMenu } from '@/widgets/header-info-menu'
 import { MarketSwitcher } from '@/widgets/market-switcher'
 
-export type WorkspaceRole = 'client' | 'owner' | 'admin' | 'super_admin'
+export type WorkspaceRole = 'client' | 'owner' | 'manager' | 'staff' | 'admin' | 'super_admin'
 
 const workspaceLabelKeys: Record<WorkspaceRole, TranslationKey> = {
     client: 'workspace.client',
     owner: 'workspace.owner',
+    manager: 'workspace.owner',
+    staff: 'workspace.owner',
     admin: 'workspace.admin',
     super_admin: 'user.superAdmin',
 }

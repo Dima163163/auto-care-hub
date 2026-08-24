@@ -6,7 +6,8 @@
   "description": "Backend API for AutoCare Hub.",
   "scripts": {
     "dev": "npm run migration:run && npm run demo:seed && npm run autocare:seed && tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "clean": "node scripts/clean-dist.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json",
     "start": "npm run start:server",
     "start:server": "node dist/server.js",
     "start:with-migrations": "npm run migration:run && npm run start:server",

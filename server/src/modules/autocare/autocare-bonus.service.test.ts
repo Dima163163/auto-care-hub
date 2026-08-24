@@ -6,6 +6,7 @@ import { ServiceRequestStatus } from '../../entities/automotive/service-request.
 import {
     awardAutoCareBonusForCompletedVisit,
     calculateAutoCareBonusPoints,
+    getMaximumAutoCareBonusRedemptionPoints,
     getMyAutoCareBonusAccounts,
     getOwnerAutoCareBonusProgram,
 } from './autocare-bonus.service.js'
@@ -20,6 +21,18 @@ describe('calculateAutoCareBonusPoints', () => {
         expect(calculateAutoCareBonusPoints(1_000_000, 10, 500)).toBe(500)
         expect(calculateAutoCareBonusPoints(0, 5, null)).toBe(0)
         expect(calculateAutoCareBonusPoints(100_000, 0, null)).toBe(0)
+    })
+
+    it('caps a redemption at the confirmed booking amount and uses the payable amount after a prior discount', () => {
+        expect(getMaximumAutoCareBonusRedemptionPoints({
+            bookingSnapshot: { amountMinor: 290_000 },
+        } as never)).toBe(2900)
+        expect(getMaximumAutoCareBonusRedemptionPoints({
+            bookingSnapshot: { amountMinor: 290_000, payableAmountMinor: 145_000 },
+        } as never)).toBe(1450)
+        expect(getMaximumAutoCareBonusRedemptionPoints({
+            bookingSnapshot: { amountMinor: 99 },
+        } as never)).toBe(0)
     })
 
     it('rejects bonus account reads for non-clients before touching the repository', async () => {

@@ -155,7 +155,7 @@ export function renderOwnerRoutes() {
         <Route
             element={
                 <RouteErrorBoundary>
-                    <RequireAuth allowedRoles={['owner']}>
+                    <RequireAuth allowedRoles={['owner']} allowOwnerWorkspace>
                         <OwnerLayout />
                     </RequireAuth>
                 </RouteErrorBoundary>

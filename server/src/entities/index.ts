@@ -24,6 +24,7 @@ import { SecurityEventActionEntity } from './security-event/security-event-actio
 import { SecurityMitigationEntity } from './security-mitigation/security-mitigation.entity.js'
 import { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 import {
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
@@ -37,6 +38,7 @@ import {
     AutomotiveProviderMembershipEntity,
 } from './automotive/provider-membership.entity.js'
 import { AutomotiveProviderInvitationEntity } from './automotive/provider-invitation.entity.js'
+import { AutoCareProviderDailyMetricEntity } from './automotive/provider-daily-metric.entity.js'
 import { AutomotiveProviderChangeRequestEntity } from './automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestEntity } from './automotive/catalog-gap-request.entity.js'
 import { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
@@ -91,6 +93,7 @@ export const entities = [
     SecurityEventActionEntity,
     SecurityMitigationEntity,
     CabinetImageManifestEntity,
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveServiceDefinitionEntity,
@@ -101,6 +104,7 @@ export const entities = [
     AutomotiveServiceOfferingEntity,
     AutomotiveProviderMembershipEntity,
     AutomotiveProviderInvitationEntity,
+    AutoCareProviderDailyMetricEntity,
     AutomotiveProviderChangeRequestEntity,
     AutomotiveCatalogGapRequestEntity,
     AutomotiveProviderFavoriteEntity,
@@ -201,6 +205,9 @@ export {
 } from './security-mitigation/security-mitigation.entity.js'
 export { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 export {
+    AutomotiveMarketCountryEntity,
+    type AutomotiveMarketCapabilities,
+    type AutomotiveMarketLegalLinks,
     AutomotiveMarketEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveLocationZoneType,
@@ -226,6 +233,7 @@ export {
     AutomotiveProviderInvitationRole,
     AutomotiveProviderInvitationStatus,
 } from './automotive/provider-invitation.entity.js'
+export { AutoCareProviderDailyMetricEntity } from './automotive/provider-daily-metric.entity.js'
 export {
     AutoCareChatThreadEntity,
     AutoCareChatThreadStatus,

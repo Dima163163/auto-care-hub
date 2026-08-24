@@ -34,7 +34,26 @@ export type AutoCareMarketResponse = {
     defaultLocale: string
     supportedLocales: string[]
     timezone: string
+    capabilities: Record<string, boolean>
+    legalLinks: Record<string, string>
     launchReady: boolean
+}
+
+export type AutoCareMarketCountryResponse = {
+    id: string
+    code: string
+    names: Record<string, string>
+    defaultLocale: string
+    supportedLocales: string[]
+    timezone: string
+    currencyCode: string
+    capabilities: Record<string, boolean>
+    legalLinks: Record<string, string>
+    active: boolean
+}
+
+export type SuperAdminMarketHierarchyResponse = AutoCareMarketCountryResponse & {
+    cities: Array<AutoCareMarketResponse & { zones: AutoCareLocationZoneResponse[] }>
 }
 
 export type AutoCareLocationZoneResponse = {
@@ -48,6 +67,8 @@ export type AutoCareLocationZoneResponse = {
     centerLongitude: number | null
     radiusKm: number | null
     imageUrl: string | null
+    displayOrder: number
+    active: boolean
     serviceCount: number
 }
 
@@ -209,6 +230,23 @@ export type AutoCareProviderAnalyticsResponse = {
     }
 }
 
+export type OwnerAutoCareBonusLiabilityResponse = {
+    providerId: string
+    activeAccounts: number
+    liabilityPoints: number
+    entries: Array<{
+        id: string
+        clientId: string
+        clientName: string
+        type: 'earn' | 'redeem' | 'refund' | 'expire' | 'adjustment'
+        points: number
+        reason: string
+        requestId: string | null
+        expiresAt: string | null
+        createdAt: string
+    }>
+}
+
 export type AutoCareFavoriteResponse = {
     id: string
     providerId: string
@@ -281,7 +319,7 @@ export type AutoCareBonusProgramResponse = {
 
 export type AutoCareBonusLedgerEntryResponse = {
     id: string
-    type: 'earn' | 'redeem' | 'expire' | 'adjustment'
+    type: 'earn' | 'redeem' | 'refund' | 'expire' | 'adjustment'
     points: number
     reason: string
     requestId: string | null
@@ -494,6 +532,8 @@ export type AutoCareBookingSnapshotResponse = {
     locationId: string
     status: 'confirmed'
     createdAt: string
+    bonusDiscountMinor?: number
+    payableAmountMinor?: number
 }
 
 export type AutoCareRescheduleResponse = {

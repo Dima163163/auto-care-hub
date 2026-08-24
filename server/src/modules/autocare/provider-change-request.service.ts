@@ -12,6 +12,8 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isAdminRole, isSuperAdmin } from '../../shared/auth/roles.js'
 import { canManageProvider } from './provider-access.service.js'
+import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
+import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareProviderChangeRequestResponse, CreateAutoCareProviderChangeRequestInput } from './autocare.types.js'
 
 const profileFields = new Set([
@@ -138,7 +140,18 @@ export async function decideAdminProviderChangeRequest(admin: UserEntity, reques
         request.reviewedById = admin.id
         request.reviewReason = reason?.trim() || null
         request.reviewedAt = new Date()
-        return toResponse(await requestRepository.save(request))
+        const savedRequest = await requestRepository.save(request)
+        await enqueueNotificationSafely({
+            userId: savedRequest.requestedById,
+            category: NotificationCategory.Account,
+            title: status === AutomotiveProviderChangeRequestStatus.Approved ? 'Изменение профиля одобрено' : 'По изменению профиля нужны уточнения',
+            message: savedRequest.reviewReason || (status === AutomotiveProviderChangeRequestStatus.Approved
+                ? 'Модератор одобрил заявку на изменение данных сервиса.'
+                : 'Модератор оставил комментарий к заявке на изменение данных сервиса.'),
+            link: `/owner/autocare-providers/${savedRequest.providerId}`,
+            metadata: { providerId: savedRequest.providerId, changeRequestId: savedRequest.id, status },
+        }, `autocare-provider-change-request:${savedRequest.id}:${status}`, manager)
+        return toResponse(savedRequest)
     })
 }
 

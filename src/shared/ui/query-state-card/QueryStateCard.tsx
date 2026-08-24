@@ -7,7 +7,7 @@ import { RetryButton } from '@/shared/ui/query-refresh-error'
 import { StateCard } from '@/shared/ui/state-card'
 
 type QueryStateCardProps = {
-    state: Exclude<QueryViewState, 'success' | 'refreshing'>
+    state: QueryViewState
     error?: unknown
     onRetry?: () => void | Promise<unknown>
     emptyTitle?: string

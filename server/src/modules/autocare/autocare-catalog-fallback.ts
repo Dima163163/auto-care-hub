@@ -30,6 +30,8 @@ export function toFallbackMarketResponse(market: MockMarket): AutoCareMarketResp
         defaultLocale: market.defaultLocale,
         supportedLocales: [...market.supportedLocales],
         timezone: market.timezone,
+        capabilities: {},
+        legalLinks: {},
         launchReady: market.launchReady,
     }
 }
@@ -80,6 +82,8 @@ export function getFallbackZones(
         centerLongitude: zone.centerLongitude,
         radiusKm: zone.radiusKm,
         imageUrl: zone.imageUrl ?? null,
+        displayOrder: zone.displayOrder,
+        active: true,
         serviceCount: 0,
     }))
 }

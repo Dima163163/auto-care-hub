@@ -27,7 +27,7 @@ import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cu
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { saveAutoCareProviderMedia as persistAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
-import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { canManageProvider, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
 import { isRolloutEnabled } from './rollout-controls.js'
@@ -35,6 +35,7 @@ import { env } from '../../config/env.js'
 import { queueProviderMediaModerationEvidence, queueReviewModerationEvidence } from './moderation-evidence.service.js'
 import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
+import { recordAutoCareProviderDiscoveryImpressions } from './autocare-analytics.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
@@ -375,6 +376,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     }))
     const lastRow = page.at(limit - 1)
     const lastValues = lastRow ? discoverySortValues(lastRow, sort) : null
+    void recordAutoCareProviderDiscoveryImpressions(items.map((item) => item.provider.id))
     return {
         items,
         nextCursor: hasMore && lastValues
@@ -419,14 +421,13 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
 }
 
 export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number; bookingMode?: 'request' | 'instant' }) {
-    assertOwner(owner)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     if (!provider || provider.status === AutomotiveProviderStatus.Suspended) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
 
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
     const offering = await offeringRepository.findOne({ where: { id: offerId, active: true } })
     if (!offering) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
-    if (!(await canManageProvider(owner.id, provider.id, offering.locationId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
+    if (!(await hasProviderWorkspacePermission(owner.id, provider.id, 'catalog', offering.locationId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
 
     const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: offering.definitionId })
     if (!definition) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service definition not found.' })
@@ -440,7 +441,6 @@ export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: st
 }
 
 export async function getOwnerAutoCareProviders(owner: UserEntity) {
-    assertOwner(owner)
     const scopes = await getManagedProviderScopes(owner.id)
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
@@ -491,11 +491,11 @@ async function filterReviewsByRequestLocations(reviews: AutomotiveReviewEntity[]
 }
 
 export async function getOwnerAutoCareProviderReviews(owner: UserEntity, providerId: string): Promise<OwnerAutoCareProviderReviewsResponse> {
-    assertOwner(owner)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     const scopes = await getManagedProviderScopes(owner.id)
     const scope = scopes.find((item) => item.providerId === providerId)
     if (!provider || provider.status === AutomotiveProviderStatus.Suspended || !scope) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    if (!(await hasProviderWorkspacePermission(owner.id, providerId, 'reviews'))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have permission to view service reviews.' })
 
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
         where: { providerId: provider.id, status: AutomotiveReviewStatus.Approved },
@@ -541,7 +541,6 @@ export async function getAutoCareProviderReviews(providerId: string, limit = 20)
 }
 
 export async function getOwnerAutoCareReviews(owner: UserEntity, providerId?: string): Promise<OwnerAutoCareReviewsResponse> {
-    assertOwner(owner)
     const providers = await getOwnerAutoCareProviders(owner)
     const selectedProviders = providerId
         ? providers.filter((provider) => provider.id === providerId)
@@ -550,26 +549,31 @@ export async function getOwnerAutoCareReviews(owner: UserEntity, providerId?: st
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     }
 
-    const providerIds = selectedProviders.map((provider) => provider.id)
+    const managedScopes = await getManagedProviderScopes(owner.id)
+    const scopes = (await Promise.all(managedScopes.map(async (scope) => (
+        await hasProviderWorkspacePermission(owner.id, scope.providerId, 'reviews') ? scope : null
+    )))).flatMap((scope) => scope ? [scope] : [])
+    const allowedProviderIds = new Set(scopes.map((scope) => scope.providerId))
+    const reviewProviders = selectedProviders.filter((provider) => allowedProviderIds.has(provider.id))
+    const providerIds = reviewProviders.map((provider) => provider.id)
     const reviews = providerIds.length === 0
         ? []
         : await AppDataSource.getRepository(AutomotiveReviewEntity).find({
             where: { providerId: In(providerIds), status: AutomotiveReviewStatus.Approved },
             order: { createdAt: 'DESC' },
         })
-    const scopes = await getManagedProviderScopes(owner.id)
     const visibleReviews = (await Promise.all(scopes.map(async (scope) => {
         const providerReviews = reviews.filter((review) => review.providerId === scope.providerId)
         return scope.locationIds === null ? providerReviews : filterReviewsByRequestLocations(providerReviews, scope.locationIds)
     }))).flat()
-    const providerById = new Map(selectedProviders.map((provider) => [provider.id, provider]))
+    const providerById = new Map(reviewProviders.map((provider) => [provider.id, provider]))
     const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
     for (const review of visibleReviews) distribution[String(review.rating) as keyof typeof distribution]++
     const totalReviews = visibleReviews.length
 
     return {
         selectedProviderId: providerId ?? null,
-        providers: providers.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, rating: provider.rating, reviewCount: provider.reviewCount })),
+        providers: reviewProviders.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, rating: provider.rating, reviewCount: provider.reviewCount })),
         totalReviews,
         averageRating: totalReviews === 0 ? 0 : Number((visibleReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1)),
         distribution,

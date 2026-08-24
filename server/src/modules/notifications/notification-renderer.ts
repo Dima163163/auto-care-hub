@@ -125,6 +125,11 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, NotificationTemplate
         messageKey: 'notifications.moderation.reviewUpdated.message',
         link: '/profile/reviews',
     },
+    'moderation.appeal_decided': {
+        titleKey: 'notifications.moderation.appealDecided.title',
+        messageKey: 'notifications.moderation.appealDecided.message',
+        link: '/profile/reviews',
+    },
 }
 
 export function renderNotificationTemplate(

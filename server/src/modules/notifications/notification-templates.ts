@@ -20,6 +20,7 @@ export const NOTIFICATION_TEMPLATE_KEYS = [
     'booking.reminder',
     'autocare.visit_reminder',
     'moderation.review_updated',
+    'moderation.appeal_decided',
 ] as const
 
 export type NotificationTemplateKey = (typeof NOTIFICATION_TEMPLATE_KEYS)[number]

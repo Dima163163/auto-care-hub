@@ -183,6 +183,8 @@ export async function updateSuperAdminAutoCareMarket(
     market.supportedLocales = [...new Set(input.supportedLocales.map((locale) => locale.trim()))]
     market.timezone = input.timezone
     market.currencyCode = input.currencyCode
+    if (input.capabilities !== undefined) market.capabilities = input.capabilities
+    if (input.legalLinks !== undefined) market.legalLinks = input.legalLinks
     market.launchReady = input.launchReady
 
     return toMarketResponse(await repository.save(market))
