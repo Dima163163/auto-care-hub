@@ -2174,6 +2174,21 @@ export const handlers = [
     }),
 
     http.get('/api/v1/service-definitions', () => HttpResponse.json(autoCareDefinitions)),
+    http.patch('/api/admin/service-definitions/:id', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'admin' && user.role !== 'super_admin') return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only administrators can update service definitions.' }, { status: 403 })
+        const definition = autoCareDefinitions.find((item) => item.id === params.id)
+        if (!definition) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive service definition not found.' }, { status: 404 })
+        const body = await request.json() as Partial<{ categorySlug: string; labels: Record<string, string>; priceType: 'fixed' | 'from' | 'range' | 'quote_required'; comparisonAttributes: string[]; active: boolean }>
+        if (typeof body.categorySlug !== 'string' || !body.categorySlug.trim() || !body.labels || typeof body.labels !== 'object' || !body.priceType || !Array.isArray(body.comparisonAttributes) || typeof body.active !== 'boolean') return invalidMockBodyResponse()
+        definition.categorySlug = body.categorySlug.trim()
+        definition.labels = body.labels
+        definition.priceType = body.priceType
+        definition.comparisonAttributes = body.comparisonAttributes.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean)
+        definition.active = body.active
+        return HttpResponse.json(definition)
+    }),
     http.post('/api/v1/catalog-gap-requests', async ({ request }) => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })

@@ -19,6 +19,7 @@ export enum AuditAction {
     AutoCareProviderChangeRequestDecided = 'autocare_provider_change_request_decided',
     AutoCareCatalogGapRequestDecided = 'autocare_catalog_gap_request_decided',
     AutoCareMarketUpdated = 'autocare_market_updated',
+    AutoCareServiceDefinitionUpdated = 'autocare_service_definition_updated',
     AutoCareBonusGranted = 'autocare_bonus_granted',
     AutoCareAppealDecided = 'autocare_appeal_decided',
     ChatReportModerated = 'chat_report_moderated',

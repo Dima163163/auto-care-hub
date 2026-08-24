@@ -148,6 +148,14 @@ export const updateAutoCareOfferSchema = z.object({
     bookingMode: z.enum(['request', 'instant']).optional(),
 })
 
+export const updateAdminAutoCareServiceDefinitionSchema = z.object({
+    categorySlug: z.string().trim().min(2).max(80),
+    labels: z.record(z.string().trim().min(2).max(16), z.string().trim().min(1).max(160)).refine((value) => Object.keys(value).length > 0, 'At least one localized label is required.'),
+    priceType: z.nativeEnum(AutomotivePriceType),
+    comparisonAttributes: z.array(z.string().trim().min(1).max(80)).max(30),
+    active: z.boolean(),
+})
+
 export const ownerAutoCareBonusProgramSchema = z.object({
     name: z.string().trim().min(2).max(120),
     earnPercent: z.number().finite().min(0).max(100),

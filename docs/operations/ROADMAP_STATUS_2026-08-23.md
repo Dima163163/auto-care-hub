@@ -52,8 +52,10 @@ product decision or a larger follow-up slice.
   required decision reasons.
 - ✅ Admin dashboard exposes the catalog-gap moderation queue with required
   decision reasons.
-- ❌ Full category editor, evidence review, appeals detail workflow and
-  authorization integration matrix.
+- ✅ Admin can edit active service definitions, localized labels, categories
+  and price format through a protected, audited API with mock parity.
+- 🟡 Evidence review, appeals detail workflow and authorization integration
+  matrix remain open.
 
 ## 7. Super-admin workspace
 

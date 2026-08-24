@@ -182,6 +182,10 @@ export const adminAutoCareMarketParamsSchema = z.object({
     id: z.string().uuid('Automotive market id must be a valid UUID.'),
 })
 
+export const adminAutoCareServiceDefinitionParamsSchema = z.object({
+    id: z.string().uuid('Automotive service definition id must be a valid UUID.'),
+})
+
 export const updateSuperAdminAutoCareMarketSchema = z.object({
     defaultLocale: z.string().trim().min(2).max(16),
     supportedLocales: z.array(z.string().trim().min(2).max(16)).min(1).max(20),

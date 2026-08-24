@@ -51,6 +51,15 @@ export type AutoCareApiServiceDefinition = {
     active: boolean
 }
 
+export type UpdateAdminAutoCareServiceDefinitionInput = {
+    id: string
+    categorySlug: string
+    labels: Record<string, string>
+    priceType: 'fixed' | 'from' | 'range' | 'quote_required'
+    comparisonAttributes: string[]
+    active: boolean
+}
+
 export type AutoCareApiOffer = {
     id: string
     serviceDefinitionId: string
@@ -894,6 +903,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(z.object({ id: z.string(), slug: z.string(), categorySlug: z.string(), labels: z.record(z.string(), z.string()), priceType: z.enum(['fixed', 'from', 'range', 'quote_required']), comparisonAttributes: z.array(z.string()), active: z.boolean() }).passthrough()).parse(value),
             providesTags: [{ type: 'AutoCareServiceDefinition', id: 'LIST' }],
         }),
+        updateAdminAutoCareServiceDefinition: build.mutation<AutoCareApiServiceDefinition, UpdateAdminAutoCareServiceDefinitionInput>({
+            query: ({ id, ...body }) => ({ url: `/admin/service-definitions/${encodeURIComponent(id)}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => z.object({ id: z.string(), slug: z.string(), categorySlug: z.string(), labels: z.record(z.string(), z.string()), priceType: z.enum(['fixed', 'from', 'range', 'quote_required']), comparisonAttributes: z.array(z.string()), active: z.boolean() }).parse(value),
+            invalidatesTags: [{ type: 'AutoCareServiceDefinition', id: 'LIST' }],
+        }),
         createAutoCareCatalogGapRequest: build.mutation<AutoCareCatalogGapRequest, CreateAutoCareCatalogGapRequestInput>({
             query: (body) => ({ url: '/v1/catalog-gap-requests', method: 'POST', body }),
             transformResponse: (value: unknown) => autoCareCatalogGapRequestSchema.parse(value),
@@ -1454,6 +1468,7 @@ export const {
     useGetAutoCareFairPriceQuery,
     useGetAutoCareProviderTrustQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useUpdateAdminAutoCareServiceDefinitionMutation,
     useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
     useCreateOwnerAutoCareProviderMutation,

@@ -78,6 +78,7 @@ export {
     useGetAutoCareFairPriceQuery,
     useGetAutoCareProviderTrustQuery,
     useGetAutoCareServiceDefinitionsQuery,
+    useUpdateAdminAutoCareServiceDefinitionMutation,
     useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
     useCreateOwnerAutoCareProviderMutation,

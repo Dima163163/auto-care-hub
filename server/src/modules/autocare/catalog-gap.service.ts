@@ -9,7 +9,9 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
 import { canManageProvider } from './provider-access.service.js'
-import type { AutoCareCatalogGapRequestResponse, CreateAutoCareCatalogGapRequestInput } from './autocare.types.js'
+import type { AutoCareCatalogGapRequestResponse, AutoCareServiceDefinitionResponse, CreateAutoCareCatalogGapRequestInput } from './autocare.types.js'
+import type { z } from 'zod'
+import type { updateAdminAutoCareServiceDefinitionSchema } from './autocare.schemas.js'
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only admins can review catalog gap requests.' })
@@ -33,6 +35,25 @@ function toResponse(request: AutomotiveCatalogGapRequestEntity): AutoCareCatalog
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
     }
+}
+
+export type UpdateAdminAutoCareServiceDefinitionInput = z.infer<typeof updateAdminAutoCareServiceDefinitionSchema>
+
+export async function updateAdminAutoCareServiceDefinition(
+    admin: UserEntity,
+    definitionId: string,
+    input: UpdateAdminAutoCareServiceDefinitionInput,
+): Promise<AutoCareServiceDefinitionResponse> {
+    assertAdmin(admin)
+    const repository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
+    const definition = await repository.findOneBy({ id: definitionId })
+    if (!definition) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service definition not found.' })
+    definition.categorySlug = input.categorySlug
+    definition.labels = input.labels
+    definition.priceType = input.priceType
+    definition.comparisonAttributes = [...new Set(input.comparisonAttributes)]
+    definition.active = input.active
+    return repository.save(definition)
 }
 
 export async function createAutoCareCatalogGapRequest(user: UserEntity, input: CreateAutoCareCatalogGapRequestInput) {

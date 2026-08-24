@@ -10,6 +10,7 @@ import {
     adminCabinetParamsSchema,
     adminAutoCareProviderParamsSchema,
     adminAutoCareMarketParamsSchema,
+    adminAutoCareServiceDefinitionParamsSchema,
     updateSuperAdminAutoCareMarketSchema,
     adminAuditLogsQuerySchema,
     auditLogsExportQuerySchema,
@@ -50,6 +51,7 @@ import {
     adminAutoCareAppealParamsSchema,
     decideAdminAutoCareAppealSchema,
 } from './admin.schemas.js'
+import { updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
 import {
     createAdmin,
@@ -107,7 +109,7 @@ import type { AdminAutoCareProvider, SuperAdminPlatformOverview } from './admin.
 import { decideAdminProviderChangeRequest, listAdminProviderChangeRequests } from '../autocare/provider-change-request.service.js'
 import { AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
-import { decideAdminCatalogGapRequest, listAdminCatalogGapRequests } from '../autocare/catalog-gap.service.js'
+import { decideAdminCatalogGapRequest, listAdminCatalogGapRequests, updateAdminAutoCareServiceDefinition } from '../autocare/catalog-gap.service.js'
 import { decideAdminAutoCareChatReport, listAdminAutoCareChatReports } from '../autocare/autocare-chat.service.js'
 import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
 import { env } from '../../config/env.js'
@@ -338,6 +340,21 @@ export async function adminRoutes(
                 defaultLocale: result.defaultLocale,
                 supportedLocales: result.supportedLocales,
             },
+            request,
+        })
+        return result
+    })
+
+    app.patch('/admin/service-definitions/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareServiceDefinitionParamsSchema, request.params)
+        const result = await updateAdminAutoCareServiceDefinition(user, params.id, validateBody(updateAdminAutoCareServiceDefinitionSchema, request.body))
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareServiceDefinitionUpdated,
+            targetId: params.id,
+            targetType: 'autocare_service_definition',
+            metadata: { slug: result.slug, active: result.active, categorySlug: result.categorySlug },
             request,
         })
         return result

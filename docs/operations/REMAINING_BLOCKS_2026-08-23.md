@@ -37,8 +37,9 @@ still requires a real environment, product decision or a later UI slice.
   revocation; calendar, onboarding and bonus screens still need the remaining
   role-specific operational UI. The backend contracts are available for those
   slices.
-- Admin catalog-gap requests now have a queue UI with decision reasons. A full
-  ServiceDefinition editor and evidence-detail workflow remain open.
+- Admin catalog-gap requests now have a queue UI with decision reasons, and the
+  dashboard includes an audited ServiceDefinition editor with mock parity.
+  Evidence-detail workflow remains open.
 - Super-admin market readouts now include locales, timezone, currency and
   zones. The protected market settings editor now updates launch readiness,
   default/supported locales, timezone and currency through the same contract in
