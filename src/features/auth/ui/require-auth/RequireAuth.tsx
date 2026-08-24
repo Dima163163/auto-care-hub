@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, Navigate, useLocation } from 'react-router'
 
 import { buttonVariants } from '@/components/ui/button-variants'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { UserRole } from '@/entities/user'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -28,10 +29,22 @@ export function RequireAuth({ children, allowedRoles }: RequireAuthProps) {
     if (isLoading) {
         return (
             <main className="min-h-screen bg-background px-4 py-10">
-                <section className="mx-auto max-w-3xl rounded-xl border bg-card p-8 shadow-sm">
-                    <p className="text-muted-foreground">
-                        {t('auth.checkingSession')}
-                    </p>
+                <section aria-busy="true" aria-label={t('auth.checkingSession')} className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <Skeleton className="h-8 w-52" />
+                        <Skeleton className="mt-4 h-4 w-full max-w-lg" />
+                        <Skeleton className="mt-2 h-4 w-4/5" />
+                        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                            <Skeleton className="h-36 rounded-lg" />
+                            <Skeleton className="h-36 rounded-lg" />
+                        </div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="mt-5 h-11 w-full rounded-lg" />
+                        <Skeleton className="mt-3 h-11 w-full rounded-lg" />
+                        <Skeleton className="mt-3 h-11 w-full rounded-lg" />
+                    </div>
                 </section>
             </main>
         )

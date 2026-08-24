@@ -13,20 +13,43 @@ import {
     type AutoCareBonusAccount,
     type AutoCareServiceRequest,
 } from '@/entities/automotive-service'
-import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import { getApiErrorMessage, getApiErrorState } from '@/shared/api/getApiErrorMessage'
+import { resolveQueryViewState } from '@/shared/api/query-view-state'
 import { useTranslation } from '@/shared/lib/useTranslation'
-import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
+import { QueryStateCard } from '@/shared/ui/query-state-card'
 import { CardsGridSkeleton } from '@/shared/ui/loading-skeleton'
 import { StateCard } from '@/shared/ui/state-card'
 
 export function AutoCareRequestsPanel() {
     const { t } = useTranslation()
-    const { data: requests = [], isLoading, isError, error, refetch } = useGetMyAutoCareServiceRequestsQuery()
-    const { data: bonusAccounts = [] } = useGetMyAutoCareBonusAccountsQuery()
+    const requestsQuery = useGetMyAutoCareServiceRequestsQuery()
+    const bonusesQuery = useGetMyAutoCareBonusAccountsQuery()
+    const requests = requestsQuery.data ?? []
+    const bonusAccounts = bonusesQuery.data ?? []
+    const requestErrorState = getApiErrorState(requestsQuery.error)
+    const requestsState = resolveQueryViewState({
+        isLoading: requestsQuery.isLoading,
+        isFetching: requestsQuery.isFetching,
+        isError: requestsQuery.isError,
+        hasData: Boolean(requestsQuery.data),
+        hasResults: requests.length > 0,
+        isOffline: requestErrorState === 'offline',
+        isPermissionDenied: requestErrorState === 'permission-denied',
+        isSuspended: requestErrorState === 'suspended',
+        isStale: requestErrorState === 'stale',
+    })
+    const bonusErrorState = getApiErrorState(bonusesQuery.error)
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const selected = requests.find((item) => item.id === selectedId) ?? null
 
-    return <section className="mt-6 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Wrench className="size-4 text-primary" /><h2 className="text-lg font-black text-foreground">{t('autocare.clientServiceRequestsTitle')}</h2></div><p className="mt-1 text-xs font-semibold text-muted-foreground">{t('autocare.clientServiceRequestsDescription')}</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">{requests.length}</span></div>{bonusAccounts.length > 0 ? <BonusSummary accounts={bonusAccounts} /> : null}{isLoading ? <div className="mt-5"><CardsGridSkeleton label={t('common.loading')} count={2} /></div> : isError ? <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(error, t('common.failedToLoad'))} action={<RetryButton onRetry={refetch} label={t('common.retry')} />} /> : requests.length === 0 ? <StateCard className="mt-5" variant="empty" title={t('autocare.clientServiceRequestsEmpty')} description={t('autocare.clientServiceRequestsDescription')} /> : <div className="mt-5 grid gap-3 lg:grid-cols-2">{requests.map((request) => <RequestCard key={request.id} request={request} selected={request.id === selectedId} onSelect={() => setSelectedId(request.id)} />)}</div>}{selected ? <Conversation request={selected} onClose={() => setSelectedId(null)} /> : null}</section>
+    const canRenderRequests = requestsState === 'success' || requestsState === 'refreshing' || requestsState === 'empty' || requestsState === 'stale-error'
+
+    return <section className="mt-6 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Wrench className="size-4 text-primary" /><h2 className="text-lg font-black text-foreground">{t('autocare.clientServiceRequestsTitle')}</h2></div><p className="mt-1 text-xs font-semibold text-muted-foreground">{t('autocare.clientServiceRequestsDescription')}</p></div><span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">{requests.length}</span></div><QueryRefreshStatus isRefreshing={requestsState === 'refreshing'} label={t('common.refreshing')} />{bonusAccounts.length > 0 ? <BonusSummary accounts={bonusAccounts} /> : null}{bonusErrorState && bonusesQuery.data === undefined ? <QueryStateCard className="mt-4" state={toQueryState(bonusErrorState)} error={bonusesQuery.error} onRetry={bonusesQuery.refetch} /> : null}{requestsState === 'loading' ? <div className="mt-5"><CardsGridSkeleton label={t('common.loading')} count={2} /></div> : null}{!canRenderRequests && requestsState !== 'loading' ? <QueryStateCard className="mt-5" state={requestsState} error={requestsQuery.error} onRetry={requestsQuery.refetch} /> : null}{canRenderRequests && requestsState === 'stale-error' ? <QueryStateCard className="mt-5" state="stale-error" error={requestsQuery.error} onRetry={requestsQuery.refetch} /> : null}{canRenderRequests && requestsState === 'empty' ? <StateCard className="mt-5" variant="empty" title={t('autocare.clientServiceRequestsEmpty')} description={t('autocare.clientServiceRequestsDescription')} /> : null}{canRenderRequests && requests.length > 0 ? <div className="mt-5 grid gap-3 lg:grid-cols-2">{requests.map((request) => <RequestCard key={request.id} request={request} selected={request.id === selectedId} onSelect={() => setSelectedId(request.id)} />)}</div> : null}{selected ? <Conversation request={selected} onClose={() => setSelectedId(null)} /> : null}</section>
+}
+
+function toQueryState(state: ReturnType<typeof getApiErrorState>) {
+    return state === 'offline' ? 'offline' : state === 'permission-denied' ? 'permission-denied' : state === 'suspended' ? 'suspended' : state === 'stale' ? 'stale-error' : 'error'
 }
 
 function BonusSummary({ accounts }: { accounts: AutoCareBonusAccount[] }) {

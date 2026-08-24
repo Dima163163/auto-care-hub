@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { getApiErrorState } from '@/shared/api/getApiErrorMessage'
+import { resolveQueryViewState } from '@/shared/api/query-view-state'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareResultsSkeleton } from '@/shared/ui/loading-skeleton'
 import { StateCard } from '@/shared/ui/state-card'
-import { RetryButton } from '@/shared/ui/query-refresh-error'
 import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
+import { QueryStateCard } from '@/shared/ui/query-state-card'
 
 import { getAutoCareResultFilters, writeAutoCareResultFilters, type AutoCareResultFilters } from '../lib/autocareResultFilters'
 import { AutoCareMapPreview } from './AutoCareMapPreview'
@@ -29,7 +31,7 @@ export function AutoCareResultsPage() {
     const filters = useMemo(() => getAutoCareResultFilters(searchParams), [searchParams])
     const [draftState, setDraftState] = useState(() => ({ key: searchParams.toString(), filters }))
     const draftFilters = draftState.key === searchParams.toString() ? draftState.filters : filters
-    const { data, isLoading, isFetching, isError, refetch } = useGetAutoCareDiscoveryQuery({
+    const { data, error, isLoading, isFetching, isError, refetch } = useGetAutoCareDiscoveryQuery({
         serviceId: filters.serviceId || undefined,
         providerName: filters.providerName || undefined,
         marketId: filters.marketId,
@@ -48,6 +50,18 @@ export function AutoCareResultsPage() {
         brandId: filters.brandId || undefined,
     })
     const providers = useMemo(() => data?.items.map(mapAutoCareDiscoveryItem) ?? [], [data])
+    const discoveryErrorState = getApiErrorState(error)
+    const discoveryState = resolveQueryViewState({
+        isLoading,
+        isFetching,
+        isError,
+        hasData: Boolean(data),
+        hasResults: providers.length > 0,
+        isOffline: discoveryErrorState === 'offline',
+        isPermissionDenied: discoveryErrorState === 'permission-denied',
+        isSuspended: discoveryErrorState === 'suspended',
+        isStale: discoveryErrorState === 'stale',
+    })
     const [selectedIds, setSelectedIds] = useState<readonly string[]>([])
     const [focusedProviderId, setFocusedProviderId] = useState<string | null>(null)
     const [page, setPage] = useState(1)
@@ -170,15 +184,16 @@ export function AutoCareResultsPage() {
                     <QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} />
                 </div>
 
-                {isLoading ? <div className="mt-6"><AutoCareResultsSkeleton label={t('common.loading')} /></div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+                {discoveryState === 'loading' ? <div className="mt-6"><AutoCareResultsSkeleton label={t('common.loading')} /></div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
                     <section className="order-2 flex flex-col gap-4 lg:order-1">
                         <div className="flex shrink-0 items-center justify-between gap-3">
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
                             <span className="text-xs font-semibold text-muted-foreground">{t('autocare.compareDescription')}</span>
                         </div>
-                        {isError && <StateCard variant="error" title={t('autocare.discoveryLoadError')} description={t('common.tryAgainLater')} action={<RetryButton onRetry={refetch} label={t('common.retry')} />} />}
-                        {!isError && providers.length === 0 && <StateCard variant="empty" title={filters.marketId ? t('autocare.noProvidersInRegion') : t('autocare.discoverySelectCity')} description={t('autocare.discoveryEmptyDescription')} />}
-                        {!isError && providers.length > 0 && (
+                        {discoveryState === 'stale-error' && <QueryStateCard state="stale-error" error={error} onRetry={refetch} />}
+                        {(discoveryState === 'error' || discoveryState === 'offline' || discoveryState === 'permission-denied' || discoveryState === 'suspended') && <QueryStateCard state={discoveryState} error={error} onRetry={refetch} />}
+                        {discoveryState === 'empty' && <StateCard variant="empty" title={filters.marketId ? t('autocare.noProvidersInRegion') : t('autocare.discoverySelectCity')} description={t('autocare.discoveryEmptyDescription')} />}
+                        {['success', 'refreshing', 'stale-error'].includes(discoveryState) && providers.length > 0 && (
                             <ProviderResultsList
                                 key={searchParams.toString()}
                                 providers={pagedProviders}

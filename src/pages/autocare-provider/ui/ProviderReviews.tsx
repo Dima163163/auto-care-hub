@@ -1,11 +1,11 @@
 import { ChevronDown, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import type { QueryViewState } from '@/shared/api/query-view-state'
 import { automotiveServices, getServiceLabel, type ProviderReview, type ProviderProfile } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
-import { RetryButton } from '@/shared/ui/query-refresh-error'
-import { StateCard } from '@/shared/ui/state-card'
+import { QueryStateCard } from '@/shared/ui/query-state-card'
 
 type SelectOption = { value: string; label: string }
 type ReviewCardProps = { review: ProviderReview; index: number }
@@ -16,7 +16,7 @@ const scoreRows = [
 const reviewAvatars = ['/images/autocare/avatars/alexey.webp', '/images/autocare/avatars/maria.webp', '/images/autocare/avatars/igor.webp']
 const reviewVehicles = ['BMW X5', 'Toyota Camry', 'Audi Q5']
 
-export function ProviderReviews({ provider, isLoading = false, isError = false, onRetry }: { provider: ProviderProfile; isLoading?: boolean; isError?: boolean; onRetry?: () => void | Promise<unknown> }) {
+export function ProviderReviews({ provider, state, error, onRetry }: { provider: ProviderProfile; state: QueryViewState; error?: unknown; onRetry: () => unknown }) {
     const { t, locale } = useTranslation()
     const [ratingFilter, setRatingFilter] = useState('all')
     const [serviceFilter, setServiceFilter] = useState('all')
@@ -32,10 +32,10 @@ export function ProviderReviews({ provider, isLoading = false, isError = false, 
         return sortBy === 'date' ? [...reviews].sort((left, right) => Date.parse(right.date) - Date.parse(left.date)) : reviews
     }, [provider.reviews, ratingFilter, serviceFilter, sortBy])
 
-    if (isLoading) return <section id="reviews" aria-busy="true" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><div className="h-6 w-44 animate-pulse rounded bg-secondary" /><div className="mt-4 h-24 w-52 animate-pulse rounded-[var(--radius-card)] bg-secondary" /><div className="mt-4 grid gap-3 md:grid-cols-3">{[0, 1, 2].map((item) => <div key={item} className="min-h-36 animate-pulse rounded-[var(--radius-card)] border border-border bg-secondary" />)}</div><span className="sr-only">{t('common.loading')}</span></section>
-    if (isError) return <section id="reviews" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><StateCard variant="error" title={t('common.failedToLoad')} description={t('common.tryAgainLater')} action={onRetry ? <RetryButton onRetry={onRetry} label={t('common.retry')} /> : undefined} /></section>
+    if (state === 'loading') return <section id="reviews" aria-busy="true" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><div className="h-6 w-44 animate-pulse rounded bg-secondary" /><div className="mt-4 h-24 w-52 animate-pulse rounded-[var(--radius-card)] bg-secondary" /><div className="mt-4 grid gap-3 md:grid-cols-3">{[0, 1, 2].map((item) => <div key={item} className="min-h-36 animate-pulse rounded-[var(--radius-card)] border border-border bg-secondary" />)}</div><span className="sr-only">{t('common.loading')}</span></section>
+    if (state !== 'success' && state !== 'refreshing' && state !== 'empty') return <section id="reviews" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><QueryStateCard state={state} error={error} onRetry={onRetry} /></section>
     const visibleReviews = filteredReviews.slice(0, visibleCount)
-    return <section id="reviews" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6"><header className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerReviews')}</h2><div className="flex flex-wrap gap-2"><ReviewSelect options={selectors[0]} value={ratingFilter} onChange={setRatingFilter} /><ReviewSelect options={selectors[1]} value={serviceFilter} onChange={setServiceFilter} /><ReviewSelect options={selectors[2]} value={sortBy} onChange={setSortBy} /></div></header><div className="mt-4"><ReviewScore provider={provider} /></div><div className="mt-4 grid gap-3 md:grid-cols-3">{visibleReviews.map((review, index) => <ReviewCard key={review.id} review={review} index={index} />)}</div>{filteredReviews.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">{t('autocare.providerNoReviews')}</p> : visibleReviews.length < filteredReviews.length ? <button type="button" onClick={() => setVisibleCount(filteredReviews.length)} className="mx-auto mt-4 inline-flex items-center gap-1 rounded-[var(--radius-control)] border border-border px-6 py-2 text-xs font-bold text-primary transition hover:border-primary"><span>{t('autocare.providerShowAllReviews', { count: filteredReviews.length })}</span><ChevronDown className="size-3.5" /></button> : null}</section>
+    return <section id="reviews" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">{state === 'stale-error' ? <QueryStateCard className="mb-4" state={state} error={error} onRetry={onRetry} /> : null}<header className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.providerReviews')}</h2><div className="flex flex-wrap gap-2"><ReviewSelect options={selectors[0]} value={ratingFilter} onChange={setRatingFilter} /><ReviewSelect options={selectors[1]} value={serviceFilter} onChange={setServiceFilter} /><ReviewSelect options={selectors[2]} value={sortBy} onChange={setSortBy} /></div></header><div className="mt-4"><ReviewScore provider={provider} /></div><div className="mt-4 grid gap-3 md:grid-cols-3">{visibleReviews.map((review, index) => <ReviewCard key={review.id} review={review} index={index} />)}</div>{filteredReviews.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">{t('autocare.providerNoReviews')}</p> : visibleReviews.length < filteredReviews.length ? <button type="button" onClick={() => setVisibleCount(filteredReviews.length)} className="mx-auto mt-4 inline-flex items-center gap-1 rounded-[var(--radius-control)] border border-border px-6 py-2 text-xs font-bold text-primary transition hover:border-primary"><span>{t('autocare.providerShowAllReviews', { count: filteredReviews.length })}</span><ChevronDown className="size-3.5" /></button> : null}</section>
 }
 
 function ReviewScore({ provider }: { provider: ProviderProfile }) {

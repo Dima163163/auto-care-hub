@@ -22,6 +22,8 @@ describe('resolveQueryViewState', () => {
         ['offline without cached data', { isOffline: true, hasData: false, hasResults: false }, 'offline'],
         ['offline with cached data keeps the data state', { isOffline: true }, 'success'],
         ['permission denied takes priority over retryable errors', { isPermissionDenied: true, isError: true }, 'permission-denied'],
+        ['suspended takes priority over a retryable error', { isSuspended: true, isError: true }, 'suspended'],
+        ['stale response keeps cached data visible', { isStale: true }, 'stale-error'],
     ])('%s', (_label, overrides, expected) => {
         expect(resolveQueryViewState({ ...baseState, ...overrides })).toBe(expected)
     })

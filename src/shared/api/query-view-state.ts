@@ -7,6 +7,7 @@ export type QueryViewState =
     | 'stale-error'
     | 'offline'
     | 'permission-denied'
+    | 'suspended'
 
 export type QueryViewStateInput = {
     isLoading: boolean
@@ -16,6 +17,8 @@ export type QueryViewStateInput = {
     hasResults: boolean
     isOffline?: boolean
     isPermissionDenied?: boolean
+    isSuspended?: boolean
+    isStale?: boolean
 }
 
 export function resolveQueryViewState({
@@ -26,13 +29,23 @@ export function resolveQueryViewState({
     hasResults,
     isOffline = false,
     isPermissionDenied = false,
+    isSuspended = false,
+    isStale = false,
 }: QueryViewStateInput): QueryViewState {
     if (isPermissionDenied) {
         return 'permission-denied'
     }
 
+    if (isSuspended) {
+        return 'suspended'
+    }
+
     if (isOffline && !hasData) {
         return 'offline'
+    }
+
+    if (isStale) {
+        return 'stale-error'
     }
 
     if (isError) {
