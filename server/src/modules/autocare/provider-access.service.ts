@@ -3,6 +3,7 @@ import type { EntityManager } from 'typeorm'
 import {
     AutomotiveProviderEntity,
     AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipRole,
     AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
 } from '../../entities/index.js'
@@ -11,6 +12,23 @@ export type ManagedProviderScope = {
     providerId: string
     /** null means that the membership is allowed to manage every branch. */
     locationIds: string[] | null
+    roles: AutomotiveProviderMembershipRole[]
+}
+
+export type ProviderWorkspacePermission =
+    | 'analytics'
+    | 'calendar'
+    | 'catalog'
+    | 'profile'
+    | 'requests'
+    | 'reviews'
+    | 'team'
+    | 'bonuses'
+
+const permissionsByRole: Record<AutomotiveProviderMembershipRole, readonly ProviderWorkspacePermission[]> = {
+    [AutomotiveProviderMembershipRole.Owner]: ['analytics', 'calendar', 'catalog', 'profile', 'requests', 'reviews', 'team', 'bonuses'],
+    [AutomotiveProviderMembershipRole.Manager]: ['analytics', 'calendar', 'catalog', 'requests', 'reviews'],
+    [AutomotiveProviderMembershipRole.Staff]: ['calendar', 'requests'],
 }
 
 /**
@@ -56,22 +74,25 @@ export async function getManagedProviderScopes(userId: string): Promise<ManagedP
     })
     const memberships = await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({
         where: { userId, status: AutomotiveProviderMembershipStatus.Active },
-        select: { providerId: true, locationId: true },
+        select: { providerId: true, locationId: true, role: true },
     })
-    const scopes = new Map<string, Set<string> | null>()
-    for (const provider of directProviders) scopes.set(provider.id, null)
-    for (const membership of memberships) {
-        if (scopes.get(membership.providerId) === null && scopes.has(membership.providerId)) continue
-        const locations = scopes.get(membership.providerId) ?? new Set<string>()
-        if (membership.locationId === null) scopes.set(membership.providerId, null)
-        else if (scopes.get(membership.providerId) !== null) {
-            locations.add(membership.locationId)
-            scopes.set(membership.providerId, locations)
-        }
+    const scopes = new Map<string, { locations: Set<string> | null; roles: Set<AutomotiveProviderMembershipRole> }>()
+    for (const provider of directProviders) {
+        scopes.set(provider.id, { locations: null, roles: new Set([AutomotiveProviderMembershipRole.Owner]) })
     }
-    return [...scopes.entries()].map(([providerId, locationIds]) => ({
+    for (const membership of memberships) {
+        const existing = scopes.get(membership.providerId)
+        if (existing?.locations === null && existing.roles.has(AutomotiveProviderMembershipRole.Owner)) continue
+        const scope = existing ?? { locations: new Set<string>(), roles: new Set<AutomotiveProviderMembershipRole>() }
+        scope.roles.add(membership.role ?? AutomotiveProviderMembershipRole.Staff)
+        if (membership.locationId === null) scope.locations = null
+        else if (scope.locations !== null) scope.locations.add(membership.locationId)
+        scopes.set(membership.providerId, scope)
+    }
+    return [...scopes.entries()].map(([providerId, scope]) => ({
         providerId,
-        locationIds: locationIds === null ? null : [...locationIds],
+        locationIds: scope.locations === null ? null : [...scope.locations],
+        roles: [...scope.roles],
     }))
 }
 
@@ -85,4 +106,26 @@ export function isManagedProviderLocationAllowed(scopes: ManagedProviderScope[],
 
 export async function getManagedProviderIds(userId: string) {
     return (await getManagedProviderScopes(userId)).map(({ providerId }) => providerId)
+}
+
+export async function hasProviderWorkspacePermission(
+    userId: string,
+    providerId: string,
+    permission: ProviderWorkspacePermission,
+    locationId?: string | null,
+) {
+    const scope = (await getManagedProviderScopes(userId)).find((item) => item.providerId === providerId)
+    if (!scope || (locationId !== undefined && !isManagedProviderLocationAllowed([scope], providerId, locationId))) return false
+    return scope.roles.some((role) => permissionsByRole[role].includes(permission))
+}
+
+/** Minimal capability endpoint for the web shell. Detailed authorization is
+ * always re-checked by the resource service, never trusted from the client. */
+export async function getOwnerWorkspaceAccess(userId: string) {
+    const scopes = await getManagedProviderScopes(userId)
+    return {
+        allowed: scopes.length > 0,
+        providerIds: scopes.map((scope) => scope.providerId),
+        scopes,
+    }
 }

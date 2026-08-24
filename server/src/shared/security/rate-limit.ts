@@ -64,6 +64,12 @@ export function assertValidRateLimitOptions(options: RateLimitOptions) {
 
 const buckets = new Map<string, RateLimitState>()
 
+export function mustFailClosedForRedisRateLimitFailure(
+    nodeEnv: typeof env.nodeEnv = env.nodeEnv,
+) {
+    return nodeEnv === 'production'
+}
+
 function hashRateLimitValue(value: string) {
     return createHmac('sha256', env.auth.jwtAccessSecret)
         .update(value)
@@ -259,7 +265,7 @@ async function checkRateLimitRedis(
         // A process-local bucket is not a security boundary in a multi-replica
         // deployment. Keep the developer/test fallback, but fail closed in
         // production until the distributed limiter is healthy again.
-        if (env.nodeEnv === 'production') {
+        if (mustFailClosedForRedisRateLimitFailure()) {
             throw new AppError({
                 statusCode: 503,
                 code: ERROR_CODES.InternalServerError,

@@ -9,11 +9,13 @@ import {
     AutomotiveProviderMembershipRole,
     AutomotiveProviderMembershipStatus,
     AutomotiveServiceLocationEntity,
+    NotificationCategory,
 } from '../../entities/index.js'
-import type { UserEntity } from '../../entities/user/user.entity.js'
+import { UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { canManageProvider } from './provider-access.service.js'
+import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import type { CreateAutoCareProviderInvitationInput } from './autocare.types.js'
 
 const INVITATION_TTL_DAYS = 7
@@ -30,6 +32,27 @@ async function getProvider(providerId: string) {
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOne({ where: { id: providerId }, select: { id: true, ownerId: true } })
     if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     return provider
+}
+
+async function findUserIdByEmail(email: string) {
+    const user = await AppDataSource.getRepository(UserEntity).findOne({
+        where: { email },
+        select: { id: true },
+    })
+    return user?.id ?? null
+}
+
+async function notifyExistingInvitee(invitation: AutomotiveProviderInvitationEntity) {
+    const userId = await findUserIdByEmail(invitation.email)
+    if (!userId) return
+    await enqueueNotificationSafely({
+        userId,
+        category: NotificationCategory.Account,
+        title: 'Приглашение в команду сервиса',
+        message: 'Вас пригласили в команду автосервиса. Откройте уведомление, чтобы принять приглашение.',
+        link: '/profile/notifications',
+        metadata: { providerId: invitation.providerId, invitationId: invitation.id, role: invitation.role, locationId: invitation.locationId },
+    }, `autocare-provider-invitation:${invitation.id}`)
 }
 
 function toInvitationResponse(invitation: AutomotiveProviderInvitationEntity, inviteToken: string | null = null) {
@@ -107,6 +130,7 @@ export async function createOwnerProviderInvitation(user: UserEntity, providerId
         acceptedAt: null,
         revokedAt: null,
     }))
+    await notifyExistingInvitee(invitation)
     return toInvitationResponse(invitation, process.env.NODE_ENV === 'production' ? null : token)
 }
 
@@ -122,7 +146,19 @@ export async function revokeOwnerProviderInvitation(user: UserEntity, providerId
     if (invitation.status !== AutomotiveProviderInvitationStatus.Pending) return toInvitationResponse(invitation)
     invitation.status = AutomotiveProviderInvitationStatus.Revoked
     invitation.revokedAt = new Date()
-    return toInvitationResponse(await repository.save(invitation))
+    const savedInvitation = await repository.save(invitation)
+    const invitedUserId = await findUserIdByEmail(savedInvitation.email)
+    if (invitedUserId) {
+        await enqueueNotificationSafely({
+            userId: invitedUserId,
+            category: NotificationCategory.Account,
+            title: 'Приглашение отозвано',
+            message: 'Приглашение в команду автосервиса больше не активно.',
+            link: '/profile/notifications',
+            metadata: { providerId, invitationId: savedInvitation.id },
+        }, `autocare-provider-invitation-revoked:${savedInvitation.id}`)
+    }
+    return toInvitationResponse(savedInvitation)
 }
 
 export async function revokeOwnerProviderMembership(user: UserEntity, providerId: string, membershipId: string) {
@@ -137,7 +173,16 @@ export async function revokeOwnerProviderMembership(user: UserEntity, providerId
     if (!membership) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider membership not found.' })
     if (membership.status === AutomotiveProviderMembershipStatus.Revoked) return membership
     membership.status = AutomotiveProviderMembershipStatus.Revoked
-    return repository.save(membership)
+    const savedMembership = await repository.save(membership)
+    await enqueueNotificationSafely({
+        userId: savedMembership.userId,
+        category: NotificationCategory.Account,
+        title: 'Доступ к сервису отозван',
+        message: 'Ваш доступ к рабочему пространству автосервиса был отозван владельцем.',
+        link: '/profile/notifications',
+        metadata: { providerId, membershipId: savedMembership.id, locationId: savedMembership.locationId },
+    }, `autocare-provider-membership-revoked:${savedMembership.id}`)
+    return savedMembership
 }
 
 export async function acceptProviderInvitation(user: UserEntity, token: string) {
@@ -176,6 +221,14 @@ export async function acceptProviderInvitation(user: UserEntity, token: string) 
         invitation.status = AutomotiveProviderInvitationStatus.Accepted
         invitation.acceptedAt = new Date()
         await invitationRepository.save(invitation)
+        await enqueueNotificationSafely({
+            userId: invitation.invitedById,
+            category: NotificationCategory.Account,
+            title: 'Приглашение принято',
+            message: 'Сотрудник принял приглашение в команду автосервиса.',
+            link: `/owner/autocare-providers/${invitation.providerId}`,
+            metadata: { providerId: invitation.providerId, membershipId: membership.id, locationId: membership.locationId },
+        }, `autocare-provider-invitation-accepted:${invitation.id}`, manager)
         return {
             membership: {
                 id: membership.id,

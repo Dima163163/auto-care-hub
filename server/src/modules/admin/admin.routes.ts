@@ -53,6 +53,14 @@ import {
     adminAutoCareModerationEvidenceQuerySchema,
     adminAutoCareModerationEvidenceParamsSchema,
     decideAdminAutoCareModerationEvidenceSchema,
+    createSuperAdminAutoCareMarketSchema,
+    createSuperAdminAutoCareMarketZoneSchema,
+    createSuperAdminMarketCountrySchema,
+    superAdminCountryParamsSchema,
+    superAdminMarketZoneParamsSchema,
+    updateSuperAdminAutoCareMarketHierarchySchema,
+    updateSuperAdminAutoCareMarketZoneSchema,
+    updateSuperAdminMarketCountrySchema,
 } from './admin.schemas.js'
 import { updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
@@ -120,6 +128,15 @@ import { getRequestLocale } from '../../shared/i18n/request-locale.js'
 import { getAutoCareQualityMonitoring, type AutoCareQualityMonitoringResponse } from '../autocare/autocare-quality-monitoring.service.js'
 import { decideAdminAutoCareAppeal, listAdminAutoCareAppeals } from '../autocare/appeal.service.js'
 import { decideAdminAutoCareModerationEvidence, listAdminAutoCareModerationEvidence } from '../autocare/moderation-evidence.service.js'
+import {
+    createSuperAdminAutoCareMarket,
+    createSuperAdminAutoCareMarketZone,
+    createSuperAdminMarketCountry,
+    getSuperAdminMarketHierarchy,
+    updateSuperAdminAutoCareMarketHierarchy,
+    updateSuperAdminAutoCareMarketZone,
+    updateSuperAdminMarketCountry,
+} from './super-admin-market-hierarchy.service.js'
 import {
     getAdminDeletionRequests,
     updateAdminDeletionRequestStatus,
@@ -360,6 +377,57 @@ export async function adminRoutes(
             },
             request,
         })
+        return result
+    })
+
+    app.get('/super-admin/market-hierarchy', async (request) => {
+        return getSuperAdminMarketHierarchy(await requireAuth(request))
+    })
+
+    app.post('/super-admin/market-countries', async (request) => {
+        const user = await requireAuth(request)
+        const result = await createSuperAdminMarketCountry(user, validateBody(createSuperAdminMarketCountrySchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryCreated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active }, request })
+        return result
+    })
+
+    app.patch('/super-admin/market-countries/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminCountryParamsSchema, request.params)
+        const result = await updateSuperAdminMarketCountry(user, params.id, validateBody(updateSuperAdminMarketCountrySchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryUpdated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
+        return result
+    })
+
+    app.post('/super-admin/market-countries/:id/cities', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminCountryParamsSchema, request.params)
+        const result = await createSuperAdminAutoCareMarket(user, params.id, validateBody(createSuperAdminAutoCareMarketSchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCreated, targetId: result.id, targetType: 'autocare_market', metadata: { countryCode: result.countryCode, cityCode: result.cityCode, launchReady: result.launchReady }, request })
+        return result
+    })
+
+    app.patch('/super-admin/market-cities/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const result = await updateSuperAdminAutoCareMarketHierarchy(user, params.id, validateBody(updateSuperAdminAutoCareMarketHierarchySchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketUpdated, targetId: result.id, targetType: 'autocare_market', metadata: { cityCode: result.cityCode, launchReady: result.launchReady, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
+        return result
+    })
+
+    app.post('/super-admin/market-cities/:id/zones', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const result = await createSuperAdminAutoCareMarketZone(user, params.id, validateBody(createSuperAdminAutoCareMarketZoneSchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneCreated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
+        return result
+    })
+
+    app.patch('/super-admin/market-zones/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
+        const result = await updateSuperAdminAutoCareMarketZone(user, params.id, validateBody(updateSuperAdminAutoCareMarketZoneSchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneUpdated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
         return result
     })
 
@@ -920,6 +988,20 @@ export async function adminRoutes(
             const params = validateParams(systemIncidentParamsSchema, request.params)
             const body = validateBody(updateSystemIncidentStatusSchema, request.body)
             const incident = await updateSystemIncidentStatus(user, params.id, body.status)
+
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.SystemIncidentStatusUpdated,
+                targetId: incident.id,
+                targetType: 'system_incident',
+                metadata: {
+                    status: incident.status,
+                    severity: incident.severity,
+                    type: incident.type,
+                    occurrenceCount: incident.occurrenceCount,
+                },
+                request,
+            })
 
             return toSystemIncidentResponse(incident)
         }

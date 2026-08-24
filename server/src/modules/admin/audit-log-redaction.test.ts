@@ -20,4 +20,18 @@ describe('audit metadata redaction', () => {
             action: 'login',
         })
     })
+
+    it('redacts contact, vehicle and private request data case-insensitively', () => {
+        expect(redactAuditMetadata({
+            PhoneNumber: '+7 999 123-45-67',
+            vin: 'JTM1234567890ABCD',
+            issueDescription: 'Engine noise after a private visit',
+            requestId: 'request-123',
+        })).toEqual({
+            PhoneNumber: '[REDACTED]',
+            vin: '[REDACTED]',
+            issueDescription: '[REDACTED]',
+            requestId: 'request-123',
+        })
+    })
 })

@@ -51,19 +51,28 @@ with the customer's jurisdiction and privacy notices before production launch.
 - Cabinet image files that are no longer referenced by cabinet records are
   eligible for deletion after `CABINET_UPLOAD_ORPHAN_GRACE_HOURS` (24 hours by
   default).
-- Object storage migration and provider-level lifecycle rules remain pending.
+- AutoCare request and chat attachments use a private store. Production requires
+  S3-compatible private storage and ClamAV quarantine; access is issued only
+  through short-lived signed URLs.
+- The maintenance cycle deletes expired attachment rows and their private/
+  quarantine objects using `AUTOCARE_ATTACHMENT_RETENTION_DAYS`. A failed
+  object deletion leaves the database row in place for a safe retry.
+- Completing an account-deletion request first removes every attachment
+  uploaded by that user, then deletes its metadata. If storage deletion fails,
+  the account transaction is rolled back so the operation can be retried
+  without leaving a metadata row that points to an undiscoverable object.
 
 ## Open work
 
-Authenticated account export, the reviewed deletion-request lifecycle, and the
-field-level anonymization contract are implemented. The deletion endpoint still
-does not perform destructive deletion or anonymization automatically; a future
-completion workflow must remain release-gated, audited, restart-safe, and
-financial-record-safe.
+Authenticated account export and the audited deletion-request completion flow
+are implemented. Completion blocks the account, removes active sessions,
+private contact/vehicle/message data, personal bonus accounts and ledgers,
+provider memberships and unaccepted invitations. Providers owned by the deleted
+account are suspended and detached rather than silently transferred; a
+super-admin must perform a documented ownership-transfer/review before they can
+be republished. Immutable completed-booking/audit references remain only in the
+redacted form needed for settlement and safety review.
 
-The remaining operational work is to execute and verify that completion policy
-for every financial record family, add a customer-facing privacy-settings
-workflow, and retain export-delivery data according to the deployment's legal
-schedule. Until those release gates exist, deployment operators must handle
-verified data-subject requests through the documented support and database
-procedures.
+The remaining release gate is external: the deployment owner must approve the
+jurisdiction-specific retention schedule, execute a timed production-like
+deletion/restore rehearsal and record the result in release evidence.

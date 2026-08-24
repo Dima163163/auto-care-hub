@@ -3,6 +3,7 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn,
 export enum AutoCareBonusLedgerType {
     Earn = 'earn',
     Redeem = 'redeem',
+    Refund = 'refund',
     Expire = 'expire',
     Adjustment = 'adjustment',
 }

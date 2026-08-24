@@ -46,10 +46,31 @@ export type AutomotiveWeeklyScheduleDay = {
 
 export type AutomotiveWeeklySchedule = Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', AutomotiveWeeklyScheduleDay>
 
+export type AutomotiveMarketCapabilities = Record<string, boolean>
+export type AutomotiveMarketLegalLinks = Record<string, string>
+
+@Entity('autocare_market_countries')
+@Index(['code'], { unique: true })
+export class AutomotiveMarketCountryEntity {
+    @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'text' }) code!: string
+    @Column({ type: 'jsonb', default: () => "'{}'" }) names!: Record<string, string>
+    @Column({ type: 'text' }) defaultLocale!: string
+    @Column('text', { array: true, default: () => "'{}'" }) supportedLocales!: string[]
+    @Column({ type: 'text' }) timezone!: string
+    @Column({ type: 'text' }) currencyCode!: string
+    @Column({ type: 'jsonb', default: () => "'{}'" }) capabilities!: AutomotiveMarketCapabilities
+    @Column({ type: 'jsonb', default: () => "'{}'" }) legalLinks!: AutomotiveMarketLegalLinks
+    @Column({ type: 'boolean', default: true }) active!: boolean
+    @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
+    @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
+}
+
 @Entity('autocare_markets')
 @Index(['countryCode', 'cityCode'], { unique: true })
 export class AutomotiveMarketEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
+    @Column({ type: 'uuid' }) countryId!: string
     @Column({ type: 'text' }) countryCode!: string
     @Column({ type: 'text' }) countryName!: string
     @Column({ type: 'text' }) cityCode!: string
@@ -62,6 +83,8 @@ export class AutomotiveMarketEntity {
     @Column({ type: 'text' }) defaultLocale!: string
     @Column('text', { array: true, default: () => "'{}'" }) supportedLocales!: string[]
     @Column({ type: 'text' }) timezone!: string
+    @Column({ type: 'jsonb', default: () => "'{}'" }) capabilities!: AutomotiveMarketCapabilities
+    @Column({ type: 'jsonb', default: () => "'{}'" }) legalLinks!: AutomotiveMarketLegalLinks
     @Column({ type: 'boolean', default: false }) launchReady!: boolean
 }
 

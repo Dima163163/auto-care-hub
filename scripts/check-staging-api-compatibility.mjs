@@ -23,5 +23,12 @@ async function checkStaging(baseUrl) {
 }
 
 await runLocalChecks()
-if (process.env.STAGING_API_BASE_URL) await checkStaging(process.env.STAGING_API_BASE_URL)
-else console.log('STAGING_API_BASE_URL is not set; external staging probe was skipped. Local parity checks passed.')
+const stagingApiBaseUrl = process.env.STAGING_API_BASE_URL?.trim()
+const requireStagingApi = process.env.REQUIRE_STAGING_API === 'true'
+
+if (stagingApiBaseUrl) await checkStaging(stagingApiBaseUrl)
+else if (requireStagingApi) {
+    throw new Error('REQUIRE_STAGING_API=true requires a non-empty STAGING_API_BASE_URL.')
+} else {
+    console.log('STAGING_API_BASE_URL is not set; external staging probe was skipped. Local parity checks passed.')
+}

@@ -727,6 +727,10 @@ export const enTranslations = {
                 title: 'Review moderation updated',
                 message: 'Your review for "{{cabinetTitle}}" is now {{status}}.',
             },
+            appealDecided: {
+                title: 'Appeal decided',
+                message: 'Your appeal about "{{subject}}" has been {{status}}.',
+            },
         },
     },
     emails: {

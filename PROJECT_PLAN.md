@@ -178,7 +178,7 @@ irreversible product choices.
 
 ## 4. Current repository audit
 
-### 4.0 Implementation snapshot — 2026-08-23
+### 4.0 Implementation snapshot — 2026-08-24
 
 The repository is no longer at the planning-only stage. The following is the
 current, reviewed implementation state and is the source for the next slices of
@@ -193,8 +193,8 @@ work.
 | Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications, transactional repair events, timezone-aware schedules and branch-capacity reservations. Accepted bookings lock the branch row and reject overlapping confirmations above its configured capacity; direct PostgreSQL concurrency tests cover instant and manual booking races. In-app and email reminders are localized and idempotently added to the outbox. | Configure the provider calendar/work queue, external push subscriptions and production delivery credentials; run the reminder worker against staging mail/push infrastructure before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
-| Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records plus an appeals queue with reasoned accept/reject decisions. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering and aggregate rating distribution. Chat navigation and owner “open chat” actions are feature-flagged off during MVP development; review/request cards keep a phone-based “contact customer” action and the audited promo flow, while the chat routes and APIs remain available for later production enablement. Provider memberships now support owner/manager/staff scope with optional branch assignment. Workspace shells keep header and navigation fixed, scroll only the content pane, and intentionally omit the public footer on every cabinet tab. | Add membership-management UI, offer editing, calendar/reminders, completed-visit trust evidence, provider analytics and the super-admin grant/promo workflows. |
-| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 202 MSW routes used by the browser and 232 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers/reviews, request lifecycle, unified chat threads, image attachments, immutable quote history, accepted-quote booking snapshots, verified-review submission, idempotent requests, availability and persisted appeals routes are implemented with migrations and mock handlers. Clean local databases now expose the same read-only market/zone/service catalog fallback as mock mode until optional seed data is present; persisted PostgreSQL rows take precedence. Docker migration, seed, real-mode endpoint checks and the integration suite pass locally. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields, deterministic rollout controls, aggregate calibration and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. The legacy financial-provider runtime is fully removed: dependencies, routes, UI, configuration, jobs, tests and active documentation are gone; only immutable historical migrations remain for existing databases. Aggregate admin quality monitoring now reports provider/review/request/trust coverage, calibration and pending appeal count without exposing private review or chat content. | Add durable object storage/quarantine and database-backed authorization/concurrency integration tests. Python rewrite is explicitly deferred until a later approved phase. Performance, pilot and production evidence remain release gates. |
+| Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. It includes an interactive branch-capacity calendar plus a working queue, onboarding checklists, auditable verification/profile change requests, scoped staff invitations and notification delivery, owner bonus-liability ledger and analytics for requests, response time, reviews, repeat customers, impressions and profile opens. Provider memberships enforce owner/manager/staff permissions and exact branch scope across requests, offers, reviews, analytics, marketplace and chat APIs; workspace navigation reflects each role. The administrator dashboard exposes automotive provider/review/catalog moderation, provider change-request decisions with rationale and audit records plus an appeals queue with reasoned accept/reject decisions. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Chat navigation and owner “open chat” actions are feature-flagged off during MVP development; review/request cards keep a phone-based “contact customer” action and the audited promo flow, while the chat routes and APIs remain available for later production enablement. Workspace shells keep header and navigation fixed, scroll only the content pane, and intentionally omit the public footer on every cabinet tab. | Add durable document/evidence storage and media moderation, specialist/resource-level scheduling, true multi-location provider records (rather than the current provider-card projection), production analytics retention/consent and the super-admin grant/promo workflows. |
+| Backend | Fastify/TypeScript + TypeORM/PostgreSQL covers all 202 MSW routes used by the browser and 232 backend routes including operational/auth/upload/WebSocket routes; OpenAPI and parity checks are automated. Markets, canonical localized zones, service definitions, discovery, provider profiles/offers/reviews, request lifecycle, unified chat threads, image attachments, immutable quote history, accepted-quote booking snapshots, verified-review submission, idempotent requests, availability and persisted appeals routes are implemented with migrations and mock handlers. Clean local databases now expose the same read-only market/zone/service catalog fallback as mock mode until optional seed data is present; persisted PostgreSQL rows take precedence. Docker migration, seed, real-mode endpoint checks and the integration suite pass locally. P0 hardening now scopes owner broadcasts/clients, validates AutoCare response payloads, protects attachment media, makes quote/offer/confirmation transitions transactional with repair events, rejects expired/negative quotes, consumes security tokens atomically, validates persisted sessions, enforces account-deletion retention/anonymization, and adds WebSocket Origin/protocol/payload/rate guards. Provider membership authorization, timezone-aware weekly schedules, blackout dates and locked slot-overlap checks are persisted. Trust scoring now has a deterministic policy, persisted score/badge fields, deterministic rollout controls, aggregate calibration and bounded worker reassessment from current evidence. Browser mutations with session cookies are covered by a shared production CSRF guard, while bearer-only native clients remain supported. API and worker Render services are split; production Redis is fail-closed. Confirmed AutoCare visits now receive idempotent outbox reminders. Production configuration now requires S3-compatible private attachment storage plus ClamAV quarantine, exposes authorized signed access and removes media as part of retention/account deletion. The legacy financial-provider runtime is fully removed: dependencies, routes, UI, configuration, jobs, tests and active documentation are gone; only immutable historical migrations remain for existing databases. Aggregate admin quality monitoring now reports provider/review/request/trust coverage, calibration and pending appeal count without exposing private review or chat content. | Configure actual S3/ClamAV secrets, provider alerting and production-like restore evidence; extend resource-level scheduling and run real-market performance/pilot checks. Python rewrite is explicitly deferred until a later approved phase. |
 | Deployment configuration | Typed frontend and backend deployment profiles are now fail-closed. `GET /api/v1/deployment-capabilities` keeps mock/real capability negotiation in sync; OAuth buttons, profile linking and server OAuth routes use the deployment allow-list. | Add deployment smoke tests for every supported profile and extend the capability matrix with legal links, currencies and market-specific features. |
 | Legacy cleanup | Public, owner and admin routes for the former cabinet product now redirect to their AutoCare counterparts; compatibility source remains isolated. Dead legacy cabinet/owner/admin lazy imports were removed from the route manifest, reducing the production bundle without deleting compatibility source. Unused Bookly browser suites and the retired cabinet action-center implementation are archived under `docs/archive/bookly/`. | Remove the remaining inherited entities, mocks and migrations only after every AutoCare replacement is live and covered by tests. |
 
@@ -511,10 +511,11 @@ of the AutoCare product.
 
 - [x] Apply as a provider and pass the initial provider profile workflow.
 - [x] Create an organization and one or more service locations.
-- [~] Invite staff with scoped permissions. Invitations, branch scope, expiry,
+- [x] Invite staff with scoped permissions. Invitations, branch scope, expiry,
   acceptance, invitation revocation and explicit active-membership revocation
-  now share the real/mock API; owner branch details expose manager/staff
-  controls, while notification delivery and broader role UI remain.
+  share the real/mock API. Existing users receive invitation/revocation
+  notifications; owners receive acceptance notifications; manager/staff
+  workspace navigation and APIs are limited to their exact allowed branches.
 - [x] Configure hours, blocked periods and booking mode. Provider onboarding
   persists timezone-aware weekly/blackout schedules and the owner offer editor
   now persists `request` versus `instant` booking mode.
@@ -524,13 +525,13 @@ of the AutoCare product.
 - [x] Handle inquiries, photos, messages and quotes.
 - [x] Confirm/decline/reschedule/complete bookings.
 - [x] Respond to reviews when policy permits.
-- [~] Configure the initial simple bonus program. The owner API and mock editor
-  persist a provider-scoped earning program; the owner-facing liability metrics
-  are still pending.
-- [~] See acquisition/booking/response metrics that demonstrate platform value.
-  Owner analytics now exposes request, quote, completion, response, repeat-
-  customer and review metrics; acquisition/impression tracking remains a
-  deliberate unavailable signal until its consent/retention contract is set.
+- [x] Configure the initial simple bonus program. The owner API and mock editor
+  persist a provider-scoped earning program; owners can inspect active account
+  balances, immutable ledger entries and current points liability.
+- [x] See acquisition/booking/response metrics that demonstrate platform value.
+  Owner analytics exposes request, quote, completion, response, repeat-customer
+  and review metrics plus daily impressions and profile opens. Branch-scoped
+  staff never receive provider-wide tracking or bonus figures.
 
 ### Admin journey
 
@@ -543,7 +544,8 @@ of the AutoCare product.
   are still pending.
 - [x] Inspect reports, audit logs, incidents and data-quality issues. Admin API
   routes expose cursor-safe audit logs/export, system incidents, outbox health
-  and retry/dead-letter actions; UI evidence remains tracked separately.
+  and retry/dead-letter actions. The dashboard also exposes the aggregate
+  data-quality queue, detailed evidence context and audited incident decisions.
 - [ ] Manage provider subscriptions, grants and promo codes when monetization is
   activated.
 
@@ -551,10 +553,12 @@ of the AutoCare product.
 
 - [x] Open a role-protected overview of markets, locales, platform access,
   provider trust signals and the billing-launch state.
-- [~] Create and govern launch markets, country/city locales and operating rules.
-  Markets, localized zones, currencies, timezones and data-driven fallback are
-  available through the API; super-admin has a readout for market/zone coverage,
-  while mutation governance UI and country-specific operating rules remain.
+- [x] Create and govern launch markets, country/city locales and operating rules.
+  The super-admin hierarchy editor and audited API manage country → city → zone
+  without frontend releases. Each country and city carries its own locales,
+  timezone, currency, capabilities and legal links; zones support hierarchy,
+  geometry, order and publication state. The same contract is available in MSW
+  and the real TypeORM/PostgreSQL server.
 - [~] Define transparent trust metrics, verification evidence, ranking boosts,
   suspensions and appeals without allowing a paid plan to alter organic ranking.
   Versioned trust snapshots, evidence, suspension-safe ranking and the
@@ -971,37 +975,51 @@ Exit gate:
 
 Goal: let real businesses operate safely on the platform.
 
-- [~] Provider application, verification and change-request workflow. Owner verification/profile submissions now persist with one pending request per kind; admin approve/reject applies audited changes and activates approved drafts. Document upload/evidence requirements and owner/admin UI remain.
+- [x] Provider application, verification and change-request workflow. Owner
+  verification/profile submissions persist with one pending request per kind;
+  the onboarding UI makes profile, gallery, offers and verification progress
+  visible. Administrators approve/reject with a required rationale, audited
+  changes activate approved drafts and requester notifications are delivered.
+  Durable document upload/evidence storage remains a separate media-security
+  release gate.
 - [~] Multi-location provider profiles and membership invitations. Provider
-  invitations now target one branch or the whole provider, expire after seven
-  days, are single-use and are available in real/mock APIs; branch/profile UI
-  and invitation delivery remain.
-- [~] Scoped staff permissions and revocation. Manager/staff acceptance,
+  invitations target one branch or the whole provider, expire after seven days,
+  are single-use and are available in real/mock APIs; owner UI, invitation
+  delivery and role-aware branch screens are live. The public/owner provider
+  projection still needs a true multi-location record model.
+- [x] Scoped staff permissions and revocation. Manager/staff acceptance,
   invitation revocation and explicit active-membership revocation are persisted
-  behind owner authorization; the owner UI and notification delivery remain.
+  behind owner authorization. Owner UI, notification delivery and exact
+  branch-scoped authorization now apply to requests, offers, reviews,
+  analytics, marketplace and chat access.
 - [~] Catalog gap requests for missing standardized services. Authenticated users can submit a normalized request; admins can approve it into the active service-definition catalog or reject it with a reason. Owner/admin UI, localization review and a richer audit queue remain.
 - [~] Provider moderation queue: administrators can list service profiles and
-  move their publication status through audited API actions; persisted appeal
-  submission/list/decision contracts are now live, while location/review/
-  complaint moderation UI remains pending.
+  move their publication status through audited API actions; verification and
+  profile-change decisions now have a dedicated admin queue with rationale and
+  requester notifications. Appeals now include full status/subject history,
+  evidence counts, owner withdrawal, reasoned decisions and notification
+  outbox delivery. The evidence queue renders related provider/address,
+  review text and photos before an audited decision. Durable location-document,
+  gallery and complaint evidence review still depends on private media
+  storage/quarantine.
 - [x] Admin audit viewer and operational issue queues. Backend/API support
   cursor-safe audit logs/export, system incidents, outbox health and retry/
   dead-letter actions; the admin UI wiring is tracked in the public-state work.
-- [~] Provider dashboard: AutoCare locations, latest requests, confirmed-estimate
-  totals, conversion and rating signals are available; impressions, profile
-  opens, response-time, booking-completion and repeat-customer analytics are
-  still pending.
+- [x] Provider dashboard: AutoCare locations, latest requests, confirmed-estimate
+  totals, conversion, rating, impressions, profile opens, response time,
+  booking-completion, repeat-customer and bonus-liability signals are available.
+  Tracking uses daily provider-level counters; retention/consent calibration is
+  a production policy gate.
 - [~] Unified owner reviews workspace: filter approved reviews by any owned
   service location/address, inspect aggregate rating distribution, contact a
   client by phone from the linked request and issue an auditable service promo
   without creating a second review flow inside the services catalog. Chat
   actions remain implemented but hidden behind the MVP feature flag until the
   production chat rollout is approved.
-- [~] Provider analytics: inquiries, response time, quote conversion, confirmed
-  bookings, completion, repeat customers, reviews and bonus liability now come
-  from the owner-scoped API/mock endpoint and dashboard card. Impression/profile
-  open event tracking is explicitly reported as unavailable until the event
-  pipeline is enabled.
+- [x] Provider analytics: inquiries, response time, quote conversion, confirmed
+  bookings, completion, repeat customers, reviews, bonus liability, impressions
+  and profile opens come from the owner-scoped API/mock endpoint and dashboard
+  card. Provider-wide tracking is deliberately hidden from branch-scoped staff.
 
 Exit gate:
 
@@ -1012,25 +1030,27 @@ Exit gate:
 Goal: add a simple, auditable loyalty system without becoming a financial
 wallet.
 
-- [~] Approve bonus unit, earning, redemption, expiry and refund rules. The MVP
-  baseline now fixes whole points, provider-funded earning and no cash withdrawal;
-  redemption/refund policy is still an explicit decision before enabling spend.
+- [x] Approve bonus unit, earning, redemption, expiry and refund rules. The
+  launch policy is versioned in `docs/product/BONUS_POLICY.md`: points are
+  provider-funded, non-cash and provider-scoped; award follows a closed visit,
+  spend is capped to an accepted booking, cancellation creates a typed refund,
+  and a non-two-decimal currency requires a separate market rule.
 - [x] Create provider-scoped bonus program and rules. Owner API and mock parity
   persist the provider program, caps, expiry and active flag.
 - [x] Create one customer bonus account per provider. The schema enforces a
   client/provider unique account.
-- [~] Use an immutable ledger for earn, redeem, expire and audited adjustment.
-  Earn/redeem/expire/refund/adjustment entries now use typed immutable rows and
-  idempotency keys; an owner-facing history UI remains.
+- [x] Use an immutable ledger for earn, redeem, expire, refund and audited
+  adjustment. All entries are typed, append-only and idempotent; an
+  owner-facing history UI remains a separate usability enhancement.
 - [x] Award only on eligible completed bookings. Points are awarded inside the
   locked close-visit transaction and use the immutable booking amount snapshot.
-- [~] Make redemption idempotent and transactional with booking completion.
-  Confirmed-request redemption now locks the request/account, rejects
-  cross-provider or insufficient-balance spends, and is idempotent by request
-  and key in real/mock APIs; completion-time reservation and customer UI remain.
-- [~] Prevent negative balance, cross-provider use and cash withdrawal. Database
-  constraints, provider-scoped accounts, redemption and expiry reconciliation
-  cover the first two and expose no cash withdrawal API.
+- [x] Make redemption idempotent and transactional with booking completion.
+  Accepted-request redemption locks the request/account, snapshots discount and
+  payable amount, rejects cross-provider or insufficient-balance spends, and
+  is covered by PostgreSQL concurrency tests.
+- [x] Prevent negative balance, cross-provider use and cash withdrawal.
+  Database constraints, provider-scoped accounts, redemption/expiry
+  reconciliation and no-cash API surface enforce the rule.
 - [~] Show balance/history to customer and program/liability metrics to provider.
   Customer balance/history is available through `/v1/bonuses/my`; owner
   analytics now includes provider-scoped liability points and the dashboard
@@ -1038,13 +1058,13 @@ wallet.
 - [~] Add manual provider grants only with permission, reason, limits and audit.
   Owner-scoped grants enforce provider access, client role, a 100k-point limit,
   reason and idempotency; each grant records an audit action. Owner UI remains.
-- [~] Add expiry, cancellation, concurrency and abuse tests. Pure point
-  calculation, schema constraints and idempotent award paths are covered;
-  transaction-level redemption/expiry/refund integration tests remain.
+- [x] Add expiry, cancellation, concurrency and abuse tests. Unit and
+  PostgreSQL integration tests cover idempotent award, concurrent redemption,
+  refund, expiry and the negative-balance boundary.
 
 Exit gate:
 
-- Bonuses are explainable from the ledger and cannot be double spent.
+- [x] Bonuses are explainable from the ledger and cannot be double spent.
 
 ### Phase 9 — Pilot and stable web gate
 
@@ -1065,7 +1085,9 @@ Goal: prove the browser product is ready before monetization or native apps.
   confirmation reliability and conflict metrics; real traffic evidence is still
   required.
 - [~] Complete security/privacy threat review, data export/deletion and retention.
-  The threat model and evidence procedure are in
+  PII-aware logging, CSRF duplicate-header rejection, provider-scoped deletion
+  invariants, private-media deletion and database-backed retention tests are
+  implemented. The threat model and evidence procedure are in
   `docs/security/THREAT_MODEL.md`; independent review and production rehearsal
   remain before the stable-web gate.
 - [~] Complete responsive browser, accessibility and localization matrix. The
@@ -1077,14 +1099,14 @@ Goal: prove the browser product is ready before monetization or native apps.
   `docs/SEO_PRERENDER_MEDIA_BUDGET.md`; locale payload splitting and local
   performance budgets pass, while production prerender/map/media measurements
   remain.
-- [~] Complete dashboards, alerts, backups and restore rehearsal. Operational
-  requirements are in `docs/operations/BACKUP_RESTORE_RUNBOOK.md`; a local
-  Docker backup/restore rehearsal passed, while deployment alert routing and a
-  production-like timed rehearsal remain.
+- [~] Complete dashboards, alerts, backups and restore rehearsal. Encrypted
+  backup/restore scripts, an alert-rule template and the runbook are present;
+  deployment alert routing, managed backup storage and a production-like timed
+  rehearsal remain external gates.
 - [~] Complete API contract and backward-compatibility tests. Mock/backend
-  parity, OpenAPI shape/structure, response-schema and local staging-check
-  commands pass in CI; a configured staging probe and versioned deprecation
-  evidence remain.
+  parity, OpenAPI shape/structure and local checks pass in CI; release-mode
+  staging compatibility now fails closed without `STAGING_API_BASE_URL`, while
+  a real staging probe and versioned deprecation evidence remain.
 - [~] Remove or archive proven-unused AutoCare Hub domain/payment code. The
   legacy payment runtime is removed and the migration audit/no-legacy checks
   are green; unused Bookly browser suites and the retired cabinet action-center

@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation } from 'react-router'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { UserRole } from '@/entities/user'
+import { useGetOwnerAutoCareWorkspaceAccessQuery } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -13,9 +14,10 @@ import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
 type RequireAuthProps = {
     children: ReactNode
     allowedRoles?: UserRole[]
+    allowOwnerWorkspace?: boolean
 }
 
-export function RequireAuth({ children, allowedRoles }: RequireAuthProps) {
+export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = false }: RequireAuthProps) {
     const { t } = useTranslation()
     const location = useLocation()
 
@@ -24,6 +26,9 @@ export function RequireAuth({ children, allowedRoles }: RequireAuthProps) {
         isLoading,
         isError
     } = useGetMeQuery()
+    const workspaceAccess = useGetOwnerAutoCareWorkspaceAccessQuery(undefined, {
+        skip: !allowOwnerWorkspace || !user || user.role === 'owner',
+    })
 
 
     if (isLoading) {
@@ -91,7 +96,11 @@ export function RequireAuth({ children, allowedRoles }: RequireAuthProps) {
         )
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (allowOwnerWorkspace && user.role !== 'owner' && workspaceAccess.isLoading) {
+        return <main className="min-h-screen bg-background" aria-busy="true" />
+    }
+
+    if (allowedRoles && !allowedRoles.includes(user.role) && !workspaceAccess.data?.allowed) {
         return (
             <Navigate
                 to={getDefaultRouteByRole(user.role)}

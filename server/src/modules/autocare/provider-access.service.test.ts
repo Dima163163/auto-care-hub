@@ -8,10 +8,11 @@ vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
 import {
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipRole,
     AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
 } from '../../entities/index.js'
-import { canManageProvider, getManagedProviderIds, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { canManageProvider, getManagedProviderIds, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 
 function membershipQuery(getOne: () => Promise<unknown>) {
     const query = {
@@ -68,7 +69,7 @@ describe('provider access boundary', () => {
 
     it('deduplicates directly owned and membership-managed providers', async () => {
         const providerRepository = { find: vi.fn().mockResolvedValue([{ id: 'provider-1' }, { id: 'provider-2' }]) }
-        const membershipRepository = { find: vi.fn().mockResolvedValue([{ providerId: 'provider-2' }, { providerId: 'provider-3' }]) }
+        const membershipRepository = { find: vi.fn().mockResolvedValue([{ providerId: 'provider-2', role: AutomotiveProviderMembershipRole.Staff }, { providerId: 'provider-3', role: AutomotiveProviderMembershipRole.Staff }]) }
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
 
         await expect(getManagedProviderIds('owner-1')).resolves.toEqual(['provider-1', 'provider-2', 'provider-3'])
@@ -76,11 +77,11 @@ describe('provider access boundary', () => {
 
     it('limits a branch membership to its assigned location', async () => {
         const providerRepository = { find: vi.fn().mockResolvedValue([]) }
-        const membershipRepository = { find: vi.fn().mockResolvedValue([{ providerId: 'provider-1', locationId: 'location-a' }]) }
+        const membershipRepository = { find: vi.fn().mockResolvedValue([{ providerId: 'provider-1', locationId: 'location-a', role: AutomotiveProviderMembershipRole.Staff }]) }
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
 
         const scopes = await getManagedProviderScopes('staff-1')
-        expect(scopes).toEqual([{ providerId: 'provider-1', locationIds: ['location-a'] }])
+        expect(scopes).toEqual([{ providerId: 'provider-1', locationIds: ['location-a'], roles: [AutomotiveProviderMembershipRole.Staff] }])
         expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-a')).toBe(true)
         expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-b')).toBe(false)
     })
@@ -91,8 +92,18 @@ describe('provider access boundary', () => {
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
 
         const scopes = await getManagedProviderScopes('owner-1')
-        expect(scopes).toEqual([{ providerId: 'provider-1', locationIds: null }])
+        expect(scopes).toEqual([{ providerId: 'provider-1', locationIds: null, roles: [AutomotiveProviderMembershipRole.Owner] }])
         expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-a')).toBe(true)
         expect(isManagedProviderLocationAllowed(scopes, 'provider-1', 'location-b')).toBe(true)
+    })
+
+    it('keeps staff to the operational permissions of their assigned branch', async () => {
+        const providerRepository = { find: vi.fn().mockResolvedValue([]) }
+        const membershipRepository = { find: vi.fn().mockResolvedValue([{ providerId: 'provider-1', locationId: 'location-a', role: AutomotiveProviderMembershipRole.Staff }]) }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'requests', 'location-a')).resolves.toBe(true)
+        await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'catalog', 'location-a')).resolves.toBe(false)
+        await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'requests', 'location-b')).resolves.toBe(false)
     })
 })

@@ -1,4 +1,4 @@
-import type { EntityManager } from 'typeorm'
+import { In, type EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -6,6 +6,7 @@ import {
     AutomotiveProviderEntity,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
+    AutomotiveServiceLocationEntity,
 } from '../../entities/index.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
@@ -27,9 +28,29 @@ type ModerationEvidenceResponse = {
     notes: string | null
     createdAt: string
     verifiedAt: string | null
+    provider: {
+        id: string
+        name: string
+        address: string | null
+    }
+    review: {
+        id: string
+        authorName: string
+        vehicleLabel: string
+        rating: number
+        text: string
+        photoUrls: string[]
+        createdAt: string
+        status: AutomotiveReviewStatus
+    } | null
 }
 
-function toResponse(item: AutoCareTrustEvidenceEntity): ModerationEvidenceResponse {
+function toResponse(
+    item: AutoCareTrustEvidenceEntity,
+    provider: Pick<AutomotiveProviderEntity, 'id' | 'name'> | undefined,
+    address: string | null,
+    review: AutomotiveReviewEntity | undefined,
+): ModerationEvidenceResponse {
     return {
         id: item.id,
         providerId: item.providerId,
@@ -40,6 +61,21 @@ function toResponse(item: AutoCareTrustEvidenceEntity): ModerationEvidenceRespon
         notes: item.notes,
         createdAt: item.createdAt.toISOString(),
         verifiedAt: item.verifiedAt?.toISOString() ?? null,
+        provider: {
+            id: item.providerId,
+            name: provider?.name ?? 'Unknown provider',
+            address,
+        },
+        review: review ? {
+            id: review.id,
+            authorName: review.authorName,
+            vehicleLabel: review.vehicleLabel,
+            rating: review.rating,
+            text: review.text,
+            photoUrls: review.photoUrls,
+            createdAt: review.createdAt.toISOString(),
+            status: review.status,
+        } : null,
     }
 }
 
@@ -89,7 +125,44 @@ export async function listAdminAutoCareModerationEvidence(user: UserEntity, stat
         order: { createdAt: 'ASC' },
         take: 100,
     })
-    return evidence.filter((item) => isAutoCareModerationEvidenceKind(item.kind)).map(toResponse)
+    const moderationEvidence = evidence.filter((item) => isAutoCareModerationEvidenceKind(item.kind))
+    if (moderationEvidence.length === 0) return []
+
+    const providerIds = [...new Set(moderationEvidence.map((item) => item.providerId))]
+    const reviewIds = moderationEvidence
+        .filter((item) => item.kind === 'review' && item.reference)
+        .flatMap((item) => item.reference ? [item.reference] : [])
+    const [providers, locations, reviews] = await Promise.all([
+        AppDataSource.getRepository(AutomotiveProviderEntity).find({
+            where: { id: In(providerIds) },
+            select: { id: true, name: true },
+        }),
+        AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({
+            where: { providerId: In(providerIds) },
+            select: { providerId: true, address: true },
+            order: { id: 'ASC' },
+        }),
+        reviewIds.length === 0
+            ? Promise.resolve([])
+            : AppDataSource.getRepository(AutomotiveReviewEntity).find({
+                where: { id: In(reviewIds) },
+            }),
+    ])
+    const providerById = new Map(providers.map((provider) => [provider.id, provider]))
+    const addressByProviderId = new Map<string, string>()
+    for (const location of locations) {
+        if (!addressByProviderId.has(location.providerId)) {
+            addressByProviderId.set(location.providerId, location.address)
+        }
+    }
+    const reviewById = new Map(reviews.map((review) => [review.id, review]))
+
+    return moderationEvidence.map((item) => toResponse(
+        item,
+        providerById.get(item.providerId),
+        addressByProviderId.get(item.providerId) ?? null,
+        item.kind === 'review' && item.reference ? reviewById.get(item.reference) : undefined,
+    ))
 }
 
 export async function decideAdminAutoCareModerationEvidence(
@@ -139,6 +212,19 @@ export async function decideAdminAutoCareModerationEvidence(
             }
         }
 
-        return toResponse(evidence)
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOne({
+            where: { id: evidence.providerId },
+            select: { id: true, name: true },
+        })
+        const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOne({
+            where: { providerId: evidence.providerId },
+            select: { providerId: true, address: true },
+            order: { id: 'ASC' },
+        })
+        const review = evidence.kind === 'review' && evidence.reference
+            ? await manager.getRepository(AutomotiveReviewEntity).findOneBy({ id: evidence.reference })
+            : undefined
+
+        return toResponse(evidence, provider ?? undefined, location?.address ?? null, review ?? undefined)
     })
 }

@@ -15,6 +15,8 @@ export type AutoCareApiMarket = {
     defaultLocale: string
     supportedLocales: string[]
     timezone: string
+    capabilities: Record<string, boolean>
+    legalLinks: Record<string, string>
     launchReady: boolean
 }
 
@@ -24,8 +26,61 @@ export type UpdateSuperAdminAutoCareMarketInput = {
     supportedLocales: string[]
     timezone: string
     currencyCode: string
+    capabilities?: Record<string, boolean>
+    legalLinks?: Record<string, string>
     launchReady: boolean
 }
+
+export type AutoCareApiMarketCountry = {
+    id: string
+    code: string
+    names: Record<string, string>
+    defaultLocale: string
+    supportedLocales: string[]
+    timezone: string
+    currencyCode: string
+    capabilities: Record<string, boolean>
+    legalLinks: Record<string, string>
+    active: boolean
+}
+
+export type SuperAdminMarketHierarchy = AutoCareApiMarketCountry & {
+    cities: Array<AutoCareApiMarket & { zones: AutoCareApiLocationZone[] }>
+}
+
+export type SuperAdminMarketProfileInput = {
+    defaultLocale: string
+    supportedLocales: string[]
+    timezone: string
+    currencyCode: string
+    capabilities: Record<string, boolean>
+    legalLinks: Record<string, string>
+}
+
+export type CreateSuperAdminMarketCountryInput = SuperAdminMarketProfileInput & {
+    code: string
+    names: Record<string, string>
+    active: boolean
+}
+
+export type UpdateSuperAdminMarketCountryInput = SuperAdminMarketProfileInput & {
+    id: string
+    names: Record<string, string>
+    active: boolean
+}
+
+export type CreateSuperAdminAutoCareMarketInput = SuperAdminMarketProfileInput & {
+    countryId: string
+    cityCode: string
+    cityName: string
+    regionCode?: string | null
+    regionName?: string | null
+    centerLatitude?: number | null
+    centerLongitude?: number | null
+    launchReady: boolean
+}
+
+export type UpdateSuperAdminAutoCareMarketHierarchyInput = Omit<CreateSuperAdminAutoCareMarketInput, 'countryId'> & { id: string }
 
 export type AutoCareApiLocationZone = {
     id: string
@@ -38,8 +93,26 @@ export type AutoCareApiLocationZone = {
     centerLongitude: number | null
     radiusKm: number | null
     imageUrl: string | null
+    displayOrder: number
+    active: boolean
     serviceCount: number
 }
+
+export type CreateSuperAdminAutoCareMarketZoneInput = {
+    marketId: string
+    parentId?: string | null
+    slug: string
+    zoneType: 'district' | 'neighborhood' | 'service_area'
+    names: Record<string, string>
+    centerLatitude?: number | null
+    centerLongitude?: number | null
+    radiusKm?: number | null
+    imageUrl?: string | null
+    displayOrder: number
+    active: boolean
+}
+
+export type UpdateSuperAdminAutoCareMarketZoneInput = Omit<CreateSuperAdminAutoCareMarketZoneInput, 'marketId'> & { id: string }
 
 export type AutoCareApiServiceDefinition = {
     id: string
@@ -115,6 +188,7 @@ export type AutoCareApiProvider = {
         zoneId?: string | null
         address: string
         hours: string
+        appointmentCapacity?: number
         timezone?: string
         weeklySchedule?: Record<string, { open: string; close: string; closed: boolean }>
         blackoutDates?: string[]
@@ -171,6 +245,29 @@ export type AutoCareProviderAnalytics = {
     tracking: { impressions: number; profileOpens: number; available: boolean }
 }
 
+export type OwnerAutoCareBonusLiability = {
+    providerId: string
+    activeAccounts: number
+    liabilityPoints: number
+    entries: Array<{
+        id: string
+        clientId: string
+        clientName: string
+        type: 'earn' | 'redeem' | 'refund' | 'expire' | 'adjustment'
+        points: number
+        reason: string
+        requestId: string | null
+        expiresAt: string | null
+        createdAt: string
+    }>
+}
+
+export type AutoCareOwnerWorkspaceAccess = {
+    allowed: boolean
+    providerIds: string[]
+    scopes: Array<{ providerId: string; locationIds: string[] | null; roles: Array<'owner' | 'manager' | 'staff'> }>
+}
+
 export type AutoCareFavorite = {
     id: string
     providerId: string
@@ -206,6 +303,28 @@ export type AutoCareQualityMonitoring = {
 
 export type AutoCareAppeal = { id: string; subject: 'provider' | 'review' | 'suspension' | 'catalog'; subjectId: string; submittedById: string; providerId: string | null; reason: string; evidenceIds: string[]; status: 'pending' | 'accepted' | 'rejected' | 'withdrawn'; decidedById: string | null; decisionReason: string | null; createdAt: string; decidedAt: string | null }
 export type CreateAutoCareAppealInput = { subject: AutoCareAppeal['subject']; subjectId: string; providerId?: string | null; reason: string; evidenceIds?: string[] }
+export type AdminAutoCareModerationEvidence = {
+    id: string
+    providerId: string
+    kind: 'provider_cover' | 'provider_gallery' | 'review'
+    label: string
+    status: 'pending' | 'approved' | 'rejected'
+    reference: string | null
+    notes: string | null
+    createdAt: string
+    verifiedAt: string | null
+    provider: { id: string; name: string; address: string | null }
+    review: {
+        id: string
+        authorName: string
+        vehicleLabel: string
+        rating: number
+        text: string
+        photoUrls: string[]
+        createdAt: string
+        status: 'pending' | 'approved' | 'rejected'
+    } | null
+}
 
 export type AutoCareApiReview = {
     id: string
@@ -254,7 +373,7 @@ export type AutoCareBonusProgram = {
 
 export type AutoCareBonusLedgerEntry = {
     id: string
-    type: 'earn' | 'redeem' | 'expire' | 'adjustment'
+    type: 'earn' | 'redeem' | 'refund' | 'expire' | 'adjustment'
     points: number
     reason: string
     requestId: string | null
@@ -310,7 +429,7 @@ export type AutoCareProviderMembersResponse = {
 }
 
 export type RedeemAutoCareBonusInput = { providerId: string; requestId: string; points: number }
-export type GrantAutoCareBonusInput = { providerId: string; clientId: string; points: number; reason: string }
+export type GrantAutoCareBonusInput = { providerId: string; clientId: string; points: number; reason: string; idempotencyKey: string }
 
 export type AutoCareProviderChangeRequest = {
     id: string
@@ -454,9 +573,25 @@ const autoCareBonusProgramSchema = z.object({
 
 const autoCareBonusAccountSchema = z.object({
     id: z.string(), providerId: z.string(), balancePoints: z.number().int().nonnegative(), earnedPoints: z.number().int().nonnegative(), redeemedPoints: z.number().int().nonnegative(),
-    entries: z.array(z.object({ id: z.string(), type: z.enum(['earn', 'redeem', 'expire', 'adjustment']), points: z.number().int(), reason: z.string(), requestId: z.string().nullable(), expiresAt: z.string().datetime({ offset: true }).nullable(), createdAt: z.string().datetime({ offset: true }) }).passthrough()),
+    entries: z.array(z.object({ id: z.string(), type: z.enum(['earn', 'redeem', 'refund', 'expire', 'adjustment']), points: z.number().int(), reason: z.string(), requestId: z.string().nullable(), expiresAt: z.string().datetime({ offset: true }).nullable(), createdAt: z.string().datetime({ offset: true }) }).passthrough()),
 }).passthrough() satisfies z.ZodType<AutoCareBonusAccount>
 const autoCareBonusAccountsSchema = z.array(autoCareBonusAccountSchema)
+const ownerAutoCareBonusLiabilitySchema = z.object({
+    providerId: z.string(), activeAccounts: z.number().int().nonnegative(), liabilityPoints: z.number().int().nonnegative(),
+    entries: z.array(z.object({
+        id: z.string(), clientId: z.string(), clientName: z.string(), type: z.enum(['earn', 'redeem', 'refund', 'expire', 'adjustment']),
+        points: z.number().int(), reason: z.string(), requestId: z.string().nullable(), expiresAt: z.string().datetime({ offset: true }).nullable(), createdAt: z.string().datetime({ offset: true }),
+    })),
+}) satisfies z.ZodType<OwnerAutoCareBonusLiability>
+const ownerWorkspaceAccessSchema = z.object({
+    allowed: z.boolean(),
+    providerIds: z.array(z.string()),
+    scopes: z.array(z.object({
+        providerId: z.string(),
+        locationIds: z.array(z.string()).nullable(),
+        roles: z.array(z.enum(['owner', 'manager', 'staff'])),
+    })),
+}) satisfies z.ZodType<AutoCareOwnerWorkspaceAccess>
 
 const autoCareProviderAnalyticsSchema = z.object({
     providerId: z.string(), generatedAt: z.string().datetime({ offset: true }),
@@ -614,12 +749,18 @@ const autoCareDiscoverySchema = z.object({
 const autoCareMarketsSchema = z.array(z.object({
     id: z.string(), countryCode: z.string(), countryName: z.string(), cityCode: z.string(), cityName: z.string(),
     regionCode: z.string().nullable(), regionName: z.string().nullable(), centerLatitude: z.number().finite().nullable(), centerLongitude: z.number().finite().nullable(),
-    currencyCode: z.string().min(3), defaultLocale: z.string(), supportedLocales: z.array(z.string()), timezone: z.string(), launchReady: z.boolean(),
+    currencyCode: z.string().min(3), defaultLocale: z.string(), supportedLocales: z.array(z.string()), timezone: z.string(), capabilities: z.record(z.string(), z.boolean()).default({}), legalLinks: z.record(z.string(), z.string()).default({}), launchReady: z.boolean(),
 }).passthrough()) satisfies z.ZodType<AutoCareApiMarket[]>
 const autoCareLocationZonesSchema = z.array(z.object({
     id: z.string(), marketId: z.string(), parentId: z.string().nullable(), slug: z.string(), zoneType: z.enum(['district', 'neighborhood', 'service_area']), names: z.record(z.string(), z.string()),
-    centerLatitude: z.number().finite().nullable(), centerLongitude: z.number().finite().nullable(), radiusKm: z.number().finite().nullable(), imageUrl: z.string().nullable(), serviceCount: z.number().int().nonnegative(),
+    centerLatitude: z.number().finite().nullable(), centerLongitude: z.number().finite().nullable(), radiusKm: z.number().finite().nullable(), imageUrl: z.string().nullable(), displayOrder: z.number().int().default(0), active: z.boolean().default(true), serviceCount: z.number().int().nonnegative(),
 }).passthrough()) satisfies z.ZodType<AutoCareApiLocationZone[]>
+const autoCareMarketCountrySchema = z.object({
+    id: z.string(), code: z.string(), names: z.record(z.string(), z.string()), defaultLocale: z.string(), supportedLocales: z.array(z.string()), timezone: z.string(), currencyCode: z.string().min(3), capabilities: z.record(z.string(), z.boolean()), legalLinks: z.record(z.string(), z.string()), active: z.boolean(),
+}).passthrough() satisfies z.ZodType<AutoCareApiMarketCountry>
+const superAdminMarketHierarchySchema = autoCareMarketCountrySchema.extend({
+    cities: z.array(autoCareMarketsSchema.element.extend({ zones: autoCareLocationZonesSchema })),
+}).passthrough() satisfies z.ZodType<SuperAdminMarketHierarchy>
 const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.string().optional(), durationMinutes: z.number().int().nonnegative(), slots: z.array(z.object({ startTime: z.string(), endTime: z.string() }).passthrough()) }).passthrough() satisfies z.ZodType<AutoCareAvailability>
 
 const autoCareQuoteLineItemSchema = z.object({ kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']), title: z.string(), quantity: z.number().finite(), unitPriceMinor: z.number().finite(), totalMinor: z.number().finite() }).passthrough()
@@ -629,6 +770,7 @@ const autoCareBookingSnapshotSchema = z.object({
     requestId: z.string(), quoteVersion: z.number().int().nonnegative(), amountMinor: z.number().finite(), currencyCode: z.string(),
     lineItems: z.array(autoCareQuoteLineItemSchema), scheduledAt: z.string(), timezone: z.string(), serviceSlug: z.string(),
     providerId: z.string(), locationId: z.string(), status: z.literal('confirmed'), createdAt: z.string(),
+    bonusDiscountMinor: z.number().int().nonnegative().optional(), payableAmountMinor: z.number().int().nonnegative().optional(),
 }).passthrough()
 const autoCareRescheduleSchema = z.object({
     id: z.string().min(1), proposedAt: z.string(), requestedById: z.string(),
@@ -680,6 +822,14 @@ const platformOverviewSchema = z.object({ markets: z.array(z.object({ id: z.stri
 const autoCareQualityMonitoringSchema = z.object({ generatedAt: z.string(), providers: z.object({ total: z.number().int().nonnegative(), active: z.number().int().nonnegative(), verified: z.number().int().nonnegative(), trusted: z.number().int().nonnegative(), suspended: z.number().int().nonnegative() }), reviews: z.object({ approved: z.number().int().nonnegative(), pending: z.number().int().nonnegative(), rejected: z.number().int().nonnegative(), anomalyCandidates: z.number().int().nonnegative() }), requests: z.object({ total: z.number().int().nonnegative(), completed: z.number().int().nonnegative(), cancelled: z.number().int().nonnegative(), noShows: z.number().int().nonnegative() }), ranking: z.object({ trustSnapshots: z.number().int().nonnegative(), reassessedProviders: z.number().int().nonnegative(), evidenceCoveragePercent: z.number().nonnegative() }), catalog: z.object({ activeDefinitions: z.number().int().nonnegative(), activeOffers: z.number().int().nonnegative(), providersWithOffers: z.number().int().nonnegative(), offerCoveragePercent: z.number().nonnegative(), offersWithDescription: z.number().int().nonnegative(), offersWithPrice: z.number().int().nonnegative(), priceCoveragePercent: z.number().nonnegative() }), supply: z.object({ activeMarkets: z.number().int().nonnegative(), averageLocationsPerProvider: z.number().nonnegative(), markets: z.array(z.object({ marketId: z.string(), providers: z.number().int().nonnegative(), locations: z.number().int().nonnegative(), activeOffers: z.number().int().nonnegative() })) }), reliability: z.object({ responseSamples: z.number().int().nonnegative(), averageResponseMinutes: z.number().nullable(), p95ResponseMinutes: z.number().nullable(), confirmedBookings: z.number().int().nonnegative(), confirmationSamples: z.number().int().nonnegative(), confirmationReliabilityPercent: z.number().nonnegative(), bookingConflicts: z.number().int().nonnegative() }), appeals: z.object({ available: z.literal(true), pending: z.number().int().nonnegative() }) })
 const autoCareAppealSchema = z.object({ id: z.string(), subject: z.enum(['provider', 'review', 'suspension', 'catalog']), subjectId: z.string(), submittedById: z.string(), providerId: z.string().nullable(), reason: z.string(), evidenceIds: z.array(z.string()), status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']), decidedById: z.string().nullable(), decisionReason: z.string().nullable(), createdAt: z.string(), decidedAt: z.string().nullable() }).passthrough()
 const autoCareAppealsSchema = z.array(autoCareAppealSchema)
+const adminAutoCareModerationEvidenceSchema = z.object({
+    id: z.string(), providerId: z.string(), kind: z.enum(['provider_cover', 'provider_gallery', 'review']), label: z.string(),
+    status: z.enum(['pending', 'approved', 'rejected']), reference: z.string().nullable(), notes: z.string().nullable(),
+    createdAt: z.string(), verifiedAt: z.string().nullable(),
+    provider: z.object({ id: z.string(), name: z.string(), address: z.string().nullable() }),
+    review: z.object({ id: z.string(), authorName: z.string(), vehicleLabel: z.string(), rating: z.number().int().min(1).max(5), text: z.string(), photoUrls: z.array(z.string()), createdAt: z.string(), status: z.enum(['pending', 'approved', 'rejected']) }).nullable(),
+}).passthrough() satisfies z.ZodType<AdminAutoCareModerationEvidence>
+const adminAutoCareModerationEvidenceListSchema = z.array(adminAutoCareModerationEvidenceSchema)
 const uploadResponseSchema = z.object({ url: z.string().min(1) }).passthrough()
 const autoCareRepairEventsSchema = z.array(z.object({ id: z.string(), requestId: z.string(), eventType: z.string(), actorId: z.string().nullable(), title: z.string(), notes: z.string().nullable(), metadata: z.record(z.string(), z.unknown()), createdAt: z.string() }).passthrough())
 const autoCareBroadcastOfferSchema = z.object({ id: z.string(), broadcastRequestId: z.string(), providerId: z.string(), providerName: z.string(), locationId: z.string(), address: z.string(), offerSnapshot: z.record(z.string(), z.unknown()), status: z.string(), createdAt: z.string() }).passthrough()
@@ -749,6 +899,8 @@ export type AutoCareBookingSnapshot = {
     locationId: string
     status: 'confirmed'
     createdAt: string
+    bonusDiscountMinor?: number
+    payableAmountMinor?: number
 }
 
 export type AutoCareReschedule = { id: string; proposedAt: string; requestedById: string; status: 'pending' | 'accepted' | 'rejected'; reason: string | null; resolvedById: string | null; resolutionReason: string | null; createdAt: string; resolvedAt: string | null }
@@ -893,6 +1045,41 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareMarketsSchema.element.parse(value),
             invalidatesTags: [{ type: 'AutoCareMarket', id: 'LIST' }],
         }),
+        getSuperAdminMarketHierarchy: build.query<SuperAdminMarketHierarchy[], void>({
+            query: () => '/super-admin/market-hierarchy',
+            transformResponse: (value: unknown) => z.array(superAdminMarketHierarchySchema).parse(value),
+            providesTags: [{ type: 'AutoCareMarket', id: 'HIERARCHY' }],
+        }),
+        createSuperAdminMarketCountry: build.mutation<AutoCareApiMarketCountry, CreateSuperAdminMarketCountryInput>({
+            query: (body) => ({ url: '/super-admin/market-countries', method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareMarketCountrySchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarket', id: 'HIERARCHY' }, { type: 'AutoCareMarket', id: 'LIST' }],
+        }),
+        updateSuperAdminMarketCountry: build.mutation<AutoCareApiMarketCountry, UpdateSuperAdminMarketCountryInput>({
+            query: ({ id, ...body }) => ({ url: `/super-admin/market-countries/${encodeURIComponent(id)}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareMarketCountrySchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarket', id: 'HIERARCHY' }, { type: 'AutoCareMarket', id: 'LIST' }],
+        }),
+        createSuperAdminAutoCareMarket: build.mutation<AutoCareApiMarket, CreateSuperAdminAutoCareMarketInput>({
+            query: ({ countryId, ...body }) => ({ url: `/super-admin/market-countries/${encodeURIComponent(countryId)}/cities`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareMarketsSchema.element.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarket', id: 'HIERARCHY' }, { type: 'AutoCareMarket', id: 'LIST' }],
+        }),
+        updateSuperAdminAutoCareMarketHierarchy: build.mutation<AutoCareApiMarket, UpdateSuperAdminAutoCareMarketHierarchyInput>({
+            query: ({ id, ...body }) => ({ url: `/super-admin/market-cities/${encodeURIComponent(id)}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareMarketsSchema.element.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarket', id: 'HIERARCHY' }, { type: 'AutoCareMarket', id: 'LIST' }],
+        }),
+        createSuperAdminAutoCareMarketZone: build.mutation<AutoCareApiLocationZone, CreateSuperAdminAutoCareMarketZoneInput>({
+            query: ({ marketId, ...body }) => ({ url: `/super-admin/market-cities/${encodeURIComponent(marketId)}/zones`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareLocationZonesSchema.element.parse(value),
+            invalidatesTags: (_result, _error, { marketId }) => [{ type: 'AutoCareMarket', id: 'HIERARCHY' }, { type: 'AutoCareMarket', id: `ZONES_${marketId}` }],
+        }),
+        updateSuperAdminAutoCareMarketZone: build.mutation<AutoCareApiLocationZone, UpdateSuperAdminAutoCareMarketZoneInput>({
+            query: ({ id, ...body }) => ({ url: `/super-admin/market-zones/${encodeURIComponent(id)}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareLocationZonesSchema.element.parse(value),
+            invalidatesTags: [{ type: 'AutoCareMarket', id: 'HIERARCHY' }],
+        }),
         getAutoCareLocationZones: build.query<AutoCareApiLocationZone[], { marketId: string; parentId?: string; limit?: number }>({
             query: ({ marketId, ...params }) => ({ url: `/v1/markets/${encodeURIComponent(marketId)}/zones`, params }),
             transformResponse: (value: unknown) => autoCareLocationZonesSchema.parse(value),
@@ -1002,10 +1189,20 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(autoCareProviderSchema).parse(value),
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        getOwnerAutoCareWorkspaceAccess: build.query<AutoCareOwnerWorkspaceAccess, void>({
+            query: () => '/owner/workspace-access',
+            transformResponse: (value: unknown) => ownerWorkspaceAccessSchema.parse(value),
+            providesTags: [{ type: 'AutoCareProvider', id: 'WORKSPACE_ACCESS' }],
+        }),
         getOwnerAutoCareProviderAnalytics: build.query<AutoCareProviderAnalytics, string>({
             query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/analytics`,
             transformResponse: (value: unknown) => autoCareProviderAnalyticsSchema.parse(value),
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `ANALYTICS_${providerId}` }],
+        }),
+        getOwnerAutoCareBonusLiability: build.query<OwnerAutoCareBonusLiability, string>({
+            query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-liability`,
+            transformResponse: (value: unknown) => ownerAutoCareBonusLiabilitySchema.parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `BONUS_LIABILITY_${providerId}` }],
         }),
         getOwnerAutoCareProviderMembers: build.query<AutoCareProviderMembersResponse, string>({
             query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/members`,
@@ -1058,7 +1255,11 @@ export const autoCareApi = baseApi.injectEndpoints({
         decideAdminAutoCareProviderChangeRequest: build.mutation<AutoCareProviderChangeRequest, DecideAutoCareProviderChangeRequestInput>({
             query: ({ id, ...body }) => ({ url: `/admin/autocare-provider-change-requests/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
             transformResponse: (value: unknown) => autoCareProviderChangeRequestSchema.parse(value),
-            invalidatesTags: [{ type: 'AutoCareProvider', id: 'CHANGE_QUEUE' }],
+            invalidatesTags: (result) => [
+                { type: 'AutoCareProvider', id: 'CHANGE_QUEUE' },
+                { type: 'AutoCareProvider', id: 'OWNER_LIST' },
+                ...(result ? [{ type: 'AutoCareProvider' as const, id: `CHANGES_${result.providerId}` }] : []),
+            ],
         }),
         getMyAutoCareBonusAccounts: build.query<AutoCareBonusAccount[], void>({
             query: () => '/v1/bonuses/my',
@@ -1071,7 +1272,7 @@ export const autoCareApi = baseApi.injectEndpoints({
             invalidatesTags: [{ type: 'AutoCareMarketplace', id: 'BONUSES_MY' }],
         }),
         grantAutoCareBonus: build.mutation<AutoCareBonusAccount, GrantAutoCareBonusInput>({
-            query: ({ providerId, clientId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-accounts/${encodeURIComponent(clientId)}/grants`, method: 'POST', body }),
+            query: ({ providerId, clientId, idempotencyKey, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-accounts/${encodeURIComponent(clientId)}/grants`, method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body }),
             transformResponse: (value: unknown) => autoCareBonusAccountSchema.parse(value),
             invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `BONUS_${providerId}` }],
         }),
@@ -1124,6 +1325,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareReview', id: 'APPEALS' }],
         }),
+        withdrawAutoCareAppeal: build.mutation<AutoCareAppeal, string>({
+            query: (appealId) => ({ url: `/v1/autocare-appeals/${encodeURIComponent(appealId)}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareReview', id: 'APPEALS' }, { type: 'AutoCareReview', id: 'ADMIN_APPEALS' }, { type: 'AutoCareProvider', id: 'QUALITY_MONITORING' }],
+        }),
         createAutoCareReview: build.mutation<AutoCareApiReview, CreateAutoCareReviewInput>({
             query: (body) => ({ url: '/v1/autocare-reviews', method: 'POST', body }),
             transformResponse: (value: unknown) => featuredReviewSchema.parse(value),
@@ -1163,6 +1369,16 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: ({ id, ...body }) => ({ url: `/admin/autocare-appeals/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
             transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareReview', id: 'ADMIN_APPEALS' }, { type: 'AutoCareProvider', id: 'QUALITY_MONITORING' }],
+        }),
+        getAdminAutoCareModerationEvidence: build.query<AdminAutoCareModerationEvidence[], { status?: AdminAutoCareModerationEvidence['status'] } | void>({
+            query: (params) => ({ url: '/admin/autocare-moderation-evidence', params: params ?? undefined }),
+            transformResponse: (value: unknown) => adminAutoCareModerationEvidenceListSchema.parse(value),
+            providesTags: [{ type: 'AutoCareReview', id: 'MODERATION_EVIDENCE' }],
+        }),
+        decideAdminAutoCareModerationEvidence: build.mutation<AdminAutoCareModerationEvidence, { id: string; status: 'approved' | 'rejected'; reason: string }>({
+            query: ({ id, ...body }) => ({ url: `/admin/autocare-moderation-evidence/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => adminAutoCareModerationEvidenceSchema.parse(value),
+            invalidatesTags: [{ type: 'AutoCareReview', id: 'MODERATION_EVIDENCE' }, { type: 'AutoCareProvider', id: 'QUALITY_MONITORING' }, { type: 'AutoCareReview', id: 'FEATURED' }],
         }),
         getSuperAdminPlatformOverview: build.query<SuperAdminPlatformOverview, void>({
             query: () => '/super-admin/platform-overview',
@@ -1421,9 +1637,18 @@ export const {
     useGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useUpdateSuperAdminAutoCareMarketMutation,
+    useGetSuperAdminMarketHierarchyQuery,
+    useCreateSuperAdminMarketCountryMutation,
+    useUpdateSuperAdminMarketCountryMutation,
+    useCreateSuperAdminAutoCareMarketMutation,
+    useUpdateSuperAdminAutoCareMarketHierarchyMutation,
+    useCreateSuperAdminAutoCareMarketZoneMutation,
+    useUpdateSuperAdminAutoCareMarketZoneMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,
+    useGetOwnerAutoCareBonusLiabilityQuery,
     useGetOwnerAutoCareProviderMembersQuery,
     useInviteAutoCareProviderMemberMutation,
     useRevokeAutoCareProviderInvitationMutation,
@@ -1448,13 +1673,17 @@ export const {
     useGetMyAutoCareReviewsQuery,
     useGetMyAutoCareAppealsQuery,
     useCreateAutoCareAppealMutation,
+    useWithdrawAutoCareAppealMutation,
     useCreateAutoCareReviewMutation,
     useRedeemAutoCareReviewPromoMutation,
     useUpdateAutoCareReviewMutation,
     useGetAdminAutoCareProvidersQuery,
     useUpdateAdminAutoCareProviderStatusMutation,
+    useGetAdminAutoCareQualityMonitoringQuery,
     useGetAdminAutoCareAppealsQuery,
     useDecideAdminAutoCareAppealMutation,
+    useGetAdminAutoCareModerationEvidenceQuery,
+    useDecideAdminAutoCareModerationEvidenceMutation,
     useGetSuperAdminPlatformOverviewQuery,
     useUploadOwnerAutoCareProviderLogoMutation,
     useUploadOwnerAutoCareProviderMediaMutation,

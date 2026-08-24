@@ -82,6 +82,7 @@ function invalidMockBodyResponse() {
 }
 
 const mockFavoritesByUser = new Map<string, string[]>()
+const mockAutoCareProviderActivity = new Map<string, { impressions: number; profileOpens: number }>()
 const mockOAuthIdentitiesByUser = new Map<string, Set<'google' | 'yandex'>>()
 const mockVehiclesByUser = new Map<string, ClientVehicle[]>([
     ['user-client-1', [{
@@ -183,6 +184,90 @@ const autoCareMarkets = [
     { id: 'market-orhei', countryCode: 'MD', countryName: 'Молдова', cityCode: 'orhei', cityName: 'Оргеев', regionCode: 'orhei', regionName: 'Оргеевский район', centerLatitude: 47.3849, centerLongitude: 28.8231, currencyCode: 'MDL', defaultLocale: 'ro', supportedLocales: ['ro', 'ru', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
     { id: 'market-ungheni', countryCode: 'MD', countryName: 'Молдова', cityCode: 'ungheni', cityName: 'Унгены', regionCode: 'ungheni', regionName: 'Унгенский район', centerLatitude: 47.2108, centerLongitude: 27.8005, currencyCode: 'MDL', defaultLocale: 'ro', supportedLocales: ['ro', 'ru', 'en'], timezone: 'Europe/Chisinau', launchReady: true },
 ]
+
+type MockSuperAdminMarket = {
+    id: string
+    countryCode: string
+    countryName: string
+    cityCode: string
+    cityName: string
+    regionCode: string | null
+    regionName: string | null
+    centerLatitude: number | null
+    centerLongitude: number | null
+    currencyCode: string
+    defaultLocale: string
+    supportedLocales: string[]
+    timezone: string
+    capabilities?: Record<string, boolean>
+    legalLinks?: Record<string, string>
+    launchReady: boolean
+}
+
+type MockSuperAdminCountry = {
+    id: string
+    code: string
+    names: Record<string, string>
+    defaultLocale: string
+    supportedLocales: string[]
+    timezone: string
+    currencyCode: string
+    capabilities: Record<string, boolean>
+    legalLinks: Record<string, string>
+    active: boolean
+}
+
+type MockSuperAdminZone = {
+    id: string
+    marketId: string
+    parentId: string | null
+    slug: string
+    zoneType: 'district' | 'neighborhood' | 'service_area'
+    names: Record<string, string>
+    centerLatitude: number | null
+    centerLongitude: number | null
+    radiusKm: number | null
+    imageUrl: string | null
+    displayOrder?: number
+    active?: boolean
+    serviceCount: number
+}
+
+const editableAutoCareMarkets = autoCareMarkets as unknown as MockSuperAdminMarket[]
+const superAdminMarketCountries: MockSuperAdminCountry[] = Array.from(
+    new Map(editableAutoCareMarkets.map((market) => [market.countryCode, market])).values(),
+).map((market) => ({
+    id: `country-${market.countryCode.toLowerCase()}`,
+    code: market.countryCode,
+    names: { [market.defaultLocale]: market.countryName, en: market.countryName },
+    defaultLocale: market.defaultLocale,
+    supportedLocales: [...market.supportedLocales],
+    timezone: market.timezone,
+    currencyCode: market.currencyCode,
+    capabilities: {},
+    legalLinks: {},
+    active: true,
+}))
+
+function toMockMarket(market: MockSuperAdminMarket) {
+    return {
+        ...market,
+        capabilities: market.capabilities ?? {},
+        legalLinks: market.legalLinks ?? {},
+    }
+}
+
+function toMockZone(zone: MockSuperAdminZone) {
+    return {
+        ...zone,
+        displayOrder: zone.displayOrder ?? 0,
+        active: zone.active ?? true,
+    }
+}
+
+function hasMockSuperAdminAccess() {
+    return currentMockUser()?.role === 'super_admin'
+}
 
 const autoCareLocationZones = [
     { id: 'zone-moscow-central', marketId: autoCareMarket.id, parentId: null, slug: 'central', zoneType: 'district', names: { ru: 'Центр Москвы', en: 'Moscow centre' }, centerLatitude: 55.7558, centerLongitude: 37.6173, radiusKm: 5, imageUrl: '/images/autocare/locations/center.webp', serviceCount: 1248 },
@@ -550,6 +635,44 @@ type MockAutoCareAppeal = {
     decidedAt: string | null
 }
 const mockAutoCareAppeals: MockAutoCareAppeal[] = [{ id: 'appeal-demo-1', subject: 'provider', subjectId: 'api-proservice-moscow', submittedById: 'user-owner-1', providerId: 'api-proservice-moscow', reason: 'Просим пересмотреть решение по публикации профиля после загрузки подтверждающих документов.', evidenceIds: [], status: 'pending', decidedById: null, decisionReason: null, createdAt: '2026-08-14T09:00:00.000Z', decidedAt: null }]
+type MockAdminAutoCareModerationEvidence = {
+    id: string
+    providerId: string
+    kind: 'provider_cover' | 'provider_gallery' | 'review'
+    label: string
+    status: 'pending' | 'approved' | 'rejected'
+    reference: string | null
+    notes: string | null
+    createdAt: string
+    verifiedAt: string | null
+    provider: { id: string; name: string; address: string | null }
+    review: { id: string; authorName: string; vehicleLabel: string; rating: number; text: string; photoUrls: string[]; createdAt: string; status: 'pending' | 'approved' | 'rejected' } | null
+}
+const mockAdminAutoCareModerationEvidence: MockAdminAutoCareModerationEvidence[] = [{
+    id: 'evidence-demo-provider-cover',
+    providerId: 'api-proservice-moscow',
+    kind: 'provider_cover',
+    label: 'Главное фото сервиса',
+    status: 'pending',
+    reference: autoCareProviders[0]?.coverImageUrl ?? null,
+    notes: 'Ожидает проверки публичного медиа.',
+    createdAt: '2026-08-18T09:30:00.000Z',
+    verifiedAt: null,
+    provider: { id: 'api-proservice-moscow', name: 'ProService', address: 'Москва, ул. Льва Толстого, 18' },
+    review: null,
+}, {
+    id: 'evidence-demo-review',
+    providerId: 'api-proservice-moscow',
+    kind: 'review',
+    label: 'Отзыв о подтверждённом визите',
+    status: 'pending',
+    reference: 'review-demo-evidence',
+    notes: 'Ожидает модерации текста и приложенных материалов.',
+    createdAt: '2026-08-18T10:00:00.000Z',
+    verifiedAt: null,
+    provider: { id: 'api-proservice-moscow', name: 'ProService', address: 'Москва, ул. Льва Толстого, 18' },
+    review: { id: 'review-demo-evidence', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Работы выполнили в согласованный срок, стоимость не изменилась.', photoUrls: [], createdAt: '2026-08-18T09:55:00.000Z', status: 'pending' },
+}]
 const mockAutoCareChatMessages = new Map<string, ServiceChatMessage[]>([
     ['chat-inquiry-proservice', [{ id: 'chat-message-1', senderId: 'user-client-1', kind: 'text', body: 'Здравствуйте! Можно ли подобрать масло по VIN и сколько займёт работа?', offer: null, deliveredAt: '2026-08-14T08:16:00.000Z', readAt: null, createdAt: '2026-08-14T08:16:00.000Z' }, { id: 'chat-message-2', senderId: 'user-owner-1', kind: 'text', body: 'Да, пришлите VIN и фото текущего фильтра — проверим совместимость.', offer: null, deliveredAt: '2026-08-14T08:20:00.000Z', readAt: null, createdAt: '2026-08-14T08:20:00.000Z' }]],
     ['chat-support-owner', [{ id: 'chat-message-3', senderId: 'user-owner-1', kind: 'text', body: 'После сохранения расписания новые слоты не видны клиентам.', offer: null, deliveredAt: '2026-08-14T07:31:00.000Z', readAt: null, createdAt: '2026-08-14T07:31:00.000Z' }, { id: 'chat-message-4', senderId: 'user-admin-1', kind: 'text', body: 'Проверяем кэш расписания, вернёмся с результатом в этом чате.', offer: null, deliveredAt: '2026-08-14T07:40:00.000Z', readAt: null, createdAt: '2026-08-14T07:40:00.000Z' }]],
@@ -595,7 +718,7 @@ type MockAutoCareBonusAccount = {
     balancePoints: number
     earnedPoints: number
     redeemedPoints: number
-    entries: Array<{ id: string; type: 'earn' | 'redeem' | 'expire' | 'adjustment'; points: number; reason: string; requestId: string | null; expiresAt: string | null; createdAt: string }>
+    entries: Array<{ id: string; type: 'earn' | 'redeem' | 'refund' | 'expire' | 'adjustment'; points: number; reason: string; requestId: string | null; expiresAt: string | null; createdAt: string }>
 }
 type MockAutoCareProviderInvitation = {
     id: string
@@ -2146,14 +2269,14 @@ export const handlers = [
         })
     }),
 
-    http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : autoCareMarkets)),
+    http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : editableAutoCareMarkets.map(toMockMarket))),
     http.patch('/api/super-admin/markets/:id', async ({ params, request }) => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })
         if (user.role !== 'super_admin') return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can update markets.' }, { status: 403 })
-        const market = autoCareMarkets.find((item) => item.id === params.id || item.cityCode === params.id)
+        const market = editableAutoCareMarkets.find((item) => item.id === params.id || item.cityCode === params.id)
         if (!market) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive market not found.' }, { status: 404 })
-        const body = await request.json() as Partial<{ defaultLocale: string; supportedLocales: string[]; timezone: string; currencyCode: string; launchReady: boolean }>
+        const body = await request.json() as Partial<{ defaultLocale: string; supportedLocales: string[]; timezone: string; currencyCode: string; capabilities: Record<string, boolean>; legalLinks: Record<string, string>; launchReady: boolean }>
         const currencyCode = body.currencyCode
         const locales = Array.isArray(body.supportedLocales) ? body.supportedLocales.filter((locale): locale is string => typeof locale === 'string' && locale.trim().length > 0).map((locale) => locale.trim()) : []
         if (typeof body.defaultLocale !== 'string' || locales.length === 0 || !locales.includes(body.defaultLocale) || typeof body.timezone !== 'string' || typeof currencyCode !== 'string' || !/^[A-Z]{3}$/.test(currencyCode) || typeof body.launchReady !== 'boolean') return invalidMockBodyResponse()
@@ -2162,7 +2285,77 @@ export const handlers = [
         market.timezone = body.timezone.trim()
         market.currencyCode = currencyCode
         market.launchReady = body.launchReady
-        return HttpResponse.json(market)
+        if (body.capabilities && typeof body.capabilities === 'object') market.capabilities = body.capabilities
+        if (body.legalLinks && typeof body.legalLinks === 'object') market.legalLinks = body.legalLinks
+        return HttpResponse.json(toMockMarket(market))
+    }),
+    http.get('/api/super-admin/market-hierarchy', () => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage the market hierarchy.' }, { status: 403 })
+        return HttpResponse.json(superAdminMarketCountries.map((country) => ({
+            ...country,
+            cities: editableAutoCareMarkets.filter((market) => market.countryCode === country.code).map((market) => ({
+                ...toMockMarket(market),
+                zones: (autoCareLocationZones as unknown as MockSuperAdminZone[]).filter((zone) => zone.marketId === market.id).map(toMockZone),
+            })),
+        })))
+    }),
+    http.post('/api/super-admin/market-countries', async ({ request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage countries.' }, { status: 403 })
+        const body = await request.json() as Partial<MockSuperAdminCountry>
+        if (!body.code || !/^[A-Z]{2,3}$/.test(body.code) || !body.names || typeof body.names !== 'object' || !body.defaultLocale || !Array.isArray(body.supportedLocales) || !body.timezone || !body.currencyCode || !/^[A-Z]{3}$/.test(body.currencyCode)) return invalidMockBodyResponse()
+        if (superAdminMarketCountries.some((country) => country.code === body.code)) return HttpResponse.json({ code: 'CONFLICT', message: 'Country already exists.' }, { status: 409 })
+        const country: MockSuperAdminCountry = { id: `country-${body.code.toLowerCase()}-${Date.now()}`, code: body.code, names: body.names, defaultLocale: body.defaultLocale, supportedLocales: body.supportedLocales, timezone: body.timezone, currencyCode: body.currencyCode, capabilities: body.capabilities ?? {}, legalLinks: body.legalLinks ?? {}, active: body.active ?? true }
+        superAdminMarketCountries.push(country)
+        return HttpResponse.json(country, { status: 201 })
+    }),
+    http.patch('/api/super-admin/market-countries/:id', async ({ params, request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage countries.' }, { status: 403 })
+        const country = superAdminMarketCountries.find((item) => item.id === params.id)
+        if (!country) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Country not found.' }, { status: 404 })
+        const body = await request.json() as Partial<MockSuperAdminCountry>
+        if (!body.names || !body.defaultLocale || !Array.isArray(body.supportedLocales) || !body.timezone || !body.currencyCode || !/^[A-Z]{3}$/.test(body.currencyCode) || typeof body.active !== 'boolean') return invalidMockBodyResponse()
+        Object.assign(country, { names: body.names, defaultLocale: body.defaultLocale, supportedLocales: body.supportedLocales, timezone: body.timezone, currencyCode: body.currencyCode, capabilities: body.capabilities ?? {}, legalLinks: body.legalLinks ?? {}, active: body.active })
+        return HttpResponse.json(country)
+    }),
+    http.post('/api/super-admin/market-countries/:id/cities', async ({ params, request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage cities.' }, { status: 403 })
+        const country = superAdminMarketCountries.find((item) => item.id === params.id)
+        if (!country) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Country not found.' }, { status: 404 })
+        const body = await request.json() as Partial<MockSuperAdminMarket>
+        if (!body.cityCode || !/^[a-z0-9][a-z0-9_-]{1,119}$/.test(body.cityCode) || !body.cityName || !body.defaultLocale || !Array.isArray(body.supportedLocales) || !body.timezone || !body.currencyCode || !/^[A-Z]{3}$/.test(body.currencyCode)) return invalidMockBodyResponse()
+        if (editableAutoCareMarkets.some((market) => market.cityCode === body.cityCode)) return HttpResponse.json({ code: 'CONFLICT', message: 'City already exists.' }, { status: 409 })
+        const city: MockSuperAdminMarket = { id: `market-${body.cityCode}-${Date.now()}`, countryCode: country.code, countryName: country.names[body.defaultLocale] ?? country.names.en ?? country.code, cityCode: body.cityCode, cityName: body.cityName, regionCode: body.regionCode ?? null, regionName: body.regionName ?? null, centerLatitude: body.centerLatitude ?? null, centerLongitude: body.centerLongitude ?? null, currencyCode: body.currencyCode, defaultLocale: body.defaultLocale, supportedLocales: body.supportedLocales, timezone: body.timezone, capabilities: body.capabilities ?? {}, legalLinks: body.legalLinks ?? {}, launchReady: body.launchReady ?? false }
+        editableAutoCareMarkets.push(city)
+        return HttpResponse.json(toMockMarket(city), { status: 201 })
+    }),
+    http.patch('/api/super-admin/market-cities/:id', async ({ params, request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage cities.' }, { status: 403 })
+        const city = editableAutoCareMarkets.find((item) => item.id === params.id)
+        if (!city) return HttpResponse.json({ code: 'NOT_FOUND', message: 'City not found.' }, { status: 404 })
+        const body = await request.json() as Partial<MockSuperAdminMarket>
+        if (!body.cityCode || !body.cityName || !body.defaultLocale || !Array.isArray(body.supportedLocales) || !body.timezone || !body.currencyCode || !/^[A-Z]{3}$/.test(body.currencyCode) || typeof body.launchReady !== 'boolean') return invalidMockBodyResponse()
+        Object.assign(city, { cityCode: body.cityCode, cityName: body.cityName, regionCode: body.regionCode ?? null, regionName: body.regionName ?? null, centerLatitude: body.centerLatitude ?? null, centerLongitude: body.centerLongitude ?? null, currencyCode: body.currencyCode, defaultLocale: body.defaultLocale, supportedLocales: body.supportedLocales, timezone: body.timezone, capabilities: body.capabilities ?? {}, legalLinks: body.legalLinks ?? {}, launchReady: body.launchReady })
+        return HttpResponse.json(toMockMarket(city))
+    }),
+    http.post('/api/super-admin/market-cities/:id/zones', async ({ params, request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage zones.' }, { status: 403 })
+        if (!editableAutoCareMarkets.some((item) => item.id === params.id)) return HttpResponse.json({ code: 'NOT_FOUND', message: 'City not found.' }, { status: 404 })
+        const body = await request.json() as Partial<MockSuperAdminZone>
+        if (!body.slug || !/^[a-z0-9][a-z0-9_-]{1,119}$/.test(body.slug) || !body.names || typeof body.names !== 'object' || !['district', 'neighborhood', 'service_area'].includes(body.zoneType ?? '')) return invalidMockBodyResponse()
+        const zones = autoCareLocationZones as unknown as MockSuperAdminZone[]
+        if (zones.some((zone) => zone.marketId === params.id && zone.slug === body.slug)) return HttpResponse.json({ code: 'CONFLICT', message: 'Zone already exists.' }, { status: 409 })
+        const zone: MockSuperAdminZone = { id: `zone-${String(params.id)}-${body.slug}-${Date.now()}`, marketId: String(params.id), parentId: body.parentId ?? null, slug: body.slug, zoneType: body.zoneType!, names: body.names, centerLatitude: body.centerLatitude ?? null, centerLongitude: body.centerLongitude ?? null, radiusKm: body.radiusKm ?? null, imageUrl: body.imageUrl ?? null, displayOrder: body.displayOrder ?? zones.filter((item) => item.marketId === params.id).length, active: body.active ?? true, serviceCount: 0 }
+        zones.push(zone)
+        return HttpResponse.json(toMockZone(zone), { status: 201 })
+    }),
+    http.patch('/api/super-admin/market-zones/:id', async ({ params, request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage zones.' }, { status: 403 })
+        const zone = (autoCareLocationZones as unknown as MockSuperAdminZone[]).find((item) => item.id === params.id)
+        if (!zone) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Zone not found.' }, { status: 404 })
+        const body = await request.json() as Partial<MockSuperAdminZone>
+        if (!body.slug || !body.names || typeof body.names !== 'object' || !['district', 'neighborhood', 'service_area'].includes(body.zoneType ?? '') || typeof body.displayOrder !== 'number' || typeof body.active !== 'boolean') return invalidMockBodyResponse()
+        Object.assign(zone, { parentId: body.parentId ?? null, slug: body.slug, zoneType: body.zoneType, names: body.names, centerLatitude: body.centerLatitude ?? null, centerLongitude: body.centerLongitude ?? null, radiusKm: body.radiusKm ?? null, imageUrl: body.imageUrl ?? null, displayOrder: body.displayOrder, active: body.active })
+        return HttpResponse.json(toMockZone(zone))
     }),
     http.get('/api/v1/deployment-capabilities', () => HttpResponse.json(STATIC_DEPLOYMENT_CAPABILITIES)),
     http.get('/api/v1/markets/:marketId/zones', ({ params, request }) => {
@@ -2302,6 +2495,11 @@ export const handlers = [
         if (sort === 'rating_desc') items.sort((left, right) => right.provider.rating - left.provider.rating)
         if (sort === 'distance_asc') items.sort((left, right) => left.distanceKm - right.distanceKm)
 
+        items.forEach((item) => {
+            const activity = mockAutoCareProviderActivity.get(item.provider.id) ?? { impressions: 0, profileOpens: 0 }
+            activity.impressions += 1
+            mockAutoCareProviderActivity.set(item.provider.id, activity)
+        })
         return HttpResponse.json({ items, nextCursor: null })
     }),
 
@@ -2480,6 +2678,9 @@ export const handlers = [
             ? automotiveServices.map((service) => toAutoCareOffer(provider.id, service.id, source.servicePrices?.[service.id] ?? source.price, source.priceType ?? 'from'))
             : []
 
+        const activity = mockAutoCareProviderActivity.get(provider.id) ?? { impressions: 0, profileOpens: 0 }
+        activity.profileOpens += 1
+        mockAutoCareProviderActivity.set(provider.id, activity)
         return HttpResponse.json({ ...provider, offers })
     }),
 
@@ -3103,6 +3304,15 @@ export const handlers = [
         return HttpResponse.json(isMockEmpty(request) ? [] : ownerAutoCareProviders)
     }),
 
+    http.get('/api/owner/workspace-access', () => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const scopes = currentUser.role === 'owner'
+            ? ownerAutoCareProviders.map((provider) => ({ providerId: provider.id, locationIds: null, roles: ['owner'] }))
+            : []
+        return HttpResponse.json({ allowed: scopes.length > 0, providerIds: scopes.map((scope) => scope.providerId), scopes })
+    }),
+
     http.get('/api/owner/autocare-providers/:providerId/members', ({ params }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -3234,7 +3444,7 @@ export const handlers = [
             reviewCount: reviews.length,
             averageRating: reviews.length ? Number((reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length).toFixed(1)) : 0,
             bonusLiabilityPoints: mockAutoCareBonusAccounts.filter((item) => item.providerId === provider.id).reduce((sum, item) => sum + item.balancePoints, 0),
-            tracking: { impressions: 0, profileOpens: 0, available: false },
+            tracking: { ...(mockAutoCareProviderActivity.get(provider.id) ?? { impressions: 0, profileOpens: 0 }), available: true },
         })
     }),
 
@@ -3244,6 +3454,18 @@ export const handlers = [
         if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage bonus programs.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         return HttpResponse.json(mockAutoCareBonusPrograms.get(String(params.providerId)) ?? null)
+    }),
+
+    http.get('/api/owner/autocare-providers/:providerId/bonus-liability', ({ params }) => {
+        const currentUser = currentMockUser()
+        if (!currentUser || currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view bonus liability.' }, { status: 403 })
+        const accounts = mockAutoCareBonusAccounts.filter((account) => account.providerId === params.providerId)
+        const entries = accounts.flatMap((account) => account.entries.map((entry) => ({
+            ...entry,
+            clientId: account.clientId,
+            clientName: mockUsers.find((user) => user.id === account.clientId)?.name ?? 'Клиент AutoCare',
+        }))).sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+        return HttpResponse.json({ providerId: String(params.providerId), activeAccounts: accounts.filter((account) => account.balancePoints > 0).length, liabilityPoints: accounts.reduce((total, account) => total + account.balancePoints, 0), entries })
     }),
 
     http.put('/api/owner/autocare-providers/:providerId/bonus-program', async ({ params, request }) => {
@@ -3265,15 +3487,21 @@ export const handlers = [
         const currentUser = currentMockUser()
         if (!currentUser || currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can grant bonus points.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
+        const idempotencyKey = request.headers.get('Idempotency-Key')
+        if (!idempotencyKey || !/^[a-zA-Z0-9_-]{8,128}$/.test(idempotencyKey)) return HttpResponse.json({ message: 'Idempotency-Key is required when granting bonus points.' }, { status: 400 })
         const body = await request.json() as { points?: number; reason?: string }
         if (typeof body.points !== 'number' || !Number.isInteger(body.points) || body.points <= 0 || body.points > 100_000 || !body.reason || body.reason.trim().length < 10) return invalidMockBodyResponse()
         const points = body.points
         const account = mockAutoCareBonusAccounts.find((candidate) => candidate.clientId === params.clientId && candidate.providerId === params.providerId)
             ?? (() => { const created: MockAutoCareBonusAccount = { id: `bonus-account-${Date.now()}`, clientId: String(params.clientId), providerId: String(params.providerId), balancePoints: 0, earnedPoints: 0, redeemedPoints: 0, entries: [] }; mockAutoCareBonusAccounts.push(created); return created })()
+        if (account.entries.some((entry) => entry.id === `bonus-entry-${idempotencyKey}`)) {
+            const { clientId: _clientId, ...response } = account
+            return HttpResponse.json(response)
+        }
         const now = new Date().toISOString()
         account.balancePoints += points
         account.earnedPoints += points
-        account.entries.unshift({ id: `bonus-entry-${Date.now()}`, type: 'adjustment', points, reason: body.reason.trim(), requestId: null, expiresAt: null, createdAt: now })
+        account.entries.unshift({ id: `bonus-entry-${idempotencyKey}`, type: 'adjustment', points, reason: body.reason.trim(), requestId: null, expiresAt: null, createdAt: now })
         const { clientId: _clientId, ...response } = account
         return HttpResponse.json(response)
     }),
@@ -4310,6 +4538,28 @@ export const handlers = [
         return HttpResponse.json(item)
     }),
 
+    http.get('/api/admin/autocare-moderation-evidence', ({ request }) => {
+        const user = currentMockUser()
+        if (!user || !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const status = new URL(request.url).searchParams.get('status')
+        return HttpResponse.json(mockAdminAutoCareModerationEvidence.filter((item) => !status || item.status === status))
+    }),
+
+    http.patch('/api/admin/autocare-moderation-evidence/:id/decision', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user || !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const evidence = mockAdminAutoCareModerationEvidence.find((item) => item.id === params.id)
+        if (!evidence) return HttpResponse.json({ message: 'Moderation evidence not found.' }, { status: 404 })
+        if (evidence.status !== 'pending') return HttpResponse.json({ message: 'Moderation evidence has already been decided.' }, { status: 409 })
+        const body = await request.json() as { status?: unknown; reason?: unknown }
+        if ((body.status !== 'approved' && body.status !== 'rejected') || typeof body.reason !== 'string' || body.reason.trim().length === 0) return invalidMockBodyResponse()
+        evidence.status = body.status
+        evidence.notes = body.reason.trim()
+        evidence.verifiedAt = new Date().toISOString()
+        if (evidence.review) evidence.review.status = body.status
+        return HttpResponse.json(evidence)
+    }),
+
     http.get('/api/admin/chat-reports', ({ request }) => {
         const user = currentMockUser()
         if (!user || !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
@@ -4382,6 +4632,16 @@ export const handlers = [
         const appeal: MockAutoCareAppeal = { id: `appeal-${Date.now()}`, subject: body.subject as MockAutoCareAppeal['subject'], subjectId: body.subjectId, submittedById: user.id, providerId: body.providerId ?? null, reason: body.reason.trim(), evidenceIds: Array.isArray(body.evidenceIds) ? body.evidenceIds : [], status: 'pending', decidedById: null, decisionReason: null, createdAt: new Date().toISOString(), decidedAt: null }
         mockAutoCareAppeals.unshift(appeal)
         return HttpResponse.json(appeal, { status: 201 })
+    }),
+
+    http.delete('/api/v1/autocare-appeals/:appealId', ({ params }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const appeal = mockAutoCareAppeals.find((item) => item.id === params.appealId && item.submittedById === user.id)
+        if (!appeal) return HttpResponse.json({ message: 'Appeal not found.' }, { status: 404 })
+        if (appeal.status !== 'pending') return HttpResponse.json({ message: 'Only a pending appeal can be withdrawn.' }, { status: 409 })
+        appeal.status = 'withdrawn'
+        return HttpResponse.json(appeal)
     }),
 
     http.get('/api/admin/autocare-appeals', ({ request }) => {

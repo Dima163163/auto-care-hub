@@ -15,6 +15,8 @@ import { WorkspaceMobileMenu } from './WorkspaceMobileMenu'
 const workspaceLabelKeys: Record<WorkspaceRole, TranslationKey> = {
     client: 'workspace.client',
     owner: 'workspace.owner',
+    manager: 'workspace.owner',
+    staff: 'workspace.owner',
     admin: 'workspace.admin',
     super_admin: 'user.superAdmin',
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
-import { AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import { AutomotiveLocationZoneType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
 import { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
@@ -186,21 +186,109 @@ export const adminAutoCareServiceDefinitionParamsSchema = z.object({
     id: z.string().uuid('Automotive service definition id must be a valid UUID.'),
 })
 
+const marketCapabilitiesSchema = z.record(
+    z.string().trim().regex(/^[a-z][a-z0-9_.-]{1,63}$/),
+    z.boolean(),
+).refine((value) => Object.keys(value).length <= 32, 'A market can have at most 32 capabilities.')
+
+const marketLegalLinksSchema = z.record(
+    z.string().trim().regex(/^[a-z][a-z0-9_.-]{1,63}$/),
+    z.string().trim().url().max(2_000),
+).refine((value) => Object.keys(value).length <= 24, 'A market can have at most 24 legal links.')
+
+const monetizationCapabilityKeys = ['subscriptions', 'promo_codes', 'billing'] as const
+
+function validateMarketProfile(value: {
+    defaultLocale: string
+    supportedLocales: string[]
+    capabilities?: Record<string, boolean>
+}, context: z.RefinementCtx) {
+    const normalizedLocales = value.supportedLocales.map((locale) => locale.toLowerCase())
+    if (new Set(normalizedLocales).size !== normalizedLocales.length) {
+        context.addIssue({ code: 'custom', path: ['supportedLocales'], message: 'supportedLocales must not contain duplicates.' })
+    }
+    if (!normalizedLocales.includes(value.defaultLocale.toLowerCase())) {
+        context.addIssue({ code: 'custom', path: ['defaultLocale'], message: 'defaultLocale must be included in supportedLocales.' })
+    }
+    for (const key of monetizationCapabilityKeys) {
+        if (value.capabilities?.[key]) {
+            context.addIssue({ code: 'custom', path: ['capabilities', key], message: 'Monetization capabilities remain disabled until the monetization phase is approved.' })
+        }
+    }
+}
+
 export const updateSuperAdminAutoCareMarketSchema = z.object({
     defaultLocale: z.string().trim().min(2).max(16),
     supportedLocales: z.array(z.string().trim().min(2).max(16)).min(1).max(20),
     timezone: z.string().trim().min(3).max(80),
     currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
+    capabilities: marketCapabilitiesSchema.optional(),
+    legalLinks: marketLegalLinksSchema.optional(),
     launchReady: z.boolean(),
+}).superRefine(validateMarketProfile)
+
+const localizedNamesSchema = z.record(
+    z.string().trim().regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/),
+    z.string().trim().min(1).max(160),
+).refine((value) => Object.keys(value).length > 0, 'At least one localized name is required.')
+
+const marketProfileSchema = z.object({
+    defaultLocale: z.string().trim().min(2).max(16),
+    supportedLocales: z.array(z.string().trim().min(2).max(16)).min(1).max(20),
+    timezone: z.string().trim().min(3).max(80),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
+    capabilities: marketCapabilitiesSchema.default({}),
+    legalLinks: marketLegalLinksSchema.default({}),
+}).superRefine(validateMarketProfile)
+
+export const superAdminCountryParamsSchema = z.object({ id: z.string().uuid() })
+export const superAdminMarketZoneParamsSchema = z.object({ id: z.string().uuid() })
+
+export const createSuperAdminMarketCountrySchema = marketProfileSchema.extend({
+    code: z.string().trim().regex(/^[A-Z]{2,3}$/),
+    names: localizedNamesSchema,
+    active: z.boolean().default(true),
+})
+
+export const updateSuperAdminMarketCountrySchema = marketProfileSchema.extend({
+    names: localizedNamesSchema,
+    active: z.boolean(),
+})
+
+export const createSuperAdminAutoCareMarketSchema = marketProfileSchema.extend({
+    cityCode: z.string().trim().regex(/^[a-z0-9][a-z0-9_-]{1,119}$/),
+    cityName: z.string().trim().min(1).max(160),
+    regionCode: z.string().trim().min(1).max(80).nullable().optional(),
+    regionName: z.string().trim().min(1).max(160).nullable().optional(),
+    centerLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    centerLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
+    launchReady: z.boolean().default(false),
 }).superRefine((value, context) => {
-    const uniqueLocales = new Set(value.supportedLocales.map((locale) => locale.toLowerCase()))
-    if (uniqueLocales.size !== value.supportedLocales.length) {
-        context.addIssue({ code: 'custom', path: ['supportedLocales'], message: 'supportedLocales must not contain duplicates.' })
-    }
-    if (!uniqueLocales.has(value.defaultLocale.toLowerCase())) {
-        context.addIssue({ code: 'custom', path: ['defaultLocale'], message: 'defaultLocale must be included in supportedLocales.' })
+    if ((value.centerLatitude === null || value.centerLatitude === undefined) !== (value.centerLongitude === null || value.centerLongitude === undefined)) {
+        context.addIssue({ code: 'custom', path: ['centerLatitude'], message: 'Center latitude and longitude must be provided together.' })
     }
 })
+
+export const updateSuperAdminAutoCareMarketHierarchySchema = createSuperAdminAutoCareMarketSchema
+
+export const createSuperAdminAutoCareMarketZoneSchema = z.object({
+    parentId: z.string().uuid().nullable().optional(),
+    slug: z.string().trim().regex(/^[a-z0-9][a-z0-9_-]{1,119}$/),
+    zoneType: z.nativeEnum(AutomotiveLocationZoneType),
+    names: localizedNamesSchema,
+    centerLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    centerLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
+    radiusKm: z.number().finite().positive().max(500).nullable().optional(),
+    imageUrl: z.string().trim().url().max(2_000).nullable().optional(),
+    displayOrder: z.number().int().min(0).max(10_000).default(0),
+    active: z.boolean().default(true),
+}).superRefine((value, context) => {
+    if ((value.centerLatitude === null || value.centerLatitude === undefined) !== (value.centerLongitude === null || value.centerLongitude === undefined)) {
+        context.addIssue({ code: 'custom', path: ['centerLatitude'], message: 'Center latitude and longitude must be provided together.' })
+    }
+})
+
+export const updateSuperAdminAutoCareMarketZoneSchema = createSuperAdminAutoCareMarketZoneSchema
 
 export const updateAdminAutoCareProviderStatusSchema = z.object({
     status: z.nativeEnum(AutomotiveProviderStatus),

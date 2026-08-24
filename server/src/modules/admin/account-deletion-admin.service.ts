@@ -12,6 +12,14 @@ import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
 import { NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { ClientVehicleEntity } from '../../entities/user/client-vehicle.entity.js'
+import {
+    AutoCareBonusAccountEntity,
+    AutomotiveProviderEntity,
+    AutomotiveProviderInvitationEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderStatus,
+    ServiceAttachmentEntity,
+} from '../../entities/index.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
@@ -28,11 +36,24 @@ import { metrics } from '../../shared/observability/metrics.js'
 import { getAdminDeletionListLimit } from './account-deletion-list-policy.js'
 import { getAnonymizedIdentity, ANONYMIZED_REVIEW_TEXT } from '../users/account-anonymization-policy.js'
 import { isAccountDeletionReady } from '../users/account-deletion-retention.js'
+import { removeAutoCareAttachmentObject } from '../autocare/autocare-attachment-storage.js'
 
 async function anonymizeAccount(manager: EntityManager, userId: string) {
     const userRepository = manager.getRepository(UserEntity)
     const user = await userRepository.findOneBy({ id: userId })
     if (!user) return null
+
+    const originalEmail = user.email
+    const attachments = await manager.getRepository(ServiceAttachmentEntity).find({
+        where: { uploadedById: userId },
+        select: { id: true, objectKey: true },
+    })
+    // Privacy wins over availability here. If object deletion fails, the
+    // transaction is rolled back and completion can safely be retried because
+    // object deletion is idempotent.
+    for (const attachment of attachments) {
+        await removeAutoCareAttachmentObject(attachment.objectKey)
+    }
 
     const identity = getAnonymizedIdentity(userId)
     user.name = identity.name
@@ -60,6 +81,17 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.getRepository(FavoriteCabinetEntity).delete({ userId })
     await manager.getRepository(NotificationEntity).delete({ userId })
     await manager.getRepository(ClientVehicleEntity).delete({ userId })
+    await manager.getRepository(ServiceAttachmentEntity).delete({ uploadedById: userId })
+    await manager.getRepository(AutoCareBonusAccountEntity).delete({ clientId: userId })
+    await manager.getRepository(AutomotiveProviderMembershipEntity).delete({ userId })
+    await manager.getRepository(AutomotiveProviderInvitationEntity).delete([
+        { email: originalEmail },
+        { invitedById: userId },
+    ])
+    await manager.getRepository(AutomotiveProviderEntity).update(
+        { ownerId: userId },
+        { ownerId: null, status: AutomotiveProviderStatus.Suspended },
+    )
 
     // Preserve immutable booking/financial references, but redact free text and
     // private AutoCare payloads that are not needed for settlement/audit.
@@ -77,7 +109,6 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = \'{}\', "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $2)', [identity.name, userId])
     await manager.query('UPDATE "autocare_chat_threads" SET "clientId" = NULL, "createdById" = NULL WHERE "clientId" = $1 OR "createdById" = $1', [userId])
     await manager.query('UPDATE "autocare_service_messages" SET "body" = NULL WHERE "senderId" = $1', [userId])
-    await manager.query('DELETE FROM "autocare_service_attachments" WHERE "uploadedById" = $1', [userId])
     await manager.query('UPDATE "autocare_repair_events" SET "actorId" = NULL, "notes" = NULL, "metadata" = \'{}\' WHERE "actorId" = $1', [userId])
     return user
 }
@@ -186,7 +217,6 @@ export async function updateAdminDeletionRequestStatus(
         const repository = manager.getRepository(AccountDeletionRequestEntity)
         const deletionRequest = await repository
             .createQueryBuilder('request')
-            .leftJoinAndSelect('request.user', 'user')
             .where('request.id = :requestId', { requestId })
             .setLock('pessimistic_write')
             .getOne()
@@ -198,6 +228,16 @@ export async function updateAdminDeletionRequestStatus(
                 message: 'Account deletion request not found.',
             })
         }
+
+        const requestUser = await manager.getRepository(UserEntity).findOneBy({ id: deletionRequest.userId })
+        if (!requestUser) {
+            throw new AppError({
+                statusCode: 409,
+                code: ERROR_CODES.Conflict,
+                message: 'Account deletion request has no active account.',
+            })
+        }
+        deletionRequest.user = requestUser
 
         if (deletionRequest.status === status) {
             outcome = 'reused'

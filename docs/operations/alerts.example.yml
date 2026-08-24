@@ -1,0 +1,24 @@
+# Provider-neutral alert policy. Translate these rules into the configured
+# deployment monitor (Render, Grafana/Prometheus, Better Stack, etc.) and
+# point every critical alert at an on-call owner before enabling a market.
+# `synthetic_health_ready_success` and `backup_age_seconds` are supplied by
+# external synthetic/backup monitors; the application does not fabricate them.
+groups:
+  - name: autocare-platform
+    rules:
+      - alert: AutoCareApiUnavailable
+        expression: synthetic_health_ready_success != 1 for 5m
+        severity: critical
+        runbook: docs/INCIDENT_RUNBOOK.md
+      - alert: AutoCareOutboxDeadLetter
+        expression: outbox_readiness_threshold_breach{reason="dead_letter"} > 0 for 1m
+        severity: critical
+        runbook: docs/OBSERVABILITY.md
+      - alert: AutoCareAttachmentQuarantineFailure
+        expression: maintenance_autocare_attachment_cleanup_total{outcome="failed"} > 0 for 5m
+        severity: critical
+        runbook: docs/operations/BOOKING_MEDIA_RELIABILITY_STATUS_2026-08-24.md
+      - alert: AutoCareBackupExpired
+        expression: backup_age_seconds > 93600 for 15m
+        severity: critical
+        runbook: docs/operations/BACKUP_RESTORE_RUNBOOK.md

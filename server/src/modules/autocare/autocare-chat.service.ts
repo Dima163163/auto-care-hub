@@ -100,8 +100,8 @@ async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEn
     // super-admin; staff access is granted through an explicit support thread.
     if ((user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return
     if (thread.clientId === user.id) return
-    if (user.role === UserRole.Owner && thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return
-    if (user.role === UserRole.Owner && thread.providerId) {
+    if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return
+    if (thread.providerId) {
         const provider = await providerForThread(thread)
         const request = thread.requestId
             ? await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: thread.requestId, providerId: thread.providerId })
@@ -159,25 +159,27 @@ async function toThreadResponse(user: UserEntity, thread: AutoCareChatThreadEnti
 export async function getMyAutoCareChats(user: UserEntity) {
     const repository = AppDataSource.getRepository(AutoCareChatThreadEntity)
     let threads: AutoCareChatThreadEntity[] = []
+    const scopes = await getManagedProviderScopes(user.id)
     if (user.role === UserRole.Client) {
         threads = await repository.find({ where: { clientId: user.id }, order: { updatedAt: 'DESC' } })
-    } else if (user.role === UserRole.Owner) {
-        const scopes = await getManagedProviderScopes(user.id)
+    }
+    if (scopes.length > 0) {
         const providerIds = scopes.map(({ providerId }) => providerId)
-        threads = providerIds.length
+        const providerThreads = providerIds.length
             ? await repository.find({ where: [{ providerId: In(providerIds) }, { createdById: user.id }], order: { updatedAt: 'DESC' } })
             : await repository.find({ where: { createdById: user.id }, order: { updatedAt: 'DESC' } })
-        const requestIds = threads.flatMap((thread) => thread.requestId ? [thread.requestId] : [])
+        const requestIds = providerThreads.flatMap((thread) => thread.requestId ? [thread.requestId] : [])
         const requests = requestIds.length
             ? await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { id: In(requestIds) }, select: { id: true, providerId: true, locationId: true } })
             : []
         const requestById = new Map(requests.map((request) => [request.id, request]))
-        threads = threads.filter((thread) => {
+        const visibleProviderThreads = providerThreads.filter((thread) => {
             if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return true
             if (!thread.providerId) return false
             const request = thread.requestId ? requestById.get(thread.requestId) : null
             return isManagedProviderLocationAllowed(scopes, thread.providerId, request?.locationId ?? null)
         })
+        threads = [...new Map([...threads, ...visibleProviderThreads].map((thread) => [thread.id, thread])).values()]
     } else if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
         threads = await repository.find({ where: [{ type: AutoCareChatThreadType.Support }, { type: AutoCareChatThreadType.AdminEscalation }], order: { updatedAt: 'DESC' } })
     }
@@ -197,11 +199,13 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
         return toThreadResponse(user, thread)
     }
     if (input.type === 'support') {
-        assertRole(user, [UserRole.Client, UserRole.Owner], 'Only clients and service owners can open a support chat.')
+        const managesProvider = input.providerId
+            ? (await getManagedProviderScopes(user.id)).some((scope) => scope.providerId === input.providerId)
+            : false
+        if (user.role !== UserRole.Client && !managesProvider) fail(403, 'Only clients and service workspace members can open a support chat.')
         if (input.providerId) {
-            assertRole(user, [UserRole.Owner], 'Only service owners can link support to a service.')
             const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId })
-            if (!provider || !(await canManageProvider(user.id, input.providerId))) fail(403, 'You do not manage this service.')
+            if (!provider || !managesProvider) fail(403, 'You do not manage this service.')
         }
         const clientId = user.role === UserRole.Client ? user.id : null
         const existing = await repository.findOne({
@@ -478,7 +482,7 @@ export async function getAutoCareChatThreadForRequest(user: UserEntity, requestI
     if (!request) fail(404, 'Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (user.role !== UserRole.Owner || !provider || !(await canManageProvider(user.id, provider.id, request.locationId))) fail(403, 'You do not have access to this request chat.')
+        if (!provider || !(await canManageProvider(user.id, provider.id, request.locationId))) fail(403, 'You do not have access to this request chat.')
     }
     const thread = await ensureAutoCareRequestChatThread(request)
     return toThreadResponse(user, thread)

@@ -727,6 +727,10 @@ export const ruTranslations = {
                 title: 'Статус отзыва изменён',
                 message: 'Статус вашего отзыва для кабинета «{{cabinetTitle}}»: {{status}}.',
             },
+            appealDecided: {
+                title: 'Апелляция рассмотрена',
+                message: 'Апелляция по разделу «{{subject}}» рассмотрена: {{status}}.',
+            },
         },
     },
     emails: {

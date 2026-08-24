@@ -1,5 +1,6 @@
 import type {
     AutomotiveMarketEntity,
+    AutomotiveMarketCountryEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveServiceDefinitionEntity,
@@ -10,6 +11,7 @@ import type {
     AutoCareLocationResponse,
     AutoCareLocationZoneResponse,
     AutoCareMarketResponse,
+    AutoCareMarketCountryResponse,
     AutoCareOfferResponse,
     AutoCareProviderResponse,
     AutoCareProviderResultResponse,
@@ -47,7 +49,24 @@ export function toMarketResponse(entity: AutomotiveMarketEntity): AutoCareMarket
         defaultLocale: entity.defaultLocale,
         supportedLocales: entity.supportedLocales,
         timezone: entity.timezone,
+        capabilities: entity.capabilities ?? {},
+        legalLinks: entity.legalLinks ?? {},
         launchReady: entity.launchReady,
+    }
+}
+
+export function toMarketCountryResponse(entity: AutomotiveMarketCountryEntity): AutoCareMarketCountryResponse {
+    return {
+        id: entity.id,
+        code: entity.code,
+        names: entity.names ?? {},
+        defaultLocale: entity.defaultLocale,
+        supportedLocales: entity.supportedLocales,
+        timezone: entity.timezone,
+        currencyCode: entity.currencyCode,
+        capabilities: entity.capabilities ?? {},
+        legalLinks: entity.legalLinks ?? {},
+        active: entity.active,
     }
 }
 
@@ -88,6 +107,8 @@ export function toLocationZoneResponse(entity: AutomotiveLocationZoneEntity, ser
         centerLongitude: toNullableNumber(entity.centerLongitude),
         radiusKm: toNullableNumber(entity.radiusKm),
         imageUrl: entity.imageUrl,
+        displayOrder: entity.displayOrder,
+        active: entity.active,
         serviceCount: toNumber(serviceCount),
     }
 }

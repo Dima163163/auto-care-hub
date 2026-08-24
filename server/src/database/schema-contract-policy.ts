@@ -35,10 +35,12 @@ export const REQUIRED_SCHEMA_TABLES: readonly SchemaTable[] = [
     { tableName: 'autocare_bonus_accounts' },
     { tableName: 'autocare_bonus_ledger' },
     { tableName: 'autocare_provider_invitations' },
+    { tableName: 'autocare_provider_daily_metrics' },
     { tableName: 'autocare_provider_change_requests' },
     { tableName: 'autocare_catalog_gap_requests' },
     { tableName: 'autocare_chat_reports' },
     { tableName: 'autocare_chat_blocks' },
+    { tableName: 'autocare_market_countries' },
     { tableName: 'migrations' },
 ]
 
@@ -79,6 +81,10 @@ export const REQUIRED_SCHEMA_COLUMNS: readonly SchemaColumn[] = [
     { tableName: 'autocare_bonus_ledger', columnName: 'idempotencyKey' },
     { tableName: 'autocare_provider_invitations', columnName: 'tokenHash' },
     { tableName: 'autocare_provider_invitations', columnName: 'expiresAt' },
+    { tableName: 'autocare_provider_daily_metrics', columnName: 'providerId' },
+    { tableName: 'autocare_provider_daily_metrics', columnName: 'day' },
+    { tableName: 'autocare_provider_daily_metrics', columnName: 'impressions' },
+    { tableName: 'autocare_provider_daily_metrics', columnName: 'profileOpens' },
     { tableName: 'autocare_provider_change_requests', columnName: 'providerId' },
     { tableName: 'autocare_provider_change_requests', columnName: 'kind' },
     { tableName: 'autocare_provider_change_requests', columnName: 'status' },
@@ -92,6 +98,12 @@ export const REQUIRED_SCHEMA_COLUMNS: readonly SchemaColumn[] = [
     { tableName: 'autocare_chat_blocks', columnName: 'threadId' },
     { tableName: 'autocare_chat_blocks', columnName: 'blockedUserId' },
     { tableName: 'autocare_chat_blocks', columnName: 'status' },
+    { tableName: 'autocare_market_countries', columnName: 'code' },
+    { tableName: 'autocare_market_countries', columnName: 'capabilities' },
+    { tableName: 'autocare_market_countries', columnName: 'legalLinks' },
+    { tableName: 'autocare_markets', columnName: 'countryId' },
+    { tableName: 'autocare_markets', columnName: 'capabilities' },
+    { tableName: 'autocare_markets', columnName: 'legalLinks' },
 ]
 
 export function getMissingSchemaTables(
@@ -179,6 +191,7 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
     { tableName: 'autocare_provider_invitations', indexName: 'IDX_autocare_provider_invitations_email_status' },
     { tableName: 'autocare_provider_invitations', indexName: 'UQ_autocare_provider_invitations_token_hash', unique: true },
     { tableName: 'autocare_provider_invitations', indexName: 'UQ_autocare_provider_invitations_pending_scope', unique: true },
+    { tableName: 'autocare_provider_daily_metrics', indexName: 'UQ_autocare_provider_daily_metrics_provider_day', unique: true, columns: ['providerId', 'day'] },
     { tableName: 'autocare_provider_change_requests', indexName: 'IDX_autocare_provider_change_requests_provider_status' },
     { tableName: 'autocare_provider_change_requests', indexName: 'IDX_autocare_provider_change_requests_kind_status' },
     { tableName: 'autocare_provider_change_requests', indexName: 'UQ_autocare_provider_change_requests_pending_kind', unique: true },
@@ -191,6 +204,8 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
     { tableName: 'autocare_chat_blocks', indexName: 'IDX_autocare_chat_blocks_thread_status' },
     { tableName: 'autocare_chat_blocks', indexName: 'IDX_autocare_chat_blocks_blocked_status' },
     { tableName: 'autocare_chat_blocks', indexName: 'UQ_autocare_chat_blocks_scope', unique: true },
+    { tableName: 'autocare_market_countries', indexName: 'UQ_autocare_market_countries_code', unique: true, columns: ['code'] },
+    { tableName: 'autocare_markets', indexName: 'IDX_autocare_markets_country', columns: ['countryId', 'cityName'] },
 ]
 
 export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
@@ -305,6 +320,8 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
         constraintName: 'FK_autocare_provider_invitations_invited_by',
         onDelete: 'RESTRICT',
     },
+    { tableName: 'autocare_provider_daily_metrics', constraintName: 'CHK_autocare_provider_daily_metrics_nonnegative' },
+    { tableName: 'autocare_provider_daily_metrics', constraintName: 'FK_autocare_provider_daily_metrics_provider', onDelete: 'CASCADE' },
     { tableName: 'autocare_chat_reports', constraintName: 'CHK_autocare_chat_reports_description' },
     { tableName: 'autocare_chat_reports', constraintName: 'CHK_autocare_chat_reports_reason' },
     { tableName: 'autocare_chat_blocks', constraintName: 'CHK_autocare_chat_blocks_distinct_users' },
@@ -315,6 +332,7 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
     { tableName: 'autocare_chat_blocks', constraintName: 'FK_autocare_chat_blocks_thread', onDelete: 'CASCADE' },
     { tableName: 'autocare_chat_blocks', constraintName: 'FK_autocare_chat_blocks_blocker', onDelete: 'RESTRICT' },
     { tableName: 'autocare_chat_blocks', constraintName: 'FK_autocare_chat_blocks_blocked_user', onDelete: 'CASCADE' },
+    { tableName: 'autocare_markets', constraintName: 'FK_autocare_markets_country', onDelete: 'RESTRICT' },
 ]
 
 export function getMissingSchemaColumns(

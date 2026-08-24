@@ -15,15 +15,16 @@ import { closeServiceChatGateway, sendServiceChatEvent, subscribeServiceChat } f
 import { createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatBlock, createAutoCareChatMessage, createAutoCareChatReport, getAutoCareChat, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, getMyAutoCareChats, markAutoCareChatRead, revokeAutoCareChatBlock } from './autocare-chat.service.js'
 import { createAutoCareBroadcastOffer, createAutoCareBroadcastRequest, createAutoCareExpertQuestion, createAutoCareFleet, createAutoCareFleetVehicle, createAutoCareGuaranteeClaim, getAutoCareFairPrice, getAutoCareProviderTrust, getAutoCareRepairTimeline, getMyAutoCareBroadcastRequests, getMyAutoCareExpertQuestions, getMyAutoCareFleets, getMyAutoCareGuaranteeClaims, getOwnerAutoCareBroadcastRequests, getAutoCareBroadcastRequest } from './autocare-marketplace.service.js'
 import { addAutoCareFavorite, getMyAutoCareFavorites, removeAutoCareFavorite, syncAutoCareFavorites } from './autocare-favorites.service.js'
-import { getMyAutoCareBonusAccounts, getOwnerAutoCareBonusProgram, grantAutoCareBonus, redeemAutoCareBonus, upsertOwnerAutoCareBonusProgram } from './autocare-bonus.service.js'
+import { getMyAutoCareBonusAccounts, getOwnerAutoCareBonusLiability, getOwnerAutoCareBonusProgram, grantAutoCareBonus, redeemAutoCareBonus, upsertOwnerAutoCareBonusProgram } from './autocare-bonus.service.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import { AutoCareChatReportCategory } from '../../entities/automotive/chat-moderation.entity.js'
-import { getOwnerAutoCareProviderAnalytics } from './autocare-analytics.service.js'
+import { getOwnerAutoCareProviderAnalytics, recordAutoCareProviderProfileOpen } from './autocare-analytics.service.js'
 import { acceptProviderInvitation, createOwnerProviderInvitation, listOwnerProviderMemberships, revokeOwnerProviderInvitation, revokeOwnerProviderMembership } from './provider-membership.service.js'
 import { cancelOwnerProviderChangeRequest, createOwnerProviderChangeRequest, listOwnerProviderChangeRequests } from './provider-change-request.service.js'
 import { createAutoCareCatalogGapRequest } from './catalog-gap.service.js'
 import { createAutoCareAppeal, getMyAutoCareAppeals, withdrawAutoCareAppeal } from './appeal.service.js'
+import { getOwnerWorkspaceAccess } from './provider-access.service.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:request-transition', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -108,7 +109,12 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return addAutoCareFavorite(await requireAuth(request), params.providerId, validateBody(createAutoCareFavoriteSchema, request.body).locationId)
     })
     app.delete('/v1/favorites/providers/:providerId', { preHandler: autoCareMutationRateLimit }, async (request) => removeAutoCareFavorite(await requireAuth(request), validateParams(autoCareFavoriteParamsSchema, request.params).providerId))
-    app.get('/v1/providers/:providerId', async (request) => getAutoCareProviderProfile(validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/v1/providers/:providerId', async (request) => {
+        const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
+        const profile = await getAutoCareProviderProfile(providerId)
+        void recordAutoCareProviderProfileOpen(providerId)
+        return profile
+    })
     app.get('/v1/providers/:providerId/reviews', async (request) => {
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const query = validateQuery(autoCareProviderReviewsQuerySchema, request.query)
@@ -131,6 +137,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return redeemAutoCareBonus(user, validateBody(redeemAutoCareBonusSchema, request.body), getOptionalIdempotencyKey(request.headers) ?? null)
     })
     app.get('/owner/autocare-providers', async (request) => getOwnerAutoCareProviders(await requireVerifiedEmail(request)))
+    app.get('/owner/workspace-access', async (request) => getOwnerWorkspaceAccess((await requireVerifiedEmail(request)).id))
     app.get('/owner/autocare-providers/:providerId/members', async (request) => listOwnerProviderMemberships(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.post('/owner/autocare-providers/:providerId/members/invitations', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
@@ -159,6 +166,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
     })
     app.get('/owner/autocare-providers/:providerId/analytics', async (request) => getOwnerAutoCareProviderAnalytics(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.get('/owner/autocare-providers/:providerId/bonus-program', async (request) => getOwnerAutoCareBonusProgram(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/owner/autocare-providers/:providerId/bonus-liability', async (request) => getOwnerAutoCareBonusLiability(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.put('/owner/autocare-providers/:providerId/bonus-program', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
         return upsertOwnerAutoCareBonusProgram(await requireVerifiedEmail(request), providerId, validateBody(ownerAutoCareBonusProgramSchema, request.body))

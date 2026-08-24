@@ -80,6 +80,10 @@ export const roTranslations = {
                 title: 'Moderarea recenziei a fost actualizată',
                 message: 'Statusul recenziei pentru „{{cabinetTitle}}” este acum {{status}}.',
             },
+            appealDecided: {
+                title: 'Contestația a fost soluționată',
+                message: 'Contestația pentru „{{subject}}” a fost {{status}}.',
+            },
         },
     },
     emails: {
