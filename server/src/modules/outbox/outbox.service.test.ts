@@ -148,6 +148,42 @@ describe('outbox processing', () => {
         })
     })
 
+    it('dispatches a localized AutoCare visit reminder email through the outbox', async () => {
+        const reminderKey = `test-autocare-visit-reminder:${suffix}`
+        const mailer = {
+            send: vi.fn().mockResolvedValue(undefined),
+            verify: vi.fn().mockResolvedValue(undefined),
+        }
+
+        await enqueueOutboxEvent({
+            type: 'email.send',
+            idempotencyKey: reminderKey,
+            payload: {
+                template: 'autocare_visit_reminder',
+                requestId: '423e4567-e89b-42d3-a456-426614174000',
+                toEmail: `autocare-reminder-${suffix}@example.com`,
+                recipientName: 'Иван',
+                providerName: 'ProService',
+                serviceTitle: 'Замена масла',
+                date: '24 августа 2026 г.',
+                startTime: '10:30',
+                frontendOrigin: 'https://autocarehub.example.com',
+                locale: 'ru',
+            },
+        })
+
+        const event = await processOutboxUntilCompleted(reminderKey, mailer)
+
+        expect(event.status).toBe(OutboxEventStatus.Completed)
+        expect(mailer.send).toHaveBeenCalledWith(expect.objectContaining({
+            to: `autocare-reminder-${suffix}@example.com`,
+            subject: 'Напоминание о визите в автосервис',
+            text: expect.stringContaining('Замена масла'),
+        }))
+
+        await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey: reminderKey })
+    })
+
     it('erases auth secrets from persisted payloads after successful dispatch', async () => {
         const authEmailIdempotencyKey = `test-password-setup:${suffix}`
         const token = 'auth-token-value-that-is-long-enough-for-the-security-flow'

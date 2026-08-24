@@ -19,6 +19,13 @@ import { assertMailModeAllowed } from './mail-config-policy.js'
 import { normalizeRuntimeMode, type RuntimeMode } from './runtime-mode-policy.js'
 import { resolveCabinetUploadsDir } from './cabinet-uploads-path.js'
 import {
+    assertProductionAutoCareAttachmentPolicy,
+    resolveAutoCareAttachmentAntivirusMode,
+    resolveAutoCareAttachmentStorageProvider,
+    type AutoCareAttachmentAntivirusMode,
+    type AutoCareAttachmentStorageProvider,
+} from '../modules/autocare/attachment-storage-policy.js'
+import {
     DEFAULT_BOOKING_REMINDER_HOURS,
     MAX_BOOKING_REMINDER_HOURS,
 } from '../modules/jobs/booking-reminder-policy.js'
@@ -58,6 +65,21 @@ export type EnvConfig = {
     cabinetPhotoAllowedHosts: string[]
     cabinetImageStorageProvider: 'filesystem' | 's3'
     cabinetUploadsDir: string
+    autoCareAttachments: {
+        storageProvider: AutoCareAttachmentStorageProvider
+        retentionDays: number
+        signedUrlTtlSeconds: number
+        antivirusMode: AutoCareAttachmentAntivirusMode
+        clamavCommand: string
+        s3: {
+            endpoint: string | null
+            region: string
+            bucket: string | null
+            accessKeyId: string | null
+            secretAccessKey: string | null
+            forcePathStyle: boolean
+        }
+    }
     corsOrigins: string[]
     frontendOrigin: string
     deployment: DeploymentCapabilities
@@ -517,6 +539,27 @@ const securityEventIpRetentionDays = normalizeSecurityEventIpRetentionDays(
     ),
     auditLogRetentionDays,
 )
+const autoCareAttachmentStorageProvider = resolveAutoCareAttachmentStorageProvider(
+    process.env.AUTOCARE_ATTACHMENT_STORAGE_PROVIDER,
+)
+const autoCareAttachmentAntivirusMode = resolveAutoCareAttachmentAntivirusMode(
+    process.env.AUTOCARE_ATTACHMENT_ANTIVIRUS_MODE,
+)
+assertProductionAutoCareAttachmentPolicy({
+    nodeEnv,
+    storageProvider: autoCareAttachmentStorageProvider,
+    antivirusMode: autoCareAttachmentAntivirusMode,
+})
+const autoCareAttachmentS3Configured = autoCareAttachmentStorageProvider === 's3'
+const autoCareAttachmentS3Bucket = autoCareAttachmentS3Configured
+    ? getRequiredEnv('AUTOCARE_ATTACHMENT_S3_BUCKET')
+    : null
+const autoCareAttachmentS3AccessKeyId = autoCareAttachmentS3Configured
+    ? getRequiredEnv('AUTOCARE_ATTACHMENT_S3_ACCESS_KEY_ID')
+    : null
+const autoCareAttachmentS3SecretAccessKey = autoCareAttachmentS3Configured
+    ? getRequiredEnv('AUTOCARE_ATTACHMENT_S3_SECRET_ACCESS_KEY')
+    : null
 
 export const env: EnvConfig = {
     nodeEnv,
@@ -529,6 +572,23 @@ export const env: EnvConfig = {
         process.env.CABINET_IMAGE_STORAGE_PROVIDER,
     ),
     cabinetUploadsDir: resolveCabinetUploadsDir(process.env.CABINET_UPLOADS_DIR),
+    autoCareAttachments: {
+        storageProvider: autoCareAttachmentStorageProvider,
+        retentionDays: getBoundedPositiveNumberEnv('AUTOCARE_ATTACHMENT_RETENTION_DAYS', 365, 3_650),
+        signedUrlTtlSeconds: getBoundedPositiveNumberEnv('AUTOCARE_ATTACHMENT_SIGNED_URL_TTL_SECONDS', 300, 3_600),
+        antivirusMode: autoCareAttachmentAntivirusMode,
+        clamavCommand: getOptionalEnv('AUTOCARE_ATTACHMENT_CLAMAV_COMMAND', 'clamdscan'),
+        s3: {
+            endpoint: isValidEnvString(process.env.AUTOCARE_ATTACHMENT_S3_ENDPOINT)
+                ? process.env.AUTOCARE_ATTACHMENT_S3_ENDPOINT!.trim()
+                : null,
+            region: getOptionalEnv('AUTOCARE_ATTACHMENT_S3_REGION', 'us-east-1'),
+            bucket: autoCareAttachmentS3Bucket,
+            accessKeyId: autoCareAttachmentS3AccessKeyId,
+            secretAccessKey: autoCareAttachmentS3SecretAccessKey,
+            forcePathStyle: getBooleanEnv('AUTOCARE_ATTACHMENT_S3_FORCE_PATH_STYLE', false),
+        },
+    },
     corsOrigins,
     frontendOrigin: normalizeFrontendOrigin(
         getOptionalEnv('FRONTEND_ORIGIN', defaultFrontendOrigin),

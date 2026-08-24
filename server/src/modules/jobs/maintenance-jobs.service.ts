@@ -3,10 +3,15 @@ import { Between, In, ObjectLiteral, Repository, type FindOptionsWhere } from 't
 import { AppDataSource } from '../../database/data-source.js'
 import { BookingEntity, BookingStatus } from '../../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
-import { AutomotiveProviderEntity } from '../../entities/automotive/automotive.entity.js'
+import {
+    AutomotiveProviderEntity,
+    AutomotiveServiceDefinitionEntity,
+    AutomotiveServiceLocationEntity,
+} from '../../entities/automotive/automotive.entity.js'
 import { ServiceAttachmentEntity, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { UserEntity } from '../../entities/user/user.entity.js'
 import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { SecurityEventEntity } from '../../entities/security-event/security-event.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
@@ -20,11 +25,15 @@ import { env } from '../../config/env.js'
 import { cleanupOrphanedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { cleanupOrphanedAutoCareProviderLogos } from '../autocare/autocare-provider-logo-storage.js'
 import { cleanupOrphanedAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
-import { cleanupOrphanedAutoCareAttachmentObjects } from '../autocare/autocare-attachment-storage.js'
+import {
+    cleanupExpiredAutoCareAttachments,
+    cleanupOrphanedAutoCareAttachmentObjects,
+} from '../autocare/autocare-attachment-storage.js'
 import { addDays, zonedDateTimeToInstant } from '../../shared/date-time/cabinet-timezone.js'
 import { enqueueOutboxEvent, processOutboxBatch } from '../outbox/outbox.service.js'
 import { enqueueNotification } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
+import { shouldDeliverNotification } from '../notifications/notification-preferences.js'
 import type { Mailer } from '../../shared/mail/mailer.js'
 import type { MaintenanceLease } from './maintenance-lease.service.js'
 import { metrics } from '../../shared/observability/metrics.js'
@@ -228,25 +237,81 @@ export async function scheduleAutoCareReminders(
         take: MAX_MAINTENANCE_REMINDER_CANDIDATES,
         order: { preferredAt: 'ASC', createdAt: 'ASC' },
     })
+    const clientIds = [...new Set(requests.map((request) => request.clientId))]
+    const providerIds = [...new Set(requests.map((request) => request.providerId))]
+    const definitionIds = [...new Set(requests.map((request) => request.definitionId))]
+    const locationIds = [...new Set(requests.map((request) => request.locationId))]
+    const [clients, providers, definitions, locations] = await Promise.all([
+        AppDataSource.getRepository(UserEntity).findBy({ id: In(clientIds) }),
+        AppDataSource.getRepository(AutomotiveProviderEntity).findBy({ id: In(providerIds) }),
+        AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findBy({ id: In(definitionIds) }),
+        AppDataSource.getRepository(AutomotiveServiceLocationEntity).findBy({ id: In(locationIds) }),
+    ])
+    const clientsById = new Map(clients.map((client) => [client.id, client]))
+    const providersById = new Map(providers.map((provider) => [provider.id, provider]))
+    const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]))
+    const locationsById = new Map(locations.map((location) => [location.id, location]))
     let scheduled = 0
 
     for (const request of requests) {
         assertLease?.()
         if (!request.preferredAt) continue
+        const client = clientsById.get(request.clientId)
+        const provider = providersById.get(request.providerId)
+        const definition = definitionsById.get(request.definitionId)
+        const location = locationsById.get(request.locationId)
+        if (!client || !provider || !definition || !location) continue
         await enqueueNotification({
             userId: request.clientId,
             category: NotificationCategory.Booking,
-            title: 'Напоминание о визите',
-            message: 'Завтра у вас подтверждён визит в автосервис. Откройте заявку, чтобы проверить детали.',
-            link: `/requests/${request.id}`,
+            template: { key: 'autocare.visit_reminder' },
+            link: `/profile/bookings?request=${request.id}`,
             metadata: { requestId: request.id, preferredAt: request.preferredAt.toISOString(), domain: 'autocare' },
         }, `autocare-reminder:${request.id}:${request.preferredAt.toISOString()}`)
+        if (shouldDeliverNotification(NotificationCategory.Booking, client, 'email')) {
+            const visit = formatAutoCareReminderVisit(request.preferredAt, client.locale ?? 'en', location.timezone)
+            await enqueueOutboxEvent({
+                type: 'email.send',
+                idempotencyKey: `email:autocare-reminder:${request.id}:${request.preferredAt.toISOString()}`,
+                payload: {
+                    template: 'autocare_visit_reminder',
+                    requestId: request.id,
+                    toEmail: client.email,
+                    recipientName: client.name,
+                    providerName: provider.name,
+                    serviceTitle: definition.labels[client.locale ?? 'en'] ?? definition.labels.en ?? definition.slug,
+                    date: visit.date,
+                    startTime: visit.startTime,
+                    frontendOrigin: env.frontendOrigin,
+                    locale: client.locale,
+                },
+            })
+        }
         scheduled += 1
     }
 
     metrics.setGauge('maintenance_autocare_reminders_last_scheduled', scheduled)
     metrics.increment('maintenance_autocare_reminders_scheduled_total', scheduled)
     return scheduled
+}
+
+function formatAutoCareReminderVisit(
+    startsAt: Date,
+    locale: string,
+    timezone: string,
+) {
+    const date = new Intl.DateTimeFormat(locale, {
+        dateStyle: 'long',
+        timeZone: timezone,
+    }).format(startsAt)
+    const startTime = new Intl.DateTimeFormat(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+        timeZone: timezone,
+    }).format(startsAt)
+
+    return { date, startTime }
 }
 
 export async function cleanupExpiredAuthData(now = new Date()) {
@@ -522,6 +587,17 @@ export async function cleanupOrphanedCabinetImageFiles(now = new Date()) {
     metrics.setGauge('maintenance_autocare_attachment_objects_failed', attachmentCleanup.failed)
     metrics.increment('maintenance_autocare_attachment_cleanup_total', attachmentCleanup.removed, { outcome: 'removed' })
     metrics.increment('maintenance_autocare_attachment_cleanup_total', attachmentCleanup.failed, { outcome: 'failed' })
+
+    const attachmentRetention = await cleanupExpiredAutoCareAttachments({
+        now,
+        retentionDays: env.autoCareAttachments.retentionDays,
+        batchSize: getMaintenanceDeleteBatchSize(),
+    })
+    metrics.setGauge('maintenance_autocare_attachment_retention_scanned', attachmentRetention.scanned)
+    metrics.setGauge('maintenance_autocare_attachment_retention_removed', attachmentRetention.removed)
+    metrics.setGauge('maintenance_autocare_attachment_retention_failed', attachmentRetention.failed)
+    metrics.increment('maintenance_autocare_attachment_retention_total', attachmentRetention.removed, { outcome: 'removed' })
+    metrics.increment('maintenance_autocare_attachment_retention_total', attachmentRetention.failed, { outcome: 'failed' })
 
     return result
 }

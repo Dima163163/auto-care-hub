@@ -231,6 +231,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/chats/:chatId/attachments/:attachmentId', async (request, reply) => {
         const params = validateParams(autoCareChatParamsSchema.extend({ attachmentId: autoCareServiceAttachmentParamsSchema.shape.attachmentId }), request.params)
         const attachment = await getAutoCareChatAttachment(await requireAuth(request), params.chatId, params.attachmentId)
+        if (attachment.signedUrl) return reply.redirect(attachment.signedUrl)
         return reply
             .header('cache-control', 'private, no-store')
             .header('x-content-type-options', 'nosniff')
@@ -337,6 +338,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/service-requests/:requestId/attachments/:attachmentId', async (request, reply) => {
         const params = validateParams(autoCareServiceAttachmentParamsSchema, request.params)
         const attachment = await getAutoCareServiceAttachment(await requireAuth(request), params.requestId, params.attachmentId)
+        if (attachment.signedUrl) return reply.redirect(attachment.signedUrl)
         return reply
             .header('cache-control', 'private, no-store')
             .header('x-content-type-options', 'nosniff')

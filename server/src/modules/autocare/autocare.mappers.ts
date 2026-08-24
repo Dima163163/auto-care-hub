@@ -62,6 +62,7 @@ export function toLocationResponse(entity: AutomotiveServiceLocationEntity): Aut
         zoneId: entity.zoneId,
         address: entity.address,
         hours: entity.hours,
+        appointmentCapacity: entity.appointmentCapacity,
         timezone: entity.timezone,
         weeklySchedule: entity.weeklySchedule,
         blackoutDates: entity.blackoutDates,

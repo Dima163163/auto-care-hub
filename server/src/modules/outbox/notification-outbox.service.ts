@@ -1,5 +1,8 @@
 import type { EntityManager } from 'typeorm'
 
+import type { SupportedLocale } from '../../config/i18n.js'
+import { AppDataSource } from '../../database/data-source.js'
+import { UserEntity } from '../../entities/user/user.entity.js'
 import type { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { logError } from '../../shared/observability/logger.js'
 import {
@@ -20,6 +23,7 @@ type EnqueueNotificationInput = {
     }
     link?: string | null
     metadata?: Record<string, unknown>
+    locale?: SupportedLocale
 }
 
 export async function enqueueNotificationSafely(
@@ -42,10 +46,12 @@ export async function enqueueNotification(
     idempotencyKey: string,
     manager?: EntityManager,
 ) {
+    const locale = input.locale ?? await resolveNotificationLocale(input.userId, manager)
     const renderedTemplate = input.template
         ? renderNotificationTemplate(
             input.template.key,
             input.template.params,
+            locale,
         )
         : undefined
     const title = input.title ?? renderedTemplate?.title
@@ -70,9 +76,23 @@ export async function enqueueNotification(
                     ? {
                         templateKey: input.template.key,
                         templateParams: input.template.params ?? {},
+                        templateLocale: locale,
                     }
                     : {}),
             },
         },
     }, manager)
+}
+
+async function resolveNotificationLocale(
+    userId: string,
+    manager?: EntityManager,
+): Promise<SupportedLocale | undefined> {
+    const repository = (manager ?? AppDataSource.manager).getRepository(UserEntity)
+    const user = await repository.findOne({
+        where: { id: userId },
+        select: { locale: true },
+    })
+
+    return user?.locale ?? undefined
 }

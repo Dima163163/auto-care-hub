@@ -190,7 +190,7 @@ work.
 | Home `/` | Desktop home is approved and locked: map hero, search form, comparison cards, category/location blocks, partner CTA, reviews and app promotion are implemented. Location and comparison blocks now expose reserved skeletons, localized empty states and inline retry actions without changing the approved composition. | Do not redesign desktop home; add stale/offline copy and long-localized-content fixtures only. |
 | Discovery `/services` | Interactive dark map, automotive SVG markers, filter UI, selected-filter clearing, brand specialization, comparison tray and eight-result pagination are implemented. Real discovery now applies market/zone scope, radius, price/rating/type, availability-by-schedule, warranty, bonus, inclusion, verification and multibrand filters with stable cursor sorting. The accepted launch strategy is portable PostgreSQL BBOX + exact SQL distance with composite indexes, bounded candidates, cursor pagination and discovery rate limiting; `benchmark:discovery` is the market-release gate. On narrow screens the map is ordered immediately below the filter form and before the provider list; desktop keeps the two-column list/map composition. | Run the benchmark against restored production-like data before a market launch; add model/year compatibility once provider specialization data is persisted. |
 | Provider profile `/services/:id` | Public profile API, approved hero/gallery layout, service offers, amenities, map, live availability, public approved review aggregates/media, provider inquiry chat with image attachments and authenticated provider favorites are implemented. Contact data now preserves all provider phone numbers. Provider gallery media and verified reviews enter an auditable moderation-evidence queue; rejection removes the relevant public item. | Replace remaining demo vehicle/contact fallbacks and run the moderator queue against pilot media. |
-| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications, transactional repair events, timezone-aware schedules and locked overlap checks. | Add reminder delivery and production resource-capacity scheduling before pilot. |
+| Service request `/services/:id/request` | Durable request flow now includes client/provider-scoped reads, confirmations, provider estimates with client accept/decline, request conversation, image attachments, connected follow-up UI, idempotent creation, outbox-backed event notifications, transactional repair events, timezone-aware schedules and branch-capacity reservations. Accepted bookings lock the branch row and reject overlapping confirmations above its configured capacity; direct PostgreSQL concurrency tests cover instant and manual booking races. In-app and email reminders are localized and idempotently added to the outbox. | Configure the provider calendar/work queue, external push subscriptions and production delivery credentials; run the reminder worker against staging mail/push infrastructure before pilot. |
 | Owner acquisition `/for-owners` | Approved AutoCare business landing is implemented: generated workshop hero, request-preview panel, product benefits, onboarding steps and free-start CTA. | Connect registration to provider creation and replace preview metrics with owner API data. |
 | Client cabinet | AutoCare requests/bookings dashboard now includes API-backed service requests, conversation messages, preliminary estimate visibility and client accept/decline actions; persistent provider favorites and automotive review terminology are implemented; profile and notifications retain the shared account shell. Client profiles now support up to 20 vehicles with dependent make/model selectors, year, fuel, engine, horsepower, colour and optional VIN, including generated neutral vehicle imagery. | Connect saved vehicle IDs to inquiry/booking snapshots, add vehicle compatibility hints and provider-scoped bonuses, and remove remaining legacy booking/payment copy. |
 | Provider/admin workspaces | The owner dashboard now uses only AutoCare data: service locations, customer requests, conversion, confirmed estimates, rating and clear next actions. The administrator dashboard exposes an automotive moderation queue with API-backed provider status transitions and audit records plus an appeals queue with reasoned accept/reject decisions. A separate super-admin dashboard is protected by the `super_admin` role and surfaces markets, locales, access counts, trust signals and the future billing state. Desktop and mobile workspace navigation now point to these AutoCare destinations. The owner sidebar now includes one unified reviews workspace with all-branch/address filtering and aggregate rating distribution. Chat navigation and owner “open chat” actions are feature-flagged off during MVP development; review/request cards keep a phone-based “contact customer” action and the audited promo flow, while the chat routes and APIs remain available for later production enablement. Provider memberships now support owner/manager/staff scope with optional branch assignment. Workspace shells keep header and navigation fixed, scroll only the content pane, and intentionally omit the public footer on every cabinet tab. | Add membership-management UI, offer editing, calendar/reminders, completed-visit trust evidence, provider analytics and the super-admin grant/promo workflows. |
@@ -349,9 +349,10 @@ than informal follow-up notes.
     PostgreSQL/Redis integration profile is defined but still requires a
     runnable environment and staging evidence.
 - [~] Replace in-process chat fan-out with the Redis pub/sub bridge. The bridge
-  now waits for initialization before publishing, bounds realtime payloads and
-  has local gateway coverage; multi-replica reconnect/backfill still needs a
-  two-process smoke run.
+  waits for initialization before publishing, bounds realtime payloads and has
+  local gateway coverage plus `npm --prefix server run smoke:autocare-realtime`,
+  which verifies cross-process delivery. A Redis-enabled staging run and
+  reconnect/backfill evidence remain release gates.
 - [x] Add provider memberships, timezone-aware schedules, blackout dates and
   transactional slot-overlap checks; owner authorization accepts provider-wide
   or branch-scoped active memberships while legacy ownerId remains compatible.
@@ -363,6 +364,9 @@ than informal follow-up notes.
   release commands; concurrent DB authorization tests remain.
 - [~] Complete durable object storage/quarantine, resource-capacity
   reservations, PostGIS/keyset discovery and trust-score policy before pilot.
+  Branch-level capacity and production-gated S3/ClamAV quarantine are now
+  implemented; deployment evidence, resource-level capacity and the remaining
+  search/trust release checks are still required.
 
 ### 4.1 Reuse as platform foundation
 
@@ -871,8 +875,11 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
   location context.
 - [~] Implement hybrid booking modes: provider offerings persist `request` or
   `instant`; instant slots create a confirmed booking snapshot after schedule
-  validation and the owner editor can change the mode. A full calendar UI and
-  capacity-aware reservations remain before pilot.
+  validation and the owner editor can change the mode. A branch-level
+  `appointmentCapacity` is now locked transactionally for instant creation,
+  owner confirmation, quote acceptance and accepted reschedules; overlapping
+  requests beyond capacity return `409`, with PostgreSQL race coverage. A full
+  calendar UI and resource/specialist-level capacity remain before pilot.
 - [x] Implement idempotent AutoCare request creation; retain overlap protection for the scheduling slice.
 - [~] Implement explicit state transitions and actor permissions. Request,
   quote, service-offer and two-sided confirmation transitions now use locked
@@ -886,8 +893,10 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
 - [~] Update customer bookings dashboard and provider calendar/work queue.
   Customer requests, owner request inbox and owner analytics are connected;
   a capacity-aware provider calendar/work-queue view remains.
-- [~] Connect AutoCare request notifications to the transactional outbox; booking
-  reminders and localized service-request email/push templates remain open.
+- [~] Connect AutoCare request notifications to the transactional outbox;
+  localized in-app and email reminders are idempotently produced for confirmed
+  AutoCare visits. Browser push templates/subscriptions and operational mail
+  delivery verification remain open.
 - [~] Implement verified review eligibility, rating aggregation and the trust
   snapshot inputs described in the “Trust score, quality badges and organic
   visibility” policy. A closed AutoCare request now creates one pending
@@ -895,9 +904,10 @@ Goal: replace the cabinet booking flow with automotive booking workflows.
   reassessment is live, while trust snapshots and broader completed-visit
   evidence remain.
 - [~] Add concurrency, timezone, authorization and E2E tests.
-  Locked transition/slot-overlap logic, timezone unit tests and route-level
-  authorization tests are present; full PostgreSQL concurrency/E2E evidence is
-  still environment-gated.
+  Locked transition/slot-overlap logic, timezone unit tests, route-level
+  authorization tests and direct PostgreSQL races for instant/manual branch
+  capacity are present. Broader multi-actor request/reschedule and staging E2E
+  evidence remain environment-gated.
 
 Exit gate:
 
@@ -921,9 +931,11 @@ Goal: support complex services such as painting and body repair.
   WebSocket invalidation and `Idempotency-Key` replay protection; the workspace
   still needs an explicit “load older” control and cursor state.
 - [~] Add secure image attachments: allowlisted formats, decode/re-encode,
-  per-conversation size/count limits and orphan cleanup are implemented;
-  private object storage, signed access, malware quarantine and retention
-  backfill remain.
+  per-conversation size/count limits and orphan cleanup are implemented.
+  Production now requires S3-compatible private object storage plus ClamAV:
+  files are quarantined, scanned, promoted to a private key, served only by a
+  short-lived signed URL and removed by retention cleanup. Deployment-bucket,
+  scanner and retention rehearsal evidence remain a release gate.
 - [x] Add read markers, today/yesterday timestamps and notification events;
   delivery/read/attachment events are broadcast to the active chat channel.
 - [~] Add quote versions with items, totals/ranges, currency, expiry, notes,
@@ -937,8 +949,9 @@ Goal: support complex services such as painting and body repair.
 - [~] Add report/block/moderation workflows without routine admin access to
   private conversation content. Scoped report/block entities, participant
   authorization, admin metadata-only queue, optional moderation block and
-  mock/REST parity are implemented; owner/admin UI evidence and policy copy
-  remain before pilot.
+  mock/REST parity are implemented. The chat workspace stays hidden behind the
+  MVP feature flag; expose the report/block and admin queue UI only with the
+  approved chat rollout and policy copy.
 - [x] Use REST as the source of truth and add WebSocket delivery for live
   invalidation, with mock event parity, polling fallback and reconnect-safe
   refetch.

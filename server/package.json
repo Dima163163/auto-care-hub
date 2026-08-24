@@ -30,6 +30,7 @@
     "demo:seed": "tsx src/scripts/seed-demo-data.ts",
     "autocare:seed": "tsx src/scripts/seed-autocare-mock-data.ts",
     "benchmark:discovery": "tsx src/scripts/benchmark-autocare-discovery.ts",
+    "smoke:autocare-realtime": "tsx src/scripts/smoke-autocare-realtime.ts",
     "demo:reset": "tsx src/scripts/reset-demo-data.ts",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
@@ -39,20 +40,22 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1116.0",
+    "@aws-sdk/s3-request-presigner": "^3.1116.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/websocket": "^11.3.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "fastify": "^5.8.5",
+    "fastify": "^5.12.1",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^8.0.11",
+    "nodemailer": "^9.0.5",
     "pg": "^8.21.0",
     "reflect-metadata": "^0.2.2",
     "sharp": "^0.35.3",
-    "typeorm": "^0.3.30",
+    "typeorm": "^0.3.31",
     "ws": "^8.21.3",
     "zod": "^4.4.3"
   },
@@ -74,5 +77,10 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.8",
     "vitest-tsconfig-paths": "^3.4.1"
+  },
+  "overrides": {
+    "brace-expansion": "2.1.4",
+    "fast-uri": "3.1.6",
+    "find-my-way": "9.9.0"
   }
 }

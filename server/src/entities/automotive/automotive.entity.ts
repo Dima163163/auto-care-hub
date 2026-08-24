@@ -133,6 +133,7 @@ export class AutomotiveProviderEntity {
 @Index(['marketId', 'providerId'])
 @Index(['marketId', 'latitude'])
 @Index(['marketId', 'longitude'])
+@Check('CHK_autocare_service_location_appointment_capacity', '"appointmentCapacity" BETWEEN 1 AND 1000')
 export class AutomotiveServiceLocationEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) providerId!: string
@@ -140,6 +141,8 @@ export class AutomotiveServiceLocationEntity {
     @Column({ type: 'uuid', nullable: true }) zoneId!: string | null
     @Column({ type: 'text' }) address!: string
     @Column({ type: 'text' }) hours!: string
+    /** Number of simultaneous confirmed visits this branch can perform. */
+    @Column({ type: 'integer', default: 1 }) appointmentCapacity!: number
     @Column({ type: 'text', default: 'UTC' }) timezone!: string
     @Column({ type: 'jsonb', default: () => "'{\"mon\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"tue\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"wed\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"thu\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"fri\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"sat\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false},\"sun\":{\"open\":\"08:00\",\"close\":\"21:00\",\"closed\":false}}'" }) weeklySchedule!: AutomotiveWeeklySchedule
     @Column('date', { array: true, default: () => "'{}'" }) blackoutDates!: string[]

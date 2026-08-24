@@ -115,6 +115,11 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, NotificationTemplate
         messageKey: 'notifications.booking.reminder.message',
         link: '/profile/bookings',
     },
+    'autocare.visit_reminder': {
+        titleKey: 'notifications.autocare.visitReminder.title',
+        messageKey: 'notifications.autocare.visitReminder.message',
+        link: '/profile/bookings',
+    },
     'moderation.review_updated': {
         titleKey: 'notifications.moderation.reviewUpdated.title',
         messageKey: 'notifications.moderation.reviewUpdated.message',

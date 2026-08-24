@@ -18,6 +18,7 @@ export const NOTIFICATION_TEMPLATE_KEYS = [
     'booking.reschedule.accepted.owner',
     'booking.reschedule.rejected.owner',
     'booking.reminder',
+    'autocare.visit_reminder',
     'moderation.review_updated',
 ] as const
 

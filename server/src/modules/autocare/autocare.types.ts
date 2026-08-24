@@ -98,6 +98,7 @@ export type AutoCareLocationResponse = {
     zoneId: string | null
     address: string
     hours: string
+    appointmentCapacity: number
     timezone: string
     weeklySchedule: Record<string, { open: string; close: string; closed: boolean }>
     blackoutDates: string[]
@@ -356,6 +357,7 @@ export type OwnerAutoCareProviderInput = {
     zoneId?: string | null
     address: string
     hours: string
+    appointmentCapacity?: number
     timezone?: string
     weeklySchedule?: Record<string, { open: string; close: string; closed: boolean }>
     blackoutDates?: string[]

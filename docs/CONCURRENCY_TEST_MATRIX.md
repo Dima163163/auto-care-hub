@@ -9,6 +9,8 @@
 | Account deletion | Repeated request and cancel calls | Pending uniqueness and status transitions remain valid. | `npm --prefix server run test:integration` |
 | Cabinet image cleanup | Upload and cleanup overlap | Grace period prevents deletion before the upload can be referenced. | Unit policy only; storage boundary remains open. |
 | Booking overlap | Two requests for the same cabinet slot | Exactly one request succeeds and the other receives a conflict. | `npm --prefix server run test:integration` |
+| AutoCare instant capacity | Two clients create an instant booking for the same AutoCare branch, overlapping time and capacity `1` | Exactly one booking is accepted; the other transaction returns `409` and no over-capacity row is persisted. | `autocare-capacity.integration.test.ts` |
+| AutoCare manual confirmation | An owner confirms two pending requests for the same branch, overlapping time and capacity `1` | Exactly one request becomes `accepted`; the other confirmation returns `409`. | `autocare-capacity.integration.test.ts` |
 | Incident deduplication | Two workers record the same failure | One durable incident row is retained with a stable fingerprint. | `npm --prefix server run test:integration` |
 
 Every matrix row should be exercised with PostgreSQL and Redis enabled in CI or a production-like staging environment. Unit tests cover the decision helpers; integration tests must cover the locking and transaction boundaries.

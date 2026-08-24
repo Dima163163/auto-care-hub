@@ -716,6 +716,12 @@ export const ruTranslations = {
                 message: 'Кабинет «{{cabinetTitle}}» забронирован на {{date}} в {{startTime}}.',
             },
         },
+        autocare: {
+            visitReminder: {
+                title: 'Напоминание о визите',
+                message: 'У вас скоро подтверждён визит в автосервис. Откройте заявку, чтобы проверить детали.',
+            },
+        },
         moderation: {
             reviewUpdated: {
                 title: 'Статус отзыва изменён',
@@ -755,6 +761,20 @@ export const ruTranslations = {
                 date: 'Дата:',
                 time: 'Время:',
             }
+        },
+        autocare: {
+            reminder: {
+                subject: 'Напоминание о визите в автосервис',
+                title: 'Скоро визит в автосервис',
+                description: 'У вас скоро подтверждён визит. Проверьте детали заявки перед поездкой.',
+                details: {
+                    header: 'Детали визита:',
+                    provider: 'Автосервис:',
+                    service: 'Работа:',
+                    date: 'Дата:',
+                    time: 'Время:',
+                },
+            },
         },
         passwordSetup: {
             subject: 'Установите пароль - AutoCare Hub',

@@ -431,6 +431,7 @@ export const ownerAutoCareProviderSchema = z.object({
     zoneId: z.string().uuid().nullable().optional(),
     address: z.string().trim().min(2).max(240),
     hours: z.string().trim().min(2).max(120),
+    appointmentCapacity: z.coerce.number().int().min(1).max(1_000).optional(),
     timezone: z.string().trim().min(3).max(80).optional(),
     weeklySchedule: weeklyScheduleSchema.optional(),
     blackoutDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(366).optional(),

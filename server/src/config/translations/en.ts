@@ -716,6 +716,12 @@ export const enTranslations = {
                 message: '{{cabinetTitle}} is booked for {{date}} at {{startTime}}.',
             },
         },
+        autocare: {
+            visitReminder: {
+                title: 'AutoCare visit reminder',
+                message: 'Your confirmed visit is coming up. Open the request to check the details.',
+            },
+        },
         moderation: {
             reviewUpdated: {
                 title: 'Review moderation updated',
@@ -755,6 +761,20 @@ export const enTranslations = {
                 date: 'Date:',
                 time: 'Time:',
             }
+        },
+        autocare: {
+            reminder: {
+                subject: 'AutoCare visit reminder',
+                title: 'Your visit is coming up',
+                description: 'Your confirmed AutoCare visit is coming up. Check the request details before you leave.',
+                details: {
+                    header: 'Visit details:',
+                    provider: 'Service:',
+                    service: 'Work:',
+                    date: 'Date:',
+                    time: 'Time:',
+                },
+            },
         },
         passwordSetup: {
             subject: 'Set your password - AutoCare Hub',

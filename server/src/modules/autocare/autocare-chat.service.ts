@@ -33,7 +33,7 @@ import type {
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
-import { createAutoCareAttachmentObjectKey, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
+import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 
@@ -465,7 +465,12 @@ export async function getAutoCareChatAttachment(user: UserEntity, chatId: string
     const thread = await getThread(user, chatId)
     const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id }, { id: attachmentId, requestId: thread.requestId }] : { id: attachmentId, threadId: thread.id }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
     if (!attachment) fail(404, 'Chat attachment not found.')
-    return { ...attachment, content: await readAutoCareAttachmentObject(attachment.objectKey) }
+    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey)
+    return {
+        ...attachment,
+        signedUrl,
+        content: signedUrl ? null : await readAutoCareAttachmentObject(attachment.objectKey),
+    }
 }
 
 export async function getAutoCareChatThreadForRequest(user: UserEntity, requestId: string) {

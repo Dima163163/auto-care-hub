@@ -93,6 +93,16 @@ async function ensureRedisBridge() {
     return redisBridgePromise
 }
 
+/**
+ * Lets process-level smoke checks wait for the Redis subscription before a
+ * separate process publishes an event. Normal WebSocket callers do not need
+ * to await this: subscribeServiceChat starts the bridge lazily for them.
+ */
+export async function waitForServiceChatRedisBridge() {
+    await ensureRedisBridge()
+    return isRedisEnabled() ? redisSubscriber !== null : false
+}
+
 export function subscribeServiceChat(channelId: string, socket: WebSocket) {
     void ensureRedisBridge()
     const listeners = connections.get(channelId) ?? new Set<WebSocket>()

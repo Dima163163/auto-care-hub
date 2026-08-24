@@ -773,6 +773,7 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             zoneId: zone?.id ?? null,
             address: input.address,
             hours: input.hours,
+            appointmentCapacity: input.appointmentCapacity ?? Math.max(1, input.workstationCount ?? 1),
             timezone: input.timezone ?? market.timezone,
             weeklySchedule: input.weeklySchedule ?? undefined,
             blackoutDates: input.blackoutDates ?? [],
