@@ -22,6 +22,7 @@ export enum AuditAction {
     AutoCareServiceDefinitionUpdated = 'autocare_service_definition_updated',
     AutoCareBonusGranted = 'autocare_bonus_granted',
     AutoCareAppealDecided = 'autocare_appeal_decided',
+    AutoCareModerationEvidenceDecided = 'autocare_moderation_evidence_decided',
     ChatReportModerated = 'chat_report_moderated',
     ReviewModerated = 'review_moderated',
     ReviewDeleted = 'review_deleted',

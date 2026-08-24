@@ -260,6 +260,19 @@ export const decideAdminAutoCareAppealSchema = z.object({
     reason: z.string().trim().min(1).max(2_000),
 })
 
+export const adminAutoCareModerationEvidenceQuerySchema = z.object({
+    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+})
+
+export const adminAutoCareModerationEvidenceParamsSchema = z.object({
+    id: z.string().uuid(),
+})
+
+export const decideAdminAutoCareModerationEvidenceSchema = z.object({
+    status: z.enum(['approved', 'rejected']),
+    reason: z.string().trim().min(1).max(2_000),
+})
+
 export const updateUserStatusSchema = z.object({
     status: z.enum(UserStatus),
 })

@@ -50,6 +50,9 @@ import {
     adminAutoCareAppealsQuerySchema,
     adminAutoCareAppealParamsSchema,
     decideAdminAutoCareAppealSchema,
+    adminAutoCareModerationEvidenceQuerySchema,
+    adminAutoCareModerationEvidenceParamsSchema,
+    decideAdminAutoCareModerationEvidenceSchema,
 } from './admin.schemas.js'
 import { updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
@@ -116,6 +119,7 @@ import { env } from '../../config/env.js'
 import { getRequestLocale } from '../../shared/i18n/request-locale.js'
 import { getAutoCareQualityMonitoring, type AutoCareQualityMonitoringResponse } from '../autocare/autocare-quality-monitoring.service.js'
 import { decideAdminAutoCareAppeal, listAdminAutoCareAppeals } from '../autocare/appeal.service.js'
+import { decideAdminAutoCareModerationEvidence, listAdminAutoCareModerationEvidence } from '../autocare/moderation-evidence.service.js'
 import {
     getAdminDeletionRequests,
     updateAdminDeletionRequestStatus,
@@ -235,6 +239,20 @@ export async function adminRoutes(
         const user = await requireAuth(request)
         const result = await decideAdminAutoCareAppeal(user, params.id, body)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareAppealDecided, targetId: result.id, targetType: 'autocare_appeal', metadata: { status: result.status, subject: result.subject }, request })
+        return result
+    })
+
+    app.get('/admin/autocare-moderation-evidence', async (request) => {
+        const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
+        return listAdminAutoCareModerationEvidence(await requireAuth(request), query.status)
+    })
+
+    app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {
+        const params = validateParams(adminAutoCareModerationEvidenceParamsSchema, request.params)
+        const body = validateBody(decideAdminAutoCareModerationEvidenceSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminAutoCareModerationEvidence(user, params.id, body)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareModerationEvidenceDecided, targetId: result.id, targetType: 'autocare_moderation_evidence', metadata: { status: result.status, kind: result.kind }, request })
         return result
     })
 

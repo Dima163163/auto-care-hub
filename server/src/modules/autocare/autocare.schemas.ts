@@ -191,6 +191,10 @@ export const createAutoCareAppealSchema = z.object({
     evidenceIds: z.array(z.string().uuid()).max(20).optional(),
 })
 
+export const autoCareAppealParamsSchema = z.object({
+    appealId: z.string().uuid(),
+})
+
 export const autoCareProviderReviewsQuerySchema = z.object({
     limit: z.coerce.number().int().positive().max(50).default(20),
 })

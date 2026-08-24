@@ -110,9 +110,14 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
     }
 }
 
+type ProviderResponseOptions = {
+    trustEnabled?: boolean
+}
+
 export function toProviderResponse(
     provider: AutomotiveProviderEntity,
     location: AutomotiveServiceLocationEntity,
+    options: ProviderResponseOptions = {},
 ): AutoCareProviderResponse {
     const phones = provider.phones?.length
         ? provider.phones
@@ -146,9 +151,9 @@ export function toProviderResponse(
         amenityIds: provider.amenityIds,
         brandSpecializations: provider.brandSpecializations,
         isMultibrand: provider.isMultibrand,
-        trustScore: toNumber(provider.trustScore),
-        trustBadge: provider.trustBadge,
-        trustReassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
+        trustScore: options.trustEnabled === false ? 0 : toNumber(provider.trustScore),
+        trustBadge: options.trustEnabled === false ? null : provider.trustBadge,
+        trustReassessedAt: options.trustEnabled === false ? null : provider.trustReassessedAt?.toISOString() ?? null,
         location: toLocationResponse(location),
     }
 }
@@ -160,9 +165,10 @@ export function toDiscoveryResponse(input: {
     definition?: AutomotiveServiceDefinitionEntity
     distanceKm: number
     nextSlot?: string | null
+    trustEnabled?: boolean
 }): AutoCareProviderResultResponse {
     return {
-        provider: toProviderResponse(input.provider, input.location),
+        provider: toProviderResponse(input.provider, input.location, { trustEnabled: input.trustEnabled }),
         offer: toOfferResponse(input.offer, input.definition),
         distanceKm: input.distanceKm,
         nextSlot: input.nextSlot ?? null,

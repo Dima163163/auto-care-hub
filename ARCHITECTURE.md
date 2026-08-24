@@ -636,7 +636,9 @@ Preferred direction is PostgreSQL with PostGIS:
 - distance returned by the query, not recomputed independently in the client.
 
 If the deployment platform cannot support PostGIS, an ADR must choose an
-alternative. Do not approximate production radius search using city strings.
+alternative. ADR-0007 selects an indexed PostgreSQL bounding-box prefilter plus
+an exact great-circle SQL predicate for launch; it is not a city-string
+approximation and retains a clean PostGIS/GiST cutover path.
 
 ### 6.2 Search endpoint projection
 

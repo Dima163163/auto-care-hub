@@ -209,6 +209,13 @@ export function getOpenApiDocument() {
             '/v1/autocare-appeals/my': {
                 get: { operationId: 'listMyAutoCareAppeals', responses: { '200': { description: 'Appeals submitted by the authenticated user.' } } },
             },
+            '/v1/autocare-appeals/{appealId}': {
+                delete: {
+                    operationId: 'withdrawAutoCareAppeal',
+                    parameters: [{ name: 'appealId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    responses: { '200': { description: 'Withdraws an unresolved appeal submitted by the authenticated user.' } },
+                },
+            },
             '/v1/discovery/providers': {
                 get: {
                     operationId: 'discoverAutoCareProviders',
@@ -315,6 +322,21 @@ export function getOpenApiDocument() {
                         },
                     },
                     responses: { '200': { description: 'Appeal decision recorded with an audit event.' } },
+                },
+            },
+            '/admin/autocare-moderation-evidence': {
+                get: {
+                    operationId: 'listAutoCareModerationEvidence',
+                    parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'approved', 'rejected'] } }],
+                    responses: { '200': { description: 'Admin moderation queue for service gallery media and verified reviews.' } },
+                },
+            },
+            '/admin/autocare-moderation-evidence/{id}/decision': {
+                patch: {
+                    operationId: 'decideAutoCareModerationEvidence',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status', 'reason'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: 'string', minLength: 1, maxLength: 2000 } }, additionalProperties: false } } } },
+                    responses: { '200': { description: 'Decides queued public media or review evidence.' } },
                 },
             },
             '/admin/catalog-gap-requests': {

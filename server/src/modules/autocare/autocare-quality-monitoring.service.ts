@@ -1,6 +1,7 @@
 import { In } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
+import { env } from '../../config/env.js'
 import {
     AutoCareTrustSnapshotEntity,
     AutoCareAppealEntity,
@@ -21,6 +22,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { assessReviewIntegrity, type ReviewIntegritySample } from './review-integrity-policy.js'
 import { buildQualityMetrics } from './quality-metrics.js'
+import { buildRankingCalibrationReport, type RankingCalibrationReport } from './ranking-calibration.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
 
 export type AutoCareQualityMonitoringResponse = {
@@ -28,7 +30,13 @@ export type AutoCareQualityMonitoringResponse = {
     providers: { total: number; active: number; verified: number; trusted: number; suspended: number }
     reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number }
     requests: { total: number; completed: number; cancelled: number; noShows: number }
-    ranking: { trustSnapshots: number; reassessedProviders: number; evidenceCoveragePercent: number }
+    ranking: {
+        trustSnapshots: number
+        reassessedProviders: number
+        evidenceCoveragePercent: number
+        calibration: RankingCalibrationReport
+        rollout: { enabled: boolean; marketIds: string[]; percentage: number }
+    }
     catalog: { activeDefinitions: number; activeOffers: number; providersWithOffers: number; offerCoveragePercent: number; offersWithDescription: number; offersWithPrice: number; priceCoveragePercent: number }
     supply: { activeMarkets: number; averageLocationsPerProvider: number; markets: Array<{ marketId: string; providers: number; locations: number; activeOffers: number }> }
     reliability: { responseSamples: number; averageResponseMinutes: number | null; p95ResponseMinutes: number | null; confirmedBookings: number; confirmationSamples: number; confirmationReliabilityPercent: number; bookingConflicts: number }
@@ -48,9 +56,9 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
     assertAdmin(user)
     const [providers, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals] = await Promise.all([
         AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
-        AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
+        AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
         AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, providerId: true, status: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
-        AppDataSource.getRepository(AutoCareTrustSnapshotEntity).count(),
+        AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({ select: { providerId: true, score: true, computedAt: true } }),
         AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ select: { id: true, active: true } }),
         AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ select: { id: true, providerId: true, marketId: true } }),
         AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({ select: { locationId: true, definitionId: true, active: true, priceFromMinor: true, priceToMinor: true, currencyCode: true, description: true } }),
@@ -103,9 +111,15 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
             noShows: requests.filter((request) => request.status === ServiceRequestStatus.NoShow).length,
         },
         ranking: {
-            trustSnapshots,
+            trustSnapshots: trustSnapshots.length,
             reassessedProviders,
             evidenceCoveragePercent: percent(reassessedProviders, totalProviders),
+            calibration: buildRankingCalibrationReport({
+                snapshots: trustSnapshots,
+                requests,
+                reviews,
+            }),
+            rollout: env.autoCareTrustRollout,
         },
         ...quality,
         appeals: { available: true, pending: pendingAppeals },

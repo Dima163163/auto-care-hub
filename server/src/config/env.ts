@@ -61,6 +61,11 @@ export type EnvConfig = {
     corsOrigins: string[]
     frontendOrigin: string
     deployment: DeploymentCapabilities
+    autoCareTrustRollout: {
+        enabled: boolean
+        marketIds: string[]
+        percentage: number
+    }
     database: {
         url: string | null
         host: string
@@ -530,6 +535,11 @@ export const env: EnvConfig = {
         { allowHttpLoopback: nodeEnv !== 'production' },
     ),
     deployment: getDeploymentCapabilities(resolvedDeploymentMarket.market),
+    autoCareTrustRollout: {
+        enabled: getBooleanEnv('AUTOCARE_TRUST_ROLLOUT_ENABLED', true),
+        marketIds: getListEnv('AUTOCARE_TRUST_ROLLOUT_MARKET_IDS', []),
+        percentage: getBoundedNonNegativeNumberEnv('AUTOCARE_TRUST_ROLLOUT_PERCENTAGE', 100, 100),
+    },
     database: getDatabaseConfig(),
     redis: getRedisConfig(nodeEnv),
     auth: {

@@ -30,6 +30,9 @@ import { enqueueNotificationSafely } from '../outbox/notification-outbox.service
 import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
+import { isRolloutEnabled } from './rollout-controls.js'
+import { env } from '../../config/env.js'
+import { queueProviderMediaModerationEvidence, queueReviewModerationEvidence } from './moderation-evidence.service.js'
 import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
@@ -363,7 +366,13 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         .filter((row) => !cursorValues || compareDiscoveryValues(discoverySortValues(row, sort), cursorValues, sort) > 0)
     const page = sorted.slice(0, limit + 1)
     const hasMore = page.length > limit
-    const items = page.slice(0, limit).map((row) => toDiscoveryResponse(row))
+    const items = page.slice(0, limit).map((row) => toDiscoveryResponse({
+        ...row,
+        trustEnabled: isRolloutEnabled(env.autoCareTrustRollout, {
+            marketId: market?.id ?? null,
+            subjectKey: row.provider.id,
+        }),
+    }))
     const lastRow = page.at(limit - 1)
     const lastValues = lastRow ? discoverySortValues(lastRow, sort) : null
     return {
@@ -389,11 +398,15 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
         offersByLocation.set(location.id, offers.filter((offer) => offer.locationId === location.id).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))))
     }
     const firstLocation = locations[0]!
+    const trustEnabled = locations.some((location) => isRolloutEnabled(env.autoCareTrustRollout, {
+        marketId: location.marketId,
+        subjectKey: provider.id,
+    }))
     return {
-        ...toProviderResponse(provider, firstLocation),
+        ...toProviderResponse(provider, firstLocation, { trustEnabled }),
         coverImageUrl: provider.coverImageUrl,
         offers: offersByLocation.get(firstLocation.id) ?? [],
-        locations: locations.map((location) => ({ location: toProviderResponse(provider, location).location, offers: offersByLocation.get(location.id) ?? [] })),
+        locations: locations.map((location) => ({ location: toProviderResponse(provider, location, { trustEnabled }).location, offers: offersByLocation.get(location.id) ?? [] })),
     }
 }
 
@@ -678,7 +691,7 @@ export async function createAutoCareReview(client: UserEntity, input: CreateAuto
             const vehicleLabel = [vehicle.make, vehicle.model, vehicle.year]
                 .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
                 .join(' ') || 'Автомобиль'
-            return reviewRepository.save(reviewRepository.create({
+            const savedReview = await reviewRepository.save(reviewRepository.create({
                 providerId: request.providerId,
                 authorName: client.name,
                 vehicleLabel,
@@ -692,6 +705,8 @@ export async function createAutoCareReview(client: UserEntity, input: CreateAuto
                 serviceSlug: request.offeringSnapshot?.serviceSlug ?? null,
                 status: AutomotiveReviewStatus.Pending,
             }))
+            await queueReviewModerationEvidence(manager, savedReview)
+            return savedReview
         })
     } catch (error) {
         if (isAutoCareReviewUniqueError(error)) {
@@ -770,6 +785,7 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             locationId: null,
             role: AutomotiveProviderMembershipRole.Owner,
         }))
+        await queueProviderMediaModerationEvidence(manager, provider)
 
         return toProviderResponse(provider, location)
     })

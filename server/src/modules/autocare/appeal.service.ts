@@ -77,6 +77,20 @@ export async function getMyAutoCareAppeals(user: User) {
     return appeals.map(toResponse)
 }
 
+/** A submitter can withdraw only an unresolved appeal; moderator decisions remain immutable. */
+export async function withdrawAutoCareAppeal(user: User, appealId: string) {
+    return AppDataSource.transaction(async (manager) => {
+        const repository = manager.getRepository(AutoCareAppealEntity)
+        const appeal = await repository.findOne({ where: { id: appealId }, lock: { mode: 'pessimistic_write' } })
+        if (!appeal || appeal.submittedById !== user.id) error(404, 'Appeal not found.')
+        if (!canTransitionAppeal(appeal.status, AutoCareAppealStatus.Withdrawn)) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Only a pending appeal can be withdrawn.' })
+        }
+        appeal.status = AutoCareAppealStatus.Withdrawn
+        return toResponse(await repository.save(appeal))
+    })
+}
+
 export async function listAdminAutoCareAppeals(user: User, input: { status?: AutoCareAppealStatus; subject?: AutoCareAppealSubject; limit?: number }) {
     if (!isAdminRole(user.role)) error(403, 'Only admins can view appeals.')
     const appeals = await AppDataSource.getRepository(AutoCareAppealEntity).find({ where: { ...(input.status ? { status: input.status } : {}), ...(input.subject ? { subject: input.subject } : {}) }, order: { createdAt: 'DESC' }, take: input.limit ?? 50 })
