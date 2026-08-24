@@ -295,6 +295,8 @@ autocare: {
         trustedBy: 'Нам доверяют',
         reviewsTitle: 'Что говорят наши клиенты',
         allReviews: 'Смотреть все отзывы',
+        reviewsEmptyTitle: 'Первые отзывы появятся здесь',
+        reviewsEmptyDescription: 'После завершённых визитов клиенты смогут поделиться впечатлениями о сервисе.',
         mobileAppTitle: 'Мобильное приложение',
         mobileAppComingSoon: 'В разработке',
         mobileAppDescription: 'Все автосервисы в вашем кармане',

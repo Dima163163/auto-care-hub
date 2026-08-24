@@ -1024,6 +1024,8 @@ export const enTranslations = {
         trustedBy: 'Trusted by',
         reviewsTitle: 'What our customers say',
         allReviews: 'View all reviews',
+        reviewsEmptyTitle: 'The first reviews will appear here',
+        reviewsEmptyDescription: 'After completed visits, customers can share their experience with the service.',
         mobileAppTitle: 'Mobile application',
         mobileAppComingSoon: 'In development',
         mobileAppDescription: 'All auto services in your pocket',
