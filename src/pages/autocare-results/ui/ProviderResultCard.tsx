@@ -5,6 +5,7 @@ import { ProviderLogo, type ProviderPreview } from '@/entities/automotive-servic
 import { useAutoCareFavorites } from '@/features/automotive-favorites'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { formatCurrency } from '@/shared/lib/locale-format'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
 
 type ProviderResultCardProps = {
@@ -16,13 +17,13 @@ type ProviderResultCardProps = {
 }
 
 export function ProviderResultCard({ provider, selected, highlight, onToggle, onFocus }: ProviderResultCardProps) {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
     const { isFavorite, toggle } = useAutoCareFavorites()
     const favorite = isFavorite(provider.id)
-    const price = new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(provider.price)
+    const price = formatCurrency(provider.price, provider.currency, locale)
     const priceType = provider.priceType ?? 'from'
     const priceTo = provider.priceTo ?? (priceType === 'range' ? Math.round(provider.price * 1.2) : null)
-    const formattedPriceTo = priceTo === null ? null : new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(priceTo)
+    const formattedPriceTo = priceTo === null ? null : formatCurrency(priceTo, provider.currency, locale)
     const displayPrice = priceType === 'fixed'
         ? price
         : priceType === 'range' && formattedPriceTo
@@ -37,7 +38,7 @@ export function ProviderResultCard({ provider, selected, highlight, onToggle, on
     const warrantyMonths = provider.warrantyMonths ?? (isBestValue ? 12 : null)
     const hasWarranty = Boolean(warrantyMonths)
     const originalParts = provider.inclusions?.some((item) => /parts|запчаст|расход/i.test(item)) ?? isBestValue
-    const oldPrice = new Intl.NumberFormat(undefined, { style: 'currency', currency: provider.currency, maximumFractionDigits: 0 }).format(Math.round(provider.price * 1.17 / 50) * 50)
+    const oldPrice = formatCurrency(Math.round(provider.price * 1.17 / 50) * 50, provider.currency, locale)
 
     return <article className={`rounded-[var(--radius-card)] border bg-card p-3 shadow-sm transition sm:p-4 ${isBestValue ? 'border-status-success-foreground/70 ring-1 ring-status-success-foreground/25' : selected ? 'border-primary ring-2 ring-ring/30' : 'border-border hover:border-primary/50'}`}>
         {isBestValue && <span className="mb-2 inline-flex rounded-md bg-status-success-surface px-2.5 py-1 text-[11px] font-black text-status-success-foreground">{t('autocare.bestValue')}</span>}

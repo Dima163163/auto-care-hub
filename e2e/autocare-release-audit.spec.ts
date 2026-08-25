@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 
-const guestWidths = [375, 390, 768, 820, 1024, 1120, 1280] as const
+const guestWidths = [360, 390, 414, 540, 682, 768, 790, 1024, 1280, 1440] as const
 const supportedLocales = ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -36,6 +36,7 @@ test.describe('AutoCare stable-web release gate', () => {
             await expectStableShell(page)
             await expect(page.locator('#comparison-map')).toBeVisible()
             await expect(page.getByRole('button', { name: /start search|начать поиск/i })).toBeVisible()
+            await expect(page.getByRole('contentinfo')).toBeVisible()
         }
     })
 
@@ -57,7 +58,7 @@ test.describe('AutoCare stable-web release gate', () => {
     })
 
     test('public header exposes the correct navigation mode at the burger boundary', async ({ page }) => {
-        for (const width of [768, 790, 1120] as const) {
+        for (const width of [768, 790, 1024, 1120] as const) {
             await page.setViewportSize({ width, height: 900 })
             await page.goto('/')
             await expect(page.getByTestId('desktop-public-mobile-menu-trigger')).toBeVisible()
@@ -83,6 +84,19 @@ test.describe('AutoCare stable-web release gate', () => {
         await expectStableShell(page)
         const results = await new AxeBuilder({ page }).analyze()
         expect(results.violations).toEqual([])
+    })
+
+    test('public gallery closes with Escape and returns focus to its trigger', async ({ page }) => {
+        await page.goto('/services/api-proservice-moscow')
+        const gallery = page.getByTestId('provider-gallery')
+        const trigger = gallery.getByRole('button').last()
+        await trigger.focus()
+        await trigger.press('Enter')
+        const dialog = page.getByRole('dialog', { name: /service gallery|галерея сервиса/i })
+        await expect(dialog).toBeVisible()
+        await page.keyboard.press('Escape')
+        await expect(dialog).toBeHidden()
+        await expect(trigger).toBeFocused()
     })
 
     test('all supported locales render without missing keys or horizontal overflow', async ({ page }) => {

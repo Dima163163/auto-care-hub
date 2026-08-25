@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router'
 
 import { NextApp } from '@/app/next/NextApp'
 import { StoreProvider } from '@/app/store'
-import { getInitialLocale } from '@/shared/config/i18n'
+import { getInitialLocale, getLocaleOption } from '@/shared/config/i18n'
 import { loadTranslations } from '@/shared/config/translations'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { readPublicEnv } from '@/shared/config/runtime-env'
@@ -88,6 +88,9 @@ export function NextClientApp() {
     const [ready, setReady] = useState(false)
 
     useEffect(() => {
+        const initialLocale = getInitialLocale()
+        document.documentElement.lang = initialLocale
+        document.documentElement.dir = getLocaleOption(initialLocale).direction
         applyTheme(
             document.documentElement,
             getInitialTheme(
@@ -99,7 +102,7 @@ export function NextClientApp() {
 
         void Promise.all([
             enableMocking(),
-            loadTranslations(getInitialLocale()),
+            loadTranslations(initialLocale),
         ]).finally(() => {
             setReady(true)
         })

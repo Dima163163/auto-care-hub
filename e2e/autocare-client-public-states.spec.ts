@@ -13,7 +13,7 @@ async function signInAsClient(page: Page) {
     await expect(page).toHaveURL(/\/profile/)
 }
 
-async function useMockScenario(page: Page, scenario: 'offline' | 'permission-denied' | 'suspended', apiPath: string) {
+async function useMockScenario(page: Page, scenario: 'error' | 'stale' | 'offline' | 'permission-denied' | 'suspended', apiPath: string) {
     await page.addInitScript(({ apiPath: path, mockScenario }) => {
         const originalFetch = window.fetch.bind(window)
 
@@ -73,7 +73,7 @@ test.describe('public and client AutoCare states', () => {
         await expect(page.getByRole('dialog')).toBeVisible()
     })
 
-    for (const scenario of ['offline', 'permission-denied', 'suspended'] as const) {
+    for (const scenario of ['error', 'stale', 'offline', 'permission-denied', 'suspended'] as const) {
         test(`uses a recoverable ${scenario} state without breaking the client shell`, async ({ page }) => {
             await signInAsClient(page)
             await useMockScenario(page, scenario, '/v1/service-requests/my')
