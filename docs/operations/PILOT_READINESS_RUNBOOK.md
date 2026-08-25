@@ -21,6 +21,9 @@ providers, customers and production infrastructure.
 5. Capture response-time, booking-success, cancellation, no-show, attachment
    failure and support-contact metrics without storing message/photo content in
    telemetry.
+   Before the go/no-go review, run `npm --prefix server run
+   check:pilot-reliability` with the agreed SLO thresholds. Empty samples are
+   blocked rather than treated as a passing zero.
 6. Hold a go/no-go review with product, support, security and the legal entity.
 
 ## Minimum evidence
