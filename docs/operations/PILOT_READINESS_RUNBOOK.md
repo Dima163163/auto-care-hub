@@ -10,6 +10,10 @@ providers, customers and production infrastructure.
    locations, service categories and booking modes.
 2. Seed the canonical catalog, price ranges, hours, blackout dates, vehicle
    compatibility and neutral fallback media.
+   Run `npm --prefix server run check:pilot-quality` with `PILOT_MARKET_ID`
+   and the agreed thresholds before inviting customers. The check reads the
+   same PostgreSQL quality aggregates exposed to admins and fails closed when
+   a market has no providers, offers or usable prices.
 3. Run provider tests for profile publication, quote response, confirmation,
    completion, review response and phone-based customer contact.
 4. Run customer tests for discovery, comparison, request creation, quote
@@ -29,6 +33,9 @@ providers, customers and production infrastructure.
 | Trust | badge evidence, complaints and appeals are reviewed by an authorized operator | trust & safety |
 | Support | a customer and a provider can reach support and receive a tracked answer | support |
 | Recovery | backup restore, outbox retry and media quarantine are rehearsed | platform |
+
+The quality preflight is a data gate, not pilot evidence: it cannot replace
+real provider/customer sessions, response-time measurements or support sign-off.
 
 ## Stop conditions
 
