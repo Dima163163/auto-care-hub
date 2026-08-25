@@ -99,6 +99,13 @@ test.describe('public and client AutoCare states', () => {
         await expect(page.locator('#reviews img[alt="Фото из отзыва"]')).toHaveCount(1)
     })
 
+    test('renders a recoverable not-found state for a removed provider profile', async ({ page }) => {
+        await page.goto('/services/provider-removed-from-public-catalog')
+
+        await expect(page.getByRole('main')).toContainText(/failed to load|не удалось загрузить|not found|не найден/i)
+        await expect(page.getByRole('button', { name: /retry|повторить/i })).toBeVisible()
+    })
+
     test('renders bonus history, garage controls, and an attachment viewer for a client', async ({ page }) => {
         await signInAsClient(page)
 
