@@ -124,6 +124,7 @@ export default defineConfig({
       'src/modules/autocare/autocare-marketplace.service.test.ts',
       'src/modules/autocare/autocare-bonus.service.test.ts',
       'src/scripts/pilot-quality-policy.test.ts',
+      'src/scripts/pilot-reliability-policy.test.ts',
       'src/database/auto-care-bonus-migration.test.ts',
       'src/database/auto-care-provider-invitation-migration.test.ts',
       'src/database/auto-care-provider-change-request-migration.test.ts',

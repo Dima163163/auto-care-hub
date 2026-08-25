@@ -34,6 +34,7 @@
     "smoke:autocare-realtime": "tsx src/scripts/smoke-autocare-realtime.ts",
     "check:production-media": "tsx src/scripts/check-production-media.ts",
     "check:pilot-quality": "tsx src/scripts/check-pilot-quality.ts",
+    "check:pilot-reliability": "tsx src/scripts/check-pilot-reliability.ts",
     "demo:reset": "tsx src/scripts/reset-demo-data.ts",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
