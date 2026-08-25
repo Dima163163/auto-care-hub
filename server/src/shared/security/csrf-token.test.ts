@@ -69,4 +69,11 @@ describe('csrf token protection', () => {
             )
         }
     })
+
+    it('rejects duplicate CSRF headers even when one value is valid', () => {
+        expect(() => assertValidCsrfToken({
+            cookies: { autocarehub_csrf_token: 'matching-token' },
+            headers: { 'x-csrf-token': ['matching-token', 'attacker-value'] },
+        })).toThrow(AppError)
+    })
 })

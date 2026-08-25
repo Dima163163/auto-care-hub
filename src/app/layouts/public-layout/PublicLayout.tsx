@@ -1,47 +1,49 @@
+import { Suspense } from 'react'
 import { Outlet, useLocation } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { SeoHead } from '@/shared/ui/seo-head'
+import { AutoCareResultsRouteSkeleton, PageContentSkeleton } from '@/shared/ui/loading-skeleton'
+import { useTranslation } from '@/shared/lib/useTranslation'
 import { AppHeader } from '@/widgets/app-header'
 import { BottomNav } from '@/widgets/bottom-nav'
 import { Footer } from '@/widgets/footer'
 import {
-    WorkspaceFooter,
     WorkspaceMobileHeader,
     WorkspaceSidebar,
     type WorkspaceRole,
 } from '@/widgets/workspace-shell'
 
 import { DesktopPublicHeader } from './DesktopPublicHeader'
+import { isPublicWorkspaceRoute } from './lib/publicWorkspaceRoute'
 
 export function PublicLayout() {
+    const { t } = useTranslation()
     const { pathname } = useLocation()
     const { data: user } = useGetMeQuery()
-    const isWorkspaceRoute = Boolean(
-        user && (
-            pathname === ROUTES.profile ||
-            pathname.startsWith(`${ROUTES.profile}/`) ||
-            pathname === ROUTES.favorites ||
-            pathname === ROUTES.notifications
-        ),
-    )
+    // Protected profile routes must use the workspace shell immediately. Waiting
+    // for /me here briefly rendered the public footer before auth resolved.
+    const isWorkspaceRoute = isPublicWorkspaceRoute(pathname)
     const workspaceRole: WorkspaceRole = user?.role === 'owner'
         ? 'owner'
-        : user?.role === 'admin' || user?.role === 'super_admin'
-            ? 'admin'
-            : 'client'
+        : user?.role === 'super_admin'
+            ? 'super_admin'
+            : user?.role === 'admin'
+                ? 'admin'
+                : 'client'
 
     return (
-        <div className="mobile-bottom-safe flex min-h-screen flex-col bg-background md:pb-0">
+        <div className={isWorkspaceRoute ? 'autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden overflow-x-clip md:pb-0' : 'autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col overflow-x-clip md:pb-0'}>
+            <SeoHead />
             <DesktopPublicHeader />
             <div className="md:hidden">
                 {isWorkspaceRoute && user ? <WorkspaceMobileHeader role={workspaceRole} /> : <AppHeader />}
             </div>
-            <div className={isWorkspaceRoute ? 'flex min-h-0 flex-1' : 'flex min-h-0 flex-1 flex-col'}>
+            <div className={isWorkspaceRoute ? 'flex min-h-0 flex-1 overflow-hidden' : 'flex min-h-0 flex-1 flex-col'}>
                 {isWorkspaceRoute && <WorkspaceSidebar role={workspaceRole} />}
-                <div className="flex min-w-0 flex-1 flex-col">
-                    <main className="min-h-0 flex-1"><Outlet /></main>
-                    {isWorkspaceRoute && <WorkspaceFooter />}
+                <div data-workspace-scroll-container={isWorkspaceRoute ? 'true' : undefined} className={isWorkspaceRoute ? 'flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain' : 'flex min-w-0 flex-1 flex-col'}>
+                    <div className={isWorkspaceRoute ? 'min-w-0' : 'min-h-0 flex-1'}><div className="autocare-page-content"><Suspense fallback={pathname === ROUTES.serviceDiscovery ? <AutoCareResultsRouteSkeleton label={t('common.loadingPage')} /> : <PageContentSkeleton label={t('common.loadingPage')} />}><Outlet /></Suspense></div></div>
                     {!isWorkspaceRoute && <Footer />}
                 </div>
             </div>

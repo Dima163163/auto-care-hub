@@ -6,14 +6,14 @@
 - [ ] Record `npm run check:migration-inventory` count and checksum with the
       release artifact before applying migrations.
 - [ ] Check `/health/live` and `/health/ready`, application logs, and error alerts after deployment.
-- [ ] Tune `DATABASE_POOL_*`, database timeout variables, `OAUTH_*` request
-      limits, and `STRIPE_*` network limits against the hosting plan; verify
-      slow-query events contain no request parameters or secrets.
+- [ ] Tune `DATABASE_POOL_*`, database timeout variables, and `OAUTH_*` request
+      limits against the hosting plan; verify slow-query events contain no
+      request parameters or secrets.
 - [ ] Verify database backup creation and perform a restore rehearsal in a non-production environment.
-- [ ] Configure Stripe webhook signing secret, then test payment success, failure, payout readiness, and refund procedures.
-- [ ] Exercise payment retries, webhook replay, bounded reconciliation, and terminal-state protections with provider errors that contain sensitive text.
+- [x] Legacy payment runtime, provider SDK, webhooks, routes, UI, deployment
+      configuration, and background reconciliation are removed. Historical
+      migrations remain immutable for existing databases only.
 - [ ] Verify trusted-proxy/CORS/CSRF configuration rejects wildcard, ambiguous, malformed, and untrusted origins in production mode.
-- [ ] Verify owner Stripe Connect status and payout capability for the intended country and currency.
 - [ ] Review audit-log export access and retention policy with the project owner.
 - [ ] Run the Phase L design QA checklist on supported desktop and mobile browsers.
 - [ ] Only at final client handoff and after two explicit confirmations: remove local personal/test data, rotate exposed keys, and leave `.env.example` placeholders only.

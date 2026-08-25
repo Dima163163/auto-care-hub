@@ -3,20 +3,18 @@ import { Between, In, ObjectLiteral, Repository, type FindOptionsWhere } from 't
 import { AppDataSource } from '../../database/data-source.js'
 import { BookingEntity, BookingStatus } from '../../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
+import {
+    AutomotiveProviderEntity,
+    AutomotiveServiceDefinitionEntity,
+    AutomotiveServiceLocationEntity,
+} from '../../entities/automotive/automotive.entity.js'
+import { ServiceAttachmentEntity, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { UserEntity } from '../../entities/user/user.entity.js'
 import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { SecurityEventEntity } from '../../entities/security-event/security-event.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
-import {
-    StripeWebhookEventEntity,
-    StripeWebhookEventStatus,
-} from '../../entities/booking/stripe-webhook-event.entity.js'
-import {
-    SystemIncidentSeverity,
-    SystemIncidentType,
-} from '../../entities/system-incident/system-incident.entity.js'
-import { recordSystemIncidentSafely } from '../admin/system-incidents.service.js'
 import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
 import {
     AccountDeletionRequestEntity,
@@ -25,24 +23,17 @@ import {
 import { NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { env } from '../../config/env.js'
 import { cleanupOrphanedCabinetImages } from '../cabinets/cabinet-image-storage.js'
+import { cleanupOrphanedAutoCareProviderLogos } from '../autocare/autocare-provider-logo-storage.js'
+import { cleanupOrphanedAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
+import {
+    cleanupExpiredAutoCareAttachments,
+    cleanupOrphanedAutoCareAttachmentObjects,
+} from '../autocare/autocare-attachment-storage.js'
 import { addDays, zonedDateTimeToInstant } from '../../shared/date-time/cabinet-timezone.js'
 import { enqueueOutboxEvent, processOutboxBatch } from '../outbox/outbox.service.js'
-import {
-    reconcileStripePayments,
-    type PaymentReconciliationResult,
-} from '../payments/payment-reconciliation.service.js'
-import {
-    reconcileStripePaymentRefunds,
-    type PaymentRefundReconciliationResult,
-} from '../payments/payment-refund-reconciliation.service.js'
-import {
-    backfillMissingPaymentInvoices,
-    type PaymentInvoiceBackfillResult,
-} from '../payments/payment-invoice-backfill.service.js'
-import {
-    reconcileUnmatchedStripeWebhooks,
-    type StripeWebhookReconciliationResult,
-} from '../payments/stripe-webhook-reconciliation.service.js'
+import { enqueueNotification } from '../outbox/notification-outbox.service.js'
+import { NotificationCategory } from '../../entities/notification/notification.entity.js'
+import { shouldDeliverNotification } from '../notifications/notification-preferences.js'
 import type { Mailer } from '../../shared/mail/mailer.js'
 import type { MaintenanceLease } from './maintenance-lease.service.js'
 import { metrics } from '../../shared/observability/metrics.js'
@@ -62,10 +53,10 @@ import {
     getBookingReminderWindowMs,
 } from './booking-reminder-policy.js'
 import { getMaintenanceDeleteBatchSize } from './maintenance-cleanup-policy.js'
-import { getStripeUnmatchedWebhookExpiryCutoff } from '../payments/stripe-webhook-retention.js'
 import { getAccountDeletionRetentionCutoff } from '../users/account-deletion-retention.js'
 import { getOutboxHealthSummary } from '../outbox/outbox-health.service.js'
 import { getMaintenanceBacklogAgeMs } from './maintenance-backlog-policy.js'
+import { reassessAutoCareTrustScores } from '../autocare/trust-score.service.js'
 import {
     runMaintenancePhaseWithFailurePolicy,
     type MaintenancePhase,
@@ -100,13 +91,10 @@ export type MaintenanceCycleResult = {
         scanned: number
         removed: number
     }
-    stripeWebhook: {
-        unmatchedExpired: number
-        replay: StripeWebhookReconciliationResult
+    trustReassessment: {
+        scanned: number
+        changed: number
     }
-    payments: PaymentReconciliationResult
-    paymentRefunds: PaymentRefundReconciliationResult
-    paymentInvoiceBackfill: PaymentInvoiceBackfillResult
     phaseFailures: MaintenancePhaseFailure[]
 }
 
@@ -119,19 +107,7 @@ export function summarizeMaintenanceCycle(result: MaintenanceCycleResult) {
         auditCleanup: Object.fromEntries(Object.entries(result.auditCleanup).map(([key, value]) => [key, count(value)])),
         notificationCleanup: Object.fromEntries(Object.entries(result.notificationCleanup).map(([key, value]) => [key, count(value)])),
         orphanImageCleanup: Object.fromEntries(Object.entries(result.orphanImageCleanup).map(([key, value]) => [key, count(value)])),
-        stripeWebhook: {
-            unmatchedExpired: count(result.stripeWebhook.unmatchedExpired),
-            replay: Object.fromEntries(
-                Object.entries(result.stripeWebhook.replay).map(([key, value]) => [key, count(value)]),
-            ),
-        },
-        payments: Object.fromEntries(Object.entries(result.payments).map(([key, value]) => [key, count(value)])),
-        paymentRefunds: Object.fromEntries(
-            Object.entries(result.paymentRefunds).map(([key, value]) => [key, count(value)]),
-        ),
-        paymentInvoiceBackfill: Object.fromEntries(
-            Object.entries(result.paymentInvoiceBackfill).map(([key, value]) => [key, count(value)]),
-        ),
+        trustReassessment: Object.fromEntries(Object.entries(result.trustReassessment).map(([key, value]) => [key, count(value)])),
     }
 }
 
@@ -243,6 +219,99 @@ export async function scheduleBookingReminders(
     metrics.increment('maintenance_reminders_scheduled_total', scheduled)
 
     return scheduled
+}
+
+export async function scheduleAutoCareReminders(
+    now = new Date(),
+    assertLease?: MaintenanceLease['assertHeld'],
+) {
+    const reminderWindowMs = getBookingReminderWindowMs(env.bookingReminderHours)
+    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({
+        where: {
+            preferredAt: Between(
+                new Date(now.getTime() + 60_000),
+                new Date(now.getTime() + reminderWindowMs),
+            ),
+            status: ServiceRequestStatus.Accepted,
+        },
+        take: MAX_MAINTENANCE_REMINDER_CANDIDATES,
+        order: { preferredAt: 'ASC', createdAt: 'ASC' },
+    })
+    const clientIds = [...new Set(requests.map((request) => request.clientId))]
+    const providerIds = [...new Set(requests.map((request) => request.providerId))]
+    const definitionIds = [...new Set(requests.map((request) => request.definitionId))]
+    const locationIds = [...new Set(requests.map((request) => request.locationId))]
+    const [clients, providers, definitions, locations] = await Promise.all([
+        AppDataSource.getRepository(UserEntity).findBy({ id: In(clientIds) }),
+        AppDataSource.getRepository(AutomotiveProviderEntity).findBy({ id: In(providerIds) }),
+        AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findBy({ id: In(definitionIds) }),
+        AppDataSource.getRepository(AutomotiveServiceLocationEntity).findBy({ id: In(locationIds) }),
+    ])
+    const clientsById = new Map(clients.map((client) => [client.id, client]))
+    const providersById = new Map(providers.map((provider) => [provider.id, provider]))
+    const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]))
+    const locationsById = new Map(locations.map((location) => [location.id, location]))
+    let scheduled = 0
+
+    for (const request of requests) {
+        assertLease?.()
+        if (!request.preferredAt) continue
+        const client = clientsById.get(request.clientId)
+        const provider = providersById.get(request.providerId)
+        const definition = definitionsById.get(request.definitionId)
+        const location = locationsById.get(request.locationId)
+        if (!client || !provider || !definition || !location) continue
+        await enqueueNotification({
+            userId: request.clientId,
+            category: NotificationCategory.Booking,
+            template: { key: 'autocare.visit_reminder' },
+            link: `/profile/bookings?request=${request.id}`,
+            metadata: { requestId: request.id, preferredAt: request.preferredAt.toISOString(), domain: 'autocare' },
+        }, `autocare-reminder:${request.id}:${request.preferredAt.toISOString()}`)
+        if (shouldDeliverNotification(NotificationCategory.Booking, client, 'email')) {
+            const visit = formatAutoCareReminderVisit(request.preferredAt, client.locale ?? 'en', location.timezone)
+            await enqueueOutboxEvent({
+                type: 'email.send',
+                idempotencyKey: `email:autocare-reminder:${request.id}:${request.preferredAt.toISOString()}`,
+                payload: {
+                    template: 'autocare_visit_reminder',
+                    requestId: request.id,
+                    toEmail: client.email,
+                    recipientName: client.name,
+                    providerName: provider.name,
+                    serviceTitle: definition.labels[client.locale ?? 'en'] ?? definition.labels.en ?? definition.slug,
+                    date: visit.date,
+                    startTime: visit.startTime,
+                    frontendOrigin: env.frontendOrigin,
+                    locale: client.locale,
+                },
+            })
+        }
+        scheduled += 1
+    }
+
+    metrics.setGauge('maintenance_autocare_reminders_last_scheduled', scheduled)
+    metrics.increment('maintenance_autocare_reminders_scheduled_total', scheduled)
+    return scheduled
+}
+
+function formatAutoCareReminderVisit(
+    startsAt: Date,
+    locale: string,
+    timezone: string,
+) {
+    const date = new Intl.DateTimeFormat(locale, {
+        dateStyle: 'long',
+        timeZone: timezone,
+    }).format(startsAt)
+    const startTime = new Intl.DateTimeFormat(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+        timeZone: timezone,
+    }).format(startsAt)
+
+    return { date, startTime }
 }
 
 export async function cleanupExpiredAuthData(now = new Date()) {
@@ -367,45 +436,6 @@ export async function measureMaintenanceOutboxBacklog(now = Date.now()) {
     return summary
 }
 
-export async function escalateExpiredUnmatchedStripeWebhooks(now = new Date()) {
-    const rows = await AppDataSource.getRepository(StripeWebhookEventEntity)
-        .createQueryBuilder('event')
-        .where('event.status = :status', { status: StripeWebhookEventStatus.Unmatched })
-        .andWhere('event.createdAt < :cutoff', {
-            cutoff: getStripeUnmatchedWebhookExpiryCutoff(now),
-        })
-        .orderBy('event.createdAt', 'ASC')
-        .take(getMaintenanceDeleteBatchSize())
-        .getMany()
-
-    for (const event of rows) {
-        await recordSystemIncidentSafely({
-            type: SystemIncidentType.PaymentWebhook,
-            severity: SystemIncidentSeverity.Critical,
-            title: `Stripe unmatched webhook expired: ${event.stripeEventId.slice(0, 160)}`,
-            metadata: {
-                stripeEventId: event.stripeEventId,
-                stripeEventType: event.eventType,
-                status: event.status,
-                createdAt: event.createdAt.toISOString(),
-            },
-        })
-    }
-
-    metrics.setGauge('maintenance_unmatched_webhooks_expired_last', rows.length)
-    metrics.increment('maintenance_unmatched_webhooks_expired_total', rows.length)
-    return { unmatchedExpired: rows.length }
-}
-
-export async function reconcileStripeWebhookEvents(
-    now = new Date(),
-    assertLease?: () => void,
-) {
-    const replay = await reconcileUnmatchedStripeWebhooks(assertLease)
-    const expired = await escalateExpiredUnmatchedStripeWebhooks(now)
-    return { ...expired, replay }
-}
-
 export async function cleanupExpiredAuditLogs(now = new Date()) {
     const retentionBefore = new Date(
         now.getTime() - env.auditLogRetentionDays * 24 * 60 * 60 * 1000,
@@ -519,6 +549,56 @@ export async function cleanupOrphanedCabinetImageFiles(now = new Date()) {
     metrics.increment('maintenance_orphan_image_cleanup_total', result.removed, { outcome: 'removed' })
     metrics.increment('maintenance_orphan_image_cleanup_total', result.failed, { outcome: 'failed' })
 
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({
+        select: { logoUrl: true, coverImageUrl: true, galleryImageUrls: true },
+    })
+    const providerReferences = providers.flatMap((provider) => [
+        provider.logoUrl,
+        provider.coverImageUrl,
+        ...provider.galleryImageUrls,
+    ].filter((value): value is string => Boolean(value)))
+    assertMaintenanceReferenceCount(providerReferences.length)
+    const gracePeriodMs = env.cabinetUploadOrphanGraceHours * 60 * 60 * 1000
+    const [logoCleanup, coverCleanup, galleryCleanup] = await Promise.all([
+        cleanupOrphanedAutoCareProviderLogos({ referencedUrls: providerReferences, now, gracePeriodMs }),
+        cleanupOrphanedAutoCareProviderMedia({ kind: 'cover', referencedUrls: providerReferences, now, gracePeriodMs }),
+        cleanupOrphanedAutoCareProviderMedia({ kind: 'gallery', referencedUrls: providerReferences, now, gracePeriodMs }),
+    ])
+    const autoCareScanned = logoCleanup.scanned + coverCleanup.scanned + galleryCleanup.scanned
+    const autoCareRemoved = logoCleanup.removed + coverCleanup.removed + galleryCleanup.removed
+    const autoCareFailed = logoCleanup.failed + coverCleanup.failed + galleryCleanup.failed
+    metrics.setGauge('maintenance_autocare_orphan_media_scanned', autoCareScanned)
+    metrics.setGauge('maintenance_autocare_orphan_media_removed', autoCareRemoved)
+    metrics.setGauge('maintenance_autocare_orphan_media_failed', autoCareFailed)
+    metrics.increment('maintenance_autocare_orphan_media_cleanup_total', autoCareRemoved, { outcome: 'removed' })
+    metrics.increment('maintenance_autocare_orphan_media_cleanup_total', autoCareFailed, { outcome: 'failed' })
+
+    const attachmentReferences = await AppDataSource.getRepository(ServiceAttachmentEntity).find({
+        select: { objectKey: true },
+    })
+    assertMaintenanceReferenceCount(attachmentReferences.length)
+    const attachmentCleanup = await cleanupOrphanedAutoCareAttachmentObjects({
+        referencedKeys: attachmentReferences.map((attachment) => attachment.objectKey),
+        now,
+        gracePeriodMs,
+    })
+    metrics.setGauge('maintenance_autocare_attachment_objects_scanned', attachmentCleanup.scanned)
+    metrics.setGauge('maintenance_autocare_attachment_objects_removed', attachmentCleanup.removed)
+    metrics.setGauge('maintenance_autocare_attachment_objects_failed', attachmentCleanup.failed)
+    metrics.increment('maintenance_autocare_attachment_cleanup_total', attachmentCleanup.removed, { outcome: 'removed' })
+    metrics.increment('maintenance_autocare_attachment_cleanup_total', attachmentCleanup.failed, { outcome: 'failed' })
+
+    const attachmentRetention = await cleanupExpiredAutoCareAttachments({
+        now,
+        retentionDays: env.autoCareAttachments.retentionDays,
+        batchSize: getMaintenanceDeleteBatchSize(),
+    })
+    metrics.setGauge('maintenance_autocare_attachment_retention_scanned', attachmentRetention.scanned)
+    metrics.setGauge('maintenance_autocare_attachment_retention_removed', attachmentRetention.removed)
+    metrics.setGauge('maintenance_autocare_attachment_retention_failed', attachmentRetention.failed)
+    metrics.increment('maintenance_autocare_attachment_retention_total', attachmentRetention.removed, { outcome: 'removed' })
+    metrics.increment('maintenance_autocare_attachment_retention_total', attachmentRetention.failed, { outcome: 'failed' })
+
     return result
 }
 
@@ -549,7 +629,11 @@ export async function runMaintenanceCycle(
         }
         const remindersScheduled = await runPhase(
             'reminders',
-            () => scheduleBookingReminders(now, lease?.assertHeld),
+            async () => {
+                const bookingReminders = await scheduleBookingReminders(now, lease?.assertHeld)
+                const autoCareReminders = await scheduleAutoCareReminders(now, lease?.assertHeld)
+                return bookingReminders + autoCareReminders
+            },
             0,
         )
         const outbox = await runPhase('outbox', async () => {
@@ -581,37 +665,11 @@ export async function runMaintenanceCycle(
             () => cleanupOrphanedCabinetImageFiles(now),
             { failed: 0, scanned: 0, removed: 0 },
         )
-        const stripeWebhook = await runPhase(
-            'stripe_webhook',
-            () => reconcileStripeWebhookEvents(now, lease?.assertHeld),
-            {
-                unmatchedExpired: 0,
-                replay: {
-                    checked: 0,
-                    applied: 0,
-                    unsupported: 0,
-                    retryable: 0,
-                    failed: 0,
-                    skipped: 0,
-                },
-            },
+        const trustReassessment = await runPhase(
+            'trust_reassessment',
+            () => reassessAutoCareTrustScores(),
+            { scanned: 0, changed: 0 },
         )
-        const payments = await runPhase(
-            'payment_reconciliation',
-            () => reconcileStripePayments(lease?.assertHeld),
-            { checked: 0, paid: 0, failed: 0, repaired: 0, skipped: 0, errors: 0 },
-        )
-        const paymentRefunds = await runPhase(
-            'payment_refund_reconciliation',
-            () => reconcileStripePaymentRefunds(lease?.assertHeld),
-            { checked: 0, repaired: 0, skipped: 0, errors: 0 },
-        )
-        const paymentInvoiceBackfill = await runPhase(
-            'payment_invoice_backfill',
-            () => backfillMissingPaymentInvoices(lease?.assertHeld),
-            { checked: 0, created: 0, skipped: 0, errors: 0 },
-        )
-
         const outcome = phaseFailures.length > 0 ? 'partial' : 'success'
         metrics.increment('maintenance_cycles_completed_total', 1, { outcome })
         metrics.setGauge(
@@ -628,10 +686,7 @@ export async function runMaintenanceCycle(
             auditCleanup,
             notificationCleanup,
             orphanImageCleanup,
-            stripeWebhook,
-            payments,
-            paymentRefunds,
-            paymentInvoiceBackfill,
+            trustReassessment,
             phaseFailures,
         }
     } catch (error) {

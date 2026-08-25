@@ -2,6 +2,7 @@ import { CircleAlert, ClipboardCheck, Copy, Search, ServerCrash } from 'lucide-r
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
     useGetSystemIncidentsPageQuery,
     useLazyGetSystemIncidentsPageQuery,
@@ -215,10 +216,12 @@ export function SystemIncidentsPanel() {
                         <tbody className="divide-y divide-border/50">
                             {isLoading ? (
                                 Array.from({ length: 4 }).map((_, index) => (
-                                    <tr key={index}>
-                                        <td colSpan={8} className="px-6 py-7 text-muted-foreground">
-                                            {t('common.loading')}
-                                        </td>
+                                    <tr key={index} aria-hidden="true">
+                                        {Array.from({ length: 8 }, (_, cellIndex) => (
+                                            <td key={cellIndex} className="px-6 py-5">
+                                                <Skeleton className={cellIndex === 0 ? 'h-4 w-44' : 'h-4 w-24'} />
+                                            </td>
+                                        ))}
                                     </tr>
                                 ))
                             ) : incidents.length === 0 ? (

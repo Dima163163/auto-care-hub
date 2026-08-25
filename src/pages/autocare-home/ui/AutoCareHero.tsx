@@ -1,14 +1,20 @@
-import { useState, type ComponentType, type SVGProps } from 'react'
+import { useEffect, type ComponentType, type SVGProps } from 'react'
 import { CalendarCheck2, ShieldCheck } from 'lucide-react'
 
+import { useGetAutoCareMarketsQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { AutoCareHeroMap } from './AutoCareHeroMap'
 import { AutoCareSearchForm } from './AutoCareSearchForm'
 
-export function AutoCareHero() {
+export function AutoCareHero({ marketId, onMarketChange }: { marketId: string; onMarketChange: (marketId: string) => void }) {
     const { t } = useTranslation()
-    const [marketId, setMarketId] = useState('ru-moscow')
+    const { data: markets = [] } = useGetAutoCareMarketsQuery()
+
+    useEffect(() => {
+        if (markets.length === 0 || markets.some((market) => market.cityCode === marketId)) return
+        onMarketChange(markets.find((market) => market.launchReady)?.cityCode ?? markets[0]!.cityCode)
+    }, [marketId, markets, onMarketChange])
 
     return (
         <section className="relative isolate min-h-[650px] overflow-hidden bg-hero-overlay text-primary-foreground lg:h-[735px]">
@@ -23,7 +29,7 @@ export function AutoCareHero() {
                         <TrustItem icon={VerifiedReviewIcon} label={t('autocare.realReviewsTrust')} />
                         <TrustItem icon={CalendarCheck2} label={t('autocare.fastBookingTrust')} />
                     </div>
-                    <div className="mt-6"><AutoCareSearchForm marketId={marketId} onMarketChange={setMarketId} /></div>
+                    <div className="mt-6"><AutoCareSearchForm marketId={marketId} markets={markets} onMarketChange={onMarketChange} /></div>
                 </div>
             </div>
         </section>

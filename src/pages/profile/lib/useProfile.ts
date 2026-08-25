@@ -34,13 +34,14 @@ export function useProfile() {
             return
         }
 
-        const nextTabIndex = event.key === 'ArrowRight'
+        const key = event.key.toLowerCase()
+        const nextTabIndex = key === 'arrowright'
             ? (tabIndex + 1) % tabs.length
-            : event.key === 'ArrowLeft'
+            : key === 'arrowleft'
                 ? (tabIndex - 1 + tabs.length) % tabs.length
-                : event.key === 'Home'
+                : key === 'home'
                     ? 0
-                    : event.key === 'End'
+                    : key === 'end'
                         ? tabs.length - 1
                         : null
 
@@ -82,6 +83,7 @@ export function useProfile() {
         { id: 'general', label: t('profile.tabs.general') },
         { id: 'security', label: t('profile.tabs.security') },
         { id: 'sessions', label: t('profile.tabs.sessions') },
+        { id: 'account', label: t('profile.tabs.account') },
     ]
 
     const currentTabId = tabs.find(t => t.id === activeTab) ? activeTab : 'general'

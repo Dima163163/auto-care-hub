@@ -5,10 +5,10 @@ import { sanitizeLogMetadata } from '../../shared/observability/sensitive-data.j
 describe('system incident metadata redaction', () => {
     it('redacts sensitive nested values before incident persistence', () => {
         expect(sanitizeLogMetadata({
-            stripe: { token: 'secret', status: 'failed' },
+            integration: { token: 'secret', status: 'failed' },
             failureMessage: 'provider failed',
         })).toEqual({
-            stripe: { token: '[REDACTED]', status: 'failed' },
+            integration: { token: '[REDACTED]', status: 'failed' },
             failureMessage: 'provider failed',
         })
     })

@@ -1,11 +1,13 @@
 import { Suspense } from 'react'
-import { Routes } from 'react-router'
+import { Routes, useLocation } from 'react-router'
 
+import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
-import { StateCard } from '@/shared/ui/state-card'
+import { AutoCareResultsRouteSkeleton, PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 
 import {
     renderAdminRoutes,
+    renderSuperAdminRoutes,
     renderAuthenticatedPublicRoutes,
     renderAuthUtilityRoutes,
     renderClientRoutes,
@@ -17,14 +19,11 @@ import {
 
 function RouteFallback() {
     const { t } = useTranslation()
+    const { pathname } = useLocation()
 
-    return (
-        <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
-            <section className="mx-auto max-w-6xl">
-                <StateCard description={t('common.loadingPage')} />
-            </section>
-        </main>
-    )
+    return pathname === ROUTES.serviceDiscovery
+        ? <AutoCareResultsRouteSkeleton label={t('common.loadingPage')} />
+        : <PageContentSkeleton label={t('common.loadingPage')} />
 }
 
 export function AppRouter() {
@@ -38,6 +37,7 @@ export function AppRouter() {
                 {renderAuthUtilityRoutes()}
                 {renderOwnerRoutes()}
                 {renderAdminRoutes()}
+                {renderSuperAdminRoutes()}
                 {renderNotFoundRoute()}
             </Routes>
         </Suspense>

@@ -2,7 +2,7 @@ schema_version: 1
 document:
   name: AutoCare Hub target domain model
   status: proposed
-  updated: 2026-08-12
+  updated: 2026-08-14
   source_of_truth:
     - ../../ARCHITECTURE.md
     - ../../PROJECT_PLAN.md
@@ -60,6 +60,8 @@ contexts:
     owns:
       - ServiceProvider
       - ServiceLocation
+      - AutomotiveMarket
+      - AutomotiveLocationZone
       - ProviderVerification
       - LocationSchedule
       - ScheduleException
@@ -67,6 +69,25 @@ contexts:
     depends_on:
       - identity_access
     security_boundary: provider_membership_and_location_scope
+
+  location_intelligence:
+    status: active
+    implementation_status: hierarchical_market_zone_api_added
+    owns:
+      - AutomotiveMarket
+      - AutomotiveLocationZone
+      - ServiceLocationZoneLink
+    hierarchy: country_region_city_zone
+    endpoint: GET /api/v1/markets/:marketId/zones
+    capabilities:
+      - localized_zone_names_and_images
+      - parent_zone_traversal
+      - nearest_zone_ordering_by_coordinates
+      - active_provider_location_counts
+    depends_on:
+      - provider_network
+      - discovery
+    security_boundary: public_read_provider_scoped_write
 
   vehicles:
     status: new
@@ -116,18 +137,17 @@ contexts:
     security_boundary: client_owner_or_provider_membership
 
   messaging:
-    status: new
-    implementation_status: first_schema_slice_added
+    status: active
+    implementation_status: unified_thread_workspace_added
     owns:
-      - Conversation
-      - ConversationParticipant
-      - Message
-      - MessageAttachment
+      - AutoCareChatThread
+      - ServiceMessage
+      - ServiceAttachment
     depends_on:
       - identity_access
       - provider_network
       - private_media
-    security_boundary: active_conversation_participant
+    security_boundary: explicit_thread_participant_or_moderation_role
 
   inquiries_quotes:
     status: new
@@ -148,6 +168,8 @@ contexts:
       - Review
       - ReviewReport
       - RatingAggregate
+      - ProviderTrustSnapshot
+      - TrustBadge
     depends_on:
       - bookings
       - provider_network
@@ -393,7 +415,7 @@ entities:
       location_id: ServiceLocation
       service_definition_id: ServiceDefinition
       vehicle_id: Vehicle
-      conversation_id: Conversation
+      conversation_id: AutoCareChatThread
     states:
       - OPEN
       - WAITING_PROVIDER
@@ -403,20 +425,30 @@ entities:
       - CLOSED
       - REPORTED
 
-  Conversation:
+  AutoCareChatThread:
     context: messaging
     key: id
     relations:
-      inquiry_id: ServiceInquiry
+      request_id: ServiceInquiry
+      provider_id: ServiceProvider
+      client_id: User
+      created_by_id: User
+    important_fields:
+      - type
+      - subject
+      - status
+      - last_message_at
     invariants:
-      - One primary conversation belongs to one inquiry.
-      - Participation is not inferred from knowing the identifier.
+      - Type is one of service_request, provider_inquiry, support or admin_escalation.
+      - A provider inquiry may exist before a booking and may have no service definition.
+      - Participation is explicit and is not inferred from knowing the identifier.
+      - Support and escalation access is limited to the relevant operational role.
 
   Message:
     context: messaging
     key: id
     relations:
-      conversation_id: Conversation
+      thread_id: AutoCareChatThread
       sender_id: User
     important_fields:
       - client_idempotency_key

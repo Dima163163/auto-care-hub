@@ -2,8 +2,9 @@
 
 This document is the human-readable contract shared by the Fastify backend,
 the React real API client, and the MSW mock handlers. All paths below are
-relative to the configured API base URL and include the `/api` prefix when the
-frontend uses the Vite same-origin proxy.
+relative to the configured API base URL and include the `/api` prefix. The
+Next.js web shell uses the same-origin `/api` rewrite (the Vite build keeps
+the equivalent proxy for compatibility checks).
 
 The machine-readable foundation is available at `GET /openapi.json`. It covers
 the shared error/cursor schemas and the main health, catalog, booking,
@@ -53,14 +54,7 @@ authorization, no-store responses, and a bounded rate limit.
 Successful Book again booking creation is counted server-side from the bounded
 `experiment: "book_again"` request field plus its source booking id. The source
 must belong to the authenticated client, match the requested cabinet/service,
-and have `completed` or `cancelled` status; the old slot and payment are never
-reused.
-
-The super-admin-only `GET /admin/payments/attention` endpoint returns only
-bounded counts for failed payments, open disputes, and disputes where funds
-were withdrawn. It uses `no-store`, has OpenAPI/MSW/runtime-schema parity, and
-does not return Stripe identifiers, payment payloads, customer data, or
-provider error text.
+and have `completed` or `cancelled` status; the old slot is never reused.
 
 Every response includes `X-Request-Id`. A caller may provide a request ID made
 of letters, digits, `_`, and `-` with a length from 8 to 128 characters.
@@ -79,8 +73,8 @@ bounded cursor contract:
 The cursor is tied to the endpoint's stable sort and must be passed back
 unchanged. Bookings support `status`, `fromDate`, and `toDate`; notifications
 support `read` and `category`. Admin users support `search`, `role`, and
-`status`; admin payments support `search` and `status`; audit logs support
-`action`, `targetType`, and `actorId`; system incidents support `search`,
+`status`; audit logs support `action`, `targetType`, and `actorId`; system
+incidents support `search`,
 `type`, `severity`, and `status`. Limits are positive integers capped at 100.
 
 Security-sensitive server records use the resolved client IP. Forwarded client
@@ -181,10 +175,20 @@ mock and real modes.
 
 | Method | Path | Access | Notes |
 | --- | --- | --- | --- |
-| GET | `/api/v1/markets` | public | Country, city, currency, timezone, and available UI locales. |
+| GET | `/api/v1/markets` | public | Country, region, city center, currency, timezone, and available UI locales. |
+| GET | `/api/v1/markets/:marketId/zones` | public | Localized district/neighborhood/service-area hierarchy with parent traversal, active service counts, images, radius and optional nearest-coordinate ordering. |
 | GET | `/api/v1/service-definitions` | public | Moderated major/minor service catalog with comparison schema. |
+| GET | `/api/v1/fair-price` | public | Fair-price benchmark by service, market and optional vehicle context; includes methodology and disclaimer. |
+| GET | `/api/v1/vehicle-catalog` | public | Versioned makes, models, production years and engine options; optional `brandId` narrows the response. The checked-in MVP catalog is normalized to the official NHTSA vPIC schema; a scheduled production importer is still required for full market coverage. |
+| GET | `/api/v1/reviews/featured` | public | Approved homepage reviews with rating, vehicle, avatar and publication date; optional `limit` up to 12. |
 | GET | `/api/v1/discovery/providers` | public | Service/location/radius/vehicle filters, sort, cursor, map projection. |
-| GET | `/api/v1/providers/:providerId` | public | Provider profile, locations, trust status, offerings, bonuses, review summary, `coverImageUrl`, and `galleryImageUrls`. |
+| GET | `/api/v1/providers/:providerId` | public | Provider profile, locations, trust status, offerings, bonuses, review summary, `logoUrl`, `coverImageUrl`, and `galleryImageUrls`. |
+| GET | `/api/v1/providers/:providerId/trust` | public | Trust score, badge and auditable evidence items used for ranking explanations. |
+| POST | `/api/owner/autocare-providers` | verified owner | Creates a draft service point with profile, contact, warranty, brand, amenity and media references. |
+| POST | `/api/owner/autocare-providers/logo` | verified owner | Validates and stores a provider logo as a normalized WebP asset. |
+| POST | `/api/owner/autocare-providers/media` | verified owner | Stores a normalized WebP cover or gallery image; `kind` is `cover` or `gallery`. |
+| GET | `/api/uploads/autocare/logos/:fileName` | public | Serves a normalized provider logo referenced by `logoUrl`; missing files return `404`. |
+| GET | `/api/uploads/autocare/media/:kind/:fileName` | public | Serves a normalized provider cover/gallery image referenced by the provider profile. |
 | GET | `/api/v1/providers/:providerId/offers` | public | Price type, range/from price, duration, inclusions, warranty, availability preview. |
 | GET | `/api/v1/providers/:providerId/reviews` | public | Approved reviews with service context and pagination. |
 | POST | `/api/v1/service-requests` | authenticated client | Creates a service-scoped inquiry; requires participant authorization and idempotency. |
@@ -193,6 +197,19 @@ mock and real modes.
 | POST | `/api/v1/service-requests/:requestId/confirmations/provider` | provider membership | Provider confirms work/quote; only both confirmations activate the booking. |
 | GET | `/api/v1/service-requests/:requestId/messages` | request participant | Cursor-paginated private thread, no public provider chat. |
 | POST | `/api/v1/service-requests/:requestId/messages` | request participant | Durable text message with optional attachment references. |
+| GET | `/api/v1/service-requests/:requestId/timeline` | request participant | Repair timeline with request, quote and confirmation events. |
+| POST | `/api/v1/broadcast-requests` | authenticated client | Sends one issue and vehicle/photo context to multiple eligible providers for comparable offers. |
+| GET | `/api/v1/broadcast-requests/my` | authenticated client | Lists the client's multi-provider requests and received offers. |
+| GET | `/api/v1/broadcast-requests/:broadcastId` | participant/admin | Returns a broadcast request and normalized provider offers. |
+| GET | `/api/owner/broadcast-requests` | verified owner | Lists open broadcast requests matching the owner's published service catalog. |
+| POST | `/api/owner/broadcast-requests/:broadcastId/offers` | verified owner | Publishes a structured provider offer with price, duration and validity. |
+| POST | `/api/v1/guarantee-claims` | authenticated client | Opens a post-visit AutoCare guarantee claim with evidence links. |
+| GET | `/api/v1/guarantee-claims/my` | authenticated client | Lists guarantee claims and their resolution status. |
+| POST | `/api/v1/expert-questions` | authenticated client | Sends a guided symptom/vehicle question to the expert queue. |
+| GET | `/api/v1/expert-questions/my` | authenticated client | Lists expert questions and answers. |
+| GET | `/api/owner/fleets` | verified owner | Lists fleet accounts and their vehicles for partner/fleet workflows. |
+| POST | `/api/owner/fleets` | verified owner | Creates a fleet account with optional approval notes. |
+| POST | `/api/owner/fleets/:fleetId/vehicles` | verified owner | Adds a vehicle and approval policy to an owned fleet. |
 
 The first browser slice intentionally does not collect repair payment. Payment
 status, if needed for a provider’s own workflow, is a provider-side note and
@@ -219,12 +236,12 @@ presentation data only and never a verification signal.
 | PATCH | `/services/:id` | service owner |
 | PATCH | `/services/:id/status` | service owner |
 | DELETE | `/services/:id` | service owner |
-| GET | `/owner/bookings` | owner | Cursor mode supports `status`, `fromDate`, and `toDate`; each booking includes an owner-safe `paymentLedger` with gross, commission, owner payout, refund, remaining balance, currency, status, and creation time when a payment exists. Stripe provider identifiers are never returned. |
+| GET | `/owner/bookings` | owner | Cursor mode supports `status`, `fromDate`, and `toDate`. |
 | POST | `/owner/bookings` | owner |
 | PATCH | `/bookings/:id/status` | cabinet owner |
 | GET | `/owner/clients` | owner |
 
-### Admin, notifications, favorites, and payments
+### Admin, notifications, and favorites
 
 | Method | Path | Access |
 | --- | --- | --- |
@@ -234,12 +251,7 @@ presentation data only and never a verification signal.
 | POST | `/admin/admins` | super-admin |
 | GET | `/admin/cabinets` | admin |
 | PATCH | `/admin/cabinets/:id/status` | admin |
-| GET | `/admin/payments` | admin | Cursor mode supports `search` and `status`. |
-| POST | `/admin/payments/:id/refund` | super-admin | Financial refund mutation; amount/reason are bounded and the payment transition writes an idempotent audit record. |
-| GET | `/bookings/:id/payment/status` | client booking owner | Returns server-calculated payment balance and a provider-free receipt summary. |
-| GET | `/admin/payments/:id/refunds` | admin | Returns at most 100 auditable refund ledger records in creation order. |
 | PATCH | `/admin/security-center/mitigations/:id` | super admin | Extends an active temporary mitigation within the 24-hour recovery window; response is `no-store`. |
-| GET | `/admin/payments/:id/disputes` | admin | Returns at most 100 retained Stripe dispute records in event order; response is `no-store`. |
 | GET | `/admin/reviews` | admin |
 | PATCH | `/admin/reviews/:id/status` | admin |
 | GET | `/admin/audit-logs` | admin | Cursor mode supports `action`, `targetType`, and `actorId`. |
@@ -257,13 +269,18 @@ presentation data only and never a verification signal.
 | POST | `/users/me/favorites/sync` | authenticated |
 | POST | `/users/me/favorites/:cabinetId` | authenticated |
 | DELETE | `/users/me/favorites/:cabinetId` | authenticated |
+
+AutoCare provider favorites are separate from the legacy cabinet collection:
+
+| GET | `/v1/favorites/providers` | authenticated client |
+| POST | `/v1/favorites/providers/sync` | authenticated client |
+| POST | `/v1/favorites/providers/:providerId` | authenticated client |
+| DELETE | `/v1/favorites/providers/:providerId` | authenticated client |
 | PATCH | `/users/me/preferences` | authenticated |
 | GET | `/users/me/export` | authenticated | Rate-limited JSON export of the caller's own data; response is `no-store`. |
 | POST | `/users/me/deletion-request` | authenticated | Creates or returns one pending deletion request; does not delete data. |
 | GET | `/users/me/deletion-request` | authenticated | Returns the caller's pending deletion request or `null`. |
 | DELETE | `/users/me/deletion-request` | authenticated | Cancels the caller's pending deletion request. |
-| POST | `/bookings/:id/payment/checkout` | verified client | Accepts an optional validated `Idempotency-Key`; returns `{ url, attemptId, reused }` and reuses the active Checkout attempt on retries. |
-| POST | `/webhooks/stripe` | Stripe signature | Processed duplicates return `200`; an active concurrent delivery returns `409` with `Retry-After` while a five-minute processing lease is held. |
 
 `PATCH /users/me/preferences` accepts optional `emailNotifications`,
 `bookingEmailNotifications`, `preferredCity`, and `preferredCategories` fields.

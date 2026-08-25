@@ -8,12 +8,6 @@ const cursorParameters = [
     { $ref: '#/components/parameters/Limit' },
 ] as const
 
-const adminPaymentParameters = [
-    ...cursorParameters,
-    { $ref: '#/components/parameters/AdminPaymentSearch' },
-    { $ref: '#/components/parameters/AdminPaymentStatus' },
-] as const
-
 const adminAuditParameters = [
     ...cursorParameters,
     { $ref: '#/components/parameters/AdminSearch' },
@@ -139,8 +133,88 @@ export function getOpenApiDocument() {
             '/v1/markets': {
                 get: { operationId: 'listAutoCareMarkets', security: [], responses: { '200': { description: 'AutoCare launch markets and supported locales.' } } },
             },
+            '/v1/deployment-capabilities': {
+                get: { operationId: 'getDeploymentCapabilities', security: [], responses: { '200': { description: 'Deployment-scoped authentication and product capabilities.' } } },
+            },
+            '/v1/markets/{marketId}/zones': {
+                get: {
+                    operationId: 'listAutoCareLocationZones',
+                    security: [],
+                    parameters: [
+                        { name: 'marketId', in: 'path', required: true, schema: { type: 'string' } },
+                        { name: 'parentId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' } },
+                        { name: 'latitude', in: 'query', required: false, schema: { type: 'number', minimum: -90, maximum: 90 } },
+                        { name: 'longitude', in: 'query', required: false, schema: { type: 'number', minimum: -180, maximum: 180 } },
+                        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 24 } },
+                    ],
+                    responses: { '200': { description: 'Hierarchical districts and service areas for a market, ordered by display order or nearest coordinates.' } },
+                },
+            },
             '/v1/service-definitions': {
                 get: { operationId: 'listAutoCareServiceDefinitions', security: [], responses: { '200': { description: 'Active standardized automotive services.' } } },
+            },
+            '/v1/bonuses/my': {
+                get: { operationId: 'getMyAutoCareBonusAccounts', responses: { '200': { description: 'Client bonus accounts and immutable ledger history.' } } },
+            },
+            '/v1/bonuses/redeem': {
+                post: { operationId: 'redeemAutoCareBonus', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['providerId', 'requestId', 'points'], properties: { providerId: { type: 'string', format: 'uuid' }, requestId: { type: 'string', format: 'uuid' }, points: { type: 'integer', minimum: 1 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Redeemed client bonus points for a confirmed service request.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/bonus-accounts/{clientId}/grants': {
+                post: { operationId: 'grantAutoCareBonus', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'clientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['points', 'reason'], properties: { points: { type: 'integer', minimum: 1, maximum: 100000 }, reason: { type: 'string', minLength: 10, maxLength: 500 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Granted provider-funded bonus points with an audit record.' } } },
+            },
+            '/v1/catalog-gap-requests': {
+                post: { operationId: 'createAutoCareCatalogGapRequest', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['proposedSlug', 'categorySlug', 'labels', 'priceType', 'comparisonAttributes', 'rationale'], additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a request for a missing standardized automotive service.' } } },
+            },
+            '/v1/fair-price': {
+                get: { operationId: 'getAutoCareFairPrice', security: [], parameters: [{ name: 'serviceId', in: 'query', required: true, schema: { type: 'string' } }, { name: 'marketId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'makeId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'modelId', in: 'query', required: false, schema: { type: 'string' } }, { name: 'fuelType', in: 'query', required: false, schema: { type: 'string' } }, { name: 'engineLiters', in: 'query', required: false, schema: { type: 'number', minimum: 0 } }], responses: { '200': { description: 'Fair-price benchmark derived from market data and comparable provider offers.' } } },
+            },
+            '/v1/vehicle-catalog': {
+                get: { operationId: 'listVehicleCatalog', security: [], parameters: [{ name: 'brandId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Versioned vehicle makes, models, years and engine options.' } } },
+            },
+            '/v1/reviews/featured': {
+                get: { operationId: 'listFeaturedAutoCareReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 12, default: 6 } }], responses: { '200': { description: 'Approved reviews for the public AutoCare Hub homepage.' } } },
+            },
+            '/v1/platform-reviews': {
+                get: { operationId: 'listPlatformReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, default: 30 } }], responses: { '200': { description: 'Approved reviews about the AutoCare Hub platform.' } } },
+                post: { operationId: 'createPlatformReview', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Submitted platform review awaiting moderation.' } } },
+            },
+            '/v1/platform-reviews/my': {
+                get: { operationId: 'listMyPlatformReviews', responses: { '200': { description: 'Authenticated client platform reviews.' } } },
+            },
+            '/v1/autocare-appeals': {
+                post: {
+                    operationId: 'createAutoCareAppeal',
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['subject', 'subjectId', 'reason'],
+                                    properties: {
+                                        subject: { type: 'string', enum: ['provider', 'review', 'suspension', 'catalog'] },
+                                        subjectId: { type: 'string', format: 'uuid' },
+                                        providerId: { type: ['string', 'null'], format: 'uuid' },
+                                        reason: { type: 'string', minLength: 20, maxLength: 4_000 },
+                                        evidenceIds: { type: 'array', maxItems: 20, items: { type: 'string', format: 'uuid' } },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '201': { description: 'Appeal submitted for moderation.' } },
+                },
+            },
+            '/v1/autocare-appeals/my': {
+                get: { operationId: 'listMyAutoCareAppeals', responses: { '200': { description: 'Appeals submitted by the authenticated user.' } } },
+            },
+            '/v1/autocare-appeals/{appealId}': {
+                delete: {
+                    operationId: 'withdrawAutoCareAppeal',
+                    parameters: [{ name: 'appealId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    responses: { '200': { description: 'Withdraws an unresolved appeal submitted by the authenticated user.' } },
+                },
             },
             '/v1/discovery/providers': {
                 get: {
@@ -148,9 +222,20 @@ export function getOpenApiDocument() {
                     security: [],
                     parameters: [
                         { name: 'serviceId', in: 'query', required: false, schema: { type: 'string' } },
+                        { name: 'providerName', in: 'query', required: false, schema: { type: 'string', maxLength: 160 } },
                         { name: 'marketId', in: 'query', required: false, schema: { type: 'string' } },
                         { name: 'radiusKm', in: 'query', required: false, schema: { type: 'number', minimum: 0 } },
                         { name: 'sort', in: 'query', required: false, schema: { type: 'string', enum: ['recommended', 'price_asc', 'rating_desc', 'distance_asc'] } },
+                        { name: 'minPrice', in: 'query', required: false, schema: { type: 'number', minimum: 0 } },
+                        { name: 'maxPrice', in: 'query', required: false, schema: { type: 'number', minimum: 0 } },
+                        { name: 'minRating', in: 'query', required: false, schema: { type: 'number', minimum: 0, maximum: 5 } },
+                        { name: 'priceType', in: 'query', required: false, schema: { type: 'string', enum: ['fixed', 'from', 'range', 'quote_required'] } },
+                        { name: 'availableToday', in: 'query', required: false, schema: { type: 'boolean' } },
+                        { name: 'verifiedOnly', in: 'query', required: false, schema: { type: 'boolean' } },
+                        { name: 'warrantyOnly', in: 'query', required: false, schema: { type: 'boolean' } },
+                        { name: 'hasBonus', in: 'query', required: false, schema: { type: 'boolean' } },
+                        { name: 'inclusion', in: 'query', required: false, schema: { type: 'string' } },
+                        { name: 'brandId', in: 'query', required: false, schema: { type: 'string' } },
                         ...cursorParameters,
                     ],
                     responses: { '200': { description: 'Stable, comparable AutoCare provider results.' } },
@@ -159,21 +244,315 @@ export function getOpenApiDocument() {
             '/v1/providers/{providerId}': {
                 get: { operationId: 'getAutoCareProviderProfile', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Public provider profile with offers and image fallbacks.' } } },
             },
+            '/v1/providers/{providerId}/reviews': {
+                get: { operationId: 'getAutoCareProviderReviews', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } }], responses: { '200': { description: 'Approved provider reviews with aggregate rating distribution.' } } },
+            },
+            '/v1/providers/{providerId}/trust': {
+                get: { operationId: 'getAutoCareProviderTrust', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Trust score and evidence used for the verified-service badge.' } } },
+            },
+            '/owner/autocare-providers/logo': {
+                post: { operationId: 'uploadOwnerAutoCareProviderLogo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['fileName', 'mimeType', 'size', 'contentBase64'] } } } }, responses: { '200': { description: 'Normalized WebP provider logo URL.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/reviews': {
+                get: { operationId: 'getOwnerAutoCareProviderReviews', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Approved reviews and rating distribution for an owner-managed automotive service location.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/analytics': {
+                get: { operationId: 'getOwnerAutoCareProviderAnalytics', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Owner-safe operational, booking, review and bonus-liability metrics.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members': {
+                get: { operationId: 'listOwnerAutoCareProviderMembers', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider-scoped memberships and pending staff invitations.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members/invitations': {
+                post: { operationId: 'inviteAutoCareProviderMember', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['email', 'role'], properties: { email: { type: 'string', format: 'email' }, role: { type: 'string', enum: ['manager', 'staff'] }, locationId: { type: ['string', 'null'], format: 'uuid' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a scoped provider staff invitation.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members/invitations/{invitationId}': {
+                delete: { operationId: 'revokeAutoCareProviderInvitation', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'invitationId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked a pending provider staff invitation.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/members/{membershipId}': {
+                delete: { operationId: 'revokeAutoCareProviderMembership', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'membershipId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked an active provider staff membership.' } } },
+            },
+            '/owner/autocare-provider-invitations/accept': {
+                post: { operationId: 'acceptAutoCareProviderInvitation', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['token'], properties: { token: { type: 'string', minLength: 32, maxLength: 512 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Accepted an invitation and created a scoped provider membership.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/change-requests': {
+                get: { operationId: 'listOwnerAutoCareProviderChangeRequests', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Owner-visible provider verification and profile change requests.' } } },
+                post: { operationId: 'createOwnerAutoCareProviderChangeRequest', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['kind'], properties: { kind: { type: 'string', enum: ['verification', 'profile_update'] }, payload: { type: 'object', additionalProperties: true } }, additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a provider verification or profile change request.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/change-requests/{requestId}': {
+                delete: { operationId: 'cancelOwnerAutoCareProviderChangeRequest', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Cancelled a pending provider change request.' } } },
+            },
+            '/admin/autocare-provider-change-requests': {
+                get: { operationId: 'listAdminAutoCareProviderChangeRequests', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'approved', 'rejected', 'cancelled'] } }, { name: 'kind', in: 'query', required: false, schema: { type: 'string', enum: ['verification', 'profile_update'] } }], responses: { '200': { description: 'Admin queue of provider verification and profile-change requests.' } } },
+            },
+            '/admin/autocare-provider-change-requests/{id}/decision': {
+                patch: { operationId: 'decideAdminAutoCareProviderChangeRequest', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: ['string', 'null'], maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Approved or rejected a provider change request with an audit record.' } } },
+            },
+            '/admin/autocare-quality-monitoring': {
+                get: { operationId: 'getAdminAutoCareQualityMonitoring', responses: { '200': { description: 'Aggregate provider, review, request and ranking-quality telemetry for administrators.' } } },
+            },
+            '/admin/autocare-appeals': {
+                get: {
+                    operationId: 'listAdminAutoCareAppeals',
+                    parameters: [
+                        { name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'accepted', 'rejected', 'withdrawn'] } },
+                        { name: 'subject', in: 'query', required: false, schema: { type: 'string', enum: ['provider', 'review', 'suspension', 'catalog'] } },
+                        ...cursorParameters,
+                    ],
+                    responses: { '200': { description: 'Admin moderation queue of provider, review and catalog appeals.' } },
+                },
+            },
+            '/admin/autocare-appeals/{id}/decision': {
+                patch: {
+                    operationId: 'decideAdminAutoCareAppeal',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['status', 'reason'],
+                                    properties: {
+                                        status: { type: 'string', enum: ['accepted', 'rejected'] },
+                                        reason: { type: 'string', minLength: 1, maxLength: 2_000 },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '200': { description: 'Appeal decision recorded with an audit event.' } },
+                },
+            },
+            '/admin/autocare-moderation-evidence': {
+                get: {
+                    operationId: 'listAutoCareModerationEvidence',
+                    parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'approved', 'rejected'] } }],
+                    responses: { '200': { description: 'Admin moderation queue for service gallery media and verified reviews.' } },
+                },
+            },
+            '/admin/autocare-moderation-evidence/{id}/decision': {
+                patch: {
+                    operationId: 'decideAutoCareModerationEvidence',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status', 'reason'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: 'string', minLength: 1, maxLength: 2000 } }, additionalProperties: false } } } },
+                    responses: { '200': { description: 'Decides queued public media or review evidence.' } },
+                },
+            },
+            '/admin/catalog-gap-requests': {
+                get: { operationId: 'listAdminCatalogGapRequests', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'approved', 'rejected'] } }], responses: { '200': { description: 'Admin queue of requested catalog additions.' } } },
+            },
+            '/admin/catalog-gap-requests/{id}/decision': {
+                patch: { operationId: 'decideAdminCatalogGapRequest', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: ['string', 'null'] } }, additionalProperties: false } } } }, responses: { '200': { description: 'Approved request creates an active standardized service definition.' } } },
+            },
+            '/admin/chat-reports': {
+                get: { operationId: 'listAdminAutoCareChatReports', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'resolved', 'dismissed'] } }], responses: { '200': { description: 'Admin moderation metadata for reported chats; private message bodies are not returned.' } } },
+            },
+            '/admin/chat-reports/{id}/decision': {
+                patch: { operationId: 'decideAdminAutoCareChatReport', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['resolved', 'dismissed'] }, reason: { type: ['string', 'null'], maxLength: 2000 }, blockUser: { type: 'boolean' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Resolved or dismissed a chat report and optionally blocked the reported participant.' } } },
+            },
+            '/owner/autocare-reviews': {
+                get: { operationId: 'getOwnerAutoCareReviews', parameters: [{ name: 'providerId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Aggregated approved reviews for all owner-managed service locations or one selected location.' } } },
+            },
+            '/admin/platform-reviews': {
+                get: { operationId: 'listAdminPlatformReviews', responses: { '200': { description: 'Platform reviews for administrator moderation.' } } },
+            },
+            '/admin/platform-reviews/{reviewId}/response': {
+                post: { operationId: 'respondToPlatformReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['response'], properties: { response: { type: 'string', minLength: 5, maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Official AutoCare Hub response added to a platform review.' } } },
+            },
+            '/super-admin/platform-reviews/{reviewId}': {
+                delete: { operationId: 'removePlatformReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Platform review removed by a super administrator.' } } },
+            },
+            '/owner/autocare-providers/{providerId}/reviews/{reviewId}/promos': {
+                post: {
+                    operationId: 'issueAutoCareReviewPromo',
+                    parameters: [
+                        { name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                        { name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                    ],
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['discountPercent'], properties: { discountPercent: { type: 'integer', minimum: 1, maximum: 100 }, serviceSlug: { type: ['string', 'null'], maxLength: 120 }, expiresInDays: { type: 'integer', minimum: 1, maximum: 90, default: 30 } }, additionalProperties: false } } } },
+                    responses: { '200': { description: 'One-time service promo issued to resolve a linked customer review.' } },
+                },
+            },
+            '/owner/autocare-providers/{providerId}/offers/{offerId}': {
+                patch: {
+                    operationId: 'updateOwnerAutoCareOffer',
+                    parameters: [
+                        { name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                        { name: 'offerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                    ],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['description', 'priceFromMinor'],
+                                    properties: {
+                                        description: { type: ['string', 'null'], maxLength: 2_000 },
+                                        priceFromMinor: { type: 'integer', minimum: 0, maximum: 10_000_000_000 },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '200': { description: 'Updated owner automotive service offer.' } },
+                },
+            },
+            '/v1/providers/{providerId}/availability': {
+                get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.' } } },
+            },
             '/v1/providers/{providerId}/offers': {
                 get: { operationId: 'listAutoCareProviderOffers', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Active provider offers for comparison and request entry.' } } },
+            },
+            '/v1/service-requests': {
+                post: {
+                    operationId: 'createAutoCareServiceRequest',
+                    parameters: [{ name: 'Idempotency-Key', in: 'header', required: false, schema: { type: 'string', minLength: 8, maxLength: 128, pattern: '^[a-zA-Z0-9_-]+$' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/AutoCareServiceRequestCreate' } } } },
+                    responses: { '201': { description: 'Created client service request.' } },
+                },
+            },
+            '/v1/service-requests/my': {
+                get: { operationId: 'listMyAutoCareServiceRequests', responses: { '200': { description: 'Authenticated client service requests.' } } },
+            },
+            '/v1/service-requests/{requestId}/timeline': {
+                get: { operationId: 'getAutoCareRepairTimeline', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Repair timeline with quote, confirmations and status events.' } } },
+            },
+            '/v1/broadcast-requests': {
+                post: { operationId: 'createAutoCareBroadcastRequest', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['serviceDefinitionId', 'issueDescription'], properties: { serviceDefinitionId: { type: 'string' }, marketId: { type: ['string', 'null'] }, issueDescription: { type: 'string', minLength: 10, maxLength: 4000 }, vehicleSnapshot: { type: ['object', 'null'] }, photoUrls: { type: 'array', maxItems: 12, items: { type: 'string', format: 'uri' } }, preferredAt: { type: ['string', 'null'], format: 'date-time' }, maxProviders: { type: 'integer', minimum: 1, maximum: 10, default: 5 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Broadcast request sent to eligible providers.' } } },
+            },
+            '/v1/broadcast-requests/my': {
+                get: { operationId: 'listMyAutoCareBroadcastRequests', responses: { '200': { description: 'Client broadcast requests and provider offers.' } } },
+            },
+            '/v1/broadcast-requests/{broadcastId}': {
+                get: { operationId: 'getAutoCareBroadcastRequest', parameters: [{ name: 'broadcastId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Broadcast request with comparable service offers.' } } },
+            },
+            '/owner/broadcast-requests': {
+                get: { operationId: 'listOwnerAutoCareBroadcastRequests', responses: { '200': { description: 'Open broadcast requests matching the owner service catalog.' } } },
+            },
+            '/owner/broadcast-requests/{broadcastId}/offers': {
+                post: { operationId: 'createAutoCareBroadcastOffer', parameters: [{ name: 'broadcastId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['locationId', 'amountMinor', 'currencyCode'], properties: { locationId: { type: 'string', format: 'uuid' }, amountMinor: { type: 'integer', minimum: 1 }, currencyCode: { type: 'string', pattern: '^[A-Z]{3}$' }, note: { type: ['string', 'null'] }, durationMinutes: { type: 'integer', minimum: 1 }, validUntil: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Provider offer added to a broadcast request.' } } },
+            },
+            '/v1/guarantee-claims': {
+                post: { operationId: 'createAutoCareGuaranteeClaim', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['requestId', 'claimType', 'summary'], properties: { requestId: { type: 'string', format: 'uuid' }, claimType: { type: 'string', maxLength: 80 }, summary: { type: 'string', minLength: 10, maxLength: 4000 }, evidenceUrls: { type: 'array', maxItems: 12, items: { type: 'string', format: 'uri' } } }, additionalProperties: false } } } }, responses: { '201': { description: 'Guarantee claim submitted for review.' } } },
+            },
+            '/v1/guarantee-claims/my': {
+                get: { operationId: 'listMyAutoCareGuaranteeClaims', responses: { '200': { description: 'Authenticated client guarantee claims.' } } },
+            },
+            '/v1/expert-questions': {
+                post: { operationId: 'createAutoCareExpertQuestion', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['symptoms'], properties: { symptoms: { type: 'string', minLength: 10, maxLength: 4000 }, categorySlug: { type: ['string', 'null'] }, vehicleSnapshot: { type: ['object', 'null'] } }, additionalProperties: false } } } }, responses: { '201': { description: 'Question sent to an AutoCare expert.' } } },
+            },
+            '/v1/expert-questions/my': {
+                get: { operationId: 'listMyAutoCareExpertQuestions', responses: { '200': { description: 'Authenticated client expert questions and answers.' } } },
+            },
+            '/owner/fleets': {
+                get: { operationId: 'listOwnerAutoCareFleets', responses: { '200': { description: 'Fleet accounts and vehicles managed by the authenticated service owner.' } } },
+                post: { operationId: 'createOwnerAutoCareFleet', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['name'], properties: { name: { type: 'string', minLength: 2, maxLength: 160 }, notes: { type: ['string', 'null'], maxLength: 4000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Fleet account created.' } } },
+            },
+            '/owner/fleets/{fleetId}/vehicles': {
+                post: { operationId: 'createOwnerAutoCareFleetVehicle', parameters: [{ name: 'fleetId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['label', 'vehicleSnapshot'], properties: { label: { type: 'string', minLength: 1, maxLength: 120 }, vehicleSnapshot: { type: 'object' }, approvalPolicy: { type: ['string', 'null'], maxLength: 160 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Fleet vehicle created.' } } },
+            },
+            '/v1/autocare-reviews/my': {
+                get: { operationId: 'listMyAutoCareReviews', responses: { '200': { description: 'Authenticated client automotive reviews and revision eligibility.' } } },
+            },
+            '/v1/autocare-reviews': {
+                post: { operationId: 'createAutoCareReview', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['requestId', 'rating', 'text'], properties: { requestId: { type: 'string', format: 'uuid' }, rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Verified visit review submitted for moderation.' } } },
+            },
+            '/v1/autocare-review-promos/redeem': {
+                post: { operationId: 'redeemAutoCareReviewPromo', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['code'], properties: { code: { type: 'string', pattern: '^CARE-[A-Z0-9]{8}$' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Redeemed service promo and opened a one-time review revision window.' } } },
+            },
+            '/v1/autocare-reviews/{reviewId}': {
+                patch: { operationId: 'updateAutoCareReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Updated automotive review queued for moderation.' } } },
+            },
+            '/v1/service-requests/{requestId}': {
+                get: { operationId: 'getAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Service request visible to its client or provider owner.' } } },
+            },
+            '/v1/service-requests/{requestId}/conversation': {
+                get: { operationId: 'getAutoCareServiceConversation', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Messages and attachments for a service request.' } } },
+            },
+            '/v1/service-requests/{requestId}/chat-thread': {
+                get: { operationId: 'getAutoCareServiceRequestChatThread', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Unified chat thread metadata for a service request.' } } },
+            },
+            '/v1/service-requests/{requestId}/quote/accept': {
+                post: { operationId: 'acceptAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client accepts provider estimate.' } } },
+            },
+            '/v1/service-requests/{requestId}/quote/decline': {
+                post: { operationId: 'declineAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client declines provider estimate.' } } },
+            },
+            '/v1/service-requests/{requestId}/messages': {
+                post: { operationId: 'createAutoCareServiceMessage', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } } } } } }, responses: { '201': { description: 'Created service message.' } } },
+            },
+            '/v1/service-requests/{requestId}/read': {
+                post: { operationId: 'markAutoCareServiceConversationRead', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked unread service messages as read.' } } },
+            },
+            '/v1/service-requests/{requestId}/offers/{messageId}/decision': {
+                post: { operationId: 'decideAutoCareServiceOffer', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'messageId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['decision'], properties: { decision: { type: 'string', enum: ['accept', 'decline'] } }, additionalProperties: false } } } }, responses: { '200': { description: 'Resolved a service offer.' } } },
+            },
+            '/v1/service-requests/{requestId}/attachments': {
+                post: { operationId: 'createAutoCareServiceAttachment', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '201': { description: 'Stored service attachment.' } } },
+            },
+            '/v1/service-requests/{requestId}/attachments/{attachmentId}': {
+                get: { operationId: 'getAutoCareServiceAttachment', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Private service attachment bytes.' } } },
+            },
+            '/v1/service-requests/{requestId}/confirm': {
+                post: { operationId: 'confirmAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client confirmation transition.' } } },
+            },
+            '/owner/service-requests': {
+                get: { operationId: 'listOwnerAutoCareServiceRequests', responses: { '200': { description: 'Service requests for owned provider locations.' } } },
+            },
+            '/owner/service-requests/{requestId}/confirm': {
+                post: { operationId: 'confirmOwnerAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider confirmation transition.' } } },
+            },
+            '/owner/service-requests/{requestId}/quote': {
+                post: { operationId: 'createAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['amountMinor', 'currencyCode'], properties: { amountMinor: { type: 'integer', minimum: 1 }, currencyCode: { type: 'string', pattern: '^[A-Z]{3}$' }, note: { type: ['string', 'null'] }, lineItems: { type: 'array', maxItems: 100, items: { type: 'object', required: ['kind', 'title', 'quantity', 'unitPriceMinor'] } }, taxMinor: { type: 'integer', minimum: 0 }, feesMinor: { type: 'integer', minimum: 0 }, validUntil: { type: ['string', 'null'], format: 'date-time' }, priceLocked: { type: 'boolean' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Provider structured preliminary estimate with a locked snapshot.' } } },
+            },
+            '/owner/service-requests/{requestId}/offers': {
+                post: { operationId: 'createAutoCareServiceOffer', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'title'], properties: { type: { type: 'string', enum: ['discount', 'alternative'] }, title: { type: 'string', minLength: 2, maxLength: 160 }, description: { type: ['string', 'null'], maxLength: 4_000 }, discountPercent: { type: ['integer', 'null'], minimum: 1, maximum: 100 }, couponCode: { type: ['string', 'null'], pattern: '^[A-Z0-9_-]{4,32}$' }, amountMinor: { type: ['integer', 'null'], minimum: 1 }, currencyCode: { type: ['string', 'null'], pattern: '^[A-Z]{3}$' }, expiresAt: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a service offer message.' } } },
+            },
+            '/v1/service-requests/{requestId}/ws': {
+                get: { operationId: 'connectAutoCareServiceChat', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], description: 'WebSocket upgrade. Authenticate with the bearer.<access-token> subprotocol; access tokens are never accepted in the URL.', responses: { '101': { description: 'WebSocket upgrade for the service request chat.' } } },
+            },
+            '/v1/chats': {
+                get: { operationId: 'listMyAutoCareChats', responses: { '200': { description: 'Chats available to the authenticated client, service owner or administrator.' } } },
+                post: { operationId: 'createAutoCareChat', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'subject'], properties: { type: { type: 'string', enum: ['provider_inquiry', 'support', 'admin_escalation'] }, providerId: { type: 'string', format: 'uuid' }, requestId: { type: 'string', format: 'uuid' }, subject: { type: 'string', minLength: 2, maxLength: 160 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a general question, support or escalation chat.' } } },
+            },
+            '/v1/chats/{chatId}': {
+                get: { operationId: 'getAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'cursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } }], responses: { '200': { description: 'Bounded messages and attachments for a chat thread with a nextCursor for the following page.' } } },
+            },
+            '/v1/chats/{chatId}/messages': {
+                post: { operationId: 'createAutoCareChatMessage', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a message in a general chat thread.' } } },
+            },
+            '/v1/chats/{chatId}/reports': {
+                post: { operationId: 'createAutoCareChatReport', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['category'], properties: { category: { type: 'string', enum: ['spam', 'harassment', 'fraud', 'unsafe', 'other'] }, description: { type: ['string', 'null'], maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a report without exposing message content to moderators.' } } },
+            },
+            '/v1/chats/{chatId}/blocks': {
+                post: { operationId: 'createAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: false, content: { 'application/json': { schema: { type: 'object', properties: { blockedUserId: { type: 'string', format: 'uuid' }, reason: { type: ['string', 'null'], maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Blocked another participant in the chat.' } } },
+            },
+            '/v1/chats/{chatId}/blocks/{blockId}': {
+                delete: { operationId: 'revokeAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'blockId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked a participant or moderation block.' } } },
+            },
+            '/v1/chats/{chatId}/read': {
+                post: { operationId: 'markAutoCareChatRead', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked chat messages as read.' } } },
+            },
+            '/v1/chats/{chatId}/attachments': {
+                post: { operationId: 'createAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '201': { description: 'Stored a photo in a general chat thread.' } } },
+            },
+            '/v1/chats/{chatId}/attachments/{attachmentId}': {
+                get: { operationId: 'getAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Private general chat attachment bytes.' } } },
+            },
+            '/v1/chats/{chatId}/ws': {
+                get: { operationId: 'connectAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], description: 'WebSocket upgrade. Authenticate with the bearer.<access-token> subprotocol; access tokens are never accepted in the URL.', responses: { '101': { description: 'WebSocket upgrade for a general chat thread.' } } },
             },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },
             },
+            '/cabinets/all': {
+                get: { operationId: 'listAllPublicCabinets', security: [], responses: { '200': { description: 'Flat active public cabinet catalog for legacy and native clients.' } } },
+            },
             '/bookings/my': {
                 get: { operationId: 'listMyBookings', parameters: cursorParameters, responses: { '200': { description: 'Authenticated client bookings.' } } },
-            },
-            '/bookings/{id}/payment/status': {
-                get: {
-                    operationId: 'getMyBookingPaymentStatus',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    responses: { '200': { description: 'Client-safe booking payment lifecycle status and receipt summary.', content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientBookingPaymentStatus' } } } } },
-                },
             },
             '/owner/bookings': {
                 get: {
@@ -181,7 +560,7 @@ export function getOpenApiDocument() {
                     parameters: cursorParameters,
                     responses: {
                         '200': {
-                            description: 'Authenticated owner bookings with owner-safe payment ledger fields and no provider identifiers.',
+                            description: 'Authenticated owner bookings.',
                             content: {
                                 'application/json': {
                                     schema: {
@@ -192,17 +571,6 @@ export function getOpenApiDocument() {
                                     },
                                 },
                             },
-                        },
-                    },
-                },
-            },
-            '/owner/readiness': {
-                get: {
-                    operationId: 'getOwnerReadiness',
-                    responses: {
-                        '200': {
-                            description: 'Owner go-live readiness checks.',
-                            content: { 'application/json': { schema: { $ref: '#/components/schemas/OwnerReadiness' } } },
                         },
                     },
                 },
@@ -262,112 +630,6 @@ export function getOpenApiDocument() {
                         '200': {
                             description: 'Updated account deletion request.',
                             content: { 'application/json': { schema: { $ref: '#/components/schemas/AdminDeletionRequest' } } },
-                        },
-                    },
-                },
-            },
-            '/admin/payments': {
-                get: {
-                    operationId: 'listAdminPayments',
-                    parameters: adminPaymentParameters,
-                    responses: {
-                        '200': {
-                            description: 'Legacy array or cursor page of payments.',
-                            content: {
-                                'application/json': {
-                                    schema: {
-                                        oneOf: [
-                                            { type: 'array', items: { $ref: '#/components/schemas/AdminPayment' } },
-                                            { $ref: '#/components/schemas/AdminPaymentCursorPage' },
-                                        ],
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/attention': {
-                get: {
-                    operationId: 'getAdminPaymentAttention',
-                    responses: {
-                        '200': {
-                            description: 'Bounded super-admin payment and provider outcome counters without provider identifiers.',
-                            content: { 'application/json': { schema: { $ref: '#/components/schemas/AdminPaymentAttention' } } },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/{id}/refunds': {
-                get: {
-                    operationId: 'listAdminPaymentRefunds',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    responses: {
-                        '200': {
-                            description: 'Bounded refund ledger history for an admin payment.',
-                            content: {
-                                'application/json': {
-                                    schema: { type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/AdminPaymentRefund' } },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/{id}/refund': {
-                post: {
-                    operationId: 'refundAdminPayment',
-                    description: 'Super-admin-only financial mutation. Payment transition audit is idempotent.',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    requestBody: {
-                        required: true,
-                        content: {
-                            'application/json': {
-                                schema: {
-                                    type: 'object',
-                                    required: ['reason'],
-                                    additionalProperties: false,
-                                    properties: {
-                                        reason: { type: 'string', enum: ['duplicate', 'fraudulent', 'requested_by_customer'] },
-                                        amountMinor: { type: 'integer', minimum: 1 },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    responses: {
-                        '200': {
-                            description: 'Provider-confirmed refund result.',
-                            content: {
-                                'application/json': {
-                                    schema: {
-                                        type: 'object',
-                                        required: ['paymentId', 'status', 'refundedAmountMinor'],
-                                        additionalProperties: false,
-                                        properties: {
-                                            paymentId: { type: 'string', format: 'uuid' },
-                                            status: { type: 'string' },
-                                            refundedAmountMinor: { type: 'integer', minimum: 0 },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            '/admin/payments/{id}/disputes': {
-                get: {
-                    operationId: 'listAdminPaymentDisputes',
-                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-                    responses: {
-                        '200': {
-                            description: 'Bounded dispute history for an admin payment.',
-                            content: {
-                                'application/json': {
-                                    schema: { type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/AdminPaymentDispute' } },
-                                },
-                            },
                         },
                     },
                 },
@@ -494,6 +756,50 @@ export function getOpenApiDocument() {
                     },
                 },
             },
+            '/users/me/vehicles': {
+                get: {
+                    operationId: 'listMyVehicles',
+                    responses: {
+                        '200': {
+                            description: 'Saved vehicles owned by the authenticated client.',
+                            content: { 'application/json': { schema: { type: 'array', maxItems: 20, items: { $ref: '#/components/schemas/ClientVehicle' } } } },
+                        },
+                    },
+                },
+                post: {
+                    operationId: 'createMyVehicle',
+                    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehicleInput' } } } },
+                    responses: {
+                        '200': {
+                            description: 'Created saved vehicle.',
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehicle' } } },
+                        },
+                    },
+                },
+            },
+            '/users/me/vehicles/{id}': {
+                patch: {
+                    operationId: 'updateMyVehicle',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehiclePatch' } } } },
+                    responses: {
+                        '200': {
+                            description: 'Updated saved vehicle.',
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientVehicle' } } },
+                        },
+                    },
+                },
+                delete: {
+                    operationId: 'deleteMyVehicle',
+                    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    responses: {
+                        '200': {
+                            description: 'Vehicle removed.',
+                            content: { 'application/json': { schema: { type: 'object', required: ['success'], properties: { success: { const: true } } } } },
+                        },
+                    },
+                },
+            },
         },
         components: {
             securitySchemes: {
@@ -518,12 +824,6 @@ export function getOpenApiDocument() {
                     required: false,
                     schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
                 },
-                AdminPaymentSearch: {
-                    name: 'search',
-                    in: 'query',
-                    required: false,
-                    schema: { type: 'string', maxLength: 120 },
-                },
                 AdminSearch: {
                     name: 'search',
                     in: 'query',
@@ -536,12 +836,6 @@ export function getOpenApiDocument() {
                     required: false,
                     schema: { type: 'string', enum: ['open', 'acknowledged', 'resolved'] },
                 },
-                AdminPaymentStatus: {
-                    name: 'status',
-                    in: 'query',
-                    required: false,
-                    schema: { type: 'string', enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded'] },
-                },
                 AdminDeletionStatus: {
                     name: 'status',
                     in: 'query',
@@ -550,6 +844,20 @@ export function getOpenApiDocument() {
                 },
             },
             schemas: {
+                AutoCareServiceRequestCreate: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['providerId', 'locationId', 'offeringId', 'preferredAt', 'contactSnapshot'],
+                    properties: {
+                        providerId: { type: 'string', format: 'uuid' },
+                        locationId: { type: 'string', format: 'uuid' },
+                        offeringId: { type: 'string', format: 'uuid' },
+                        preferredAt: { type: 'string', format: 'date-time' },
+                        vehicleSnapshot: { type: ['object', 'null'] },
+                        contactSnapshot: { type: 'object' },
+                        note: { type: ['string', 'null'], maxLength: 4_000 },
+                    },
+                },
                 SecurityCenterActionTimelineItem: {
                     type: 'object',
                     additionalProperties: false,
@@ -581,7 +889,7 @@ export function getOpenApiDocument() {
                     required: ['id', 'type', 'severity', 'status', 'title', 'requestId', 'occurrenceCount', 'firstOccurredAt', 'lastOccurredAt'],
                     properties: {
                         id: { type: 'string', format: 'uuid' },
-                        type: { type: 'string', enum: ['server_error', 'health_check', 'background_job', 'payment_webhook'] },
+                        type: { type: 'string', enum: ['server_error', 'health_check', 'background_job'] },
                         severity: { type: 'string', enum: ['warning', 'critical'] },
                         status: { type: 'string', enum: ['open', 'acknowledged', 'resolved'] },
                         title: { type: 'string', maxLength: 240 },
@@ -710,91 +1018,6 @@ export function getOpenApiDocument() {
                         service: { type: 'string', enum: ['autocare-hub-api'] },
                     },
                 },
-                OwnerReadiness: {
-                    type: 'object',
-                    required: ['ready', 'blockers', 'checks'],
-                    properties: {
-                        ready: { type: 'boolean' },
-                        blockers: {
-                            type: 'array',
-                            maxItems: 5,
-                            items: {
-                                type: 'string',
-                                enum: ['email_verification', 'active_cabinet', 'active_service', 'schedule', 'payout_account'],
-                            },
-                        },
-                        checks: {
-                            type: 'object',
-                            required: ['emailVerified', 'activeCabinet', 'activeService', 'scheduleConfigured', 'payoutAccount'],
-                            properties: {
-                                emailVerified: { type: 'boolean' },
-                                activeCabinet: { type: 'boolean' },
-                                activeService: { type: 'boolean' },
-                                scheduleConfigured: { type: 'boolean' },
-                                payoutAccount: { type: 'string', enum: ['ready', 'not_connected', 'pending', 'unavailable'] },
-                            },
-                        },
-                    },
-                },
-                ClientBookingPaymentStatus: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['status', 'grossAmount', 'refundedAmountMinor', 'remainingAmountMinor', 'currency', 'createdAt', 'invoice', 'attempts'],
-                    properties: {
-                        status: { type: ['string', 'null'], enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded', null] },
-                        grossAmount: { type: ['integer', 'null'], minimum: 0 },
-                        refundedAmountMinor: { type: 'integer', minimum: 0 },
-                        remainingAmountMinor: { type: ['integer', 'null'], minimum: 0 },
-                        currency: { type: ['string', 'null'], minLength: 3, maxLength: 3 },
-                        createdAt: { type: ['string', 'null'], format: 'date-time' },
-                        invoice: {
-                            oneOf: [
-                                { type: 'null' },
-                                {
-                                    type: 'object',
-                                    additionalProperties: false,
-                                    required: ['invoiceId', 'amount', 'currency', 'status', 'issuedAt'],
-                                    properties: {
-                                        invoiceId: { type: 'string', minLength: 1 },
-                                        amount: { type: 'integer', minimum: 0 },
-                                        currency: { type: 'string', minLength: 3, maxLength: 3 },
-                                        status: { type: 'string', enum: ['open', 'paid', 'void'] },
-                                        issuedAt: { type: 'string', format: 'date-time' },
-                                    },
-                                },
-                            ],
-                        },
-                        attempts: {
-                            type: 'array',
-                            maxItems: 20,
-                            items: {
-                                type: 'object',
-                                additionalProperties: false,
-                                required: ['attemptNumber', 'status', 'createdAt'],
-                                properties: {
-                                    attemptNumber: { type: 'integer', minimum: 1 },
-                                    status: { type: 'string', enum: ['creating', 'created', 'failed', 'paid', 'expired'] },
-                                    createdAt: { type: 'string', format: 'date-time' },
-                                },
-                            },
-                        },
-                    },
-                },
-                OwnerPaymentLedger: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['grossAmount', 'commissionAmount', 'ownerPayoutAmount', 'refundedAmountMinor', 'remainingAmountMinor', 'currency', 'status', 'createdAt'],
-                    properties: {
-                        grossAmount: { type: 'integer', minimum: 0 },
-                        commissionAmount: { type: 'integer', minimum: 0 },
-                        ownerPayoutAmount: { type: 'integer', minimum: 0 },
-                        refundedAmountMinor: { type: 'integer', minimum: 0 },
-                        remainingAmountMinor: { type: 'integer', minimum: 0 },
-                        currency: { type: 'string', minLength: 3, maxLength: 3 },
-                        status: { type: 'string', enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                    },
-                },
                 OutboxHealth: {
                     type: 'object',
                     additionalProperties: false,
@@ -829,7 +1052,7 @@ export function getOpenApiDocument() {
                 OwnerBooking: {
                     type: 'object',
                     additionalProperties: false,
-                    required: ['id', 'clientId', 'cabinetId', 'serviceId', 'date', 'startTime', 'endTime', 'status', 'comment', 'cancellationReason', 'createdAt', 'cabinet', 'service', 'ownerNote', 'client', 'paymentLedger'],
+                    required: ['id', 'clientId', 'cabinetId', 'serviceId', 'date', 'startTime', 'endTime', 'status', 'comment', 'cancellationReason', 'createdAt', 'cabinet', 'service', 'ownerNote', 'client'],
                     properties: {
                         id: { type: 'string', format: 'uuid' },
                         clientId: { type: 'string', format: 'uuid' },
@@ -872,12 +1095,6 @@ export function getOpenApiDocument() {
                                 email: { type: 'string' },
                                 phone: { type: ['string', 'null'] },
                             },
-                        },
-                        paymentLedger: {
-                            oneOf: [
-                                { $ref: '#/components/schemas/OwnerPaymentLedger' },
-                                { type: 'null' },
-                            ],
                         },
                     },
                 },
@@ -978,7 +1195,7 @@ export function getOpenApiDocument() {
                 },
                 UserDataExport: {
                     type: 'object',
-                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets'],
+                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets', 'vehicles'],
                     properties: {
                         schemaVersion: { type: 'integer', enum: [1] },
                         generatedAt: { type: 'string', format: 'date-time' },
@@ -991,12 +1208,13 @@ export function getOpenApiDocument() {
                         },
                         truncated: {
                             type: 'object',
-                            required: ['favorites', 'bookings', 'notifications', 'cabinets'],
+                            required: ['favorites', 'bookings', 'notifications', 'cabinets', 'vehicles'],
                             properties: {
                                 favorites: { type: 'boolean' },
                                 bookings: { type: 'boolean' },
                                 notifications: { type: 'boolean' },
                                 cabinets: { type: 'boolean' },
+                                vehicles: { type: 'boolean' },
                             },
                         },
                         user: { $ref: '#/components/schemas/PublicUser' },
@@ -1004,6 +1222,7 @@ export function getOpenApiDocument() {
                         bookings: { type: 'array', items: { type: 'object' } },
                         notifications: { type: 'array', items: { type: 'object' } },
                         cabinets: { type: 'array', items: { type: 'object' } },
+                        vehicles: { type: 'array', items: { $ref: '#/components/schemas/ClientVehicle' } },
                     },
                 },
                 PublicUser: {
@@ -1017,7 +1236,7 @@ export function getOpenApiDocument() {
                         role: { type: 'string', enum: ['client', 'owner', 'admin', 'super_admin'] },
                         status: { type: 'string', enum: ['active', 'blocked'] },
                         avatarUrl: { type: ['string', 'null'] },
-                        locale: { type: ['string', 'null'], enum: ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi', null] },
+                        locale: { type: ['string', 'null'], enum: ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi', null] },
                         provider: { type: 'string', enum: ['email', 'google', 'yandex'] },
                         emailVerifiedAt: { type: ['string', 'null'], format: 'date-time' },
                         emailNotifications: { type: 'boolean' },
@@ -1033,6 +1252,45 @@ export function getOpenApiDocument() {
                         reason: { type: 'string', maxLength: 500 },
                     },
                     additionalProperties: false,
+                },
+                ClientVehicleInput: {
+                    type: 'object',
+                    required: ['brandId', 'model', 'year', 'fuelType', 'engineDisplacement', 'horsepower', 'color', 'vin'],
+                    additionalProperties: false,
+                    properties: {
+                        brandId: { type: 'string', minLength: 1, maxLength: 60 },
+                        model: { type: 'string', minLength: 1, maxLength: 120 },
+                        year: { type: 'integer', minimum: 1950, maximum: 2100 },
+                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other'] },
+                        engineDisplacement: { type: ['number', 'null'], minimum: 0, maximum: 20 },
+                        horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
+                        color: { type: 'string', minLength: 1, maxLength: 40 },
+                        vin: { type: ['string', 'null'], pattern: '^[A-HJ-NPR-Z0-9]{17}$' },
+                    },
+                },
+                ClientVehiclePatch: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                        brandId: { type: 'string', minLength: 1, maxLength: 60 },
+                        model: { type: 'string', minLength: 1, maxLength: 120 },
+                        year: { type: 'integer', minimum: 1950, maximum: 2100 },
+                        fuelType: { type: 'string', enum: ['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other'] },
+                        engineDisplacement: { type: ['number', 'null'], minimum: 0, maximum: 20 },
+                        horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
+                        color: { type: 'string', minLength: 1, maxLength: 40 },
+                        vin: { type: ['string', 'null'], pattern: '^[A-HJ-NPR-Z0-9]{17}$' },
+                    },
+                },
+                ClientVehicle: {
+                    allOf: [{ $ref: '#/components/schemas/ClientVehicleInput' }],
+                    required: ['id', 'imageUrl', 'isPrimary', 'createdAt'],
+                    properties: {
+                        id: { type: 'string', format: 'uuid' },
+                        imageUrl: { type: 'string' },
+                        isPrimary: { type: 'boolean' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                    },
                 },
                 AccountDeletionRequest: {
                     type: 'object',
@@ -1093,131 +1351,6 @@ export function getOpenApiDocument() {
                         message: { type: 'string' },
                         requestId: { type: 'string' },
                     },
-                },
-                AdminPaymentParty: {
-                    type: 'object',
-                    required: ['id', 'name', 'email'],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        name: { type: 'string' },
-                        email: { type: 'string', format: 'email' },
-                    },
-                },
-                PaymentRecoveryAttempt: {
-                    type: 'object',
-                    required: ['attemptNumber', 'status', 'createdAt'],
-                    additionalProperties: false,
-                    properties: {
-                        attemptNumber: { type: 'integer', minimum: 1 },
-                        status: { type: 'string', enum: ['creating', 'created', 'failed', 'paid', 'expired'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                PaymentRecoveryTimeline: {
-                    type: 'array',
-                    items: { $ref: '#/components/schemas/PaymentRecoveryAttempt' },
-                    maxItems: 100,
-                },
-                AdminPayment: {
-                    type: 'object',
-                    required: [
-                        'id', 'bookingId', 'client', 'owner', 'cabinetTitle',
-                        'serviceTitle', 'date', 'startTime', 'endTime',
-                        'grossAmount', 'refundedAmountMinor', 'remainingAmountMinor', 'commissionAmount', 'ownerPayoutAmount',
-                        'currency', 'status', 'stripeSessionId',
-                        'stripePaymentIntentId', 'createdAt',
-                    ],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        bookingId: { type: 'string', format: 'uuid' },
-                        client: { $ref: '#/components/schemas/AdminPaymentParty' },
-                        owner: { $ref: '#/components/schemas/AdminPaymentParty' },
-                        cabinetTitle: { type: 'string' },
-                        serviceTitle: { type: 'string' },
-                        date: { type: 'string', format: 'date' },
-                        startTime: { type: 'string' },
-                        endTime: { type: 'string' },
-                        grossAmount: { type: 'number' },
-                        refundedAmountMinor: { type: 'integer', minimum: 0 },
-                        remainingAmountMinor: { type: 'integer', minimum: 0 },
-                        commissionAmount: { type: 'number' },
-                        ownerPayoutAmount: { type: 'number' },
-                        currency: { type: 'string' },
-                        status: { type: 'string', enum: ['pending', 'paid', 'failed', 'partially_refunded', 'refunded'] },
-                        stripeSessionId: { type: ['string', 'null'] },
-                        stripePaymentIntentId: { type: ['string', 'null'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                AdminPaymentRefund: {
-                    type: 'object',
-                    required: [
-                        'id', 'paymentId', 'bookingId', 'providerRefundId',
-                        'providerChargeId', 'amountMinor', 'currency', 'reason',
-                        'status', 'createdAt', 'updatedAt',
-                    ],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        paymentId: { type: 'string', format: 'uuid' },
-                        bookingId: { type: 'string', format: 'uuid' },
-                        providerRefundId: { type: 'string' },
-                        providerChargeId: { type: ['string', 'null'] },
-                        amountMinor: { type: 'integer', minimum: 1 },
-                        currency: { type: 'string' },
-                        reason: { type: ['string', 'null'] },
-                        status: { type: 'string', enum: ['pending', 'succeeded', 'failed', 'canceled'] },
-                        createdAt: { type: 'string', format: 'date-time' },
-                        updatedAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                AdminPaymentDispute: {
-                    type: 'object',
-                    required: [
-                        'id', 'paymentId', 'bookingId', 'providerDisputeId',
-                        'providerChargeId', 'amountMinor', 'currency', 'reason',
-                        'providerStatus', 'status', 'lastEventId', 'lastEventCreatedAt',
-                        'createdAt', 'updatedAt',
-                    ],
-                    properties: {
-                        id: { type: 'string', format: 'uuid' },
-                        paymentId: { type: 'string', format: 'uuid' },
-                        bookingId: { type: 'string', format: 'uuid' },
-                        providerDisputeId: { type: 'string' },
-                        providerChargeId: { type: ['string', 'null'] },
-                        amountMinor: { type: 'integer', minimum: 1 },
-                        currency: { type: 'string' },
-                        reason: { type: 'string' },
-                        providerStatus: { type: 'string' },
-                        status: { type: 'string', enum: ['open', 'funds_withdrawn', 'funds_reinstated', 'closed'] },
-                        lastEventId: { type: 'string' },
-                        lastEventCreatedAt: { type: 'string', format: 'date-time' },
-                        createdAt: { type: 'string', format: 'date-time' },
-                        updatedAt: { type: 'string', format: 'date-time' },
-                    },
-                },
-                AdminPaymentAttention: {
-                    type: 'object',
-                    additionalProperties: false,
-                    required: ['failedPaymentCount', 'openDisputeCount', 'fundsWithdrawnDisputeCount'],
-                    properties: {
-                        failedPaymentCount: { type: 'integer', minimum: 0 },
-                        openDisputeCount: { type: 'integer', minimum: 0 },
-                        fundsWithdrawnDisputeCount: { type: 'integer', minimum: 0 },
-                    },
-                },
-                AdminPaymentCursorPage: {
-                    allOf: [
-                        { $ref: '#/components/schemas/CursorPage' },
-                        {
-                            type: 'object',
-                            properties: {
-                                items: {
-                                    type: 'array',
-                                    items: { $ref: '#/components/schemas/AdminPayment' },
-                                },
-                            },
-                        },
-                    ],
                 },
             },
             headers: {

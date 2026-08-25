@@ -1,11 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
+import { loadAllTranslations } from '@/shared/config/translations'
 import {
     getApiErrorCode,
     getApiErrorMessage,
+    getApiErrorState,
 } from './getApiErrorMessage'
 
 describe('getApiErrorMessage', () => {
+    beforeAll(async () => {
+        await loadAllTranslations()
+    })
+
     it('returns API message when error contains non-empty string message', () => {
         const error = {
             data: {
@@ -171,5 +177,18 @@ describe('getApiErrorMessage', () => {
                 'Fallback message',
             ),
         ).toBe('Translated upload error')
+    })
+
+    it.each([
+        [{ status: 'FETCH_ERROR' }, 'offline'],
+        [{ data: { code: 'OFFLINE' } }, 'offline'],
+        [{ data: { code: 'FORBIDDEN' } }, 'permission-denied'],
+        [{ status: 403 }, 'permission-denied'],
+        [{ data: { code: 'ACCOUNT_SUSPENDED' } }, 'suspended'],
+        [{ status: 423 }, 'suspended'],
+        [{ data: { code: 'STALE_DATA' } }, 'stale'],
+        [{ status: 500 }, undefined],
+    ] as const)('maps API error state %o to %s', (error, expected) => {
+        expect(getApiErrorState(error)).toBe(expected)
     })
 })

@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import { translations } from './index'
+import type { SupportedLocale } from '@/shared/config/i18n'
+import { loadAllTranslations, type TranslationSchema } from './index'
+
+let translations: Record<SupportedLocale, TranslationSchema>
 
 function getLeafPaths(value: unknown, prefix = ''): string[] {
     if (typeof value !== 'object' || value === null) {
@@ -23,6 +26,10 @@ function getValue(value: unknown, path: string): unknown {
 }
 
 describe('translation coverage', () => {
+    beforeAll(async () => {
+        translations = await loadAllTranslations()
+    })
+
     it('keeps every locale compatible with the English translation schema', () => {
         const englishKeys = getLeafPaths(translations.en)
 
@@ -69,8 +76,6 @@ describe('translation coverage', () => {
             'booking.bookingCreatedSuccessfully',
             'booking.successTitle',
             'booking.viewMyBookings',
-            'booking.payBooking',
-            'booking.paymentCheckoutFailed',
             'booking.openDirections',
             'booking.pendingStatusLabel',
             'booking.confirmedStatusLabel',
@@ -153,11 +158,25 @@ describe('translation coverage', () => {
             'profile.privacy.requestAction',
         ]
 
-        for (const [locale, value] of Object.entries(translations)) {
-            if (locale === 'en') continue
+        const fullyLocalizedLocales = ['ru', 'ro', 'es', 'de', 'fr', 'pt', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
+
+        for (const locale of fullyLocalizedLocales) {
+            const value = translations[locale]
 
             for (const key of criticalKeys) {
                 expect(getValue(value, key), `${locale}.${key} is missing`).not.toBe(getValue(translations.en, key))
+            }
+        }
+    })
+
+    it('translates the public automotive journey for every supported language', () => {
+        const keys = ['heroTitle', 'heroDescription', 'byService', 'byProvider', 'searchAction', 'resultsTitle', 'bookAction', 'detailsAction'] as const
+
+        for (const locale of Object.keys(translations).filter((value) => value !== 'en')) {
+            for (const key of keys) {
+                expect(translations[locale as keyof typeof translations].autocare[key], `${locale}.autocare.${key} uses English fallback`).not.toBe(
+                    translations.en.autocare[key],
+                )
             }
         }
     })
@@ -174,9 +193,6 @@ describe('translation coverage', () => {
             'commission.title',
             'commission.description',
             'commission.mainDescription',
-            'stripeConnect.title',
-            'stripeConnect.description',
-            'stripeConnect.connectAction',
             'adminLayout.title',
             'favorites.title',
             'favorites.emptyTitle',
@@ -222,8 +238,6 @@ describe('translation coverage', () => {
             'failedToLoad',
             'queueTitle',
             'queueDescription',
-            'paymentAttention',
-            'paymentAttentionDescription',
             'queueMetricsLabel',
             'queueEmpty',
             'openSecurityCenter',

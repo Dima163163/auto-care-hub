@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-    normalizeCheckoutResponse,
     normalizeClientBookingListResponse,
     normalizeOwnerBookingListResponse,
-    normalizePaymentStatusResponse,
     normalizeResolveBookingRescheduleResponse,
 } from './booking-response-schema'
 
@@ -31,31 +29,15 @@ describe('booking response schemas', () => {
             ...booking,
             client: { id: 'client-1', name: 'Alex', email: 'alex@example.com', phone: null },
             ownerNote: null,
-            paymentLedger: null,
-        }])[0]?.paymentLedger).toBeNull()
+        }])[0]?.ownerNote).toBeNull()
         expect(normalizeOwnerBookingListResponse({
             items: [{
                 ...booking,
                 client: { id: 'client-1', name: 'Alex', email: 'alex@example.com', phone: null },
                 ownerNote: null,
-                paymentLedger: null,
             }],
             nextCursor: null,
         })).toHaveLength(1)
-    })
-
-    it('validates payment status and checkout responses', () => {
-        expect(normalizePaymentStatusResponse({
-            status: 'paid',
-            grossAmount: 1500,
-            refundedAmountMinor: 0,
-            remainingAmountMinor: 150000,
-            currency: 'rub',
-            createdAt: null,
-            invoice: null,
-            attempts: [],
-        }).status).toBe('paid')
-        expect(normalizeCheckoutResponse({ url: 'https://checkout.example.test/1', attemptId: 'attempt-1', reused: false }).reused).toBe(false)
     })
 
     it('validates the owner reschedule resolution response', () => {
@@ -75,9 +57,7 @@ describe('booking response schemas', () => {
                 ...booking,
                 client: { id: 'client-1', name: 'Alex', email: 'alex@example.com', phone: null },
                 ownerNote: null,
-                paymentLedger: null,
             },
-            paymentStatus: 'paid',
         })
 
         expect(result.request.status).toBe('accepted')
@@ -86,6 +66,5 @@ describe('booking response schemas', () => {
 
     it('rejects malformed booking state', () => {
         expect(() => normalizeClientBookingListResponse([{ ...booking, status: 'paid' }])).toThrow()
-        expect(() => normalizeCheckoutResponse({ url: 'not-a-url', attemptId: 'attempt-1', reused: false })).toThrow()
     })
 })

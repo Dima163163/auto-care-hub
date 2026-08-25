@@ -1,14 +1,8 @@
 import { lazy } from 'react'
 
-export const HomePage = lazy(() =>
-    import('@/pages/autocare-home').then((module) => ({
-        default: module.AutoCareHomePage,
-    })),
-)
-
-export const CabinetsPage = lazy(() =>
-    import('@/pages/cabinets').then((module) => ({
-        default: module.CabinetsPage,
+export const PlatformReviewsPage = lazy(() =>
+    import('@/pages/platform-reviews').then((module) => ({
+        default: module.PlatformReviewsPage,
     })),
 )
 
@@ -90,15 +84,15 @@ export const RulesPage = lazy(() =>
     })),
 )
 
-export const PrivacyPage = lazy(() =>
+export const AgreementPage = lazy(() =>
     import('@/pages/info').then((module) => ({
-        default: module.PrivacyPage,
+        default: module.AgreementPage,
     })),
 )
 
-export const CabinetDetailsPage = lazy(() =>
-    import('@/pages/cabinet-details').then((module) => ({
-        default: module.CabinetDetailsPage,
+export const PrivacyPage = lazy(() =>
+    import('@/pages/info').then((module) => ({
+        default: module.PrivacyPage,
     })),
 )
 
@@ -156,6 +150,12 @@ export const ProfilePage = lazy(() =>
     })),
 )
 
+export const ProfileVehiclesPage = lazy(() =>
+    import('@/pages/profile-vehicles').then((module) => ({
+        default: module.ProfileVehiclesPage,
+    })),
+)
+
 export const ProfileBookingsPage = lazy(() =>
     import('@/pages/profile-bookings').then((module) => ({
         default: module.ProfileBookingsPage,
@@ -168,33 +168,39 @@ export const ProfileReviewsPage = lazy(() =>
     })),
 )
 
+export const ChatsPage = lazy(() =>
+    import('@/pages/chats').then((module) => ({
+        default: module.ChatsPage,
+    })),
+)
+
 export const OwnerDashboardPage = lazy(() =>
     import('@/pages/owner-dashboard').then((module) => ({
         default: module.OwnerDashboardPage,
     })),
 )
 
-export const OwnerCabinetsPage = lazy(() =>
-    import('@/pages/owner-cabinets').then((module) => ({
-        default: module.OwnerCabinetsPage,
+export const OwnerAutoCareProvidersPage = lazy(() =>
+    import('@/pages/owner-autocare-providers').then((module) => ({
+        default: module.OwnerAutoCareProvidersPage,
     })),
 )
 
-export const OwnerCabinetCreatePage = lazy(() =>
-    import('@/pages/owner-cabinet-create').then((module) => ({
-        default: module.OwnerCabinetCreatePage,
+export const OwnerAutoCareProviderDetailsPage = lazy(() =>
+    import('@/pages/owner-autocare-provider-details').then((module) => ({
+        default: module.OwnerAutoCareProviderDetailsPage,
     })),
 )
 
-export const OwnerCabinetEditPage = lazy(() =>
-    import('@/pages/owner-cabinet-edit').then((module) => ({
-        default: module.OwnerCabinetEditPage,
+export const OwnerAutoCareProviderReviewsPage = lazy(() =>
+    import('@/pages/owner-autocare-provider-reviews').then((module) => ({
+        default: module.OwnerAutoCareProviderReviewsPage,
     })),
 )
 
-export const OwnerBookingsPage = lazy(() =>
-    import('@/pages/owner-bookings').then((module) => ({
-        default: module.OwnerBookingsPage,
+export const OwnerAutoCareRequestsPage = lazy(() =>
+    import('@/pages/owner-autocare-requests').then((module) => ({
+        default: module.OwnerAutoCareRequestsPage,
     })),
 )
 
@@ -234,15 +240,15 @@ export const AdminOwnersPage = lazy(() =>
     })),
 )
 
-export const AdminCabinetsPage = lazy(() =>
-    import('@/pages/admin-cabinets').then((module) => ({
-        default: module.AdminCabinetsPage,
-    })),
-)
-
 export const AdminReviewsPage = lazy(() =>
     import('@/pages/admin-reviews').then((module) => ({
         default: module.AdminReviewsPage,
+    })),
+)
+
+export const AdminPlatformReviewsPage = lazy(() =>
+    import('@/pages/admin-platform-reviews').then((module) => ({
+        default: module.AdminPlatformReviewsPage,
     })),
 )
 
@@ -255,6 +261,12 @@ export const AdminAuditLogsPage = lazy(() =>
 export const SecurityCenterPage = lazy(() =>
     import('@/pages/security-center').then((module) => ({
         default: module.SecurityCenterPage,
+    })),
+)
+
+export const SuperAdminDashboardPage = lazy(() =>
+    import('@/pages/super-admin-dashboard').then((module) => ({
+        default: module.SuperAdminDashboardPage,
     })),
 )
 

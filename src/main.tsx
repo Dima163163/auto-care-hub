@@ -5,6 +5,9 @@ import { BrowserRouter } from 'react-router'
 import './index.css'
 import { App } from '@/app/App'
 import { StoreProvider } from '@/app/store'
+import { IS_MOCK_API } from '@/shared/config/api'
+import { getInitialLocale } from '@/shared/config/i18n'
+import { loadTranslations } from '@/shared/config/translations'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
 import {
     applyTheme,
@@ -13,7 +16,7 @@ import {
 } from '@/shared/lib/theme'
 
 const SHOULD_ENABLE_MSW =
-    import.meta.env.VITE_API_MODE === 'mock'
+    IS_MOCK_API
     && import.meta.env.VITE_ENABLE_MSW !== 'false'
 
 applyTheme(
@@ -34,12 +37,22 @@ async function enableMocking() {
     const { worker } = await import('@/app/mocks/browser')
 
     return worker.start({
-        onUnhandledRequest: 'bypass',
+        onUnhandledRequest(request) {
+            // Mock mode must never silently fall through to a real backend. Keep
+            // static assets and navigation requests bypassed, but fail loudly
+            // for an API route missing from the mock contract.
+            if (new URL(request.url).pathname.startsWith('/api/')) {
+                throw new Error(`Unhandled mock API request: ${request.method} ${request.url}`)
+            }
+        },
     })
 }
 
 
-enableMocking().then(() => {
+Promise.all([
+    enableMocking(),
+    loadTranslations(getInitialLocale()),
+]).then(() => {
     createRoot(document.getElementById('root')!).render(
         <StrictMode>
             <StoreProvider>

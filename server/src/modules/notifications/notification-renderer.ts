@@ -115,29 +115,19 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, NotificationTemplate
         messageKey: 'notifications.booking.reminder.message',
         link: '/profile/bookings',
     },
-    'payment.completed': {
-        titleKey: 'notifications.payment.completed.title',
-        messageKey: 'notifications.payment.completed.message',
-        link: '/profile/bookings',
-    },
-    'payment.failed': {
-        titleKey: 'notifications.payment.failed.title',
-        messageKey: 'notifications.payment.failed.message',
-        link: '/profile/bookings',
-    },
-    'payment.partially_refunded': {
-        titleKey: 'notifications.payment.partiallyRefunded.title',
-        messageKey: 'notifications.payment.partiallyRefunded.message',
-        link: '/profile/bookings',
-    },
-    'payment.refunded': {
-        titleKey: 'notifications.payment.refunded.title',
-        messageKey: 'notifications.payment.refunded.message',
+    'autocare.visit_reminder': {
+        titleKey: 'notifications.autocare.visitReminder.title',
+        messageKey: 'notifications.autocare.visitReminder.message',
         link: '/profile/bookings',
     },
     'moderation.review_updated': {
         titleKey: 'notifications.moderation.reviewUpdated.title',
         messageKey: 'notifications.moderation.reviewUpdated.message',
+        link: '/profile/reviews',
+    },
+    'moderation.appeal_decided': {
+        titleKey: 'notifications.moderation.appealDecided.title',
+        messageKey: 'notifications.moderation.appealDecided.message',
         link: '/profile/reviews',
     },
 }

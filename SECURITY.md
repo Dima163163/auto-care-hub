@@ -40,7 +40,7 @@ AutoCare Hub follows a modern, multi-layered security approach:
 ### Infrastructure & Uploads
 - **Secure Uploads:** Image uploads are restricted to authenticated owners, validated via MIME magic bytes, and size-limited.
 - **Audit Logging:** Comprehensive tracking of all administrative and security-sensitive actions (role changes, moderation, status updates).
-- **CSP (Content Security Policy):** Strict policy restricting script and style sources, disabling `unsafe-eval` in production, and white-listing trusted domains (e.g., Stripe, Google Avatars).
+- **CSP (Content Security Policy):** Strict policy restricting script and style sources, disabling `unsafe-eval` in production, and allowing only the domains required for application media.
 
 ## Important Security Decisions
 

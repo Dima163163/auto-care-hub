@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">AutoLux</title>
+  <desc id="desc">Red automotive service mark</desc>
+  <rect width="96" height="96" rx="22" fill="#e63535"/>
+  <path d="M20 60V37h11l17 16V37h11v23H48L31 45v15H20Z" fill="#fff"/>
+  <path d="M63 37h13c6 0 10 5 10 12s-4 11-10 11H63V37Zm10 17c3 0 5-2 5-5s-2-5-5-5h-2v10h2Z" fill="#fff"/>
+  <circle cx="28" cy="70" r="4" fill="#ffd35a"/>
+  <circle cx="76" cy="70" r="4" fill="#ffd35a"/>
+</svg>

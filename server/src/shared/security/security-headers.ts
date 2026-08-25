@@ -18,19 +18,11 @@ export function getSecurityHeadersOptions({
             directives: {
                 defaultSrc: ["'self'"],
                 baseUri: ["'self'"],
-                connectSrc: [
-                    "'self'",
-                    'https://api.stripe.com',
-                    'https://r.stripe.com',
-                ],
+                connectSrc: ["'self'"],
                 fontSrc: ["'self'", 'data:'],
                 formAction: ["'self'"],
                 frameAncestors: ["'none'"],
-                frameSrc: [
-                    "'self'",
-                    'https://js.stripe.com',
-                    'https://hooks.stripe.com',
-                ],
+                frameSrc: ["'self'"],
                 imgSrc: [
                     "'self'",
                     'data:',
@@ -39,8 +31,8 @@ export function getSecurityHeadersOptions({
                 ],
                 objectSrc: ["'none'"],
                 scriptSrc: isProduction
-                    ? ["'self'", 'https://js.stripe.com']
-                    : ["'self'", "'unsafe-eval'", 'https://js.stripe.com'],
+                    ? ["'self'"]
+                    : ["'self'", "'unsafe-eval'"],
                 styleSrc: ["'self'", "'unsafe-inline'"],
                 upgradeInsecureRequests: isProduction ? [] : null,
             },

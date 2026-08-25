@@ -1,9 +1,10 @@
 const SENSITIVE_KEY_PATTERN = /password|token|secret|authorization|cookie|api[_-]?key/i
+const PII_KEY_PATTERN = /^(?:email|emailAddress|phone|phoneNumber|telephone|mobile|mobilePhone|vin|vinNumber|licensePlate|registrationNumber|contactSnapshot|vehicleSnapshot|messageBody|issueDescription|symptoms|body|note)$/i
 const SENSITIVE_URL_PARAMETER_PATTERN = /([?&](?:token|access_token|refresh_token|id_token|code|state)=)[^&#\s"'<>]+/gi
 const SENSITIVE_BEARER_PATTERN = /(\bBearer\s+)[A-Za-z0-9._~+/=-]+/gi
 
 export function isSensitiveLogKey(key: string) {
-    return SENSITIVE_KEY_PATTERN.test(key)
+    return SENSITIVE_KEY_PATTERN.test(key) || PII_KEY_PATTERN.test(key)
 }
 
 function sanitizeLogString(value: string) {

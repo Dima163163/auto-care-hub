@@ -8,6 +8,7 @@ import {
 } from '@/entities/review'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { getProviderProfile } from '@/entities/automotive-service'
 
 import { ProfileReviewEditForm } from './ProfileReviewEditForm'
 import {
@@ -26,6 +27,7 @@ export function ProfileReviewCard({ review }: ProfileReviewCardProps) {
     const [text, setText] = useState(review.text)
     const [formError, setFormError] = useState<string | null>(null)
     const [updateReview, { isLoading }] = useUpdateClientReviewMutation()
+    const provider = getProviderProfile(review.cabinetId) ?? getProviderProfile('proservice-moscow')
 
     const handleCancelEdit = () => {
         setIsEditing(false)
@@ -59,7 +61,7 @@ export function ProfileReviewCard({ review }: ProfileReviewCardProps) {
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
                     <p className="text-sm text-muted-foreground">
-                        {review.cabinet.title}
+                        {provider?.name ?? review.cabinet.title}
                     </p>
                     <h2 className="mt-1 text-lg font-semibold">
                         {new Date(review.createdAt).toLocaleDateString()}

@@ -120,12 +120,14 @@
     --motion-duration-hero: 1200ms;
     --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
     --background: oklch(0.985 0.008 245);
+    --autocare-pattern-image: url('/images/autocare/patterns/autocare-theme-pattern-light.webp');
     --foreground: oklch(0.15 0.02 260);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.15 0.02 260);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.15 0.02 260);
-    --primary: oklch(0.52 0.23 250);
+    /* 7.1:1 against white for buttons and links that carry meaning. */
+    --primary: #0057b8;
     --primary-foreground: oklch(0.99 0 0);
     --secondary: oklch(0.95 0.025 245);
     --secondary-foreground: oklch(0.35 0.15 265);
@@ -153,7 +155,8 @@
     --map-marker-primary-foreground: #ffffff;
     --map-rating: #fbbf24;
     --rating-fill: #fbbf24;
-    --rating-foreground: #f59e0b;
+    /* Amber text needs a darker tone on white (WCAG AA). */
+    --rating-foreground: #a15c00;
     --radius: 0.625rem;
     --status-danger-surface: #fef3f2;
     --status-danger-border: #fecdca;
@@ -185,64 +188,98 @@
 }
 
 .dark {
-    --background: oklch(0.11 0.025 245);
-    --foreground: oklch(0.95 0.01 260);
-    --card: oklch(0.15 0.025 245);
-    --card-foreground: oklch(0.95 0.01 260);
-    --popover: oklch(0.16 0.02 260);
-    --popover-foreground: oklch(0.95 0.01 260);
-    --primary: oklch(0.68 0.2 220);
-    --primary-foreground: oklch(0.1 0.02 260);
-    --secondary: oklch(0.22 0.035 245);
-    --secondary-foreground: oklch(0.9 0.02 260);
-    --muted: oklch(0.2 0.02 260);
-    --muted-foreground: oklch(0.78 0.02 260);
-    --accent: oklch(0.22 0.055 190);
-    --accent-foreground: oklch(0.95 0.02 260);
-    --destructive: oklch(0.5 0.2 25);
-    --success-strong: #4ade80;
-    --border: oklch(0.25 0.02 260);
-    --input: oklch(0.25 0.02 260);
-    --ring: oklch(0.68 0.2 220 / 0.4);
-    --hero-overlay: oklch(0.1 0.045 245);
-    --hero-glow: oklch(0.68 0.2 220 / 0.26);
-    --map-surface: #07192d;
-    --map-overlay: #041225;
-    --map-pin: #8bbfff;
-    --map-marker-success: #34d399;
-    --map-marker-primary: #60a5fa;
-    --map-marker-success-foreground: #052e1b;
+    /* Midnight workshop palette: distinct surface levels keep cards readable over the pattern. */
+    --background: #071525;
+    --autocare-pattern-image: url('/images/autocare/patterns/autocare-theme-pattern-dark.webp');
+    --foreground: #edf6ff;
+    --card: #10243a;
+    --card-foreground: #edf6ff;
+    --popover: #132b44;
+    --popover-foreground: #edf6ff;
+    --primary: #4d9dff;
+    --primary-foreground: #edf6ff;
+    --secondary: #1b344d;
+    --secondary-foreground: #dcecff;
+    --muted: #152b42;
+    --muted-foreground: #b7c9dc;
+    --accent: #164057;
+    --accent-foreground: #e7f8ff;
+    --destructive: #f87171;
+    --success-strong: #67e8a5;
+    --border: #2b4863;
+    --input: #2b4863;
+    --ring: rgb(77 157 255 / 0.65);
+    --hero-overlay: #061a31;
+    --hero-glow: rgb(77 157 255 / 0.36);
+    --map-surface: #103257;
+    --map-overlay: #071b32;
+    --map-pin: #9acbff;
+    --map-marker-success: #4adea0;
+    --map-marker-primary: #63aaff;
+    --map-marker-success-foreground: #032819;
     --map-marker-primary-foreground: #ffffff;
     --map-rating: #fbbf24;
     --rating-fill: #fbbf24;
-    --rating-foreground: #f59e0b;
-    --status-danger-surface: #451a1a;
-    --status-danger-border: #912018;
-    --status-danger-foreground: #fda29b;
-    --status-info-surface: #172554;
-    --status-info-border: #1d4ed8;
-    --status-info-foreground: #93c5fd;
-    --status-neutral-surface: #1e293b;
-    --status-neutral-border: #475569;
-    --status-neutral-foreground: #e2e8f0;
-    --status-success-surface: #052e1b;
-    --status-success-border: #087443;
-    --status-success-foreground: #6ce9a6;
-    --status-warning-surface: #451a03;
-    --status-warning-border: #b54708;
-    --status-warning-foreground: #fecd6a;
-    --severity-critical-surface: #451a1a;
-    --severity-critical-border: #b42318;
-    --severity-critical-foreground: #fda29b;
-    --severity-high-surface: #431407;
-    --severity-high-border: #c2410c;
-    --severity-high-foreground: #fdba74;
-    --severity-warning-surface: #451a03;
-    --severity-warning-border: #a16207;
+    --rating-foreground: #ffbf3c;
+    --status-danger-surface: #4a2027;
+    --status-danger-border: #b94b5b;
+    --status-danger-foreground: #ffabb6;
+    --status-info-surface: #152f57;
+    --status-info-border: #3c83df;
+    --status-info-foreground: #9dcbff;
+    --status-neutral-surface: #20364d;
+    --status-neutral-border: #56728c;
+    --status-neutral-foreground: #e0edf9;
+    --status-success-surface: #0b3a2d;
+    --status-success-border: #1b8b60;
+    --status-success-foreground: #7cf1b5;
+    --status-warning-surface: #4a3510;
+    --status-warning-border: #bd7b18;
+    --status-warning-foreground: #ffd783;
+    --severity-critical-surface: #4a2027;
+    --severity-critical-border: #c75a68;
+    --severity-critical-foreground: #ffabb6;
+    --severity-high-surface: #4a2a16;
+    --severity-high-border: #d36d32;
+    --severity-high-foreground: #ffc08f;
+    --severity-warning-surface: #4a3510;
+    --severity-warning-border: #bd7b18;
     --severity-warning-foreground: #facc15;
-    --severity-info-surface: #172554;
-    --severity-info-border: #1d4ed8;
-    --severity-info-foreground: #93c5fd;
+    --severity-info-surface: #152f57;
+    --severity-info-border: #3c83df;
+    --severity-info-foreground: #9dcbff;
+}
+
+/* Primary controls sit on the brighter blue action color; use a dark ink
+   label there while keeping hero/header text light on midnight surfaces. */
+.dark .bg-primary.text-primary-foreground,
+.dark .bg-primary .text-primary-foreground {
+    color: #041322;
+}
+
+@layer base {
+    select:not([multiple]) {
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: transparent;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23566b82' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 0.875rem;
+        padding-right: 2.75rem !important;
+    }
+
+    select.select-with-icon {
+        background-image: none;
+    }
+
+    .dark select:not([multiple]):not(.select-with-icon) {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%23b5c6dc' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
+    .dark select.select-with-icon {
+        background-image: none;
+    }
 }
 
 @layer utilities {
@@ -338,6 +375,28 @@
     }
 }
 
+.autocare-app-surface {
+    background-color: var(--background);
+    background-image: var(--autocare-pattern-image);
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+/* Keep the generated automotive texture visible around workspace cards and pages. */
+.autocare-page-content > main.bg-background,
+.autocare-page-content > .bg-background {
+    background-color: transparent;
+}
+
+.autocare-info-pattern {
+    background-image: var(--autocare-pattern-image);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -350,6 +409,373 @@ html {
 body {
     margin: 0;
     min-width: 320px;
+}
+
+.autocare-toolbar-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
+.autocare-toolbar-select::-ms-expand {
+    display: none;
+}
+
+/* Keep the authenticated account control centered independently of header text baselines. */
+.account-avatar-trigger {
+    display: flex;
+    pointer-events: auto;
+    cursor: pointer;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    font: inherit;
+    line-height: 0;
+    vertical-align: middle;
+    appearance: none;
+}
+
+.account-avatar-ring {
+    display: flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    flex: 0 0 2.25rem;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 9999px;
+    padding: 0.125rem;
+    line-height: 0;
+}
+
+.account-avatar-content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    line-height: 1;
+    text-align: center;
+}
+
+/* Chat send actions keep the wheel mark as a universal visual verb while the
+   accessible label supplies the localized action text. */
+button[type="submit"][aria-label] {
+    width: auto;
+    min-width: 5.75rem;
+    padding-left: 1.4rem;
+    padding-right: 0.75rem;
+    background-image: url('/images/autocare/icons/wheel-send.svg');
+    background-position: 0.4rem center;
+    background-repeat: no-repeat;
+    background-size: 0.8rem;
+    cursor: pointer;
+}
+
+button[type="submit"][aria-label] > svg {
+    display: none;
+}
+
+button[type="submit"][aria-label]::after {
+    content: attr(aria-label);
+    font: inherit;
+    line-height: 1;
+}
+
+/* In Russian the wheel takes the visual place of the initial «О». */
+button[type="submit"][aria-label="Отправить"]::after {
+    content: "тправить";
+}
+
+button:disabled[type="submit"][aria-label] {
+    cursor: not-allowed;
+}
+
+/* Public header has a compact intermediate layout before the mobile shell
+   takes over. This prevents controls from competing for the same row around
+   tablet widths while keeping every action available from the menu. */
+.public-desktop-header__inner {
+    min-width: 0;
+    gap: 0.75rem;
+}
+
+.public-desktop-header__logo {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+.public-desktop-header__logo > svg {
+    width: 214px;
+    max-width: 100%;
+}
+
+.public-desktop-header__actions {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+/* The mobile menu is rendered only while open, but remains hidden by default
+   so a resized desktop header never leaves an orphaned popover visible. */
+.public-desktop-header__mobile-menu {
+    display: none;
+}
+
+@media (max-width: 1100px) {
+    .public-desktop-header__inner {
+        gap: 0.5rem;
+    }
+
+    .public-desktop-header__logo > svg {
+        width: 168px !important;
+    }
+
+    .public-desktop-header__actions {
+        gap: 0.45rem;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button {
+        max-width: 104px;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] {
+        width: 90px;
+    }
+}
+
+@media (max-width: 900px) {
+    .public-desktop-header__logo > svg {
+        width: 148px !important;
+    }
+
+    .public-desktop-header__actions {
+        gap: 0.35rem;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button {
+        max-width: 92px;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] {
+        width: 82px;
+    }
+
+    .public-desktop-header__favorite {
+        display: none;
+    }
+
+    .public-desktop-header__sign-in {
+        width: 40px;
+        justify-content: center;
+        padding-inline: 0;
+    }
+
+    .public-desktop-header__sign-in > span {
+        display: none;
+    }
+}
+
+@media (max-width: 820px) {
+    .public-desktop-header__logo > svg {
+        width: 132px !important;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button {
+        max-width: 84px;
+        padding-inline: 0.45rem;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] {
+        width: 76px;
+    }
+
+    /* Keep the regular navigation usable immediately after the burger
+       boundary. The compact typography gives the 1121px edge enough room for
+       the locale, theme and account actions without clipping the right side. */
+    .public-desktop-header__nav {
+        gap: 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .public-desktop-header__actions {
+        gap: 0.25rem;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button {
+        max-width: 76px;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] {
+        width: 66px;
+    }
+
+    .public-desktop-header__actions > button.group {
+        width: 68px;
+    }
+
+    .public-desktop-header__sign-in {
+        min-width: 40px;
+        flex: 0 0 40px;
+    }
+}
+
+/* Keep the compact header deterministic. At 1120px and below the regular
+   links are replaced by the burger; below 768px the dedicated mobile header
+   owns navigation, so this rule remains harmless if the desktop shell is
+   kept mounted by a host layout. */
+@media (max-width: 1120px) {
+    .public-desktop-header__actions {
+        gap: 0.5rem;
+    }
+
+    .public-desktop-header .public-desktop-header__nav {
+        display: none !important;
+    }
+
+    .public-desktop-header .public-desktop-header__menu-trigger {
+        display: inline-flex !important;
+        visibility: visible !important;
+    }
+
+    .public-desktop-header__mobile-menu {
+        display: block !important;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button {
+        width: 94px;
+        max-width: 94px;
+        justify-content: center;
+        gap: 0.35rem;
+        padding-inline: 0.5rem;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button > svg {
+        flex: 0 0 auto;
+    }
+
+    .public-desktop-header__actions [data-market-switcher] button > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] {
+        width: 72px;
+        flex: 0 0 72px;
+        gap: 0.1rem;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__icon {
+        display: none;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__select {
+        min-width: 0;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__value {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding-inline: 0.35rem;
+        text-align: center;
+    }
+
+    .public-desktop-header__actions [data-language-switcher] .language-switcher__chevron {
+        margin-right: 0.45rem;
+        width: 0.75rem;
+    }
+}
+
+/* Workspace headers use the same compact contract, because authenticated
+   layouts are still desktop-rendered from the md breakpoint upward. */
+.workspace-header__logo {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+.workspace-header__logo > svg {
+    width: 190px;
+    max-width: 100%;
+}
+
+.workspace-header__actions {
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+@media (max-width: 1100px) {
+    .workspace-header {
+        gap: 0.5rem;
+        padding-inline: 1rem;
+    }
+
+    .workspace-header__logo > svg {
+        width: 150px !important;
+    }
+
+    .workspace-header__actions {
+        gap: 0.4rem;
+    }
+
+    .workspace-header__actions [data-language-switcher] {
+        width: 104px;
+    }
+
+    .workspace-header__actions [data-market-switcher] button {
+        max-width: 96px;
+    }
+
+    .workspace-header__create-provider {
+        display: none !important;
+    }
+}
+
+@media (max-width: 860px) {
+    .workspace-header {
+        padding-inline: 0.75rem;
+    }
+
+    .workspace-header__logo > svg {
+        width: 132px !important;
+    }
+
+    .workspace-header__compact-nav {
+        gap: 0.6rem;
+    }
+
+    .workspace-header__compact-nav > a,
+    .workspace-header__compact-nav button {
+        font-size: 0.6875rem;
+    }
+
+    .workspace-header__actions {
+        gap: 0.3rem;
+    }
+
+    .workspace-header__actions [data-language-switcher] {
+        width: 84px;
+    }
+
+    .workspace-header__actions [data-market-switcher] button {
+        max-width: 84px;
+        padding-inline: 0.45rem;
+    }
 }
 
 :where(h1, h2, h3, h4, h5, h6)[class*="tracking-"] {
@@ -400,6 +826,20 @@ body {
 @keyframes autocarehub-motion-hero-orb-secondary {
     0%, 100% { transform: translate(0, 0); }
     50% { transform: translate(-120px, 120px); }
+}
+
+.autocare-map-skeleton {
+    background: linear-gradient(110deg, var(--muted) 20%, var(--card) 38%, var(--muted) 56%);
+    background-size: 220% 100%;
+    animation: autocarehub-skeleton-shimmer 1.8s linear infinite;
+}
+
+@keyframes autocarehub-skeleton-shimmer {
+    to { background-position-x: -220%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .autocare-map-skeleton { animation: none; }
 }
 
 .autocarehub-motion-fade-in { animation: autocarehub-motion-fade-in var(--motion-duration-slow) var(--motion-ease-standard) both; }

@@ -6,12 +6,16 @@ import { automotiveServices, getServiceLabel } from '@/entities/automotive-servi
 
 export function LandingHeroCategories() {
     const { t, locale } = useTranslation()
-    const categories = automotiveServices.slice(0, 5).map((service) => ({
-        id: service.id,
-        label: getServiceLabel(service, locale),
-        icon: service.icon,
-        to: `${ROUTES.serviceDiscovery}?service=${encodeURIComponent(service.id)}`,
-    }))
+    const featuredCategoryIds = ['oil-change', 'tire-service', 'diagnostics', 'tow-truck', 'mobile-diagnostics']
+    const categories = featuredCategoryIds.flatMap((id) => {
+        const service = automotiveServices.find((item) => item.id === id)
+        return service ? [{
+            id: service.id,
+            label: getServiceLabel(service, locale),
+            icon: service.icon,
+            to: `${ROUTES.serviceDiscovery}?service=${encodeURIComponent(service.id)}`,
+        }] : []
+    })
 
     return (
         <div className="mt-8">

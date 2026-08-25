@@ -1,35 +1,51 @@
 import { Check } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { ROUTES } from '@/shared/constants/routes'
+import { useGetAutoCareLocationZonesQuery, useGetAutoCareMarketsQuery } from '@/entities/automotive-service'
+import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { Skeleton } from '@/components/ui/skeleton'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
 
 import { ServiceCategoryGrid } from './ServiceCategoryGrid'
 
-const locations = [
-    { title: 'Центр Москвы', count: '1 248 автосервисов', image: '/images/autocare/locations/center.webp' },
-    { title: 'Северо-Запад', count: '892 автосервиса', image: '/images/autocare/locations/north-west.webp' },
-    { title: 'Юго-Запад', count: '756 автосервисов', image: '/images/autocare/locations/south-west.webp' },
-    { title: 'Восток Москвы', count: '645 автосервисов', image: '/images/autocare/locations/east.webp' },
-] as const
-
-export function HomeDiscoveryGrid() {
+export function HomeDiscoveryGrid({ marketId }: { marketId: string }) {
     return (
         <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-4 px-[var(--layout-gutter)] pb-7 lg:grid-cols-[1.05fr_0.97fr_1.05fr]">
             <ServiceCategoryGrid />
-            <LocationCard />
+            <LocationCard marketId={marketId} />
             <PartnerCard />
         </section>
     )
 }
 
-function LocationCard() {
-    const { t } = useTranslation()
+function LocationCard({ marketId }: { marketId: string }) {
+    const { t, locale } = useTranslation()
+    const { data: markets = [], isLoading: isMarketsLoading } = useGetAutoCareMarketsQuery()
+    const selectedMarket = markets.find((market) => market.cityCode === marketId || market.id === marketId)
+    const apiMarketId = selectedMarket?.id ?? marketId
+    const routeMarket = selectedMarket?.cityCode ?? marketId
+    const { data: zones = [], isLoading, isError, refetch } = useGetAutoCareLocationZonesQuery({ marketId: apiMarketId, limit: 4 }, { skip: !apiMarketId || isMarketsLoading })
+    const getZoneName = (names: Record<string, string>) => names[locale] ?? names[locale.split('-')[0] ?? ''] ?? names.en ?? names.ru ?? Object.values(names)[0] ?? ''
+    const countLabel = (count: number) => {
+        if (!locale.startsWith('ru')) return `${count.toLocaleString(locale)} services`
+        const mod10 = count % 10
+        const mod100 = count % 100
+        const noun = mod10 === 1 && mod100 !== 11
+            ? 'автосервис'
+            : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)
+                ? 'автосервиса'
+                : 'автосервисов'
+        return `${count.toLocaleString(locale)} ${noun}`
+    }
     return (
         <section className="h-full rounded-[10px] bg-card p-5">
-            <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">{t('autocare.exploreLocations')}</h2><Link to={ROUTES.serviceDiscovery} className="text-xs font-semibold text-primary">{t('autocare.viewOnMap')}</Link></div>
-            <div className="mt-4 grid gap-2">
-                {locations.map((location) => <Link key={location.title} to={ROUTES.serviceDiscovery} className="group flex items-center gap-3"><img src={location.image} alt="" className="h-[52px] w-[73px] rounded-[7px] object-cover" /><span><strong className="block text-sm group-hover:text-primary">{location.title}</strong><span className="mt-0.5 block text-xs text-muted-foreground">{location.count}</span></span></Link>)}
+            <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">{t('autocare.exploreLocations')}</h2><Link to={routePaths.serviceDiscovery({ market: routeMarket })} className="text-xs font-semibold text-primary">{t('autocare.viewOnMap')}</Link></div>
+            <div className="mt-4 grid gap-2" aria-busy={isMarketsLoading || isLoading}>
+                {(isMarketsLoading || isLoading) && [1, 2, 3, 4].map((item) => <div key={item} className="flex h-[52px] items-center gap-3" aria-hidden="true"><Skeleton className="h-[52px] w-[73px] rounded-[7px]" /><div className="grid flex-1 gap-2"><Skeleton className="h-3.5 w-3/5" /><Skeleton className="h-3 w-2/5" /></div></div>)}
+                {!isMarketsLoading && !isLoading && !isError && zones.map((zone) => <Link key={zone.id} to={routePaths.serviceDiscovery({ market: routeMarket, zone: zone.id })} className="group flex items-center gap-3"><img src={zone.imageUrl ?? '/images/autocare/locations/center.webp'} alt="" className="h-[52px] w-[73px] rounded-[7px] object-cover" /><span><strong className="block text-sm group-hover:text-primary">{getZoneName(zone.names)}</strong><span className="mt-0.5 block text-xs text-muted-foreground">{countLabel(zone.serviceCount)}</span></span></Link>)}
+                {!isMarketsLoading && !isLoading && isError && <div role="alert" className="rounded-[var(--radius-control)] border border-status-danger-border bg-status-danger-surface p-3"><p className="text-sm font-semibold text-status-danger-foreground">{t('common.failedToLoad')}</p><RetryButton className="mt-3" size="sm" onRetry={refetch} label={t('common.retry')} /></div>}
+                {!isMarketsLoading && !isLoading && !isError && zones.length === 0 && <p className="rounded-[var(--radius-control)] border border-dashed border-border bg-secondary/40 px-3 py-4 text-sm text-muted-foreground">{t('autocare.noLocations')}</p>}
             </div>
         </section>
     )

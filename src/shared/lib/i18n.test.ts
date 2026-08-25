@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
+import { loadAllTranslations } from '@/shared/config/translations'
 import { t } from './i18n'
 
 describe('t', () => {
+    beforeAll(async () => {
+        await loadAllTranslations()
+    })
+
     it('returns english translation by default', () => {
         expect(t('common.loadingPage')).toBe('Loading page...')
     })
@@ -185,13 +190,13 @@ describe('t', () => {
     })
 
     it('returns translated admin cabinets text', () => {
-        expect(t('adminCabinets.title')).toBe('Cabinets')
-        expect(t('adminCabinets.title', undefined, 'ru')).toBe('Кабинеты')
+        expect(t('adminCabinets.title')).toBe('Service locations')
+        expect(t('adminCabinets.title', undefined, 'ru')).toBe('Точки автосервисов')
         expect(t('adminCabinets.statusUpdatedSuccessfully')).toBe(
-            'Cabinet status updated successfully.',
+            'Service location status updated successfully.',
         )
         expect(t('adminCabinets.confirmBlockTitle', undefined, 'ru')).toBe(
-            'Заблокировать этот кабинет?',
+            'Заблокировать эту точку автосервиса?',
         )
     })
 

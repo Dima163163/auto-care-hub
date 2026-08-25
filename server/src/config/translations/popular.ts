@@ -31,10 +31,6 @@ function createPopularLocale(overrides: LocaleOverrides): typeof enTranslations 
                 enTranslations.notifications.security,
                 overrides.notifications?.security,
             ),
-            payment: mergeSection(
-                enTranslations.notifications.payment,
-                overrides.notifications?.payment,
-            ),
         } as typeof enTranslations.notifications,
         emails: {
             ...enTranslations.emails,
@@ -99,19 +95,6 @@ const security = {
     hi: { accountLocked: { title: 'खाता अस्थायी रूप से लॉक है' }, refreshTokenReuse: { title: 'सुरक्षा चेतावनी' } },
 } as const
 
-const payment = {
-    es: { completed: { title: 'Pago completado' }, failed: { title: 'Pago fallido' } },
-    de: { completed: { title: 'Zahlung abgeschlossen' }, failed: { title: 'Zahlung fehlgeschlagen' } },
-    fr: { completed: { title: 'Paiement effectué' }, failed: { title: 'Échec du paiement' } },
-    pt: { completed: { title: 'Pagamento concluído' }, failed: { title: 'Falha no pagamento' } },
-    zh: { completed: { title: '付款完成' }, failed: { title: '付款失败' } },
-    ja: { completed: { title: '支払いが完了しました' }, failed: { title: '支払いに失敗しました' } },
-    ko: { completed: { title: '결제가 완료되었습니다' }, failed: { title: '결제에 실패했습니다' } },
-    ar: { completed: { title: 'اكتملت عملية الدفع' }, failed: { title: 'فشلت عملية الدفع' } },
-    tr: { completed: { title: 'Ödeme tamamlandı' }, failed: { title: 'Ödeme başarısız' } },
-    hi: { completed: { title: 'भुगतान पूरा हुआ' }, failed: { title: 'भुगतान विफल हुआ' } },
-} as const
-
 const bookingEmails = {
     es: { subject: { created: 'Solicitud de reserva enviada - AutoCare Hub', createdOwner: 'Nueva solicitud de reserva - AutoCare Hub', confirmed: 'Reserva confirmada - AutoCare Hub', cancelled: 'Reserva cancelada - AutoCare Hub' }, title: { created: 'Solicitud de reserva enviada', createdOwner: 'Nueva solicitud de reserva', confirmed: 'Reserva confirmada', cancelled: 'Reserva cancelada' }, description: { created: 'Tu solicitud de reserva se ha enviado al propietario y está pendiente de confirmación.', createdOwner: 'Has recibido una nueva solicitud de reserva para tu cabinete.', confirmed: 'El propietario ha confirmado tu reserva.', cancelled: 'Se ha cancelado una reserva.' }, details: { header: 'Detalles de la reserva:', cabinet: 'Cabinete:', service: 'Servicio:', date: 'Fecha:', time: 'Hora:' } },
     de: { subject: { created: 'Buchungsanfrage gesendet - AutoCare Hub', createdOwner: 'Neue Buchungsanfrage - AutoCare Hub', confirmed: 'Buchung bestätigt - AutoCare Hub', cancelled: 'Buchung storniert - AutoCare Hub' }, title: { created: 'Buchungsanfrage gesendet', createdOwner: 'Neue Buchungsanfrage', confirmed: 'Buchung bestätigt', cancelled: 'Buchung storniert' }, description: { created: 'Deine Buchungsanfrage wurde an den Eigentümer gesendet und wartet auf Bestätigung.', createdOwner: 'Du hast eine neue Buchungsanfrage für deinen Raum erhalten.', confirmed: 'Der Eigentümer hat deine Buchung bestätigt.', cancelled: 'Eine Buchung wurde storniert.' }, details: { header: 'Buchungsdetails:', cabinet: 'Raum:', service: 'Leistung:', date: 'Datum:', time: 'Zeit:' } },
@@ -138,13 +121,13 @@ const emails = {
     hi: { common: { hello: 'नमस्ते {{name}},', viewDetails: 'अपने खाते में विवरण देखें', footer: 'यदि आपको इस ईमेल की अपेक्षा नहीं थी, तो इसे अनदेखा कर सकते हैं।' }, passwordSetup: { subject: 'पासवर्ड सेट करें - AutoCare Hub', title: 'पासवर्ड सेट करें', button: 'पासवर्ड सेट करें', expiry: 'यह लिंक {{expiry}} को समाप्त हो जाएगा।' }, passwordReset: { subject: 'पासवर्ड रीसेट करें - AutoCare Hub', title: 'पासवर्ड रीसेट करें', button: 'पासवर्ड रीसेट करें', expiry: 'यह लिंक {{expiry}} को समाप्त हो जाएगा।' }, emailVerification: { subject: 'ईमेल सत्यापित करें - AutoCare Hub', title: 'ईमेल सत्यापित करें', button: 'ईमेल सत्यापित करें', expiry: 'यह लिंक {{expiry}} को समाप्त हो जाएगा।' } },
 } as const
 
-export const esTranslations = createPopularLocale({ common: common.es, navigation: navigation.es, errors: errors.es, notifications: { security: security.es, payment: payment.es }, emails: { ...emails.es, booking: bookingEmails.es } })
-export const deTranslations = createPopularLocale({ common: common.de, navigation: navigation.de, errors: errors.de, notifications: { security: security.de, payment: payment.de }, emails: { ...emails.de, booking: bookingEmails.de } })
-export const frTranslations = createPopularLocale({ common: common.fr, navigation: navigation.fr, errors: errors.fr, notifications: { security: security.fr, payment: payment.fr }, emails: { ...emails.fr, booking: bookingEmails.fr } })
-export const ptTranslations = createPopularLocale({ common: common.pt, navigation: navigation.pt, errors: errors.pt, notifications: { security: security.pt, payment: payment.pt }, emails: { ...emails.pt, booking: bookingEmails.pt } })
-export const zhTranslations = createPopularLocale({ common: common.zh, navigation: navigation.zh, errors: errors.zh, notifications: { security: security.zh, payment: payment.zh }, emails: { ...emails.zh, booking: bookingEmails.zh } })
-export const jaTranslations = createPopularLocale({ common: common.ja, navigation: navigation.ja, errors: errors.ja, notifications: { security: security.ja, payment: payment.ja }, emails: { ...emails.ja, booking: bookingEmails.ja } })
-export const koTranslations = createPopularLocale({ common: common.ko, navigation: navigation.ko, errors: errors.ko, notifications: { security: security.ko, payment: payment.ko }, emails: { ...emails.ko, booking: bookingEmails.ko } })
-export const arTranslations = createPopularLocale({ common: common.ar, navigation: navigation.ar, errors: errors.ar, notifications: { security: security.ar, payment: payment.ar }, emails: { ...emails.ar, booking: bookingEmails.ar } })
-export const trTranslations = createPopularLocale({ common: common.tr, navigation: navigation.tr, errors: errors.tr, notifications: { security: security.tr, payment: payment.tr }, emails: { ...emails.tr, booking: bookingEmails.tr } })
-export const hiTranslations = createPopularLocale({ common: common.hi, navigation: navigation.hi, errors: errors.hi, notifications: { security: security.hi, payment: payment.hi }, emails: { ...emails.hi, booking: bookingEmails.hi } })
+export const esTranslations = createPopularLocale({ common: common.es, navigation: navigation.es, errors: errors.es, notifications: { security: security.es }, emails: { ...emails.es, booking: bookingEmails.es } })
+export const deTranslations = createPopularLocale({ common: common.de, navigation: navigation.de, errors: errors.de, notifications: { security: security.de }, emails: { ...emails.de, booking: bookingEmails.de } })
+export const frTranslations = createPopularLocale({ common: common.fr, navigation: navigation.fr, errors: errors.fr, notifications: { security: security.fr }, emails: { ...emails.fr, booking: bookingEmails.fr } })
+export const ptTranslations = createPopularLocale({ common: common.pt, navigation: navigation.pt, errors: errors.pt, notifications: { security: security.pt }, emails: { ...emails.pt, booking: bookingEmails.pt } })
+export const zhTranslations = createPopularLocale({ common: common.zh, navigation: navigation.zh, errors: errors.zh, notifications: { security: security.zh }, emails: { ...emails.zh, booking: bookingEmails.zh } })
+export const jaTranslations = createPopularLocale({ common: common.ja, navigation: navigation.ja, errors: errors.ja, notifications: { security: security.ja }, emails: { ...emails.ja, booking: bookingEmails.ja } })
+export const koTranslations = createPopularLocale({ common: common.ko, navigation: navigation.ko, errors: errors.ko, notifications: { security: security.ko }, emails: { ...emails.ko, booking: bookingEmails.ko } })
+export const arTranslations = createPopularLocale({ common: common.ar, navigation: navigation.ar, errors: errors.ar, notifications: { security: security.ar }, emails: { ...emails.ar, booking: bookingEmails.ar } })
+export const trTranslations = createPopularLocale({ common: common.tr, navigation: navigation.tr, errors: errors.tr, notifications: { security: security.tr }, emails: { ...emails.tr, booking: bookingEmails.tr } })
+export const hiTranslations = createPopularLocale({ common: common.hi, navigation: navigation.hi, errors: errors.hi, notifications: { security: security.hi }, emails: { ...emails.hi, booking: bookingEmails.hi } })

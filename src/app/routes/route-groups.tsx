@@ -1,4 +1,4 @@
-import { Route } from 'react-router'
+import { Navigate, Route } from 'react-router'
 
 import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AuthLayout } from '@/app/layouts/auth-layout'
@@ -7,39 +7,40 @@ import { PublicLayout } from '@/app/layouts/public-layout'
 import { RequireAuth, RequireGuest } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { RouteErrorBoundary } from '@/shared/ui/route-error-boundary'
+import { AutoCareHomePage } from '@/pages/autocare-home'
 
 import {
     AboutPage,
+    AgreementPage,
     AutoCareResultsPage,
     AutoCareProviderPage,
     AutoCareRequestPage,
     AdminAuditLogsPage,
-    AdminCabinetsPage,
     AdminDashboardPage,
     AdminOwnersPage,
     AdminReviewsPage,
+    AdminPlatformReviewsPage,
     AdminUsersPage,
     SecurityCenterPage,
+    SuperAdminDashboardPage,
     BlogPage,
-    CabinetDetailsPage,
-    CabinetsPage,
+    ChatsPage,
     ContactsPage,
     EmailVerificationPage,
     FavoritesPage,
     FeaturesPage,
     ForgotPasswordPage,
     HelpPage,
-    HomePage,
     LoginCallbackPage,
     LoginPage,
     NotFoundPage,
     NotificationsPage,
     OnboardingPage,
-    OwnerBookingsPage,
+    OwnerAutoCareRequestsPage,
     OwnerClientsPage,
-    OwnerCabinetCreatePage,
-    OwnerCabinetEditPage,
-    OwnerCabinetsPage,
+    OwnerAutoCareProvidersPage,
+    OwnerAutoCareProviderDetailsPage,
+    OwnerAutoCareProviderReviewsPage,
     OwnerDashboardPage,
     OwnerServicesPage,
     OwnersPage,
@@ -51,6 +52,8 @@ import {
     ProfileBookingsPage,
     ProfilePage,
     ProfileReviewsPage,
+    ProfileVehiclesPage,
+    PlatformReviewsPage,
     RegisterPage,
     RulesPage,
 } from './lazy-pages'
@@ -58,7 +61,8 @@ import {
 export function renderPublicRoutes() {
     return (
         <Route element={<RouteErrorBoundary><PublicLayout /></RouteErrorBoundary>}>
-            <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.home} element={<AutoCareHomePage />} />
+            <Route path={ROUTES.platformReviews} element={<PlatformReviewsPage />} />
             <Route path={ROUTES.features} element={<FeaturesPage />} />
             <Route path={ROUTES.owners} element={<OwnersPage />} />
             <Route path={ROUTES.pricing} element={<PricingPage />} />
@@ -68,13 +72,13 @@ export function renderPublicRoutes() {
             <Route path={ROUTES.partners} element={<PartnersPage />} />
             <Route path={ROUTES.contacts} element={<ContactsPage />} />
             <Route path={ROUTES.help} element={<HelpPage />} />
+            <Route path={ROUTES.agreement} element={<AgreementPage />} />
             <Route path={ROUTES.rules} element={<RulesPage />} />
             <Route path={ROUTES.privacy} element={<PrivacyPage />} />
-            <Route path={ROUTES.cabinets} element={<CabinetsPage />} />
+            <Route path={ROUTES.cabinets} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
             <Route path={ROUTES.serviceDiscovery} element={<AutoCareResultsPage />} />
             <Route path={ROUTES.serviceProviderDetails} element={<AutoCareProviderPage />} />
-            <Route path={ROUTES.serviceRequest} element={<AutoCareRequestPage />} />
-            <Route path={ROUTES.cabinetDetails} element={<CabinetDetailsPage />} />
+            <Route path={ROUTES.cabinetDetails} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
         </Route>
     )
 }
@@ -93,6 +97,7 @@ export function renderAuthenticatedPublicRoutes() {
             <Route path={ROUTES.profile} element={<ProfilePage />} />
             <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
+            <Route path={ROUTES.chats} element={<ChatsPage workspace="client" />} />
         </Route>
     )
 }
@@ -110,6 +115,8 @@ export function renderClientRoutes() {
         >
             <Route path={ROUTES.profileBookings} element={<ProfileBookingsPage />} />
             <Route path={ROUTES.profileReviews} element={<ProfileReviewsPage />} />
+            <Route path={ROUTES.profileVehicles} element={<ProfileVehiclesPage />} />
+            <Route path={ROUTES.serviceRequest} element={<AutoCareRequestPage />} />
         </Route>
     )
 }
@@ -148,19 +155,25 @@ export function renderOwnerRoutes() {
         <Route
             element={
                 <RouteErrorBoundary>
-                    <RequireAuth allowedRoles={['owner']}>
+                    <RequireAuth allowedRoles={['owner']} allowOwnerWorkspace>
                         <OwnerLayout />
                     </RequireAuth>
                 </RouteErrorBoundary>
             }
         >
             <Route path={ROUTES.ownerDashboard} element={<OwnerDashboardPage />} />
-            <Route path={ROUTES.ownerCabinets} element={<OwnerCabinetsPage />} />
-            <Route path={ROUTES.ownerCabinetCreate} element={<OwnerCabinetCreatePage />} />
-            <Route path={ROUTES.ownerCabinetEdit} element={<OwnerCabinetEditPage />} />
-            <Route path={ROUTES.ownerBookings} element={<OwnerBookingsPage />} />
+            <Route path={ROUTES.ownerAutoCareProviders} element={<OwnerAutoCareProvidersPage />} />
+            <Route path={ROUTES.ownerAutoCareProviderDetails} element={<OwnerAutoCareProviderDetailsPage />} />
+            <Route path={ROUTES.ownerAutoCareProviderReviews} element={<OwnerAutoCareProviderReviewsPage />} />
+            <Route path={ROUTES.ownerCabinets} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
+            <Route path={ROUTES.ownerCabinetCreate} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
+            <Route path={ROUTES.ownerCabinetEdit} element={<Navigate replace to={ROUTES.ownerAutoCareProviders} />} />
+            <Route path={ROUTES.ownerBookings} element={<Navigate replace to={ROUTES.ownerAutoCareRequests} />} />
+            <Route path={ROUTES.ownerAutoCareRequests} element={<OwnerAutoCareRequestsPage />} />
+            <Route path={ROUTES.ownerReviews} element={<OwnerAutoCareProviderReviewsPage />} />
             <Route path={ROUTES.ownerClients} element={<OwnerClientsPage />} />
             <Route path={ROUTES.ownerServices} element={<OwnerServicesPage />} />
+            <Route path={ROUTES.ownerChats} element={<ChatsPage workspace="owner" />} />
         </Route>
     )
 }
@@ -179,10 +192,29 @@ export function renderAdminRoutes() {
             <Route path={ROUTES.adminDashboard} element={<AdminDashboardPage />} />
             <Route path={ROUTES.adminUsers} element={<AdminUsersPage />} />
             <Route path={ROUTES.adminOwners} element={<AdminOwnersPage />} />
-            <Route path={ROUTES.adminCabinets} element={<AdminCabinetsPage />} />
+            <Route path={ROUTES.adminCabinets} element={<Navigate replace to={ROUTES.adminDashboard} />} />
             <Route path={ROUTES.adminReviews} element={<AdminReviewsPage />} />
+            <Route path={ROUTES.adminPlatformReviews} element={<AdminPlatformReviewsPage />} />
             <Route path={ROUTES.adminAuditLogs} element={<AdminAuditLogsPage />} />
             <Route path={ROUTES.adminSecurityCenter} element={<SecurityCenterPage />} />
+            <Route path={ROUTES.adminChats} element={<ChatsPage workspace="admin" />} />
+        </Route>
+    )
+}
+
+export function renderSuperAdminRoutes() {
+    return (
+        <Route
+            element={
+                <RouteErrorBoundary>
+                    <RequireAuth allowedRoles={['super_admin']}>
+                        <AdminLayout />
+                    </RequireAuth>
+                </RouteErrorBoundary>
+            }
+        >
+            <Route path={ROUTES.superAdminDashboard} element={<SuperAdminDashboardPage />} />
+            <Route path={ROUTES.superAdminChats} element={<ChatsPage workspace="super_admin" />} />
         </Route>
     )
 }

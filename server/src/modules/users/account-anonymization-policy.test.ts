@@ -9,8 +9,6 @@ import {
 describe('account anonymization policy', () => {
     it('keeps financial evidence and business context immutable', () => {
         expect(accountAnonymizationPolicy.bookings.businessAndFinancialReferences).toBe('preserve')
-        expect(accountAnonymizationPolicy.paymentsAndInvoices.amountsCurrenciesProviderReferencesAndStatuses).toBe('preserve')
-        expect(accountAnonymizationPolicy.paymentsAndInvoices.userReference).toBe('preserve_through_booking')
         expect(accountAnonymizationPolicy.reviews.ratingStatusAndTimestamps).toBe('preserve')
     })
 
@@ -29,10 +27,6 @@ describe('account anonymization policy', () => {
         })
         expect(accountAnonymizationPolicy.financialRecords.review.text).toBe('redact')
         expect(accountAnonymizationPolicy.financialRecords.review.ratingStatusAndTimestamps).toBe('preserve')
-        expect(accountAnonymizationPolicy.financialRecords.invoice.providerReference).toBe('preserve')
-        expect(accountAnonymizationPolicy.financialRecords.refund.freeTextReason).toBe('redact')
-        expect(accountAnonymizationPolicy.financialRecords.dispute.providerReferencesAndEventCursor).toBe('preserve')
-        expect(accountAnonymizationPolicy.financialRecords.providerEvidence.rawPayloadsAndPersonalMetadata).toBe('redact')
     })
 
     it('generates a deterministic reserved email for idempotent reruns', () => {

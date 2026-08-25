@@ -653,7 +653,7 @@ function MobileAvailabilitySearch() {
                     value={duration}
                     onChange={(event) => setDuration(event.target.value)}
                     aria-label={t('landing.availabilityDurationLabel')}
-                    className="min-w-0 flex-1 appearance-none bg-transparent text-base font-medium text-foreground outline-none "
+                    className="select-with-icon min-w-0 flex-1 appearance-none bg-transparent text-base font-medium text-foreground outline-none "
                 >
                     <option value="30">{t('service.form.durationMinutes', { count: 30 })}</option>
                     <option value="60">{t('service.form.durationMinutes', { count: 60 })}</option>

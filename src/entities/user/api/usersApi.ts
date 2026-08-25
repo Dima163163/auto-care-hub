@@ -1,6 +1,8 @@
 import { baseApi } from '@/shared/api/baseApi'
+import { z } from 'zod'
 
 import type { OwnerClient, User, UserRole, UserStatus } from '../model/types'
+import type { ClientVehicle, CreateClientVehicleInput } from '../model/vehicles'
 import type { CursorPage, CursorQuery } from '@/shared/api/cursorPagination'
 import type { SupportedLocale } from '@/shared/config/i18n'
 import {
@@ -9,6 +11,8 @@ import {
     normalizeAdminUserPageResponse,
     normalizeAdminUserResponse,
     normalizeAccountDeletionRequest,
+    normalizeClientVehicleListResponse,
+    normalizeClientVehicleResponse,
     normalizeOwnerClientListResponse,
     normalizeUserResponse,
     normalizeUserDataExport,
@@ -47,6 +51,9 @@ type UpdateUserPreferencesRequest = {
 type RequestAccountDeletionRequest = {
     reason?: string
 }
+
+type UpdateClientVehicleRequest = { id: string; patch: Partial<CreateClientVehicleInput> }
+const userSuccessSchema = z.object({ success: z.literal(true) })
 
 export type AdminUsersQuery = CursorQuery & {
     search?: string
@@ -204,6 +211,30 @@ export const usersApi = baseApi.injectEndpoints({
             ],
         }),
 
+        getMyVehicles: build.query<ClientVehicle[], void>({
+            query: () => '/users/me/vehicles',
+            transformResponse: normalizeClientVehicleListResponse,
+            providesTags: [{ type: 'UserVehicle', id: 'LIST' }],
+        }),
+
+        createMyVehicle: build.mutation<ClientVehicle, CreateClientVehicleInput>({
+            query: (body) => ({ url: '/users/me/vehicles', method: 'POST', body }),
+            transformResponse: normalizeClientVehicleResponse,
+            invalidatesTags: [{ type: 'UserVehicle', id: 'LIST' }],
+        }),
+
+        updateMyVehicle: build.mutation<ClientVehicle, UpdateClientVehicleRequest>({
+            query: ({ id, patch }) => ({ url: `/users/me/vehicles/${id}`, method: 'PATCH', body: patch }),
+            transformResponse: normalizeClientVehicleResponse,
+            invalidatesTags: [{ type: 'UserVehicle', id: 'LIST' }],
+        }),
+
+        deleteMyVehicle: build.mutation<{ success: true }, string>({
+            query: (id) => ({ url: `/users/me/vehicles/${id}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => userSuccessSchema.parse(value),
+            invalidatesTags: [{ type: 'UserVehicle', id: 'LIST' }],
+        }),
+
         exportMyData: build.query<UserDataExport, void>({
             query: () => '/users/me/export',
             transformResponse: normalizeUserDataExport,
@@ -245,6 +276,10 @@ export const {
     useUpdateAdminUserRoleMutation,
     useCreateAdminUserMutation,
     useUpdateUserPreferencesMutation,
+    useGetMyVehiclesQuery,
+    useCreateMyVehicleMutation,
+    useUpdateMyVehicleMutation,
+    useDeleteMyVehicleMutation,
     useLazyExportMyDataQuery,
     useGetAccountDeletionRequestQuery,
     useRequestAccountDeletionMutation,

@@ -2,7 +2,7 @@ schema_version: 1
 document:
   name: Legacy cabinet booking to AutoCare Hub migration map
   status: proposed
-  updated: 2026-08-12
+  updated: 2026-08-13
   audit: ../MIGRATION_AUDIT.md
 
 strategy:
@@ -193,45 +193,12 @@ quarantine_then_delete:
       - new_autocare_booking_has_no_dependency
       - migrations_and_tests_green
 
-  - current_area: server/src/modules/payments
-    reason: legacy_booking_payments_and_stripe_connect_are_not_provider_subscriptions
-    may_reuse_patterns:
-      - webhook_signature_verification
-      - unique_event_persistence
-      - idempotency
-      - retry
-      - reconciliation
-      - provider_timeout
-      - audit_and_incident_handling
-    do_not_reuse_entities:
-      - BookingPayment
-      - BookingPaymentAttempt
-      - BookingPaymentRefund
-      - BookingPaymentDispute
-      - BookingPaymentInvoice
-    deletion_gate:
-      - no_autocare_route_depends_on_booking_payment
-      - provider_subscription_module_has_separate_contract_or_is_not_yet_active
-      - financial_retention_consequences_reviewed
-
-  - current_area: server/src/entities/booking booking-payment family
-    reason: legacy_financial_context
-    deletion_gate:
-      - exact_database_strategy_approved
-      - unknown_production_database_protected
-      - rollback_and_retention_documented
-
-  - current_area: stripe_connect_fields_on_user
-    reason: provider_payout_identity_is_not_subscription_customer_identity
-    deletion_gate:
-      - legacy_payment_routes_removed
-      - migration_verified
-
-  - current_area: src/entities/payment and legacy payment UI
-    reason: first_autocare_release_does_not_assume_repair_checkout
-    deletion_gate:
-      - booking_dashboard_replaced
-      - no_route_imports_remain
+  - current_area: legacy_financial_runtime
+    reason: removed_from_runtime; AutoCare customers pay providers directly
+    deletion_status:
+      - modules_dependencies_routes_ui_tests_configuration_removed
+      - historical_migrations_preserved_for_existing_databases
+      - no_autocare_route_depends_on_legacy_financial_schema
 
 documentation_follow_up:
   current_source_of_truth:

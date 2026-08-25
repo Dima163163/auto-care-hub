@@ -5,6 +5,7 @@ import { userSchema } from '@/entities/user/lib/user-response-schema'
 import { setAccessToken } from '@/shared/lib/auth-token'
 import type {
     EmailVerificationTokenResponse,
+    DeploymentCapabilities,
     OAuthIdentitySummary,
     OAuthUrlResponse,
     PasswordResetTokenResponse,
@@ -46,6 +47,13 @@ const oauthIdentitySchema = z.object({
     createdAt: z.string().datetime({ offset: true }).nullable(),
     canUnlink: z.boolean(),
 }) satisfies z.ZodType<OAuthIdentitySummary>
+
+const deploymentCapabilitiesSchema = z.object({
+    deploymentMarket: z.enum(['ru', 'global']),
+    auth: z.object({
+        oauthProviders: z.array(z.enum(['google', 'yandex'])),
+    }),
+}) satisfies z.ZodType<DeploymentCapabilities>
 
 const userSessionSchema = z.object({
     id: z.string(),
@@ -106,6 +114,10 @@ export function normalizeOAuthUrlResponse(value: unknown): OAuthUrlResponse {
 
 export function normalizeOAuthIdentitiesResponse(value: unknown): OAuthIdentitySummary[] {
     return z.array(oauthIdentitySchema).parse(value)
+}
+
+export function normalizeDeploymentCapabilitiesResponse(value: unknown): DeploymentCapabilities {
+    return deploymentCapabilitiesSchema.parse(value)
 }
 
 export function normalizeUserSessionsResponse(value: unknown): UserSession[] {

@@ -1,5 +1,6 @@
 import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 import { generateTimeSlots, timeSlotsOverlap } from '../lib/bookingTime'
 import { useGetOccupiedSlotsQuery } from '@/entities/booking'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -49,8 +50,8 @@ export function TimeSlotPicker({
 
   if (isFetching) {
     return (
-      <div className={cn('flex min-h-24 items-center justify-center rounded-md bg-muted/10', className)}>
-        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div role="status" aria-label={t('common.loading')} className={cn('grid grid-cols-3 gap-2 rounded-md bg-muted/10', className)}>
+        {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-12 w-full rounded-md" />)}
       </div>
     )
   }

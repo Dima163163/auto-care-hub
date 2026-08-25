@@ -1,9 +1,11 @@
 const API_MODES = ['mock', 'real'] as const
 
+import { isDevRuntime, readPublicEnv } from './runtime-env'
+
 export type ApiMode = (typeof API_MODES)[number]
 
 function getApiMode(): ApiMode {
-    const value = import.meta.env.VITE_API_MODE ?? 'mock'
+    const value = readPublicEnv('VITE_API_MODE') ?? 'mock'
 
     if (API_MODES.includes(value as ApiMode)) {
         return value as ApiMode
@@ -13,7 +15,7 @@ function getApiMode(): ApiMode {
 }
 
 function getRealApiBaseUrl() {
-    if (import.meta.env.DEV) {
+    if (isDevRuntime()) {
         return '/api'
     }
 
@@ -24,7 +26,7 @@ function getRealApiBaseUrl() {
         return '/api'
     }
 
-    return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'
+    return readPublicEnv('VITE_API_BASE_URL') ?? 'http://localhost:4000'
 }
 
 export const API_MODE = getApiMode()

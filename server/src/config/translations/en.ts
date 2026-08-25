@@ -716,28 +716,20 @@ export const enTranslations = {
                 message: '{{cabinetTitle}} is booked for {{date}} at {{startTime}}.',
             },
         },
-        payment: {
-            completed: {
-                title: 'Payment completed',
-                message: 'Your booking payment was completed successfully.',
-            },
-            failed: {
-                title: 'Payment failed',
-                message: 'Your booking payment could not be completed. You can try again from your bookings.',
-            },
-            partiallyRefunded: {
-                title: 'Payment partially refunded',
-                message: 'Part of your booking payment was refunded. The remaining balance is still recorded in your account.',
-            },
-            refunded: {
-                title: 'Payment refunded',
-                message: 'Your booking payment was refunded.',
+        autocare: {
+            visitReminder: {
+                title: 'AutoCare visit reminder',
+                message: 'Your confirmed visit is coming up. Open the request to check the details.',
             },
         },
         moderation: {
             reviewUpdated: {
                 title: 'Review moderation updated',
                 message: 'Your review for "{{cabinetTitle}}" is now {{status}}.',
+            },
+            appealDecided: {
+                title: 'Appeal decided',
+                message: 'Your appeal about "{{subject}}" has been {{status}}.',
             },
         },
     },
@@ -773,6 +765,20 @@ export const enTranslations = {
                 date: 'Date:',
                 time: 'Time:',
             }
+        },
+        autocare: {
+            reminder: {
+                subject: 'AutoCare visit reminder',
+                title: 'Your visit is coming up',
+                description: 'Your confirmed AutoCare visit is coming up. Check the request details before you leave.',
+                details: {
+                    header: 'Visit details:',
+                    provider: 'Service:',
+                    service: 'Work:',
+                    date: 'Date:',
+                    time: 'Time:',
+                },
+            },
         },
         passwordSetup: {
             subject: 'Set your password - AutoCare Hub',

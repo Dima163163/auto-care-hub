@@ -29,7 +29,7 @@ export function BrandLogo({ size = 'md' }: BrandLogoProps) {
                 <path d="M9.5 18.6 21 25.1M8.5 46l12-7.2M35.2 59.8l-1.5-13.6M56.4 16.8 44 24" stroke="var(--map-overlay)" strokeWidth="2" />
                 <path d="M15.4 12.2A27 27 0 0 1 32 5" fill="none" stroke="var(--map-pin)" strokeLinecap="round" strokeWidth="1.5" opacity=".85" />
             </g>
-            <text x="73" y="33" fill="var(--primary-foreground)" fontFamily="Inter Variable, Inter, Arial, sans-serif" fontSize="24" fontWeight="750" letterSpacing="-.6">
+            <text x="73" y="33" fill="currentColor" fontFamily="Inter Variable, Inter, Arial, sans-serif" fontSize="24" fontWeight="750" letterSpacing="-.6">
                 AutoCare <tspan fill="var(--primary)">Hub</tspan>
             </text>
             <text x="74" y="50" fill="var(--map-pin)" opacity=".75" fontFamily="Inter Variable, Inter, Arial, sans-serif" fontSize="9.2" fontWeight="500">

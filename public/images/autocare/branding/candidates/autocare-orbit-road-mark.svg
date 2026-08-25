@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">AutoCare Hub — Orbit Road</title>
+  <desc id="desc">Минималистичный знак AutoCare Hub: динамичное колесо, центральная втулка и дорога в отрицательном пространстве.</desc>
+  <defs>
+    <radialGradient id="field" cx="31%" cy="19%" r="88%">
+      <stop stop-color="#153e6c"/><stop offset=".48" stop-color="#071b38"/><stop offset="1" stop-color="#020a18"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="45" y1="35" x2="215" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6ddcff"/><stop offset=".32" stop-color="#1b8df0"/><stop offset=".72" stop-color="#0755d8"/><stop offset="1" stop-color="#073178"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="75" y1="67" x2="184" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e4f4f8"/><stop offset=".25" stop-color="#8faebb"/><stop offset=".57" stop-color="#3b586b"/><stop offset="1" stop-color="#142738"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity=".66"/></filter>
+  </defs>
+  <circle cx="128" cy="128" r="121" fill="url(#field)" stroke="#60c9f7" stroke-opacity=".38" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <path d="M128 27a101 101 0 1 1-78.6 37.5" fill="none" stroke="#020812" stroke-width="27" stroke-linecap="round"/>
+    <path d="M128 27a101 101 0 0 1 85.7 47.6" fill="none" stroke="url(#ring)" stroke-width="21" stroke-linecap="round"/>
+    <path d="M213.7 74.6A101 101 0 0 1 180 211" fill="none" stroke="#0a55cb" stroke-width="21" stroke-linecap="round"/>
+    <path d="M180 211a101 101 0 0 1-130.6-146.5" fill="none" stroke="#2a9ff6" stroke-width="21" stroke-linecap="round"/>
+    <circle cx="128" cy="128" r="72" fill="#071727" stroke="#07101a" stroke-width="5"/>
+    <g fill="url(#steel)" stroke="#ecfbff" stroke-opacity=".38" stroke-width="1.5">
+      <path d="M121 57h14l11 58-18 18-18-18Z"/>
+      <path d="m182 80 9 9-42 43-19-3 6-17Z" transform="rotate(72 128 128)"/>
+      <path d="m182 80 9 9-42 43-19-3 6-17Z" transform="rotate(144 128 128)"/>
+      <path d="m182 80 9 9-42 43-19-3 6-17Z" transform="rotate(216 128 128)"/>
+      <path d="m182 80 9 9-42 43-19-3 6-17Z" transform="rotate(288 128 128)"/>
+    </g>
+    <circle cx="128" cy="128" r="31" fill="#061425" stroke="#8bdfff" stroke-opacity=".7" stroke-width="2"/>
+    <path d="M117 143c3-12 8-21 15-27 6-5 13-8 21-8" fill="none" stroke="#e8fbff" stroke-width="6" stroke-linecap="round"/>
+    <path d="M111 145h48" fill="none" stroke="#1a8df0" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="128" cy="128" r="8" fill="#0b58c9" stroke="#dff8ff" stroke-width="2"/>
+  </g>
+  <path d="M41 43h28M184 215h30" fill="none" stroke="#9cecff" stroke-opacity=".65" stroke-width="2" stroke-linecap="round"/>
+</svg>

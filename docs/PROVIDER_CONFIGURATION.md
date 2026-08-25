@@ -25,12 +25,27 @@ metadata bounds. The environment path changes where the filesystem provider
 stores objects; it does not by itself prove that the volume is durable or
 shared.
 
+## AutoCare provider media and profile fields
+
+The owner service form is the source of truth for the public provider page. It
+stores the square logo separately from a hero cover and up to twelve gallery
+photos. Cover and gallery uploads use `/owner/autocare-providers/media` and are
+normalized to WebP before being referenced by `coverImageUrl` and
+`galleryImageUrls`. The public gallery combines these service photos with
+approved review photos; if no service photo exists, the UI uses a placeholder.
+
+The same profile payload also contains contact phone/email, website, metro or
+landmark, number of service bays, warranty promise and customer bonus text.
+These values are rendered in the hero, “About” and “Find us” sections, so new
+service points do not require hardcoded contact information. Media remains on
+the same filesystem abstraction as cabinet images and must move to shared
+object storage before running multiple API replicas.
+
 ## Payments
 
-Stripe webhook events older than 24 hours or more than five minutes in the
-future are rejected before event claiming. Reconciliation classifies provider
-failures as retryable, permanent, or escalation-worthy; inspect the related
-metrics and system incidents during provider recovery.
+AutoCare Hub does not process customer payments. Clients agree payment directly
+with the service point, so owner configuration contains no payment-provider,
+payout, webhook, or reconciliation settings.
 
 ## Password breach checks
 

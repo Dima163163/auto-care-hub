@@ -18,14 +18,10 @@ const requiredOperations = [
     ['GET', '/cabinets', 'listPublicCabinets'],
     ['GET', '/bookings/my', 'listMyBookings'],
     ['GET', '/owner/bookings', 'listOwnerBookings'],
-    ['GET', '/owner/readiness', 'getOwnerReadiness'],
     ['GET', '/notifications', 'listNotifications'],
     ['GET', '/admin/users', 'listAdminUsers'],
     ['GET', '/admin/account-deletion-requests', 'listAdminAccountDeletionRequests'],
     ['PATCH', '/admin/account-deletion-requests/{id}/status', 'updateAdminAccountDeletionRequestStatus'],
-    ['GET', '/admin/payments', 'listAdminPayments'],
-    ['GET', '/admin/payments/{id}/refunds', 'listAdminPaymentRefunds'],
-    ['GET', '/admin/payments/{id}/disputes', 'listAdminPaymentDisputes'],
     ['GET', '/admin/audit-logs', 'listAdminAuditLogs'],
     ['GET', '/admin/audit-logs/export', 'exportAdminAuditLogs'],
     ['GET', '/admin/system-incidents', 'listAdminSystemIncidents'],
@@ -33,6 +29,10 @@ const requiredOperations = [
     ['GET', '/users/me/deletion-request', 'getMyDeletionRequest'],
     ['POST', '/users/me/deletion-request', 'requestAccountDeletion'],
     ['DELETE', '/users/me/deletion-request', 'cancelAccountDeletion'],
+    ['POST', '/v1/autocare-appeals', 'createAutoCareAppeal'],
+    ['GET', '/v1/autocare-appeals/my', 'listMyAutoCareAppeals'],
+    ['GET', '/admin/autocare-appeals', 'listAdminAutoCareAppeals'],
+    ['PATCH', '/admin/autocare-appeals/{id}/decision', 'decideAdminAutoCareAppeal'],
 ]
 
 function quote(value) {

@@ -1,10 +1,10 @@
 # AutoCare Hub — Architecture
 
-> Status: target architecture for review; the first AutoCare design/mock slice
-> is implemented on `design/autocare-foundation`, while backend replacement and
-> legacy deletion remain gated by user review
+> Status: target architecture with the first public discovery/profile slices
+> implemented on `dev`; backend replacement and legacy deletion remain gated by
+> replacement coverage and review
 >
-> Updated: 2026-08-12
+> Updated: 2026-08-14
 >
 > Applies to: web-first product, future iOS/Android clients
 >
@@ -21,9 +21,12 @@ Machine-readable companion maps:
 AutoCare Hub evolves the copied legacy booking repository in place. It is a
 modular monolith, not a greenfield FastAPI/Next.js rewrite.
 
-Current baseline:
+Current baseline (the public AutoCare discovery/profile slices and the first
+owner/client workspace slices are already running on `dev`):
 
-- React 19 + TypeScript + Vite + React Router frontend;
+- React 19 + TypeScript with a Next.js App Router production shell. The
+  existing React Router feature tree is mounted behind a catch-all route during
+  the incremental migration; Vite remains a tested PWA/compatibility fallback;
 - Redux Toolkit/RTK Query, MSW, Tailwind and Base UI primitives;
 - Fastify + TypeScript backend;
 - PostgreSQL + TypeORM migrations;
@@ -45,6 +48,25 @@ The backend remains the only owner of business rules and persistent product
 data. Web and future mobile clients are API consumers. No client directly
 accesses PostgreSQL or reconstructs authorization, price, entitlement, booking,
 quote or bonus rules.
+
+### Deployment capability profiles
+
+Every deployment receives a validated `VITE_DEPLOYMENT_MARKET` frontend profile
+and a server-side `DEPLOYMENT_MARKET` profile at build/deploy time. The initial
+values are `ru` and `global`; the registry can later add country or market
+profiles without branching UI components. The
+profile selects market-specific capabilities such as visible OAuth providers,
+payment methods, legal links, currencies and feature copy. For example, the
+`ru` profile hides Google sign-in when that provider is not approved, while
+`global` exposes all providers enabled for the deployment.
+
+This variable is public frontend configuration, not a secret and not an
+authorization boundary. The API publishes the effective allow-list through
+`GET /api/v1/deployment-capabilities` and rejects unsupported OAuth/provider
+actions server-side. The backend profile is the authority if the two build
+variables differ.
+Missing or unknown profiles fail closed to the restrictive policy, surface a
+startup/configuration warning, and are covered by deployment smoke tests.
 
 ## 2. Non-negotiable rules
 
@@ -187,6 +209,28 @@ Responsibilities:
 `ServiceProvider` represents the business/brand. `ServiceLocation` represents
 the physical place used for search, map distance, schedules and bookings.
 
+### 4.3.1 Location intelligence
+
+Locations are a first-class hierarchy rather than a hard-coded city list:
+
+```text
+Country
+  └─ Region / administrative area (market metadata)
+       └─ City (AutomotiveMarket)
+            └─ District / neighborhood / service area (LocationZone)
+                 └─ ServiceLocation → ServiceProvider
+```
+
+`AutomotiveMarket` stores country, region, city, locale/currency/timezone and
+city-center coordinates. `AutomotiveLocationZone` stores localized names,
+parent zone, zone type, center, radius, image and display order. A physical
+service location references both its city market and its zone. Public clients
+use `GET /api/v1/markets/:marketId/zones` for the same location cards and
+discovery links; optional coordinates order the zones by proximity. Counts are
+computed from active provider locations, never copied into frontend fixtures.
+This keeps new cities and languages data-driven and gives web and future iOS /
+Android clients one contract.
+
 ### 4.4 Vehicles
 
 Responsibilities:
@@ -233,20 +277,35 @@ Responsibilities:
 - immutable commercial/service snapshot;
 - completion events and review/bonus eligibility.
 
-### 4.7 Inquiry, conversation and quote
+### 4.7 Unified chat, inquiry and quote
 
 Responsibilities:
 
-- pre-booking service inquiry;
-- customer/provider conversation;
+- provider questions before a booking and service-request conversation;
+- owner-to-admin support and admin-to-super-admin escalation channels;
+- one role-scoped chat workspace for web and future mobile clients;
 - private media attachments;
 - read/unread state;
+- WebSocket delivery with REST as the source of truth and reconnect-safe
+  refetch/polling fallback;
 - versioned estimates/quotes;
 - quote acceptance and booking conversion;
 - reports and exceptional moderation access.
 
-A conversation is not a general social chat. It is anchored to a specific
-provider location, service definition, customer, and optional vehicle/booking.
+A chat is not a general social network. Each thread has an explicit type:
+`service_request`, `provider_inquiry`, `support` or `admin_escalation`. A
+provider inquiry may be created before a booking and can optionally reference a
+service, vehicle or location. Access is granted only to the client/provider
+members involved, the assigned support/admin roles, or the super-admin; knowing
+an identifier is never sufficient. Messages and attachments are private by
+default and every exceptional moderation access is audited.
+
+The durable model is `AutoCareChatThread` plus `ServiceMessage` and
+`ServiceAttachment`. Request threads keep the legacy request identifier for
+backward-compatible reads while new records also store `thread_id`. The same
+contract is available through `/api/v1/chats` and `/v1/chats/:chatId/ws`, so
+web and native clients share lifecycle, read-marker, attachment and timestamp
+semantics.
 
 ### 4.8 Reviews and reputation
 
@@ -256,6 +315,17 @@ Responsibilities:
 - rating dimensions and aggregate calculation;
 - edit/reply/report/moderation rules;
 - anti-abuse and public projections.
+
+The reviews context also produces a versioned `ProviderTrustSnapshot` for each
+service location. It records the computed score, badge state, policy version,
+input counters, reason codes, `computed_at` and `valid_until`. Inputs are limited
+to attributable platform signals: completed interactions, sample-size-adjusted
+verified ratings, complaint/dispute and cancellation rates, response and quote
+reliability, price consistency, profile verification and moderation state.
+Subscriptions, promo codes and paid placement are never score inputs. Badge
+eligibility is threshold-based, expires on schedule, and can be suspended with
+an auditable reason. Public cards and map markers expose the badge plus a
+short explanation of the current policy version.
 
 ### 4.9 Provider bonuses
 
@@ -329,6 +399,7 @@ specific permission; knowing a provider/location UUID is never sufficient.
 
 - `provider_id`, name, description, address components;
 - latitude/longitude/geography point and timezone;
+- market and optional location-zone IDs used for localized area discovery;
 - public contacts, facilities, policies and verification state;
 - active/suspended status;
 - aggregate rating fields as cached projections only.
@@ -565,7 +636,9 @@ Preferred direction is PostgreSQL with PostGIS:
 - distance returned by the query, not recomputed independently in the client.
 
 If the deployment platform cannot support PostGIS, an ADR must choose an
-alternative. Do not approximate production radius search using city strings.
+alternative. ADR-0007 selects an indexed PostgreSQL bounding-box prefilter plus
+an exact great-circle SQL predicate for launch; it is not a city-string
+approximation and retains a clean PostGIS/GiST cutover path.
 
 ### 6.2 Search endpoint projection
 
@@ -609,6 +682,14 @@ approved inputs such as:
 - next availability;
 - provider response/booking reliability;
 - data freshness.
+
+The trust score is one bounded quality input among comparable offers; it may
+improve ordering when service, vehicle and location relevance are otherwise
+comparable, but cannot make an incompatible or materially worse match appear
+first. Ranking explanations must identify the main factors. Quality snapshots
+are recomputed from durable events and retain an audit trail so badge and rank
+changes can be investigated. A sponsored result, if introduced, is a separate
+labelled slot and never masquerades as organic trust.
 
 Any sponsored placement is a separate labeled product. Subscription plan alone
 must not modify organic ranking.
@@ -655,6 +736,9 @@ Clients do not branch on translated message text.
 ```text
 GET    /api/v1/catalog/categories
 GET    /api/v1/catalog/services
+GET    /api/v1/vehicle-catalog?brandId={brandId}
+GET    /api/v1/markets
+GET    /api/v1/markets/:marketId/zones?parentId={zoneId}&latitude={lat}&longitude={lng}
 
 GET    /api/v1/search/offerings
 GET    /api/v1/providers/:providerId
@@ -797,9 +881,12 @@ back/forward navigation is correct.
 
 ### 9.1 Web rendering and SEO
 
-The current app is a Vite SPA. That is compatible with the first authenticated
-application and product pilot, but public discovery pages need an explicit SEO
-decision.
+The production web entrypoint is now a Next.js App Router shell. During the
+incremental migration the existing React Router feature tree is mounted behind
+`src/app/[[...slug]]/page.page.tsx`, preserving every approved route while
+public pages move to server-aware route segments. Vite remains a compatibility
+and PWA build, not the production entrypoint. Public discovery pages still
+need an explicit SEO implementation.
 
 Options to evaluate in an ADR after routes/data stabilize:
 
@@ -808,8 +895,8 @@ Options to evaluate in an ADR after routes/data stabilize:
 3. move only the public discovery surface to an SSR frontend while keeping the
    provider/admin app as the current SPA.
 
-A wholesale Next.js rewrite is not the default. The chosen option must preserve
-the Fastify API boundary and be justified by crawl/indexing measurements.
+The chosen option must preserve the Fastify API boundary and be justified by
+crawl/indexing measurements; a second backend rewrite is out of scope.
 
 ### 9.2 Design system
 
@@ -831,17 +918,17 @@ desktop density is approved.
 
 PostgreSQL is the message source of truth.
 
-Initial reliable flow:
+Initial reliable flow (implemented for AutoCare service requests):
 
-1. client sends message with idempotency key via REST;
+1. client sends a message or offer via REST;
 2. server authenticates participant and commits message;
 3. transaction records outbox notification event;
-4. response returns durable message/cursor;
-5. recipient refreshes through polling/invalidation until realtime is added.
+4. response returns the durable message/offer projection;
+5. recipient refreshes through polling and WebSocket invalidation events.
 
-Realtime evolution:
+Realtime delivery:
 
-- WebSocket or SSE may push message/inquiry invalidations;
+- WebSocket pushes message, attachment, read-marker and offer invalidations;
 - Redis pub/sub may fan out across API instances;
 - reconnect always resumes from a durable cursor;
 - missed realtime events never lose messages;
@@ -1049,8 +1136,9 @@ Each replacement includes real API, frontend/mock contract, tests and docs.
 Only after replacement gates pass:
 
 - remove cabinet routes/entities/pages/mocks/translations/assets;
-- remove customer booking payment, commission and Stripe Connect code;
-- preserve/generalize only subscription-relevant payment reliability helpers;
+- remove customer booking-payment, commission and provider-payment code;
+- preserve only provider-agnostic reliability patterns when a separately
+  approved subscription-billing context needs them;
 - verify migrations, OpenAPI, lint, unit/integration/E2E and production build;
 - list deleted files and data consequences for user review.
 

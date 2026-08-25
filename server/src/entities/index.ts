@@ -4,13 +4,11 @@ import { ReviewEntity } from './review/review.entity.js'
 import { SecurityTokenEntity } from './security-token/security-token.entity.js'
 import { ServiceEntity } from './service/service.entity.js'
 import { UserEntity } from './user/user.entity.js'
+import { ClientVehicleEntity } from './user/client-vehicle.entity.js'
 import { UserSessionEntity } from './user-session/user-session.entity.js'
 import { AuditLogEntity } from './audit-log/audit-log.entity.js'
 import { NotificationEntity } from './notification/notification.entity.js'
 import { BookingStatusHistoryEntity } from './booking/booking-status-history.entity.js'
-import { BookingPaymentEntity } from './booking/booking-payment.entity.js'
-import { BookingPaymentAttemptEntity } from './booking/booking-payment-attempt.entity.js'
-import { StripeWebhookEventEntity } from './booking/stripe-webhook-event.entity.js'
 import { CabinetScheduleEntity } from './cabinet/cabinet-schedule.entity.js'
 import { CabinetScheduleExceptionEntity } from './cabinet/cabinet-schedule-exception.entity.js'
 import { BookingRescheduleRequestEntity } from './booking/booking-reschedule-request.entity.js'
@@ -23,26 +21,55 @@ import { OAuthLinkRequestEntity } from './oauth-link-request/oauth-link-request.
 import { AccountDeletionRequestEntity } from './account-deletion-request/account-deletion-request.entity.js'
 import { SecurityEventEntity } from './security-event/security-event.entity.js'
 import { SecurityEventActionEntity } from './security-event/security-event-action.entity.js'
-import { BookingPaymentInvoiceEntity } from './booking/booking-payment-invoice.entity.js'
-import { BookingPaymentRefundEntity } from './booking/booking-payment-refund.entity.js'
-import { BookingPaymentDisputeEntity } from './booking/booking-payment-dispute.entity.js'
 import { SecurityMitigationEntity } from './security-mitigation/security-mitigation.entity.js'
 import { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 import {
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
+    AutomotiveReviewEntity,
+    AutomotiveReviewPromoEntity,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 import {
+    AutomotiveProviderMembershipEntity,
+} from './automotive/provider-membership.entity.js'
+import { AutomotiveProviderInvitationEntity } from './automotive/provider-invitation.entity.js'
+import { AutoCareProviderDailyMetricEntity } from './automotive/provider-daily-metric.entity.js'
+import { AutomotiveProviderChangeRequestEntity } from './automotive/provider-change-request.entity.js'
+import { AutomotiveCatalogGapRequestEntity } from './automotive/catalog-gap-request.entity.js'
+import { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
+import { AutoCareBonusAccountEntity, AutoCareBonusLedgerEntity, AutoCareBonusProgramEntity } from './automotive/bonus.entity.js'
+import { AutoCareChatBlockEntity, AutoCareChatReportEntity } from './automotive/chat-moderation.entity.js'
+import { AutoCareAppealEntity } from './automotive/appeal.entity.js'
+import {
+    AutoCareChatThreadEntity,
     ServiceAttachmentEntity,
     ServiceMessageEntity,
     ServiceRequestEntity,
 } from './automotive/service-request.entity.js'
+import { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
+import { AutoCareRescheduleRequestEntity } from './automotive/autocare-reschedule-request.entity.js'
+import { PlatformReviewEntity } from './platform-review/platform-review.entity.js'
+import {
+    AutoCareBroadcastOfferEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareRepairEventEntity,
+    AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
+} from './automotive/marketplace-enhancements.entity.js'
 
 export const entities = [
     UserEntity,
+    ClientVehicleEntity,
     CabinetEntity,
     ServiceEntity,
     BookingEntity,
@@ -52,9 +79,6 @@ export const entities = [
     AuditLogEntity,
     NotificationEntity,
     BookingStatusHistoryEntity,
-    BookingPaymentEntity,
-    BookingPaymentAttemptEntity,
-    StripeWebhookEventEntity,
     CabinetScheduleEntity,
     CabinetScheduleExceptionEntity,
     BookingRescheduleRequestEntity,
@@ -67,40 +91,78 @@ export const entities = [
     AccountDeletionRequestEntity,
     SecurityEventEntity,
     SecurityEventActionEntity,
-    BookingPaymentInvoiceEntity,
-    BookingPaymentRefundEntity,
-    BookingPaymentDisputeEntity,
     SecurityMitigationEntity,
     CabinetImageManifestEntity,
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
     AutomotiveServiceDefinitionEntity,
     AutomotiveProviderEntity,
+    AutomotiveReviewEntity,
+    AutomotiveReviewPromoEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderInvitationEntity,
+    AutoCareProviderDailyMetricEntity,
+    AutomotiveProviderChangeRequestEntity,
+    AutomotiveCatalogGapRequestEntity,
+    AutomotiveProviderFavoriteEntity,
+    AutoCareBonusProgramEntity,
+    AutoCareBonusAccountEntity,
+    AutoCareBonusLedgerEntity,
+    AutoCareChatReportEntity,
+    AutoCareChatBlockEntity,
+    AutoCareAppealEntity,
     ServiceRequestEntity,
+    AutoCareServiceQuoteEntity,
+    AutoCareRescheduleRequestEntity,
+    AutoCareChatThreadEntity,
     ServiceMessageEntity,
     ServiceAttachmentEntity,
+    PlatformReviewEntity,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
+    AutoCareRepairEventEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareBroadcastOfferEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
 ]
 
 export { BookingEntity } from './booking/booking.entity.js'
+export { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
+export {
+    AutomotiveProviderChangeRequestEntity,
+    AutomotiveProviderChangeRequestKind,
+    AutomotiveProviderChangeRequestStatus,
+} from './automotive/provider-change-request.entity.js'
+export {
+    AutomotiveCatalogGapRequestEntity,
+    AutomotiveCatalogGapRequestStatus,
+} from './automotive/catalog-gap-request.entity.js'
+export { AutoCareBonusAccountEntity, AutoCareBonusLedgerEntity, AutoCareBonusProgramEntity, AutoCareBonusLedgerType } from './automotive/bonus.entity.js'
+export {
+    AutoCareChatBlockEntity,
+    AutoCareChatBlockStatus,
+    AutoCareChatReportCategory,
+    AutoCareChatReportEntity,
+    AutoCareChatReportStatus,
+} from './automotive/chat-moderation.entity.js'
+export { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from './automotive/appeal.entity.js'
 export { CabinetEntity } from './cabinet/cabinet.entity.js'
 export { ReviewEntity } from './review/review.entity.js'
 export { SecurityTokenEntity } from './security-token/security-token.entity.js'
 export { ServiceEntity } from './service/service.entity.js'
 export { UserEntity } from './user/user.entity.js'
+export { ClientVehicleEntity } from './user/client-vehicle.entity.js'
 export { UserSessionEntity } from './user-session/user-session.entity.js'
 export { AuditLogEntity, AuditAction } from './audit-log/audit-log.entity.js'
 export { NotificationEntity, NotificationCategory } from './notification/notification.entity.js'
 export { BookingStatusHistoryEntity } from './booking/booking-status-history.entity.js'
-export { BookingPaymentEntity, BookingPaymentStatus } from './booking/booking-payment.entity.js'
-export {
-    BookingPaymentAttemptEntity,
-    BookingPaymentAttemptStatus,
-} from './booking/booking-payment-attempt.entity.js'
-export {
-    StripeWebhookEventEntity,
-    StripeWebhookEventStatus,
-} from './booking/stripe-webhook-event.entity.js'
 export { CabinetScheduleEntity } from './cabinet/cabinet-schedule.entity.js'
 export { CabinetScheduleExceptionEntity } from './cabinet/cabinet-schedule-exception.entity.js'
 export { BookingRescheduleRequestEntity, BookingRescheduleStatus } from './booking/booking-reschedule-request.entity.js'
@@ -138,32 +200,46 @@ export {
     SecurityEventActionStatus,
 } from './security-event/security-event-action.entity.js'
 export {
-    BookingPaymentInvoiceEntity,
-    BookingPaymentInvoiceStatus,
-} from './booking/booking-payment-invoice.entity.js'
-export {
-    BookingPaymentRefundEntity,
-    BookingPaymentRefundStatus,
-} from './booking/booking-payment-refund.entity.js'
-export {
-    BookingPaymentDisputeEntity,
-    BookingPaymentDisputeStatus,
-} from './booking/booking-payment-dispute.entity.js'
-export {
     SecurityMitigationEntity,
     SecurityMitigationKind,
 } from './security-mitigation/security-mitigation.entity.js'
 export { CabinetImageManifestEntity } from './cabinet-image/cabinet-image-manifest.entity.js'
 export {
+    AutomotiveMarketCountryEntity,
+    type AutomotiveMarketCapabilities,
+    type AutomotiveMarketLegalLinks,
     AutomotiveMarketEntity,
+    AutomotiveLocationZoneEntity,
+    AutomotiveLocationZoneType,
     AutomotivePriceType,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
+    AutomotiveReviewEntity,
+    AutomotiveReviewStatus,
+    AutomotiveReviewPromoEntity,
+    AutomotiveReviewPromoStatus,
+    AutomotiveBookingMode,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
 } from './automotive/automotive.entity.js'
 export {
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipRole,
+    AutomotiveProviderMembershipStatus,
+} from './automotive/provider-membership.entity.js'
+export {
+    AutomotiveProviderInvitationEntity,
+    AutomotiveProviderInvitationRole,
+    AutomotiveProviderInvitationStatus,
+} from './automotive/provider-invitation.entity.js'
+export { AutoCareProviderDailyMetricEntity } from './automotive/provider-daily-metric.entity.js'
+export {
+    AutoCareChatThreadEntity,
+    AutoCareChatThreadStatus,
+    AutoCareChatThreadType,
+    type AutomotiveOfferingSnapshot,
+    type ServiceMessageOffer,
     ServiceAttachmentEntity,
     ServiceAttachmentStatus,
     ServiceMessageEntity,
@@ -171,3 +247,18 @@ export {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from './automotive/service-request.entity.js'
+export { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
+export { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from './automotive/autocare-reschedule-request.entity.js'
+export { PlatformReviewEntity, PlatformReviewStatus } from './platform-review/platform-review.entity.js'
+export {
+    AutoCareBroadcastOfferEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCarePriceBenchmarkEntity,
+    AutoCareRepairEventEntity,
+    AutoCareTrustEvidenceEntity,
+    AutoCareTrustSnapshotEntity,
+} from './automotive/marketplace-enhancements.entity.js'

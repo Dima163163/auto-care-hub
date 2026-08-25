@@ -46,6 +46,16 @@ describe('notification renderer', () => {
         expect(rendered.message).toContain('2026-08-01')
     })
 
+    it('renders AutoCare visit reminders in the recipient locale', () => {
+        const english = renderNotificationTemplate('autocare.visit_reminder', {}, 'en')
+        const russian = renderNotificationTemplate('autocare.visit_reminder', {}, 'ru')
+
+        expect(english.link).toBe('/profile/bookings')
+        expect(english.title).toBe('AutoCare visit reminder')
+        expect(russian.title).toBe('Напоминание о визите')
+        expect(russian.message).not.toBe(english.message)
+    })
+
     it('reads only valid template metadata parameters', () => {
         const template = readNotificationTemplateMetadata({
             templateKey: 'booking.reminder',

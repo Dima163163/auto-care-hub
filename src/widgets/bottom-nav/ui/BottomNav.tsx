@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router'
-import { Bookmark, Building2, Calendar, FileText, HelpCircle, Home, Menu, MessageSquare, MoreHorizontal, Plus, Search, ShieldAlert, ShieldCheck, User, Users, X } from 'lucide-react'
+import { Bookmark, Building2, Calendar, CarFront, FileText, HelpCircle, Home, Menu, MessageSquare, MoreHorizontal, Plus, Search, ShieldAlert, ShieldCheck, User, Users, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,12 @@ const adminPrimaryNavItems = [
     { labelKey: 'navigation.adminCabinets', to: ROUTES.adminCabinets, icon: Building2 },
 ] as const
 
+const superAdminPrimaryNavItems = [
+    { labelKey: 'user.superAdmin', to: ROUTES.superAdminDashboard, icon: ShieldCheck },
+    { labelKey: 'navigation.adminUsers', to: ROUTES.adminUsers, icon: Users },
+    { labelKey: 'navigation.adminAuditLogs', to: ROUTES.adminAuditLogs, icon: FileText },
+] as const
+
 const adminSecondaryNavItems = [
     { labelKey: 'navigation.home', to: ROUTES.home, icon: Home },
     { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: ShieldCheck },
@@ -39,12 +45,13 @@ function isNavItemActive(pathname: string, to: string) {
         : pathname === to || pathname.startsWith(`${to}/`)
 }
 
-function AdminBottomNav() {
+function AdminBottomNav({ role }: { role: 'admin' | 'super_admin' }) {
     const { t } = useTranslation()
     const { pathname } = useLocation()
     const [isMoreOpen, setIsMoreOpen] = useState(false)
     const moreMenuRef = useRef<HTMLDivElement | null>(null)
 
+    const primaryNavItems = role === 'super_admin' ? superAdminPrimaryNavItems : adminPrimaryNavItems
     const isSecondaryRouteActive = adminSecondaryNavItems.some(({ to }) => isNavItemActive(pathname, to))
 
     useEffect(() => {
@@ -70,7 +77,7 @@ function AdminBottomNav() {
     return (
         <nav aria-label={`${t('navigation.adminWorkspace')}, ${t('navigation.mainNavigation')}`} className="fixed inset-x-0 bottom-0 z-[1000] border-t bg-background/95 px-2 pt-2 backdrop-blur-md md:hidden">
             <div ref={moreMenuRef} className="relative mx-auto flex max-w-lg items-stretch gap-1 pb-safe">
-                {adminPrimaryNavItems.map(({ icon: Icon, labelKey, to }) => (
+                {primaryNavItems.map(({ icon: Icon, labelKey, to }) => (
                     <NavLink
                         key={to}
                         to={to}
@@ -151,24 +158,22 @@ function OwnerBottomNav() {
             isActive: pathname === ROUTES.ownerDashboard,
         },
         {
-            id: 'bookings',
-            icon: Calendar,
-            label: t('navigation.ownerBookings'),
-            to: ROUTES.ownerBookings,
-            isActive: pathname.startsWith(ROUTES.ownerBookings),
+            id: 'providers',
+            icon: CarFront,
+            label: t('navigation.ownerAutoCareProviders'),
+            to: ROUTES.ownerAutoCareProviders,
+            isActive: pathname.startsWith(ROUTES.ownerAutoCareProviders),
         },
         {
-            id: 'calendar',
-            icon: Calendar,
-            label: t('navigation.ownerCalendar'),
-            to: ROUTES.ownerBookings,
-            isActive: pathname.startsWith(ROUTES.ownerBookings),
+            id: 'requests',
+            icon: MessageSquare,
+            label: t('navigation.ownerAutoCareRequests'),
+            to: ROUTES.ownerAutoCareRequests,
+            isActive: pathname.startsWith(ROUTES.ownerAutoCareRequests),
         },
     ]
 
     const moreLinks = [
-        { to: ROUTES.ownerCabinets, label: t('navigation.ownerCabinets') },
-        { to: ROUTES.ownerCabinetCreate, label: t('cabinet.form.createTitle') },
         { to: ROUTES.ownerServices, label: t('navigation.ownerServices') },
         { to: ROUTES.ownerClients, label: t('navigation.ownerClients') },
         { to: ROUTES.profile, label: t('navigation.profile') },
@@ -258,7 +263,7 @@ export function BottomNav() {
     }
 
     if (user?.role === 'admin' || user?.role === 'super_admin') {
-        return <AdminBottomNav />
+        return <AdminBottomNav role={user.role} />
     }
 
     const primaryTarget = getBottomNavPrimaryTarget(user?.role)

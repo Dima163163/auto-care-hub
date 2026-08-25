@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">AutoCare Hub — crest wheel</title>
+  <desc id="desc">Строгая круглая эмблема с полированным ободом, пятью спицами и тонким синим акцентом.</desc>
+  <defs>
+    <radialGradient id="field" cx="30%" cy="18%" r="84%"><stop stop-color="#193d61"/><stop offset=".52" stop-color="#0a2039"/><stop offset="1" stop-color="#020914"/></radialGradient>
+    <linearGradient id="rim" x1="51" y1="43" x2="205" y2="214" gradientUnits="userSpaceOnUse"><stop stop-color="#f2f8f9"/><stop offset=".24" stop-color="#9aaeb8"/><stop offset=".62" stop-color="#3d5667"/><stop offset="1" stop-color="#112433"/></linearGradient>
+    <filter id="shadow" x="-24%" y="-24%" width="148%" height="158%"><feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <circle cx="128" cy="128" r="119" fill="url(#field)" stroke="#718995" stroke-opacity=".7" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <circle cx="128" cy="128" r="91" fill="none" stroke="#01070e" stroke-width="25"/>
+    <circle cx="128" cy="128" r="79" fill="url(#rim)" stroke="#eaf5f7" stroke-opacity=".7" stroke-width="2"/>
+    <g fill="#20394c" stroke="#eff8fa" stroke-opacity=".45" stroke-width="1.5">
+      <path d="M122 54h12l13 61-19 16-19-16Z"/>
+      <path d="m184 91 6 10-53 35-18-12 5-17Z" transform="rotate(72 128 128)"/>
+      <path d="m184 91 6 10-53 35-18-12 5-17Z" transform="rotate(144 128 128)"/>
+      <path d="m184 91 6 10-53 35-18-12 5-17Z" transform="rotate(216 128 128)"/>
+      <path d="m184 91 6 10-53 35-18-12 5-17Z" transform="rotate(288 128 128)"/>
+    </g>
+    <circle cx="128" cy="128" r="31" fill="#091a2b" stroke="#dbe9ed" stroke-opacity=".8" stroke-width="3"/>
+    <circle cx="128" cy="128" r="10" fill="#116ed0" stroke="#bcefff" stroke-width="2"/>
+    <path d="M128 40a88 88 0 0 1 73 39" fill="none" stroke="#4bbaff" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

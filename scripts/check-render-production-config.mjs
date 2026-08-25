@@ -8,8 +8,6 @@ const REQUIRED_FRAGMENTS = [
     ['SMTP delivery', 'key: MAIL_MODE\n        value: smtp'],
     ['explicit bootstrap email', 'key: BOOTSTRAP_SUPER_ADMIN_EMAIL\n        sync: false'],
     ['outbox encryption key', 'key: OUTBOX_TOKEN_ENCRYPTION_KEY\n        sync: false'],
-    ['Stripe secret key', 'key: STRIPE_SECRET_KEY\n        sync: false'],
-    ['Stripe webhook secret', 'key: STRIPE_WEBHOOK_SECRET\n        sync: false'],
     ['explicit cabinet uploads root', 'key: CABINET_UPLOADS_DIR\n        sync: false'],
 ]
 

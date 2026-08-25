@@ -14,10 +14,6 @@ key: BOOTSTRAP_SUPER_ADMIN_EMAIL
         sync: false
 key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
-key: STRIPE_SECRET_KEY
-        sync: false
-key: STRIPE_WEBHOOK_SECRET
-        sync: false
 key: CABINET_UPLOADS_DIR
         sync: false
 `
@@ -38,8 +34,6 @@ const completeEnvironment = {
     SMTP_USER: 'mailer',
     SMTP_PASSWORD: 'mailer-password',
     MAIL_FROM: 'AutoCare Hub <no-reply@mailhost.test>',
-    STRIPE_SECRET_KEY: 'sk_live_real',
-    STRIPE_WEBHOOK_SECRET: 'whsec_real',
     CABINET_UPLOADS_DIR: '/var/data/autocarehub/uploads/cabinets',
     BOOTSTRAP_SUPER_ADMIN_EMAIL: 'owner@autocarehub.test',
     BOOTSTRAP_SUPER_ADMIN_NAME: 'AutoCare Hub Owner',
@@ -54,28 +48,14 @@ test('reports configured MVP prerequisites without treating external evidence as
 test('rejects placeholders without leaking secret values', () => {
     const checks = getMvpReadinessChecks({
         ...completeEnvironment,
-        STRIPE_SECRET_KEY: 'sk_test_replace_me',
         SMTP_PASSWORD: 'change-me',
         CABINET_UPLOADS_DIR: '',
     }, renderSource)
     const output = formatMvpReadiness(checks)
 
-    assert.match(output, /Stripe configuration:.*STRIPE_SECRET_KEY/)
     assert.match(output, /SMTP configuration:.*SMTP_PASSWORD/)
     assert.match(output, /Cabinet media storage:.*CABINET_UPLOADS_DIR/)
-    assert.doesNotMatch(output, /sk_test_replace_me|change-me/)
-})
-
-test('rejects Stripe test mode before a production release without leaking the key', () => {
-    const checks = getMvpReadinessChecks({
-        ...completeEnvironment,
-        NODE_ENV: 'production',
-        STRIPE_SECRET_KEY: 'sk_test_real_but_wrong_mode',
-    }, renderSource)
-    const output = formatMvpReadiness(checks)
-
-    assert.match(output, /Stripe configuration:.*STRIPE_SECRET_KEY must use live mode/)
-    assert.doesNotMatch(output, /sk_test_real_but_wrong_mode/)
+    assert.doesNotMatch(output, /change-me/)
 })
 
 test('fails when the production Render contract is incomplete', () => {

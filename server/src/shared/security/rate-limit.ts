@@ -64,6 +64,12 @@ export function assertValidRateLimitOptions(options: RateLimitOptions) {
 
 const buckets = new Map<string, RateLimitState>()
 
+export function mustFailClosedForRedisRateLimitFailure(
+    nodeEnv: typeof env.nodeEnv = env.nodeEnv,
+) {
+    return nodeEnv === 'production'
+}
+
 function hashRateLimitValue(value: string) {
     return createHmac('sha256', env.auth.jwtAccessSecret)
         .update(value)
@@ -238,8 +244,10 @@ async function checkRateLimitRedis(
         if (incrErr) throw incrErr
         if (ttlErr) throw ttlErr
 
-        // Set expiry on first request in window
-        if (count === 1) {
+        // Set expiry on the first request and repair buckets whose TTL was
+        // lost after a Redis failover/restart. Without this guard a bucket
+        // can remain immortal and permanently block a user.
+        if (count === 1 || pttl < 0) {
             await redis.pexpire(bucketKey, options.windowMs)
         }
 
@@ -251,9 +259,19 @@ async function checkRateLimitRedis(
             resetAt,
         }
     } catch (error) {
-        logError('Redis rate limit error; falling back to memory', error, {
+        logError('Redis rate limit error', error, {
             scope: options.scope,
         })
+        // A process-local bucket is not a security boundary in a multi-replica
+        // deployment. Keep the developer/test fallback, but fail closed in
+        // production until the distributed limiter is healthy again.
+        if (mustFailClosedForRedisRateLimitFailure()) {
+            throw new AppError({
+                statusCode: 503,
+                code: ERROR_CODES.InternalServerError,
+                message: 'Rate limiting is temporarily unavailable. Please try again later.',
+            })
+        }
         return checkRateLimit(identifier, options)
     }
 }

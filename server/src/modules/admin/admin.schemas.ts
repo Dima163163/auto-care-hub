@@ -1,8 +1,12 @@
 import { z } from 'zod'
 
 import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
+import { AutomotiveLocationZoneType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
+import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
+import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { AccountDeletionRequestStatus } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
-import { BookingPaymentStatus } from '../../entities/booking/booking-payment.entity.js'
 import { UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import {
     SecurityEventAuthOutcome,
@@ -31,14 +35,6 @@ export const adminUsersQuerySchema = z.object({
 })
 
 export type AdminUsersQuery = z.infer<typeof adminUsersQuerySchema>
-
-export const adminPaymentsQuerySchema = z.object({
-    ...cursorPaginationFields,
-    search: z.string().trim().max(120).optional(),
-    status: z.nativeEnum(BookingPaymentStatus).optional(),
-})
-
-export type AdminPaymentsQuery = z.infer<typeof adminPaymentsQuerySchema>
 
 export const adminAuditLogsQuerySchema = z.object({
     ...cursorPaginationFields,
@@ -178,8 +174,191 @@ export const adminCabinetParamsSchema = z.object({
     id: z.string().uuid('Cabinet id must be a valid UUID.'),
 })
 
-export const adminPaymentParamsSchema = z.object({
-    id: z.string().uuid('Payment id must be a valid UUID.'),
+export const adminAutoCareProviderParamsSchema = z.object({
+    id: z.string().uuid('Automotive provider id must be a valid UUID.'),
+})
+
+export const adminAutoCareMarketParamsSchema = z.object({
+    id: z.string().uuid('Automotive market id must be a valid UUID.'),
+})
+
+export const adminAutoCareServiceDefinitionParamsSchema = z.object({
+    id: z.string().uuid('Automotive service definition id must be a valid UUID.'),
+})
+
+const marketCapabilitiesSchema = z.record(
+    z.string().trim().regex(/^[a-z][a-z0-9_.-]{1,63}$/),
+    z.boolean(),
+).refine((value) => Object.keys(value).length <= 32, 'A market can have at most 32 capabilities.')
+
+const marketLegalLinksSchema = z.record(
+    z.string().trim().regex(/^[a-z][a-z0-9_.-]{1,63}$/),
+    z.string().trim().url().max(2_000),
+).refine((value) => Object.keys(value).length <= 24, 'A market can have at most 24 legal links.')
+
+const monetizationCapabilityKeys = ['subscriptions', 'promo_codes', 'billing'] as const
+
+function validateMarketProfile(value: {
+    defaultLocale: string
+    supportedLocales: string[]
+    capabilities?: Record<string, boolean>
+}, context: z.RefinementCtx) {
+    const normalizedLocales = value.supportedLocales.map((locale) => locale.toLowerCase())
+    if (new Set(normalizedLocales).size !== normalizedLocales.length) {
+        context.addIssue({ code: 'custom', path: ['supportedLocales'], message: 'supportedLocales must not contain duplicates.' })
+    }
+    if (!normalizedLocales.includes(value.defaultLocale.toLowerCase())) {
+        context.addIssue({ code: 'custom', path: ['defaultLocale'], message: 'defaultLocale must be included in supportedLocales.' })
+    }
+    for (const key of monetizationCapabilityKeys) {
+        if (value.capabilities?.[key]) {
+            context.addIssue({ code: 'custom', path: ['capabilities', key], message: 'Monetization capabilities remain disabled until the monetization phase is approved.' })
+        }
+    }
+}
+
+export const updateSuperAdminAutoCareMarketSchema = z.object({
+    defaultLocale: z.string().trim().min(2).max(16),
+    supportedLocales: z.array(z.string().trim().min(2).max(16)).min(1).max(20),
+    timezone: z.string().trim().min(3).max(80),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
+    capabilities: marketCapabilitiesSchema.optional(),
+    legalLinks: marketLegalLinksSchema.optional(),
+    launchReady: z.boolean(),
+}).superRefine(validateMarketProfile)
+
+const localizedNamesSchema = z.record(
+    z.string().trim().regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/),
+    z.string().trim().min(1).max(160),
+).refine((value) => Object.keys(value).length > 0, 'At least one localized name is required.')
+
+const marketProfileSchema = z.object({
+    defaultLocale: z.string().trim().min(2).max(16),
+    supportedLocales: z.array(z.string().trim().min(2).max(16)).min(1).max(20),
+    timezone: z.string().trim().min(3).max(80),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/),
+    capabilities: marketCapabilitiesSchema.default({}),
+    legalLinks: marketLegalLinksSchema.default({}),
+}).superRefine(validateMarketProfile)
+
+export const superAdminCountryParamsSchema = z.object({ id: z.string().uuid() })
+export const superAdminMarketZoneParamsSchema = z.object({ id: z.string().uuid() })
+
+export const createSuperAdminMarketCountrySchema = marketProfileSchema.extend({
+    code: z.string().trim().regex(/^[A-Z]{2,3}$/),
+    names: localizedNamesSchema,
+    active: z.boolean().default(true),
+})
+
+export const updateSuperAdminMarketCountrySchema = marketProfileSchema.extend({
+    names: localizedNamesSchema,
+    active: z.boolean(),
+})
+
+export const createSuperAdminAutoCareMarketSchema = marketProfileSchema.extend({
+    cityCode: z.string().trim().regex(/^[a-z0-9][a-z0-9_-]{1,119}$/),
+    cityName: z.string().trim().min(1).max(160),
+    regionCode: z.string().trim().min(1).max(80).nullable().optional(),
+    regionName: z.string().trim().min(1).max(160).nullable().optional(),
+    centerLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    centerLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
+    launchReady: z.boolean().default(false),
+}).superRefine((value, context) => {
+    if ((value.centerLatitude === null || value.centerLatitude === undefined) !== (value.centerLongitude === null || value.centerLongitude === undefined)) {
+        context.addIssue({ code: 'custom', path: ['centerLatitude'], message: 'Center latitude and longitude must be provided together.' })
+    }
+})
+
+export const updateSuperAdminAutoCareMarketHierarchySchema = createSuperAdminAutoCareMarketSchema
+
+export const createSuperAdminAutoCareMarketZoneSchema = z.object({
+    parentId: z.string().uuid().nullable().optional(),
+    slug: z.string().trim().regex(/^[a-z0-9][a-z0-9_-]{1,119}$/),
+    zoneType: z.nativeEnum(AutomotiveLocationZoneType),
+    names: localizedNamesSchema,
+    centerLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
+    centerLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
+    radiusKm: z.number().finite().positive().max(500).nullable().optional(),
+    imageUrl: z.string().trim().url().max(2_000).nullable().optional(),
+    displayOrder: z.number().int().min(0).max(10_000).default(0),
+    active: z.boolean().default(true),
+}).superRefine((value, context) => {
+    if ((value.centerLatitude === null || value.centerLatitude === undefined) !== (value.centerLongitude === null || value.centerLongitude === undefined)) {
+        context.addIssue({ code: 'custom', path: ['centerLatitude'], message: 'Center latitude and longitude must be provided together.' })
+    }
+})
+
+export const updateSuperAdminAutoCareMarketZoneSchema = createSuperAdminAutoCareMarketZoneSchema
+
+export const updateAdminAutoCareProviderStatusSchema = z.object({
+    status: z.nativeEnum(AutomotiveProviderStatus),
+})
+
+export const adminProviderChangeRequestsQuerySchema = z.object({
+    status: z.nativeEnum(AutomotiveProviderChangeRequestStatus).optional(),
+    kind: z.nativeEnum(AutomotiveProviderChangeRequestKind).optional(),
+})
+
+export const adminProviderChangeRequestParamsSchema = z.object({
+    id: z.string().uuid('Provider change request id must be a valid UUID.'),
+})
+
+export const decideAdminProviderChangeRequestSchema = z.object({
+    status: z.enum([AutomotiveProviderChangeRequestStatus.Approved, AutomotiveProviderChangeRequestStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000).nullable().optional(),
+})
+
+export const adminCatalogGapRequestsQuerySchema = z.object({
+    status: z.nativeEnum(AutomotiveCatalogGapRequestStatus).optional(),
+})
+
+export const adminCatalogGapRequestParamsSchema = z.object({
+    id: z.string().uuid('Catalog gap request id must be a valid UUID.'),
+})
+
+export const decideAdminCatalogGapRequestSchema = z.object({
+    status: z.enum([AutomotiveCatalogGapRequestStatus.Approved, AutomotiveCatalogGapRequestStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000).nullable().optional(),
+})
+
+export const adminChatReportsQuerySchema = z.object({
+    status: z.nativeEnum(AutoCareChatReportStatus).optional(),
+})
+
+export const adminChatReportParamsSchema = z.object({
+    id: z.string().uuid('Chat report id must be a valid UUID.'),
+})
+
+export const decideAdminChatReportSchema = z.object({
+    status: z.enum([AutoCareChatReportStatus.Resolved, AutoCareChatReportStatus.Dismissed]),
+    reason: z.string().trim().min(1).max(2_000).nullable().optional(),
+    blockUser: z.boolean().default(false),
+})
+
+export const adminAutoCareAppealsQuerySchema = z.object({
+    ...cursorPaginationFields,
+    status: z.nativeEnum(AutoCareAppealStatus).optional(),
+    subject: z.nativeEnum(AutoCareAppealSubject).optional(),
+})
+
+export const adminAutoCareAppealParamsSchema = z.object({ id: z.string().uuid() })
+
+export const decideAdminAutoCareAppealSchema = z.object({
+    status: z.enum([AutoCareAppealStatus.Accepted, AutoCareAppealStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000),
+})
+
+export const adminAutoCareModerationEvidenceQuerySchema = z.object({
+    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+})
+
+export const adminAutoCareModerationEvidenceParamsSchema = z.object({
+    id: z.string().uuid(),
+})
+
+export const decideAdminAutoCareModerationEvidenceSchema = z.object({
+    status: z.enum(['approved', 'rejected']),
+    reason: z.string().trim().min(1).max(2_000),
 })
 
 export const updateUserStatusSchema = z.object({
@@ -204,11 +383,6 @@ export const updateCabinetStatusSchema = z.object({
 export const createAdminSchema = z.object({
     name: z.string().trim().min(2, 'Name must contain at least 2 characters.').max(120),
     email: z.string().trim().email('Enter a valid email.').max(320),
-})
-
-export const refundPaymentSchema = z.object({
-    reason: z.enum(['duplicate', 'fraudulent', 'requested_by_customer']),
-    amountMinor: z.number().int().positive().safe().optional(),
 })
 
 export const systemIncidentParamsSchema = z.object({

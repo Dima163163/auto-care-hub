@@ -716,28 +716,20 @@ export const ruTranslations = {
                 message: 'Кабинет «{{cabinetTitle}}» забронирован на {{date}} в {{startTime}}.',
             },
         },
-        payment: {
-            completed: {
-                title: 'Платёж выполнен',
-                message: 'Оплата бронирования успешно завершена.',
-            },
-            failed: {
-                title: 'Не удалось выполнить платёж',
-                message: 'Оплату бронирования не удалось завершить. Повторите попытку в разделе бронирований.',
-            },
-            partiallyRefunded: {
-                title: 'Частичный возврат платежа',
-                message: 'Часть оплаты бронирования возвращена. Оставшаяся сумма сохранена в истории аккаунта.',
-            },
-            refunded: {
-                title: 'Платёж возвращён',
-                message: 'Оплата бронирования возвращена.',
+        autocare: {
+            visitReminder: {
+                title: 'Напоминание о визите',
+                message: 'У вас скоро подтверждён визит в автосервис. Откройте заявку, чтобы проверить детали.',
             },
         },
         moderation: {
             reviewUpdated: {
                 title: 'Статус отзыва изменён',
                 message: 'Статус вашего отзыва для кабинета «{{cabinetTitle}}»: {{status}}.',
+            },
+            appealDecided: {
+                title: 'Апелляция рассмотрена',
+                message: 'Апелляция по разделу «{{subject}}» рассмотрена: {{status}}.',
             },
         },
     },
@@ -773,6 +765,20 @@ export const ruTranslations = {
                 date: 'Дата:',
                 time: 'Время:',
             }
+        },
+        autocare: {
+            reminder: {
+                subject: 'Напоминание о визите в автосервис',
+                title: 'Скоро визит в автосервис',
+                description: 'У вас скоро подтверждён визит. Проверьте детали заявки перед поездкой.',
+                details: {
+                    header: 'Детали визита:',
+                    provider: 'Автосервис:',
+                    service: 'Работа:',
+                    date: 'Дата:',
+                    time: 'Время:',
+                },
+            },
         },
         passwordSetup: {
             subject: 'Установите пароль - AutoCare Hub',

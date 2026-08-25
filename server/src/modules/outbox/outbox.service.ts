@@ -10,6 +10,7 @@ import { createPasswordResetEmail } from '../../shared/mail/password-reset-email
 import { createEmailVerificationEmail } from '../../shared/mail/email-verification-email.js'
 import { createPasswordSetupEmail } from '../../shared/mail/password-setup-email.js'
 import { createBookingEmail } from '../../shared/mail/booking-email.js'
+import { createAutoCareVisitReminderEmail } from '../../shared/mail/autocare-visit-reminder-email.js'
 import { SUPPORTED_LOCALES } from '../../config/i18n.js'
 import { serializeError } from '../../shared/observability/logger.js'
 import { assertOutboxPayloadWithinBounds } from './outbox-payload.js'
@@ -104,6 +105,21 @@ const emailPayloadSchema = z.discriminatedUnion('template', [
         }),
         status: z.enum(['created', 'confirmed', 'cancelled']),
         isForOwner: z.boolean(),
+        frontendOrigin: z.string().transform((value) => normalizeFrontendOrigin(value, { allowHttpLoopback: true })),
+        locale: z.enum(SUPPORTED_LOCALES).nullable(),
+    }),
+    z.object({
+        template: z.literal('autocare_visit_reminder'),
+        requestId: z.string().uuid(),
+        toEmail: z.string().transform(normalizeEmailAddress),
+        recipientName: z.string().min(1).max(MAX_OUTBOX_RECIPIENT_NAME_LENGTH).transform((value) =>
+            normalizeOutboxEmailText(value, MAX_OUTBOX_RECIPIENT_NAME_LENGTH, 'recipient name')),
+        providerName: z.string().min(1).max(MAX_OUTBOX_EMAIL_TITLE_LENGTH).transform((value) =>
+            normalizeOutboxEmailText(value, MAX_OUTBOX_EMAIL_TITLE_LENGTH, 'provider name')),
+        serviceTitle: z.string().min(1).max(MAX_OUTBOX_EMAIL_TITLE_LENGTH).transform((value) =>
+            normalizeOutboxEmailText(value, MAX_OUTBOX_EMAIL_TITLE_LENGTH, 'service title')),
+        date: z.string().min(1).max(120),
+        startTime: timeSchema,
         frontendOrigin: z.string().transform((value) => normalizeFrontendOrigin(value, { allowHttpLoopback: true })),
         locale: z.enum(SUPPORTED_LOCALES).nullable(),
     }),
@@ -235,6 +251,14 @@ async function dispatchOutboxEvent(event: OutboxEventEntity, mailer?: Mailer) {
         const payload = emailPayloadSchema.parse(event.payload)
         if (payload.template === 'booking') {
             await mailer.send(createBookingEmail({
+                ...payload,
+                locale: payload.locale ?? undefined,
+            }))
+            return
+        }
+
+        if (payload.template === 'autocare_visit_reminder') {
+            await mailer.send(createAutoCareVisitReminderEmail({
                 ...payload,
                 locale: payload.locale ?? undefined,
             }))

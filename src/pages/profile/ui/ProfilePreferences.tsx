@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import { toast } from 'sonner'
 import { Bell } from 'lucide-react'
 
 import { useUpdateUserPreferencesMutation, type User } from '@/entities/user'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
-import { Button } from '@/components/ui/button'
 
 type ProfilePreferencesProps = {
     user: User
@@ -14,10 +12,6 @@ type ProfilePreferencesProps = {
 export function ProfilePreferences({ user }: ProfilePreferencesProps) {
     const { t } = useTranslation()
     const [updatePreferences, { isLoading }] = useUpdateUserPreferencesMutation()
-    const [preferredCity, setPreferredCity] = useState(user.preferredCity ?? '')
-    const [preferredCategories, setPreferredCategories] = useState(
-        user.preferredCategories.join(', '),
-    )
 
     const handleToggle = async (
         preference: 'emailNotifications' | 'bookingEmailNotifications',
@@ -30,23 +24,6 @@ export function ProfilePreferences({ user }: ProfilePreferencesProps) {
             toast.error(
                 getApiErrorMessage(error, t('profile.preferences.updateError'))
             )
-        }
-    }
-
-    const handleSaveDiscoveryPreferences = async () => {
-        const categories = preferredCategories
-            .split(',')
-            .map((category) => category.trim())
-            .filter(Boolean)
-
-        try {
-            await updatePreferences({
-                preferredCity: preferredCity.trim() || null,
-                preferredCategories: categories,
-            }).unwrap()
-            toast.success(t('profile.preferences.updateSuccess'))
-        } catch (error) {
-            toast.error(getApiErrorMessage(error, t('profile.preferences.updateError')))
         }
     }
 
@@ -115,19 +92,6 @@ export function ProfilePreferences({ user }: ProfilePreferencesProps) {
                 </label>
             </div>
 
-            <div className="mt-4 grid gap-4 rounded-xl border p-4 bg-muted/30">
-                <label className="grid gap-2 text-sm font-medium">
-                    {t('profile.preferences.preferredCity')}
-                    <input className="rounded-lg border bg-background px-3 py-2" value={preferredCity} onChange={(event) => setPreferredCity(event.target.value)} />
-                </label>
-                <label className="grid gap-2 text-sm font-medium">
-                    {t('profile.preferences.preferredCategories')}
-                    <input className="rounded-lg border bg-background px-3 py-2" value={preferredCategories} onChange={(event) => setPreferredCategories(event.target.value)} />
-                </label>
-                <Button className="justify-self-start" loading={isLoading} type="button" onClick={() => void handleSaveDiscoveryPreferences()}>
-                    {isLoading ? t('common.saving') : t('common.save')}
-                </Button>
-            </div>
         </div>
     )
 }

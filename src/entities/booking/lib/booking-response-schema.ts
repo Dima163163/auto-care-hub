@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 import type {
     Booking,
-    BookingPaymentStatusResponse,
     BookingRescheduleRequest,
     ResolveBookingRescheduleResponse,
     BookingStatusHistory,
@@ -49,16 +48,6 @@ const ownerBookingSchema = clientBookingSchema.extend({
         phone: z.string().nullable(),
     }),
     ownerNote: z.string().nullable(),
-    paymentLedger: z.object({
-        grossAmount: z.number().nonnegative(),
-        commissionAmount: z.number().nonnegative(),
-        ownerPayoutAmount: z.number().nonnegative(),
-        refundedAmountMinor: z.number().int().nonnegative(),
-        remainingAmountMinor: z.number().int().nonnegative(),
-        currency: z.string().min(3).max(3),
-        status: z.enum(['pending', 'paid', 'failed', 'partially_refunded', 'refunded']),
-        createdAt: z.string(),
-    }).nullable(),
 }) satisfies z.ZodType<OwnerBooking>
 
 const bookingStatusHistorySchema = z.object({
@@ -81,33 +70,6 @@ const rescheduleRequestSchema = z.object({
     resolvedAt: z.string().nullable(),
 }) satisfies z.ZodType<BookingRescheduleRequest>
 
-const paymentStatusSchema = z.object({
-    status: z.enum(['pending', 'paid', 'failed', 'partially_refunded', 'refunded']).nullable(),
-    grossAmount: z.number().nullable(),
-    refundedAmountMinor: z.number().int().nonnegative(),
-    remainingAmountMinor: z.number().int().nonnegative().nullable(),
-    currency: z.string().nullable(),
-    createdAt: z.string().nullable(),
-    invoice: z.object({
-        invoiceId: z.string().min(1),
-        amount: z.number().int().nonnegative(),
-        currency: z.string().min(3).max(3),
-        status: z.enum(['open', 'paid', 'void']),
-        issuedAt: z.string(),
-    }).nullable(),
-    attempts: z.array(z.object({
-        attemptNumber: z.number().int().positive(),
-        status: z.enum(['creating', 'created', 'failed', 'paid', 'expired']),
-        createdAt: z.string(),
-    })),
-}) satisfies z.ZodType<BookingPaymentStatusResponse>
-
-const checkoutSchema = z.object({
-    url: z.string().url(),
-    attemptId: z.string(),
-    reused: z.boolean(),
-})
-
 const occupiedSlotSchema = z.object({
     start: z.string(),
     end: z.string(),
@@ -116,7 +78,6 @@ const occupiedSlotSchema = z.object({
 const resolveBookingRescheduleResponseSchema = z.object({
     request: rescheduleRequestSchema,
     booking: ownerBookingSchema,
-    paymentStatus: z.enum(['pending', 'paid', 'failed', 'partially_refunded', 'refunded']).nullable(),
 }) satisfies z.ZodType<ResolveBookingRescheduleResponse>
 
 export function normalizeBookingResponse(value: unknown): Booking {
@@ -163,22 +124,8 @@ export function normalizeResolveBookingRescheduleResponse(value: unknown): Resol
     return resolveBookingRescheduleResponseSchema.parse(value)
 }
 
-export function normalizePaymentStatusResponse(value: unknown): BookingPaymentStatusResponse {
-    return paymentStatusSchema.parse(value)
-}
-
-export function normalizeCheckoutResponse(value: unknown): BookingPaymentCheckout {
-    return checkoutSchema.parse(value)
-}
-
 export function normalizeOccupiedSlotsResponse(value: unknown): OccupiedSlot[] {
     return z.array(occupiedSlotSchema).parse(value)
-}
-
-type BookingPaymentCheckout = {
-    url: string
-    attemptId: string
-    reused: boolean
 }
 
 type OccupiedSlot = {

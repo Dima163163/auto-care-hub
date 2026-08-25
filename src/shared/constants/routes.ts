@@ -2,15 +2,18 @@ import type { EntityId } from '@/shared/types/common'
 
 export const ROUTES = {
     home: '/',
+    platformReviews: '/reviews',
     features: '/features',
     owners: '/for-owners',
     about: '/about',
     favorites: '/favorites',
     notifications: '/notifications',
+    chats: '/chats',
     blog: '/blog',
     partners: '/partners',
     contacts: '/contacts',
     help: '/help',
+    agreement: '/agreement',
     rules: '/rules',
     privacy: '/privacy',
 
@@ -30,38 +33,54 @@ export const ROUTES = {
     onboarding: '/onboarding',
 
     profile: '/profile',
+    profileVehicles: '/profile/vehicles',
     profileBookings: '/profile/bookings',
     profileReviews: '/profile/reviews',
 
     pricing: '/pricing',
 
     ownerDashboard: '/owner/dashboard',
+    ownerAutoCareProviders: '/owner/autocare-providers',
+    ownerAutoCareProviderDetails: '/owner/autocare-providers/:id',
+    ownerAutoCareProviderReviews: '/owner/autocare-providers/:id/reviews',
     ownerCabinets: '/owner/cabinets',
     ownerCabinetCreate: '/owner/cabinets/create',
     ownerCabinetEdit: '/owner/cabinets/:id/edit',
     ownerBookings: '/owner/bookings',
+    ownerAutoCareRequests: '/owner/autocare-requests',
+    ownerReviews: '/owner/reviews',
     ownerClients: '/owner/clients',
     ownerServices: '/owner/services',
+    ownerChats: '/owner/chats',
 
     adminDashboard: '/admin/dashboard',
     adminUsers: '/admin/users',
     adminOwners: '/admin/owners',
     adminCabinets: '/admin/cabinets',
     adminReviews: '/admin/reviews',
+    adminPlatformReviews: '/admin/platform-reviews',
     adminAuditLogs: '/admin/audit-logs',
     adminSecurityCenter: '/admin/security-center',
+    adminChats: '/admin/chats',
+
+    superAdminDashboard: '/super-admin/dashboard',
+    superAdminChats: '/super-admin/chats',
 } as const
 
 export const routePaths = {
     serviceDiscovery: (params?: {
         service?: string
+        provider?: string
         market?: string
+        zone?: string
         radius?: string | number
     }) => {
         const searchParams = new URLSearchParams()
 
         if (params?.service?.trim()) searchParams.set('service', params.service.trim())
+        if (params?.provider?.trim()) searchParams.set('provider', params.provider.trim())
         if (params?.market?.trim()) searchParams.set('market', params.market.trim())
+        if (params?.zone?.trim()) searchParams.set('zone', params.zone.trim())
         if (params?.radius !== undefined && String(params.radius).trim()) searchParams.set('radius', String(params.radius).trim())
 
         const query = searchParams.toString()
@@ -142,4 +161,6 @@ export const routePaths = {
     cabinetReviewEdit: (cabinetId: EntityId, reviewId: EntityId) =>
         `/cabinets/${cabinetId}?reviewId=${reviewId}`,
     ownerCabinetEdit: (id: string) => `/owner/cabinets/${id}/edit`,
+    ownerAutoCareProviderDetails: (id: EntityId) => `/owner/autocare-providers/${id}`,
+    ownerAutoCareProviderReviews: (id: EntityId) => `${ROUTES.ownerReviews}?provider=${encodeURIComponent(id)}`,
 } as const

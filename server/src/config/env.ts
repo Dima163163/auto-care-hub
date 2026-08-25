@@ -4,7 +4,6 @@ import type { SignOptions } from 'jsonwebtoken'
 import { validateTrustedProxyConfig } from '../shared/security/trusted-proxy.js'
 import { validateOAuthRedirectUri } from '../shared/security/oauth-redirect.js'
 import { resolveCabinetImageStorageProvider } from '../modules/cabinets/storage-provider-policy.js'
-import { resolveExternalPaymentProviderConfig } from '../modules/payments/external-provider-config.js'
 import { parseHealthThreshold } from '../routes/health-thresholds.js'
 import { normalizeAuditLogRetentionDays } from '../modules/admin/audit-retention-policy.js'
 import {
@@ -19,11 +18,22 @@ import {
 import { assertMailModeAllowed } from './mail-config-policy.js'
 import { normalizeRuntimeMode, type RuntimeMode } from './runtime-mode-policy.js'
 import { resolveCabinetUploadsDir } from './cabinet-uploads-path.js'
-import { getStripeConfig } from './stripe-config-policy.js'
+import {
+    assertProductionAutoCareAttachmentPolicy,
+    resolveAutoCareAttachmentAntivirusMode,
+    resolveAutoCareAttachmentStorageProvider,
+    type AutoCareAttachmentAntivirusMode,
+    type AutoCareAttachmentStorageProvider,
+} from '../modules/autocare/attachment-storage-policy.js'
 import {
     DEFAULT_BOOKING_REMINDER_HOURS,
     MAX_BOOKING_REMINDER_HOURS,
 } from '../modules/jobs/booking-reminder-policy.js'
+import {
+    getDeploymentCapabilities,
+    resolveDeploymentMarket,
+    type DeploymentCapabilities,
+} from './deployment-capabilities.js'
 
 const NODE_ENVS = ['development', 'test', 'production'] as const
 
@@ -55,8 +65,29 @@ export type EnvConfig = {
     cabinetPhotoAllowedHosts: string[]
     cabinetImageStorageProvider: 'filesystem' | 's3'
     cabinetUploadsDir: string
+    autoCareAttachments: {
+        storageProvider: AutoCareAttachmentStorageProvider
+        retentionDays: number
+        signedUrlTtlSeconds: number
+        antivirusMode: AutoCareAttachmentAntivirusMode
+        clamavCommand: string
+        s3: {
+            endpoint: string | null
+            region: string
+            bucket: string | null
+            accessKeyId: string | null
+            secretAccessKey: string | null
+            forcePathStyle: boolean
+        }
+    }
     corsOrigins: string[]
     frontendOrigin: string
+    deployment: DeploymentCapabilities
+    autoCareTrustRollout: {
+        enabled: boolean
+        marketIds: string[]
+        percentage: number
+    }
     database: {
         url: string | null
         host: string
@@ -73,6 +104,7 @@ export type EnvConfig = {
         slowQueryThresholdMs: number
         maxActiveRatio: number
         maxWaitingRequests: number
+        sslRejectUnauthorized: boolean
     }
     redis: {
         enabled: boolean
@@ -111,12 +143,6 @@ export type EnvConfig = {
             clientSecret: string
             redirectUri: string
         }
-    }
-    stripe: {
-        secretKey: string
-        webhookSecret: string
-        requestTimeoutMs: number
-        maxNetworkRetries: number
     }
     auditLogRetentionDays: number
     securityEventIpRetentionDays: number
@@ -332,6 +358,7 @@ function getDatabaseConfig(): EnvConfig['database'] {
         slowQueryThresholdMs: getBoundedPositiveNumberEnv('DATABASE_SLOW_QUERY_THRESHOLD_MS', 750, 120_000),
         maxActiveRatio: getBoundedRatioEnv('DATABASE_MAX_ACTIVE_RATIO', 0.9, 1),
         maxWaitingRequests: getBoundedNonNegativeNumberEnv('DATABASE_MAX_WAITING_REQUESTS', 10, 10_000),
+        sslRejectUnauthorized: getBooleanEnv('DATABASE_SSL_REJECT_UNAUTHORIZED', true),
     }
 
     if (!isValidEnvString(databaseUrl)) {
@@ -359,11 +386,14 @@ function getDatabaseConfig(): EnvConfig['database'] {
     }
 }
 
-function getRedisConfig(): EnvConfig['redis'] {
+function getRedisConfig(nodeEnv: NodeEnv): EnvConfig['redis'] {
     const redisUrl = process.env.REDIS_URL
     const redisHost = process.env.REDIS_HOST
 
     if (!isValidEnvString(redisUrl) && !isValidEnvString(redisHost)) {
+        if (nodeEnv === 'production') {
+            throw new Error('Production requires REDIS_URL or REDIS_HOST for distributed rate limits and realtime coordination.')
+        }
         return {
             enabled: false,
             url: null,
@@ -482,23 +512,20 @@ function getCorsOrigins(nodeEnv: NodeEnv, defaultOrigin: string) {
 }
 
 const nodeEnv = getNodeEnv()
+const configuredDeploymentMarket = process.env.DEPLOYMENT_MARKET ?? process.env.VITE_DEPLOYMENT_MARKET
+const resolvedDeploymentMarket = resolveDeploymentMarket(configuredDeploymentMarket)
+
+if (resolvedDeploymentMarket.usedFallback) {
+    console.warn(
+        `[AutoCare Hub] Unsupported DEPLOYMENT_MARKET "${configuredDeploymentMarket}"; using restrictive "ru" capabilities.`,
+    )
+}
+
 const breachedPasswordCheckMode = resolveBreachedPasswordCheckMode({
     nodeEnv,
     configuredMode: process.env.BREACHED_PASSWORD_CHECK_MODE,
 })
 const breachedPasswordClientPolicy = getBreachedPasswordClientPolicy(breachedPasswordCheckMode)
-const stripeCredentials = getStripeConfig(nodeEnv, {
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-})
-const stripeRequestTimeoutMs = getBoundedPositiveNumberEnv('STRIPE_REQUEST_TIMEOUT_MS', 8_000, 120_000)
-const stripeMaxNetworkRetries = getBoundedNonNegativeNumberEnv('STRIPE_MAX_NETWORK_RETRIES', 2, 3)
-resolveExternalPaymentProviderConfig({
-    ...stripeCredentials,
-    nodeEnv,
-    requestTimeoutMs: stripeRequestTimeoutMs,
-    maxNetworkRetries: stripeMaxNetworkRetries,
-})
 const defaultFrontendOrigin = getOptionalEnv('CORS_ORIGIN', 'http://localhost:5173')
 const corsOrigins = getCorsOrigins(nodeEnv, defaultFrontendOrigin)
 const auditLogRetentionDays = normalizeAuditLogRetentionDays(
@@ -512,6 +539,27 @@ const securityEventIpRetentionDays = normalizeSecurityEventIpRetentionDays(
     ),
     auditLogRetentionDays,
 )
+const autoCareAttachmentStorageProvider = resolveAutoCareAttachmentStorageProvider(
+    process.env.AUTOCARE_ATTACHMENT_STORAGE_PROVIDER,
+)
+const autoCareAttachmentAntivirusMode = resolveAutoCareAttachmentAntivirusMode(
+    process.env.AUTOCARE_ATTACHMENT_ANTIVIRUS_MODE,
+)
+assertProductionAutoCareAttachmentPolicy({
+    nodeEnv,
+    storageProvider: autoCareAttachmentStorageProvider,
+    antivirusMode: autoCareAttachmentAntivirusMode,
+})
+const autoCareAttachmentS3Configured = autoCareAttachmentStorageProvider === 's3'
+const autoCareAttachmentS3Bucket = autoCareAttachmentS3Configured
+    ? getRequiredEnv('AUTOCARE_ATTACHMENT_S3_BUCKET')
+    : null
+const autoCareAttachmentS3AccessKeyId = autoCareAttachmentS3Configured
+    ? getRequiredEnv('AUTOCARE_ATTACHMENT_S3_ACCESS_KEY_ID')
+    : null
+const autoCareAttachmentS3SecretAccessKey = autoCareAttachmentS3Configured
+    ? getRequiredEnv('AUTOCARE_ATTACHMENT_S3_SECRET_ACCESS_KEY')
+    : null
 
 export const env: EnvConfig = {
     nodeEnv,
@@ -524,13 +572,36 @@ export const env: EnvConfig = {
         process.env.CABINET_IMAGE_STORAGE_PROVIDER,
     ),
     cabinetUploadsDir: resolveCabinetUploadsDir(process.env.CABINET_UPLOADS_DIR),
+    autoCareAttachments: {
+        storageProvider: autoCareAttachmentStorageProvider,
+        retentionDays: getBoundedPositiveNumberEnv('AUTOCARE_ATTACHMENT_RETENTION_DAYS', 365, 3_650),
+        signedUrlTtlSeconds: getBoundedPositiveNumberEnv('AUTOCARE_ATTACHMENT_SIGNED_URL_TTL_SECONDS', 300, 3_600),
+        antivirusMode: autoCareAttachmentAntivirusMode,
+        clamavCommand: getOptionalEnv('AUTOCARE_ATTACHMENT_CLAMAV_COMMAND', 'clamdscan'),
+        s3: {
+            endpoint: isValidEnvString(process.env.AUTOCARE_ATTACHMENT_S3_ENDPOINT)
+                ? process.env.AUTOCARE_ATTACHMENT_S3_ENDPOINT!.trim()
+                : null,
+            region: getOptionalEnv('AUTOCARE_ATTACHMENT_S3_REGION', 'us-east-1'),
+            bucket: autoCareAttachmentS3Bucket,
+            accessKeyId: autoCareAttachmentS3AccessKeyId,
+            secretAccessKey: autoCareAttachmentS3SecretAccessKey,
+            forcePathStyle: getBooleanEnv('AUTOCARE_ATTACHMENT_S3_FORCE_PATH_STYLE', false),
+        },
+    },
     corsOrigins,
     frontendOrigin: normalizeFrontendOrigin(
         getOptionalEnv('FRONTEND_ORIGIN', defaultFrontendOrigin),
         { allowHttpLoopback: nodeEnv !== 'production' },
     ),
+    deployment: getDeploymentCapabilities(resolvedDeploymentMarket.market),
+    autoCareTrustRollout: {
+        enabled: getBooleanEnv('AUTOCARE_TRUST_ROLLOUT_ENABLED', true),
+        marketIds: getListEnv('AUTOCARE_TRUST_ROLLOUT_MARKET_IDS', []),
+        percentage: getBoundedNonNegativeNumberEnv('AUTOCARE_TRUST_ROLLOUT_PERCENTAGE', 100, 100),
+    },
     database: getDatabaseConfig(),
-    redis: getRedisConfig(),
+    redis: getRedisConfig(nodeEnv),
     auth: {
         jwtAccessSecret:
             process.env.JWT_ACCESS_SECRET ?? getRequiredEnv('JWT_SECRET'),
@@ -588,11 +659,6 @@ export const env: EnvConfig = {
                 nodeEnv,
             ),
         },
-    },
-    stripe: {
-        ...stripeCredentials,
-        requestTimeoutMs: stripeRequestTimeoutMs,
-        maxNetworkRetries: stripeMaxNetworkRetries,
     },
     auditLogRetentionDays,
     securityEventIpRetentionDays,

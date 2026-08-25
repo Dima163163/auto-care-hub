@@ -2,31 +2,6 @@ import type { EntityId, ISODateString } from '@/shared/types/common'
 
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed'
 
-export type BookingPaymentStatus = 'pending' | 'paid' | 'failed' | 'partially_refunded' | 'refunded'
-
-export type BookingPaymentAttemptStatus = 'creating' | 'created' | 'failed' | 'paid' | 'expired'
-
-export type BookingPaymentStatusResponse = {
-    status: BookingPaymentStatus | null
-    grossAmount: number | null
-    refundedAmountMinor: number
-    remainingAmountMinor: number | null
-    currency: string | null
-    createdAt: ISODateString | null
-    invoice: {
-        invoiceId: string
-        amount: number
-        currency: string
-        status: 'open' | 'paid' | 'void'
-        issuedAt: ISODateString
-    } | null
-    attempts: Array<{
-        attemptNumber: number
-        status: BookingPaymentAttemptStatus
-        createdAt: ISODateString
-    }>
-}
-
 export type BookingStatusHistory = {
     id: EntityId
     status: BookingStatus
@@ -50,7 +25,6 @@ export type BookingRescheduleRequest = {
 export type ResolveBookingRescheduleResponse = {
     request: BookingRescheduleRequest
     booking: OwnerBooking
-    paymentStatus: BookingPaymentStatus | null
 }
 
 export type Booking = {
@@ -93,19 +67,7 @@ export type OwnerBookingClientSummary = {
     phone: string | null
 }
 
-export type OwnerPaymentLedger = {
-    grossAmount: number
-    commissionAmount: number
-    ownerPayoutAmount: number
-    refundedAmountMinor: number
-    remainingAmountMinor: number
-    currency: string
-    status: BookingPaymentStatus
-    createdAt: ISODateString
-}
-
 export type OwnerBooking = ClientBooking & {
     client: OwnerBookingClientSummary
     ownerNote: string | null
-    paymentLedger: OwnerPaymentLedger | null
 }

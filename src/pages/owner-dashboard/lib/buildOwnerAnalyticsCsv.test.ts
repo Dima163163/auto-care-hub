@@ -11,8 +11,6 @@ const labels = {
     city: 'City',
     durationMinutes: 'Duration (min)',
     price: 'Price',
-    currency: 'Currency',
-    paymentStatus: 'Payment status',
 }
 
 describe('buildOwnerAnalyticsCsv', () => {
@@ -32,13 +30,12 @@ describe('buildOwnerAnalyticsCsv', () => {
                 service: { id: 'service-1', title: 'Consultation', durationMinutes: 90, price: 120 },
                 client: { id: 'client-1', name: 'Private Client', email: 'client@example.com', phone: '+79990000000' },
                 ownerNote: 'Private note',
-                paymentLedger: { grossAmount: 120, commissionAmount: 2.4, ownerPayoutAmount: 117.6, refundedAmountMinor: 0, remainingAmountMinor: 120, currency: 'EUR', status: 'paid', createdAt: '2026-08-11T08:00:00.000Z' },
             },
         ], labels)
 
         expect(csv).toContain('"Bright, Studio"')
         expect(csv).toContain('09:00-10:30,confirmed')
-        expect(csv).toContain('90,120,EUR,paid')
+        expect(csv).toContain('90,120')
         expect(csv).not.toContain('Private Client')
         expect(csv).not.toContain('client@example.com')
         expect(csv).not.toContain('Private note')
@@ -61,10 +58,9 @@ describe('buildOwnerAnalyticsCsv', () => {
                 service: { id: 'service-1', title: 'Service', durationMinutes: 60, price: 100 },
                 client: { id: 'client-1', name: 'Client', email: 'client@example.com', phone: null },
                 ownerNote: null,
-                paymentLedger: null,
             },
         ], labels)
 
-        expect(csv).toContain('0,100,,')
+        expect(csv).toContain('0,100')
     })
 })

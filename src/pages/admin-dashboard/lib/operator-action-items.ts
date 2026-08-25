@@ -1,5 +1,4 @@
 import type {
-    AdminPaymentAttention,
     OutboxHealth,
     SecurityCenterEvent,
     SystemIncident,
@@ -8,7 +7,7 @@ import { ROUTES } from '@/shared/constants/routes'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
 export type OperatorActionPriority = 'critical' | 'high' | 'warning'
-export type OperatorActionKind = 'security' | 'incident' | 'outbox' | 'payment'
+export type OperatorActionKind = 'security' | 'incident' | 'outbox'
 export type OperatorActionStatus = 'open' | 'acknowledged' | 'investigating' | 'failed'
 
 type OperatorActionSecurityEvent = Pick<
@@ -141,68 +140,21 @@ function fromOutboxEvent(event: OutboxHealth['failedEvents'][number], now: Date)
     }, now)
 }
 
-function fromPaymentAttention(attention: AdminPaymentAttention, now: Date): OperatorActionItem[] {
-    const items: OperatorActionItem[] = []
-
-    if (attention.failedPaymentCount > 0) {
-        items.push(withSla({
-            id: 'payment:failed',
-            kind: 'payment',
-            title: 'payment_failures',
-            titleKey: 'adminDashboard.operatorCenter.paymentFailures',
-            priority: 'high',
-            reasonCode: 'payment_failed',
-            status: 'open',
-            assigneeId: null,
-            occurredAt: now.toISOString(),
-            acknowledgedAt: null,
-            resolutionHistoryCount: 0,
-            slaMinutes: getSlaMinutes('high'),
-            href: ROUTES.adminAuditLogs,
-        }, now))
-    }
-
-    if (attention.openDisputeCount + attention.fundsWithdrawnDisputeCount > 0) {
-        items.push(withSla({
-            id: 'payment:disputes',
-            kind: 'payment',
-            title: 'payment_disputes',
-            titleKey: 'adminDashboard.operatorCenter.paymentDisputes',
-            priority: attention.fundsWithdrawnDisputeCount > 0 ? 'critical' : 'high',
-            reasonCode: attention.fundsWithdrawnDisputeCount > 0
-                ? 'payment_dispute_funds_withdrawn'
-                : 'payment_dispute_open',
-            status: 'open',
-            assigneeId: null,
-            occurredAt: now.toISOString(),
-            acknowledgedAt: null,
-            resolutionHistoryCount: 0,
-            slaMinutes: getSlaMinutes(attention.fundsWithdrawnDisputeCount > 0 ? 'critical' : 'high'),
-            href: ROUTES.adminAuditLogs,
-        }, now))
-    }
-
-    return items
-}
-
 export function buildOperatorActionItems({
     securitySummary,
     incidents,
     outboxHealth,
-    paymentAttention,
     now = new Date(),
 }: {
     securitySummary?: { recentEvents: readonly OperatorActionSecurityEvent[] } | null
     incidents: readonly SystemIncident[]
     outboxHealth?: OutboxHealth | null
-    paymentAttention?: AdminPaymentAttention | null
     now?: Date
 }) {
     const items = [
         ...(securitySummary?.recentEvents ?? []).map((event) => fromSecurityEvent(event, now)),
         ...incidents.map((incident) => fromSystemIncident(incident, now)),
         ...(outboxHealth?.failedEvents ?? []).map((event) => fromOutboxEvent(event, now)),
-        ...(paymentAttention ? fromPaymentAttention(paymentAttention, now) : []),
     ]
         .filter((item): item is OperatorActionItem => item !== null)
         .sort((left, right) => {

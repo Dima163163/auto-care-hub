@@ -25,6 +25,7 @@ import {
     parseCsrfTokenResponse,
 } from './security-response-schema'
 import { parseApiErrorData } from './api-error-shape'
+import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
 
 const AUTH_SECURITY_ERROR_CODES = new Set([
     'CSRF_ORIGIN_MISMATCH',
@@ -44,8 +45,13 @@ const CSRF_PROTECTED_PATHS = new Set([
     '/auth/change-password',
     '/auth/sessions/revoke-all',
     '/owner/action-center/events',
+    '/owner/autocare-providers',
+    '/owner/autocare-providers/logo',
+    '/owner/autocare-providers/media',
+    '/v1/service-requests',
     '/client/experiment-events',
     '/users/me/deletion-request',
+    '/users/me/vehicles',
 ])
 
 let csrfTokenRequest: Promise<string | null> | null = null
@@ -100,11 +106,21 @@ function needsCsrfToken(args: string | FetchArgs) {
 
     const isOAuthFlowStart =
         args.url.startsWith('/auth/oauth/') && args.url.endsWith('/start')
+    const isServiceRequestTransition =
+        args.url.startsWith('/v1/service-requests/') || args.url.startsWith('/owner/service-requests/')
+    const isVehicleMutation =
+        args.url === '/users/me/vehicles' || args.url.startsWith('/users/me/vehicles/')
 
-    return (
-        args.method?.toUpperCase() === 'POST' &&
-        (CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart)
+    const method = args.method?.toUpperCase() ?? ''
+    const isVehicleWrite = isVehicleMutation && ['POST', 'PATCH', 'DELETE'].includes(method)
+    const isMutationPath = args.url.startsWith('/v1/')
+        || args.url.startsWith('/owner/')
+        || args.url.startsWith('/users/me/')
+    const isExistingProtectedPost = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && (
+        CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition || isMutationPath
     )
+
+    return isVehicleWrite || isExistingProtectedPost
 }
 
 function createRequestHeaders(headersInit: FetchArgs['headers']) {
@@ -167,6 +183,7 @@ function clearAuthenticatedClientState(
     clearAccessToken()
     clearCsrfToken()
     api.dispatch(baseApi.util.resetApiState())
+    void clearIdentityScopedPwaCaches()
 }
 
 const rawBaseQuery = fetchBaseQuery({
@@ -180,6 +197,11 @@ const rawBaseQuery = fetchBaseQuery({
     }
 
     headers.set('Accept-Language', getStoredLocale())
+
+    if (!IS_REAL_API && typeof window !== 'undefined') {
+        const mockState = window.localStorage.getItem('autocare-mock-state')
+        if (mockState) headers.set('X-AutoCare-Mock-State', mockState)
+    }
 
     return headers
     },
@@ -321,11 +343,10 @@ export const baseApi = createApi({
         'Service',
         'Booking',
         'User',
+        'UserVehicle',
         'Review',
         'UserSessions',
         'AuditLogs',
-        'PaymentRefunds',
-        'PaymentDisputes',
         'SystemIncidents',
         'SecurityEvents',
         'Notification',
@@ -334,11 +355,15 @@ export const baseApi = createApi({
         'CabinetSchedule',
         'CabinetScheduleExceptions',
         'CabinetBlockedPeriods',
-        'StripeConnect',
         'OwnerReadiness',
         'AutoCareMarket',
         'AutoCareServiceDefinition',
         'AutoCareProvider',
+        'AutoCareReview',
+        'AutoCareServiceRequest',
+        'AutoCareVehicleCatalog',
+        'AutoCareMarketplace',
+        'PlatformReview',
     ],
     endpoints: () => ({}),
 })

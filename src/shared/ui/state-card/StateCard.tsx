@@ -1,3 +1,4 @@
+import { AlertTriangle, Ban, CloudOff, Inbox, LockKeyhole } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
@@ -9,6 +10,10 @@ export type StateCardVariant =
     | 'loading'
     | 'offline'
     | 'permission-denied'
+    | 'stale'
+    | 'stale-error'
+    | 'empty'
+    | 'suspended'
 
 type StateCardProps = {
     title?: string
@@ -27,9 +32,20 @@ export function StateCard({
   action,
   className,
 }: StateCardProps) {
-    const isError = variant === 'error'
-    const isAlert = isError || variant === 'offline' || variant === 'permission-denied'
+    const isError = variant === 'error' || variant === 'suspended'
+    const isAlert = isError || variant === 'offline' || variant === 'permission-denied' || variant === 'stale-error'
     const isLoading = variant === 'loading'
+    const Icon = variant === 'offline'
+        ? CloudOff
+        : variant === 'permission-denied'
+            ? LockKeyhole
+            : variant === 'suspended'
+                ? Ban
+                : variant === 'empty'
+                    ? Inbox
+                : variant === 'stale' || variant === 'stale-error'
+                        ? AlertTriangle
+                        : null
 
     return (
         <div
@@ -42,6 +58,8 @@ export function StateCard({
                 isError && 'border-status-danger-border bg-status-danger-surface',
                 variant === 'offline' && 'border-status-warning-border bg-status-warning-surface',
                 variant === 'permission-denied' && 'border-status-neutral-border bg-status-neutral-surface',
+                variant === 'stale' && 'border-status-warning-border bg-status-warning-surface',
+                variant === 'stale-error' && 'border-status-warning-border bg-status-warning-surface',
                 isLoading && 'space-y-3',
                 className,
             )}
@@ -57,19 +75,22 @@ export function StateCard({
                 </>
             )}
 
-            {!isLoading && title && (
-                <p
+            {!isLoading && (Icon || title) && (
+                <div className="flex items-start gap-3">
+                    {Icon && <span aria-hidden="true" className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Icon className="size-4" /></span>}
+                    {title && <p
                     className={cn(
                         'font-medium',
                         isError
                             ? 'text-status-danger-foreground'
-                            : variant === 'offline'
+                            : variant === 'offline' || variant === 'stale' || variant === 'stale-error'
                                 ? 'text-status-warning-foreground'
                                 : 'text-foreground',
                     )}
                 >
                     {title}
-                </p>
+                </p>}
+                </div>
             )}
 
             {!isLoading && description && (
@@ -79,7 +100,7 @@ export function StateCard({
                         'text-sm',
                         isError
                             ? 'text-status-danger-foreground'
-                            : variant === 'offline'
+                            : variant === 'offline' || variant === 'stale' || variant === 'stale-error'
                                 ? 'text-status-warning-foreground'
                                 : 'text-muted-foreground',
                     )}

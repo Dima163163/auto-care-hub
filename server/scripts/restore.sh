@@ -20,8 +20,12 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 66
 fi
 
-if ! gzip -t "$BACKUP_FILE"; then
-  echo "Backup file is not a valid gzip archive: $BACKUP_FILE" >&2
+ENCRYPTION_PASSWORD_FILE=${BACKUP_ENCRYPTION_PASSWORD_FILE:-}
+ENCRYPTION_ITERATIONS=${BACKUP_ENCRYPTION_ITERATIONS:-600000}
+CHECKSUM_FILE="$BACKUP_FILE.sha256"
+
+if [ -f "$CHECKSUM_FILE" ] && ! shasum -a 256 -c "$CHECKSUM_FILE"; then
+  echo "Backup checksum verification failed: $CHECKSUM_FILE" >&2
   exit 65
 fi
 
@@ -42,9 +46,32 @@ if [ "$TARGET_DATABASE" = "$CURRENT_DATABASE" ] && [ "${ALLOW_SAME_DATABASE_REST
   exit 77
 fi
 
+restore_encrypted_backup() {
+  if [ -z "$ENCRYPTION_PASSWORD_FILE" ] || [ ! -r "$ENCRYPTION_PASSWORD_FILE" ]; then
+    echo "BACKUP_ENCRYPTION_PASSWORD_FILE must reference the secret used to create this backup." >&2
+    exit 78
+  fi
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter "$ENCRYPTION_ITERATIONS" \
+    -pass "file:$ENCRYPTION_PASSWORD_FILE" \
+    -in "$BACKUP_FILE" | gzip -dc
+}
+
+restore_unencrypted_backup() {
+  if [ "${ALLOW_UNENCRYPTED_LOCAL_RESTORE:-false}" != "true" ]; then
+    echo "Refusing unencrypted restore. Set ALLOW_UNENCRYPTED_LOCAL_RESTORE=true only for a local exercise." >&2
+    exit 78
+  fi
+  gzip -t "$BACKUP_FILE"
+  gzip -dc "$BACKUP_FILE"
+}
+
 echo "Restoring $BACKUP_FILE into $DB_HOST:$DB_PORT/$TARGET_DATABASE..."
 
-gzip -dc "$BACKUP_FILE" | PGPASSWORD="$DB_PASS" psql \
+if [[ "$BACKUP_FILE" == *.enc ]]; then
+  restore_encrypted_backup
+else
+  restore_unencrypted_backup
+fi | PGPASSWORD="$DB_PASS" psql \
   --no-psqlrc \
   --set ON_ERROR_STOP=1 \
   --host "$DB_HOST" \

@@ -9,8 +9,6 @@ export type OwnerAnalyticsCsvLabels = {
     city: string
     durationMinutes: string
     price: string
-    currency: string
-    paymentStatus: string
 }
 
 function escapeCsvCell(value: string | number | null | undefined) {
@@ -45,8 +43,6 @@ export function buildOwnerAnalyticsCsv(
         labels.city,
         labels.durationMinutes,
         labels.price,
-        labels.currency,
-        labels.paymentStatus,
     ]
     const rows = bookings.map((booking) => [
         booking.date,
@@ -57,8 +53,6 @@ export function buildOwnerAnalyticsCsv(
         booking.cabinet.city,
         getDurationMinutes(booking),
         booking.service.price,
-        booking.paymentLedger?.currency ?? '',
-        booking.paymentLedger?.status ?? '',
     ])
 
     return [header, ...rows]

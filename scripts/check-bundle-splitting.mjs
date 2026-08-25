@@ -9,11 +9,14 @@ const requiredChunkPrefixes = [
     'react-runtime-',
     'state-runtime-',
     'ui-runtime-',
-    'home-',
-    'cabinets-',
-    'cabinet-details-',
+    'autocare-results-',
+    'autocare-provider-',
     'admin-dashboard-',
-    'i18n-runtime-',
+    'autocare-popular-',
+    'popular-',
+    'ro-',
+    'ru-',
+    'european-',
 ]
 
 const missingChunks = requiredChunkPrefixes.filter(

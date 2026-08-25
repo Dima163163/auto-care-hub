@@ -1,4 +1,5 @@
 export { WorkspaceFooter } from './ui/WorkspaceFooter'
 export { WorkspaceHeader, type WorkspaceRole } from './ui/WorkspaceHeader'
 export { WorkspaceMobileHeader } from './ui/WorkspaceMobileHeader'
+export { WorkspaceMobileMenu } from './ui/WorkspaceMobileMenu'
 export { WorkspaceSidebar } from './ui/WorkspaceSidebar'

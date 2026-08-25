@@ -1,12 +1,11 @@
 import { Bell, Check, Clock3, Search, Star } from 'lucide-react'
+import { useMemo } from 'react'
+import { Link } from 'react-router'
 
+import { useGetPlatformReviewsQuery, type PlatformReview } from '@/entities/platform-review'
+import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
-
-const reviews = [
-    { avatar: '/images/autocare/avatars/alexey.webp', name: 'Алексей С.', car: 'BMW X5', text: 'Отличный сервис! Нашёл ближайший автосервис с хорошим рейтингом и ценой за пару кликов. Записался онлайн, всё сделали быстро и качественно.', time: '2 дня назад' },
-    { avatar: '/images/autocare/avatars/maria.webp', name: 'Мария К.', car: 'Toyota RAV4', text: 'Очень удобно сравнивать цены и время записи. Сэкономила время и деньги. Теперь только через AutoCare Hub ищу автосервисы.', time: '1 неделю назад' },
-    { avatar: '/images/autocare/avatars/igor.webp', name: 'Игорь П.', car: 'Skoda Octavia', text: 'Пользуюсь сервисом постоянно. Всегда можно найти проверенный сервис рядом с работой или домом. Рекомендую!', time: '2 недели назад' },
-] as const
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function HomeReviewsSection() {
     return (
@@ -19,18 +18,43 @@ export function HomeReviewsSection() {
 
 function ReviewsCard() {
     const { t } = useTranslation()
-    return (
-        <section className="rounded-[10px] border border-border bg-card p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><span className="text-xs font-semibold text-primary">{t('autocare.allReviews')}</span></div><div className="mt-5 grid gap-3 md:grid-cols-3">{reviews.map((review) => <article key={review.name} className="rounded-[8px] border border-border p-4"><div className="flex items-center gap-3"><img src={review.avatar} alt="" className="size-11 rounded-full object-cover" /><div><h3 className="text-sm font-black">{review.name}</h3><p className="text-xs text-muted-foreground">{review.car}</p></div></div><div className="mt-3 flex">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className="size-3.5 fill-rating-fill text-rating-fill" />)}</div><p className="mt-3 text-[0.7rem] leading-[1.55] text-muted-foreground">{review.text}</p><p className="mt-4 text-[0.68rem] text-muted-foreground/75">{review.time}</p></article>)}</div></section>
-    )
+    const { data: reviews = [], isLoading, isError } = useGetPlatformReviewsQuery(6)
+    const reviewItems = useMemo(() => reviews.slice(0, 3), [reviews])
+
+    return <section className="rounded-[10px] border border-border bg-card p-5" aria-busy={isLoading}><div className="flex items-center justify-between"><h2 className="text-lg font-black">{t('autocare.reviewsTitle')}</h2><Link to={ROUTES.platformReviews} className="text-xs font-semibold text-primary hover:underline">{t('autocare.allReviews')}</Link></div>{isLoading ? <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3" aria-label={t('common.loading')} role="status">{Array.from({ length: 3 }, (_, index) => <div key={index} aria-hidden="true" className="min-h-[214px] rounded-[8px] border border-border p-4"><div className="flex items-center gap-3"><Skeleton className="size-11 rounded-full" /><div className="grid flex-1 gap-2"><Skeleton className="h-3.5 w-3/5" /><Skeleton className="h-3 w-2/5" /></div></div><Skeleton className="mt-4 h-3.5 w-24" /><Skeleton className="mt-4 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /><Skeleton className="mt-5 h-3 w-1/3" /></div>)}</div> : isError ? <p className="mt-5 text-sm text-muted-foreground">{t('common.failedToLoad')}</p> : reviewItems.length > 0 ? <div className="mt-5 grid items-stretch gap-3 md:grid-cols-3">{reviewItems.map((review) => <ReviewCard key={review.id} review={review} />)}</div> : <EmptyReviewsState />}</section>
+}
+
+function EmptyReviewsState() {
+    const { t } = useTranslation()
+
+    return <div className="mt-5 flex min-h-[214px] flex-col items-center justify-center rounded-[8px] border border-dashed border-border bg-muted/20 px-6 text-center"><div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"><Star aria-hidden="true" className="size-5" /></div><h3 className="mt-3 text-sm font-bold">{t('autocare.reviewsEmptyTitle')}</h3><p className="mt-1 max-w-[28rem] text-xs leading-relaxed text-muted-foreground">{t('autocare.reviewsEmptyDescription')}</p></div>
+}
+
+function ReviewCard({ review }: { review: PlatformReview }) {
+    const { locale } = useTranslation()
+    const publicationDate = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(review.createdAt))
+    const initials = review.authorName.split(/\s+/).map((part) => part[0]).filter(Boolean).slice(0, 2).join('')
+    return <article className="flex h-full min-h-[214px] flex-col rounded-[8px] border border-border p-4"><div className="flex items-center gap-3">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-11 rounded-full object-cover" /> : <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-black text-primary">{initials}</span>}<div><h3 className="text-sm font-black">{review.authorName}</h3><p className="text-xs text-muted-foreground">{review.authorRole}</p></div></div><div className="mt-3 flex">{Array.from({ length: 5 }).map((_, index) => <Star key={index} className={`size-3.5 ${index < review.rating ? 'fill-rating-fill text-rating-fill' : 'text-muted-foreground/30'}`} />)}</div><p className="mt-3 line-clamp-5 flex-1 text-[0.7rem] leading-[1.55] text-muted-foreground">{review.text}</p><p className="mt-4 text-[0.68rem] text-muted-foreground/75">{publicationDate}</p></article>
 }
 
 function MobileAppCard() {
     const { t } = useTranslation()
     const items = [{ icon: Search, key: 'autocare.mobileAppSearch' }, { icon: Check, key: 'autocare.mobileAppBooking' }, { icon: Clock3, key: 'autocare.mobileAppHistory' }, { icon: Bell, key: 'autocare.mobileAppAlerts' }] as const
     return (
-        <section className="relative min-h-[326px] overflow-hidden rounded-[10px] border border-border bg-card p-5"><div className="relative z-10 max-w-[15rem]"><h2 className="text-lg font-black">{t('autocare.mobileAppTitle')}</h2><p className="mt-1 text-sm text-muted-foreground">{t('autocare.mobileAppDescription')}</p><ul className="mt-6 grid gap-4 text-sm text-muted-foreground">{items.map((item) => <li key={item.key} className="flex items-center gap-3"><item.icon className="size-4" />{t(item.key)}</li>)}</ul><div className="mt-7 flex gap-2"><StoreBadge store="apple" label="App Store" /><StoreBadge store="google" label="Google Play" /></div></div><img src="/images/autocare/mobile/app-phones.webp" alt="" className="absolute -bottom-[9%] -right-[12%] h-[112%] w-[72%] object-cover object-[66%_center]" /></section>
+        <section className="relative min-h-[326px] overflow-hidden rounded-[10px] border border-border bg-card p-5">
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-hidden" aria-hidden="true">
+                <span className="relative inline-flex -rotate-[18deg] items-center justify-center rounded-full bg-primary/25 px-5 py-2 text-center text-xs font-black uppercase tracking-[0.28em] text-primary-foreground shadow-[0_8px_24px_rgba(0,36,112,0.18)] backdrop-blur-sm before:absolute before:-inset-x-5 before:-inset-y-3 before:-z-10 before:rounded-full before:bg-primary/25 before:blur-xl sm:px-6 sm:py-2.5 sm:text-sm">
+                    <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">{t('autocare.mobileAppComingSoon')}</span>
+                </span>
+            </div>
+            <div className="relative z-10 max-w-[15rem]"><h2 className="text-lg font-black">{t('autocare.mobileAppTitle')}</h2><p className="mt-1 text-sm text-muted-foreground">{t('autocare.mobileAppDescription')}</p><ul className="mt-6 grid gap-4 text-sm text-muted-foreground">{items.map((item) => <li key={item.key} className="flex items-center gap-3"><item.icon className="size-4" />{t(item.key)}</li>)}</ul><div className="mt-7 flex gap-2"><StoreBadge store="apple" label="App Store" /><StoreBadge store="google" label="Google Play" /></div></div><img src="/images/autocare/mobile/app-phones.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] block h-[112%] w-[84%] object-cover object-[70%_center] dark:hidden" style={mobileArtworkMask} /><img src="/images/autocare/mobile/app-phones-dark.webp" alt="" aria-hidden="true" className="absolute -bottom-[9%] -right-[12%] hidden h-[112%] w-[84%] object-cover object-[70%_center] dark:block" style={mobileArtworkMask} /></section>
     )
 }
+
+const mobileArtworkMask = {
+    maskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, var(--foreground) 29%, var(--foreground) 100%)',
+    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.58) 13%, var(--foreground) 29%, var(--foreground) 100%)',
+} as const
 
 function StoreBadge({ store, label }: { store: 'apple' | 'google'; label: string }) {
     return <span className="inline-flex h-9 items-center gap-2 rounded-[4px] bg-foreground px-3 text-[0.66rem] font-bold text-background">{store === 'apple' ? <AppleIcon /> : <GooglePlayIcon />}{label}</span>

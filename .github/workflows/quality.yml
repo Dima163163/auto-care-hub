@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - dev
       - main
 
 permissions:
@@ -14,6 +15,20 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  production-promotion-policy:
+    name: Production promotion policy
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require dev as the production promotion source
+        env:
+          SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if [ "$SOURCE_BRANCH" != "dev" ]; then
+            echo "Production main can only be promoted from dev; received $SOURCE_BRANCH."
+            exit 1
+          fi
+
   security:
     name: Dependency and secret scanning
     runs-on: ubuntu-latest
@@ -88,6 +103,9 @@ jobs:
       - name: Check frontend API runtime boundaries
         run: npm run check:api-runtime-boundaries
 
+      - name: Check staging/API compatibility contract
+        run: npm run check:staging-api
+
       - name: Check OpenAPI shape
         run: npm run check:openapi-shape
 
@@ -157,8 +175,6 @@ jobs:
       FRONTEND_ORIGIN: http://localhost:5173
       CORS_ORIGINS: http://localhost:5173
       MAIL_MODE: logger
-      STRIPE_SECRET_KEY: sk_test_mock
-      STRIPE_WEBHOOK_SECRET: whsec_mock
 
     steps:
       - name: Checkout
@@ -199,6 +215,10 @@ jobs:
 
       - name: Run PostgreSQL integration and concurrency profile
         run: npm run test:integration
+        working-directory: server
+
+      - name: Run worker lifecycle smoke test
+        run: npm run test:unit -- --run src/modules/jobs/background-jobs.test.ts
         working-directory: server
 
       - name: Test
@@ -294,8 +314,6 @@ jobs:
       FRONTEND_ORIGIN: http://127.0.0.1:5174
       CORS_ORIGINS: http://127.0.0.1:5174
       MAIL_MODE: logger
-      STRIPE_SECRET_KEY: sk_test_mock
-      STRIPE_WEBHOOK_SECRET: whsec_mock
       VITE_API_MODE: real
       VITE_API_BASE_URL: http://127.0.0.1:4000
 
@@ -362,7 +380,7 @@ jobs:
           exit 1
 
       - name: Reset and seed demo data
-        run: npm run demo:reset && npm run demo:seed
+        run: npm run demo:reset && npm run demo:seed && npm run autocare:seed
         working-directory: server
 
       - name: Install Chromium

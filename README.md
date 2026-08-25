@@ -23,8 +23,9 @@ cabinet-rental booking product to AutoCare Hub.
 - The automotive provider/catalog/search/messaging/bonus domain is implemented
   in reviewed vertical slices; the remaining work is to replace legacy
   workspace flows one slice at a time.
-- Existing `cabinet`, booking-commission and Stripe Connect code is an isolated
-  compatibility layer, not the AutoCare product model.
+- The historical cabinet-rental and booking-payment schema is retained only in
+  immutable migration history; it is not mapped, exposed, or executed by the
+  AutoCare application.
 - Do not present any legacy deployment as the current AutoCare Hub service.
 - Do not remove legacy code until the corresponding AutoCare vertical slice and
   tests are accepted.
@@ -58,7 +59,10 @@ Read before making changes:
 ### Frontend
 
 - React 19 and TypeScript;
-- Vite and React Router;
+- Next.js App Router as the only production web runtime, with the existing
+  React Router feature tree mounted behind a catch-all route;
+- Vite remains available only as an explicitly named local compatibility build
+  (`dev:vite`/`build:vite`) while the feature tree is incrementally decomposed;
 - Redux Toolkit and RTK Query;
 - React Hook Form and Zod;
 - Tailwind CSS and Base UI primitives;
@@ -78,8 +82,8 @@ Read before making changes:
 - transactional outbox, email and notifications;
 - media decoding/re-encoding through `sharp`;
 - audit logs, security events, health/readiness and metrics;
-- Stripe reliability code currently tied to legacy AutoCare Hub payments and not
-  approved as AutoCare repair-payment behavior.
+- Clients arrange payment directly with the selected service; the platform has
+  no payment-provider integration.
 
 ## Project structure
 
@@ -87,6 +91,7 @@ Read before making changes:
 .
 ├── src/                       # React application
 │   ├── app/                   # bootstrap, routing, layouts, mocks, store
+│   │   └── next/              # Next.js client shell and App Router entrypoint
 │   ├── pages/                 # route composition
 │   ├── widgets/               # large UI sections
 │   ├── features/              # user actions/workflows
@@ -138,11 +143,15 @@ invalidate sessions or point at the wrong database/storage.
 
 ## Run modes
 
-Frontend mock mode:
+Frontend mock mode (Next.js):
 
 ```bash
 npm run dev
 ```
+
+The production frontend is built with `npm run build` and served with
+`npm run start`. The Render web service runs this Next.js server directly;
+`dist/` is no longer a production publish target.
 
 Real frontend/backend mode with local PostgreSQL/Redis:
 
@@ -154,7 +163,6 @@ Or run components separately:
 
 ```bash
 npm run server:db:up
-npm run server:migrate
 npm run server:dev
 npm run dev:real
 ```
@@ -194,18 +202,30 @@ than runtime tests.
 
 ## Git workflow
 
-- One feature branch per task, created from current `main`.
-- Preserve unrelated user changes.
-- Stage explicit files; never use `git add .`.
-- The user reviews the local diff/commit before push.
-- The newly initialized repository has no `origin`. Do not add one until the new
-  AutoCare Hub repository URL is supplied and explicitly approved.
-- Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
+`main` is the production branch. No direct push, merge, or deployment to
+`main` happens without explicit user approval.
 
-Current new-repository branch:
+All implementation work goes through `dev` and short-lived feature branches:
 
 ```text
-main
+main  <- production, approval required
+  ^
+dev   <- integration branch, normal development push target
+  ^
+feature/<short-task-name>
+```
+
+- Keep `dev` based on the latest `main` and push completed work to `origin/dev`.
+- Create `feature/*` branches from `dev` for isolated tasks; merge them into
+  `dev` after checks pass.
+- Preserve unrelated user changes and stage explicit files; never use `git add .`.
+- Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
+
+Current repository branches:
+
+```text
+main  (production)
+dev   (active development)
 ```
 
 The inherited Git metadata is not active. A recoverable copy is stored

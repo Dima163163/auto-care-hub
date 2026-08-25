@@ -6,11 +6,16 @@ import { getDefaultRouteByRole } from '@/features/auth/lib/getDefaultRouteByRole
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { IS_REAL_API } from '@/shared/config/api'
+import {
+    STATIC_DEPLOYMENT_CAPABILITIES,
+    type DeploymentOAuthProvider,
+} from '@/shared/config/deployment'
 
 import {
     useGoogleMockLoginMutation,
     useYandexMockLoginMutation,
     useGetOAuthUrlMutation,
+    useGetDeploymentCapabilitiesQuery,
 } from '../../api/authApi'
 
 type SocialAuthButtonsProps = {
@@ -20,12 +25,17 @@ type SocialAuthButtonsProps = {
 
 export const SocialAuthButtons = ({ onSuccess, redirectPath }: SocialAuthButtonsProps) => {
     const { t } = useTranslation()
+    const { data: deploymentCapabilities, isLoading: isCapabilitiesLoading, isError: isCapabilitiesError } = useGetDeploymentCapabilitiesQuery()
     const [googleMockLogin, { isLoading: isGoogleLoading }] = useGoogleMockLoginMutation()
     const [yandexMockLogin, { isLoading: isYandexLoading }] = useYandexMockLoginMutation()
     const [getOAuthUrl, { isLoading: isUrlLoading }] = useGetOAuthUrlMutation()
     const [activeProvider, setActiveProvider] = useState<'google' | 'yandex' | null>(null)
 
     const isLoading = isGoogleLoading || isYandexLoading || isUrlLoading
+    const enabledProviders: readonly DeploymentOAuthProvider[] = deploymentCapabilities?.auth.oauthProviders
+        ?? (isCapabilitiesError ? [] : STATIC_DEPLOYMENT_CAPABILITIES.auth.oauthProviders)
+    const isGoogleEnabled = enabledProviders.includes('google')
+    const isYandexEnabled = enabledProviders.includes('yandex')
     const isGoogleActionLoading = activeProvider === 'google' && (IS_REAL_API ? isUrlLoading : isGoogleLoading)
     const isYandexActionLoading = activeProvider === 'yandex' && (IS_REAL_API ? isUrlLoading : isYandexLoading)
 
@@ -93,27 +103,33 @@ export const SocialAuthButtons = ({ onSuccess, redirectPath }: SocialAuthButtons
                 </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    loading={isGoogleActionLoading}
-                    disabled={isLoading && !isGoogleActionLoading}
-                    onClick={() => void handleGoogleLogin()}
-                >
-                    {t('auth.continueWithGoogle')}
-                </Button>
+            {isCapabilitiesLoading && !deploymentCapabilities ? null : enabledProviders.length === 0 ? null : (
+                <div className={`grid gap-3 ${enabledProviders.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+                    {isGoogleEnabled ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            loading={isGoogleActionLoading}
+                            disabled={isLoading && !isGoogleActionLoading}
+                            onClick={() => void handleGoogleLogin()}
+                        >
+                            {t('auth.continueWithGoogle')}
+                        </Button>
+                    ) : null}
 
-                <Button
-                    type="button"
-                    variant="outline"
-                    loading={isYandexActionLoading}
-                    disabled={isLoading && !isYandexActionLoading}
-                    onClick={() => void handleYandexLogin()}
-                >
-                    {t('auth.continueWithYandex')}
-                </Button>
-            </div>
+                    {isYandexEnabled ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            loading={isYandexActionLoading}
+                            disabled={isLoading && !isYandexActionLoading}
+                            onClick={() => void handleYandexLogin()}
+                        >
+                            {t('auth.continueWithYandex')}
+                        </Button>
+                    ) : null}
+                </div>
+            )}
         </div>
     )
 }

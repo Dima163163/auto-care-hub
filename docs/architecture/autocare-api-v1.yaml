@@ -1,6 +1,6 @@
 schema_version: 1
 document:
-  name: AutoCare Hub discovery and service-request API slice
+  name: AutoCare Hub discovery, location and service-request API
   status: proposed
   source_of_truth:
     - ../../docs/API_CONTRACT.md
@@ -10,11 +10,23 @@ resources:
   markets:
     read: public
     route: /api/v1/markets
-    fields: [countryCode, cityCode, currencyCode, timezone, supportedLocales]
+    fields: [countryCode, countryName, regionCode, regionName, cityCode, cityName, centerLatitude, centerLongitude, currencyCode, timezone, supportedLocales]
+  location_zones:
+    read: public
+    route: /api/v1/markets/{marketId}/zones
+    query: [parentId, latitude, longitude, limit]
+    fields: [id, marketId, parentId, slug, zoneType, names, centerLatitude, centerLongitude, radiusKm, imageUrl, serviceCount]
+    ordering: display_order_or_nearest_coordinates
   service_definitions:
     read: public
     route: /api/v1/service-definitions
     fields: [id, categoryId, labels, priceType, comparisonAttributes, active]
+  vehicle_catalog:
+    read: public
+    route: /api/v1/vehicle-catalog
+    query: [brandId]
+    fields: [id, labels, models, yearsFrom, yearsTo, engines]
+    source: normalized catalog aligned with the official NHTSA vPIC schema; production importer and refresh jobs are versioned
   provider_discovery:
     read: public
     route: /api/v1/discovery/providers
@@ -23,7 +35,39 @@ resources:
   provider_profile:
     read: public
     route: /api/v1/providers/{providerId}
-    includes: [verification, locations, offers, amenities, reviewSummary, coverImageUrl, galleryImageUrls]
+    includes: [verification, locations, offers, amenities, reviewSummary, contact, warrantyText, workstationCount, logoUrl, coverImageUrl, galleryImageUrls]
+  provider_reviews:
+    read: public
+    route: /api/v1/providers/{providerId}/reviews
+    query: [limit]
+    projection: [providerId, totalReviews, averageRating, distribution, reviews]
+  provider_favorites:
+    read: authenticated_client
+    route: /api/v1/favorites/providers
+    create: /api/v1/favorites/providers/{providerId}
+    remove: /api/v1/favorites/providers/{providerId}
+    sync: /api/v1/favorites/providers/sync
+    projection: [providerId, locationId, provider, primaryOffer, createdAt]
+  provider_profile_create:
+    create: verified_owner
+    route: /api/owner/autocare-providers
+    fields: [name, description, marketId, zoneId, address, hours, yearsActive, staffCount, workstationCount, phone, phones, email, websiteUrl, metroStation, warrantyText, bonusSummary, isMultibrand, brandSpecializations, amenityIds, logoUrl, coverImageUrl, galleryImageUrls]
+  provider_logo:
+    create: verified_owner
+    route: /api/owner/autocare-providers/logo
+    projection: [logoUrl]
+    asset_route: /api/uploads/autocare/logos/{fileName}
+  provider_media:
+    create: verified_owner
+    route: /api/owner/autocare-providers/media
+    fields: [kind, fileName, mimeType, size, contentBase64]
+    kinds: [cover, gallery]
+    asset_route: /api/uploads/autocare/media/{kind}/{fileName}
+  featured_reviews:
+    read: public
+    route: /api/v1/reviews/featured
+    query: [limit]
+    projection: [providerId, authorName, vehicleLabel, rating, text, avatarUrl, createdAt]
   service_request:
     create: authenticated_client
     route: /api/v1/service-requests
@@ -50,7 +94,7 @@ resources:
 security_invariants:
   - locale_currency_and_market_never_grant_authorization
   - attachments_are_private_to_request_participants
-  - repair_payment_is_direct_to_provider_in_mvp
+  - repair_payment_is_direct_to_provider
   - provider_subscription_is_separate_from_customer_service_request
   - all_mutating_requests_support_csrf_and_idempotency_where_retried
   - generated_provider_images_are_optional_and_missing_assets_resolve_to_a_placeholder

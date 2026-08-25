@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils'
 import { Link } from 'react-router'
 
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -6,9 +5,8 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { useGetMeQuery } from '../../api/authApi'
-import { getAccountLinkTranslationKey } from '../../lib/getAccountLinkTranslationKey'
-import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
 import { CurrentUserBadge } from '../current-user-badge/CurrentUserBadge'
+import { CurrentUserMenu } from '../current-user-menu/CurrentUserMenu'
 
 export function AuthHeaderActions() {
     const { t } = useTranslation()
@@ -46,16 +44,5 @@ export function AuthHeaderActions() {
         )
     }
 
-    return (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-            <Link
-                to={getDefaultRouteByRole(user.role)}
-                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), "max-md:hidden")}
-            >
-                {t(getAccountLinkTranslationKey(user.role))}
-            </Link>
-
-            <CurrentUserBadge user={user} />
-        </div>
-    )
+    return <CurrentUserMenu user={user} />
 }

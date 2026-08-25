@@ -21,6 +21,7 @@ final confirmation 3 of 3.
 | Contacts | `/contacts` | Give support, business, and safety-contact paths with expected response guidance. |
 | Help center | `/help` | Searchable help routes for guest, client, and owner tasks. |
 | Service rules | `/rules` | State booking, cancellation, reviews, and owner rules in readable sections. |
+| User agreement | `/agreement` | Explain platform roles, accounts, requests, provider responsibilities, subscriptions and bonuses. |
 | Privacy policy | `/privacy` | Explain data use, rights, retention, and privacy contact details. |
 
 ## Content rules
@@ -40,7 +41,7 @@ final confirmation 3 of 3.
 
 1. Guidance: How it works and For owners.
 2. Help: Help center, FAQ articles, contact support.
-3. Trust and legal: Rules and Privacy policy.
+3. Trust and legal: User agreement, Rules and Privacy policy.
 4. Company: About, Partners, Contacts.
 5. Editorial: Blog index and article template.
 

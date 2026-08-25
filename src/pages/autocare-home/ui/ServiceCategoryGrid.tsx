@@ -1,22 +1,23 @@
-import { CircleGauge, Cog, Disc3, ScanSearch, Snowflake, Wrench, Zap } from 'lucide-react'
+import { Battery, CircleGauge, Disc3, LocateFixed, ScanSearch, ShieldCheck, Truck, Zap } from 'lucide-react'
 import { Link } from 'react-router'
 
+import { automotiveServices, getServiceLabel } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 const services = [
-    { id: 'maintenance', label: 'Техническое обслуживание', icon: Wrench },
-    { id: 'diagnostics', label: 'Диагностика', icon: ScanSearch },
-    { id: 'brakes', label: 'Тормозная система', icon: Disc3 },
-    { id: 'engine', label: 'Двигатель', icon: Cog },
-    { id: 'tire-service', label: 'Шины и диски', icon: CircleGauge },
-    { id: 'suspension', label: 'Подвеска', icon: Wrench },
-    { id: 'electric', label: 'Электрика', icon: Zap },
-    { id: 'air-conditioning', label: 'Кондиционер', icon: Snowflake },
+    { id: 'maintenance', icon: Disc3 },
+    { id: 'diagnostics', icon: ScanSearch },
+    { id: 'tow-truck', icon: Truck },
+    { id: 'mobile-diagnostics', icon: LocateFixed },
+    { id: 'tire-service', icon: CircleGauge },
+    { id: 'electric', icon: Zap },
+    { id: 'roadside-assistance', icon: ShieldCheck },
+    { id: 'battery-service', icon: Battery },
 ] as const
 
 export function ServiceCategoryGrid() {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
 
     return (
         <section className="h-full rounded-[10px] bg-card p-5">
@@ -25,12 +26,17 @@ export function ServiceCategoryGrid() {
                 <Link to={ROUTES.serviceDiscovery} className="text-xs font-semibold text-primary">{t('autocare.allServices')}</Link>
             </div>
             <div className="mt-5 grid grid-cols-4 gap-x-3 gap-y-7">
-                {services.map((service) => (
-                    <Link key={service.id} to={`${ROUTES.serviceDiscovery}?service=${service.id}`} className="group text-center">
-                        <span className="mx-auto flex size-14 items-center justify-center rounded-[9px] bg-secondary/55 text-primary"><service.icon className="size-8 stroke-[1.8]" /></span>
-                        <span className="mt-2 block text-[0.7rem] font-semibold leading-[1.25] group-hover:text-primary">{service.label}</span>
-                    </Link>
-                ))}
+                {services.map((service) => {
+                    const catalogService = automotiveServices.find((item) => item.id === service.id)
+                    if (!catalogService) return null
+
+                    return (
+                        <Link key={service.id} to={`${ROUTES.serviceDiscovery}?service=${service.id}`} className="group text-center">
+                            <span className="mx-auto flex size-14 items-center justify-center rounded-[9px] bg-secondary/55 text-primary"><service.icon className="size-8 stroke-[1.8]" /></span>
+                            <span className="mt-2 block text-[0.7rem] font-semibold leading-[1.25] group-hover:text-primary">{getServiceLabel(catalogService, locale)}</span>
+                        </Link>
+                    )
+                })}
             </div>
         </section>
     )

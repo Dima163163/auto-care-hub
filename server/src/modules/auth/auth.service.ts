@@ -16,8 +16,8 @@ import { toPublicUser } from './public-user.js'
 import {
     createSecurityToken,
     EMAIL_VERIFICATION_TOKEN_TTL_MINUTES,
+    consumeUsableSecurityToken,
     findUsableSecurityToken,
-    markSecurityTokenUsed,
     SecurityTokenPurpose,
 } from './security-token.service.js'
 import {
@@ -497,32 +497,30 @@ export async function verifyPasswordSetupToken(token: string) {
 }
 
 export async function completePasswordSetup(input: CompletePasswordSetupInput) {
-    const securityToken = await findUsableSecurityToken(
+    const savedUser = await consumeUsableSecurityToken(
         input.token,
-        SecurityTokenPurpose.PasswordSetup
+        SecurityTokenPurpose.PasswordSetup,
+        async (securityToken, manager) => {
+            const password = await assertPasswordSecurityPolicy(input.password, {
+                mode: env.auth.breachedPasswordCheckMode,
+                timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
+            })
+            const passwordHash = await hash(password, PASSWORD_SALT_ROUNDS)
+
+            securityToken.user.passwordHash = passwordHash
+            securityToken.user.status = UserStatus.Active
+            securityToken.user.tokenVersion += 1
+            return manager.getRepository(UserEntity).save(securityToken.user)
+        },
     )
 
-    if (!securityToken) {
+    if (!savedUser) {
         throw new AppError({
             statusCode: 400,
             code: ERROR_CODES.BadRequest,
             message: 'Password setup link is invalid or expired.',
         })
     }
-
-    const userRepository = AppDataSource.getRepository(UserEntity)
-    const password = await assertPasswordSecurityPolicy(input.password, {
-        mode: env.auth.breachedPasswordCheckMode,
-        timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
-    })
-    const passwordHash = await hash(password, PASSWORD_SALT_ROUNDS)
-
-    securityToken.user.passwordHash = passwordHash
-    securityToken.user.status = UserStatus.Active
-    securityToken.user.tokenVersion += 1
-
-    const savedUser = await userRepository.save(securityToken.user)
-    await markSecurityTokenUsed(securityToken)
 
     const tokens = createAuthTokens(savedUser)
 
@@ -578,31 +576,30 @@ export async function verifyPasswordResetToken(token: string) {
 }
 
 export async function completePasswordReset(input: CompletePasswordResetInput) {
-    const securityToken = await findUsableSecurityToken(
+    const completed = await consumeUsableSecurityToken(
         input.token,
-        SecurityTokenPurpose.PasswordReset
+        SecurityTokenPurpose.PasswordReset,
+        async (securityToken, manager) => {
+            const password = await assertPasswordSecurityPolicy(input.password, {
+                mode: env.auth.breachedPasswordCheckMode,
+                timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
+            })
+            const passwordHash = await hash(password, PASSWORD_SALT_ROUNDS)
+
+            securityToken.user.passwordHash = passwordHash
+            securityToken.user.tokenVersion += 1
+            await manager.getRepository(UserEntity).save(securityToken.user)
+            return true
+        },
     )
 
-    if (!securityToken) {
+    if (!completed) {
         throw new AppError({
             statusCode: 400,
             code: ERROR_CODES.BadRequest,
             message: 'Password reset link is invalid or expired.',
         })
     }
-
-    const userRepository = AppDataSource.getRepository(UserEntity)
-    const password = await assertPasswordSecurityPolicy(input.password, {
-        mode: env.auth.breachedPasswordCheckMode,
-        timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
-    })
-    const passwordHash = await hash(password, PASSWORD_SALT_ROUNDS)
-
-    securityToken.user.passwordHash = passwordHash
-    securityToken.user.tokenVersion += 1
-
-    await userRepository.save(securityToken.user)
-    await markSecurityTokenUsed(securityToken)
 
     return {
         success: true,
@@ -630,25 +627,23 @@ export async function verifyEmailVerificationToken(token: string) {
 }
 
 export async function completeEmailVerification(token: string) {
-    const securityToken = await findUsableSecurityToken(
+    const completed = await consumeUsableSecurityToken(
         token,
-        SecurityTokenPurpose.EmailVerification
+        SecurityTokenPurpose.EmailVerification,
+        async (securityToken, manager) => {
+            securityToken.user.emailVerifiedAt = new Date()
+            await manager.getRepository(UserEntity).save(securityToken.user)
+            return true
+        },
     )
 
-    if (!securityToken) {
+    if (!completed) {
         throw new AppError({
             statusCode: 400,
             code: ERROR_CODES.BadRequest,
             message: 'Email verification link is invalid or expired.',
         })
     }
-
-    const userRepository = AppDataSource.getRepository(UserEntity)
-
-    securityToken.user.emailVerifiedAt = new Date()
-
-    await userRepository.save(securityToken.user)
-    await markSecurityTokenUsed(securityToken)
 
     return {
         success: true,

@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
+import { loadAllTranslations } from '@/shared/config/translations'
 import { t } from '@/shared/lib/i18n'
 
 import { getAccountLinkTranslationKey } from './getAccountLinkTranslationKey'
 
 describe('getAccountLinkTranslationKey', () => {
+    beforeAll(async () => {
+        await loadAllTranslations()
+    })
+
     it('returns the profile label key for clients', () => {
         expect(t(getAccountLinkTranslationKey('client'))).toBe('Profile')
     })

@@ -8,6 +8,8 @@ test.describe('profile privacy controls', () => {
         await page.getByRole('button', { name: /sign in/i }).click()
         await expect(page).toHaveURL(/\/profile$/)
 
+        await page.goto('/profile?tab=account')
+
         const privacy = page.getByTestId('profile-privacy')
         await expect(privacy).toBeVisible()
 

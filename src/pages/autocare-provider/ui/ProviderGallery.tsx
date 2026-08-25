@@ -1,0 +1,30 @@
+import { ChevronLeft, ChevronRight, Images, X } from 'lucide-react'
+import { useState } from 'react'
+
+import type { ProviderProfile } from '@/entities/automotive-service'
+import { useTranslation } from '@/shared/lib/useTranslation'
+import { Dialog, DialogContent, DialogTitle } from '@/shared/ui/dialog'
+import { AutoCareImage } from '@/shared/ui/autocare-image'
+
+type GalleryImage = { id: string; src: string; source: 'service' | 'review' }
+type ProviderGalleryProps = { provider: ProviderProfile }
+
+const servicePhotos = ['/images/autocare/providers/generated/service-oil-change.png', '/images/autocare/providers/generated/service-diagnostics.png', '/images/autocare/providers/generated/service-detailing.png']
+export function ProviderGallery({ provider }: ProviderGalleryProps) {
+    const { t } = useTranslation()
+    const reviewPhotos = provider.reviews.flatMap((review) => review.photos ?? [])
+    const providerPhotos = provider.galleryImageUrls.filter((src) => !src.includes('/placeholders/provider.svg'))
+    const serviceGallery = providerPhotos.length > 0 ? providerPhotos : servicePhotos
+    const images: GalleryImage[] = [
+        ...Array.from(new Set([provider.image, ...serviceGallery].filter((src): src is string => Boolean(src)))).map((src, index): GalleryImage => ({ id: `service-${index}-${src}`, src, source: 'service' })),
+        ...reviewPhotos.map((src, index): GalleryImage => ({ id: `review-${index}-${src}`, src, source: 'review' })),
+    ]
+    const [selectedIndex, setSelectedIndex] = useState(0)
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false)
+    const selectedImage = images[selectedIndex] ?? images[0]
+    const openPreview = (index: number) => { setSelectedIndex(index); setIsGalleryOpen(true) }
+    const selectPrevious = () => setSelectedIndex((index) => (index + images.length - 1) % images.length)
+    const selectNext = () => setSelectedIndex((index) => (index + 1) % images.length)
+
+    return <><div data-testid="provider-gallery" className="grid h-56 grid-cols-[minmax(0,1fr)_6rem] grid-rows-[minmax(0,1fr)_auto] gap-1.5 overflow-hidden rounded-[var(--radius-panel)] border border-primary-foreground/35 bg-primary-foreground/10 p-1.5 shadow-2xl shadow-black/25 sm:h-64"><button type="button" onClick={() => openPreview(selectedIndex)} aria-label={t('autocare.providerGalleryTitle')} className="relative row-span-2 overflow-hidden rounded-[calc(var(--radius-panel)-0.25rem)] text-left focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary"><AutoCareImage src={selectedImage?.src} alt="" loading="eager" className="h-full w-full object-cover" /><span className="absolute inset-x-2 bottom-2 rounded-[var(--radius-control)] bg-hero-overlay/85 px-2.5 py-1.5 text-[11px] font-black">{t('autocare.providerServices')}</span></button><div className="grid min-h-0 grid-rows-3 gap-1.5">{images.slice(0, 3).map((image, index) => <button type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`${t('autocare.providerGalleryTitle')} ${index + 1}`} className={`min-h-0 overflow-hidden rounded-[var(--radius-card)] border-2 transition focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary ${selectedIndex === index ? 'border-primary' : 'border-transparent hover:border-primary-foreground/70'}`}><AutoCareImage src={image.src} alt="" className="h-full w-full object-cover" /></button>)}</div><button type="button" onClick={() => setIsGalleryOpen(true)} className="inline-flex min-w-0 items-center justify-center gap-1 rounded-[var(--radius-control)] bg-hero-overlay/90 px-1.5 py-1.5 text-[10px] font-black leading-3 shadow-lg transition hover:bg-hero-overlay"><Images className="size-3 shrink-0" />{t('autocare.providerViewAllPhotos', { count: images.length })}</button></div><Dialog isOpen={isGalleryOpen} onOpenChange={setIsGalleryOpen} className="max-w-4xl bg-hero-overlay p-3 text-primary-foreground sm:p-5"><DialogContent><div className="flex items-center justify-between gap-3"><DialogTitle className="text-primary-foreground">{t('autocare.providerGalleryTitle')}</DialogTitle><button type="button" onClick={() => setIsGalleryOpen(false)} aria-label={t('common.close')} className="flex size-9 items-center justify-center rounded-[var(--radius-control)] text-primary-foreground hover:bg-primary-foreground/10"><X className="size-5" /></button></div><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_8rem]"><div className="relative aspect-[16/10] overflow-hidden rounded-[var(--radius-panel)] bg-black"><AutoCareImage src={selectedImage?.src} alt="" loading="eager" className="h-full w-full object-cover" /><button type="button" onClick={selectPrevious} aria-label={t('common.back')} className="absolute left-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-hero-overlay/80 text-primary-foreground"><ChevronLeft className="size-5" /></button><button type="button" onClick={selectNext} aria-label={t('autocare.providerNextPhoto')} className="absolute right-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-hero-overlay/80 text-primary-foreground"><ChevronRight className="size-5" /></button></div><div className="grid grid-cols-3 gap-2 md:grid-cols-1 md:overflow-y-auto">{images.map((image, index) => <button type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`${t('autocare.providerGalleryTitle')} ${index + 1}`} className={`relative aspect-video overflow-hidden rounded-[var(--radius-card)] border-2 ${selectedIndex === index ? 'border-primary' : 'border-transparent'}`}><AutoCareImage src={image.src} alt="" className="h-full w-full object-cover" />{image.source === 'review' && <span className="absolute inset-x-1 bottom-1 rounded bg-hero-overlay/85 px-1 py-0.5 text-[9px] font-bold">{t('autocare.providerReviewPhoto')}</span>}</button>)}</div></div></DialogContent></Dialog></>
+}

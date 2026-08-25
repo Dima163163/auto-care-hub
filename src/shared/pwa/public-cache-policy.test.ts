@@ -1,55 +1,65 @@
 import { describe, expect, it } from 'vitest'
 
-import { isPublicCatalogRequest } from './public-cache-policy'
+import { isPublicDiscoveryRequest } from './public-cache-policy'
 
 describe('public PWA cache policy', () => {
-    it('allows anonymous catalog GET requests', () => {
-        expect(isPublicCatalogRequest({
+    it('allows anonymous AutoCare discovery GET requests', () => {
+        expect(isPublicDiscoveryRequest({
             method: 'GET',
-            pathname: '/api/cabinets',
+            pathname: '/api/v1/markets',
             hasAuthorization: false,
         })).toBe(true)
-        expect(isPublicCatalogRequest({
-            method: 'get',
-            pathname: '/api/cabinets/cabinet-1',
+        expect(isPublicDiscoveryRequest({
+            method: 'GET',
+            pathname: '/api/v1/markets/market-moscow/zones',
             hasAuthorization: false,
         })).toBe(true)
-        expect(isPublicCatalogRequest({
+        expect(isPublicDiscoveryRequest({
             method: 'GET',
-            pathname: '/api/cabinets/123e4567-e89b-12d3-a456-426614174000',
+            pathname: '/api/v1/discovery/providers',
+            hasAuthorization: false,
+        })).toBe(true)
+        expect(isPublicDiscoveryRequest({
+            method: 'GET',
+            pathname: '/api/v1/providers/provider-1',
+            hasAuthorization: false,
+        })).toBe(true)
+        expect(isPublicDiscoveryRequest({
+            method: 'GET',
+            pathname: '/api/v1/platform-reviews',
             hasAuthorization: false,
         })).toBe(true)
     })
 
     it('rejects private, mutating, and unrelated requests', () => {
-        expect(isPublicCatalogRequest({
+        expect(isPublicDiscoveryRequest({
             method: 'GET',
-            pathname: '/api/cabinets',
+            pathname: '/api/v1/discovery/providers',
             hasAuthorization: true,
         })).toBe(false)
-        expect(isPublicCatalogRequest({
+        expect(isPublicDiscoveryRequest({
             method: 'POST',
+            pathname: '/api/v1/service-requests',
+            hasAuthorization: false,
+        })).toBe(false)
+        expect(isPublicDiscoveryRequest({
+            method: 'GET',
+            pathname: '/api/owner/autocare-providers',
+            hasAuthorization: false,
+        })).toBe(false)
+        expect(isPublicDiscoveryRequest({
+            method: 'GET',
             pathname: '/api/cabinets',
             hasAuthorization: false,
         })).toBe(false)
-        expect(isPublicCatalogRequest({
+        expect(isPublicDiscoveryRequest({
             method: 'GET',
-            pathname: '/api/owner/cabinets',
+            pathname: '/api/v1/service-requests',
             hasAuthorization: false,
         })).toBe(false)
-        expect(isPublicCatalogRequest({
+        expect(isPublicDiscoveryRequest({
             method: 'GET',
-            pathname: '/api/cabinets/all',
-            hasAuthorization: false,
-        })).toBe(false)
-        expect(isPublicCatalogRequest({
-            method: 'GET',
-            pathname: '/api/cabinets/private/metadata',
-            hasAuthorization: false,
-        })).toBe(false)
-        expect(isPublicCatalogRequest({
-            method: 'GET',
-            pathname: '/api/cabinets/private',
+            pathname: '/api/v1/providers/provider-1/availability',
             hasAuthorization: false,
         })).toBe(false)
     })

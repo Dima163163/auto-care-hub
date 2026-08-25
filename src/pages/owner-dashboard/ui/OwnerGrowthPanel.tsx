@@ -2,12 +2,13 @@ import { Gift, MessageCircle, Sparkles } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { ROUTES } from '@/shared/constants/routes'
+import { isProviderPricingVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 export function OwnerGrowthPanel() {
     const { t } = useTranslation()
     const items = [
-        { icon: Sparkles, title: t('ownerDashboard.growth.subscriptionTitle'), text: t('ownerDashboard.growth.subscriptionText'), action: t('ownerDashboard.growth.subscriptionAction'), to: ROUTES.pricing },
+        ...(isProviderPricingVisible ? [{ icon: Sparkles, title: t('ownerDashboard.growth.subscriptionTitle'), text: t('ownerDashboard.growth.subscriptionText'), action: t('ownerDashboard.growth.subscriptionAction'), to: ROUTES.pricing }] : []),
         { icon: Gift, title: t('ownerDashboard.growth.bonusesTitle'), text: t('ownerDashboard.growth.bonusesText'), action: t('ownerDashboard.growth.bonusesAction'), to: ROUTES.ownerServices },
         { icon: MessageCircle, title: t('ownerDashboard.growth.messagesTitle'), text: t('ownerDashboard.growth.messagesText'), action: t('ownerDashboard.growth.messagesAction'), to: ROUTES.ownerBookings },
     ]

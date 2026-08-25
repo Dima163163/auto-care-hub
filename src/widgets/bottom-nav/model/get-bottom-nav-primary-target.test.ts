@@ -19,7 +19,7 @@ describe('getBottomNavPrimaryTarget', () => {
 
     it('takes administrators to the admin workspace', () => {
         expect(getBottomNavPrimaryTarget('admin').to).toBe('/admin/dashboard')
-        expect(getBottomNavPrimaryTarget('super_admin').to).toBe('/admin/dashboard')
+        expect(getBottomNavPrimaryTarget('super_admin').to).toBe('/super-admin/dashboard')
     })
 
     it('offers sign in to guests', () => {

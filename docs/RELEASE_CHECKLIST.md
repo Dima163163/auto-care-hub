@@ -14,6 +14,7 @@ npm run check:mvp-readiness
 npm run test:server:unit
 npm run quality:backend
 npm --prefix server run check:migrations
+npm run check:autocare-integrity
 npm --prefix server run test:unit
 npm --prefix server run build
 npm run build
@@ -33,6 +34,10 @@ and use the test database settings from `.github/workflows/quality.yml`. The
 unit quality command remains runnable without services; integration failures
 must be reported with the dependency name and port rather than treated as a
 passing smoke test.
+
+AutoCare does not process customer repair payments. Customers agree and pay
+directly with the selected provider; no payment-provider configuration belongs
+in a deployment.
 
 ## Release review
 
@@ -57,25 +62,16 @@ passing smoke test.
   an allowed application role; malformed claims must fail verification.
 - Confirm trusted-proxy hops/CIDRs and CORS origins stay within their bounded,
   explicit configuration policy.
-- Confirm session metadata, outbox failure details, and Stripe webhook/checkout
-  diagnostics are bounded and redacted before persistence.
-- Exercise payment success, retry, failure, refund, webhook replay, and
-  reconciliation paths; verify terminal states cannot be reopened.
-- Apply and verify the dispute retention migration before enabling the new
-  application build; confirm `booking_payment_disputes` has restricted payment
-  and booking foreign keys and the provider-ID uniqueness index.
-- Exercise `charge.dispute.created`, `charge.dispute.updated`,
-  `charge.dispute.funds_withdrawn`, `charge.dispute.funds_reinstated`, and
-  `charge.dispute.closed` with duplicate and out-of-order delivery; verify the
-  admin dispute history is bounded and `no-store`.
+- In production, verify browser mutations with a refresh/CSRF cookie are
+  rejected without a trusted Origin/Referer and matching CSRF header; verify
+  bearer-only native requests remain supported without browser cookies.
 - Review `/openapi.json` rate-limit headers (`RateLimit-*`, `Retry-After`) and
   correlation header references after API changes.
 - Confirm `docs/PROVIDER_CONFIGURATION.md` matches the deployed SMTP,
-  monitoring, cabinet-image storage, and Stripe webhook setup. Filesystem image
+  monitoring and cabinet-image storage setup. Filesystem image
   storage must use a persistent volume until an object-storage adapter is
   deployed.
-- Confirm `external_error_reports_total` and
-  `payment_reconciliation_errors_total` use only finite outcome labels, and
+- Confirm `external_error_reports_total` uses only finite outcome labels, and
   that maintenance incidents distinguish timeout, lease, dependency, and
   unknown failures.
 - Run `npm run check:security-headers` and `npm run check:integration-prerequisites`
@@ -84,22 +80,12 @@ passing smoke test.
   protected by its configured bearer token and `no-store` headers.
 - Confirm notification retention, localized security templates, outbox
   dead-letter handling, and preference guards are covered by unit tests.
-- Confirm Stripe checkout verifies connected-account payout capability and
-  payment recovery records preserve bounded amount, currency, and attempt
-  contracts.
 - Review `docs/CONCURRENCY_TEST_MATRIX.md` and run the PostgreSQL/Redis-backed
   scenarios before production promotion. CI also runs the explicit
   `npm --prefix server run test:integration` profile; a green unit profile does
   not substitute for this service-backed evidence.
 - Complete a backup restore rehearsal in a separate database before a schema
   change is accepted for production.
-- Confirm Stripe raw webhook bodies are rejected when empty or over the
-  configured size bound before signature verification.
-- Confirm refund amount and currency metadata match the stored payment and
-  that repeated readiness failures are rate-limited by the incident cooldown.
-- Confirm payment refund reconciliation and invoice backfill backlog/age/error
-  metrics are visible before promoting a release that includes financial
-  migrations.
 - Record the migration inventory checksum with the release artifact and
   review any unexpected change before running migrations.
 - If a deployed process reports a missing entity column, stop traffic changes,
@@ -124,11 +110,13 @@ Phase Z checks:
 
 - Run `npm run check:migration-inventory` and record the checksum with the
   release artifact; investigate any unexpected migration source change.
+- Run `npm run check:autocare-integrity`. Repair any reported cross-aggregate
+  rows before promotion, then run `npm --prefix server run
+  check:autocare-integrity -- --validate` to promote the AutoCare constraints
+  from `NOT VALID`.
 - Confirm shared cursor limits, session metadata, OAuth subjects, booking
   cancellation reasons, notification content, and audit targets are bounded
   before persistence.
-- Confirm Stripe timeout multiplied by `(maxNetworkRetries + 1)` stays within
-  the approved total request budget.
 
 ## Phase AA checks
 
@@ -136,8 +124,8 @@ Phase Z checks:
   and empty migration inventories fail closed.
 - Run `npm run check:migration-inventory` and record the checksum with the
   release artifact.
-- Confirm authentication, booking, cabinet, notification, audit, export, and
-  payment service boundaries reject oversized or malformed input before the
+- Confirm authentication, booking, cabinet, notification, audit and export
+  service boundaries reject oversized or malformed input before the
   database or provider call.
 - Confirm metric names, metric labels, external error context, and pagination
   cursors remain finite and do not contain user-controlled high-cardinality
@@ -154,8 +142,8 @@ Phase Z checks:
   responses and that paginated endpoints still use the shared cursor limit.
 - Confirm outbox payload shape, schedule, email text, and idempotency bounds are
   enforced before database writes or mail dispatch.
-- Confirm checkout URLs are HTTPS-only, OAuth callback values are normalized,
-  request diagnostics are bounded, and provider failure details are redacted.
+- Confirm OAuth callback values are normalized, request diagnostics are
+  bounded, and provider failure details are redacted.
 - Confirm resolved system incidents cannot be reopened and that invalid dates,
   sort options, rating filters, and blank optional searches follow their tests.
 - Run `npm --prefix server run test:unit`, `npm --prefix server run build`, and
@@ -165,19 +153,22 @@ Phase Z checks:
 
 - Confirm `1785430000000-RepairBookingIdempotencyKey` is present in the built
   release artifact and that migration order/inventory checks report the
-  current production migration set. This baseline contains 67 files; always
-  record the command's checksum instead of relying on a copied count.
+  current production migration set. The 2026-08-15 baseline contains 101 files;
+  always record the command's checksum instead of relying on a copied count.
 - Run the release migration job before starting replicas. Verify both
   `bookings.idempotency_key` and `IDX_bookings_client_idempotency_key` through
   the production database or migration diagnostics; do not repair them with
   an ad-hoc SQL edit.
 - Verify `/health/ready` reports a connected database after migration. A
   schema-contract degradation must block promotion and background jobs.
-- Confirm production `FRONTEND_ORIGIN`, `CORS_ORIGINS`, OAuth redirect URIs,
-  and payment checkout URLs remain HTTPS/origin/Stripe-host constrained.
+- Confirm production `FRONTEND_ORIGIN`, `CORS_ORIGINS` and OAuth redirect URIs
+  remain HTTPS/origin constrained.
 - Confirm retention cleanup, availability previews, reminder scheduling,
   outbox dispatch, external OAuth responses, and data exports stay within
   their documented batch/body bounds.
+- Verify the provider trust endpoint exposes the deterministic score factors,
+  approved-review/evidence counts and open-guarantee-claim penalty; do not
+  promote a provider badge without the corresponding evidence policy.
 - Run `npm --prefix server run test:unit`, `npm --prefix server run build`,
   `npm run test:migration-check`, `npm run check:migration-inventory`, and
   `npm --prefix server run check:migrations` before promotion.

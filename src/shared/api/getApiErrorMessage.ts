@@ -60,6 +60,53 @@ function isFetchError(error: unknown) {
     return isRecord(error) && error.status === 'FETCH_ERROR'
 }
 
+function getApiErrorStatus(error: unknown) {
+    return isRecord(error) && typeof error.status === 'number'
+        ? error.status
+        : undefined
+}
+
+export type ApiErrorState =
+    | 'offline'
+    | 'permission-denied'
+    | 'suspended'
+    | 'stale'
+
+/**
+ * Converts transport/API error shapes into display-level states shared by
+ * public and authenticated screens.  HTTP status is kept only as a fallback:
+ * a stable API error code always wins when the server provides one.
+ */
+export function getApiErrorState(error: unknown): ApiErrorState | undefined {
+    const code = getApiErrorCode(error)
+
+    if (code === 'PERMISSION_DENIED' || code === 'FORBIDDEN') {
+        return 'permission-denied'
+    }
+
+    if (code === 'ACCOUNT_SUSPENDED') {
+        return 'suspended'
+    }
+
+    if (code === 'STALE_DATA') {
+        return 'stale'
+    }
+
+    if (code === 'OFFLINE' || isFetchError(error)) {
+        return 'offline'
+    }
+
+    const status = getApiErrorStatus(error)
+    if (status === 401 || status === 403) {
+        return 'permission-denied'
+    }
+    if (status === 423) {
+        return 'suspended'
+    }
+
+    return undefined
+}
+
 export const getApiErrorCode = (error: unknown) => {
     const data = getApiErrorData(error)
     const code = data?.code

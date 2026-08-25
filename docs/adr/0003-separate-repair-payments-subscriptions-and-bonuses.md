@@ -6,8 +6,8 @@ Proposed; repair-payment scope and bonus rules require product-owner approval.
 
 ## Context
 
-The copied legacy booking project contains customer booking payments, a two-percent
-commission and Stripe Connect payouts. AutoCare Hub is planned as free for
+The copied legacy booking project contained customer booking payments and a
+two-percent commission. AutoCare Hub is planned as free for
 providers initially and later monetized through provider subscriptions. It also
 needs provider-funded customer bonuses.
 
@@ -30,8 +30,8 @@ idempotency, webhook persistence, retry and reconciliation.
 
 ## Consequences
 
-- Legacy commission and Stripe Connect flows can be quarantined and later
-  removed after the AutoCare booking replacement.
+- Legacy payment runtime is removed; only immutable database migration history
+  remains for existing installations.
 - Subscription promo codes do not alter bonus balances.
 - Subscription failure does not rewrite booking/repair payment history.
 - The platform avoids premature marketplace payout/KYC/dispute obligations.

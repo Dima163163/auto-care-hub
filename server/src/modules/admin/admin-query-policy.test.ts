@@ -8,6 +8,7 @@ import {
     securityCenterEventsQuerySchema,
     securityCenterExportQuerySchema,
     updateSecurityCenterEventStatusSchema,
+    updateSuperAdminAutoCareMarketSchema,
 } from './admin.schemas.js'
 
 describe('admin query policy', () => {
@@ -74,5 +75,29 @@ describe('admin query policy', () => {
             status: 'resolved',
             operatorNote: 'x'.repeat(1_001),
         })).toThrow()
+    })
+
+    it('requires a valid, unique locale set for market updates', () => {
+        expect(updateSuperAdminAutoCareMarketSchema.parse({
+            defaultLocale: 'ru',
+            supportedLocales: ['ru', 'en', 'es'],
+            timezone: 'Europe/Samara',
+            currencyCode: 'RUB',
+            launchReady: true,
+        })).toMatchObject({ defaultLocale: 'ru', currencyCode: 'RUB', launchReady: true })
+        expect(() => updateSuperAdminAutoCareMarketSchema.parse({
+            defaultLocale: 'ru',
+            supportedLocales: ['ru', 'RU'],
+            timezone: 'Europe/Samara',
+            currencyCode: 'RUB',
+            launchReady: true,
+        })).toThrow(/duplicates/)
+        expect(() => updateSuperAdminAutoCareMarketSchema.parse({
+            defaultLocale: 'de',
+            supportedLocales: ['ru', 'en'],
+            timezone: 'Europe/Samara',
+            currencyCode: 'RUB',
+            launchReady: true,
+        })).toThrow(/included/)
     })
 })

@@ -49,26 +49,15 @@ describe('getSecurityHeadersOptions', () => {
         ).toBeNull()
     })
 
-    it('keeps Stripe frame and connection origins explicit', () => {
+    it('allows only same-origin connections, frames, and scripts', () => {
         const options = getSecurityHeadersOptions({
             isProduction: true,
         })
         const directives = options.contentSecurityPolicy.directives
 
-        expect(directives.connectSrc).toEqual([
-            "'self'",
-            'https://api.stripe.com',
-            'https://r.stripe.com',
-        ])
-        expect(directives.frameSrc).toEqual([
-            "'self'",
-            'https://js.stripe.com',
-            'https://hooks.stripe.com',
-        ])
-        expect(directives.scriptSrc).toEqual([
-            "'self'",
-            'https://js.stripe.com',
-        ])
+        expect(directives.connectSrc).toEqual(["'self'"])
+        expect(directives.frameSrc).toEqual(["'self'"])
+        expect(directives.scriptSrc).toEqual(["'self'"])
     })
 
     it('uses a strict referrer policy', () => {

@@ -47,21 +47,13 @@ export function startBackgroundJobs(logger: FastifyBaseLogger, mailer: Mailer) {
                 return
             }
             if (result.phaseFailures.length > 0) {
-                const hasPaymentFailure = result.phaseFailures.some(
-                    ({ phase }) => phase === 'payment_reconciliation'
-                        || phase === 'payment_refund_reconciliation'
-                        || phase === 'payment_invoice_backfill',
-                )
                 metrics.increment('background_job_runs_total', 1, { outcome: 'partial' })
                 await recordSystemIncidentSafely({
                     type: SystemIncidentType.BackgroundJob,
-                    severity: hasPaymentFailure
-                        ? SystemIncidentSeverity.Critical
-                        : SystemIncidentSeverity.Warning,
+                    severity: SystemIncidentSeverity.Warning,
                     title: 'Background maintenance phases failed',
                     metadata: {
                         phaseFailures: result.phaseFailures,
-                        hasPaymentFailure,
                     },
                 })
                 logger.warn(
@@ -103,12 +95,7 @@ export function startBackgroundJobs(logger: FastifyBaseLogger, mailer: Mailer) {
                 result.auditCleanup.auditLogs > 0 ||
                 result.auditCleanup.securityEvents > 0 ||
                 result.orphanImageCleanup.removed > 0 ||
-                result.payments.checked > 0 ||
-                result.payments.errors > 0 ||
-                result.paymentRefunds.checked > 0 ||
-                result.paymentRefunds.errors > 0 ||
-                result.paymentInvoiceBackfill.checked > 0 ||
-                result.paymentInvoiceBackfill.errors > 0
+                result.trustReassessment.changed > 0
             ) {
                 logger.info(
                     { backgroundJobs: summarizeMaintenanceCycle(result) },

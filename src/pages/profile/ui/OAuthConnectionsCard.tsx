@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
+    useGetDeploymentCapabilitiesQuery,
     useGetOAuthIdentitiesQuery,
     useGetOAuthLinkUrlMutation,
     useGetOAuthUnlinkUrlMutation,
@@ -14,13 +15,20 @@ import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
-
-const PROVIDERS: OAuthIdentitySummary['provider'][] = ['google', 'yandex']
+import {
+    STATIC_DEPLOYMENT_CAPABILITIES,
+    type DeploymentOAuthProvider,
+} from '@/shared/config/deployment'
 
 export function OAuthConnectionsCard() {
     const { t } = useTranslation()
     const [searchParams, setSearchParams] = useSearchParams()
     const [activeProvider, setActiveProvider] = useState<string | null>(null)
+    const {
+        data: deploymentCapabilities,
+        isLoading: isCapabilitiesLoading,
+        isError: isCapabilitiesError,
+    } = useGetDeploymentCapabilitiesQuery()
     const {
         data: identities = [],
         isError,
@@ -31,6 +39,10 @@ export function OAuthConnectionsCard() {
         useGetOAuthIdentitiesQuery()
     const [startLink] = useGetOAuthLinkUrlMutation()
     const [startUnlink] = useGetOAuthUnlinkUrlMutation()
+    const providers: readonly DeploymentOAuthProvider[] = deploymentCapabilities?.auth.oauthProviders
+        ?? (isCapabilitiesError ? [] : STATIC_DEPLOYMENT_CAPABILITIES.auth.oauthProviders)
+    const isPageLoading = isLoading || isCapabilitiesLoading
+    const isPageError = isError || isCapabilitiesError
 
     const identitiesByProvider = useMemo(
         () => new Map(identities.map((identity) => [identity.provider, identity])),
@@ -82,7 +94,7 @@ export function OAuthConnectionsCard() {
     return (
         <section
             className="rounded-xl border bg-card p-6 shadow-sm"
-            aria-busy={isLoading || isFetching}
+            aria-busy={isPageLoading || isFetching}
         >
             <QueryRefreshStatus
                 isRefreshing={isFetching && !isLoading}
@@ -102,16 +114,16 @@ export function OAuthConnectionsCard() {
                 </div>
             </div>
 
-            {isLoading ? (
+            {isPageLoading ? (
                 <div className="mt-6 grid gap-3" aria-label={t('common.loading')}>
-                    {PROVIDERS.map((provider) => (
+                    {providers.map((provider) => (
                         <div
                             key={provider}
                             className="h-16 animate-pulse rounded-xl bg-muted"
                         />
                     ))}
                 </div>
-            ) : isError ? (
+            ) : isPageError ? (
                 <div
                     className="mt-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
                     role="alert"
@@ -123,7 +135,7 @@ export function OAuthConnectionsCard() {
                 </div>
             ) : (
                 <div className="mt-6 grid gap-3">
-                    {PROVIDERS.map((provider) => {
+                    {providers.map((provider) => {
                         const identity = identitiesByProvider.get(provider)
                         const isActive = activeProvider === provider
                         const isMultiple = Boolean(

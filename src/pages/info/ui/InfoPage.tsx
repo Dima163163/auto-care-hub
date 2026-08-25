@@ -21,6 +21,8 @@ import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
+import { LegalDocumentPage } from './LegalDocumentPage'
+
 type InfoContent = {
     eyebrowKey: TranslationKey
     titleKey: TranslationKey
@@ -79,41 +81,61 @@ function InfoPage({ content }: { content: InfoContent }) {
     const Icon = content.icon
 
     return (
-        <main className="min-h-screen bg-background px-5 py-10 text-foreground md:px-12">
-            <section className="mx-auto max-w-5xl">
-                <div className="grid gap-8 lg:grid-cols-[0.8fr_1fr]">
-                    <div>
-                        <p className="text-sm font-black uppercase tracking-[0.16em] text-primary">
+        <main className="relative isolate overflow-hidden bg-background text-foreground">
+            <section className="relative overflow-hidden bg-hero-overlay text-primary-foreground">
+                <div className="autocare-info-pattern absolute inset-0 opacity-15" />
+                <div className="relative mx-auto grid max-w-[var(--layout-public-max)] gap-8 px-[var(--layout-gutter)] py-14 sm:py-18 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
+                    <div className="max-w-3xl">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
                             {t(content.eyebrowKey)}
                         </p>
-                        <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight">
+                        <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl">
                             {t(content.titleKey)}
                         </h1>
-                        <p className="mt-4 text-base font-medium leading-7 text-muted-foreground">
+                        <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-primary-foreground/75 sm:text-lg">
                             {t(content.descriptionKey)}
                         </p>
-                        <Link
-                            to={ROUTES.cabinets}
-                            className="mt-7 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
-                        >
-                            {t('info.openCatalog')}
-                            <ArrowRight className="size-4" />
-                        </Link>
+                        <div className="mt-8 flex flex-wrap gap-3">
+                            <Link
+                                to={ROUTES.serviceDiscovery}
+                                className="inline-flex h-12 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-5 text-sm font-black text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
+                            >
+                                {t('info.openCatalog')}
+                                <ArrowRight className="size-4" />
+                            </Link>
+                            <Link
+                                to={ROUTES.help}
+                                className="inline-flex h-12 items-center rounded-[var(--radius-control)] border border-primary-foreground/25 px-5 text-sm font-black hover:bg-primary-foreground/10"
+                            >
+                                {t('landing.footerHelpCenter')}
+                            </Link>
+                        </div>
                     </div>
 
-                    <div className="rounded-xl border border-border bg-card p-6">
-                        <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.08] p-4 shadow-2xl shadow-black/20 backdrop-blur-sm sm:p-6">
+                        <span className="flex size-12 items-center justify-center rounded-[var(--radius-control)] bg-primary text-primary-foreground">
                             <Icon className="size-6" />
                         </span>
-                        <div className="mt-6 grid gap-4">
-                            {content.points.map((pointKey) => (
-                                <div key={pointKey} className="rounded-lg bg-background p-4 text-sm font-bold leading-6 text-foreground">
-                                    {t(pointKey)}
+                        <div className="mt-5 grid gap-3">
+                            {content.points.map((pointKey, index) => (
+                                <div key={pointKey} className="flex gap-3 rounded-[var(--radius-card)] border border-primary-foreground/10 bg-primary-foreground/[0.06] p-4 text-sm font-bold leading-6 text-primary-foreground/90">
+                                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-black text-primary">
+                                        {index + 1}
+                                    </span>
+                                    <span>{t(pointKey)}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
+            </section>
+            <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-4 px-[var(--layout-gutter)] py-10 sm:grid-cols-3 sm:py-14">
+                {['info.trust.accurate', 'info.trust.reviews', 'info.trust.support'].map((key) => (
+                    <div key={key} className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm">
+                        <ShieldCheck className="size-5 text-primary" />
+                        <p className="mt-3 text-sm font-black leading-6">{t(key as TranslationKey)}</p>
+                    </div>
+                ))}
             </section>
         </main>
     )
@@ -142,7 +164,7 @@ export function HelpPage() {
             title: t('info.help.clientTitle'),
             description: t('info.help.clientDescription'),
             action: t('info.help.clientAction'),
-            to: ROUTES.cabinets,
+            to: ROUTES.serviceDiscovery,
         },
         {
             icon: Building2,
@@ -185,7 +207,7 @@ export function HelpPage() {
     const hasResults = filteredTracks.length > 0 || filteredFaqs.length > 0
 
     return (
-        <main className="min-h-screen bg-background text-foreground">
+        <main className="relative z-0 min-h-full bg-background text-foreground">
             <section className="border-b bg-primary/5 px-5 py-12 md:px-12 md:py-16">
                 <div className="mx-auto max-w-6xl">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
@@ -327,10 +349,14 @@ export function HelpPage() {
     )
 }
 
+export function AgreementPage() {
+    return <LegalDocumentPage document="agreement" />
+}
+
 export function RulesPage() {
-    return <InfoPage content={infoContent.rules} />
+    return <LegalDocumentPage document="rules" />
 }
 
 export function PrivacyPage() {
-    return <InfoPage content={infoContent.privacy} />
+    return <LegalDocumentPage document="privacy" />
 }

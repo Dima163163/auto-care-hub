@@ -4,7 +4,7 @@ import Fastify, { type FastifyRequest } from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
-import rawBody from 'fastify-raw-body'
+import websocket from '@fastify/websocket'
 
 import { env } from './config/env.js'
 import { connectDatabase } from './database/database.js'
@@ -19,9 +19,9 @@ import { healthRoutes } from './routes/health.route.js'
 import { adminRoutes } from './modules/admin/admin.routes.js'
 import { oauthRoutes } from './modules/oauth/oauth.routes.js'
 import { usersRoutes } from './modules/users/users.routes.js'
-import { paymentsRoutes } from './modules/payments/payments.routes.js'
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js'
 import { autoCareRoutes } from './modules/autocare/autocare.routes.js'
+import { platformReviewsRoutes } from './modules/platform-reviews/platform-reviews.routes.js'
 import { bootstrapSuperAdmin } from './modules/bootstrap/bootstrap-super-admin.js'
 import { registerErrorHandler } from './shared/errors/error-handler.js'
 import { registerNotFoundHandler } from './shared/errors/not-found-handler.js'
@@ -37,6 +37,7 @@ import { openApiRoutes } from './routes/openapi.route.js'
 import { sanitizeIncomingRequestId } from './shared/http/request-id.js'
 import { MAX_FASTIFY_JSON_BODY_BYTES } from './shared/security/request-limits.js'
 import { getBoundedApiLatencyMs } from './shared/observability/api-latency.js'
+import { deploymentCapabilitiesRoutes } from './routes/deployment-capabilities.route.js'
 import {
     isSecurityIpBlocked,
     shouldRecordSecurityMitigationSignal,
@@ -46,6 +47,8 @@ import { ERROR_CODES } from './shared/errors/error-codes.js'
 import { getLocalizedErrorMessage } from './shared/i18n/error-message.js'
 import { getRequestLocale } from './shared/i18n/request-locale.js'
 import { recordSecurityActivitySafely } from './modules/auth/security-event-stream.js'
+import { assertTrustedRequestOrigin } from './shared/security/csrf-origin.js'
+import { assertValidCsrfToken } from './shared/security/csrf-token.js'
 import {
     SecurityEventAuthOutcome,
     SecurityEventRateLimitResult,
@@ -69,7 +72,17 @@ export async function buildApp() {
                 paths: [
                     'req.headers.authorization',
                     'req.headers.cookie',
+                    'req.headers.sec-websocket-protocol',
                     'res.headers.set-cookie',
+                    'email',
+                    'phone',
+                    'vin',
+                    '*.email',
+                    '*.phone',
+                    '*.vin',
+                    'req.body.email',
+                    'req.body.phone',
+                    'req.body.vin',
                 ],
             },
         },
@@ -145,14 +158,6 @@ export async function buildApp() {
         requestStartedAt.delete(request)
     })
 
-    await app.register(rawBody, {
-        field: 'rawBody',
-        global: false,
-        encoding: false,
-        runFirst: true,
-        routes: ['/webhooks/stripe']
-    })
-
     const mailer = createMailer(env.mail, app.log)
     app.decorate('mailer', mailer)
 
@@ -189,6 +194,27 @@ export async function buildApp() {
     }
 
     await app.register(cookie)
+    app.addHook('preHandler', async (request) => {
+        if (env.nodeEnv !== 'production') return
+        if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return
+        if (request.url.startsWith('/webhooks/') || request.url.startsWith('/health')) return
+
+        // Native clients authenticate with a bearer token and do not receive
+        // browser cookies. Browser sessions do, so protect every mutation
+        // carrying the refresh/CSRF cookie instead of maintaining a route list
+        // that can silently drift as new AutoCare endpoints are added.
+        const hasBrowserSession = Boolean(
+            request.cookies[env.auth.refreshTokenCookieName]
+            || request.cookies[env.auth.csrfTokenCookieName],
+        )
+        if (!hasBrowserSession) return
+
+        assertTrustedRequestOrigin(request, {
+            allowedOrigins: env.corsOrigins,
+            isProduction: true,
+        })
+        assertValidCsrfToken(request)
+    })
     await app.register(
         helmet,
         getSecurityHeadersOptions({
@@ -197,9 +223,15 @@ export async function buildApp() {
     )
 
     await app.register(cors, getCorsOptions(env.corsOrigins))
+    await app.register(websocket, {
+        options: {
+            maxPayload: 64 * 1024,
+        },
+    })
 
     await app.register(healthRoutes)
     await app.register(metricsRoutes)
+    await app.register(deploymentCapabilitiesRoutes)
     await app.register(openApiRoutes)
     await app.register(authRoutes, {
         mailer,
@@ -212,7 +244,7 @@ export async function buildApp() {
     await app.register(usersRoutes)
     await app.register(notificationsRoutes)
     await app.register(autoCareRoutes)
-    await app.register(paymentsRoutes)
+    await app.register(platformReviewsRoutes)
     await app.register(adminRoutes, {
         mailer,
     })

@@ -110,7 +110,7 @@ export function OnboardingPage() {
 
     if (isLoading) {
         return (
-            <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
+            <main className="relative z-0 min-h-full bg-background px-4 py-8 lg:px-8">
                 <section className="mx-auto max-w-6xl">
                     <StateCard variant="loading" description={t('common.loadingPage')} />
                 </section>
@@ -150,7 +150,7 @@ export function OnboardingPage() {
     }
 
     return (
-        <main className="min-h-screen bg-background px-4 py-8 lg:px-8">
+            <main className="relative z-0 min-h-full bg-background px-4 py-8 lg:px-8">
             <section className="mx-auto grid max-w-6xl gap-8 lg:px-4">
                 <div className="grid gap-4">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">

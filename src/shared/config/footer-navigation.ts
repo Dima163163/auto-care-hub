@@ -1,4 +1,5 @@
 import { ROUTES } from '@/shared/constants/routes'
+import { isProviderPricingVisible } from '@/shared/config/features'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
 export interface FooterColumn {
@@ -14,9 +15,9 @@ export const footerColumns: FooterColumn[] = [
         titleKey: 'autocare.footerClients',
         items: [
             { labelKey: 'navigation.services', to: ROUTES.serviceDiscovery },
-            { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings },
+            { labelKey: 'autocare.footerReviews', to: ROUTES.platformReviews },
             { labelKey: 'navigation.favorites', to: ROUTES.favorites },
-            { labelKey: 'autocare.footerReviews', to: ROUTES.profileReviews },
+            { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings },
             { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
         ],
     },
@@ -24,9 +25,9 @@ export const footerColumns: FooterColumn[] = [
         titleKey: 'landing.footerOwners',
         items: [
             { labelKey: 'landing.footerOwners', to: ROUTES.owners },
-            { labelKey: 'autocare.footerAdvertising', to: ROUTES.owners },
-            { labelKey: 'landing.footerBlog', to: ROUTES.blog },
-            { labelKey: 'landing.footerSupport', to: ROUTES.help },
+            ...(isProviderPricingVisible ? [{ labelKey: 'navigation.pricing' as const, to: ROUTES.pricing }] : []),
+            { labelKey: 'landing.footerPartners', to: ROUTES.partners },
+            { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
         ],
     },
     {
@@ -34,14 +35,13 @@ export const footerColumns: FooterColumn[] = [
         items: [
             { labelKey: 'navigation.about', to: ROUTES.about },
             { labelKey: 'landing.footerBlog', to: ROUTES.blog },
-            { labelKey: 'autocare.footerCareer', to: ROUTES.contacts },
             { labelKey: 'landing.footerContacts', to: ROUTES.contacts },
         ],
     },
     {
         titleKey: 'autocare.footerLegal',
         items: [
-            { labelKey: 'autocare.footerAgreement', to: ROUTES.rules },
+            { labelKey: 'autocare.footerAgreement', to: ROUTES.agreement },
             { labelKey: 'landing.footerPrivacy', to: ROUTES.privacy },
             { labelKey: 'autocare.footerTerms', to: ROUTES.rules },
         ],

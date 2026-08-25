@@ -12,6 +12,7 @@ type CurrentUserBadgeProps = {
     user?: User
     isError?: boolean
     isLoading?: boolean
+    variant?: 'surface' | 'dark'
     compactAtTablet?: boolean
     compactMobile?: boolean
 }
@@ -20,14 +21,17 @@ export function CurrentUserBadge({
     user,
     isError = false,
     isLoading = false,
+    variant = 'surface',
     compactAtTablet = false,
     compactMobile = false,
 }: CurrentUserBadgeProps) {
     const { t } = useTranslation()
+    const isDark = variant === 'dark'
+    const statusClass = isDark ? 'border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground' : 'border-border bg-card text-muted-foreground'
 
     if (isLoading) {
         return (
-            <div className="rounded-full border bg-card px-3 py-2 text-sm text-muted-foreground">
+            <div className={`rounded-full border px-3 py-2 text-sm ${statusClass}`}>
                 {t('auth.loadingUser')}
             </div>
         )
@@ -35,15 +39,15 @@ export function CurrentUserBadge({
 
     if (isError || !user) {
         return (
-            <div className="rounded-full border bg-card px-3 py-2 text-sm text-muted-foreground">
+            <div className={`rounded-full border px-3 py-2 text-sm ${statusClass}`}>
                 {t('auth.guestMode')}
             </div>
         )
     }
 
     return (
-        <div className={`flex items-center gap-2 rounded-full border bg-card p-1.5 shadow-sm ${compactMobile ? 'rounded-md border-0 bg-transparent p-0 shadow-none' : ''}`}>
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full border bg-background text-sm font-medium">
+        <div className={`flex items-center gap-2 rounded-full border p-1.5 shadow-sm ${isDark ? 'border-primary-foreground/25 bg-primary-foreground/10' : 'border-border bg-card'} ${compactMobile ? 'rounded-md border-0 bg-transparent p-0 shadow-none' : ''}`}>
+            <div className={`flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-medium ${isDark ? 'border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground' : 'border-border bg-background text-foreground'}`}>
                 {user.name.slice(0, 1)}
             </div>
 

@@ -103,37 +103,6 @@ describe('buildOperatorActionItems', () => {
         expect(items.every((item) => item.status !== 'open' || item.id !== 'security:security-0')).toBe(true)
     })
 
-    it('adds bounded payment provider outcomes without exposing provider data', () => {
-        const items = buildOperatorActionItems({
-            now: new Date('2026-08-11T12:00:00.000Z'),
-            incidents: [],
-            paymentAttention: {
-                failedPaymentCount: 2,
-                openDisputeCount: 1,
-                fundsWithdrawnDisputeCount: 1,
-            },
-        })
-
-        expect(items).toEqual(expect.arrayContaining([
-            expect.objectContaining({
-                id: 'payment:failed',
-                kind: 'payment',
-                priority: 'high',
-                reasonCode: 'payment_failed',
-                status: 'open',
-                titleKey: 'adminDashboard.operatorCenter.paymentFailures',
-            }),
-            expect.objectContaining({
-                id: 'payment:disputes',
-                kind: 'payment',
-                priority: 'critical',
-                reasonCode: 'payment_dispute_funds_withdrawn',
-                titleKey: 'adminDashboard.operatorCenter.paymentDisputes',
-            }),
-        ]))
-        expect(JSON.stringify(items)).not.toContain('stripe')
-    })
-
     it('computes a bounded live queue snapshot without pretending it is durable MTTA/MTTR', () => {
         const items = buildOperatorActionItems({
             now: new Date('2026-08-11T12:00:00.000Z'),

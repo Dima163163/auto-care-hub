@@ -1,5 +1,6 @@
 import {
     Bell,
+    CarFront,
     CalendarDays,
     Heart,
     Home,
@@ -11,6 +12,7 @@ import { NavLink } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
+import { isChatNavigationVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type ProfileNavigationProps = {
@@ -27,6 +29,8 @@ export function ProfileNavigation({ desktopHidden = true }: ProfileNavigationPro
         ...(user?.role === 'client'
             ? [
                   { to: ROUTES.profileBookings, label: t('navigation.myBookings'), icon: CalendarDays },
+                  ...(isChatNavigationVisible ? [{ to: ROUTES.chats, label: t('navigation.chats'), icon: MessageSquare }] : []),
+                  { to: ROUTES.profileVehicles, label: t('navigation.myVehicles'), icon: CarFront },
                   { to: ROUTES.profileReviews, label: t('navigation.myReviews'), icon: MessageSquare },
                   { to: ROUTES.favorites, label: t('navigation.favorites'), icon: Heart },
                   { to: ROUTES.notifications, label: t('navigation.notifications'), icon: Bell },
@@ -48,7 +52,7 @@ export function ProfileNavigation({ desktopHidden = true }: ProfileNavigationPro
                         key={to}
                         to={to}
                         {...(end === undefined ? {} : { end })}
-                        className={({ isActive }) => `flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors lg:w-full ${
+                        className={({ isActive }) => `flex h-10 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors lg:w-full ${
                             isActive
                             ? 'bg-primary/10 text-foreground'
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'

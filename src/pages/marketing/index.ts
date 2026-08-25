@@ -1,1 +1,2 @@
-export { AboutPage, FeaturesPage, OwnersPage } from './ui/MarketingInfoPage'
+export { FeaturesPage, OwnersPage } from './ui/MarketingInfoPage'
+export { AboutPage } from './ui/AboutPage'

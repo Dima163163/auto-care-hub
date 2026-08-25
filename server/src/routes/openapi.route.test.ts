@@ -8,26 +8,13 @@ describe('OpenAPI document', () => {
 
         expect(document.openapi).toBe('3.1.0')
         expect(document.paths['/admin/users']).toBeDefined()
+        expect(document.paths['/cabinets/all'].get.operationId).toBe('listAllPublicCabinets')
         expect(document.paths['/admin/account-deletion-requests'].get.operationId).toBe('listAdminAccountDeletionRequests')
         expect(document.paths['/admin/account-deletion-requests/{id}/status'].patch.operationId).toBe('updateAdminAccountDeletionRequestStatus')
         expect(document.paths['/admin/system-incidents']).toBeDefined()
-        expect(document.paths['/admin/payments/{id}/refunds'].get.operationId).toBe('listAdminPaymentRefunds')
-        expect(document.paths['/admin/payments/{id}/refund'].post.operationId).toBe('refundAdminPayment')
-        expect(document.paths['/admin/payments/{id}/refund'].post.requestBody.content['application/json'].schema.properties.reason.enum).toEqual([
-            'duplicate',
-            'fraudulent',
-            'requested_by_customer',
-        ])
-        expect(document.paths['/admin/payments/{id}/disputes'].get.operationId).toBe('listAdminPaymentDisputes')
         expect(document.paths['/admin/security-events'].get.operationId).toBe('listAdminSecurityEvents')
         expect(document.paths['/admin/security-center/events/export'].get.operationId).toBe('exportAdminSecurityCenterEvents')
-        expect(document.paths['/bookings/{id}/payment/status'].get.responses['200'].content['application/json'].schema).toEqual({
-            $ref: '#/components/schemas/ClientBookingPaymentStatus',
-        })
-        expect(document.components.schemas.ClientBookingPaymentStatus.properties.invoice.oneOf).toBeDefined()
         expect(document.paths['/owner/bookings'].get.responses['200'].content['application/json'].schema.oneOf).toBeDefined()
-        expect(document.components.schemas.OwnerBooking.properties.paymentLedger.oneOf).toBeDefined()
-        expect(document.components.schemas.OwnerPaymentLedger.properties).not.toHaveProperty('stripePaymentIntentId')
         expect(document.paths['/admin/outbox/health'].get.operationId).toBe('getAdminOutboxHealth')
         expect(document.paths['/admin/outbox/health'].get.responses['200'].content['application/json'].schema).toEqual({
             $ref: '#/components/schemas/OutboxHealth',
@@ -103,12 +90,6 @@ describe('OpenAPI document', () => {
             'catalog_search_to_book',
             'catalog_no_results',
         ]))
-        expect(document.paths['/admin/payments/attention'].get.operationId).toBe('getAdminPaymentAttention')
-        expect(document.components.schemas.AdminPaymentAttention.required).toEqual([
-            'failedPaymentCount',
-            'openDisputeCount',
-            'fundsWithdrawnDisputeCount',
-        ])
         expect(document.paths['/admin/audit-logs/export'].get.operationId).toBe('exportAdminAuditLogs')
         expect(document.paths['/users/me/deletion-request'].post.operationId).toBe('requestAccountDeletion')
         expect(document.paths['/users/me/export'].get.responses['200'].content['application/json'].schema).toEqual({
@@ -146,19 +127,6 @@ describe('OpenAPI document', () => {
             { $ref: '#/components/parameters/Cursor' },
             { $ref: '#/components/parameters/Limit' },
             { $ref: '#/components/parameters/AdminSearch' },
-        ])
-        expect(document.paths['/admin/payments'].get.parameters).toContainEqual({
-            $ref: '#/components/parameters/AdminPaymentStatus',
-        })
-        expect(document.components.schemas.AdminPayment.properties.status.enum).toEqual([
-            'pending', 'paid', 'failed', 'partially_refunded', 'refunded',
-        ])
-        expect(document.components.schemas.AdminPaymentRefund.properties.amountMinor).toMatchObject({
-            type: 'integer',
-            minimum: 1,
-        })
-        expect(document.components.schemas.AdminPaymentDispute.properties.status.enum).toEqual([
-            'open', 'funds_withdrawn', 'funds_reinstated', 'closed',
         ])
         expect(document.components.schemas.AdminDeletionRequestStatusUpdate.required).toEqual(['status'])
         expect(document.components.schemas.AdminDeletionRequest.allOf[1].properties.user).toBeDefined()

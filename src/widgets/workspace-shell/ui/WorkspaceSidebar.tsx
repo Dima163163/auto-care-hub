@@ -1,113 +1,13 @@
-import type { ComponentType } from 'react'
 import { useState } from 'react'
 import {
-    Bell,
-    BookOpen,
-    Building2,
     ChevronLeft,
     ChevronRight,
-    ClipboardList,
-    FileText,
-    HelpCircle,
-    Heart,
-    LayoutDashboard,
-    MessageSquare,
-    Settings,
-    ShieldCheck,
-    ShieldAlert,
-    Users,
 } from 'lucide-react'
 import { NavLink } from 'react-router'
 
-import { ROUTES } from '@/shared/constants/routes'
-import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import type { WorkspaceRole } from './WorkspaceHeader'
-
-type SidebarItem = {
-    labelKey: TranslationKey
-    to: string
-    icon: ComponentType<{ className?: string }>
-    end?: boolean
-}
-
-type SidebarGroup = {
-    labelKey: TranslationKey
-    items: SidebarItem[]
-}
-
-const groupsByRole: Record<WorkspaceRole, SidebarGroup[]> = {
-    client: [
-        {
-            labelKey: 'workspace.overview',
-            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: LayoutDashboard, end: true }],
-        },
-        {
-            labelKey: 'workspace.manage',
-            items: [
-                { labelKey: 'navigation.services', to: ROUTES.serviceDiscovery, icon: Building2 },
-                { labelKey: 'navigation.myBookings', to: ROUTES.profileBookings, icon: BookOpen },
-                { labelKey: 'navigation.myReviews', to: ROUTES.profileReviews, icon: MessageSquare },
-                { labelKey: 'navigation.favorites', to: ROUTES.favorites, icon: Heart },
-                { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
-            ],
-        },
-        {
-            labelKey: 'workspace.support',
-            items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }],
-        },
-    ],
-    owner: [
-        {
-            labelKey: 'workspace.overview',
-            items: [{ labelKey: 'navigation.ownerDashboard', to: ROUTES.ownerDashboard, icon: LayoutDashboard, end: true }],
-        },
-        {
-            labelKey: 'workspace.manage',
-            items: [
-                { labelKey: 'navigation.ownerCabinets', to: ROUTES.ownerCabinets, icon: Building2 },
-                { labelKey: 'navigation.ownerBookings', to: ROUTES.ownerBookings, icon: BookOpen },
-                { labelKey: 'navigation.ownerClients', to: ROUTES.ownerClients, icon: Users },
-                { labelKey: 'navigation.ownerServices', to: ROUTES.ownerServices, icon: ClipboardList },
-            ],
-        },
-        {
-            labelKey: 'workspace.configure',
-            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }],
-        },
-        {
-            labelKey: 'workspace.support',
-            items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }],
-        },
-    ],
-    admin: [
-        {
-            labelKey: 'workspace.monitor',
-            items: [
-                { labelKey: 'navigation.adminDashboard', to: ROUTES.adminDashboard, icon: LayoutDashboard, end: true },
-                { labelKey: 'navigation.adminAuditLogs', to: ROUTES.adminAuditLogs, icon: FileText },
-                { labelKey: 'navigation.adminSecurityCenter', to: ROUTES.adminSecurityCenter, icon: ShieldAlert },
-            ],
-        },
-        {
-            labelKey: 'workspace.manage',
-            items: [
-                { labelKey: 'navigation.adminUsers', to: ROUTES.adminUsers, icon: Users },
-                { labelKey: 'navigation.adminOwners', to: ROUTES.adminOwners, icon: ShieldCheck },
-                { labelKey: 'navigation.adminCabinets', to: ROUTES.adminCabinets, icon: Building2 },
-                { labelKey: 'navigation.adminReviews', to: ROUTES.adminReviews, icon: MessageSquare },
-            ],
-        },
-        {
-            labelKey: 'workspace.configure',
-            items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }],
-        },
-        {
-            labelKey: 'workspace.support',
-            items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }],
-        },
-    ],
-}
+import { getWorkspaceNavigationGroups } from './workspace-navigation'
 
 type WorkspaceSidebarProps = {
     role: WorkspaceRole
@@ -120,10 +20,10 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
     )
 
     return (
-        <aside className={`${isCollapsed ? 'w-[72px]' : 'w-[232px]'} hidden shrink-0 border-r bg-background transition-[width] duration-200 md:block`}>
-            <div className="sticky top-0 flex h-[calc(100vh-72px)] flex-col px-3 py-5">
-                <nav aria-label={t('navigation.profileWorkspace')} className="flex-1 space-y-6">
-                    {groupsByRole[role].map((group) => (
+        <aside className={`${isCollapsed ? 'w-[72px]' : 'w-[232px]'} hidden h-full min-h-0 shrink-0 overflow-hidden border-r bg-background transition-[width] duration-200 md:block`}>
+            <div className="flex h-full min-h-0 flex-col px-3 py-5">
+                <nav aria-label={t('navigation.profileWorkspace')} className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain pb-4">
+                    {getWorkspaceNavigationGroups(role).map((group) => (
                         <div key={group.labelKey}>
                             {!isCollapsed && (
                                 <p className="mb-2 px-3 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">
@@ -137,7 +37,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
                                         to={to}
                                         {...(end === undefined ? {} : { end })}
                                         title={isCollapsed ? t(labelKey) : undefined}
-                                        className={({ isActive }) => `flex h-10 items-center gap-3 rounded-md px-3 text-sm font-semibold transition-colors ${
+                                        className={({ isActive }) => `flex h-10 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-semibold transition-colors ${
                                             isActive
                                                 ? 'bg-primary/10 text-primary'
                                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -155,7 +55,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
                 <button
                     type="button"
                     onClick={() => setIsCollapsed((value) => !value)}
-                    className="flex h-10 items-center gap-3 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="flex h-10 cursor-pointer items-center gap-3 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     aria-label={isCollapsed ? t('workspace.expandSidebar') : t('workspace.collapseSidebar')}
                     title={isCollapsed ? t('workspace.expandSidebar') : t('workspace.collapseSidebar')}
                 >

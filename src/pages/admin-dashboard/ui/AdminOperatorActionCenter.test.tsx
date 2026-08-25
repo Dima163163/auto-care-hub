@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
     getSummary: vi.fn(),
     getIncidents: vi.fn(),
     getOutbox: vi.fn(),
-    getPaymentAttention: vi.fn(),
 }))
 
 vi.mock('@/features/auth', () => ({
@@ -81,16 +80,6 @@ vi.mock('@/features/admin/api/adminApi', () => ({
             refetch: vi.fn(),
         }
     },
-    useGetAdminPaymentAttentionQuery: (...args: unknown[]) => {
-        mocks.getPaymentAttention(...args)
-        return {
-            data: { failedPaymentCount: 0, openDisputeCount: 0, fundsWithdrawnDisputeCount: 0 },
-            isLoading: false,
-            isFetching: false,
-            isError: false,
-            refetch: vi.fn(),
-        }
-    },
 }))
 
 function renderCenter() {
@@ -109,7 +98,6 @@ describe('AdminOperatorActionCenter', () => {
         mocks.getSummary.mockClear()
         mocks.getIncidents.mockClear()
         mocks.getOutbox.mockClear()
-        mocks.getPaymentAttention.mockClear()
     })
 
     it('shows bounded security and incident signals for a super admin', () => {
@@ -142,10 +130,6 @@ describe('AdminOperatorActionCenter', () => {
             expect.objectContaining({ skip: true }),
         )
         expect(mocks.getOutbox).toHaveBeenCalledWith(
-            undefined,
-            expect.objectContaining({ skip: true }),
-        )
-        expect(mocks.getPaymentAttention).toHaveBeenCalledWith(
             undefined,
             expect.objectContaining({ skip: true }),
         )

@@ -8,7 +8,7 @@ const testBaseUrl = `http://127.0.0.1:${testPort}`
 export default defineConfig({
     testDir: './e2e',
     testIgnore: [
-        '**/real-mode.smoke.spec.ts',
+        '**/autocare-real-mode.smoke.spec.ts',
         '**/pwa-preview.spec.ts',
         '**/visual-regression.spec.ts',
     ],
@@ -31,7 +31,7 @@ export default defineConfig({
             : undefined,
     },
     webServer: {
-        command: `VITE_API_MODE=mock npm run dev -- --host 127.0.0.1 --port ${testPort}`,
+        command: `NEXT_PUBLIC_API_MODE=mock npm run dev -- --hostname 127.0.0.1 --port ${testPort}`,
         // MSW must be reachable before any browser context is created. Waiting
         // only for the HTML endpoint lets parallel projects race service-worker
         // registration and silently execute against the real API proxy.

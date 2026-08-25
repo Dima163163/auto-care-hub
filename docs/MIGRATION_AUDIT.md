@@ -15,7 +15,8 @@ foundation and replace the legacy domain in reviewed vertical slices.
 
 The supplied `PROJECT_PLAN.md` and `ARCHITECTURE.md` described a greenfield
 Next.js/FastAPI/SQLAlchemy/Alembic/PostGIS monorepo. The copied repository is
-instead a React/Vite and Fastify/TypeORM project with 67 TypeORM migration files,
+instead a React/Vite and Fastify/TypeORM project. The historical audit snapshot
+contained 67 TypeORM migration files; the current repository contains 93,
 hundreds of frontend/backend TypeScript files, existing production checks and
 deployed AutoCare Hub assumptions. The greenfield documents were useful for the
 AutoCare domain model, but not as executable instructions for this repository.
@@ -25,8 +26,9 @@ AutoCare domain model, but not as executable instructions for this repository.
 - The inherited AutoCare Hub `.git` directory is no longer active.
 - It is preserved for recovery at
   `/Users/a1/Desktop/my-projects/AutoCareHub/.legacy-git/legacy-booking.git-2026-08-12`.
-- `/Users/a1/Desktop/my-projects/AutoCareHub/autocare-hub` is now a new empty Git
-  repository on `main` with no commits and no remotes.
+- `/Users/a1/Desktop/my-projects/AutoCareHub/autocare-hub` is now maintained on
+  the `dev` integration branch; `main` remains production-only and the remote
+  is `git@github.com:Dima163163/auto-care-hub.git`.
 - A new `origin` must not be added until the product owner supplies and approves
   the new AutoCare Hub repository URL.
 - Real `.env.*` files are ignored; `.env.example` templates remain eligible for
@@ -50,7 +52,7 @@ AutoCare domain model, but not as executable instructions for this repository.
 | Operations | health/readiness, metrics, incidents, backups/runbooks | Reuse and rename/revalidate |
 | Tests | Vitest, Testing Library, Playwright, CI checks | Reuse and add AutoCare vertical coverage |
 | API contract | OpenAPI foundation and runtime schemas | Version and expand for mobile |
-| Payments | booking payments, commission, Stripe Connect | Legacy conflict; quarantine/remove |
+| Legacy payments | booking payments and commission | Removed from runtime; preserve migration history only |
 | Subscription | old migration existed, then was dropped | Redesign provider-scoped subscriptions |
 
 ## Reusable modules/patterns
@@ -68,8 +70,6 @@ currently legacy cabinet-booking-specific:
 - cursor pagination and stable error patterns;
 - upload decoding/re-encoding/checksum/orphan-cleanup techniques;
 - booking idempotency, schedule and concurrency techniques;
-- Stripe webhook/reconciliation techniques that can be generalized for later
-  provider subscription billing without retaining repair commissions.
 
 ## Legacy domain to replace
 
@@ -83,8 +83,7 @@ currently legacy cabinet-booking-specific:
 | cabinet booking snapshot | automotive offer/quote snapshot | Preserve inclusions, vehicle and policy |
 | favorite cabinet | favorite provider/location/offering | Product decision per UI |
 | cabinet gallery storage | provider/location public media | Separate from private inquiry media |
-| booking payment/commission | no initial repair payment context | Remove after new booking path |
-| Stripe Connect payout | provider subscription billing later | Different payer/payee/state model |
+| booking payment/commission | no repair-payment context | Removed from runtime |
 
 ## Why not rewrite the backend
 
@@ -182,6 +181,8 @@ that changes the corresponding runtime behavior.
 
 ## Immediate next action
 
-Review the documentation diff, answer the decision register, then prepare the
-design/mock phase. No legacy deletion or backend implementation is required for
-the documentation commit.
+Apply migrations through `178595` in the disposable Docker PostgreSQL instance,
+run `npm run check:autocare-integrity`, repair any existing mismatches, and
+validate the `NOT VALID` aggregate constraints. Then add the AutoCare-specific
+database integration cases to CI before enabling a pilot. No legacy deletion or
+Python backend rewrite is authorized in this phase.

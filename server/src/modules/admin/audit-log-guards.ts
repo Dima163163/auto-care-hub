@@ -21,6 +21,17 @@ export function normalizeAuditAction(action: string) {
 }
 
 export function assertAuditMetadataWithinBounds(metadata: Record<string, unknown>) {
+    // Bound the received payload before redaction as well. Redaction protects
+    // privacy but must not turn a multi-megabyte PII field into a small value
+    // that bypasses the audit-input DoS limit.
+    const receivedSerialized = JSON.stringify(metadata)
+    if (
+        receivedSerialized === undefined ||
+        !isWithinUtf8ByteLimit(receivedSerialized, MAX_AUDIT_METADATA_BYTES)
+    ) {
+        throw new Error('Audit metadata is too large.')
+    }
+
     const redactedMetadata = redactAuditMetadata(metadata)
     const serialized = JSON.stringify(redactedMetadata)
 

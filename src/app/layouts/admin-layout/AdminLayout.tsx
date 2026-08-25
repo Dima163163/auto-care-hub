@@ -1,19 +1,26 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router'
 
+import { useGetMeQuery } from '@/features/auth'
 import { BottomNav } from '@/widgets/bottom-nav'
-import { WorkspaceFooter, WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 export function AdminLayout() {
-    return (
-        <div className="min-h-screen bg-background">
-            <WorkspaceHeader role="admin" />
-            <div className="mobile-admin-bottom-safe flex min-h-[calc(100vh-72px)] md:pb-0">
-                <WorkspaceSidebar role="admin" />
-                <div className="min-w-0 flex-1">
-                    <WorkspaceMobileHeader role="admin" />
+    const { t } = useTranslation()
+    const { data: user } = useGetMeQuery()
+    const role = user?.role === 'super_admin' ? 'super_admin' : 'admin'
 
-                    <Outlet />
-                    <WorkspaceFooter />
+    return (
+        <div className="autocare-app-surface flex h-dvh min-h-0 flex-col overflow-hidden">
+            <WorkspaceHeader role={role} />
+            <div className="mobile-admin-bottom-safe flex min-h-0 flex-1 overflow-hidden md:pb-0">
+                <WorkspaceSidebar role={role} />
+                <div data-workspace-scroll-container className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+                    <WorkspaceMobileHeader role={role} />
+
+                    <div className="autocare-page-content"><Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="workspace" />}><Outlet /></Suspense></div>
                 </div>
             </div>
             <BottomNav />

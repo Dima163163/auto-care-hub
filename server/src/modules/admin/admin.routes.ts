@@ -8,10 +8,12 @@ import {
 } from '../../shared/validation/validate.js'
 import {
     adminCabinetParamsSchema,
+    adminAutoCareProviderParamsSchema,
+    adminAutoCareMarketParamsSchema,
+    adminAutoCareServiceDefinitionParamsSchema,
+    updateSuperAdminAutoCareMarketSchema,
     adminAuditLogsQuerySchema,
     auditLogsExportQuerySchema,
-    adminPaymentParamsSchema,
-    adminPaymentsQuerySchema,
     adminUserParamsSchema,
     adminUsersQuerySchema,
     adminDeletionRequestsQuerySchema,
@@ -31,22 +33,46 @@ import {
     extendSecurityMitigationSchema,
     securityMitigationParamsSchema,
     updateCabinetStatusSchema,
+    updateAdminAutoCareProviderStatusSchema,
     updateSystemIncidentStatusSchema,
     updateUserRoleSchema,
     updateUserStatusSchema,
     updateAdminDeletionRequestStatusSchema,
-    refundPaymentSchema,
+    adminProviderChangeRequestsQuerySchema,
+    adminProviderChangeRequestParamsSchema,
+    decideAdminProviderChangeRequestSchema,
+    adminCatalogGapRequestsQuerySchema,
+    adminCatalogGapRequestParamsSchema,
+    decideAdminCatalogGapRequestSchema,
+    adminChatReportsQuerySchema,
+    adminChatReportParamsSchema,
+    decideAdminChatReportSchema,
+    adminAutoCareAppealsQuerySchema,
+    adminAutoCareAppealParamsSchema,
+    decideAdminAutoCareAppealSchema,
+    adminAutoCareModerationEvidenceQuerySchema,
+    adminAutoCareModerationEvidenceParamsSchema,
+    decideAdminAutoCareModerationEvidenceSchema,
+    createSuperAdminAutoCareMarketSchema,
+    createSuperAdminAutoCareMarketZoneSchema,
+    createSuperAdminMarketCountrySchema,
+    superAdminCountryParamsSchema,
+    superAdminMarketZoneParamsSchema,
+    updateSuperAdminAutoCareMarketHierarchySchema,
+    updateSuperAdminAutoCareMarketZoneSchema,
+    updateSuperAdminMarketCountrySchema,
 } from './admin.schemas.js'
+import { updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
 import {
     createAdmin,
     getAdminCabinets,
     getAdminUsers,
-    getAdminPayments,
-    getAdminPaymentAttention,
-    getAdminPaymentRefunds,
-    getAdminPaymentDisputes,
     updateAdminCabinetStatus,
+    getAdminAutoCareProviders,
+    getSuperAdminPlatformOverview,
+    updateAdminAutoCareProviderStatus,
+    updateSuperAdminAutoCareMarket,
     updateAdminUserRole,
     updateAdminUserStatus,
 } from './admin.service.js'
@@ -89,10 +115,28 @@ import {
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import type { SystemIncidentEntity } from '../../entities/system-incident/system-incident.entity.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
-import type { AdminCabinet, AdminPayment, AdminPaymentDispute, AdminPaymentRefund, AdminUser, CreateAdminResponse } from './admin.types.js'
+import type { AdminCabinet, AdminUser, CreateAdminResponse } from './admin.types.js'
+import type { AdminAutoCareProvider, SuperAdminPlatformOverview } from './admin.service.js'
+import { decideAdminProviderChangeRequest, listAdminProviderChangeRequests } from '../autocare/provider-change-request.service.js'
+import { AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
+import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
+import { decideAdminCatalogGapRequest, listAdminCatalogGapRequests, updateAdminAutoCareServiceDefinition } from '../autocare/catalog-gap.service.js'
+import { decideAdminAutoCareChatReport, listAdminAutoCareChatReports } from '../autocare/autocare-chat.service.js'
+import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
 import { env } from '../../config/env.js'
 import { getRequestLocale } from '../../shared/i18n/request-locale.js'
-import { refundBookingPayment } from '../payments/payment-refund.service.js'
+import { getAutoCareQualityMonitoring, type AutoCareQualityMonitoringResponse } from '../autocare/autocare-quality-monitoring.service.js'
+import { decideAdminAutoCareAppeal, listAdminAutoCareAppeals } from '../autocare/appeal.service.js'
+import { decideAdminAutoCareModerationEvidence, listAdminAutoCareModerationEvidence } from '../autocare/moderation-evidence.service.js'
+import {
+    createSuperAdminAutoCareMarket,
+    createSuperAdminAutoCareMarketZone,
+    createSuperAdminMarketCountry,
+    getSuperAdminMarketHierarchy,
+    updateSuperAdminAutoCareMarketHierarchy,
+    updateSuperAdminAutoCareMarketZone,
+    updateSuperAdminMarketCountry,
+} from './super-admin-market-hierarchy.service.js'
 import {
     getAdminDeletionRequests,
     updateAdminDeletionRequestStatus,
@@ -105,19 +149,6 @@ type AdminDeletionRequestsListResponse = AdminDeletionRequest[] | CursorResponse
 type AdminUserResponse = AdminUser
 type AdminCabinetsListResponse = AdminCabinet[]
 type AdminCabinetResponse = AdminCabinet
-type AdminPaymentResponse = Omit<AdminPayment, 'createdAt'> & { createdAt: string }
-type AdminPaymentsListResponse = AdminPaymentResponse[] | CursorResponse<AdminPaymentResponse>
-type AdminPaymentRefundResponse = Omit<AdminPaymentRefund, 'createdAt' | 'updatedAt'> & {
-    createdAt: string
-    updatedAt: string
-}
-type AdminPaymentDisputeResponse = Omit<AdminPaymentDispute, 'createdAt' | 'updatedAt' | 'lastEventCreatedAt'> & {
-    lastEventCreatedAt: string
-    createdAt: string
-    updatedAt: string
-}
-type AdminPaymentAttentionResponse = Awaited<ReturnType<typeof getAdminPaymentAttention>>
-type RefundPaymentResponse = { paymentId: string; status: string; refundedAmountMinor: number }
 
 type AuditLogResponse = {
     id: string
@@ -206,6 +237,215 @@ function mapCursorResponse<T, M>(
 export async function adminRoutes(
     app: FastifyInstance
 ) {
+    app.get<{ Reply: AdminAutoCareProvider[] }>('/admin/autocare-providers', async (request) => {
+        return getAdminAutoCareProviders(await requireAuth(request))
+    })
+
+    app.get<{ Reply: AutoCareQualityMonitoringResponse }>('/admin/autocare-quality-monitoring', async (request) => {
+        return getAutoCareQualityMonitoring(await requireAuth(request))
+    })
+
+    app.get('/admin/autocare-appeals', async (request) => {
+        const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
+        return listAdminAutoCareAppeals(await requireAuth(request), query)
+    })
+
+    app.patch('/admin/autocare-appeals/:id/decision', async (request) => {
+        const params = validateParams(adminAutoCareAppealParamsSchema, request.params)
+        const body = validateBody(decideAdminAutoCareAppealSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminAutoCareAppeal(user, params.id, body)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareAppealDecided, targetId: result.id, targetType: 'autocare_appeal', metadata: { status: result.status, subject: result.subject }, request })
+        return result
+    })
+
+    app.get('/admin/autocare-moderation-evidence', async (request) => {
+        const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
+        return listAdminAutoCareModerationEvidence(await requireAuth(request), query.status)
+    })
+
+    app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {
+        const params = validateParams(adminAutoCareModerationEvidenceParamsSchema, request.params)
+        const body = validateBody(decideAdminAutoCareModerationEvidenceSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminAutoCareModerationEvidence(user, params.id, body)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareModerationEvidenceDecided, targetId: result.id, targetType: 'autocare_moderation_evidence', metadata: { status: result.status, kind: result.kind }, request })
+        return result
+    })
+
+    app.patch<{ Params: unknown; Body: unknown; Reply: AdminAutoCareProvider }>(
+        '/admin/autocare-providers/:id/status',
+        async (request) => {
+            const user = await requireAuth(request)
+            const params = validateParams(adminAutoCareProviderParamsSchema, request.params)
+            const body = validateBody(updateAdminAutoCareProviderStatusSchema, request.body)
+            const result = await updateAdminAutoCareProviderStatus(user, params.id, body.status)
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.AutoCareProviderStatusUpdated,
+                targetId: params.id,
+                targetType: 'autocare_provider',
+                metadata: { oldStatus: result.oldStatus, newStatus: result.newStatus },
+                request,
+            })
+            return result.provider
+        },
+    )
+
+    app.get('/admin/autocare-provider-change-requests', async (request) => {
+        const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
+        return listAdminProviderChangeRequests(await requireAuth(request), query.status, query.kind)
+    })
+
+    app.patch('/admin/autocare-provider-change-requests/:id/decision', async (request) => {
+        const params = validateParams(adminProviderChangeRequestParamsSchema, request.params)
+        const body = validateBody(decideAdminProviderChangeRequestSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminProviderChangeRequest(user, params.id, body.status as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, body.reason)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareProviderChangeRequestDecided,
+            targetId: params.id,
+            targetType: 'autocare_provider_change_request',
+            metadata: { status: body.status, reason: body.reason ?? null, providerId: result.providerId },
+            request,
+        })
+        return result
+    })
+
+    app.get('/admin/catalog-gap-requests', async (request) => {
+        const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
+        return listAdminCatalogGapRequests(await requireAuth(request), query.status)
+    })
+
+    app.patch('/admin/catalog-gap-requests/:id/decision', async (request) => {
+        const params = validateParams(adminCatalogGapRequestParamsSchema, request.params)
+        const body = validateBody(decideAdminCatalogGapRequestSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminCatalogGapRequest(user, params.id, body.status as AutomotiveCatalogGapRequestStatus.Approved | AutomotiveCatalogGapRequestStatus.Rejected, body.reason)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareCatalogGapRequestDecided,
+            targetId: params.id,
+            targetType: 'autocare_catalog_gap_request',
+            metadata: { status: body.status, reason: body.reason ?? null, proposedSlug: result.proposedSlug },
+            request,
+        })
+        return result
+    })
+
+    app.get('/admin/chat-reports', async (request) => {
+        const query = validateQuery(adminChatReportsQuerySchema, request.query)
+        return listAdminAutoCareChatReports(await requireAuth(request), query.status)
+    })
+
+    app.patch('/admin/chat-reports/:id/decision', async (request) => {
+        const params = validateParams(adminChatReportParamsSchema, request.params)
+        const body = validateBody(decideAdminChatReportSchema, request.body)
+        const user = await requireAuth(request)
+        const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.ChatReportModerated,
+            targetId: params.id,
+            targetType: 'autocare_chat_report',
+            metadata: { status: body.status, blockUser: body.blockUser, reason: body.reason ?? null },
+            request,
+        })
+        return result
+    })
+
+    app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {
+        return getSuperAdminPlatformOverview(await requireAuth(request))
+    })
+
+    app.patch('/super-admin/markets/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const body = validateBody(updateSuperAdminAutoCareMarketSchema, request.body)
+        const result = await updateSuperAdminAutoCareMarket(user, params.id, body)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareMarketUpdated,
+            targetId: params.id,
+            targetType: 'autocare_market',
+            metadata: {
+                cityCode: result.cityCode,
+                launchReady: result.launchReady,
+                defaultLocale: result.defaultLocale,
+                supportedLocales: result.supportedLocales,
+            },
+            request,
+        })
+        return result
+    })
+
+    app.get('/super-admin/market-hierarchy', async (request) => {
+        return getSuperAdminMarketHierarchy(await requireAuth(request))
+    })
+
+    app.post('/super-admin/market-countries', async (request) => {
+        const user = await requireAuth(request)
+        const result = await createSuperAdminMarketCountry(user, validateBody(createSuperAdminMarketCountrySchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryCreated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active }, request })
+        return result
+    })
+
+    app.patch('/super-admin/market-countries/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminCountryParamsSchema, request.params)
+        const result = await updateSuperAdminMarketCountry(user, params.id, validateBody(updateSuperAdminMarketCountrySchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryUpdated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
+        return result
+    })
+
+    app.post('/super-admin/market-countries/:id/cities', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminCountryParamsSchema, request.params)
+        const result = await createSuperAdminAutoCareMarket(user, params.id, validateBody(createSuperAdminAutoCareMarketSchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCreated, targetId: result.id, targetType: 'autocare_market', metadata: { countryCode: result.countryCode, cityCode: result.cityCode, launchReady: result.launchReady }, request })
+        return result
+    })
+
+    app.patch('/super-admin/market-cities/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const result = await updateSuperAdminAutoCareMarketHierarchy(user, params.id, validateBody(updateSuperAdminAutoCareMarketHierarchySchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketUpdated, targetId: result.id, targetType: 'autocare_market', metadata: { cityCode: result.cityCode, launchReady: result.launchReady, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
+        return result
+    })
+
+    app.post('/super-admin/market-cities/:id/zones', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const result = await createSuperAdminAutoCareMarketZone(user, params.id, validateBody(createSuperAdminAutoCareMarketZoneSchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneCreated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
+        return result
+    })
+
+    app.patch('/super-admin/market-zones/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
+        const result = await updateSuperAdminAutoCareMarketZone(user, params.id, validateBody(updateSuperAdminAutoCareMarketZoneSchema, request.body))
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneUpdated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
+        return result
+    })
+
+    app.patch('/admin/service-definitions/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareServiceDefinitionParamsSchema, request.params)
+        const result = await updateAdminAutoCareServiceDefinition(user, params.id, validateBody(updateAdminAutoCareServiceDefinitionSchema, request.body))
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareServiceDefinitionUpdated,
+            targetId: params.id,
+            targetType: 'autocare_service_definition',
+            metadata: { slug: result.slug, active: result.active, categorySlug: result.categorySlug },
+            request,
+        })
+        return result
+    })
+
     app.get<{ Querystring: unknown; Reply: AdminUsersListResponse }>(
         '/admin/users',
         async (request) => {
@@ -306,87 +546,6 @@ export async function adminRoutes(
             const user = await requireAuth(request)
 
             return getAdminCabinets(user)
-        }
-    )
-
-    app.get<{ Querystring: unknown; Reply: AdminPaymentsListResponse }>(
-        '/admin/payments',
-        async (request) => {
-            const user = await requireAuth(request)
-            const query = validateQuery(adminPaymentsQuerySchema, request.query)
-            const payments = await getAdminPayments(user, query)
-
-            return mapCursorResponse(payments, (payment) => ({
-                ...payment,
-                createdAt: payment.createdAt.toISOString(),
-            }))
-        }
-    )
-
-    app.get<{ Reply: AdminPaymentAttentionResponse }>(
-        '/admin/payments/attention',
-        async (request, reply) => {
-            const user = await requireAuth(request)
-            const attention = await getAdminPaymentAttention(user)
-
-            return reply
-                .header('cache-control', 'no-store')
-                .send(attention)
-        },
-    )
-
-    app.get<{ Params: unknown; Reply: AdminPaymentRefundResponse[] }>(
-        '/admin/payments/:id/refunds',
-        async (request, reply) => {
-            const user = await requireAuth(request)
-            const params = validateParams(adminPaymentParamsSchema, request.params)
-            const refunds = await getAdminPaymentRefunds(user, params.id)
-
-            return reply
-                .header('cache-control', 'no-store')
-                .send(refunds.map((refund) => ({
-                    ...refund,
-                    createdAt: refund.createdAt.toISOString(),
-                    updatedAt: refund.updatedAt.toISOString(),
-                })))
-        },
-    )
-
-    app.get<{ Params: unknown; Reply: AdminPaymentDisputeResponse[] }>(
-        '/admin/payments/:id/disputes',
-        async (request, reply) => {
-            const user = await requireAuth(request)
-            const params = validateParams(adminPaymentParamsSchema, request.params)
-            const disputes = await getAdminPaymentDisputes(user, params.id)
-
-            return reply
-                .header('cache-control', 'no-store')
-                .send(disputes.map((dispute) => ({
-                    ...dispute,
-                    lastEventCreatedAt: dispute.lastEventCreatedAt.toISOString(),
-                    createdAt: dispute.createdAt.toISOString(),
-                    updatedAt: dispute.updatedAt.toISOString(),
-                })))
-        },
-    )
-
-    app.post<{
-        Params: unknown
-        Body: unknown
-        Reply: RefundPaymentResponse
-    }>(
-        '/admin/payments/:id/refund',
-        async (request) => {
-            const user = await requireAuth(request)
-            const params = validateParams(adminPaymentParamsSchema, request.params)
-            const body = validateBody(refundPaymentSchema, request.body)
-            const payment = await refundBookingPayment(user, params.id, body.reason, request, body.amountMinor)
-
-            return {
-                paymentId: payment.id,
-                status: payment.status,
-                refundedAmountMinor: payment.refundedAmountMinor,
-            }
         }
     )
 
@@ -829,6 +988,20 @@ export async function adminRoutes(
             const params = validateParams(systemIncidentParamsSchema, request.params)
             const body = validateBody(updateSystemIncidentStatusSchema, request.body)
             const incident = await updateSystemIncidentStatus(user, params.id, body.status)
+
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.SystemIncidentStatusUpdated,
+                targetId: incident.id,
+                targetType: 'system_incident',
+                metadata: {
+                    status: incident.status,
+                    severity: incident.severity,
+                    type: incident.type,
+                    occurrenceCount: incident.occurrenceCount,
+                },
+                request,
+            })
 
             return toSystemIncidentResponse(incident)
         }

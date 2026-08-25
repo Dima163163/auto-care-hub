@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { CursorPage } from '@/shared/api/cursorPagination'
 import type { OwnerClient, User } from '../model/types'
+import type { ClientVehicle } from '../model/vehicles'
 import { SUPPORTED_LOCALES } from '@/shared/config/i18n'
 
 export const userSchema = z.object({
@@ -68,6 +69,7 @@ const userDataExportSchema = z.object({
         algorithm: z.literal('sha256'),
         checksum: z.string().min(1),
     }),
+    vehicles: z.array(z.object({})).default([]),
 }).passthrough()
 
 export type AccountDeletionRequest = z.infer<typeof accountDeletionRequestSchema>
@@ -115,4 +117,27 @@ export function normalizeAccountDeletionRequest(value: unknown) {
 
 export function normalizeUserDataExport(value: unknown) {
     return userDataExportSchema.parse(value)
+}
+
+export const clientVehicleSchema = z.object({
+    id: z.string(),
+    brandId: z.string(),
+    model: z.string(),
+    year: z.number().int(),
+    fuelType: z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg', 'hydrogen', 'other']),
+    engineDisplacement: z.number().nullable(),
+    horsepower: z.number().int().nullable(),
+    color: z.string(),
+    vin: z.string().nullable(),
+    imageUrl: z.string(),
+    isPrimary: z.boolean(),
+    createdAt: z.string(),
+}) satisfies z.ZodType<ClientVehicle>
+
+export function normalizeClientVehicleResponse(value: unknown) {
+    return clientVehicleSchema.parse(value)
+}
+
+export function normalizeClientVehicleListResponse(value: unknown) {
+    return z.array(clientVehicleSchema).parse(value)
 }

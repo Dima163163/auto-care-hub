@@ -116,8 +116,8 @@ step-up confirmation before production launch.
 - Downgrade/expiry must not delete provider data.
 - Subscription plan must not silently change organic search ranking.
 
-Legacy customer booking payments, commission and Stripe Connect are
-not approved AutoCare subscription implementations.
+Historical customer booking-payment and commission schemas are not approved
+AutoCare subscription implementations and have no active runtime integration.
 
 ## Mobile security gate
 

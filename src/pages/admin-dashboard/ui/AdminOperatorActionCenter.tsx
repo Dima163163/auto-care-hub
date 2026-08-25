@@ -4,7 +4,6 @@ import { Link } from 'react-router'
 import { useGetMeQuery } from '@/features/auth'
 import {
     useGetOutboxHealthQuery,
-    useGetAdminPaymentAttentionQuery,
     useGetSecurityCenterSummaryQuery,
     useGetSystemIncidentsPageQuery,
 } from '@/features/admin/api/adminApi'
@@ -37,7 +36,6 @@ const kindTranslationKeys: Record<OperatorActionKind, TranslationKey> = {
     security: 'adminDashboard.operatorCenter.kindSecurity',
     incident: 'adminDashboard.operatorCenter.kindIncident',
     outbox: 'adminDashboard.operatorCenter.kindOutbox',
-    payment: 'adminDashboard.operatorCenter.kindPayment',
 }
 
 const statusTranslationKeys: Record<OperatorActionStatus, TranslationKey> = {
@@ -69,25 +67,19 @@ export function AdminOperatorActionCenter() {
         skip: !isSuperAdmin,
         refetchOnMountOrArgChange: true,
     })
-    const paymentAttention = useGetAdminPaymentAttentionQuery(undefined, {
-        skip: !isSuperAdmin,
-        refetchOnMountOrArgChange: true,
-    })
-
     if (!isSuperAdmin) return null
 
-    const isLoading = securitySummary.isLoading || systemIncidents.isLoading || outboxHealth.isLoading || paymentAttention.isLoading
-    const isFetching = securitySummary.isFetching || systemIncidents.isFetching || outboxHealth.isFetching || paymentAttention.isFetching
-    const isError = securitySummary.isError || systemIncidents.isError || outboxHealth.isError || paymentAttention.isError
-    const hasStaleData = Boolean(securitySummary.data || systemIncidents.data || outboxHealth.data || paymentAttention.data)
+    const isLoading = securitySummary.isLoading || systemIncidents.isLoading || outboxHealth.isLoading
+    const isFetching = securitySummary.isFetching || systemIncidents.isFetching || outboxHealth.isFetching
+    const isError = securitySummary.isError || systemIncidents.isError || outboxHealth.isError
+    const hasStaleData = Boolean(securitySummary.data || systemIncidents.data || outboxHealth.data)
     const incidents = systemIncidents.data?.items ?? []
-    const refreshError = securitySummary.error ?? systemIncidents.error ?? outboxHealth.error ?? paymentAttention.error
+    const refreshError = securitySummary.error ?? systemIncidents.error ?? outboxHealth.error
     const outboxAttention = (outboxHealth.data?.deadLetterCount ?? 0) + (outboxHealth.data?.abandonedCount ?? 0)
     const actionItems = buildOperatorActionItems({
         securitySummary: securitySummary.data,
         incidents,
         outboxHealth: outboxHealth.data,
-        paymentAttention: paymentAttention.data,
     })
     const queueMetrics = buildOperatorQueueMetrics(actionItems)
 
@@ -131,7 +123,6 @@ export function AdminOperatorActionCenter() {
                                 securitySummary.refetch(),
                                 systemIncidents.refetch(),
                                 outboxHealth.refetch(),
-                                paymentAttention.refetch(),
                             ])}
                         />
                     }
@@ -145,7 +136,6 @@ export function AdminOperatorActionCenter() {
                         securitySummary.refetch(),
                         systemIncidents.refetch(),
                         outboxHealth.refetch(),
-                        paymentAttention.refetch(),
                     ])}
                     retryLabel={t('common.retry')}
                 />
@@ -167,26 +157,6 @@ export function AdminOperatorActionCenter() {
                             <p className="mt-1 text-xs text-muted-foreground">
                                 {t('adminDashboard.operatorCenter.criticalEvents', {
                                     count: securitySummary.data?.criticalSeverityEvents ?? 0,
-                                })}
-                            </p>
-                        </div>
-
-                        <div className="rounded-xl border bg-background p-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    {t('adminDashboard.operatorCenter.paymentAttention')}
-                                </p>
-                                <CircleAlert className="size-4 text-status-warning-foreground" aria-hidden="true" />
-                            </div>
-                            <p className="mt-3 text-2xl font-bold tracking-tight">
-                                {(paymentAttention.data?.failedPaymentCount ?? 0) +
-                                    (paymentAttention.data?.openDisputeCount ?? 0) +
-                                    (paymentAttention.data?.fundsWithdrawnDisputeCount ?? 0)}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {t('adminDashboard.operatorCenter.paymentAttentionDescription', {
-                                    failed: paymentAttention.data?.failedPaymentCount ?? 0,
-                                    disputes: (paymentAttention.data?.openDisputeCount ?? 0) + (paymentAttention.data?.fundsWithdrawnDisputeCount ?? 0),
                                 })}
                             </p>
                         </div>
