@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveBookingMode,
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
     AutomotiveProviderEntity,
@@ -28,6 +29,7 @@ describe('AutoCare appointment capacity integration', () => {
     const createdRequestIds: string[] = []
     let owner: UserEntity
     let client: UserEntity
+    let country: AutomotiveMarketCountryEntity
     let market: AutomotiveMarketEntity
     let provider: AutomotiveProviderEntity
     let location: AutomotiveServiceLocationEntity
@@ -52,8 +54,22 @@ describe('AutoCare appointment capacity integration', () => {
             passwordHash: 'hash',
             emailVerifiedAt: new Date(),
         }))
+        country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).save(
+            AppDataSource.getRepository(AutomotiveMarketCountryEntity).create({
+                code: `ZZ-${suffix}`,
+                names: { en: 'Capacity Test' },
+                defaultLocale: 'en',
+                supportedLocales: ['en'],
+                timezone: 'UTC',
+                currencyCode: 'USD',
+                capabilities: {},
+                legalLinks: {},
+                active: true,
+            }),
+        )
         market = await AppDataSource.getRepository(AutomotiveMarketEntity).save(
             AppDataSource.getRepository(AutomotiveMarketEntity).create({
+                countryId: country.id,
                 countryCode: 'ZZ',
                 countryName: 'Capacity Test',
                 cityCode: `capacity-${suffix}`,
@@ -167,6 +183,7 @@ describe('AutoCare appointment capacity integration', () => {
         if (location) await AppDataSource.getRepository(AutomotiveServiceLocationEntity).delete({ id: location.id })
         if (provider) await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider.id })
         if (market) await AppDataSource.getRepository(AutomotiveMarketEntity).delete({ id: market.id })
+        if (country) await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: country.id })
         if (owner) await AppDataSource.getRepository(UserEntity).delete({ id: owner.id })
         if (client) await AppDataSource.getRepository(UserEntity).delete({ id: client.id })
     })

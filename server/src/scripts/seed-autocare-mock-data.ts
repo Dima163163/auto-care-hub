@@ -4,6 +4,9 @@ import {
     AutomotiveMarketEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipRole,
+    AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
@@ -14,6 +17,7 @@ import {
     AutoCarePriceBenchmarkEntity,
     AutoCareTrustEvidenceEntity,
 } from '../entities/index.js'
+import { UserEntity } from '../entities/user/user.entity.js'
 import {
     AUTOMOTIVE_MOCK_LOCATION_ZONES,
     AUTOMOTIVE_MOCK_MARKETS,
@@ -23,6 +27,7 @@ import {
     AUTOCARE_MOCK_FALLBACK_IMAGE,
     resolveMockAssetUrl,
 } from '../modules/autocare/autocare-mock-catalog.js'
+import { DEMO_USERS } from './demo-fixtures.js'
 
 async function seedAutoCareMockData() {
     await AppDataSource.initialize()
@@ -33,6 +38,9 @@ async function seedAutoCareMockData() {
             const zoneRepository = manager.getRepository(AutomotiveLocationZoneEntity)
             const definitionRepository = manager.getRepository(AutomotiveServiceDefinitionEntity)
             const providerRepository = manager.getRepository(AutomotiveProviderEntity)
+            const membershipRepository = manager.getRepository(AutomotiveProviderMembershipEntity)
+            const demoOwner = await manager.getRepository(UserEntity).findOneBy({ email: DEMO_USERS.owner.email })
+            if (!demoOwner) throw new Error('Demo owner must be seeded before AutoCare mock data.')
             const locationRepository = manager.getRepository(AutomotiveServiceLocationEntity)
             const offeringRepository = manager.getRepository(AutomotiveServiceOfferingEntity)
             const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
@@ -89,6 +97,12 @@ async function seedAutoCareMockData() {
                 const existing = await providerRepository.findOneBy({ name: input.name })
                 const provider = await providerRepository.save(providerRepository.create({
                     ...existing,
+                    // Keep the seeded ProService usable in the real-mode pilot. We only
+                    // claim an unowned demo provider; an existing real owner is never
+                    // replaced by a seed rerun.
+                    ownerId: input.name === 'ProService' && (!existing?.ownerId || existing.ownerId === demoOwner.id)
+                        ? demoOwner.id
+                        : existing?.ownerId ?? null,
                     name: input.name,
                     description: input.description,
                     status: AutomotiveProviderStatus.Active,
@@ -125,6 +139,22 @@ async function seedAutoCareMockData() {
                     dispatchBasePriceMinor: input.amenityIds.includes('pickup_delivery') ? 50000 : 0,
                     etaMinutes: input.amenityIds.includes('pickup_delivery') ? 60 : null,
                 }))
+
+                if (input.name === 'ProService' && provider.ownerId === demoOwner.id) {
+                    const existingMembership = await membershipRepository.findOneBy({
+                        providerId: provider.id,
+                        userId: demoOwner.id,
+                        locationId: IsNull(),
+                    })
+                    await membershipRepository.save(membershipRepository.create({
+                        ...existingMembership,
+                        providerId: provider.id,
+                        userId: demoOwner.id,
+                        locationId: null,
+                        role: AutomotiveProviderMembershipRole.Owner,
+                        status: AutomotiveProviderMembershipStatus.Active,
+                    }))
+                }
 
                 const evidenceFixtures = [
                     ['profile', 'Данные компании подтверждены', input.verified ? 'verified' : 'pending'],
