@@ -504,6 +504,10 @@ function getCorsOrigins(nodeEnv: NodeEnv, defaultOrigin: string) {
 
     return [...new Set([
         ...configuredOrigins,
+        // Next.js uses port 3000 for the default local dev server. Keep the
+        // loopback exception development-only; production remains explicit.
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:5178',
