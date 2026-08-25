@@ -154,8 +154,6 @@ export {
 export type {
     AutoCareApiDiscoveryItem,
     AutoCareApiDiscoveryResponse,
-    AutoCareApiMarket,
-    AutoCareApiLocationZone,
     AutoCareApiOffer,
     UpdateAutoCareOfferInput,
     AutoCareApiProvider,

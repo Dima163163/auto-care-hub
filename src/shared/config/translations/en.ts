@@ -1162,6 +1162,7 @@ export const enTranslations = {
         providerDirectPayment: 'Payment is arranged directly with the service.',
         providerWarranty: 'Warranty and inclusions are shown before confirmation.',
         providerNoReviews: 'No reviews for this service yet.',
+        providerNoReviewsDescription: 'After a confirmed visit, the customer can leave the first review for this service.',
         providerNotFound: 'This service profile is unavailable.',
         providerNoOffersTitle: 'No published services yet',
         providerNoOffersDescription: 'This service is completing its catalogue. Try another location or come back later.',

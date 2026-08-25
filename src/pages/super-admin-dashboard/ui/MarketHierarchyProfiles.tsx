@@ -18,9 +18,18 @@ import {
     type MarketProfileDraft,
 } from './market-hierarchy-form-utils'
 
-type SubmitState = { isLoading: boolean; isSuccess: boolean; error: unknown }
-type CountryInput = CreateSuperAdminMarketCountryInput | UpdateSuperAdminMarketCountryInput
-type CityInput = CreateSuperAdminAutoCareMarketInput | UpdateSuperAdminAutoCareMarketHierarchyInput
+type SubmitState = { isLoading: boolean; isSuccess: boolean }
+type CountryProfileFormProps = {
+    country?: AutoCareApiMarketCountry
+    onSubmit: (input: CreateSuperAdminMarketCountryInput | UpdateSuperAdminMarketCountryInput) => Promise<unknown>
+    state: SubmitState
+}
+type CityProfileFormProps = {
+    country: AutoCareApiMarketCountry
+    city?: AutoCareApiMarket
+    onSubmit: (input: CreateSuperAdminAutoCareMarketInput | UpdateSuperAdminAutoCareMarketHierarchyInput) => Promise<unknown>
+    state: SubmitState
+}
 
 const primaryButton = 'inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground disabled:opacity-60'
 const inputClassName = 'mt-1 h-10 w-full rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary'
@@ -29,7 +38,7 @@ function ErrorMessage({ error }: { error: string | null }) {
     return error ? <p role="alert" className="mt-3 text-xs font-bold text-destructive">{error}</p> : null
 }
 
-export function CountryProfileForm({ country, onSubmit, state }: { country?: AutoCareApiMarketCountry; onSubmit: (input: CountryInput) => Promise<unknown>; state: SubmitState }) {
+export function CountryProfileForm({ country, onSubmit, state }: CountryProfileFormProps) {
     const [code, setCode] = useState(country?.code ?? '')
     const [names, setNames] = useState(JSON.stringify(country?.names ?? { ru: '', en: '' }, null, 2))
     const [active, setActive] = useState(country?.active ?? true)
@@ -56,7 +65,7 @@ export function CountryProfileForm({ country, onSubmit, state }: { country?: Aut
     </form>
 }
 
-export function CityProfileForm({ country, city, onSubmit, state }: { country: AutoCareApiMarketCountry; city?: AutoCareApiMarket; onSubmit: (input: CityInput) => Promise<unknown>; state: SubmitState }) {
+export function CityProfileForm({ country, city, onSubmit, state }: CityProfileFormProps) {
     const [cityCode, setCityCode] = useState(city?.cityCode ?? '')
     const [cityName, setCityName] = useState(city?.cityName ?? '')
     const [regionCode, setRegionCode] = useState(city?.regionCode ?? '')
