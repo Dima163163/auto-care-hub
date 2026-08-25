@@ -439,6 +439,16 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         websiteUrl: null,
         metroStation: 'м. Парк культуры',
         workstationCount: provider.id === 'proservice-moscow' ? 12 : 8,
+        teamSize: provider.id === 'formula-moscow' ? 'solo' as const : 'team' as const,
+        businessType: provider.id === 'formula-moscow' ? 'private_master' as const : 'company' as const,
+        chatEnabled: provider.id !== 'formula-moscow',
+        communicationMode: provider.id === 'formula-moscow' ? 'phone_only' as const : 'online' as const,
+        responseWindowMinutes: provider.id === 'formula-moscow' ? null : 120,
+        responseHours: 'working_hours' as const,
+        phoneBookingEnabled: true,
+        callbackEnabled: true,
+        requestPhotosEnabled: provider.id !== 'formula-moscow',
+        publicContactNote: provider.id === 'formula-moscow' ? 'Небольшая команда: принимаем записи по телефону.' : null,
         warrantyText: 'Гарантия на работы 12 месяцев',
         logoUrl: provider.logoUrl ?? null,
         brandSpecializations: [...provider.brandSpecializations],
@@ -816,9 +826,9 @@ function mockChatThreadFromRequest(request: MockAutoCareServiceRequest): MockAut
 
 function getMockAutoCareChatThreads(user: User) {
     const requestThreads = mockAutoCareServiceRequests
-        .filter((request) => request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)))
+        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)))
         .map(mockChatThreadFromRequest)
-    const genericThreads = mockAutoCareChatThreads.filter((thread) => ((user.role === 'super_admin' || user.role === 'admin') && ['support', 'admin_escalation'].includes(thread.type)) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
+    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && ['support', 'admin_escalation'].includes(thread.type)) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
     return [...requestThreads, ...genericThreads].sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
 }
 
@@ -2826,8 +2836,9 @@ export const handlers = [
         if (body.type === 'provider_inquiry' && user.role !== 'client') return HttpResponse.json({ message: 'Only clients can ask a service a question.' }, { status: 403 })
         if (body.type === 'support' && !['client', 'owner'].includes(user.role)) return HttpResponse.json({ message: 'Only clients and service owners can open support.' }, { status: 403 })
         if (body.type === 'support' && body.providerId && user.role !== 'owner') return HttpResponse.json({ message: 'Only service owners can link support to a service.' }, { status: 403 })
-        if (body.type === 'admin_escalation' && user.role !== 'admin') return HttpResponse.json({ message: 'Only administrators can escalate.' }, { status: 403 })
+        if (body.type === 'admin_escalation' && !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Only administrators can escalate.' }, { status: 403 })
         const provider = body.providerId ? autoCareProviders.find((candidate) => candidate.id === body.providerId) : undefined
+        if (body.type === 'provider_inquiry' && provider?.chatEnabled === false) return HttpResponse.json({ message: 'This service currently accepts questions by phone or request form, not in chat.' }, { status: 409 })
         const clientId = user.role === 'client' ? user.id : null
         const existing = body.type === 'support'
             ? mockAutoCareChatThreads.find((thread) => thread.type === 'support' && thread.status === 'open' && thread.createdById === user.id && thread.providerId === (body.providerId ?? null) && thread.clientId === clientId)
@@ -3737,6 +3748,16 @@ export const handlers = [
             yearsActive?: number
             staffCount?: number
             workstationCount?: number
+            teamSize?: 'solo' | 'small_team' | 'team' | 'enterprise'
+            businessType?: 'sole_proprietor' | 'self_employed' | 'company' | 'private_master' | 'other'
+            chatEnabled?: boolean
+            communicationMode?: 'online' | 'request_then_confirm' | 'phone_only'
+            responseWindowMinutes?: number | null
+            responseHours?: 'working_hours' | 'always_on'
+            phoneBookingEnabled?: boolean
+            callbackEnabled?: boolean
+            requestPhotosEnabled?: boolean
+            publicContactNote?: string | null
             phone?: string | null
             phones?: string[]
             email?: string | null
@@ -3766,6 +3787,16 @@ export const handlers = [
             yearsActive: Math.max(0, Number(body.yearsActive) || 0),
             staffCount: Math.max(0, Number(body.staffCount) || 0),
             workstationCount: Math.max(0, Number(body.workstationCount) || 0),
+            teamSize: body.teamSize ?? 'small_team',
+            businessType: body.businessType ?? 'company',
+            chatEnabled: body.chatEnabled ?? true,
+            communicationMode: body.communicationMode ?? 'online',
+            responseWindowMinutes: body.responseWindowMinutes ?? 240,
+            responseHours: body.responseHours ?? 'working_hours',
+            phoneBookingEnabled: body.phoneBookingEnabled ?? true,
+            callbackEnabled: body.callbackEnabled ?? true,
+            requestPhotosEnabled: body.requestPhotosEnabled ?? true,
+            publicContactNote: body.publicContactNote ?? null,
             phone: body.phone?.trim() || null,
             phones: [...new Set([body.phone?.trim() ?? '', ...(body.phones ?? [])].map((phone) => phone.trim()).filter(Boolean))],
             email: body.email?.trim() || null,
@@ -3795,6 +3826,28 @@ export const handlers = [
 
         ownerAutoCareProviders.unshift(provider)
         return HttpResponse.json(provider, { status: 201 })
+    }),
+
+    http.patch('/api/owner/autocare-providers/:providerId/communication-settings', async ({ params, request }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+        const provider = ownerAutoCareProviders.find((item) => item.id === params.providerId)
+        if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
+        const body = await request.json() as Partial<Omit<AutoCareApiProvider, 'id' | 'location'>>
+        Object.assign(provider, {
+            teamSize: body.teamSize ?? provider.teamSize ?? 'small_team',
+            businessType: body.businessType ?? provider.businessType ?? 'company',
+            chatEnabled: body.chatEnabled ?? provider.chatEnabled ?? true,
+            communicationMode: body.communicationMode ?? provider.communicationMode ?? 'online',
+            responseWindowMinutes: body.responseWindowMinutes ?? provider.responseWindowMinutes ?? 240,
+            responseHours: body.responseHours ?? provider.responseHours ?? 'working_hours',
+            phoneBookingEnabled: body.phoneBookingEnabled ?? provider.phoneBookingEnabled ?? true,
+            callbackEnabled: body.callbackEnabled ?? provider.callbackEnabled ?? true,
+            requestPhotosEnabled: body.requestPhotosEnabled ?? provider.requestPhotosEnabled ?? true,
+            publicContactNote: body.publicContactNote ?? provider.publicContactNote ?? null,
+        })
+        return HttpResponse.json(provider)
     }),
 
     http.get('/api/cabinets/all', () => {

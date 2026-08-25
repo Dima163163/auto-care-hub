@@ -424,6 +424,31 @@ const weeklyScheduleSchema = z.record(z.enum(['mon', 'tue', 'wed', 'thu', 'fri',
     }
 })
 
+const providerCommunicationFields = {
+    teamSize: z.enum(['solo', 'small_team', 'team', 'enterprise']).default('small_team'),
+    businessType: z.enum(['sole_proprietor', 'self_employed', 'company', 'private_master', 'other']).default('company'),
+    chatEnabled: z.boolean().default(true),
+    communicationMode: z.enum(['online', 'request_then_confirm', 'phone_only']).default('online'),
+    responseWindowMinutes: z.coerce.number().int().min(15).max(10_080).nullable().default(240),
+    responseHours: z.enum(['working_hours', 'always_on']).default('working_hours'),
+    phoneBookingEnabled: z.boolean().default(true),
+    callbackEnabled: z.boolean().default(true),
+    requestPhotosEnabled: z.boolean().default(true),
+    publicContactNote: z.string().trim().max(240).nullable().default(null),
+} as const
+
+export const autoCareCommunicationSettingsSchema = z.object(providerCommunicationFields).superRefine((value, context) => {
+    if (value.communicationMode === 'phone_only' && value.chatEnabled) {
+        context.addIssue({ code: 'custom', path: ['chatEnabled'], message: 'Phone-only services must disable customer chat.' })
+    }
+    if (value.communicationMode === 'phone_only' && !value.phoneBookingEnabled) {
+        context.addIssue({ code: 'custom', path: ['phoneBookingEnabled'], message: 'Phone-only services must accept phone bookings.' })
+    }
+    if (value.chatEnabled && value.responseWindowMinutes === null) {
+        context.addIssue({ code: 'custom', path: ['responseWindowMinutes'], message: 'Chat-enabled services need a response window.' })
+    }
+})
+
 export const ownerAutoCareProviderSchema = z.object({
     name: z.string().trim().min(2).max(160),
     description: z.string().trim().max(5_000).nullable().optional(),
@@ -438,6 +463,7 @@ export const ownerAutoCareProviderSchema = z.object({
     yearsActive: z.coerce.number().int().min(0).max(150),
     staffCount: z.coerce.number().int().min(0).max(10_000),
     workstationCount: z.coerce.number().int().nonnegative().max(100_000).optional(),
+    ...providerCommunicationFields,
     phone: z.string().trim().min(5).max(32).nullable().optional(),
     phones: z.array(z.string().trim().min(5).max(32)).max(5).optional(),
     email: z.string().trim().email().max(320).nullable().optional(),

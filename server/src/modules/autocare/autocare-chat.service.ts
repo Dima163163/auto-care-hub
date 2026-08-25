@@ -94,11 +94,11 @@ export async function ensureAutoCareRequestChatThread(request: ServiceRequestEnt
 }
 
 async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEntity) {
-    // Support/admin escalation threads are the only private conversations that
-    // may be opened by platform staff. A service-request or provider-inquiry
-    // thread must remain visible only to its participants, even for a
-    // super-admin; staff access is granted through an explicit support thread.
-    if ((user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return
+    // The super administrator is the final escalation point and may inspect
+    // and answer any conversation, including service-request attachments.
+    // Regular admins remain limited to support/escalation threads.
+    if (user.role === UserRole.SuperAdmin) return
+    if (user.role === UserRole.Admin && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return
     if (thread.clientId === user.id) return
     if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return
     if (thread.providerId) {
@@ -180,7 +180,9 @@ export async function getMyAutoCareChats(user: UserEntity) {
             return isManagedProviderLocationAllowed(scopes, thread.providerId, request?.locationId ?? null)
         })
         threads = [...new Map([...threads, ...visibleProviderThreads].map((thread) => [thread.id, thread])).values()]
-    } else if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+    } else if (user.role === UserRole.SuperAdmin) {
+        threads = await repository.find({ order: { updatedAt: 'DESC' } })
+    } else if (user.role === UserRole.Admin) {
         threads = await repository.find({ where: [{ type: AutoCareChatThreadType.Support }, { type: AutoCareChatThreadType.AdminEscalation }], order: { updatedAt: 'DESC' } })
     }
     return Promise.all(threads.map((thread) => toThreadResponse(user, thread)))
@@ -193,6 +195,7 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
         if (!input.providerId) fail(400, 'A provider is required for a service question.')
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId, status: AutomotiveProviderStatus.Active })
         if (!provider) fail(404, 'Automotive provider not found.')
+        if (!provider.chatEnabled) fail(409, 'This service currently accepts questions by phone or request form, not in chat.')
         const existing = await repository.findOneBy({ type: AutoCareChatThreadType.ProviderInquiry, providerId: provider.id, clientId: user.id, status: AutoCareChatThreadStatus.Open })
         if (existing) return toThreadResponse(user, existing)
         const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.ProviderInquiry, providerId: provider.id, clientId: user.id, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
@@ -222,7 +225,7 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
         const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.Support, providerId: input.providerId ?? null, clientId, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
         return toThreadResponse(user, thread)
     }
-    assertRole(user, [UserRole.Admin], 'Only administrators can escalate a platform question.')
+    assertRole(user, [UserRole.Admin, UserRole.SuperAdmin], 'Only administrators can escalate a platform question.')
     const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.AdminEscalation, providerId: null, clientId: null, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
     return toThreadResponse(user, thread)
 }

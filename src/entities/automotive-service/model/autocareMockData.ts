@@ -85,6 +85,16 @@ export type ProviderProfile = ProviderPreview & {
     supportsMobile?: boolean
     supportsPickup?: boolean
     coverageRadiusKm?: number | null
+    teamSize?: 'solo' | 'small_team' | 'team' | 'enterprise'
+    businessType?: 'sole_proprietor' | 'self_employed' | 'company' | 'private_master' | 'other'
+    chatEnabled?: boolean
+    communicationMode?: 'online' | 'request_then_confirm' | 'phone_only'
+    responseWindowMinutes?: number | null
+    responseHours?: 'working_hours' | 'always_on'
+    phoneBookingEnabled?: boolean
+    callbackEnabled?: boolean
+    requestPhotosEnabled?: boolean
+    publicContactNote?: string | null
 }
 
 export const automotiveServices: readonly AutomotiveService[] = [

@@ -175,6 +175,16 @@ export type AutoCareApiProvider = {
     websiteUrl?: string | null
     metroStation?: string | null
     workstationCount?: number
+    teamSize?: 'solo' | 'small_team' | 'team' | 'enterprise'
+    businessType?: 'sole_proprietor' | 'self_employed' | 'company' | 'private_master' | 'other'
+    chatEnabled?: boolean
+    communicationMode?: 'online' | 'request_then_confirm' | 'phone_only'
+    responseWindowMinutes?: number | null
+    responseHours?: 'working_hours' | 'always_on'
+    phoneBookingEnabled?: boolean
+    callbackEnabled?: boolean
+    requestPhotosEnabled?: boolean
+    publicContactNote?: string | null
     warrantyText?: string | null
     logoUrl: string | null
     coverImageUrl: string | null
@@ -224,6 +234,20 @@ export type AutoCareApiProviderProfile = AutoCareApiProvider & {
         location: AutoCareApiProvider['location']
         offers: AutoCareApiOffer[]
     }>
+}
+
+export type UpdateAutoCareCommunicationSettingsInput = {
+    providerId: string
+    teamSize: NonNullable<AutoCareApiProvider['teamSize']>
+    businessType: NonNullable<AutoCareApiProvider['businessType']>
+    chatEnabled: boolean
+    communicationMode: NonNullable<AutoCareApiProvider['communicationMode']>
+    responseWindowMinutes: number | null
+    responseHours: NonNullable<AutoCareApiProvider['responseHours']>
+    phoneBookingEnabled: boolean
+    callbackEnabled: boolean
+    requestPhotosEnabled: boolean
+    publicContactNote: string | null
 }
 
 export type AutoCareProviderAnalytics = {
@@ -694,6 +718,16 @@ const autoCareProviderSchema = z.object({
     websiteUrl: z.string().nullable().optional(),
     metroStation: z.string().nullable().optional(),
     workstationCount: z.number().int().nonnegative().optional(),
+    teamSize: z.enum(['solo', 'small_team', 'team', 'enterprise']).optional(),
+    businessType: z.enum(['sole_proprietor', 'self_employed', 'company', 'private_master', 'other']).optional(),
+    chatEnabled: z.boolean().optional(),
+    communicationMode: z.enum(['online', 'request_then_confirm', 'phone_only']).optional(),
+    responseWindowMinutes: z.number().int().nonnegative().nullable().optional(),
+    responseHours: z.enum(['working_hours', 'always_on']).optional(),
+    phoneBookingEnabled: z.boolean().optional(),
+    callbackEnabled: z.boolean().optional(),
+    requestPhotosEnabled: z.boolean().optional(),
+    publicContactNote: z.string().nullable().optional(),
     warrantyText: z.string().nullable().optional(),
     logoUrl: z.string().nullable(),
     coverImageUrl: z.string().nullable(),
@@ -1189,6 +1223,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(autoCareProviderSchema).parse(value),
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        updateOwnerAutoCareCommunicationSettings: build.mutation<AutoCareApiProvider, UpdateAutoCareCommunicationSettingsInput>({
+            query: ({ providerId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/communication-settings`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareProviderSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: providerId }, { type: 'AutoCareProvider', id: 'OWNER_LIST' }],
+        }),
         getOwnerAutoCareWorkspaceAccess: build.query<AutoCareOwnerWorkspaceAccess, void>({
             query: () => '/owner/workspace-access',
             transformResponse: (value: unknown) => ownerWorkspaceAccessSchema.parse(value),
@@ -1646,6 +1685,7 @@ export const {
     useUpdateSuperAdminAutoCareMarketZoneMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useUpdateOwnerAutoCareCommunicationSettingsMutation,
     useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,
     useGetOwnerAutoCareBonusLiabilityQuery,

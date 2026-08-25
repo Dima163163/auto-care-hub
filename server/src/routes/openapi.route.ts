@@ -259,6 +259,37 @@ export function getOpenApiDocument() {
             '/owner/autocare-providers/{providerId}/analytics': {
                 get: { operationId: 'getOwnerAutoCareProviderAnalytics', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Owner-safe operational, booking, review and bonus-liability metrics.' } } },
             },
+            '/owner/autocare-providers/{providerId}/communication-settings': {
+                patch: {
+                    operationId: 'updateOwnerAutoCareCommunicationSettings',
+                    parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    required: ['teamSize', 'businessType', 'chatEnabled', 'communicationMode', 'responseWindowMinutes', 'responseHours', 'phoneBookingEnabled', 'callbackEnabled', 'requestPhotosEnabled', 'publicContactNote'],
+                                    properties: {
+                                        teamSize: { type: 'string', enum: ['solo', 'small_team', 'team', 'enterprise'] },
+                                        businessType: { type: 'string', enum: ['sole_proprietor', 'self_employed', 'company', 'private_master', 'other'] },
+                                        chatEnabled: { type: 'boolean' },
+                                        communicationMode: { type: 'string', enum: ['online', 'request_then_confirm', 'phone_only'] },
+                                        responseWindowMinutes: { type: ['integer', 'null'], minimum: 15, maximum: 10080 },
+                                        responseHours: { type: 'string', enum: ['working_hours', 'always_on'] },
+                                        phoneBookingEnabled: { type: 'boolean' },
+                                        callbackEnabled: { type: 'boolean' },
+                                        requestPhotosEnabled: { type: 'boolean' },
+                                        publicContactNote: { type: ['string', 'null'], maxLength: 240 },
+                                    },
+                                    additionalProperties: false,
+                                },
+                            },
+                        },
+                    },
+                    responses: { '200': { description: 'Updated provider communication and booking preferences.' } },
+                },
+            },
             '/owner/autocare-providers/{providerId}/members': {
                 get: { operationId: 'listOwnerAutoCareProviderMembers', parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider-scoped memberships and pending staff invitations.' } } },
             },

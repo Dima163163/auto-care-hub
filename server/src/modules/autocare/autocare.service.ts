@@ -37,7 +37,7 @@ import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, to
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
 import { recordAutoCareProviderDiscoveryImpressions } from './autocare-analytics.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareCommunicationSettingsInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -757,6 +757,16 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             yearsActive: input.yearsActive,
             staffCount: input.staffCount,
             workstationCount: input.workstationCount ?? 0,
+            teamSize: input.teamSize ?? 'small_team',
+            businessType: input.businessType ?? 'company',
+            chatEnabled: input.chatEnabled ?? true,
+            communicationMode: input.communicationMode ?? 'online',
+            responseWindowMinutes: input.responseWindowMinutes ?? 240,
+            responseHours: input.responseHours ?? 'working_hours',
+            phoneBookingEnabled: input.phoneBookingEnabled ?? true,
+            callbackEnabled: input.callbackEnabled ?? true,
+            requestPhotosEnabled: input.requestPhotosEnabled ?? true,
+            publicContactNote: input.publicContactNote ?? null,
             phone: phones[0] ?? input.phone ?? null,
             phones,
             email: input.email ?? null,
@@ -794,4 +804,17 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
 
         return toProviderResponse(provider, location)
     })
+}
+
+export async function updateOwnerAutoCareCommunicationSettings(owner: UserEntity, providerId: string, input: UpdateAutoCareCommunicationSettingsInput) {
+    assertOwner(owner)
+    const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
+    const provider = await providerRepository.findOneBy({ id: providerId, ownerId: owner.id })
+    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
+
+    Object.assign(provider, input)
+    const savedProvider = await providerRepository.save(provider)
+    const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOne({ where: { providerId: savedProvider.id }, order: { id: 'ASC' } })
+    if (!location) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Automotive provider has no service location.' })
+    return toProviderResponse(savedProvider, location)
 }

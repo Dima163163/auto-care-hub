@@ -14,6 +14,7 @@ import { StateCard } from '@/shared/ui/state-card'
 import { OwnerProviderMembersPanel } from './OwnerProviderMembersPanel'
 import { OwnerProviderOnboardingPanel } from './OwnerProviderOnboardingPanel'
 import { OwnerProviderBonusPanel } from './OwnerProviderBonusPanel'
+import { OwnerProviderCommunicationSettings } from './OwnerProviderCommunicationSettings'
 
 export function OwnerAutoCareProviderDetailsPage() {
     const { locale, t } = useTranslation()
@@ -29,7 +30,7 @@ export function OwnerAutoCareProviderDetailsPage() {
     const scope = workspaceAccess.data?.scopes.find((item) => item.providerId === provider.id)
     const isDirectOwner = scope?.roles.includes('owner') ?? false
 
-    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><div className="space-y-5"><ProviderOverview provider={provider} />{isDirectOwner ? <><OwnerProviderOnboardingPanel provider={provider} locale={locale} /><OwnerProviderMembersPanel provider={provider} locale={locale} /><OwnerProviderBonusPanel provider={provider} locale={locale} /></> : <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 text-sm leading-6 text-muted-foreground shadow-sm">{locale === 'ru' ? 'Ваш доступ ограничен назначенной ролью и филиалом. Управление профилем, командой и бонусной программой доступно владельцу сервиса.' : 'Your access is limited to the assigned role and branch. Profile, team and bonus programme management are available to the service owner.'}</section>}</div></section></main>
+    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><div className="space-y-5"><ProviderOverview provider={provider} />{isDirectOwner ? <><OwnerProviderOnboardingPanel provider={provider} locale={locale} /><OwnerProviderCommunicationSettings provider={provider} locale={locale} /><OwnerProviderMembersPanel provider={provider} locale={locale} /><OwnerProviderBonusPanel provider={provider} locale={locale} /></> : <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 text-sm leading-6 text-muted-foreground shadow-sm">{locale === 'ru' ? 'Ваш доступ ограничен назначенной ролью и филиалом. Управление профилем, командой и бонусной программой доступно владельцу сервиса.' : 'Your access is limited to the assigned role and branch. Profile, team and bonus programme management are available to the service owner.'}</section>}</div></section></main>
 }
 
 function ProviderOverview({ provider }: { provider: AutoCareApiProvider }) {

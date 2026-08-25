@@ -5,6 +5,7 @@ import {
     Clock3,
     MapPin,
     MessageCircle,
+    Phone,
     Star,
     UsersRound,
 } from 'lucide-react'
@@ -41,9 +42,10 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
                             </div>
                         </div>
                         <div className="mt-5 flex flex-wrap gap-3">
-                            <Link to={routePaths.serviceRequest(provider.id)} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><CalendarDays className="size-4" />{t('autocare.bookAction')}</Link>
-                            <Link to={`${ROUTES.chats}?providerId=${encodeURIComponent(provider.id)}`} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary-foreground/30 bg-primary-foreground/10 px-4 text-sm font-black text-primary-foreground transition hover:bg-primary-foreground/15"><MessageCircle className="size-4" />{t('autocare.messageAction')}</Link>
+                            {provider.communicationMode !== 'phone_only' ? <Link to={routePaths.serviceRequest(provider.id)} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><CalendarDays className="size-4" />{provider.communicationMode === 'request_then_confirm' ? t('autocare.requestAction') : t('autocare.bookAction')}</Link> : <a href={`tel:${(provider.phones[0] ?? provider.phone ?? '').replace(/[^+\d]/g, '')}`} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><Phone className="size-4" />{t('autocare.callAction')}</a>}
+                            {provider.chatEnabled && <Link to={`${ROUTES.chats}?providerId=${encodeURIComponent(provider.id)}`} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary-foreground/30 bg-primary-foreground/10 px-4 text-sm font-black text-primary-foreground transition hover:bg-primary-foreground/15"><MessageCircle className="size-4" />{t('autocare.messageAction')}</Link>}
                         </div>
+                        {provider.publicContactNote && <p className="mt-3 text-xs font-semibold text-primary-foreground/75">{provider.publicContactNote}</p>}
                         <div className="mt-5 flex flex-wrap gap-x-7 gap-y-3 border-t border-primary-foreground/20 pt-4 text-xs font-bold text-primary-foreground/80"><HeroFact icon={<CalendarDays className="size-4" />} label={t('autocare.providerYears', { count: provider.yearsActive })} /><HeroFact icon={<UsersRound className="size-4" />} label={t('autocare.providerStaff', { count: provider.staffCount })} />{provider.workstationCount > 0 && <HeroFact icon={<BadgeCheck className="size-4" />} label={t('autocare.providerWorkstations', { count: provider.workstationCount })} />}<HeroFact icon={<BadgeCheck className="size-4" />} label={provider.warrantyText || t('autocare.providerWarranty')} /></div>
                     </div>
                     <ProviderGallery provider={provider} />

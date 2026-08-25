@@ -26,7 +26,16 @@ function getDateInputValue(offset = 0) {
 }
 
 export function ProviderRequestPanel({ provider, offering }: ProviderRequestPanelProps) {
-    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5"><BookingPanel provider={provider} offering={offering} /><EstimatePanel provider={provider} offering={offering} /><TrustPanel /><SupportPanel provider={provider} /></aside>
+    const usesOnlineSlots = provider.communicationMode !== 'phone_only' && provider.communicationMode !== 'request_then_confirm'
+    const canChat = provider.chatEnabled !== false
+    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5">{usesOnlineSlots ? <BookingPanel provider={provider} offering={offering} /> : <PhoneRequestPanel provider={provider} offering={offering} mode={provider.communicationMode ?? 'request_then_confirm'} />}{canChat && <EstimatePanel provider={provider} offering={offering} />}<TrustPanel /><SupportPanel provider={provider} /></aside>
+}
+
+function PhoneRequestPanel({ provider, offering, mode }: { provider: ProviderProfile; offering: ProviderOffering; mode: 'request_then_confirm' | 'phone_only' }) {
+    const { t } = useTranslation()
+    const phone = provider.phones[0] ?? provider.phone
+    const isPhoneOnly = mode === 'phone_only'
+    return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Phone className="size-5" /></span><div><h2 className="text-lg font-black tracking-tight text-foreground">{isPhoneOnly ? t('autocare.providerPhoneBookingTitle') : t('autocare.providerRequestConfirmTitle')}</h2><p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">{provider.publicContactNote || (isPhoneOnly ? t('autocare.providerPhoneBookingDescription') : t('autocare.providerRequestConfirmDescription'))}</p><div className="mt-4 flex flex-wrap gap-2">{!isPhoneOnly && <Link to={routePaths.serviceRequest(provider.id, offering.serviceId)} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground"><CalendarDays className="size-4" />{t('autocare.requestAction')}</Link>}{phone && provider.phoneBookingEnabled !== false ? <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] border border-border bg-background px-4 text-xs font-black text-foreground"><Phone className="size-4 text-primary" />{t('autocare.callAction')}</a> : <p className="mt-4 text-xs font-bold text-muted-foreground">{t('common.notProvided')}</p>}</div></div></div></section>
 }
 
 function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {

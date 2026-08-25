@@ -36,6 +36,8 @@ export type {
     UpdateSuperAdminAutoCareMarketHierarchyInput,
     UpdateSuperAdminAutoCareMarketZoneInput,
     UpdateSuperAdminMarketCountryInput,
+    AutoCareApiProvider,
+    UpdateAutoCareCommunicationSettingsInput,
 } from './api/autocareApi'
 export {
     useGetAutoCareDiscoveryQuery,
@@ -50,6 +52,7 @@ export {
     useUpdateSuperAdminAutoCareMarketZoneMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useUpdateOwnerAutoCareCommunicationSettingsMutation,
     useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,
     useGetOwnerAutoCareBonusLiabilityQuery,

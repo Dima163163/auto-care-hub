@@ -26,6 +26,11 @@ export enum AutomotiveBookingMode {
     Instant = 'instant',
 }
 
+export type AutomotiveProviderTeamSize = 'solo' | 'small_team' | 'team' | 'enterprise'
+export type AutomotiveProviderBusinessType = 'sole_proprietor' | 'self_employed' | 'company' | 'private_master' | 'other'
+export type AutomotiveProviderCommunicationMode = 'online' | 'request_then_confirm' | 'phone_only'
+export type AutomotiveProviderResponseHours = 'working_hours' | 'always_on'
+
 export enum AutomotiveReviewStatus {
     Approved = 'approved',
     Pending = 'pending',
@@ -139,6 +144,16 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'text', nullable: true }) websiteUrl!: string | null
     @Column({ type: 'text', nullable: true }) metroStation!: string | null
     @Column({ type: 'integer', default: 0 }) workstationCount!: number
+    @Column({ type: 'text', default: 'small_team' }) teamSize!: AutomotiveProviderTeamSize
+    @Column({ type: 'text', default: 'company' }) businessType!: AutomotiveProviderBusinessType
+    @Column({ type: 'boolean', default: true }) chatEnabled!: boolean
+    @Column({ type: 'text', default: 'online' }) communicationMode!: AutomotiveProviderCommunicationMode
+    @Column({ type: 'integer', nullable: true, default: 240 }) responseWindowMinutes!: number | null
+    @Column({ type: 'text', default: 'working_hours' }) responseHours!: AutomotiveProviderResponseHours
+    @Column({ type: 'boolean', default: true }) phoneBookingEnabled!: boolean
+    @Column({ type: 'boolean', default: true }) callbackEnabled!: boolean
+    @Column({ type: 'boolean', default: true }) requestPhotosEnabled!: boolean
+    @Column({ type: 'text', nullable: true }) publicContactNote!: string | null
     @Column({ type: 'text', nullable: true }) warrantyText!: string | null
     @Column({ type: 'text', nullable: true }) logoUrl!: string | null
     @Column({ type: 'text', nullable: true }) coverImageUrl!: string | null

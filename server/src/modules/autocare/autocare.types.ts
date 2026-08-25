@@ -1,4 +1,4 @@
-import type { AutomotivePriceType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import type { AutomotivePriceType, AutomotiveProviderBusinessType, AutomotiveProviderCommunicationMode, AutomotiveProviderResponseHours, AutomotiveProviderStatus, AutomotiveProviderTeamSize } from '../../entities/automotive/automotive.entity.js'
 import type { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import type { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import type { ServiceMessageOffer, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
@@ -99,6 +99,16 @@ export type AutoCareProviderResponse = {
     websiteUrl: string | null
     metroStation: string | null
     workstationCount: number
+    teamSize: AutomotiveProviderTeamSize
+    businessType: AutomotiveProviderBusinessType
+    chatEnabled: boolean
+    communicationMode: AutomotiveProviderCommunicationMode
+    responseWindowMinutes: number | null
+    responseHours: AutomotiveProviderResponseHours
+    phoneBookingEnabled: boolean
+    callbackEnabled: boolean
+    requestPhotosEnabled: boolean
+    publicContactNote: string | null
     warrantyText: string | null
     logoUrl: string | null
     coverImageUrl: string | null
@@ -402,6 +412,16 @@ export type OwnerAutoCareProviderInput = {
     yearsActive: number
     staffCount: number
     workstationCount?: number
+    teamSize?: AutomotiveProviderTeamSize
+    businessType?: AutomotiveProviderBusinessType
+    chatEnabled?: boolean
+    communicationMode?: AutomotiveProviderCommunicationMode
+    responseWindowMinutes?: number | null
+    responseHours?: AutomotiveProviderResponseHours
+    phoneBookingEnabled?: boolean
+    callbackEnabled?: boolean
+    requestPhotosEnabled?: boolean
+    publicContactNote?: string | null
     phone?: string | null
     phones?: string[]
     email?: string | null
@@ -415,6 +435,19 @@ export type OwnerAutoCareProviderInput = {
     logoUrl?: string | null
     coverImageUrl?: string | null
     galleryImageUrls?: string[]
+}
+
+export type UpdateAutoCareCommunicationSettingsInput = {
+    teamSize: AutomotiveProviderTeamSize
+    businessType: AutomotiveProviderBusinessType
+    chatEnabled: boolean
+    communicationMode: AutomotiveProviderCommunicationMode
+    responseWindowMinutes: number | null
+    responseHours: AutomotiveProviderResponseHours
+    phoneBookingEnabled: boolean
+    callbackEnabled: boolean
+    requestPhotosEnabled: boolean
+    publicContactNote: string | null
 }
 
 export type AutoCareProviderChangeRequestPayload = Record<string, unknown>
