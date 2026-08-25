@@ -1,6 +1,5 @@
 import { In } from 'typeorm'
 
-import { env } from '../config/env.js'
 import { AppDataSource } from '../database/data-source.js'
 import {
     AutomotiveProviderEntity,

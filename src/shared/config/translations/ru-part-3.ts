@@ -433,6 +433,7 @@ autocare: {
         providerDirectPayment: 'Оплата согласуется напрямую с сервисом.',
         providerWarranty: 'Гарантия и состав работ видны до подтверждения.',
         providerNoReviews: 'Пока нет отзывов по этой услуге.',
+        providerNoReviewsDescription: 'После подтверждённого визита клиент сможет оставить первый отзыв об этом сервисе.',
         providerNotFound: 'Профиль сервиса недоступен.',
         providerNoOffersTitle: 'Опубликованных услуг пока нет',
         providerNoOffersDescription: 'Сервис завершает заполнение каталога. Попробуйте другую локацию или зайдите позже.',
