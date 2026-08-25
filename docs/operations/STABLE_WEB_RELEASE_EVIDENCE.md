@@ -25,6 +25,10 @@ redacted artifacts.
   `docs/archive/bookly/e2e/`.
 - [x] The workspace layout has one page landmark per route and the shared
   light-theme primary/rating tokens meet the intended text contrast target.
+- [x] Local Chromium release audit covers maintained responsive widths,
+  keyboard operation, burger navigation, Axe accessibility, all supported
+  locales and owner workspace privacy controls. See
+  `BROWSER_RELEASE_AUDIT_2026-08-25.md`.
 
 ## External sign-off still required
 

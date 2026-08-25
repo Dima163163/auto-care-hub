@@ -13,8 +13,11 @@ product decision or a larger follow-up slice.
   mock states.
 - ✅ Provider/admin dashboard queues render retryable states; admin appeals
   queue and client appeal history are now wired to the same API contract.
-- ❌ Full real-device responsive, keyboard, screen-reader and long-translation
-  audit.
+- ✅ Local Chromium release audit covers responsive widths, keyboard operation,
+  burger navigation, Axe accessibility and all 20 supported locales; evidence
+  is recorded in `BROWSER_RELEASE_AUDIT_2026-08-25.md`.
+- ❌ Physical-device responsive, real screen-reader and production
+  long-translation audit.
 
 ## 3. Search, map and trust
 
@@ -64,9 +67,11 @@ product decision or a larger follow-up slice.
   coverage readouts from the backend catalog.
 - ✅ Super-admin can edit launch readiness, default/supported locales, timezone
   and currency through a protected API with mock parity and audit logging.
-- 🟡 Country/city/zone creation and hierarchy editor plus future
-  subscription/promo controls remain open (monetization remains disabled for
-  the free client MVP).
+- ✅ Country/city/zone hierarchy editor and protected create/update contracts
+  are available in mock and real modes; production seed/review remains an
+  operational gate.
+- 🟡 Future subscription/promo controls remain open (monetization remains
+  disabled for the free client MVP).
 
 ## 8. Bonuses
 
@@ -81,9 +86,10 @@ product decision or a larger follow-up slice.
 - `tsc -p tsconfig.app.json --noEmit`
 - `npm run build`
 - `npm --prefix server run build`
-- `npm --prefix server run test:unit -- --run` — 171 files / 509 tests
+- `npm --prefix server test -- --pool=threads --maxWorkers=1 --reporter=dot` —
+  266 files / 726 tests
 - API contract, OpenAPI shape/structure, API parity and staging compatibility
   checks (staging probe skipped because `STAGING_API_BASE_URL` is unset).
-- `npm run test:e2e -- --project=chromium e2e/autocare-release-audit.spec.ts`
-  could not launch because the Playwright Chromium binary is not installed in
-  the environment; no browser download was performed.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=... npm run test:e2e --
+  --project=chromium e2e/autocare-release-audit.spec.ts` — 6 tests passed;
+  see `BROWSER_RELEASE_AUDIT_2026-08-25.md`.
