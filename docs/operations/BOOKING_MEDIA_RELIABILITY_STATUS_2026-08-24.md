@@ -29,10 +29,14 @@
    quarantine object remains.
 3. Run the retention worker against a disposable expired attachment and confirm
    the row and object are both removed.
-4. Enable `REDIS_URL` or `REDIS_HOST`, then run
+4. Run `npm --prefix server run check:production-media` from the API environment
+   with the production S3 and ClamAV configuration. The command writes only a
+   randomly named disposable object, verifies clean/EICAR scanner outcomes,
+   quarantine promotion and signed private read, then removes both objects.
+5. Enable `REDIS_URL` or `REDIS_HOST`, then run
    `npm --prefix server run smoke:autocare-realtime` from the API environment.
-5. Configure the production email provider and send a reminder through the
+6. Configure the production email provider and send a reminder through the
    outbox. Browser push requires separate VAPID keys and persisted subscription
    records; it is deliberately not enabled without those credentials.
-6. Keep chat navigation disabled until the report/block workflow and moderation
+7. Keep chat navigation disabled until the report/block workflow and moderation
    policy are approved for the MVP release.
