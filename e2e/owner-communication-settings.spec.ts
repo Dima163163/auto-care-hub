@@ -10,6 +10,12 @@ test.describe('owner communication settings', () => {
 
         await page.goto('/owner/autocare-providers')
         await expect(page.getByTestId('owner-provider-card').first()).toBeVisible()
+        const quickChatToggle = page.getByRole('switch', { name: /чаты|chat/i }).first()
+        await expect(quickChatToggle).toBeChecked()
+        await quickChatToggle.uncheck()
+        await expect(quickChatToggle).not.toBeChecked()
+        await quickChatToggle.check()
+        await expect(quickChatToggle).toBeChecked()
         await page.getByTestId('owner-provider-communication-link').first().click()
 
         await expect(page).toHaveURL(/\/owner\/autocare-providers\/[^/]+$/)
@@ -26,5 +32,10 @@ test.describe('owner communication settings', () => {
         await page.getByRole('button', { name: /сохранить режим связи|save contact settings/i }).click()
         await expect(page.getByRole('status')).toContainText(/сохранены|saved/i)
         await expect(chatToggle).toBeChecked()
+
+        await page.goto('/profile')
+        await expect(page.getByTestId('owner-profile-communication-settings')).toBeVisible()
+        await expect(page.getByRole('switch', { name: /чаты клиентов|customer chat/i }).first()).toBeChecked()
+        await expect(page.getByRole('switch', { name: /запись по телефону|phone bookings/i }).first()).toBeVisible()
     })
 })

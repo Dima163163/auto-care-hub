@@ -1,9 +1,30 @@
 import { Building2, MapPin, MessageCircle, Phone, Settings2 } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
-import { automotiveAmenities, getAutomotiveAmenityLabel, ProviderLogo, type AutoCareApiProvider, type AutomotiveAmenity } from '@/entities/automotive-service'
+import { automotiveAmenities, getAutomotiveAmenityLabel, ProviderLogo, type AutoCareApiProvider, type AutomotiveAmenity, useUpdateOwnerAutoCareCommunicationSettingsMutation, type UpdateAutoCareCommunicationSettingsInput } from '@/entities/automotive-service'
+import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { routePaths } from '@/shared/constants/routes'
+import { CommunicationSwitch } from '@/shared/ui/communication-switch'
+
+type CommunicationSettings = Omit<UpdateAutoCareCommunicationSettingsInput, 'providerId'>
+
+function getCommunicationSettings(provider: AutoCareApiProvider): CommunicationSettings {
+    return {
+        teamSize: provider.teamSize ?? 'small_team',
+        businessType: provider.businessType ?? 'company',
+        chatEnabled: provider.chatEnabled ?? true,
+        communicationMode: provider.communicationMode ?? 'online',
+        responseWindowMinutes: provider.responseWindowMinutes ?? 240,
+        responseHours: provider.responseHours ?? 'working_hours',
+        phoneBookingEnabled: provider.phoneBookingEnabled ?? true,
+        callbackEnabled: provider.callbackEnabled ?? true,
+        requestPhotosEnabled: provider.requestPhotosEnabled ?? true,
+        publicContactNote: provider.publicContactNote ?? null,
+    }
+}
 
 type OwnerAutoCareProviderListProps = {
     providers: AutoCareApiProvider[]
@@ -35,10 +56,35 @@ export function OwnerAutoCareProviderList({ providers }: OwnerAutoCareProviderLi
                     <p className="mt-4 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{provider.description || t('common.notProvided')}</p><p className="mt-4 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">{t('autocare.ownerProviderAmenitiesCount', { count: amenities.length })}</p><div className="mt-2 flex flex-wrap gap-1.5">{amenities.map((amenity) => <span key={amenity.id} className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{getAutomotiveAmenityLabel(amenity, locale)}</span>)}</div>
                 </Link>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-xs font-bold">
-                    <span className="inline-flex items-center gap-1.5 text-muted-foreground"><MessageCircle className="size-3.5 text-primary" />{chatEnabled ? (locale === 'ru' ? 'Чаты включены' : 'Chat enabled') : (<><Phone className="size-3.5 text-primary" />{locale === 'ru' ? 'Связь по телефону' : 'Phone contact'}<span className="sr-only">{modeLabel}</span></>)}</span>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground"><MessageCircle className="size-3.5 text-primary" />{chatEnabled ? (locale === 'ru' ? 'Чаты включены' : 'Chat enabled') : (<><Phone className="size-3.5 text-primary" />{locale === 'ru' ? 'Связь по телефону' : 'Phone contact'}<span className="sr-only">{modeLabel}</span></>)}</span>
+                        <OwnerProviderChatQuickSwitch provider={provider} locale={locale} />
+                    </div>
                     <Link data-testid="owner-provider-communication-link" to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border border-primary/35 px-3 py-1.5 text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Settings2 className="size-3.5" />{locale === 'ru' ? 'Настроить связь' : 'Contact settings'}</Link>
                 </div>
             </article>
         })}
     </div>
+}
+
+function OwnerProviderChatQuickSwitch({ provider, locale }: { provider: AutoCareApiProvider; locale: string }) {
+    const ru = locale === 'ru'
+    const [enabled, setEnabled] = useState(provider.chatEnabled !== false && provider.communicationMode !== 'phone_only')
+    const [update, state] = useUpdateOwnerAutoCareCommunicationSettingsMutation()
+    const disabled = provider.communicationMode === 'phone_only' || state.isLoading
+
+    const handleChange = async (value: boolean) => {
+        if (disabled) return
+        const previous = enabled
+        setEnabled(value)
+        try {
+            await update({ providerId: provider.id, ...getCommunicationSettings(provider), chatEnabled: value }).unwrap()
+            toast.success(ru ? 'Чат обновлён.' : 'Chat updated.')
+        } catch (error) {
+            setEnabled(previous)
+            toast.error(getApiErrorMessage(error, ru ? 'Не удалось обновить чат.' : 'Could not update chat.'))
+        }
+    }
+
+    return <CommunicationSwitch id={`owner-list-chat-${provider.id}`} compact checked={enabled} disabled={disabled} onChange={(event) => void handleChange(event.target.checked)} label={ru ? 'Чаты' : 'Chat'} />
 }
