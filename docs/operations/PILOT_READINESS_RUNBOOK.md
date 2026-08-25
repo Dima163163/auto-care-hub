@@ -39,6 +39,9 @@ providers, customers and production infrastructure.
 
 The quality preflight is a data gate, not pilot evidence: it cannot replace
 real provider/customer sessions, response-time measurements or support sign-off.
+The latest disposable local run is recorded in
+`LOCAL_PILOT_QUALITY_EVIDENCE_2026-08-25.md`; its reliability gate remains
+blocked until real response samples are collected.
 
 ## Stop conditions
 
