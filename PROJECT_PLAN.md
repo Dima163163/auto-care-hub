@@ -184,6 +184,33 @@ The repository is no longer at the planning-only stage. The following is the
 current, reviewed implementation state and is the source for the next slices of
 work.
 
+### 4.0.1 Automated release-gate evidence — 2026-08-25
+
+The following checks were run against a clean Next.js dev server on Chromium
+and are now closed for the local/mock release gate:
+
+- [x] Next.js direct-route smoke: 12/12 — representative public and protected
+  URLs return successfully, provider deep links hydrate after reload, unknown
+  URLs return a real 404, and unauthenticated protected URLs redirect to login.
+- [x] Chromium release audit: 21/21 — responsive widths 360, 390, 414, 540,
+  682, 768, 790, 1024, 1280 and 1440; filter/sort controls; burger boundary;
+  gallery Escape/focus restoration; Axe checks; owner workspace; and locale
+  overflow checks.
+- [x] Full mock E2E matrix: 84/84 — public/client states, garage, comparison,
+  attachment viewer, bonuses, reviews (empty/one/many/photo), removed and
+  suspended providers, API error/stale/offline/permission states, mobile
+  journeys, profile privacy, security center and workspace routes.
+- [x] Frontend unit suite: 104 files / 348 tests.
+- [x] Local contract gates: staging API parity, Next route contract, security
+  headers, interaction contract and PWA update checks all pass. The external
+  staging probe remains intentionally skipped when `STAGING_API_BASE_URL` is
+  not configured.
+
+These results close the corresponding local/mock UI, loading-state,
+responsive, accessibility and localization checklist items. They do not close
+production-device, screen-reader, staging, infrastructure, legal or real-pilot
+evidence gates.
+
 | Area | Current state | Next required work |
 | --- | --- | --- |
 | Public shell | AutoCare SVG logo, responsive header with grouped help/client/provider navigation, locale selector, shared footer, SEO foundation, role-aware Help Center, themed registration and non-duplicated footer navigation are implemented. At 1120px and below the desktop shell hides primary links and exposes a working burger menu; from 1121px regular desktop links return, while below 768px the dedicated mobile header remains active. Legal links now resolve to detailed `/agreement`, `/rules` and `/privacy` pages with client/provider sections, table of contents, stable anchors and SEO metadata. The provider pricing route/components remain preserved but pricing navigation and promotional blocks are hidden during the free MVP launch. | Have the legal entity review and approve the draft texts for Russia, Spain and Moldova/Transnistria; then test every footer route at all maintained locales and publish the final controller/contact/retention details. Enable provider pricing only after the monetization gate is approved. |
@@ -202,7 +229,8 @@ The remaining public pages use the AutoCare visual shell, but Blog, Partners,
 Contacts, Rules and Privacy still use a shared generic information composition;
 their final policy/content pass is not complete. The responsive pass covers
 the main stacked layouts, and public/workspace header tablet overlap handling is
-implemented; full 360/390/768/1024 visual QA is still open.
+implemented; the automated 360/390/414/540/682/768/790/1024/1280/1440 release
+matrix is green. Production-device and screen-reader evidence is still open.
 PWA install prompting and the service-worker contract exist. Anonymous AutoCare
 markets, zones, service definitions, provider search, provider profiles and
 platform reviews are cached for offline use; the production preview verifies
