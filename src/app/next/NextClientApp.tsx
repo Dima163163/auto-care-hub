@@ -10,6 +10,7 @@ import { loadTranslations } from '@/shared/config/translations'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { readPublicEnv } from '@/shared/config/runtime-env'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
+import { BrandLogo } from '@/shared/ui/brand-logo'
 import {
     applyTheme,
     getInitialTheme,
@@ -24,12 +25,33 @@ let mockingPromise: Promise<void> | null = null
 
 function NextShellSkeleton() {
     return (
-        <div aria-busy="true" className="min-h-screen bg-background">
-            <div className="h-16 border-b border-border bg-card" />
-            <main className="mx-auto min-h-[70vh] max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-8">
-                <div className="h-32 animate-pulse rounded-[var(--radius-panel)] bg-muted" />
+        <div aria-busy="true" aria-label="Loading AutoCare Hub" className="flex min-h-screen flex-col bg-background text-foreground">
+            <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center border-b border-primary-foreground/10 bg-hero-overlay px-[var(--layout-gutter)] text-primary-foreground md:h-[84px]">
+                <div className="mx-auto flex w-full max-w-[var(--layout-public-max)] items-center justify-between gap-4">
+                    <BrandLogo size="sm" />
+                    <div className="flex items-center gap-2" aria-hidden="true">
+                        <span className="hidden h-9 w-24 animate-pulse rounded-[var(--radius-control)] bg-primary-foreground/10 sm:block" />
+                        <span className="h-9 w-20 animate-pulse rounded-[var(--radius-control)] bg-primary-foreground/10" />
+                        <span className="size-9 animate-pulse rounded-full bg-primary-foreground/10" />
+                    </div>
+                </div>
+            </header>
+            <main className="flex min-h-[calc(100dvh-16rem)] flex-1 items-start">
+                <div className="mx-auto w-full max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-8" role="status">
+                    <div className="h-8 w-56 animate-pulse rounded bg-muted" />
+                    <div className="mt-4 h-4 max-w-xl animate-pulse rounded bg-muted" />
+                    <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]">
+                        <div className="h-64 animate-pulse rounded-[var(--radius-panel)] bg-muted" />
+                        <div className="h-64 animate-pulse rounded-[var(--radius-panel)] bg-muted" />
+                    </div>
+                </div>
             </main>
-            <div className="h-48 bg-card" />
+            <footer className="flex min-h-40 shrink-0 items-end bg-hero-overlay px-[var(--layout-gutter)] py-8 text-primary-foreground">
+                <div className="mx-auto flex w-full max-w-[var(--layout-public-max)] items-center justify-between gap-6" aria-hidden="true">
+                    <BrandLogo size="sm" />
+                    <div className="hidden gap-3 sm:flex"><span className="h-3 w-24 animate-pulse rounded bg-primary-foreground/10" /><span className="h-3 w-20 animate-pulse rounded bg-primary-foreground/10" /><span className="h-3 w-28 animate-pulse rounded bg-primary-foreground/10" /></div>
+                </div>
+            </footer>
         </div>
     )
 }
