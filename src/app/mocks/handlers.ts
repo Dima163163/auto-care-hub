@@ -2690,7 +2690,15 @@ export const handlers = [
         const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
 
-        const providerReviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === provider.id)
+        const allProviderReviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === provider.id)
+        const reviewFixture = request.headers.get('x-autocare-review-fixture')
+        const providerReviews = reviewFixture === 'empty'
+            ? []
+            : reviewFixture === 'one'
+                ? allProviderReviews.slice(0, 1)
+                : reviewFixture === 'photos'
+                    ? allProviderReviews.filter((review) => review.photoUrls.length > 0).slice(0, 1)
+                    : allProviderReviews
         const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
         providerReviews.forEach((review) => { distribution[String(review.rating) as keyof typeof distribution] += 1 })
         const averageRating = providerReviews.length === 0 ? 0 : Number((providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerReviews.length).toFixed(1))
@@ -3849,7 +3857,15 @@ export const handlers = [
 
     http.get('/api/v1/reviews/featured', ({ request }) => {
         const limit = Number(new URL(request.url).searchParams.get('limit') ?? 6)
-        return HttpResponse.json(mockFeaturedAutoCareReviews.slice(0, Number.isFinite(limit) ? limit : 6))
+        const fixture = request.headers.get('x-autocare-review-fixture')
+        const reviews = fixture === 'empty'
+            ? []
+            : fixture === 'one'
+                ? mockFeaturedAutoCareReviews.slice(0, 1)
+                : fixture === 'photos'
+                    ? mockFeaturedAutoCareReviews.filter((review) => review.photoUrls.length > 0).slice(0, 3)
+                    : mockFeaturedAutoCareReviews
+        return HttpResponse.json(reviews.slice(0, Number.isFinite(limit) ? limit : 6))
     }),
 
     http.get('/api/cabinets/:id', ({ params }) => {

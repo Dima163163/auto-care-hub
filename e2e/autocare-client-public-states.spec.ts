@@ -36,6 +36,29 @@ async function useMockScenario(page: Page, scenario: 'error' | 'stale' | 'offlin
     }, { apiPath, mockScenario: scenario })
 }
 
+async function useReviewFixture(page: Page, fixture: 'empty' | 'one' | 'photos') {
+    await page.addInitScript(({ reviewFixture }) => {
+        const originalFetch = window.fetch.bind(window)
+
+        window.fetch = (input, init) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : input.url
+
+            if (!url.includes('/v1/providers/') || !url.includes('/reviews')) return originalFetch(input, init)
+
+            const requestHeaders = input instanceof Request ? input.headers : undefined
+            const headers = new Headers(requestHeaders)
+            new Headers(init?.headers).forEach((value, key) => headers.set(key, value))
+            headers.set('x-autocare-review-fixture', reviewFixture)
+
+            return originalFetch(input, { ...init, headers })
+        }
+    }, { reviewFixture: fixture })
+}
+
 test.describe('public and client AutoCare states', () => {
     test('opens the provider gallery and the service comparison table', async ({ page }) => {
         await page.goto('/services?service=oil-change')
@@ -52,6 +75,28 @@ test.describe('public and client AutoCare states', () => {
         await expect(galleryDialog).toBeVisible()
         await galleryDialog.getByRole('button', { name: /next photo|следующее фото/i }).click()
         await expect(galleryDialog.locator('img').first()).toBeVisible()
+    })
+
+    test('renders an explicit empty review state for a provider', async ({ page }) => {
+        await useReviewFixture(page, 'empty')
+        await page.goto('/services/api-proservice-moscow')
+
+        await expect(page.locator('#reviews')).toContainText(/no reviews for this service yet|no published reviews|отзывов пока нет/i)
+    })
+
+    test('renders a single published review fixture without collapsing the review section', async ({ page }) => {
+        await useReviewFixture(page, 'one')
+        await page.goto('/services/api-proservice-moscow')
+
+        await expect(page.locator('#reviews')).toBeVisible()
+        await expect(page.locator('#reviews article')).toHaveCount(1)
+    })
+
+    test('renders a one-review fixture with customer photos', async ({ page }) => {
+        await useReviewFixture(page, 'photos')
+        await page.goto('/services/api-proservice-moscow')
+
+        await expect(page.locator('#reviews img[alt="Фото из отзыва"]')).toHaveCount(1)
     })
 
     test('renders bonus history, garage controls, and an attachment viewer for a client', async ({ page }) => {

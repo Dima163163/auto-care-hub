@@ -42,6 +42,66 @@ describe('AutoCare public catalog and request route integration', () => {
         expect(response.body.items.length).toBeLessThanOrEqual(8)
     })
 
+    it('keeps keyset pages stable, bounded and duplicate-free', async () => {
+        const firstPage = await request(app.server)
+            .get('/v1/discovery/providers')
+            .query({ serviceId: 'oil-change', marketId: 'moscow', radiusKm: 25, sort: 'distance_asc', limit: 1 })
+
+        expect(firstPage.status).toBe(200)
+        expect(firstPage.body.items.length).toBeLessThanOrEqual(1)
+        const firstKeys = firstPage.body.items.map((item: { provider: { id: string; location: { id: string } } }) => `${item.provider.id}:${item.provider.location.id}`)
+        expect(new Set(firstKeys).size).toBe(firstKeys.length)
+
+        if (typeof firstPage.body.nextCursor === 'string') {
+            const secondPage = await request(app.server)
+                .get('/v1/discovery/providers')
+                .query({ serviceId: 'oil-change', marketId: 'moscow', radiusKm: 25, sort: 'distance_asc', limit: 1, cursor: firstPage.body.nextCursor })
+            expect(secondPage.status).toBe(200)
+            expect(secondPage.body.items.length).toBeLessThanOrEqual(1)
+            const secondKeys = secondPage.body.items.map((item: { provider: { id: string; location: { id: string } } }) => `${item.provider.id}:${item.provider.location.id}`)
+            expect(new Set(secondKeys).size).toBe(secondKeys.length)
+            expect(secondKeys.some((key: string) => firstKeys.includes(key))).toBe(false)
+        }
+    })
+
+    it('returns an explicit empty result for an unavailable market and validates discovery bounds', async () => {
+        const empty = await request(app.server)
+            .get('/v1/discovery/providers')
+            .query({ serviceId: 'oil-change', marketId: 'not-published-city', radiusKm: 25, limit: 8 })
+        expect(empty.status).toBe(200)
+        expect(empty.body.items).toEqual([])
+        expect(empty.body.nextCursor).toBeNull()
+
+        const tooMany = await request(app.server)
+            .get('/v1/discovery/providers')
+            .query({ marketId: 'moscow', limit: 51 })
+        const invalidRadius = await request(app.server)
+            .get('/v1/discovery/providers')
+            .query({ marketId: 'moscow', radiusKm: 0 })
+        expect(tooMany.status).toBe(400)
+        expect(invalidRadius.status).toBe(400)
+    })
+
+    it('applies brand compatibility, multibrand fallback and price ordering in SQL-backed discovery', async () => {
+        const bmw = await request(app.server)
+            .get('/v1/discovery/providers')
+            .query({ serviceId: 'oil-change', marketId: 'moscow', radiusKm: 25, brandId: 'bmw', sort: 'price_asc', limit: 8 })
+
+        expect(bmw.status).toBe(200)
+        expect(bmw.body.items.length).toBeGreaterThan(0)
+        const bmwPrices = bmw.body.items.map((item: { offer: { priceFromMinor: number } }) => item.offer.priceFromMinor)
+        expect(bmwPrices).toEqual([...bmwPrices].sort((left: number, right: number) => left - right))
+        expect(bmw.body.items.every((item: { provider: { isMultibrand: boolean; brandSpecializations: string[] } }) => item.provider.isMultibrand || item.provider.brandSpecializations.includes('bmw'))).toBe(true)
+
+        const multibrand = await request(app.server)
+            .get('/v1/discovery/providers')
+            .query({ serviceId: 'oil-change', marketId: 'moscow', radiusKm: 25, brandId: 'brand-not-in-catalog', limit: 8 })
+
+        expect(multibrand.status).toBe(200)
+        expect(multibrand.body.items.length).toBeGreaterThan(0)
+        expect(multibrand.body.items.every((item: { provider: { isMultibrand: boolean } }) => item.provider.isMultibrand)).toBe(true)
+    })
+
     it('requires a verified client before creating a service request', async () => {
         const response = await request(app.server)
             .post('/v1/service-requests')
