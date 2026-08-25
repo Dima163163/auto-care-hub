@@ -697,9 +697,11 @@ Required design work:
   visual system; initial implementations exist.
 - [x] Implement the approved service-request screen and the approved
   owner-acquisition landing page.
-- [~] Add missing customer mocks: service-request conversation, quote
+- [x] Add missing customer mocks: service-request conversation, quote
   visibility and quote acceptance are connected; comparison table, vehicle
-  garage, attachment viewer, bonuses and reviews remain.
+  garage, attachment viewer, bonuses and reviews are covered by the mock/API
+  contracts and the 84-test Chromium E2E matrix. Real-device media acceptance
+  remains an external release check.
 - [~] Add missing provider mocks: the request inbox, conversation, confirmation
   and quote composer are now connected; onboarding, location/offer editor,
   calendar, bookings, bonus program, analytics and team remain.
@@ -710,12 +712,13 @@ Required design work:
   grant, promo-redemption and billing-incident workflows stay disabled until
   monetization is approved.
 - [~] Include loading, empty, error, stale, offline, success,
-  permission-denied, suspended and expired-subscription states.
+  permission-denied, suspended and expired-subscription states. The local/mock
+  state matrix is covered by E2E; real API and production delivery failures
+  remain a release check.
 - [~] Include keyboard focus, contrast, reduced-motion, localization and long
-  content examples.
-  Focus-visible, design-token, interaction-contract, locale and responsive
-  checks are automated; a full axe/device/long-copy matrix remains before the
-  stable-web gate.
+  content examples. Focus-visible, design-token, interaction-contract, Axe,
+  locale and responsive checks are green in the automated release matrix;
+  real screen-reader/device evidence remains before the stable-web gate.
 - [~] Generate or render proposal images for review; the approved homepage and
   public state matrix are documented, while remaining admin/workspace state
   boards are still pending.
