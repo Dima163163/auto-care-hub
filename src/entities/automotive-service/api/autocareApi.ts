@@ -1024,6 +1024,16 @@ export type CreateOwnerAutoCareProviderInput = {
     yearsActive: number
     staffCount: number
     workstationCount?: number
+    teamSize?: 'solo' | 'small_team' | 'team' | 'enterprise'
+    businessType?: 'sole_proprietor' | 'self_employed' | 'company' | 'private_master' | 'other'
+    chatEnabled?: boolean
+    communicationMode?: 'online' | 'request_then_confirm' | 'phone_only'
+    responseWindowMinutes?: number | null
+    responseHours?: 'working_hours' | 'always_on'
+    phoneBookingEnabled?: boolean
+    callbackEnabled?: boolean
+    requestPhotosEnabled?: boolean
+    publicContactNote?: string | null
     phone?: string | null
     phones?: string[]
     email?: string | null

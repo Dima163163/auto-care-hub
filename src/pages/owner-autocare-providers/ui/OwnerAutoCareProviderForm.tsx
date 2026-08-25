@@ -32,6 +32,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
     const [uploadLogo, { isLoading: isLogoUploading }] = useUploadOwnerAutoCareProviderLogoMutation()
     const [uploadMedia, { isLoading: isMediaUploading }] = useUploadOwnerAutoCareProviderMediaMutation()
     const [isMultibrand, setIsMultibrand] = useState(true)
+    const [chatEnabled, setChatEnabled] = useState(false)
+    const [communicationMode, setCommunicationMode] = useState<'online' | 'request_then_confirm' | 'phone_only'>('request_then_confirm')
     const [selectedBrands, setSelectedBrands] = useState<string[]>([])
     const [selectedAmenities, setSelectedAmenities] = useState<AutomotiveAmenityId[]>([...defaultAutomotiveAmenityIds])
     const [additionalPhones, setAdditionalPhones] = useState<number[]>([])
@@ -79,6 +81,16 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 yearsActive: Number(formData.get('yearsActive') ?? 0),
                 staffCount: Number(formData.get('staffCount') ?? 0),
                 workstationCount: Number(formData.get('workstationCount') ?? 0),
+                teamSize: 'small_team',
+                businessType: 'company',
+                chatEnabled,
+                communicationMode,
+                responseWindowMinutes: chatEnabled ? 240 : null,
+                responseHours: 'working_hours',
+                phoneBookingEnabled: true,
+                callbackEnabled: true,
+                requestPhotosEnabled: true,
+                publicContactNote: null,
                 phone: phones[0] ?? null,
                 phones,
                 email: optionalText(formData.get('email')),
@@ -96,6 +108,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             await createProvider(body).unwrap()
             event.currentTarget.reset()
             setIsMultibrand(true)
+            setChatEnabled(false)
+            setCommunicationMode('request_then_confirm')
             setSelectedBrands([])
             setSelectedAmenities([...defaultAutomotiveAmenityIds])
             setAdditionalPhones([])
@@ -202,6 +216,15 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                         <span className="mt-1 block text-xs font-medium text-muted-foreground">{t('autocare.ownerProviderGalleryHint')}</span>
                         {galleryPreviews.length > 0 && <div className="mt-3 grid grid-cols-4 gap-2">{galleryPreviews.map((preview) => <img key={preview} src={preview} alt="" className="aspect-square rounded-lg border object-cover" />)}</div>}
                     </Field>
+                </section>
+
+                <section className="border-t pt-5">
+                    <h3 className="text-sm font-bold">{locale === 'ru' ? 'Связь с клиентами' : 'Customer contact'}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{locale === 'ru' ? 'По умолчанию новая небольшая команда принимает заявку и подтверждает время по телефону. Чаты можно включить позже в профиле сервиса.' : 'By default, a small new team receives requests and confirms times by phone. You can enable chat later in the service profile.'}</p>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <label htmlFor="owner-create-chat-enabled" className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-card)] border border-primary/30 bg-primary/5 p-3 text-sm font-bold"><input id="owner-create-chat-enabled" data-testid="owner-create-chat-toggle" type="checkbox" checked={chatEnabled} disabled={communicationMode === 'phone_only'} onChange={(event) => setChatEnabled(event.target.checked)} /><span>{locale === 'ru' ? 'Принимать вопросы в чате' : 'Accept customer chat'}</span></label>
+                        <label className="grid gap-1.5 text-xs font-black"><span>{locale === 'ru' ? 'Режим записи' : 'Booking mode'}</span><select className={inputClassName} value={communicationMode} onChange={(event) => { const mode = event.target.value as typeof communicationMode; setCommunicationMode(mode); if (mode === 'phone_only') setChatEnabled(false) }}><option value="request_then_confirm">{locale === 'ru' ? 'Заявка + подтверждение по телефону' : 'Request + phone confirmation'}</option><option value="online">{locale === 'ru' ? 'Онлайн-запись по слотам' : 'Online slots'}</option><option value="phone_only">{locale === 'ru' ? 'Только по телефону' : 'Phone only'}</option></select></label>
+                    </div>
                 </section>
 
                 <section className="border-t pt-5">

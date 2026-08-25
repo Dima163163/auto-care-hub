@@ -51,7 +51,12 @@ resources:
   provider_profile_create:
     create: verified_owner
     route: /api/owner/autocare-providers
-    fields: [name, description, marketId, zoneId, address, hours, yearsActive, staffCount, workstationCount, phone, phones, email, websiteUrl, metroStation, warrantyText, bonusSummary, isMultibrand, brandSpecializations, amenityIds, logoUrl, coverImageUrl, galleryImageUrls]
+    fields: [name, description, marketId, zoneId, address, hours, yearsActive, staffCount, workstationCount, teamSize, businessType, chatEnabled, communicationMode, responseWindowMinutes, responseHours, phoneBookingEnabled, callbackEnabled, requestPhotosEnabled, publicContactNote, phone, phones, email, websiteUrl, metroStation, warrantyText, bonusSummary, isMultibrand, brandSpecializations, amenityIds, logoUrl, coverImageUrl, galleryImageUrls]
+  provider_communication_settings:
+    update: verified_owner
+    route: /api/owner/autocare-providers/{providerId}/communication-settings
+    fields: [teamSize, businessType, chatEnabled, communicationMode, responseWindowMinutes, responseHours, phoneBookingEnabled, callbackEnabled, requestPhotosEnabled, publicContactNote]
+    invariants: [phone_only_requires_phone_booking, phone_only_disables_chat, chat_requires_response_window]
   provider_logo:
     create: verified_owner
     route: /api/owner/autocare-providers/logo

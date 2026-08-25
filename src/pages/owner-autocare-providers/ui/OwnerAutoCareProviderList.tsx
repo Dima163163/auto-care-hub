@@ -1,4 +1,4 @@
-import { Building2, MapPin } from 'lucide-react'
+import { Building2, MapPin, MessageCircle, Phone, Settings2 } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { automotiveAmenities, getAutomotiveAmenityLabel, ProviderLogo, type AutoCareApiProvider, type AutomotiveAmenity } from '@/entities/automotive-service'
@@ -22,7 +22,23 @@ export function OwnerAutoCareProviderList({ providers }: OwnerAutoCareProviderLi
                 const amenity = automotiveAmenities.find((item) => item.id === id)
                 return amenity ? [...items, amenity] : items
             }, [])
-            return <Link key={provider.id} to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="block rounded-xl border bg-card p-5 shadow-sm transition hover:border-primary hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-10 shrink-0" /><div className="min-w-0"><h2 className="truncate font-bold">{provider.name}</h2><p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-3.5" />{provider.location.address}</p></div></div><span className="shrink-0 rounded-full bg-status-warning-surface px-2.5 py-1 text-xs font-bold text-status-warning-foreground">{provider.status === 'active' ? t('autocare.ownerProviderPublished') : t('autocare.ownerProviderDraft')}</span></div><p className="mt-4 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{provider.description || t('common.notProvided')}</p><p className="mt-4 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">{t('autocare.ownerProviderAmenitiesCount', { count: amenities.length })}</p><div className="mt-2 flex flex-wrap gap-1.5">{amenities.map((amenity) => <span key={amenity.id} className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{getAutomotiveAmenityLabel(amenity, locale)}</span>)}</div></Link>
+            const chatEnabled = provider.chatEnabled !== false
+            const mode = provider.communicationMode ?? 'online'
+            const modeLabel = mode === 'phone_only'
+                ? (locale === 'ru' ? 'Только по телефону' : 'Phone only')
+                : mode === 'request_then_confirm'
+                    ? (locale === 'ru' ? 'Заявка + подтверждение' : 'Request + confirmation')
+                    : (locale === 'ru' ? 'Онлайн-запись' : 'Online booking')
+            return <article key={provider.id} data-testid="owner-provider-card" className="rounded-xl border bg-card p-5 shadow-sm transition hover:border-primary hover:shadow-md">
+                <Link to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-10 shrink-0" /><div className="min-w-0"><h2 className="truncate font-bold">{provider.name}</h2><p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-3.5" />{provider.location.address}</p></div></div><span className="shrink-0 rounded-full bg-status-warning-surface px-2.5 py-1 text-xs font-bold text-status-warning-foreground">{provider.status === 'active' ? t('autocare.ownerProviderPublished') : t('autocare.ownerProviderDraft')}</span></div>
+                    <p className="mt-4 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{provider.description || t('common.notProvided')}</p><p className="mt-4 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">{t('autocare.ownerProviderAmenitiesCount', { count: amenities.length })}</p><div className="mt-2 flex flex-wrap gap-1.5">{amenities.map((amenity) => <span key={amenity.id} className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{getAutomotiveAmenityLabel(amenity, locale)}</span>)}</div>
+                </Link>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-xs font-bold">
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground"><MessageCircle className="size-3.5 text-primary" />{chatEnabled ? (locale === 'ru' ? 'Чаты включены' : 'Chat enabled') : (<><Phone className="size-3.5 text-primary" />{locale === 'ru' ? 'Связь по телефону' : 'Phone contact'}<span className="sr-only">{modeLabel}</span></>)}</span>
+                    <Link data-testid="owner-provider-communication-link" to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] border border-primary/35 px-3 py-1.5 text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Settings2 className="size-3.5" />{locale === 'ru' ? 'Настроить связь' : 'Contact settings'}</Link>
+                </div>
+            </article>
         })}
     </div>
 }

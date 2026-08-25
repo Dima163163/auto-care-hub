@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { autoCareCommunicationSettingsSchema } from './autocare.schemas.js'
+import { autoCareCommunicationSettingsSchema, ownerAutoCareProviderSchema } from './autocare.schemas.js'
 
 const base = {
     teamSize: 'solo' as const,
@@ -36,5 +36,22 @@ describe('auto care communication settings', () => {
 
     it('rejects customer chat in phone-only mode', () => {
         expect(() => autoCareCommunicationSettingsSchema.parse({ ...base, communicationMode: 'phone_only' })).toThrow()
+    })
+
+    it('applies the same communication rules when a provider is created', () => {
+        const provider = {
+            ...base,
+            name: 'Small Garage',
+            marketId: '00000000-0000-4000-8000-000000000001',
+            address: 'Samara, Lenina 1',
+            hours: 'Mon-Sun 09:00-20:00',
+            yearsActive: 1,
+            staffCount: 1,
+            isMultibrand: true,
+            brandSpecializations: [],
+            amenityIds: [],
+        }
+        expect(() => ownerAutoCareProviderSchema.parse({ ...provider, communicationMode: 'phone_only' })).toThrow()
+        expect(ownerAutoCareProviderSchema.parse({ ...provider, chatEnabled: false, communicationMode: 'phone_only', responseWindowMinutes: null }).communicationMode).toBe('phone_only')
     })
 })

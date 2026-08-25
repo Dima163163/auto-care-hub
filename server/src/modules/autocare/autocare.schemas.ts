@@ -481,4 +481,13 @@ export const ownerAutoCareProviderSchema = z.object({
     if (!value.isMultibrand && value.brandSpecializations.length === 0) {
         context.addIssue({ code: 'custom', path: ['brandSpecializations'], message: 'Choose at least one brand or enable multibrand service.' })
     }
+    if (value.communicationMode === 'phone_only' && value.chatEnabled) {
+        context.addIssue({ code: 'custom', path: ['chatEnabled'], message: 'Phone-only services must disable customer chat.' })
+    }
+    if (value.communicationMode === 'phone_only' && !value.phoneBookingEnabled) {
+        context.addIssue({ code: 'custom', path: ['phoneBookingEnabled'], message: 'Phone-only services must accept phone bookings.' })
+    }
+    if (value.chatEnabled && value.responseWindowMinutes === null) {
+        context.addIssue({ code: 'custom', path: ['responseWindowMinutes'], message: 'Chat-enabled services need a response window.' })
+    }
 })
