@@ -1121,6 +1121,7 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
                 providerId: request.providerId,
                 preferredAt: request.preferredAt,
                 durationMinutes: getRequestDurationMinutes(request),
+                excludeRequestId: request.id,
                 scheduleMessage: 'The selected visit time is outside the service schedule.',
                 capacityMessage: 'The selected visit time is no longer available.',
             })
