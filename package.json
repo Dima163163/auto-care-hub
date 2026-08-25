@@ -47,6 +47,8 @@
     "test:openapi-structure": "node --test scripts/check-openapi-structure.test.mjs",
     "check:performance": "node scripts/check-performance-budget.mjs",
     "check:e2e:browser": "node scripts/check-playwright-browser.mjs",
+    "check:next-route-contract": "vitest run --run src/app/next/next-route-contract.test.ts",
+    "test:e2e:next": "playwright test e2e/next-route-smoke.spec.ts",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "preview": "vite preview",
