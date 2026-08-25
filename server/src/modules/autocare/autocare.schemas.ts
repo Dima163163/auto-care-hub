@@ -330,7 +330,12 @@ export const autoCareServiceMessageParamsSchema = z.object({
 
 export const autoCareServiceConversationQuerySchema = z.object({
     cursor: z.string().trim().max(2_048).optional(),
+    beforeCursor: z.string().trim().max(2_048).optional(),
     limit: z.coerce.number().int().positive().max(100).default(50),
+}).superRefine((value, context) => {
+    if (value.cursor && value.beforeCursor) {
+        context.addIssue({ code: 'custom', path: ['beforeCursor'], message: 'Use either cursor or beforeCursor, not both.' })
+    }
 })
 
 // Generic support/provider-inquiry chats use the same keyset contract as

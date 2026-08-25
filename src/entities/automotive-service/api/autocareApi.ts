@@ -824,8 +824,8 @@ const autoCareChatThreadsSchema = z.array(autoCareChatThreadSchema)
 const autoCareServiceMessageOfferSchema = z.object({ type: z.enum(['discount', 'alternative']), title: z.string(), description: z.string().nullable(), discountPercent: z.number().int().nullable(), couponCode: z.string().nullable(), amountMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), expiresAt: z.string().nullable(), status: z.enum(['pending', 'accepted', 'declined']) }).passthrough()
 const autoCareServiceMessageSchema = z.object({ id: z.string().min(1), senderId: z.string().min(1), kind: z.enum(['text', 'system', 'offer']), body: z.string().nullable(), offer: autoCareServiceMessageOfferSchema.nullable(), deliveredAt: z.string().nullable(), readAt: z.string().nullable(), createdAt: z.string() }).passthrough()
 const autoCareServiceAttachmentSchema = z.object({ id: z.string().min(1), uploadedById: z.string().min(1), contentType: z.string(), bytes: z.number().int().positive(), status: z.enum(['pending', 'ready', 'rejected']), url: z.string(), createdAt: z.string() }).passthrough()
-const autoCareServiceConversationSchema = z.object({ request: autoCareServiceRequestSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null) }).passthrough()
-const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null) }).passthrough()
+const autoCareServiceConversationSchema = z.object({ request: autoCareServiceRequestSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null) }).passthrough()
+const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null) }).passthrough()
 const autoCareChatReportSchema = z.object({ id: z.string(), threadId: z.string(), reporterId: z.string(), reportedUserId: z.string().nullable(), category: z.enum(['spam', 'harassment', 'fraud', 'unsafe', 'other']), description: z.string().nullable(), status: z.enum(['pending', 'resolved', 'dismissed']), reviewedById: z.string().nullable(), resolutionReason: z.string().nullable(), createdAt: z.string(), reviewedAt: z.string().nullable() }).passthrough()
 const autoCareChatReportsSchema = z.array(autoCareChatReportSchema)
 const autoCareChatBlockSchema = z.object({ id: z.string(), threadId: z.string(), blockerId: z.string(), blockedUserId: z.string(), status: z.enum(['active', 'revoked']), reason: z.string().nullable(), createdAt: z.string(), revokedAt: z.string().nullable() }).passthrough()
@@ -944,10 +944,10 @@ export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; 
 export type AutoCareServiceMessageOffer = { type: 'discount' | 'alternative'; title: string; description: string | null; discountPercent: number | null; couponCode: string | null; amountMinor: number | null; currencyCode: string | null; expiresAt: string | null; status: 'pending' | 'accepted' | 'declined' }
 export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; createdAt: string }
 export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
-export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null }
+export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null; previousCursor: string | null }
 export type AutoCareChatThreadType = 'service_request' | 'provider_inquiry' | 'support' | 'admin_escalation'
 export type AutoCareChatThread = { id: string; type: AutoCareChatThreadType; status: 'open' | 'closed'; subject: string; requestId: string | null; providerId: string | null; providerName: string | null; clientId: string | null; lastMessageAt: string | null; unreadCount: number; createdAt: string; updatedAt: string }
-export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null }
+export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null; previousCursor: string | null }
 export type AutoCareChatReport = { id: string; threadId: string; reporterId: string; reportedUserId: string | null; category: 'spam' | 'harassment' | 'fraud' | 'unsafe' | 'other'; description: string | null; status: 'pending' | 'resolved' | 'dismissed'; reviewedById: string | null; resolutionReason: string | null; createdAt: string; reviewedAt: string | null }
 export type AutoCareChatBlock = { id: string; threadId: string; blockerId: string; blockedUserId: string; status: 'active' | 'revoked'; reason: string | null; createdAt: string; revokedAt: string | null }
 export type CreateAutoCareChatReportInput = { chatId: string; category: AutoCareChatReport['category']; description?: string | null }
@@ -958,7 +958,7 @@ export type CreateAutoCareChatInput = { type: Exclude<AutoCareChatThreadType, 's
 export type CreateAutoCareChatMessageInput = { chatId: string; body: string }
 export type CreateAutoCareChatAttachmentInput = { chatId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
 export type CreateAutoCareServiceMessageInput = { requestId: string; body: string; idempotencyKey?: string }
-export type GetAutoCareServiceConversationInput = { requestId: string; cursor?: string; limit?: number }
+export type GetAutoCareServiceConversationInput = { requestId: string; cursor?: string; beforeCursor?: string; limit?: number }
 export type CreateAutoCareServiceOfferInput = { requestId: string; type: 'discount' | 'alternative'; title: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
 export type DecideAutoCareServiceOfferInput = { requestId: string; messageId: string; decision: 'accept' | 'decline' }
 export type CreateAutoCareServiceAttachmentInput = { requestId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
@@ -1481,10 +1481,10 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareChatThreadSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
         }),
-        getAutoCareChat: build.query<AutoCareChatConversation, string | { chatId: string; cursor?: string; limit?: number }>({
+        getAutoCareChat: build.query<AutoCareChatConversation, string | { chatId: string; cursor?: string; beforeCursor?: string; limit?: number }>({
             query: (input) => {
                 const chatId = typeof input === 'string' ? input : input.chatId
-                const query = typeof input === 'string' ? '' : new URLSearchParams({ ...(input.cursor ? { cursor: input.cursor } : {}), ...(input.limit ? { limit: String(input.limit) } : {}) }).toString()
+                const query = typeof input === 'string' ? '' : new URLSearchParams({ ...(input.cursor ? { cursor: input.cursor } : {}), ...(input.beforeCursor ? { beforeCursor: input.beforeCursor } : {}), ...(input.limit ? { limit: String(input.limit) } : {}) }).toString()
                 return `/v1/chats/${chatId}${query ? `?${query}` : ''}`
             },
             transformResponse: (value: unknown) => autoCareChatConversationSchema.parse(value),
@@ -1591,8 +1591,8 @@ export const autoCareApi = baseApi.injectEndpoints({
         }),
         getAutoCareServiceConversation: build.query<AutoCareServiceConversation, string | GetAutoCareServiceConversationInput>({
             query: (input) => {
-                const { requestId, cursor, limit } = typeof input === 'string' ? { requestId: input, cursor: undefined, limit: undefined } : input
-                return { url: `/v1/service-requests/${requestId}/conversation`, params: { cursor, limit } }
+                const { requestId, cursor, beforeCursor, limit } = typeof input === 'string' ? { requestId: input, cursor: undefined, beforeCursor: undefined, limit: undefined } : input
+                return { url: `/v1/service-requests/${requestId}/conversation`, params: { cursor, beforeCursor, limit } }
             },
             transformResponse: (value: unknown) => autoCareServiceConversationSchema.parse(value),
             providesTags: (_result, _error, input) => [{ type: 'AutoCareServiceRequest', id: typeof input === 'string' ? input : input.requestId }],

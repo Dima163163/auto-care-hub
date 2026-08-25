@@ -800,6 +800,7 @@ export type AutoCareChatConversationResponse = {
     messages: AutoCareServiceMessageResponse[]
     attachments: AutoCareServiceAttachmentResponse[]
     nextCursor: string | null
+    previousCursor: string | null
 }
 
 export type CreateAutoCareChatInput = {
@@ -816,6 +817,7 @@ export type AutoCareServiceRequestConversationResponse = {
     messages: AutoCareServiceMessageResponse[]
     attachments: AutoCareServiceAttachmentResponse[]
     nextCursor: string | null
+    previousCursor: string | null
 }
 
 export type CreateAutoCareServiceMessageInput = {

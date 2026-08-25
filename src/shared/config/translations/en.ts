@@ -788,6 +788,7 @@ export const enTranslations = {
         chatDescription: 'Messages, photos and service offers',
         chatOnline: 'Live channel',
         chatLoading: 'Loading conversation…',
+        chatLoadOlder: 'Load older messages',
         chatEmpty: 'No messages yet. Start the conversation about this request.',
         chatPlaceholder: 'Write a message…',
         chatSend: 'Send',

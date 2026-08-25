@@ -17,7 +17,7 @@ export type AutoCareBookingSnapshotInput = {
 export function createAutoCareBookingSnapshot(input: AutoCareBookingSnapshotInput): AutoCareBookingSnapshotResponse {
     return {
         ...input,
+        lineItems: input.lineItems.map((item) => ({ ...item })),
         status: 'confirmed',
     }
 }
-

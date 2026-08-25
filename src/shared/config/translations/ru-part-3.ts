@@ -58,6 +58,7 @@ autocare: {
         chatDescription: 'Сообщения, фото и предложения сервиса',
         chatOnline: 'Онлайн-канал',
         chatLoading: 'Загрузка переписки…',
+        chatLoadOlder: 'Загрузить старые сообщения',
         chatEmpty: 'Сообщений пока нет. Начните диалог по заявке.',
         chatPlaceholder: 'Напишите сообщение…',
         chatSend: 'Отправить',

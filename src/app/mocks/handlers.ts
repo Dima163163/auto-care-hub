@@ -2907,15 +2907,34 @@ export const handlers = [
         const url = new URL(request.url)
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit') ?? 50) || 50, 1), 100)
         const cursorId = decodeMockChatCursor(url.searchParams.get('cursor'))
+        const beforeCursorId = decodeMockChatCursor(url.searchParams.get('beforeCursor'))
         const cursorIndex = cursorId ? allMessages.findIndex((message) => message.id === cursorId) : -1
-        const start = cursorIndex >= 0 ? cursorIndex + 1 : 0
-        const page = allMessages.slice(start, start + limit + 1)
-        const hasMore = page.length > limit
-        const messages = hasMore ? page.slice(0, limit) : page
+        const beforeCursorIndex = beforeCursorId ? allMessages.findIndex((message) => message.id === beforeCursorId) : -1
+        const isLatestPage = !cursorId && !beforeCursorId
+        const end = beforeCursorIndex >= 0
+            ? beforeCursorIndex
+            : cursorIndex >= 0
+                ? allMessages.length
+                : allMessages.length
+        const start = beforeCursorIndex >= 0
+            ? Math.max(0, end - limit)
+            : cursorIndex >= 0
+                ? cursorIndex + 1
+                : Math.max(0, allMessages.length - limit)
+        const pageEnd = beforeCursorIndex >= 0 || isLatestPage ? end : Math.min(allMessages.length, start + limit)
+        const messages = allMessages.slice(start, pageEnd)
+        const hasOlder = start > 0
+        const hasNewer = pageEnd < allMessages.length
         const now = new Date().toISOString()
         messages.filter((message) => message.senderId !== user.id && !message.readAt).forEach((message) => { message.readAt = now })
         const attachments = mockChatAttachments(thread).map(({ contentBase64: _contentBase64, ...attachment }) => attachment)
-        return HttpResponse.json({ thread: { ...thread, unreadCount: 0 }, messages, attachments, nextCursor: hasMore && messages.at(-1) ? encodeMockChatCursor(messages.at(-1)!) : null })
+        return HttpResponse.json({
+            thread: { ...thread, unreadCount: 0 },
+            messages,
+            attachments,
+            nextCursor: hasNewer && messages.at(-1) ? encodeMockChatCursor(messages.at(-1)!) : null,
+            previousCursor: hasOlder && messages.at(0) ? encodeMockChatCursor(messages.at(0)!) : null,
+        })
     }),
 
     http.post('/api/v1/chats/:chatId/messages', async ({ params, request }) => {
@@ -2993,15 +3012,28 @@ export const handlers = [
         const allMessages = mockAutoCareMessages.get(item.id) ?? []
         const requestedLimit = Number(new URL(request.url).searchParams.get('limit') ?? 50)
         const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 100) : 50
-        const requestedOffset = Number(new URL(request.url).searchParams.get('cursor') ?? 0)
+        const query = new URL(request.url).searchParams
+        const requestedOffset = Number(query.get('cursor') ?? 0)
+        const requestedBeforeOffset = Number(query.get('beforeCursor') ?? NaN)
+        const hasBeforeOffset = Number.isInteger(requestedBeforeOffset) && requestedBeforeOffset >= 0
         const offset = Number.isInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0
-        const messages = allMessages.slice(offset, offset + limit)
+        const isLatestPage = !query.has('cursor') && !hasBeforeOffset
+        const end = hasBeforeOffset ? Math.min(requestedBeforeOffset, allMessages.length) : allMessages.length
+        const start = hasBeforeOffset ? Math.max(0, end - limit) : isLatestPage ? Math.max(0, allMessages.length - limit) : offset
+        const pageEnd = hasBeforeOffset || isLatestPage ? end : Math.min(allMessages.length, start + limit)
+        const messages = allMessages.slice(start, pageEnd)
         const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
         unread.forEach((message) => { message.readAt = now })
         if (unread.length) emitMockServiceChatEvent({ type: 'message.read', requestId: item.id, payload: { messageIds: unread.map((message) => message.id), readAt: now } })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         const attachments = (mockAutoCareAttachments.get(item.id) ?? []).map(({ contentBase64: _contentBase64, ...attachment }) => attachment)
-        return HttpResponse.json({ request: response, messages, attachments, nextCursor: offset + messages.length < allMessages.length ? String(offset + messages.length) : null })
+        return HttpResponse.json({
+            request: response,
+            messages,
+            attachments,
+            nextCursor: pageEnd < allMessages.length && !isLatestPage ? String(pageEnd) : null,
+            previousCursor: start > 0 && messages[0] ? String(start) : null,
+        })
     }),
 
     http.post('/api/v1/service-requests/:requestId/messages', async ({ params, request }) => {

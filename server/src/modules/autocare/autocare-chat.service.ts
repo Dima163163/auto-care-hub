@@ -230,17 +230,20 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
     return toThreadResponse(user, thread)
 }
 
-export async function getAutoCareChat(user: UserEntity, chatId: string, input: { cursor?: string; limit?: number } = {}): Promise<AutoCareChatConversationResponse> {
+export async function getAutoCareChat(user: UserEntity, chatId: string, input: { cursor?: string; beforeCursor?: string; limit?: number } = {}): Promise<AutoCareChatConversationResponse> {
     const thread = await getThread(user, chatId)
     const limit = getCursorLimit(input.limit)
     const cursor = input.cursor ? decodeCursor(input.cursor, ['createdAt', 'id']) : null
+    const beforeCursor = input.beforeCursor ? decodeCursor(input.beforeCursor, ['createdAt', 'id']) : null
     const cursorCreatedAt = cursor ? assertCursorDate(cursor, 'createdAt') : null
+    const beforeCursorCreatedAt = beforeCursor ? assertCursorDate(beforeCursor, 'createdAt') : null
     const messageWhere = thread.requestId ? '(message.threadId = :threadId OR message.requestId = :requestId)' : 'message.threadId = :threadId'
+    const isLatestPage = !cursor && !beforeCursor
     const messageQuery = AppDataSource.getRepository(ServiceMessageEntity)
         .createQueryBuilder('message')
         .where(messageWhere, { threadId: thread.id, requestId: thread.requestId })
-        .orderBy('message.createdAt', 'ASC')
-        .addOrderBy('message.id', 'ASC')
+        .orderBy('message.createdAt', isLatestPage || beforeCursor ? 'DESC' : 'ASC')
+        .addOrderBy('message.id', isLatestPage || beforeCursor ? 'DESC' : 'ASC')
         .take(limit + 1)
     if (cursorCreatedAt && cursor) {
         messageQuery.andWhere('(message.createdAt > :cursorCreatedAt OR (message.createdAt = :cursorCreatedAt AND message.id > :cursorId))', {
@@ -248,12 +251,19 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
             cursorId: cursor.id,
         })
     }
+    if (beforeCursorCreatedAt && beforeCursor) {
+        messageQuery.andWhere('(message.createdAt < :beforeCursorCreatedAt OR (message.createdAt = :beforeCursorCreatedAt AND message.id < :beforeCursorId))', {
+            beforeCursorCreatedAt,
+            beforeCursorId: beforeCursor.id,
+        })
+    }
     const [messages, attachments] = await Promise.all([
         messageQuery.getMany(),
         AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id }, order: { createdAt: 'ASC' } }),
     ])
     const hasMore = messages.length > limit
-    const page = hasMore ? messages.slice(0, limit) : messages
+    const page = [...(hasMore ? messages.slice(0, limit) : messages)].reverse()
+    const firstMessage = page.at(0)
     const lastMessage = page.at(-1)
     const unread = page.filter((message) => message.senderId !== user.id && !message.readAt)
     if (unread.length > 0) {
@@ -266,7 +276,8 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
         thread: await toThreadResponse(user, thread),
         messages: page.map(messageResponse),
         attachments: attachments.map((attachment) => attachmentResponse(attachment, thread.id)),
-        nextCursor: hasMore && lastMessage ? encodeCursor({ createdAt: lastMessage.createdAt.toISOString(), id: lastMessage.id }) : null,
+        nextCursor: hasMore && lastMessage && !isLatestPage && !beforeCursor ? encodeCursor({ createdAt: lastMessage.createdAt.toISOString(), id: lastMessage.id }) : null,
+        previousCursor: hasMore && firstMessage ? encodeCursor({ createdAt: firstMessage.createdAt.toISOString(), id: firstMessage.id }) : null,
     }
 }
 
