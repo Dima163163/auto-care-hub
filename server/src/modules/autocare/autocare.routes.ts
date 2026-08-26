@@ -24,6 +24,7 @@ import { acceptProviderInvitation, createOwnerProviderInvitation, listOwnerProvi
 import { cancelOwnerProviderChangeRequest, createOwnerProviderChangeRequest, listOwnerProviderChangeRequests } from './provider-change-request.service.js'
 import { createAutoCareCatalogGapRequest } from './catalog-gap.service.js'
 import { createAutoCareAppeal, getMyAutoCareAppeals, withdrawAutoCareAppeal } from './appeal.service.js'
+import { listOwnerAutoCareEvidence } from './moderation-evidence.service.js'
 import { getOwnerWorkspaceAccess } from './provider-access.service.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -149,6 +150,10 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const query = validateQuery(autoCareCapacityReservationQuerySchema, request.query)
         return getOwnerAutoCareCapacityReservations(await requireVerifiedEmail(request), params.providerId, query)
+    })
+    app.get('/owner/autocare-providers/:providerId/evidence', async (request) => {
+        const params = validateParams(autoCareProviderParamsSchema, request.params)
+        return listOwnerAutoCareEvidence(await requireVerifiedEmail(request), params.providerId)
     })
     app.post('/owner/autocare-providers/:providerId/resources', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const params = validateParams(autoCareProviderParamsSchema, request.params)

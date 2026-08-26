@@ -3797,7 +3797,27 @@ export const handlers = [
             averageRating: reviews.length ? Number((reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length).toFixed(1)) : 0,
             bonusLiabilityPoints: mockAutoCareBonusAccounts.filter((item) => item.providerId === provider.id).reduce((sum, item) => sum + item.balancePoints, 0),
             tracking: { ...(mockAutoCareProviderActivity.get(provider.id) ?? { impressions: 0, profileOpens: 0 }), available: true },
+            privacy: { consentRequired: true, retentionDays: 365 },
         })
+    }),
+
+    http.get('/api/owner/autocare-providers/:providerId/evidence', ({ params }) => {
+        const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can view evidence.' }, { status: 403 })
+        if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
+        return HttpResponse.json(mockAdminAutoCareModerationEvidence.filter((item) => item.providerId === params.providerId).map((item) => ({
+            id: item.id,
+            providerId: item.providerId,
+            kind: item.kind,
+            label: item.label,
+            status: item.status,
+            reference: item.reference,
+            notes: item.notes,
+            expiresAt: null,
+            createdAt: item.createdAt,
+            verifiedAt: item.verifiedAt,
+        })))
     }),
 
     http.get('/api/owner/autocare-providers/:providerId/bonus-program', ({ params }) => {

@@ -1,4 +1,4 @@
-import type { FormEvent, ReactNode } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 
 import type { AutoCareApiProvider } from '@/entities/automotive-service'
 
@@ -11,10 +11,10 @@ type Props = {
 
 const copy = {
     ru: {
-        title: 'Изменить публичные данные', name: 'Название сервиса', description: 'Описание', phones: 'Телефоны через запятую', email: 'Почта сервиса', website: 'Сайт сервиса', metro: 'Метро или ориентир', warranty: 'Гарантия на работы', years: 'Лет работы', staff: 'Сотрудников', workstations: 'Постов', brands: 'Основные марки через запятую', multibrand: 'Работаем со всеми марками', submit: 'Отправить изменение на проверку',
+        title: 'Изменить публичные данные', name: 'Название сервиса', description: 'Описание', phones: 'Телефоны через запятую', email: 'Почта сервиса', website: 'Сайт сервиса', metro: 'Метро или ориентир', warranty: 'Гарантия на работы', years: 'Лет работы', staff: 'Сотрудников', workstations: 'Постов', brands: 'Основные марки через запятую', multibrand: 'Работаем со всеми марками', documents: 'Документы и подтверждения', addDocument: 'Добавить документ', documentName: 'Название документа', documentReference: 'Приватная ссылка', documentExpiry: 'Действует до', removeDocument: 'Удалить', submit: 'Отправить изменение на проверку',
     },
     en: {
-        title: 'Change public details', name: 'Service name', description: 'Description', phones: 'Phones separated by commas', email: 'Service email', website: 'Service website', metro: 'Metro or landmark', warranty: 'Work warranty', years: 'Years in business', staff: 'Staff members', workstations: 'Workstations', brands: 'Primary brands separated by commas', multibrand: 'We work with all brands', submit: 'Submit change for review',
+        title: 'Change public details', name: 'Service name', description: 'Description', phones: 'Phones separated by commas', email: 'Service email', website: 'Service website', metro: 'Metro or landmark', warranty: 'Work warranty', years: 'Years in business', staff: 'Staff members', workstations: 'Workstations', brands: 'Primary brands separated by commas', multibrand: 'We work with all brands', documents: 'Documents and evidence', addDocument: 'Add document', documentName: 'Document name', documentReference: 'Private reference', documentExpiry: 'Expires on', removeDocument: 'Remove', submit: 'Submit change for review',
     },
 } as const
 
@@ -23,9 +23,19 @@ const strings = (value: FormDataEntryValue | null) => [...new Set(String(value ?
 
 export function OwnerProviderProfileChangeForm({ provider, locale, disabled, onSubmit }: Props) {
     const text = locale === 'ru' ? copy.ru : copy.en
+    const [documents, setDocuments] = useState<number[]>([])
+    const nextDocumentId = useRef(0)
     const submit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const values = new FormData(event.currentTarget)
+        const documentLabels = values.getAll('documentLabel')
+        const documentReferences = values.getAll('documentReference')
+        const documentExpiries = values.getAll('documentExpiresAt')
+        const documentsPayload = documentLabels.map((label, index) => ({
+            label: String(label).trim(),
+            reference: String(documentReferences[index] ?? '').trim(),
+            expiresAt: String(documentExpiries[index] ?? '').trim() || null,
+        })).filter((document) => document.label && document.reference)
         await onSubmit({
             name: String(values.get('name') ?? '').trim(),
             description: String(values.get('description') ?? '').trim() || null,
@@ -39,6 +49,7 @@ export function OwnerProviderProfileChangeForm({ provider, locale, disabled, onS
             workstationCount: numberOrZero(values.get('workstationCount')),
             brandSpecializations: strings(values.get('brandSpecializations')),
             isMultibrand: values.get('isMultibrand') === 'on',
+            documents: documentsPayload,
         })
     }
     const inputClass = 'mt-1.5 h-10 w-full rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -57,6 +68,10 @@ export function OwnerProviderProfileChangeForm({ provider, locale, disabled, onS
         <Label label={text.brands}><input name="brandSpecializations" defaultValue={provider.brandSpecializations.join(', ')} className={inputClass} /></Label>
         <label className="flex min-h-10 items-center gap-2 text-xs font-black text-foreground sm:col-span-2"><input name="isMultibrand" type="checkbox" defaultChecked={provider.isMultibrand} />{text.multibrand}</label>
         <Label className="sm:col-span-2" label={text.description}><textarea name="description" rows={3} defaultValue={provider.description ?? ''} className="mt-1.5 w-full rounded-[var(--radius-control)] border border-border bg-card p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" /></Label>
+        <section className="sm:col-span-2 rounded-[var(--radius-card)] border border-border bg-card/60 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-xs font-black">{text.documents}</h4><p className="mt-1 text-[11px] font-medium text-muted-foreground">{locale === 'ru' ? 'Ссылки private:// отправляются на модерацию.' : 'private:// references are sent for moderation.'}</p></div><button type="button" disabled={documents.length >= 20} onClick={() => setDocuments((items) => [...items, nextDocumentId.current++])} className="rounded-[var(--radius-control)] border border-primary px-3 py-2 text-[11px] font-black text-primary disabled:opacity-50">{text.addDocument}</button></div>
+            {documents.length > 0 && <div className="mt-3 space-y-2">{documents.map((documentId) => <div key={documentId} className="grid gap-2 sm:grid-cols-[1fr_1.3fr_150px_auto] sm:items-end"><Label label={text.documentName}><input required name="documentLabel" className={inputClass} /></Label><Label label={text.documentReference}><input required name="documentReference" pattern="^private://.*" placeholder="private://documents/..." className={inputClass} /></Label><Label label={text.documentExpiry}><input name="documentExpiresAt" type="date" className={inputClass} /></Label><button type="button" onClick={() => setDocuments((items) => items.filter((id) => id !== documentId))} className="h-10 rounded-[var(--radius-control)] px-2 text-xs font-black text-destructive hover:bg-destructive/10">{text.removeDocument}</button></div>)}</div>}
+        </section>
         <button type="submit" disabled={disabled} className="inline-flex h-10 items-center justify-center rounded-[var(--radius-control)] border border-primary px-4 text-xs font-black text-primary disabled:opacity-50 sm:col-span-2">{text.submit}</button>
     </form>
 }

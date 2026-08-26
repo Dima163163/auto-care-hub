@@ -25,9 +25,11 @@ function escapeHtml(value: string) {
     }[character] ?? character))
 }
 
-function getMarkerMarkup(provider: AutoCareApiProvider) {
+type ProviderBranch = { provider: AutoCareApiProvider; location: AutoCareApiProvider['location'] }
+
+function getMarkerMarkup({ provider, location }: ProviderBranch) {
     const name = escapeHtml(provider.name)
-    const address = escapeHtml(provider.location.address)
+    const address = escapeHtml(location.address)
 
     return `<div class="owner-provider-map-marker"><span class="owner-provider-map-marker__pin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/><circle cx="12" cy="10" r="2.4"/></svg></span><span class="owner-provider-map-marker__copy"><strong>${name}</strong><span>${address}</span><b>★ ${provider.rating.toFixed(1)}</b></span></div>`
 }
@@ -40,15 +42,13 @@ export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMap
     const mapContainerRef = useRef<HTMLDivElement | null>(null)
     const mapRef = useRef<L.Map | null>(null)
     const markerLayerRef = useRef<L.LayerGroup | null>(null)
-    const positions = useMemo(
-        () => new Map(providers.map((provider, index) => [
-            provider.id,
-            provider.location.latitude !== null && provider.location.longitude !== null
-                ? [provider.location.latitude, provider.location.longitude] as MapPosition
-                : getFallbackPosition(index),
-        ])),
-        [providers],
-    )
+    const branches = useMemo<ProviderBranch[]>(() => providers.flatMap((provider) => (provider.locations?.length ? provider.locations : [{ location: provider.location, offers: provider.offers ?? [] }]).map(({ location }) => ({ provider, location }))), [providers])
+    const positions = useMemo(() => new Map(branches.map((branch, index) => [
+        `${branch.provider.id}:${branch.location.id}`,
+        branch.location.latitude !== null && branch.location.longitude !== null
+            ? [branch.location.latitude, branch.location.longitude] as MapPosition
+            : getFallbackPosition(index),
+    ])), [branches])
 
     useEffect(() => {
         const container = mapContainerRef.current
@@ -85,19 +85,19 @@ export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMap
         if (!map || !layer) return
 
         layer.clearLayers()
-        const points = providers.map((provider, index) => positions.get(provider.id) ?? getFallbackPosition(index))
+        const points = branches.map((branch, index) => positions.get(`${branch.provider.id}:${branch.location.id}`) ?? getFallbackPosition(index))
 
-        providers.forEach((provider, index) => {
+        branches.forEach((branch, index) => {
             const position = points[index]
             L.marker(position, {
                 icon: L.divIcon({
                     className: 'owner-provider-map-marker-host',
-                    html: getMarkerMarkup(provider),
+                    html: getMarkerMarkup(branch),
                     iconAnchor: [26, 54],
                     iconSize: [224, 58],
                 }),
                 keyboard: true,
-                title: `${provider.name}, ${provider.location.address}, ${provider.rating.toFixed(1)}`,
+                title: `${branch.provider.name}, ${branch.location.address}, ${branch.provider.rating.toFixed(1)}`,
             }).addTo(layer)
         })
 
@@ -108,7 +108,7 @@ export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMap
         } else {
             map.setView(MOSCOW_CENTER, 10, { animate: false })
         }
-    }, [positions, providers])
+    }, [branches, positions])
 
     return <div className="owner-provider-map h-full w-full" ref={mapContainerRef} />
 }

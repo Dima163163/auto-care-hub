@@ -39,10 +39,11 @@ export function OwnerProviderOnboardingPanel({ provider, locale }: Props) {
     if (query.isLoading) return <StateCard variant="loading" title={ru ? 'Загружаем этапы подключения…' : 'Loading onboarding…'} />
     if (query.error) return <StateCard variant="error" title={ru ? 'Не удалось загрузить этапы подключения' : 'Could not load onboarding'} description={getApiErrorMessage(query.error, '')} action={<RetryButton onRetry={query.refetch} label={ru ? 'Повторить' : 'Retry'} />} />
 
+    const allOffers = provider.locations?.flatMap((branch) => branch.offers) ?? provider.offers ?? []
     const checks = [
         { done: Boolean(provider.description && provider.phone && provider.location.address), label: ru ? 'Профиль и контакты заполнены' : 'Profile and contacts are complete' },
         { done: Boolean(provider.coverImageUrl || provider.galleryImageUrls.length), label: ru ? 'Добавлены фотографии сервиса' : 'Service photos are added' },
-        { done: Boolean(provider.offers?.length), label: ru ? 'Опубликован каталог услуг' : 'Service catalog is published' },
+        { done: allOffers.length > 0, label: ru ? 'Опубликован каталог услуг' : 'Service catalog is published' },
         { done: provider.verified, label: ru ? 'Проверка сервиса пройдена' : 'Service verification is complete' },
     ]
     return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm">

@@ -121,6 +121,12 @@ export type AutoCareProviderResponse = {
     trustReassessedAt: string | null
     location: AutoCareLocationResponse
     offers?: AutoCareOfferResponse[]
+    /** Visible branches for owner workspaces. `location` remains the primary
+     * branch for backwards-compatible consumers. */
+    locations?: Array<{
+        location: AutoCareLocationResponse
+        offers: AutoCareOfferResponse[]
+    }>
 }
 
 export type AutoCareLocationResponse = {
@@ -240,6 +246,23 @@ export type AutoCareProviderAnalyticsResponse = {
         profileOpens: number
         available: boolean
     }
+    privacy: {
+        consentRequired: boolean
+        retentionDays: number
+    }
+}
+
+export type OwnerAutoCareEvidenceResponse = {
+    id: string
+    providerId: string
+    kind: string
+    label: string
+    status: string
+    reference: string | null
+    notes: string | null
+    expiresAt: string | null
+    createdAt: string
+    verifiedAt: string | null
 }
 
 export type OwnerAutoCareBonusLiabilityResponse = {

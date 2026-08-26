@@ -196,6 +196,7 @@ autocare: {
         ownerProviderStatsTitle: 'Статистика точки',
         ownerProviderStatsDescription: 'Подробная аналитика заявок, записей, конверсии и выручки появится здесь по мере развития кабинета владельца.',
         ownerProviderOpenDashboard: 'Открыть общий дашборд',
+        ownerProviderOffersLabel: 'услуг',
         heroTitle: 'Найдите лучший автосервис рядом',
         heroDescription: 'Сравните цены, рейтинги и время записи за пару кликов',
         byService: 'По услуге',

@@ -38,16 +38,17 @@ export function OwnerAutoCareAnalyticsCard({ locale, analytics, isLoading, isErr
                 <Metric icon={Eye} label={text.impressions} value={analytics.tracking.available ? String(analytics.tracking.impressions) : '—'} />
                 <Metric icon={Eye} label={text.profileOpens} value={analytics.tracking.available ? String(analytics.tracking.profileOpens) : '—'} />
             </div>}
+            {!isLoading && analytics && <p className="mt-4 text-xs text-muted-foreground">{analytics.privacy.consentRequired ? text.privacyConsent : text.privacyNoConsent} · {text.retention}: {analytics.privacy.retentionDays} {text.days}</p>}
         </section>
     )
 }
 
 const copy = {
-    ru: {
-        title: 'Операционная аналитика', description: 'Заявки, запись, отзывы, бонусы и видимость выбранного сервиса.', providerChoice: 'Выбор сервиса для аналитики', failed: 'Не удалось загрузить аналитику.', retry: 'Повторить', inquiries: 'Заявки', response: 'Ответ', minutes: 'мин', quoteConversion: 'Конверсия смет', rating: 'Рейтинг', repeatCustomers: 'Повторные клиенты', bonusLiability: 'Бонусы в обороте', impressions: 'Показы', profileOpens: 'Открытия профиля',
+        ru: {
+        title: 'Операционная аналитика', description: 'Заявки, запись, отзывы, бонусы и видимость выбранного сервиса.', providerChoice: 'Выбор сервиса для аналитики', failed: 'Не удалось загрузить аналитику.', retry: 'Повторить', inquiries: 'Заявки', response: 'Ответ', minutes: 'мин', quoteConversion: 'Конверсия смет', rating: 'Рейтинг', repeatCustomers: 'Повторные клиенты', bonusLiability: 'Бонусы в обороте', impressions: 'Показы', profileOpens: 'Открытия профиля', privacyConsent: 'Аналитика собирается только с согласия клиента', privacyNoConsent: 'Аналитика работает без согласия', retention: 'Срок хранения', days: 'дн.',
     },
     en: {
-        title: 'Operational analytics', description: 'Requests, bookings, reviews, bonuses and visibility for the selected service.', providerChoice: 'Choose service for analytics', failed: 'Could not load analytics.', retry: 'Retry', inquiries: 'Requests', response: 'Response', minutes: 'min', quoteConversion: 'Quote conversion', rating: 'Rating', repeatCustomers: 'Returning customers', bonusLiability: 'Bonus liability', impressions: 'Impressions', profileOpens: 'Profile opens',
+        title: 'Operational analytics', description: 'Requests, bookings, reviews, bonuses and visibility for the selected service.', providerChoice: 'Choose service for analytics', failed: 'Could not load analytics.', retry: 'Retry', inquiries: 'Requests', response: 'Response', minutes: 'min', quoteConversion: 'Quote conversion', rating: 'Rating', repeatCustomers: 'Returning customers', bonusLiability: 'Bonus liability', impressions: 'Impressions', profileOpens: 'Profile opens', privacyConsent: 'Analytics is collected with customer consent', privacyNoConsent: 'Analytics works without consent', retention: 'Retention', days: 'days',
     },
 }
 

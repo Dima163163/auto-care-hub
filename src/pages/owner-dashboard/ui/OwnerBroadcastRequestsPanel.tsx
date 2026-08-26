@@ -14,13 +14,16 @@ export function OwnerBroadcastRequestsPanel() {
     const copy = locale === 'ru'
         ? { title: 'Запросы от клиентов', text: 'Отвечайте на один запрос вместе с другими подходящими сервисами.', empty: 'Подходящих открытых запросов пока нет.', amount: 'Цена предложения, ₽', send: 'Отправить предложение', sent: 'Предложение отправлено' }
         : { title: 'Customer requests', text: 'Respond to an open request alongside other matching providers.', empty: 'No matching open requests yet.', amount: 'Offer price', send: 'Send offer', sent: 'Offer sent' }
-    const providerByService = useMemo(() => new Map(providers.flatMap((provider) => (provider.offers ?? []).map((offer) => [offer.serviceDefinitionId, provider] as const))), [providers])
+    const providerByService = useMemo(() => new Map(providers.flatMap((provider) => {
+        const branches = provider.locations?.length ? provider.locations : [{ location: provider.location, offers: provider.offers ?? [] }]
+        return branches.flatMap((branch) => branch.offers.map((offer) => [offer.serviceDefinitionId, { provider, location: branch.location, offers: branch.offers }] as const))
+    })), [providers])
     const submit = async (requestId: string, serviceDefinitionId: string) => {
-        const provider = providerByService.get(serviceDefinitionId) ?? providers[0]
+        const target = providerByService.get(serviceDefinitionId) ?? (providers[0] ? { provider: providers[0], location: providers[0].location, offers: providers[0].offers ?? [] } : undefined)
         const value = Math.round(Number(amount) * 100)
-        if (!provider || !Number.isFinite(value) || value <= 0) return
-        const currencyCode = provider.offers?.find((offer) => offer.serviceDefinitionId === serviceDefinitionId)?.currencyCode ?? provider.offers?.[0]?.currencyCode ?? 'RUB'
-        await createOffer({ broadcastId: requestId, locationId: provider.location.id, amountMinor: value, currencyCode }).unwrap()
+        if (!target || !Number.isFinite(value) || value <= 0) return
+        const currencyCode = target.offers.find((offer) => offer.serviceDefinitionId === serviceDefinitionId)?.currencyCode ?? target.offers[0]?.currencyCode ?? 'RUB'
+        await createOffer({ broadcastId: requestId, locationId: target.location.id, amountMinor: value, currencyCode }).unwrap()
         setAmount('')
         setActiveId(null)
     }

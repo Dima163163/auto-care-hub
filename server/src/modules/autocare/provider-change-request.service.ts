@@ -12,6 +12,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isAdminRole, isSuperAdmin } from '../../shared/auth/roles.js'
 import { canManageProvider } from './provider-access.service.js'
+import { queueProviderDocumentModerationEvidence } from './moderation-evidence.service.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareProviderChangeRequestResponse, CreateAutoCareProviderChangeRequestInput } from './autocare.types.js'
@@ -20,6 +21,7 @@ const profileFields = new Set([
     'name', 'description', 'phone', 'phones', 'email', 'websiteUrl', 'metroStation',
     'warrantyText', 'yearsActive', 'staffCount', 'workstationCount', 'amenityIds',
     'brandSpecializations', 'isMultibrand',
+    'documents',
 ])
 
 function assertOwner(user: UserEntity) {
@@ -64,6 +66,19 @@ function normalizeProfilePayload(payload: Record<string, unknown>) {
         if (key === 'isMultibrand') {
             if (typeof value !== 'boolean') throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'isMultibrand must be a boolean.' })
             normalized[key] = value
+            continue
+        }
+        if (key === 'documents') {
+            if (!Array.isArray(value)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'documents must be an array.' })
+            const documents = value.map((item) => {
+                if (!item || typeof item !== 'object' || Array.isArray(item)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Each document must be an object.' })
+                const document = item as { label?: unknown; reference?: unknown; expiresAt?: unknown }
+                if (typeof document.label !== 'string' || document.label.trim().length < 1 || document.label.trim().length > 160) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document label is invalid.' })
+                if (typeof document.reference !== 'string' || !/^private:\/\/[A-Za-z0-9._/-]{1,500}$/.test(document.reference.trim())) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document reference must be a private storage reference.' })
+                if (document.expiresAt !== undefined && document.expiresAt !== null && (typeof document.expiresAt !== 'string' || Number.isNaN(Date.parse(document.expiresAt)))) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document expiration date is invalid.' })
+                return { label: document.label.trim(), reference: document.reference.trim(), expiresAt: document.expiresAt ?? null }
+            })
+            normalized[key] = documents.slice(0, 20)
             continue
         }
         if (['phones', 'amenityIds', 'brandSpecializations'].includes(key)) {
@@ -125,13 +140,21 @@ export async function decideAdminProviderChangeRequest(admin: UserEntity, reques
                 if (provider.status === AutomotiveProviderStatus.Draft) provider.status = AutomotiveProviderStatus.Active
             } else {
                 const changes = normalizeProfilePayload(request.payload)
+                const documents = Array.isArray(changes.documents) ? changes.documents as Array<{ label: string; reference: string; expiresAt: string | null }> : []
                 for (const [key, value] of Object.entries(changes)) {
+                    if (key === 'documents') continue
                     if (key === 'phones') {
                         provider.phones = value as string[]
                         provider.phone = provider.phones[0] ?? null
                     } else if (key in provider) {
                         Object.assign(provider, { [key]: value })
                     }
+                }
+                if (documents.length > 0) {
+                    await queueProviderDocumentModerationEvidence(manager, provider.id, documents.map((document) => ({
+                        ...document,
+                        expiresAt: document.expiresAt ? new Date(document.expiresAt) : null,
+                    })))
                 }
             }
             await providerRepository.save(provider)

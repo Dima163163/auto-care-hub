@@ -147,6 +147,7 @@ export type EnvConfig = {
     auditLogRetentionDays: number
     securityEventIpRetentionDays: number
     notificationRetentionDays: number
+    autoCareAnalyticsRetentionDays: number
     bookingReminderHours: number
     cabinetUploadOrphanGraceHours: number
     backgroundJobShutdownTimeoutMs: number
@@ -669,6 +670,7 @@ export const env: EnvConfig = {
     auditLogRetentionDays,
     securityEventIpRetentionDays,
     notificationRetentionDays: getBoundedPositiveNumberEnv('NOTIFICATION_RETENTION_DAYS', 180, 730),
+    autoCareAnalyticsRetentionDays: getBoundedPositiveNumberEnv('AUTOCARE_ANALYTICS_RETENTION_DAYS', 365, 3_650),
     bookingReminderHours: getBoundedPositiveNumberEnv(
         'BOOKING_REMINDER_HOURS',
         DEFAULT_BOOKING_REMINDER_HOURS,
