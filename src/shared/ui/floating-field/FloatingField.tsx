@@ -31,7 +31,7 @@ const toneClasses: Record<FloatingFieldTone, { wrapper: string; label: string; l
         // both themes; the field surface itself remains theme-specific.
         label: 'text-slate-700',
         labelSurface: 'bg-white',
-        control: 'text-primary-foreground disabled:text-primary-foreground/50 [&>option]:bg-hero-overlay [&>option]:text-primary-foreground',
+        control: 'text-primary-foreground disabled:text-muted-foreground [&>option]:bg-hero-overlay [&>option]:text-primary-foreground',
     },
 }
 
@@ -68,7 +68,8 @@ function FloatingLabel({ label, tone, filled }: { label: string; tone: FloatingF
 }
 
 export function FloatingSelect({ children, className, floatLabelWhenEmpty = false, label, leadingAdornment, tone = 'light', value, defaultValue, wrapperClassName, ...props }: FloatingSelectProps) {
-    const filled = floatLabelWhenEmpty || isFilled(value ?? defaultValue)
+    const hasValue = isFilled(value ?? defaultValue)
+    const filled = floatLabelWhenEmpty || hasValue
 
     return (
         <label data-filled={filled} className={getWrapperClassName(tone, filled, wrapperClassName)}>
@@ -84,6 +85,7 @@ export function FloatingSelect({ children, className, floatLabelWhenEmpty = fals
                     'select-with-icon h-12 w-full appearance-none bg-transparent pb-1 pt-4 text-sm font-bold outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60',
                     leadingAdornment ? 'pl-9 pr-9' : 'px-3 pr-9',
                     toneClasses[tone].control,
+                    !hasValue && 'text-muted-foreground',
                     className,
                 )}
                 {...props}

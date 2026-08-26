@@ -51,6 +51,26 @@ describe('Floating fields', () => {
         expect(select.parentElement?.querySelector('span')).toHaveClass('bg-white', 'text-slate-700')
     })
 
+    it('uses muted text for an unselected dark select and keeps selected values prominent', () => {
+        const { rerender } = render(
+            <FloatingSelect label="Марка" value="" tone="dark" onChange={() => undefined}>
+                <option value="">Любая марка</option>
+                <option value="bmw">BMW</option>
+            </FloatingSelect>,
+        )
+
+        expect(screen.getByLabelText('Марка')).toHaveClass('text-muted-foreground')
+
+        rerender(
+            <FloatingSelect label="Марка" value="bmw" tone="dark" onChange={() => undefined}>
+                <option value="">Любая марка</option>
+                <option value="bmw">BMW</option>
+            </FloatingSelect>,
+        )
+
+        expect(screen.getByLabelText('Марка')).toHaveClass('text-primary-foreground')
+    })
+
     it('uses an opaque field surface behind the floating label so the border stays clean', () => {
         render(<FloatingInput label="Точка поиска" value="Рядом с вами" readOnly />)
 

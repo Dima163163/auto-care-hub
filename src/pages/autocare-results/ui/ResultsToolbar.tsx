@@ -53,9 +53,11 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
                 <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:p-4">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
-                        <ServiceSelect serviceId={serviceId} onChange={onServiceChange} />
+                        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:col-span-12">
+                            <ServiceSelect serviceId={serviceId} onChange={onServiceChange} />
+                            <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
+                        </div>
                         <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
-                        <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
                     </div>
                     <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
                     <div className="mt-4 border-t border-primary-foreground/15 pt-4">
@@ -102,13 +104,13 @@ function VehicleSelects({ brandId, vehicleModel, vehicleYear, onChange }: { bran
 function ServiceSelect({ serviceId, onChange }: { serviceId: string; onChange: (serviceId: string) => void }) {
     const { t, locale } = useTranslation()
 
-    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.serviceLabel')} tone="dark" value={serviceId} onChange={(event) => onChange(event.target.value)} wrapperClassName="sm:col-span-2 lg:col-span-12"><option value="">{t('autocare.servicePlaceholder')}</option>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</FloatingSelect>
+    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.serviceLabel')} tone="dark" value={serviceId} onChange={(event) => onChange(event.target.value)}><option value="">{t('autocare.servicePlaceholder')}</option>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</FloatingSelect>
 }
 
 function RadiusSelect({ radiusKm, onChange }: { radiusKm: number; onChange: (radiusKm: number) => void }) {
     const { t } = useTranslation()
 
-    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.radiusLabel')} tone="dark" value={radiusKm} onChange={(event) => onChange(Number(event.target.value))} wrapperClassName="lg:col-span-2"><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option></FloatingSelect>
+    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.radiusLabel')} tone="dark" value={radiusKm} onChange={(event) => onChange(Number(event.target.value))}><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option></FloatingSelect>
 }
 
 function AppliedFilters({ filters, onClear, onRemove }: { filters: readonly ActiveFilter[]; onClear: () => void; onRemove: (key: ActiveFilter['key']) => void }) {
