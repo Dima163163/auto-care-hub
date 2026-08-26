@@ -719,6 +719,23 @@ button:disabled[type="submit"][aria-label] {
     flex: 0 1 auto;
 }
 
+/* At compact workspace widths, replace the full navigation and header CTA
+   with one predictable burger menu. The mobile header takes over below md. */
+@media (max-width: 1120px) and (min-width: 768px) {
+    .workspace-header__desktop-nav,
+    .workspace-header__compact-nav {
+        display: none !important;
+    }
+
+    .workspace-header__responsive-menu-wrap {
+        display: flex !important;
+    }
+
+    .workspace-header__create-provider {
+        display: none !important;
+    }
+}
+
 @media (max-width: 1100px) {
     .workspace-header {
         gap: 0.5rem;
@@ -832,6 +849,24 @@ button:disabled[type="submit"][aria-label] {
     background: linear-gradient(110deg, var(--muted) 20%, var(--card) 38%, var(--muted) 56%);
     background-size: 220% 100%;
     animation: autocarehub-skeleton-shimmer 1.8s linear infinite;
+}
+
+/* Keep the initial server-loading stage visually connected to the dark
+   discovery form. Individual cards still use theme-aware surface tokens. */
+.autocare-results-loading-surface {
+    position: relative;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    padding: clamp(1.25rem, 3vw, 2rem) var(--layout-gutter) clamp(1.5rem, 4vw, 2.75rem);
+    background: var(--hero-overlay);
+    color: var(--primary-foreground);
+}
+
+.autocare-results-loading-content {
+    width: 100%;
+    max-width: var(--layout-operational-max);
+    margin-inline: auto;
 }
 
 @keyframes autocarehub-skeleton-shimmer {

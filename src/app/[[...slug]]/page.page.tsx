@@ -25,5 +25,5 @@ export default async function CatchAllPage({ params }: CatchAllPageProps) {
         notFound()
     }
 
-    return <NextClientApp />
+    return <NextClientApp initialPathname={pathname} />
 }

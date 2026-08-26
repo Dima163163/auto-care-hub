@@ -124,6 +124,8 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
         priceToMinor: entity.priceToMinor === null ? null : toNumber(entity.priceToMinor),
         currencyCode: entity.currencyCode,
         durationMinutes: toNumber(entity.durationMinutes),
+        requiredResourceTypes: entity.requiredResourceTypes ?? [],
+        requiredResourceIds: entity.requiredResourceIds ?? [],
         inclusions: entity.inclusions,
         warrantyText: entity.warrantyText,
         active: entity.active,

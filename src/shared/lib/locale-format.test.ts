@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCurrency, formatDateTime, getIntlLocale } from './locale-format'
+import { formatCurrency, formatDateTime, formatPlural, getIntlLocale } from './locale-format'
 
 describe('locale formatting', () => {
     it('maps supported locales to stable Intl tags', () => {
@@ -19,5 +19,20 @@ describe('locale formatting', () => {
         const value = '2026-08-25T12:30:00.000Z'
         expect(formatDateTime(value, 'en', { timeZone: 'UTC', dateStyle: 'medium' })).toContain('Aug')
         expect(formatDateTime(value, 'ru', { timeZone: 'UTC', dateStyle: 'medium' })).toContain('авг')
+    })
+
+    it('uses locale-specific plural categories for customer-facing counts', () => {
+        const forms = {
+            one: 'service',
+            few: 'services',
+            many: 'services',
+            other: 'services',
+        }
+
+        expect(formatPlural(1, 'en', forms)).toBe('service')
+        expect(formatPlural(2, 'en', forms)).toBe('services')
+        expect(formatPlural(1, 'ru', { one: 'сервис', few: 'сервиса', many: 'сервисов', other: 'сервисов' })).toBe('сервис')
+        expect(formatPlural(5, 'ru', { one: 'сервис', few: 'сервиса', many: 'сервисов', other: 'сервисов' })).toBe('сервисов')
+        expect(formatPlural(1, 'ro', { one: 'service', few: 'service', other: 'de servicii' })).toBe('service')
     })
 })

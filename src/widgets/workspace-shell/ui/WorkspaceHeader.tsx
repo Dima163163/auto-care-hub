@@ -1,6 +1,6 @@
-import { Bell, ChevronDown, Plus } from 'lucide-react'
+import { Bell, ChevronDown, Menu, Plus, X } from 'lucide-react'
 import { Link, NavLink } from 'react-router'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { CurrentUserBadge, CurrentUserMenu, useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
@@ -11,6 +11,8 @@ import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitche
 import { ThemeSwitcher } from '@/widgets/theme-switcher'
 import { HeaderInfoMenu } from '@/widgets/header-info-menu'
 import { MarketSwitcher } from '@/widgets/market-switcher'
+
+import { WorkspaceMobileMenu } from './WorkspaceMobileMenu'
 
 export type WorkspaceRole = 'client' | 'owner' | 'manager' | 'staff' | 'admin' | 'super_admin'
 
@@ -40,6 +42,26 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
     const { t } = useTranslation()
     const { data: user, isLoading, isError } = useGetMeQuery()
     const [isMoreOpen, setIsMoreOpen] = useState(false)
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const menuRef = useRef<HTMLDivElement | null>(null)
+
+    useEffect(() => {
+        if (!isMenuOpen) return
+
+        const closeOnOutsidePointer = (event: PointerEvent) => {
+            if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setIsMenuOpen(false)
+        }
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setIsMenuOpen(false)
+        }
+
+        document.addEventListener('pointerdown', closeOnOutsidePointer)
+        document.addEventListener('keydown', closeOnEscape)
+        return () => {
+            document.removeEventListener('pointerdown', closeOnOutsidePointer)
+            document.removeEventListener('keydown', closeOnEscape)
+        }
+    }, [isMenuOpen])
 
     const links = [
         { to: ROUTES.serviceDiscovery, label: t('navigation.services') },
@@ -109,6 +131,19 @@ export function WorkspaceHeader({ role, showCreateProvider = false }: WorkspaceH
             </nav>
 
             <div className="workspace-header__actions ml-auto flex items-center gap-1.5 lg:gap-3">
+                <div ref={menuRef} className="workspace-header__responsive-menu-wrap relative hidden">
+                    <button
+                        type="button"
+                        className="flex size-10 cursor-pointer items-center justify-center rounded-md border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/85 transition-colors hover:bg-primary-foreground/15 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={t('common.menu')}
+                        aria-expanded={isMenuOpen}
+                        aria-controls="workspace-mobile-menu"
+                        onClick={() => setIsMenuOpen((value) => !value)}
+                    >
+                        {isMenuOpen ? <X className="size-4" aria-hidden="true" /> : <Menu className="size-4" aria-hidden="true" />}
+                    </button>
+                    {isMenuOpen && <WorkspaceMobileMenu role={role} onClose={() => setIsMenuOpen(false)} />}
+                </div>
                 <div className="hidden items-center gap-2 border-l pl-5 text-xs font-bold text-muted-foreground xl:flex">
                     <span className="rounded-md bg-primary-foreground/10 px-2 py-1 text-primary-foreground/85">{t(workspaceLabelKeys[role])}</span>
                 </div>

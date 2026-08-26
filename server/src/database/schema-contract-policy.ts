@@ -41,6 +41,8 @@ export const REQUIRED_SCHEMA_TABLES: readonly SchemaTable[] = [
     { tableName: 'autocare_chat_reports' },
     { tableName: 'autocare_chat_blocks' },
     { tableName: 'autocare_market_countries' },
+    { tableName: 'autocare_capacity_resources' },
+    { tableName: 'autocare_capacity_reservations' },
     { tableName: 'migrations' },
 ]
 
@@ -73,7 +75,12 @@ export const REQUIRED_SCHEMA_COLUMNS: readonly SchemaColumn[] = [
     { tableName: 'outbox_events', columnName: 'createdAt' },
     { tableName: 'autocare_service_requests', columnName: 'bookingSnapshot' },
     { tableName: 'autocare_service_requests', columnName: 'bookingCreatedAt' },
+    { tableName: 'autocare_service_requests', columnName: 'vehicleId' },
+    { tableName: 'client_vehicles', columnName: 'licensePlate' },
+    { tableName: 'client_vehicles', columnName: 'internalNumber' },
     { tableName: 'autocare_service_offerings', columnName: 'bookingMode' },
+    { tableName: 'autocare_service_offerings', columnName: 'requiredResourceTypes' },
+    { tableName: 'autocare_service_offerings', columnName: 'requiredResourceIds' },
     { tableName: 'autocare_bonus_programs', columnName: 'providerId' },
     { tableName: 'autocare_bonus_accounts', columnName: 'clientId' },
     { tableName: 'autocare_bonus_accounts', columnName: 'providerId' },
@@ -206,6 +213,11 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
     { tableName: 'autocare_chat_blocks', indexName: 'UQ_autocare_chat_blocks_scope', unique: true },
     { tableName: 'autocare_market_countries', indexName: 'UQ_autocare_market_countries_code', unique: true, columns: ['code'] },
     { tableName: 'autocare_markets', indexName: 'IDX_autocare_markets_country', columns: ['countryId', 'cityName'] },
+    { tableName: 'autocare_service_requests', indexName: 'IDX_autocare_service_requests_vehicle', columns: ['clientId', 'vehicleId', 'createdAt'] },
+    { tableName: 'autocare_capacity_resources', indexName: 'IDX_autocare_capacity_resources_location_active_type', columns: ['locationId', 'active', 'type'] },
+    { tableName: 'autocare_capacity_resources', indexName: 'UQ_autocare_capacity_resources_provider_location_name', unique: true, columns: ['providerId', 'locationId', 'name'] },
+    { tableName: 'autocare_capacity_reservations', indexName: 'IDX_autocare_capacity_reservations_resource_status_range', columns: ['resourceId', 'status', 'startsAt', 'endsAt'] },
+    { tableName: 'autocare_capacity_reservations', indexName: 'UQ_autocare_capacity_reservations_request_resource_active', unique: true, columns: ['requestId', 'resourceId'] },
 ]
 
 export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
@@ -333,6 +345,14 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
     { tableName: 'autocare_chat_blocks', constraintName: 'FK_autocare_chat_blocks_blocker', onDelete: 'RESTRICT' },
     { tableName: 'autocare_chat_blocks', constraintName: 'FK_autocare_chat_blocks_blocked_user', onDelete: 'CASCADE' },
     { tableName: 'autocare_markets', constraintName: 'FK_autocare_markets_country', onDelete: 'RESTRICT' },
+    { tableName: 'autocare_capacity_resources', constraintName: 'CHK_autocare_capacity_resources_capacity' },
+    { tableName: 'autocare_capacity_reservations', constraintName: 'CHK_autocare_capacity_reservations_range' },
+    { tableName: 'autocare_capacity_resources', constraintName: 'FK_autocare_capacity_resources_provider', onDelete: 'CASCADE' },
+    { tableName: 'autocare_capacity_resources', constraintName: 'FK_autocare_capacity_resources_location', onDelete: 'CASCADE' },
+    { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_request', onDelete: 'CASCADE' },
+    { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_resource', onDelete: 'CASCADE' },
+    { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_provider', onDelete: 'CASCADE' },
+    { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_location', onDelete: 'CASCADE' },
 ]
 
 export function getMissingSchemaColumns(

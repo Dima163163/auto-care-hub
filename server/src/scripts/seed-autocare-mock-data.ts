@@ -41,6 +41,8 @@ async function seedAutoCareMockData() {
             const membershipRepository = manager.getRepository(AutomotiveProviderMembershipEntity)
             const demoOwner = await manager.getRepository(UserEntity).findOneBy({ email: DEMO_USERS.owner.email })
             if (!demoOwner) throw new Error('Demo owner must be seeded before AutoCare mock data.')
+            const demoStaff = await manager.getRepository(UserEntity).findOneBy({ email: DEMO_USERS.staff.email })
+            if (!demoStaff) throw new Error('Demo staff must be seeded before AutoCare mock data.')
             const locationRepository = manager.getRepository(AutomotiveServiceLocationEntity)
             const offeringRepository = manager.getRepository(AutomotiveServiceOfferingEntity)
             const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
@@ -152,6 +154,19 @@ async function seedAutoCareMockData() {
                         userId: demoOwner.id,
                         locationId: null,
                         role: AutomotiveProviderMembershipRole.Owner,
+                        status: AutomotiveProviderMembershipStatus.Active,
+                    }))
+                    const existingStaffMembership = await membershipRepository.findOneBy({
+                        providerId: provider.id,
+                        userId: demoStaff.id,
+                        locationId: location.id,
+                    })
+                    await membershipRepository.save(membershipRepository.create({
+                        ...existingStaffMembership,
+                        providerId: provider.id,
+                        userId: demoStaff.id,
+                        locationId: location.id,
+                        role: AutomotiveProviderMembershipRole.Staff,
                         status: AutomotiveProviderMembershipStatus.Active,
                     }))
                 }

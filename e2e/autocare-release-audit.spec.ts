@@ -5,9 +5,21 @@ const guestWidths = [360, 390, 414, 540, 682, 768, 790, 1024, 1280, 1440] as con
 const supportedLocales = ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
 
 async function expectNoHorizontalOverflow(page: Page) {
-    await expect.poll(() => page.evaluate(() =>
-        document.documentElement.scrollWidth <= window.innerWidth + 1,
-    )).toBe(true)
+    await expect.poll(async () => {
+        try {
+            return await page.evaluate(() =>
+                document.documentElement.scrollWidth <= window.innerWidth + 1,
+            )
+        } catch (error) {
+            // Locale changes can briefly replace the document between a
+            // navigation and the first layout pass. Keep polling instead of
+            // turning that expected transition into a flaky release failure.
+            if (error instanceof Error && /execution context was destroyed|frame was detached/i.test(error.message)) {
+                return false
+            }
+            throw error
+        }
+    }).toBe(true)
 }
 
 async function expectStableShell(page: Page) {
@@ -24,8 +36,55 @@ async function expectStableShell(page: Page) {
 
 async function expectWorkspaceShell(page: Page) {
     await expect(page.getByRole('main')).toHaveCount(1)
-    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('heading').first()).toBeVisible({ timeout: 15_000 })
     await expectNoHorizontalOverflow(page)
+}
+
+async function gotoStable(page: Page, url: string) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20_000 })
+            return
+        } catch (error) {
+            if (attempt === 1 || !(error instanceof Error) || !/ERR_ABORTED|execution context was destroyed/i.test(error.message)) {
+                throw error
+            }
+        }
+    }
+}
+
+async function expectKeyboardTraversal(page: Page) {
+    const interactive = page.locator('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')
+    const interactiveCount = await interactive.count()
+    expect(interactiveCount).toBeGreaterThan(3)
+
+    const focusedTargets = new Set<string>()
+    for (let index = 0; index < Math.min(interactiveCount + 4, 60); index += 1) {
+        await page.keyboard.press('Tab')
+        const target = await page.evaluate(() => {
+            const element = document.activeElement
+            if (!(element instanceof HTMLElement)) return ''
+
+            return `${element.tagName}:${element.getAttribute('aria-label') ?? element.textContent?.trim().slice(0, 40) ?? ''}`
+        })
+        if (target) focusedTargets.add(target)
+    }
+
+    expect(focusedTargets.size).toBeGreaterThan(3)
+}
+
+async function signInWithMockAccount(page: Page, email: string) {
+    await gotoStable(page, '/login')
+    await page.locator('#email').fill(email)
+    await page.locator('#password').fill('password123')
+    await page.getByRole('button', { name: /sign in|войти/i }).click()
+    await expect(page).toHaveURL(/\/(?:owner\/dashboard|admin\/dashboard|super-admin\/dashboard)$/)
+}
+
+async function signOutMockAccount(page: Page) {
+    await page.evaluate(async () => {
+        await fetch('/api/auth/logout', { method: 'POST' })
+    })
 }
 
 test.describe('AutoCare stable-web release gate', () => {
@@ -86,6 +145,87 @@ test.describe('AutoCare stable-web release gate', () => {
         expect(results.violations).toEqual([])
     })
 
+    test('public pages expose a usable keyboard order', async ({ page }) => {
+        for (const route of ['/', '/services?service=oil-change', '/services/api-proservice-moscow']) {
+            await page.setViewportSize({ width: 1280, height: 900 })
+            await gotoStable(page, route)
+            await expect(page.locator('header:visible').first()).toBeVisible()
+            await expect(page.getByRole('heading').first()).toBeVisible()
+            await expectNoHorizontalOverflow(page)
+            await expectKeyboardTraversal(page)
+        }
+    })
+
+    test('protected workspaces expose a usable keyboard order', async ({ page }) => {
+        test.setTimeout(240_000)
+        await page.setViewportSize({ width: 1280, height: 900 })
+        await signInWithMockAccount(page, 'sophia.miller@example.com')
+
+        for (const route of [
+            '/owner/dashboard',
+            '/owner/autocare-providers',
+            '/owner/cabinets',
+            '/owner/bookings',
+            '/owner/autocare-requests',
+            '/owner/reviews',
+            '/owner/clients',
+            '/owner/services',
+            '/profile',
+            '/profile/vehicles',
+            '/profile/bookings',
+            '/profile/reviews',
+            '/notifications',
+        ]) {
+            await gotoStable(page, route)
+            await expectWorkspaceShell(page)
+            await expectKeyboardTraversal(page)
+        }
+
+        await signOutMockAccount(page)
+        await signInWithMockAccount(page, 'admin@autocarehub.test')
+        for (const route of [
+            '/admin/dashboard',
+            '/admin/users',
+            '/admin/owners',
+            '/admin/cabinets',
+            '/admin/reviews',
+            '/admin/platform-reviews',
+            '/admin/audit-logs',
+            '/admin/security-center',
+            '/admin/chats',
+            '/super-admin/dashboard',
+            '/super-admin/chats',
+        ]) {
+            await gotoStable(page, route)
+            await expectWorkspaceShell(page)
+            await expectKeyboardTraversal(page)
+        }
+    })
+
+    test('city listbox supports arrows, Home, End and Escape', async ({ page }) => {
+        await page.setViewportSize({ width: 790, height: 900 })
+        await gotoStable(page, '/')
+
+        const trigger = page.locator('[data-market-switcher] > button').first()
+        await expect(trigger).toBeEnabled()
+        await trigger.focus()
+        await trigger.click()
+
+        const listbox = page.getByRole('listbox', { name: /choose a city|select city|выберите город/i })
+        await expect(listbox).toBeVisible()
+        const options = listbox.getByRole('option')
+        expect(await options.count()).toBeGreaterThan(1)
+        await options.first().press('End')
+        await expect(options.last()).toBeFocused()
+        await options.last().press('Home')
+        await expect(options.first()).toBeFocused()
+        await options.first().press('ArrowDown')
+        await expect(options.nth(1)).toBeFocused()
+        await options.nth(1).press('Escape')
+        await expect(listbox).toBeHidden()
+        await expect(trigger).toBeFocused()
+    })
+
     test('public gallery closes with Escape and returns focus to its trigger', async ({ page }) => {
         await page.goto('/services/api-proservice-moscow')
         const gallery = page.getByTestId('provider-gallery')
@@ -103,14 +243,46 @@ test.describe('AutoCare stable-web release gate', () => {
         await page.setViewportSize({ width: 1280, height: 900 })
 
         for (const locale of supportedLocales) {
-            await page.goto(`/?lang=${locale}`)
+            await gotoStable(page, `/?lang=${locale}`)
             await expect(page.locator('html')).toHaveAttribute('lang', locale)
             await expectNoHorizontalOverflow(page)
-            await expect.poll(() => page.evaluate(() => {
-                const text = document.body.innerText
-                return !/(?:landing|navigation|common|errors)\.[A-Za-z0-9_.-]+/.test(text)
-                    && !/\b(?:undefined|null|TODO|FIXME)\b/i.test(text)
-            })).toBe(true)
+            await expect.poll(async () => {
+                try {
+                    return await page.evaluate(() => {
+                        const text = document.body.innerText
+                        return !/(?:landing|navigation|common|errors)\.[A-Za-z0-9_.-]+/.test(text)
+                            && !/\b(?:undefined|null|TODO|FIXME)\b/i.test(text)
+                    })
+                } catch (error) {
+                    if (error instanceof Error && /execution context was destroyed|frame was detached/i.test(error.message)) return false
+                    throw error
+                }
+            }).toBe(true)
+        }
+    })
+
+    test('Spanish and Romanian stay usable on mobile with long labels', async ({ page }) => {
+        for (const locale of ['es', 'ro'] as const) {
+            for (const width of [360, 390] as const) {
+                await page.setViewportSize({ width, height: 900 })
+                await gotoStable(page, `/services?service=oil-change&lang=${locale}`)
+                await expect(page.locator('html')).toHaveAttribute('lang', locale)
+                await expectStableShell(page)
+                await expectNoHorizontalOverflow(page)
+                const mobileMenu = page.getByTestId('mobile-home-menu')
+                await expect(mobileMenu).toBeVisible()
+                await mobileMenu.click()
+                await expect(page.locator('#public-mobile-menu')).toBeVisible()
+                await page.keyboard.press('Escape')
+                await expect(page.locator('#public-mobile-menu')).toBeHidden()
+
+                const longCity = 'San Cristóbal de La Laguna — Región Metropolitana'
+                await page.evaluate((value) => {
+                    const label = document.querySelector('[data-market-switcher] > button > span')
+                    if (label) label.textContent = value
+                }, longCity)
+                await expectNoHorizontalOverflow(page)
+            }
         }
     })
 

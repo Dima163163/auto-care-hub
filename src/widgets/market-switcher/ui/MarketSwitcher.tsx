@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { ChevronDown, MapPin } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 
@@ -29,9 +30,12 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
     const [isOpen, setIsOpen] = useState(false)
     const [storedMarketId, setStoredMarketId] = useState(() => readAutoCareMarketPreference())
     const rootRef = useRef<HTMLDivElement | null>(null)
+    const triggerRef = useRef<HTMLButtonElement | null>(null)
+    const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
     const queryMarketId = new URLSearchParams(location.search).get('market')
     const selectedMarketId = queryMarketId ?? storedMarketId
     const groups = useMemo(() => groupMarkets(markets), [markets])
+    const flatMarkets = useMemo(() => groups.flatMap((group) => group.markets), [groups])
     const selectedMarket = markets.find((market) => market.cityCode === selectedMarketId) ?? markets.find((market) => market.launchReady) ?? markets[0]
     const label = selectedMarket?.cityName ?? (isLoading ? '…' : t('autocare.selectCity'))
     const buttonClass = variant === 'dark'
@@ -48,6 +52,13 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         document.addEventListener('keydown', escape)
         return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape) }
     }, [isOpen])
+
+    useEffect(() => {
+        if (!isOpen || flatMarkets.length === 0) return
+
+        const selectedIndex = Math.max(0, flatMarkets.findIndex((market) => market.cityCode === selectedMarket?.cityCode))
+        optionRefs.current[selectedIndex]?.focus()
+    }, [flatMarkets, isOpen, selectedMarket?.cityCode])
 
     useEffect(() => {
         const syncMarket = () => setStoredMarketId(readAutoCareMarketPreference())
@@ -67,15 +78,48 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         navigate(`${target}${query ? `?${query}` : ''}`)
     }
 
+    const openWithKeyboard = (event: KeyboardEvent<HTMLButtonElement>) => {
+        if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setIsOpen(true)
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault()
+            setIsOpen(false)
+        }
+    }
+
+    const handleOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            optionRefs.current[(index + 1) % flatMarkets.length]?.focus()
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault()
+            optionRefs.current[(index - 1 + flatMarkets.length) % flatMarkets.length]?.focus()
+        } else if (event.key === 'Home') {
+            event.preventDefault()
+            optionRefs.current[0]?.focus()
+        } else if (event.key === 'End') {
+            event.preventDefault()
+            optionRefs.current[flatMarkets.length - 1]?.focus()
+        } else if (event.key === 'Escape') {
+            event.preventDefault()
+            setIsOpen(false)
+            triggerRef.current?.focus()
+        }
+    }
+
     return (
         <div ref={rootRef} data-market-switcher className="relative shrink-0">
             <button
+                ref={triggerRef}
                 type="button"
                 disabled={isLoading}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
                 aria-label={`${t('autocare.locationLabel')}: ${label}`}
                 onClick={() => setIsOpen((value) => !value)}
+                onKeyDown={openWithKeyboard}
                 className={`inline-flex h-10 items-center gap-1.5 rounded-[9px] border px-2.5 text-xs font-semibold transition-colors disabled:cursor-wait disabled:opacity-70 xl:px-3 ${buttonClass}`}
             >
                 <MapPin className="size-4" />
@@ -98,19 +142,25 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
                     ) : groups.map((group) => (
                         <div key={group.country} className="pb-2 last:pb-0">
                             <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{group.country}</p>
-                            {group.markets.map((market) => (
+                            {group.markets.map((market) => {
+                                const optionIndex = flatMarkets.findIndex((item) => item.id === market.id)
+
+                                return (
                                 <button
                                     key={market.id}
+                                    ref={(node) => { optionRefs.current[optionIndex] = node }}
                                     type="button"
                                     role="option"
                                     aria-selected={market.cityCode === selectedMarket?.cityCode}
                                     onClick={() => chooseMarket(market)}
+                                    onKeyDown={(event) => handleOptionKeyDown(event, optionIndex)}
                                     className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm font-semibold transition-colors ${market.cityCode === selectedMarket?.cityCode ? 'bg-primary/15 text-primary' : 'hover:bg-primary/10'}`}
                                 >
                                     <span>{market.cityName}</span>
                                     <span className="text-[10px] font-bold text-muted-foreground">{market.currencyCode}</span>
                                 </button>
-                            ))}
+                                )
+                            })}
                         </div>
                     ))}
                 </div>

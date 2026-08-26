@@ -1,5 +1,6 @@
 import { createSecurityTokenValue, hashSecurityTokenValue } from '../auth/security-token-value.js'
 import { AppDataSource } from '../../database/data-source.js'
+import { In } from 'typeorm'
 import {
     AutomotiveProviderEntity,
     AutomotiveProviderInvitationEntity,
@@ -71,6 +72,27 @@ function toInvitationResponse(invitation: AutomotiveProviderInvitationEntity, in
     }
 }
 
+function toMembershipResponse(
+    membership: AutomotiveProviderMembershipEntity,
+    user: Pick<UserEntity, 'id' | 'name' | 'email' | 'avatarUrl'> | undefined,
+) {
+    return {
+        id: membership.id,
+        providerId: membership.providerId,
+        userId: membership.userId,
+        user: user ? {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatarUrl: user.avatarUrl,
+        } : null,
+        locationId: membership.locationId,
+        role: membership.role,
+        status: membership.status,
+        createdAt: membership.createdAt.toISOString(),
+    }
+}
+
 export async function listOwnerProviderMemberships(user: UserEntity, providerId: string) {
     assertOwnerRole(user)
     const provider = await getProvider(providerId)
@@ -81,16 +103,15 @@ export async function listOwnerProviderMemberships(user: UserEntity, providerId:
         AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { providerId }, order: { createdAt: 'ASC' } }),
         AppDataSource.getRepository(AutomotiveProviderInvitationEntity).find({ where: { providerId }, order: { createdAt: 'DESC' } }),
     ])
+    const users = memberships.length
+        ? await AppDataSource.getRepository(UserEntity).find({
+            where: { id: In(memberships.map((membership) => membership.userId)) },
+            select: { id: true, name: true, email: true, avatarUrl: true },
+        })
+        : []
+    const usersById = new Map(users.map((member) => [member.id, member]))
     return {
-        memberships: memberships.map((membership) => ({
-            id: membership.id,
-            providerId: membership.providerId,
-            userId: membership.userId,
-            locationId: membership.locationId,
-            role: membership.role,
-            status: membership.status,
-            createdAt: membership.createdAt.toISOString(),
-        })),
+        memberships: memberships.map((membership) => toMembershipResponse(membership, usersById.get(membership.userId))),
         invitations: invitations.map((invitation) => toInvitationResponse(invitation)),
     }
 }
@@ -171,7 +192,11 @@ export async function revokeOwnerProviderMembership(user: UserEntity, providerId
     const repository = AppDataSource.getRepository(AutomotiveProviderMembershipEntity)
     const membership = await repository.findOneBy({ id: membershipId, providerId })
     if (!membership) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider membership not found.' })
-    if (membership.status === AutomotiveProviderMembershipStatus.Revoked) return membership
+    const member = await AppDataSource.getRepository(UserEntity).findOne({
+        where: { id: membership.userId },
+        select: { id: true, name: true, email: true, avatarUrl: true },
+    })
+    if (membership.status === AutomotiveProviderMembershipStatus.Revoked) return toMembershipResponse(membership, member ?? undefined)
     membership.status = AutomotiveProviderMembershipStatus.Revoked
     const savedMembership = await repository.save(membership)
     await enqueueNotificationSafely({
@@ -182,7 +207,7 @@ export async function revokeOwnerProviderMembership(user: UserEntity, providerId
         link: '/profile/notifications',
         metadata: { providerId, membershipId: savedMembership.id, locationId: savedMembership.locationId },
     }, `autocare-provider-membership-revoked:${savedMembership.id}`)
-    return savedMembership
+    return toMembershipResponse(savedMembership, member ?? undefined)
 }
 
 export async function acceptProviderInvitation(user: UserEntity, token: string) {
@@ -230,14 +255,7 @@ export async function acceptProviderInvitation(user: UserEntity, token: string) 
             metadata: { providerId: invitation.providerId, membershipId: membership.id, locationId: membership.locationId },
         }, `autocare-provider-invitation-accepted:${invitation.id}`, manager)
         return {
-            membership: {
-                id: membership.id,
-                providerId: membership.providerId,
-                userId: membership.userId,
-                locationId: membership.locationId,
-                role: membership.role,
-                status: membership.status,
-            },
+            membership: toMembershipResponse(membership, user),
             invitation: toInvitationResponse(invitation),
         }
     })

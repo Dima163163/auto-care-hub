@@ -61,6 +61,8 @@ export function AutoCareResultsPage() {
         isPermissionDenied: discoveryErrorState === 'permission-denied',
         isSuspended: discoveryErrorState === 'suspended',
         isStale: discoveryErrorState === 'stale',
+        isSessionExpired: discoveryErrorState === 'session-expired',
+        isPartial: Boolean(data?.partial),
     })
     const [selectedIds, setSelectedIds] = useState<readonly string[]>([])
     const [focusedProviderId, setFocusedProviderId] = useState<string | null>(null)
@@ -123,10 +125,11 @@ export function AutoCareResultsPage() {
     const totalPages = Math.max(1, Math.ceil(providers.length / RESULTS_PAGE_SIZE))
     const currentPage = Math.min(page, totalPages)
     const pagedProviders = providers.slice((currentPage - 1) * RESULTS_PAGE_SIZE, currentPage * RESULTS_PAGE_SIZE)
-    const serviceLabel = getServiceLabel(automotiveServices.find((service) => service.id === draftFilters.serviceId) ?? automotiveServices[0]!, locale)
+    const selectedService = automotiveServices.find((service) => service.id === draftFilters.serviceId)
+    const serviceLabel = selectedService ? getServiceLabel(selectedService, locale) : t('autocare.servicePlaceholder')
     const brandLabel = draftFilters.brandId ? getVehicleBrandLabel(automotiveVehicleBrands.find((brand) => brand.id === draftFilters.brandId) ?? automotiveVehicleBrands[0]!, locale) : t('autocare.anyBrand')
     const activeFilters = useMemo<readonly ActiveFilter[]>(() => [
-        { key: 'serviceId', label: serviceLabel },
+        draftFilters.serviceId ? { key: 'serviceId', label: serviceLabel } : null,
         draftFilters.providerName ? { key: 'providerName', label: `${t('autocare.providerLabel')}: ${draftFilters.providerName}` } : null,
         draftFilters.brandId ? { key: 'brandId', label: brandLabel } : null,
         draftFilters.radiusKm !== 25 ? { key: 'radiusKm', label: `${draftFilters.radiusKm} km` } : null,
@@ -184,16 +187,17 @@ export function AutoCareResultsPage() {
                     <QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} />
                 </div>
 
-                {discoveryState === 'loading' ? <div className="mt-6"><AutoCareResultsSkeleton label={t('common.loading')} /></div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+                {discoveryState === 'loading' ? <AutoCareResultsSkeleton label={t('common.loading')} /> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
                     <section className="order-2 flex flex-col gap-4 lg:order-1">
                         <div className="flex shrink-0 items-center justify-between gap-3">
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
                             <span className="text-xs font-semibold text-muted-foreground">{t('autocare.compareDescription')}</span>
                         </div>
                         {discoveryState === 'stale-error' && <QueryStateCard state="stale-error" error={error} onRetry={refetch} />}
-                        {(discoveryState === 'error' || discoveryState === 'offline' || discoveryState === 'permission-denied' || discoveryState === 'suspended') && <QueryStateCard state={discoveryState} error={error} onRetry={refetch} />}
+                        {(discoveryState === 'error' || discoveryState === 'offline' || discoveryState === 'permission-denied' || discoveryState === 'suspended' || discoveryState === 'session-expired') && <QueryStateCard state={discoveryState} error={error} onRetry={refetch} />}
+                        {discoveryState === 'partial' && <QueryStateCard state="partial" onRetry={refetch} />}
                         {discoveryState === 'empty' && <StateCard variant="empty" title={filters.marketId ? t('autocare.noProvidersInRegion') : t('autocare.discoverySelectCity')} description={t('autocare.discoveryEmptyDescription')} />}
-                        {['success', 'refreshing', 'stale-error'].includes(discoveryState) && providers.length > 0 && (
+                        {['success', 'refreshing', 'partial', 'stale-error'].includes(discoveryState) && providers.length > 0 && (
                             <ProviderResultsList
                                 key={searchParams.toString()}
                                 providers={pagedProviders}
@@ -218,9 +222,11 @@ export function AutoCareResultsPage() {
                         />
                     </div>
                 </div>}
-                <div className="mt-6"><FairPriceBenchmarkCard serviceId={filters.serviceId || 'oil-change'} marketId={filters.marketId} /></div>
-                <div className="mt-4"><ExpertQuestionCard categorySlug={filters.serviceId || 'oil-change'} /></div>
-                <div className="mt-6"><MultiProviderRequestCard serviceDefinitionId={filters.serviceId || 'oil-change'} marketId={filters.marketId} /></div>
+                {filters.serviceId ? <>
+                    <div className="mt-6"><FairPriceBenchmarkCard serviceId={filters.serviceId} marketId={filters.marketId} /></div>
+                    <div className="mt-4"><ExpertQuestionCard categorySlug={filters.serviceId} /></div>
+                    <div className="mt-6"><MultiProviderRequestCard serviceDefinitionId={filters.serviceId} marketId={filters.marketId} /></div>
+                </> : null}
                 <TrustStrip />
             </div>
         </main>

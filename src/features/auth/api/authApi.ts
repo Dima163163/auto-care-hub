@@ -7,6 +7,7 @@ import { clearAccessToken } from '@/shared/lib/auth-token'
 import { clearCsrfToken } from '@/shared/lib/csrf-token'
 import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
 import { clearMockSession } from '@/shared/lib/mock-session'
+import { clearSessionExpired } from '@/shared/lib/auth-session-state'
 import {
     normalizeAuthResponse,
     normalizeDeploymentCapabilitiesResponse,
@@ -177,6 +178,7 @@ export const authApi = baseApi.injectEndpoints({
             transformResponse: normalizeAuthResponse,
             async onQueryStarted(_arg, { queryFulfilled, dispatch }) {
                 await queryFulfilled
+                clearSessionExpired()
                 await clearIdentityScopedPwaCaches()
                 dispatch(baseApi.util.resetApiState())
             },
@@ -195,6 +197,7 @@ export const authApi = baseApi.injectEndpoints({
             }),
             transformResponse: normalizeLogoutResponse,
             async onQueryStarted(_arg, { queryFulfilled }) {
+                clearSessionExpired()
                 clearAccessToken()
                 clearCsrfToken()
                 if (IS_MOCK_API) {

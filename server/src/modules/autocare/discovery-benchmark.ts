@@ -1,11 +1,16 @@
+import { performance } from 'node:perf_hooks'
+
 export type DiscoveryBenchmarkSample = {
     durationMs: number
+    ok?: boolean
 }
 
 export type DiscoveryBenchmarkSummary = {
     samples: number
+    failedSamples: number
     p50Ms: number | null
     p95Ms: number | null
+    p99Ms: number | null
     maxMs: number | null
 }
 
@@ -73,8 +78,10 @@ export function summarizeDiscoveryBenchmark(samples: readonly DiscoveryBenchmark
 
     return {
         samples: durations.length,
+        failedSamples: samples.filter((sample) => sample.ok === false).length,
         p50Ms: percentile(durations, 50),
         p95Ms: percentile(durations, 95),
+        p99Ms: percentile(durations, 99),
         maxMs: durations.length === 0 ? null : Math.round(Math.max(...durations) * 10) / 10,
     }
 }
@@ -85,4 +92,58 @@ export function isDiscoveryBenchmarkWithinBudget(summary: DiscoveryBenchmarkSumm
         && p95BudgetMs > 0
         && summary.p95Ms !== null
         && summary.p95Ms <= p95BudgetMs
+}
+
+export type ConcurrentDiscoveryBenchmarkOptions = {
+    iterations: number
+    concurrency: number
+    task: (iteration: number) => Promise<unknown>
+}
+
+/**
+ * Runs the same discovery operation through a bounded worker pool. Keeping
+ * this in a shared module makes the local Docker benchmark and CI tests use
+ * the same p50/p95/p99 accounting without introducing a load-test dependency.
+ */
+export async function runConcurrentDiscoveryBenchmark(options: ConcurrentDiscoveryBenchmarkOptions): Promise<DiscoveryBenchmarkSummary> {
+    if (!Number.isSafeInteger(options.iterations) || options.iterations < 1) throw new Error('Benchmark iterations must be a positive integer.')
+    if (!Number.isSafeInteger(options.concurrency) || options.concurrency < 1) throw new Error('Benchmark concurrency must be a positive integer.')
+
+    const samples: DiscoveryBenchmarkSample[] = []
+    let nextIteration = 0
+    const workerCount = Math.min(options.concurrency, options.iterations)
+
+    async function worker() {
+        while (nextIteration < options.iterations) {
+            const iteration = nextIteration
+            nextIteration += 1
+            const startedAt = performance.now()
+            try {
+                await options.task(iteration)
+                samples.push({ durationMs: performance.now() - startedAt, ok: true })
+            } catch {
+                samples.push({ durationMs: performance.now() - startedAt, ok: false })
+            }
+        }
+    }
+
+    await Promise.all(Array.from({ length: workerCount }, () => worker()))
+    return summarizeDiscoveryBenchmark(samples)
+}
+
+export function isDiscoveryBenchmarkWithinBudgets(
+    summary: DiscoveryBenchmarkSummary,
+    budgets: { p95Ms: number; p99Ms: number; maxFailureRatePercent?: number },
+) {
+    const failureRate = summary.samples === 0 ? 100 : (summary.failedSamples / summary.samples) * 100
+    return summary.samples > 0
+        && summary.p95Ms !== null
+        && summary.p99Ms !== null
+        && Number.isFinite(budgets.p95Ms)
+        && Number.isFinite(budgets.p99Ms)
+        && budgets.p95Ms > 0
+        && budgets.p99Ms > 0
+        && summary.p95Ms <= budgets.p95Ms
+        && summary.p99Ms <= budgets.p99Ms
+        && failureRate <= (budgets.maxFailureRatePercent ?? 0)
 }

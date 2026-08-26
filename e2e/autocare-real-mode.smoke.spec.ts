@@ -37,4 +37,13 @@ test.describe('AutoCare real API smoke', () => {
         expect(Array.isArray(payload.items)).toBe(true)
         expect('nextCursor' in payload).toBe(true)
     })
+
+    test('real API keeps protected cabinets behind the expired-session boundary', async ({ page, request }) => {
+        const meResponse = await request.get(`${apiBaseUrl}/auth/me`)
+        expect(meResponse.status()).toBe(401)
+
+        await page.goto('/profile')
+        await expect(page).toHaveURL(/\/login(?:\?reason=session-expired)?$/)
+        await expect(page.getByText(/session expired|сессия истекла/i)).toBeVisible()
+    })
 })

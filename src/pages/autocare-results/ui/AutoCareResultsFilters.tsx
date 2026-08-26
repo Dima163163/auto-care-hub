@@ -1,7 +1,8 @@
-import { Filter, RotateCcw, ChevronDown } from 'lucide-react'
+import { Filter, RotateCcw } from 'lucide-react'
 
 import type { AutomotivePriceType } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { FloatingInput, FloatingSelect } from '@/shared/ui/floating-field'
 
 import type { AutoCareResultFilters } from '../lib/autocareResultFilters'
 
@@ -66,6 +67,7 @@ export function AutoCareResultsFilters({ filters, onChange, onReset, variant = '
                     value={filters.minRating}
                     onChange={(value) => update('minRating', value)}
                     className={fieldClass}
+                    tone={variant}
                     options={[
                         ['', t('autocare.anyRating')],
                         ['4', '4.0+'],
@@ -79,13 +81,14 @@ export function AutoCareResultsFilters({ filters, onChange, onReset, variant = '
                     value={filters.priceType}
                     onChange={(value) => update('priceType', value as AutoCareResultFilters['priceType'])}
                     className={fieldClass}
+                    tone={variant}
                     options={[
                         ['', t('autocare.anyPriceType')],
                         ...priceTypes.map((type) => [type, t(`autocare.priceType.${type}`)] as [string, string]),
                     ]}
                 />
-                <FilterInput label={t('autocare.minPriceLabel')} value={filters.minPrice} onChange={(value) => update('minPrice', value)} placeholder="0" className={inputClass} />
-                <FilterInput label={t('autocare.maxPriceLabel')} value={filters.maxPrice} onChange={(value) => update('maxPrice', value)} placeholder={t('autocare.noPriceLimit')} className={inputClass} />
+                <FilterInput label={t('autocare.minPriceLabel')} value={filters.minPrice} onChange={(value) => update('minPrice', value)} placeholder="0" className={inputClass} tone={variant} />
+                <FilterInput label={t('autocare.maxPriceLabel')} value={filters.maxPrice} onChange={(value) => update('maxPrice', value)} placeholder={t('autocare.noPriceLimit')} className={inputClass} tone={variant} />
             </div>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -94,6 +97,7 @@ export function AutoCareResultsFilters({ filters, onChange, onReset, variant = '
                     value={filters.inclusion}
                     onChange={(value) => update('inclusion', value)}
                     className={fieldClass}
+                    tone={variant}
                     options={[
                         ['', t('autocare.anyInclusion')],
                         ...inclusionOptions.map((option) => [option, t(`autocare.inclusion.${option}`)] as [string, string]),
@@ -120,24 +124,17 @@ export function AutoCareResultsFilters({ filters, onChange, onReset, variant = '
     )
 }
 
-function FilterSelect({ label, value, onChange, options, className }: { label: string; value: string; onChange: (value: string) => void; options: readonly [string, string][]; className: string }) {
+function FilterSelect({ label, value, onChange, options, className, tone }: { label: string; value: string; onChange: (value: string) => void; options: readonly [string, string][]; className: string; tone: 'light' | 'dark' }) {
     return (
-        <label className="relative grid gap-1.5 text-xs font-bold">
-            <span>{label}</span>
-            <select value={value} onChange={(event) => onChange(event.target.value)} className={`select-with-icon h-10 appearance-none rounded-[var(--radius-control)] border px-3 pr-9 text-sm font-medium outline-none focus:border-primary ${className}`}>
-                {options.map(([option, optionLabel]) => <option key={option} value={option}>{optionLabel}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-current opacity-70" />
-        </label>
+        <FloatingSelect floatLabelWhenEmpty label={label} tone={tone} value={value} onChange={(event) => onChange(event.target.value)} wrapperClassName={className}>
+            {options.map(([option, optionLabel]) => <option key={option} value={option}>{optionLabel}</option>)}
+        </FloatingSelect>
     )
 }
 
-function FilterInput({ label, value, onChange, placeholder, className }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; className: string }) {
+function FilterInput({ label, value, onChange, placeholder, className, tone }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; className: string; tone: 'light' | 'dark' }) {
     return (
-        <label className="grid gap-1.5 text-xs font-bold">
-            <span>{label}</span>
-            <input type="number" min="0" step="100" value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={`h-10 rounded-[var(--radius-control)] border px-3 text-sm font-medium outline-none focus:border-primary ${className}`} />
-        </label>
+        <FloatingInput type="number" min="0" step="100" label={label} tone={tone} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} wrapperClassName={className} />
     )
 }
 

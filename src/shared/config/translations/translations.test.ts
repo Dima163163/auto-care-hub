@@ -181,6 +181,24 @@ describe('translation coverage', () => {
         }
     })
 
+    it('keeps discovery result counts localized for launch languages', () => {
+        expect(translations.es.autocare.resultCount).toBe('{{count}} talleres encontrados')
+        expect(translations.ro.autocare.resultCount).toBe('{{count}} service-uri găsite')
+        expect(translations.ru.autocare.resultCount).toBe('{{count}} сервисов найдено')
+    })
+
+    it('uses a concise automotive-services label in the main navigation', () => {
+        expect(translations.ru.navigation.services).toBe('Автоуслуги')
+        expect(translations.en.navigation.services).toBe('Auto services')
+        expect(translations.es.navigation.services).toBe('Servicios de auto')
+        expect(translations.ro.navigation.services).toBe('Servicii auto')
+
+        for (const locale of Object.values(translations)) {
+            expect(locale.navigation.services).not.toBe('Найти автосервис')
+            expect(locale.navigation.services).not.toBe('Find services')
+        }
+    })
+
     it('keeps secondary runtime surfaces translated for every popular locale', () => {
         const longTailKeys = [
             'routeError.title',

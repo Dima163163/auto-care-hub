@@ -40,6 +40,25 @@ describe('AutoCare public catalog and request route integration', () => {
         expect(response.body).toHaveProperty('nextCursor')
         expect(response.body.nextCursor === null || typeof response.body.nextCursor === 'string').toBe(true)
         expect(response.body.items.length).toBeLessThanOrEqual(8)
+        expect(response.headers['cache-control']).toContain('max-age=5')
+    })
+
+    it('filters real seeded providers by the requested service catalog', async () => {
+        const [tireService, airConditioning] = await Promise.all([
+            request(app.server)
+                .get('/v1/discovery/providers')
+                .query({ serviceId: 'tire-service', marketId: 'moscow', radiusKm: 25, limit: 8 }),
+            request(app.server)
+                .get('/v1/discovery/providers')
+                .query({ serviceId: 'air-conditioning', marketId: 'moscow', radiusKm: 25, limit: 8 }),
+        ])
+
+        expect(tireService.status).toBe(200)
+        expect(airConditioning.status).toBe(200)
+        expect(tireService.body.items.length).toBeGreaterThan(0)
+        expect(airConditioning.body.items.length).toBeGreaterThan(0)
+        expect(tireService.body.items.every((item: { offer: { serviceSlug: string } }) => item.offer.serviceSlug === 'tire-service')).toBe(true)
+        expect(airConditioning.body.items.every((item: { offer: { serviceSlug: string } }) => item.offer.serviceSlug === 'air-conditioning')).toBe(true)
     })
 
     it('keeps keyset pages stable, bounded and duplicate-free', async () => {

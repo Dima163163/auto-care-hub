@@ -70,6 +70,7 @@ export type ApiErrorState =
     | 'offline'
     | 'permission-denied'
     | 'suspended'
+    | 'session-expired'
     | 'stale'
 
 /**
@@ -88,6 +89,10 @@ export function getApiErrorState(error: unknown): ApiErrorState | undefined {
         return 'suspended'
     }
 
+    if (code === 'SESSION_EXPIRED' || code === 'UNAUTHORIZED') {
+        return 'session-expired'
+    }
+
     if (code === 'STALE_DATA') {
         return 'stale'
     }
@@ -97,7 +102,10 @@ export function getApiErrorState(error: unknown): ApiErrorState | undefined {
     }
 
     const status = getApiErrorStatus(error)
-    if (status === 401 || status === 403) {
+    if (status === 401) {
+        return 'session-expired'
+    }
+    if (status === 403) {
         return 'permission-denied'
     }
     if (status === 423) {
@@ -124,6 +132,10 @@ export const getApiErrorMessage = (
     fallbackMessage: string,
     locale: SupportedLocale = getStoredLocale(),
 ) => {
+    if (getApiErrorState(error) === 'session-expired') {
+        return t('auth.sessionExpiredTitle', undefined, locale)
+    }
+
     const code = getApiErrorCode(error)
 
     if (code) {

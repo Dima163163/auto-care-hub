@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { CalendarCheck, CheckCircle2, Clock3, Phone, Send, Wrench } from 'lucide-react'
+import { CalendarCheck, CheckCircle2, Clock3, ListFilter, Phone, Send, Wrench } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -26,18 +26,37 @@ const emptyRequests: AutoCareServiceRequest[] = []
 export function OwnerAutoCareRequestsPage() {
     const { locale, t } = useTranslation()
     const [searchParams] = useSearchParams()
+    const [queue, setQueue] = useState<'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted'>('all')
     const query = useGetOwnerAutoCareServiceRequestsQuery()
     const requests = query.data ?? emptyRequests
     const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('request'))
     const effectiveSelectedId = selectedId && requests.some((item) => item.id === selectedId) ? selectedId : requests[0]?.id ?? null
     const selected = requests.find((item) => item.id === effectiveSelectedId) ?? null
+    const queueRequests = useMemo(() => {
+        const sorted = [...requests].sort((a, b) => {
+            const aTime = a.preferredAt ? new Date(a.preferredAt).getTime() : Number.MAX_SAFE_INTEGER
+            const bTime = b.preferredAt ? new Date(b.preferredAt).getTime() : Number.MAX_SAFE_INTEGER
+            return aTime - bTime || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        })
+        if (queue === 'urgent') return sorted.filter((item) => ['open', 'awaiting_reply'].includes(item.status))
+        if (queue === 'all') return sorted
+        return sorted.filter((item) => item.status === queue)
+    }, [queue, requests])
     const counts = useMemo(() => ({
         open: requests.filter((item) => ['open', 'awaiting_reply'].includes(item.status)).length,
         estimates: requests.filter((item) => item.status === 'estimate_shared').length,
         confirmed: requests.filter((item) => item.status === 'accepted').length,
     }), [requests])
 
-    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} /></div>{!query.isLoading && !query.error && <OwnerCapacityCalendar requests={requests} locale={locale} />}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={requests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div>}</section></main>
+    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} /></div>{!query.isLoading && !query.error && <OwnerCapacityCalendar requests={requests} locale={locale} />}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <><WorkQueue active={queue} requests={requests} onChange={setQueue} locale={locale} /><div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={queueRequests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div></>}</section></main>
+}
+
+function WorkQueue({ active, requests, onChange, locale }: { active: 'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted'; requests: AutoCareServiceRequest[]; onChange: (value: 'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted') => void; locale: string }) {
+    const labels = locale === 'ru'
+        ? { all: 'Все', urgent: 'Нужно ответить', awaiting_reply: 'Ждут ответа', estimate_shared: 'Смета', accepted: 'Подтверждены' }
+        : { all: 'All', urgent: 'Needs attention', awaiting_reply: 'Awaiting reply', estimate_shared: 'Estimate', accepted: 'Confirmed' }
+    const options = Object.keys(labels) as Array<keyof typeof labels>
+    return <section className="mb-5 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex flex-wrap items-center gap-2"><ListFilter className="size-4 text-primary" /><p className="mr-2 text-sm font-black text-foreground">{locale === 'ru' ? 'Рабочая очередь' : 'Work queue'}</p>{options.map((option) => <button key={option} type="button" onClick={() => onChange(option)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${active === option ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}>{labels[option]} <span className="ml-1 opacity-70">{option === 'all' ? requests.length : option === 'urgent' ? requests.filter((item) => ['open', 'awaiting_reply'].includes(item.status)).length : requests.filter((item) => item.status === option).length}</span></button>)}</div></section>
 }
 
 function SummaryCard({ icon: Icon, label, value }: { icon: typeof Clock3; label: string; value: number }) {

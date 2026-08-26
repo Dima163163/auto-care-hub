@@ -7,7 +7,8 @@ const validRequest = {
     locationId: '22222222-2222-4222-8222-222222222222',
     offeringId: '33333333-3333-4333-8333-333333333333',
     preferredAt: '2026-08-14T10:00:00.000Z',
-    vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021 },
+    vehicleId: '44444444-4444-4444-8444-444444444444',
+    vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, licensePlate: 'A123BC163', internalNumber: 'AC-001', vin: 'WBA1234567890ABCD' },
     contactSnapshot: { name: 'Alex Client', email: 'alex@example.com', phone: '+79990000000' },
     note: 'Please call before starting work.',
 }
@@ -20,6 +21,12 @@ describe('AutoCare service request schema', () => {
     it('allows a request without a vehicle snapshot', () => {
         const result = createAutoCareServiceRequestSchema.safeParse({ ...validRequest, vehicleSnapshot: null })
         expect(result.success).toBe(true)
+    })
+
+    it('keeps vehicle identity fields in the request snapshot contract', () => {
+        const parsed = createAutoCareServiceRequestSchema.parse(validRequest)
+        expect(parsed.vehicleId).toBe(validRequest.vehicleId)
+        expect(parsed.vehicleSnapshot).toMatchObject({ licensePlate: 'A123BC163', internalNumber: 'AC-001', vin: 'WBA1234567890ABCD' })
     })
 
     it('rejects incomplete contact data and invalid appointment dates', () => {

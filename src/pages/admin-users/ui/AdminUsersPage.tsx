@@ -8,7 +8,7 @@ import {
     useUpdateAdminUserStatusMutation,
 } from '@/entities/user'
 import { useGetMeQuery } from '@/features/auth'
-import { getApiErrorCode, getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import { getApiErrorCode, getApiErrorMessage, getApiErrorState } from '@/shared/api/getApiErrorMessage'
 import { resolveQueryViewState } from '@/shared/api/query-view-state'
 import { useOnlineStatus } from '@/features/pwa-lifecycle/lib/useOnlineStatus'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -37,6 +37,7 @@ export function AdminUsersPage() {
     const { data: currentUser } = useGetMeQuery()
     const isOnline = useOnlineStatus()
     const users = usersData ?? []
+    const errorState = getApiErrorState(error)
     const queryState = resolveQueryViewState({
         isLoading,
         isFetching,
@@ -45,6 +46,7 @@ export function AdminUsersPage() {
         hasResults: users.length > 0,
         isOffline: !isOnline,
         isPermissionDenied: getApiErrorCode(error) === 'FORBIDDEN',
+        isSessionExpired: errorState === 'session-expired',
     })
 
     const [updateAdminUserStatus, { isLoading: isUpdating }] =
@@ -155,6 +157,13 @@ export function AdminUsersPage() {
                     <AdminUsersStateCard
                         onRetry={refetch}
                         state="permission-denied"
+                    />
+                )}
+
+                {queryState === 'session-expired' && (
+                    <AdminUsersStateCard
+                        onRetry={refetch}
+                        state="session-expired"
                     />
                 )}
 

@@ -24,6 +24,8 @@ describe('resolveQueryViewState', () => {
         ['permission denied takes priority over retryable errors', { isPermissionDenied: true, isError: true }, 'permission-denied'],
         ['suspended takes priority over a retryable error', { isSuspended: true, isError: true }, 'suspended'],
         ['stale response keeps cached data visible', { isStale: true }, 'stale-error'],
+        ['partial response keeps available data visible', { isPartial: true }, 'partial'],
+        ['expired session takes priority over other states', { isSessionExpired: true, isError: true }, 'session-expired'],
     ])('%s', (_label, overrides, expected) => {
         expect(resolveQueryViewState({ ...baseState, ...overrides })).toBe(expected)
     })

@@ -15,6 +15,8 @@ export class ClientVehicleEntity {
     @Column({ type: 'integer', nullable: true }) horsepower!: number | null
     @Column({ type: 'text' }) color!: string
     @Column({ type: 'text', nullable: true }) vin!: string | null
+    @Column({ type: 'text', nullable: true }) licensePlate!: string | null
+    @Column({ type: 'text', nullable: true }) internalNumber!: string | null
     @Column({ type: 'text' }) imageUrl!: string
     @Column({ type: 'boolean', default: false }) isPrimary!: boolean
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date

@@ -26,6 +26,7 @@ import {
 } from './security-response-schema'
 import { parseApiErrorData } from './api-error-shape'
 import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
+import { markSessionExpired } from '@/shared/lib/auth-session-state'
 
 const AUTH_SECURITY_ERROR_CODES = new Set([
     'CSRF_ORIGIN_MISMATCH',
@@ -180,6 +181,7 @@ function clearAuthenticatedClientState(
     api: Parameters<typeof rawBaseQuery>[1],
 ) {
     authRefreshBlocked = true
+    markSessionExpired()
     clearAccessToken()
     clearCsrfToken()
     api.dispatch(baseApi.util.resetApiState())
@@ -298,6 +300,12 @@ const baseQueryWithReauth: BaseQueryFn<
     let result = await baseQueryWithCsrf(args, api, extraOptions)
 
     logAuthSecurityError(args, result.error, 'base-query')
+
+    // Keep the explicit server contract visible in mock and real modes. A
+    // plain 401 can be retried, but SESSION_EXPIRED is a terminal UI state.
+    if (result.error?.status === 401 && getApiErrorCode(result.error) === 'SESSION_EXPIRED') {
+        markSessionExpired()
+    }
 
     if (
         result.error?.status !== 401

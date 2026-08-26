@@ -136,7 +136,7 @@ const common = { ko: {
         notProvided: '입력되지 않음', tryAgainLater: '나중에 다시 시도해 주세요.', retry: '다시 시도',
     } } as const
 
-const navigation = { ko: { home: '홈', features: '기능', cabinets: '공간', owners: '소유자용', pricing: '요금', about: '소개', profile: '프로필', myBookings: '내 예약', favorites: '즐겨찾기', notifications: '알림', ownerDashboard: '소유자 대시보드', ownerCabinets: '내 공간', ownerBookings: '예약', ownerServices: '서비스', adminDashboard: '관리자 대시보드', adminUsers: '사용자', adminOwners: '소유자', adminCabinets: '공간', adminReviews: '리뷰', adminAuditLogs: '감사 로그', ownerDashboardShort: '대시보드', ownerCalendar: '캘린더' } } as const
+const navigation = { ko: { home: '홈', features: '기능', cabinets: '공간', services: '자동차 서비스', owners: '소유자용', pricing: '요금', about: '소개', profile: '프로필', myBookings: '내 예약', favorites: '즐겨찾기', notifications: '알림', ownerDashboard: '소유자 대시보드', ownerCabinets: '내 공간', ownerBookings: '예약', ownerServices: '서비스', adminDashboard: '관리자 대시보드', adminUsers: '사용자', adminOwners: '소유자', adminCabinets: '공간', adminReviews: '리뷰', adminAuditLogs: '감사 로그', ownerDashboardShort: '대시보드', ownerCalendar: '캘린더' } } as const
 
 const auth = { ko: { signIn: '로그인', logOut: '로그아웃', createAccount: '계정 만들기', welcomeBack: '다시 오신 것을 환영합니다', signInTitle: 'AutoCare Hub 로그인', signInToContinue: '계속하려면 로그인하세요.', email: '이메일', password: '비밀번호', signingIn: '로그인 중...', failedToSignIn: '로그인하지 못했습니다.', alreadyHaveAccount: '이미 계정이 있나요?', forgotPasswordLink: '비밀번호를 잊으셨나요?' } } as const
 

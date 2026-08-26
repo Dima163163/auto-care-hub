@@ -1,6 +1,7 @@
-import { X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { NavLink } from 'react-router'
 
+import { ROUTES } from '@/shared/constants/routes'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
@@ -38,6 +39,17 @@ export function WorkspaceMobileMenu({ role, onClose }: WorkspaceMobileMenuProps)
                     </button>
                 </div>
             </div>
+
+            {role === 'owner' && (
+                <NavLink
+                    to={ROUTES.ownerAutoCareProviders}
+                    onClick={onClose}
+                    className="mt-3 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl bg-primary px-3 py-2.5 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                    <Plus className="size-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{t('autocare.ownerProvidersCreate')}</span>
+                </NavLink>
+            )}
 
             <nav className="grid gap-3 px-1 pb-1 pt-3" aria-label={t('navigation.profileWorkspace')}>
                 {groups.map((group) => (

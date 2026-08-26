@@ -41,6 +41,7 @@ import type {
 } from './autocare.types.js'
 import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { calculateAutoCareTrustScore } from './trust-score.js'
+import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -163,6 +164,14 @@ export async function getAutoCareProviderTrust(providerId: string) {
         where: { providerId },
         order: { createdAt: 'DESC' },
     })
+    const nowMs = Date.now()
+    // Pending/rejected/expired evidence is an internal moderation concern and
+    // must never leak through a public trust response. Only currently approved
+    // evidence contributes to the public proof list.
+    const publicEvidence = evidence.filter((item) =>
+        isApprovedAutoCareEvidenceStatus(item.status)
+        && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
+    )
     const snapshots = await AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({
         where: { providerId },
         order: { computedAt: 'DESC' },
@@ -198,7 +207,7 @@ export async function getAutoCareProviderTrust(providerId: string) {
         score: latestSnapshot?.score ?? Number(provider.trustScore),
         badge: latestSnapshot?.badge ?? provider.trustBadge,
         reassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
-        evidence: evidence.map((item): AutoCareTrustEvidenceResponse => ({
+        evidence: publicEvidence.map((item): AutoCareTrustEvidenceResponse => ({
             id: item.id,
             providerId: item.providerId,
             kind: item.kind,

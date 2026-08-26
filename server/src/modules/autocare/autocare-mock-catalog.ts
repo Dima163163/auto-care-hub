@@ -268,7 +268,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
         brandSpecializations: ['bmw', 'mercedes-benz', 'audi'], isMultibrand: false,
         offerings: [
             { serviceSlug: 'oil-change', priceFromMinor: 290000, durationMinutes: 60 }, { serviceSlug: 'diagnostics', priceFromMinor: 120000, durationMinutes: 60 }, { serviceSlug: 'brakes', priceFromMinor: 350000, durationMinutes: 90 },
-            { serviceSlug: 'mobile-diagnostics', priceFromMinor: 180000, durationMinutes: 90 }, { serviceSlug: 'electric', priceFromMinor: 260000, durationMinutes: 120 }, { serviceSlug: 'battery-service', priceFromMinor: 190000, durationMinutes: 60 }, { serviceSlug: 'wheel-alignment', priceFromMinor: 280000, durationMinutes: 60 },
+            { serviceSlug: 'mobile-diagnostics', priceFromMinor: 180000, durationMinutes: 90 }, { serviceSlug: 'electric', priceFromMinor: 260000, durationMinutes: 120 }, { serviceSlug: 'battery-service', priceFromMinor: 190000, durationMinutes: 60 }, { serviceSlug: 'wheel-alignment', priceFromMinor: 280000, durationMinutes: 60 }, { serviceSlug: 'tire-service', priceFromMinor: 240000, durationMinutes: 75 }, { serviceSlug: 'maintenance', priceFromMinor: 360000, durationMinutes: 120 },
         ],
     },
     {
@@ -280,7 +280,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
         brandSpecializations: ['toyota', 'volkswagen', 'skoda'], isMultibrand: false,
         offerings: [
             { serviceSlug: 'oil-change', priceFromMinor: 320000, durationMinutes: 60 }, { serviceSlug: 'detailing', priceFromMinor: 650000, durationMinutes: 180 },
-            { serviceSlug: 'car-wash', priceFromMinor: 120000, durationMinutes: 45 }, { serviceSlug: 'windshield-repair', priceFromMinor: 540000, durationMinutes: 180 }, { serviceSlug: 'tow-truck', priceFromMinor: 350000, durationMinutes: 60 },
+            { serviceSlug: 'car-wash', priceFromMinor: 120000, durationMinutes: 45 }, { serviceSlug: 'windshield-repair', priceFromMinor: 540000, durationMinutes: 180 }, { serviceSlug: 'tow-truck', priceFromMinor: 350000, durationMinutes: 60 }, { serviceSlug: 'air-conditioning', priceFromMinor: 260000, durationMinutes: 90 },
         ],
     },
     {
@@ -291,7 +291,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
         brandSpecializations: [], isMultibrand: true,
         offerings: [
             { serviceSlug: 'oil-change', priceFromMinor: 280000, durationMinutes: 45 }, { serviceSlug: 'body-paint', priceFromMinor: 1500000, durationMinutes: 360 },
-            { serviceSlug: 'roadside-assistance', priceFromMinor: 220000, durationMinutes: 60 }, { serviceSlug: 'engine', priceFromMinor: 620000, durationMinutes: 240 }, { serviceSlug: 'suspension', priceFromMinor: 380000, durationMinutes: 120 },
+            { serviceSlug: 'roadside-assistance', priceFromMinor: 220000, durationMinutes: 60 }, { serviceSlug: 'engine', priceFromMinor: 620000, durationMinutes: 240 }, { serviceSlug: 'suspension', priceFromMinor: 380000, durationMinutes: 120 }, { serviceSlug: 'tire-service', priceFromMinor: 230000, durationMinutes: 75 }, { serviceSlug: 'diagnostics', priceFromMinor: 140000, durationMinutes: 60 },
         ],
     },
 ] as const

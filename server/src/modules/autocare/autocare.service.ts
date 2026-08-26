@@ -17,6 +17,8 @@ import {
     AutomotiveServiceOfferingEntity,
     AutomotiveProviderMembershipEntity,
     AutomotiveProviderMembershipRole,
+    AutoCareCapacityResourceEntity,
+    AutoCareCapacityResourceType,
 } from '../../entities/index.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
@@ -32,12 +34,55 @@ import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
 import { isRolloutEnabled } from './rollout-controls.js'
 import { env } from '../../config/env.js'
-import { queueProviderMediaModerationEvidence, queueReviewModerationEvidence } from './moderation-evidence.service.js'
+import { queueProviderDocumentModerationEvidence, queueProviderMediaModerationEvidence, queueReviewModerationEvidence } from './moderation-evidence.service.js'
 import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, toFallbackMarketResponse } from './autocare-catalog-fallback.js'
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
 import { recordAutoCareProviderDiscoveryImpressions } from './autocare-analytics.service.js'
+import { getDiscoveryCache, getDiscoveryCacheKey, setDiscoveryCache } from './discovery-cache.js'
+import { ensureDefaultAutoCareResources, listAutoCareCapacityReservations, listAutoCareCapacityResources } from './capacity-resource.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareCommunicationSettingsInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+
+export type AutoCareCapacityResourceInput = {
+    locationId: string
+    type: AutoCareCapacityResourceType
+    name: string
+    capacity: number
+    active: boolean
+    metadata: Record<string, unknown>
+}
+
+export type AutoCareCapacityResourcePatch = Partial<Omit<AutoCareCapacityResourceInput, 'locationId'>>
+
+function toCapacityResourceResponse(resource: AutoCareCapacityResourceEntity) {
+    return {
+        id: resource.id,
+        providerId: resource.providerId,
+        locationId: resource.locationId,
+        type: resource.type,
+        name: resource.name,
+        capacity: resource.capacity,
+        active: resource.active,
+        metadata: resource.metadata ?? {},
+        createdAt: resource.createdAt.toISOString(),
+        updatedAt: resource.updatedAt.toISOString(),
+    }
+}
+
+function toCapacityReservationResponse(reservation: import('../../entities/index.js').AutoCareCapacityReservationEntity) {
+    return {
+        id: reservation.id,
+        requestId: reservation.requestId,
+        resourceId: reservation.resourceId,
+        providerId: reservation.providerId,
+        locationId: reservation.locationId,
+        startsAt: reservation.startsAt.toISOString(),
+        endsAt: reservation.endsAt.toISOString(),
+        status: reservation.status,
+        releasedAt: reservation.releasedAt?.toISOString() ?? null,
+        createdAt: reservation.createdAt.toISOString(),
+    }
+}
 
 function assertProviderActive(provider: AutomotiveProviderEntity | null): asserts provider is AutomotiveProviderEntity {
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) {
@@ -271,14 +316,23 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     if (cursorValues && (!cursorValues.providerId || !cursorValues.locationId || !Number.isFinite(cursorValues.primary) || !Number.isFinite(cursorValues.secondary))) {
         throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Cursor is invalid or expired.' })
     }
+    const cacheEnabled = env.nodeEnv !== 'test'
+    const cacheKey = cacheEnabled ? getDiscoveryCacheKey(input) : null
+    const cachedResponse = cacheKey ? getDiscoveryCache(cacheKey) : null
+    if (cachedResponse) {
+        void recordAutoCareProviderDiscoveryImpressions(cachedResponse.items.map((item) => item.provider.id))
+        return cachedResponse
+    }
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const offerRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
-    const definition = input.serviceId
-        ? await findServiceDefinition(input.serviceId)
-        : (await definitionRepository.find({ where: { active: true }, take: 1 }))[0]
-    if (!definition) return { items: [], nextCursor: null }
+    // An omitted service is an intentional unscoped discovery request. Do not
+    // silently replace it with the first catalog definition: that would hide
+    // providers which only publish other services. The representative offer
+    // is selected after the location query below.
+    const definition = input.serviceId ? await findServiceDefinition(input.serviceId) : null
+    if (input.serviceId && !definition) return { items: [], nextCursor: null }
     const market = input.marketId ? await findMarket(input.marketId) : null
     // A selected market is a hard scope. Returning all locations when an unknown
     // market code is supplied would leak another region's providers and diverge
@@ -292,12 +346,16 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     const marketLongitude = Number(market?.centerLongitude ?? 37.6173)
     const box = market ? getBoundingBox(marketLatitude, marketLongitude, input.radiusKm) : null
     const distanceExpression = '6371 * acos(least(1, greatest(-1, cos(radians(:marketLatitude)) * cos(radians(location.latitude)) * cos(radians(location.longitude) - radians(:marketLongitude)) + sin(radians(:marketLatitude)) * sin(radians(location.latitude)))))'
-    if (input.priceType && definition.priceType !== input.priceType) return { items: [], nextCursor: null }
+    if (input.priceType && definition && definition.priceType !== input.priceType) return { items: [], nextCursor: null }
+
+    const offerJoinCondition = input.serviceId
+        ? 'offer.locationId = location.id AND offer.definitionId = :definitionId AND offer.active = true'
+        : 'offer.locationId = location.id AND offer.active = true'
 
     const candidateQuery = locationRepository
         .createQueryBuilder('location')
         .innerJoin(AutomotiveProviderEntity, 'provider', 'provider.id = location.providerId AND provider.status = :providerStatus', { providerStatus: AutomotiveProviderStatus.Active })
-        .innerJoin(AutomotiveServiceOfferingEntity, 'offer', 'offer.locationId = location.id AND offer.definitionId = :definitionId AND offer.active = true', { definitionId: definition.id })
+        .innerJoin(AutomotiveServiceOfferingEntity, 'offer', offerJoinCondition, input.serviceId ? { definitionId: definition!.id } : {})
         .select('location.id', 'locationId')
         .addSelect('offer.priceFromMinor', 'priceFromMinor')
         .addSelect('provider.rating', 'providerRating')
@@ -326,33 +384,58 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         })
     }
     if (input.providerName) locationQuery.andWhere('LOWER(provider.name) LIKE :providerName', { providerName: `%${input.providerName.toLowerCase()}%` })
-    if (input.minPrice !== undefined) locationQuery.andWhere('offer.priceFromMinor >= :minPriceMinor', { minPriceMinor: Math.round(input.minPrice * 100) })
-    if (input.maxPrice !== undefined) locationQuery.andWhere('offer.priceFromMinor <= :maxPriceMinor', { maxPriceMinor: Math.round(input.maxPrice * 100) })
+    // With a selected service these predicates can be pushed into SQL. For an
+    // unscoped request they are evaluated against every offer for a location
+    // after loading the small bounded candidate set, so one non-matching
+    // offer cannot hide a different matching service.
+    if (input.serviceId && input.minPrice !== undefined) locationQuery.andWhere('offer.priceFromMinor >= :minPriceMinor', { minPriceMinor: Math.round(input.minPrice * 100) })
+    if (input.serviceId && input.maxPrice !== undefined) locationQuery.andWhere('offer.priceFromMinor <= :maxPriceMinor', { maxPriceMinor: Math.round(input.maxPrice * 100) })
     if (input.minRating !== undefined) locationQuery.andWhere('provider.rating >= :minRating', { minRating: input.minRating })
     if (input.verifiedOnly) locationQuery.andWhere('provider.verified = true')
     if (input.warrantyOnly) locationQuery.andWhere('offer."warrantyText" IS NOT NULL')
     if (input.hasBonus) locationQuery.andWhere('provider."bonusSummary" IS NOT NULL')
     if (input.brandId) locationQuery.andWhere('(provider."isMultibrand" = true OR provider."brandSpecializations" @> ARRAY[:brandId]::text[])', { brandId: input.brandId })
     const candidates = await locationQuery.getRawMany<{ locationId: string }>()
-    const locationIds = candidates.map((candidate) => candidate.locationId)
+    const locationIds = [...new Set(candidates.map((candidate) => candidate.locationId))]
     if (locationIds.length === 0) return { items: [], nextCursor: null }
     const locations = await locationRepository.find({ where: { id: In(locationIds) } })
     const [offers, providers] = await Promise.all([
-        offerRepository.find({ where: { definitionId: definition.id, active: true, locationId: In(locationIds) } }),
+        offerRepository.find({ where: { ...(definition ? { definitionId: definition.id } : {}), active: true, locationId: In(locationIds) } }),
         providerRepository.find({ where: { status: AutomotiveProviderStatus.Active, id: In([...new Set(locations.map((location) => location.providerId))]) }, order: { id: 'ASC' } }),
     ])
-    const offerByLocation = new Map(offers.map((offer) => [offer.locationId, offer]))
+    const definitions = await definitionRepository.findByIds([...new Set(offers.map((offer) => offer.definitionId))])
+    const definitionById = new Map(definitions.map((item) => [item.id, item]))
+    const offersByLocation = new Map<string, AutomotiveServiceOfferingEntity[]>()
+    for (const offer of offers) {
+        const locationOffers = offersByLocation.get(offer.locationId) ?? []
+        locationOffers.push(offer)
+        offersByLocation.set(offer.locationId, locationOffers)
+    }
     const providerById = new Map(providers.map((provider) => [provider.id, provider]))
     const rows = locations.flatMap((location) => {
         const provider = providerById.get(location.providerId)
-        const offer = offerByLocation.get(location.id)
+        const locationOffers = offersByLocation.get(location.id) ?? []
+        const matchingOffers = locationOffers.filter((offer) => {
+            const offerDefinition = definitionById.get(offer.definitionId)
+            const price = offer.priceFromMinor / 100
+            return (input.minPrice === undefined || price >= input.minPrice)
+                && (input.maxPrice === undefined || price <= input.maxPrice)
+                && (!input.priceType || offerDefinition?.priceType === input.priceType)
+                && (!input.warrantyOnly || Boolean(offer.warrantyText))
+                && (!input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase())))
+        })
+        // Keep one row per service location while still allowing an
+        // unscoped search to match any of its published services. The lowest
+        // starting price is a stable representative for the card and map.
+        const offer = matchingOffers.slice().sort((left, right) => left.priceFromMinor - right.priceFromMinor)[0]
         if (!provider || !offer) return []
+        const rowDefinition = definitionById.get(offer.definitionId) ?? definition ?? undefined
         const matchesProvider = !input.providerName || provider.name.toLowerCase().includes(input.providerName.toLowerCase())
         const distanceKm = market ? getDistanceKm(location.latitude, location.longitude, marketLatitude, marketLongitude) : 0
         const price = offer.priceFromMinor / 100
         const matchesPrice = (input.minPrice === undefined || price >= input.minPrice) && (input.maxPrice === undefined || price <= input.maxPrice)
         const matchesRating = input.minRating === undefined || Number(provider.rating) >= input.minRating
-        const matchesType = input.priceType === undefined || definition.priceType === input.priceType
+        const matchesType = !input.priceType || rowDefinition?.priceType === input.priceType
         const discoverySlot = getDiscoverySlot(location, market)
         const matchesAvailableToday = !input.availableToday || discoverySlot.availableToday
         const matchesVerified = !input.verifiedOnly || provider.verified
@@ -361,7 +444,7 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         const matchesInclusion = !input.inclusion || offer.inclusions.some((item) => item.toLowerCase().includes(input.inclusion!.toLowerCase()))
         const matchesBrand = !input.brandId || provider.isMultibrand || provider.brandSpecializations.includes(input.brandId)
         const matchesDistance = !market || distanceKm <= input.radiusKm
-        return matchesProvider && matchesDistance && matchesPrice && matchesRating && matchesType && matchesAvailableToday && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition, nextSlot: discoverySlot.nextSlot }] : []
+        return matchesProvider && matchesDistance && matchesPrice && matchesRating && matchesType && matchesAvailableToday && matchesVerified && matchesWarranty && matchesBonus && matchesInclusion && matchesBrand ? [{ provider, location, offer, distanceKm, definition: rowDefinition, nextSlot: discoverySlot.nextSlot }] : []
     })
     const sorted = rows.sort((left, right) => compareDiscoveryValues(discoverySortValues(left, sort), discoverySortValues(right, sort), sort))
         .filter((row) => !cursorValues || compareDiscoveryValues(discoverySortValues(row, sort), cursorValues, sort) > 0)
@@ -377,12 +460,14 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     const lastRow = page.at(limit - 1)
     const lastValues = lastRow ? discoverySortValues(lastRow, sort) : null
     void recordAutoCareProviderDiscoveryImpressions(items.map((item) => item.provider.id))
-    return {
+    const response = {
         items,
         nextCursor: hasMore && lastValues
             ? encodeCursor({ sort, primary: String(lastValues.primary), secondary: String(lastValues.secondary), providerId: lastValues.providerId, locationId: lastValues.locationId })
             : null,
     }
+    if (cacheKey) setDiscoveryCache(cacheKey, response)
+    return response
 }
 
 export async function getAutoCareProviderProfile(providerId: string): Promise<AutoCareProviderProfileResponse> {
@@ -420,7 +505,7 @@ export async function getAutoCareProviderOffers(providerId: string, serviceId?: 
     return definition ? offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
 }
 
-export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number; bookingMode?: 'request' | 'instant' }) {
+export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number; bookingMode?: 'request' | 'instant'; requiredResourceTypes?: AutoCareCapacityResourceType[]; requiredResourceIds?: string[] }) {
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     if (!provider || provider.status === AutomotiveProviderStatus.Suspended) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
 
@@ -435,6 +520,15 @@ export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: st
     offering.description = input.description
     offering.priceFromMinor = input.priceFromMinor
     if (input.bookingMode) offering.bookingMode = input.bookingMode === 'instant' ? AutomotiveBookingMode.Instant : AutomotiveBookingMode.Request
+    if (input.requiredResourceTypes !== undefined) offering.requiredResourceTypes = [...new Set(input.requiredResourceTypes)]
+    if (input.requiredResourceIds !== undefined) {
+        const resourceIds = [...new Set(input.requiredResourceIds)]
+        const resources = resourceIds.length > 0
+            ? await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findBy({ id: In(resourceIds), providerId, locationId: offering.locationId, active: true })
+            : []
+        if (resources.length !== resourceIds.length) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Every selected resource must be active at the offer location.' })
+        offering.requiredResourceIds = resourceIds
+    }
     if (offering.priceToMinor !== null && offering.priceToMinor < input.priceFromMinor) offering.priceToMinor = input.priceFromMinor
     const savedOffering = await offeringRepository.save(offering)
     return toOfferResponse(savedOffering, definition)
@@ -794,6 +888,13 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             latitude: null,
             longitude: null,
         }))
+        await ensureDefaultAutoCareResources(manager, {
+            providerId: provider.id,
+            locationId: location.id,
+            specialists: Math.max(1, input.staffCount),
+            bays: Math.max(1, input.workstationCount ?? input.appointmentCapacity ?? 1),
+            lifts: Math.max(0, input.workstationCount ?? 0),
+        })
         await manager.getRepository(AutomotiveProviderMembershipEntity).save(manager.getRepository(AutomotiveProviderMembershipEntity).create({
             providerId: provider.id,
             userId: owner.id,
@@ -801,9 +902,109 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             role: AutomotiveProviderMembershipRole.Owner,
         }))
         await queueProviderMediaModerationEvidence(manager, provider)
+        await queueProviderDocumentModerationEvidence(manager, provider.id, (input.documents ?? []).map((document) => ({
+            label: document.label,
+            reference: document.reference,
+            expiresAt: document.expiresAt ? new Date(document.expiresAt) : null,
+        })))
 
         return toProviderResponse(provider, location)
     })
+}
+
+export async function getOwnerAutoCareCapacityResources(user: UserEntity, providerId: string, locationId?: string) {
+    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', locationId))) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
+    }
+    // Resolve the effective branch scope before creating default resources. A
+    // branch-scoped member must never trigger writes (or even a read) for
+    // another branch simply by omitting `locationId` from the list request.
+    const scope = (await getManagedProviderScopes(user.id)).find((item) => item.providerId === providerId)
+    const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
+    const visibleLocationIds = scope?.locationIds === null || !scope ? undefined : scope.locationIds
+    if (visibleLocationIds && visibleLocationIds.length === 0) return []
+    const locations = await locationRepository.find({
+        where: locationId
+            ? { id: locationId, providerId }
+            : visibleLocationIds
+                ? { providerId, id: In(visibleLocationIds) }
+                : { providerId },
+    })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    if (provider) {
+        for (const location of locations) {
+            await ensureDefaultAutoCareResources(AppDataSource.manager, {
+                providerId,
+                locationId: location.id,
+                specialists: Math.max(1, provider.staffCount),
+                bays: Math.max(1, provider.workstationCount || location.appointmentCapacity || 1),
+                lifts: Math.max(0, provider.workstationCount || 0),
+            })
+        }
+    }
+    const resources = await listAutoCareCapacityResources(AppDataSource.manager, providerId, locationId)
+    return resources
+        .filter((resource) => !visibleLocationIds || visibleLocationIds.includes(resource.locationId))
+        .map(toCapacityResourceResponse)
+}
+
+export async function getOwnerAutoCareCapacityReservations(user: UserEntity, providerId: string, input: { locationId?: string; from?: string; to?: string }) {
+    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', input.locationId))) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
+    }
+    const from = input.from ? new Date(input.from) : undefined
+    const to = input.to ? new Date(input.to) : undefined
+    if (from && Number.isNaN(from.getTime())) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Invalid reservation start range.' })
+    if (to && Number.isNaN(to.getTime())) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Invalid reservation end range.' })
+    if (from && to && from >= to) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Reservation start must be before its end.' })
+    const reservations = await listAutoCareCapacityReservations(AppDataSource.manager, { providerId, locationId: input.locationId, from, to })
+    const scopes = await getManagedProviderScopes(user.id)
+    const scope = scopes.find((item) => item.providerId === providerId)
+    const visible = scope?.locationIds === null || !scope
+        ? reservations
+        : reservations.filter((reservation) => scope.locationIds?.includes(reservation.locationId))
+    return visible.map(toCapacityReservationResponse)
+}
+
+export async function createOwnerAutoCareCapacityResource(user: UserEntity, providerId: string, input: AutoCareCapacityResourceInput) {
+    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', input.locationId))) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
+    }
+    return AppDataSource.transaction(async (manager) => {
+        const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId, providerId })
+        if (!location) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service branch not found.' })
+        const repository = manager.getRepository(AutoCareCapacityResourceEntity)
+        const existing = await repository.findOneBy({ providerId, locationId: input.locationId, name: input.name.trim() })
+        if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A resource with this name already exists at the branch.' })
+        const resource = await repository.save(repository.create({
+            providerId,
+            locationId: input.locationId,
+            type: input.type,
+            name: input.name.trim(),
+            capacity: input.capacity,
+            active: input.active,
+            metadata: input.metadata ?? {},
+        }))
+        return toCapacityResourceResponse(resource)
+    })
+}
+
+export async function updateOwnerAutoCareCapacityResource(user: UserEntity, providerId: string, resourceId: string, patch: AutoCareCapacityResourcePatch) {
+    const resource = await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findOneBy({ id: resourceId, providerId })
+    if (!resource) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Capacity resource not found.' })
+    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', resource.locationId))) {
+        throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
+    }
+    if (patch.name !== undefined) {
+        const duplicate = await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findOneBy({ providerId, locationId: resource.locationId, name: patch.name.trim() })
+        if (duplicate && duplicate.id !== resource.id) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A resource with this name already exists at the branch.' })
+        resource.name = patch.name.trim()
+    }
+    if (patch.type !== undefined) resource.type = patch.type
+    if (patch.capacity !== undefined) resource.capacity = patch.capacity
+    if (patch.active !== undefined) resource.active = patch.active
+    if (patch.metadata !== undefined) resource.metadata = patch.metadata
+    return toCapacityResourceResponse(await AppDataSource.getRepository(AutoCareCapacityResourceEntity).save(resource))
 }
 
 export async function updateOwnerAutoCareCommunicationSettings(owner: UserEntity, providerId: string, input: UpdateAutoCareCommunicationSettingsInput) {

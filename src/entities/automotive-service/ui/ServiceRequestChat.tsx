@@ -63,6 +63,7 @@ export function ServiceRequestChat({ requestId, ownerMode = false }: ServiceRequ
         isPermissionDenied: conversationErrorState === 'permission-denied',
         isSuspended: conversationErrorState === 'suspended',
         isStale: conversationErrorState === 'stale',
+        isSessionExpired: conversationErrorState === 'session-expired',
     })
 
     const messages = messageState.items

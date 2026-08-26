@@ -1,12 +1,17 @@
 # Next.js route matrix
 
-Updated: 2026-08-25
+Updated: 2026-08-26
 
 The production web process is `next start`. The existing feature tree is still
 rendered inside the App Router catch-all shell through React Router; Vite is
 kept only for the PWA preview and Vitest compatibility workflow. The server
 allow-list lives in `src/app/next/next-route-contract.ts` and prevents unknown
 paths from returning a false HTTP 200.
+
+The route constants in `src/shared/constants/routes.ts`, the server allow-list
+and this inventory are one contract. The `check:next-route-inventory` command
+fails if a route constant is not represented below, so a new route cannot be
+added to the client tree without a release-review entry.
 
 ## Route groups
 
@@ -23,6 +28,77 @@ paths from returning a false HTTP 200.
 | Super-admin workspace | `/super-admin/dashboard` | 200 | super-admin role |
 | Hidden MVP chat routes | `/chats`, `/owner/chats`, `/admin/chats`, `/super-admin/chats` | 200 | feature flag keeps navigation hidden |
 | Unknown | any path outside the contract | 404 | Next `not-found` boundary |
+
+## Canonical route inventory and runtime owners
+
+Every row below is served by the Next.js App Router catch-all page. The runtime
+owner names the React Router layout that renders inside that shell; it does not
+mean that Vite is involved in production.
+
+| Path | Runtime owner | Access / behavior |
+| --- | --- | --- |
+| `/` | `PublicLayout` | public home |
+| `/reviews` | `PublicLayout` | public platform reviews |
+| `/features` | `PublicLayout` | public feature overview |
+| `/for-owners` | `PublicLayout` | public provider landing |
+| `/about` | `PublicLayout` | public company information |
+| `/favorites` | `PublicLayout` | public shell; auth action when needed |
+| `/notifications` | `PublicLayout` | authenticated client |
+| `/chats` | `PublicLayout` | authenticated client; MVP navigation hidden |
+| `/blog` | `PublicLayout` | public blog |
+| `/partners` | `PublicLayout` | public partners |
+| `/contacts` | `PublicLayout` | public contacts |
+| `/help` | `PublicLayout` | public help center |
+| `/agreement` | `PublicLayout` | public legal |
+| `/rules` | `PublicLayout` | public legal |
+| `/privacy` | `PublicLayout` | public legal |
+| `/cabinets` | `PublicLayout` | legacy redirect to `/services` |
+| `/services` | `PublicLayout` | public discovery |
+| `/login` | `AuthLayout` | guest-only |
+| `/login/callback` | `AuthLayout` | guest auth callback |
+| `/register` | `AuthLayout` | guest-only |
+| `/forgot-password` | `AuthLayout` | guest utility |
+| `/password/setup` | `AuthLayout` | tokenized auth utility |
+| `/password/reset` | `AuthLayout` | tokenized auth utility |
+| `/verify-email` | `AuthLayout` | tokenized auth utility |
+| `/onboarding` | `PublicLayout` | authenticated client onboarding |
+| `/profile` | `PublicLayout` | authenticated client |
+| `/profile/vehicles` | `PublicLayout` | authenticated client garage |
+| `/profile/bookings` | `PublicLayout` | authenticated client bookings |
+| `/profile/reviews` | `PublicLayout` | authenticated client reviews |
+| `/pricing` | `PublicLayout` | public; monetization remains disabled |
+| `/owner/dashboard` | `OwnerLayout` | owner role |
+| `/owner/autocare-providers` | `OwnerLayout` | owner provider list |
+| `/owner/cabinets` | `OwnerLayout` | legacy redirect to provider list |
+| `/owner/cabinets/create` | `OwnerLayout` | legacy redirect to provider list |
+| `/owner/bookings` | `OwnerLayout` | legacy redirect to requests |
+| `/owner/autocare-requests` | `OwnerLayout` | owner requests |
+| `/owner/reviews` | `OwnerLayout` | owner reviews |
+| `/owner/clients` | `OwnerLayout` | owner clients |
+| `/owner/services` | `OwnerLayout` | owner service catalog |
+| `/owner/chats` | `OwnerLayout` | owner chats; MVP navigation hidden |
+| `/admin/dashboard` | `AdminLayout` | admin or super-admin |
+| `/admin/users` | `AdminLayout` | admin or super-admin |
+| `/admin/owners` | `AdminLayout` | admin or super-admin |
+| `/admin/cabinets` | `AdminLayout` | legacy redirect to admin dashboard |
+| `/admin/reviews` | `AdminLayout` | admin or super-admin |
+| `/admin/platform-reviews` | `AdminLayout` | admin or super-admin |
+| `/admin/audit-logs` | `AdminLayout` | admin or super-admin |
+| `/admin/security-center` | `AdminLayout` | admin or super-admin |
+| `/admin/chats` | `AdminLayout` | admin or super-admin; MVP navigation hidden |
+| `/super-admin/dashboard` | `AdminLayout` | super-admin only |
+| `/super-admin/chats` | `AdminLayout` | super-admin only; MVP navigation hidden |
+
+### Dynamic route variants
+
+| Pattern | Examples covered by release smoke | Runtime owner |
+| --- | --- | --- |
+| `/services/:id` | `/services/api-proservice-moscow` and terminal-slash/query normalization | `PublicLayout` |
+| `/services/:id/request` | base path and `?service=oil-change` | `PublicLayout` + client booking guard |
+| `/cabinets/:id` | `/cabinets/cabinet-1` | `PublicLayout` legacy redirect |
+| `/owner/autocare-providers/:id` | `/owner/autocare-providers/provider-1` | `OwnerLayout` + branch scope |
+| `/owner/autocare-providers/:id/reviews` | `/owner/autocare-providers/provider-1/reviews` | `OwnerLayout` + branch scope |
+| `/owner/cabinets/:id/edit` | `/owner/cabinets/provider-1/edit` | `OwnerLayout` legacy redirect |
 
 ## Direct URL verification
 

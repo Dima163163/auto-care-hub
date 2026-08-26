@@ -10,6 +10,7 @@ export {
     type ProviderProfile,
     type ProviderPreview,
     type ProviderReview,
+    type ProviderScheduleDay,
 } from './model/autocareMockData'
 export { automotiveVehicleBrands, getVehicleBrandLabel, type AutomotiveVehicleBrandId } from './model/vehicleBrands'
 export { getVehicleModels } from './model/vehicleModels'
@@ -37,6 +38,10 @@ export type {
     UpdateSuperAdminAutoCareMarketZoneInput,
     UpdateSuperAdminMarketCountryInput,
     AutoCareApiProvider,
+    AutoCareCapacityResource,
+    AutoCareCapacityReservation,
+    CreateAutoCareCapacityResourceInput,
+    UpdateAutoCareCapacityResourceInput,
     UpdateAutoCareCommunicationSettingsInput,
 } from './api/autocareApi'
 export {
@@ -52,6 +57,10 @@ export {
     useUpdateSuperAdminAutoCareMarketZoneMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useGetOwnerAutoCareCapacityResourcesQuery,
+    useGetOwnerAutoCareCapacityReservationsQuery,
+    useCreateOwnerAutoCareCapacityResourceMutation,
+    useUpdateOwnerAutoCareCapacityResourceMutation,
     useUpdateOwnerAutoCareCommunicationSettingsMutation,
     useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,

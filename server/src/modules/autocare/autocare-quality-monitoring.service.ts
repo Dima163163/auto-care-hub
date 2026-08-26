@@ -24,6 +24,7 @@ import { assessReviewIntegrity, type ReviewIntegritySample } from './review-inte
 import { buildQualityMetrics } from './quality-metrics.js'
 import { buildRankingCalibrationReport, type RankingCalibrationReport } from './ranking-calibration.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
+import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 
 export type AutoCareQualityMonitoringResponse = {
     generatedAt: string
@@ -57,7 +58,7 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
     const [providers, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals] = await Promise.all([
         AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
         AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
-        AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, providerId: true, status: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
+        AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, providerId: true, status: true, completedAt: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
         AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({ select: { providerId: true, score: true, computedAt: true } }),
         AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ select: { id: true, active: true } }),
         AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ select: { id: true, providerId: true, marketId: true } }),
@@ -106,7 +107,7 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
         },
         requests: {
             total: requests.length,
-            completed: requests.filter((request) => request.status === ServiceRequestStatus.Closed).length,
+            completed: requests.filter(isVerifiedCompletedVisit).length,
             cancelled: requests.filter((request) => request.status === ServiceRequestStatus.Cancelled).length,
             noShows: requests.filter((request) => request.status === ServiceRequestStatus.NoShow).length,
         },

@@ -148,6 +148,8 @@ export type AutoCareApiOffer = {
     active: boolean
     priceType?: 'fixed' | 'from' | 'range' | 'quote_required'
     bookingMode?: 'request' | 'instant'
+    requiredResourceTypes?: Array<'specialist' | 'bay' | 'lift' | 'equipment'>
+    requiredResourceIds?: string[]
 }
 
 export type UpdateAutoCareOfferInput = {
@@ -156,6 +158,8 @@ export type UpdateAutoCareOfferInput = {
     description: string | null
     priceFromMinor: number
     bookingMode?: 'request' | 'instant'
+    requiredResourceTypes?: Array<'specialist' | 'bay' | 'lift' | 'equipment'>
+    requiredResourceIds?: string[]
 }
 
 export type AutoCareApiProvider = {
@@ -226,6 +230,7 @@ export type AutoCareApiDiscoveryItem = {
 export type AutoCareApiDiscoveryResponse = {
     items: AutoCareApiDiscoveryItem[]
     nextCursor: string | null
+    partial?: boolean
 }
 
 export type AutoCareApiProviderProfile = AutoCareApiProvider & {
@@ -427,6 +432,7 @@ export type AutoCareProviderMember = {
     id: string
     providerId: string
     userId: string
+    user: { id: string; name: string; email: string; avatarUrl: string | null } | null
     locationId: string | null
     role: 'owner' | 'manager' | 'staff'
     status: 'active' | 'revoked'
@@ -637,7 +643,11 @@ const autoCareProviderInvitationSchema = z.object({
     inviteToken: z.string().nullable(),
 }).passthrough() satisfies z.ZodType<AutoCareProviderInvitation>
 const autoCareProviderMembersSchema = z.object({
-    memberships: z.array(z.object({ id: z.string(), providerId: z.string(), userId: z.string(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']), createdAt: z.string().datetime({ offset: true }) }).passthrough()),
+    memberships: z.array(z.object({
+        id: z.string(), providerId: z.string(), userId: z.string(), locationId: z.string().nullable(),
+        user: z.object({ id: z.string(), name: z.string(), email: z.string().email(), avatarUrl: z.string().nullable() }).nullable(),
+        role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']), createdAt: z.string().datetime({ offset: true }),
+    }).passthrough()),
     invitations: z.array(autoCareProviderInvitationSchema),
 }).passthrough() satisfies z.ZodType<AutoCareProviderMembersResponse>
 
@@ -699,7 +709,35 @@ const autoCareOfferSchema = z.object({
     active: z.boolean(),
     priceType: z.enum(['fixed', 'from', 'range', 'quote_required']).optional(),
     bookingMode: z.enum(['request', 'instant']).optional(),
+    requiredResourceTypes: z.array(z.enum(['specialist', 'bay', 'lift', 'equipment'])).optional(),
+    requiredResourceIds: z.array(z.string()).optional(),
 }).passthrough() satisfies z.ZodType<AutoCareApiOffer>
+
+const autoCareCapacityResourceSchema = z.object({
+    id: z.string(),
+    providerId: z.string(),
+    locationId: z.string(),
+    type: z.enum(['specialist', 'bay', 'lift', 'equipment']),
+    name: z.string(),
+    capacity: z.number().int().min(1),
+    active: z.boolean(),
+    metadata: z.record(z.string(), z.unknown()),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+}) satisfies z.ZodType<AutoCareCapacityResource>
+
+const autoCareCapacityReservationSchema = z.object({
+    id: z.string(),
+    requestId: z.string(),
+    resourceId: z.string(),
+    providerId: z.string(),
+    locationId: z.string(),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }),
+    status: z.enum(['active', 'released']),
+    releasedAt: z.string().datetime({ offset: true }).nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+}) satisfies z.ZodType<AutoCareCapacityReservation>
 
 const autoCareProviderSchema = z.object({
     id: z.string(),
@@ -741,6 +779,7 @@ const autoCareProviderSchema = z.object({
         zoneId: z.string().nullable().optional(),
         address: z.string(),
         hours: z.string(),
+        appointmentCapacity: z.number().int().positive().optional(),
         timezone: z.string().optional(),
         weeklySchedule: z.record(z.string(), z.object({ open: z.string(), close: z.string(), closed: z.boolean() })).optional(),
         blackoutDates: z.array(z.string()).optional(),
@@ -805,6 +844,7 @@ const autoCareBookingSnapshotSchema = z.object({
     lineItems: z.array(autoCareQuoteLineItemSchema), scheduledAt: z.string(), timezone: z.string(), serviceSlug: z.string(),
     providerId: z.string(), locationId: z.string(), status: z.literal('confirmed'), createdAt: z.string(),
     bonusDiscountMinor: z.number().int().nonnegative().optional(), payableAmountMinor: z.number().int().nonnegative().optional(),
+    vehicleId: z.string().nullable().optional(), vehicleSnapshot: z.record(z.string(), z.union([z.string(), z.number(), z.null()])).nullable().optional(),
 }).passthrough()
 const autoCareRescheduleSchema = z.object({
     id: z.string().min(1), proposedAt: z.string(), requestedById: z.string(),
@@ -815,7 +855,7 @@ const autoCareRescheduleSchema = z.object({
 const autoCareScalarRecordSchema = z.record(z.string(), z.union([z.string(), z.number(), z.null()]))
 const autoCareServiceRequestSchema = z.object({
     id: z.string().min(1), providerId: z.string().min(1), providerName: z.string(), locationId: z.string().min(1), address: z.string(), definitionId: z.string().min(1), serviceSlug: z.string(),
-    serviceLabels: z.record(z.string(), z.string()), serviceDescription: z.string().nullable().default(null), offeringId: z.string().nullable(), priceFromMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), preferredAt: z.string().nullable(),
+    serviceLabels: z.record(z.string(), z.string()), serviceDescription: z.string().nullable().default(null), offeringId: z.string().nullable(), priceFromMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), preferredAt: z.string().nullable(), vehicleId: z.string().nullable().optional(),
     vehicleSnapshot: autoCareScalarRecordSchema.nullable(), contactSnapshot: autoCareScalarRecordSchema.nullable(), note: z.string().nullable(), status: z.enum(['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted', 'declined', 'cancelled', 'no_show', 'closed']), clientConfirmedAt: z.string().nullable(), providerConfirmedAt: z.string().nullable(), cancelledAt: z.string().nullable().optional(), cancelledById: z.string().nullable().optional(), cancellationReason: z.string().nullable().optional(), noShowAt: z.string().nullable().optional(), noShowById: z.string().nullable().optional(), noShowReason: z.string().nullable().optional(), completedAt: z.string().nullable().optional(), completedById: z.string().nullable().optional(), completionNote: z.string().nullable().optional(), acceptedQuoteVersion: z.number().int().positive().nullable().optional(), acceptedQuoteSnapshot: z.record(z.string(), z.unknown()).nullable().optional(), acceptedQuoteAt: z.string().nullable().optional(), booking: autoCareBookingSnapshotSchema.nullable().optional(), reschedule: autoCareRescheduleSchema.nullable().default(null), createdAt: z.string(), updatedAt: z.string(), quote: autoCareQuoteSchema.nullable(), quoteHistory: z.array(autoCareQuoteHistorySchema).default([]),
 }).passthrough()
 const autoCareServiceRequestsSchema = z.array(autoCareServiceRequestSchema)
@@ -894,6 +934,7 @@ export type AutoCareServiceRequest = {
     priceFromMinor: number | null
     currencyCode: string | null
     preferredAt: string | null
+    vehicleId?: string | null
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
@@ -933,6 +974,8 @@ export type AutoCareBookingSnapshot = {
     locationId: string
     status: 'confirmed'
     createdAt: string
+    vehicleId?: string | null
+    vehicleSnapshot?: Record<string, string | number | null> | null
     bonusDiscountMinor?: number
     payableAmountMinor?: number
 }
@@ -997,11 +1040,19 @@ export type CreateAutoCareServiceRequestInput = {
     locationId: string
     offeringId: string
     preferredAt: string
+    vehicleId?: string | null
     vehicleSnapshot?: {
         make: string
         model: string
         year: number
         mileage?: number
+        fuelType?: string
+        engineDisplacement?: number | null
+        horsepower?: number | null
+        color?: string
+        licensePlate?: string | null
+        internalNumber?: string | null
+        vin?: string | null
     } | null
     contactSnapshot: {
         name: string
@@ -1048,6 +1099,35 @@ export type CreateOwnerAutoCareProviderInput = {
     coverImageUrl?: string | null
     galleryImageUrls?: string[]
 }
+
+export type AutoCareCapacityResource = {
+    id: string
+    providerId: string
+    locationId: string
+    type: 'specialist' | 'bay' | 'lift' | 'equipment'
+    name: string
+    capacity: number
+    active: boolean
+    metadata: Record<string, unknown>
+    createdAt: string
+    updatedAt: string
+}
+
+export type AutoCareCapacityReservation = {
+    id: string
+    requestId: string
+    resourceId: string
+    providerId: string
+    locationId: string
+    startsAt: string
+    endsAt: string
+    status: 'active' | 'released'
+    releasedAt: string | null
+    createdAt: string
+}
+
+export type CreateAutoCareCapacityResourceInput = Omit<AutoCareCapacityResource, 'id' | 'providerId' | 'createdAt' | 'updatedAt'>
+export type UpdateAutoCareCapacityResourceInput = { providerId: string; resourceId: string } & Partial<Omit<CreateAutoCareCapacityResourceInput, 'locationId'>>
 
 export type UploadOwnerAutoCareProviderMediaInput = {
     kind: 'cover' | 'gallery'
@@ -1233,6 +1313,26 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(autoCareProviderSchema).parse(value),
             providesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
         }),
+        getOwnerAutoCareCapacityResources: build.query<AutoCareCapacityResource[], { providerId: string; locationId?: string }>({
+            query: ({ providerId, locationId }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/resources`, params: locationId ? { locationId } : undefined }),
+            transformResponse: (value: unknown) => z.array(autoCareCapacityResourceSchema).parse(value),
+            providesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `RESOURCES_${providerId}` }],
+        }),
+        getOwnerAutoCareCapacityReservations: build.query<AutoCareCapacityReservation[], { providerId: string; locationId?: string; from?: string; to?: string }>({
+            query: ({ providerId, ...params }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/resource-reservations`, params }),
+            transformResponse: (value: unknown) => z.array(autoCareCapacityReservationSchema).parse(value),
+            providesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `RESERVATIONS_${providerId}` }],
+        }),
+        createOwnerAutoCareCapacityResource: build.mutation<AutoCareCapacityResource, { providerId: string } & CreateAutoCareCapacityResourceInput>({
+            query: ({ providerId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/resources`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareCapacityResourceSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `RESOURCES_${providerId}` }],
+        }),
+        updateOwnerAutoCareCapacityResource: build.mutation<AutoCareCapacityResource, UpdateAutoCareCapacityResourceInput>({
+            query: ({ providerId, resourceId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/resources/${encodeURIComponent(resourceId)}`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareCapacityResourceSchema.parse(value),
+            invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `RESOURCES_${providerId}` }],
+        }),
         updateOwnerAutoCareCommunicationSettings: build.mutation<AutoCareApiProvider, UpdateAutoCareCommunicationSettingsInput>({
             query: ({ providerId, ...body }) => ({ url: `/owner/autocare-providers/${encodeURIComponent(providerId)}/communication-settings`, method: 'PATCH', body }),
             transformResponse: (value: unknown) => autoCareProviderSchema.parse(value),
@@ -1276,7 +1376,7 @@ export const autoCareApi = baseApi.injectEndpoints({
         acceptAutoCareProviderInvitation: build.mutation<unknown, AcceptAutoCareProviderInvitationInput>({
             query: (body) => ({ url: '/owner/autocare-provider-invitations/accept', method: 'POST', body }),
             transformResponse: (value: unknown) => z.object({
-                membership: z.object({ id: z.string(), providerId: z.string(), userId: z.string(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']) }).passthrough(),
+                membership: z.object({ id: z.string(), providerId: z.string(), userId: z.string(), user: z.object({ id: z.string(), name: z.string(), email: z.string().email(), avatarUrl: z.string().nullable() }).nullable(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']) }).passthrough(),
                 invitation: autoCareProviderInvitationSchema,
             }).parse(value),
             invalidatesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
@@ -1695,6 +1795,10 @@ export const {
     useUpdateSuperAdminAutoCareMarketZoneMutation,
     useGetAutoCareLocationZonesQuery,
     useGetOwnerAutoCareProvidersQuery,
+    useGetOwnerAutoCareCapacityResourcesQuery,
+    useGetOwnerAutoCareCapacityReservationsQuery,
+    useCreateOwnerAutoCareCapacityResourceMutation,
+    useUpdateOwnerAutoCareCapacityResourceMutation,
     useUpdateOwnerAutoCareCommunicationSettingsMutation,
     useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,

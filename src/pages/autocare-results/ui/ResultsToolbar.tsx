@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
-import { Check, ChevronDown, LocateFixed, Search, ShieldCheck, X } from 'lucide-react'
+
+import { Check, ChevronDown, Search, ShieldCheck, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, getVehicleModels, useGetVehicleCatalogQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { FloatingSelect } from '@/shared/ui/floating-field'
 
 import { ResultsQuickFilters } from './ResultsQuickFilters'
 
@@ -52,7 +54,6 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
                 <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:p-4">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
                         <ServiceSelect serviceId={serviceId} onChange={onServiceChange} />
-                        <SearchSummary className="lg:col-span-6" icon={<LocateFixed className="size-4" />} label={t('autocare.searchPointLabel')} value={t('autocare.currentLocation')} />
                         <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
                         <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
                     </div>
@@ -91,28 +92,26 @@ function VehicleSelects({ brandId, vehicleModel, vehicleYear, onChange }: { bran
     const brands = remoteCatalog ?? automotiveVehicleBrands
     const models = remoteCatalog?.find((brand) => brand.id === brandId)?.models.map((model) => model.label) ?? getVehicleModels(brandId)
     const years = Array.from({ length: 22 }, (_, index) => String(new Date().getFullYear() - index))
-    const selectClass = 'select-with-icon autocare-toolbar-select h-5 w-full bg-transparent pr-4 text-sm font-black text-primary-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>option]:bg-hero-overlay [&>option]:text-primary-foreground'
-
-    return <><label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 lg:col-span-3"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.vehicleMakeLabel')}</span><select value={brandId} onChange={(event) => onChange({ brandId: event.target.value, vehicleModel: '', vehicleYear: '' })} className={selectClass}><option value="">{t('autocare.anyBrand')}</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/60" aria-hidden="true" /></label><label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 lg:col-span-3"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.vehicleModelLabel')}</span><select value={vehicleModel} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel: event.target.value, vehicleYear })} className={selectClass}><option value="">{t('autocare.anyModel')}</option>{models.map((model) => <option key={model} value={model}>{model}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/60" aria-hidden="true" /></label><label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 lg:col-span-2"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.vehicleYearLabel')}</span><select value={vehicleYear} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel, vehicleYear: event.target.value })} className={selectClass}><option value="">{t('autocare.anyYear')}</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/60" aria-hidden="true" /></label></>
+    return <>
+        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleMakeLabel')} tone="dark" value={brandId} onChange={(event) => onChange({ brandId: event.target.value, vehicleModel: '', vehicleYear: '' })} wrapperClassName="lg:col-span-4"><option value="">{t('autocare.anyBrand')}</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</FloatingSelect>
+        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleModelLabel')} tone="dark" value={vehicleModel} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel: event.target.value, vehicleYear })} wrapperClassName="lg:col-span-4"><option value="">{t('autocare.anyModel')}</option>{models.map((model) => <option key={model} value={model}>{model}</option>)}</FloatingSelect>
+        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleYearLabel')} tone="dark" value={vehicleYear} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel, vehicleYear: event.target.value })} wrapperClassName="lg:col-span-2"><option value="">{t('autocare.anyYear')}</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</FloatingSelect>
+    </>
 }
 
 function ServiceSelect({ serviceId, onChange }: { serviceId: string; onChange: (serviceId: string) => void }) {
     const { t, locale } = useTranslation()
 
-    return <label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 lg:col-span-6"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.serviceLabel')}</span><select value={serviceId} onChange={(event) => onChange(event.target.value)} className="select-with-icon autocare-toolbar-select h-5 w-full appearance-none bg-transparent pr-5 text-sm font-black text-primary-foreground outline-none [&>option]:bg-hero-overlay [&>option]:text-primary-foreground">{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/60" aria-hidden="true" /></label>
+    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.serviceLabel')} tone="dark" value={serviceId} onChange={(event) => onChange(event.target.value)} wrapperClassName="sm:col-span-2 lg:col-span-12"><option value="">{t('autocare.servicePlaceholder')}</option>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</FloatingSelect>
 }
 
 function RadiusSelect({ radiusKm, onChange }: { radiusKm: number; onChange: (radiusKm: number) => void }) {
     const { t } = useTranslation()
 
-    return <label className="relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 lg:col-span-2"><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{t('autocare.radiusLabel')}</span><select value={radiusKm} onChange={(event) => onChange(Number(event.target.value))} className="select-with-icon autocare-toolbar-select h-5 w-full bg-transparent pr-4 text-sm font-black text-primary-foreground outline-none [&>option]:bg-hero-overlay [&>option]:text-primary-foreground"><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option></select><ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/60" aria-hidden="true" /></label>
+    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.radiusLabel')} tone="dark" value={radiusKm} onChange={(event) => onChange(Number(event.target.value))} wrapperClassName="lg:col-span-2"><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option></FloatingSelect>
 }
 
 function AppliedFilters({ filters, onClear, onRemove }: { filters: readonly ActiveFilter[]; onClear: () => void; onRemove: (key: ActiveFilter['key']) => void }) {
     const { t } = useTranslation()
     return <div className="mt-4 border-t border-primary-foreground/15 pt-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs font-black text-primary-foreground">{t('autocare.appliedFilters')}</p>{filters.length > 0 && <button type="button" onClick={onClear} className="text-xs font-bold text-primary-foreground hover:underline">{t('autocare.clearAllFilters')}</button>}</div><div className="mt-2 flex flex-wrap gap-2">{filters.length === 0 ? <span className="text-xs font-medium text-primary-foreground/55">{t('autocare.noActiveFilters')}</span> : filters.map((filter) => <button type="button" key={filter.key} onClick={() => onRemove(filter.key)} className="inline-flex items-center gap-1.5 rounded-full border border-primary-foreground/15 bg-primary-foreground/[0.08] px-3 py-1.5 text-xs font-bold text-primary-foreground hover:border-primary">{filter.label}<X className="size-3.5" /></button>)}</div></div>
-}
-
-function SearchSummary({ className = '', icon, label, value }: { className?: string; icon: ReactNode; label: string; value: string }) {
-    return <div className={`min-w-0 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 ${className}`}><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{label}</p><div className="mt-1 flex items-center gap-2 truncate text-sm font-black">{icon}<span className="truncate">{value}</span></div></div>
 }

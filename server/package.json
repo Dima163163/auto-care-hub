@@ -32,6 +32,8 @@
     "autocare:seed": "tsx src/scripts/seed-autocare-mock-data.ts",
     "benchmark:discovery": "tsx src/scripts/benchmark-autocare-discovery.ts",
     "benchmark:discovery:synthetic": "tsx src/scripts/benchmark-discovery-synthetic.ts",
+    "benchmark:discovery:geospatial": "tsx src/scripts/benchmark-discovery-geospatial.ts",
+    "check:discovery-density": "tsx src/scripts/check-discovery-supply-density.ts",
     "smoke:autocare-realtime": "tsx src/scripts/smoke-autocare-realtime.ts",
     "check:production-media": "tsx src/scripts/check-production-media.ts",
     "check:pilot-quality": "tsx src/scripts/check-pilot-quality.ts",

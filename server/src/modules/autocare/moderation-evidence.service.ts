@@ -17,6 +17,8 @@ import {
     isAutoCareModerationEvidenceKind,
     type AutoCareModerationDecision,
 } from './moderation-evidence-policy.js'
+import { reassessAutoCareProviderTrust } from './trust-score.service.js'
+import { logError } from '../../shared/observability/logger.js'
 
 type ModerationEvidenceResponse = {
     id: string
@@ -118,6 +120,44 @@ export async function queueReviewModerationEvidence(manager: EntityManager, revi
     }))
 }
 
+/**
+ * Adds uploaded registration/licensing material to the same moderation queue
+ * as public provider media. References are opaque private-storage keys; this
+ * function intentionally never exposes their bytes or creates public URLs.
+ */
+export async function queueProviderDocumentModerationEvidence(
+    manager: EntityManager,
+    providerId: string,
+    documents: readonly { label: string; reference: string; expiresAt?: Date | null }[],
+) {
+    const entries = documents
+        .filter((document) => document.reference.trim().length > 0)
+        .slice(0, 20)
+    if (entries.length === 0) return []
+
+    const repository = manager.getRepository(AutoCareTrustEvidenceEntity)
+    const existing = await repository.find({
+        where: {
+            providerId,
+            kind: 'provider_document',
+            reference: In(entries.map((document) => document.reference.trim())),
+        },
+        select: { reference: true },
+    })
+    const existingReferences = new Set(existing.map((item) => item.reference))
+    const newEntries = entries.filter((document) => !existingReferences.has(document.reference.trim()))
+    if (newEntries.length === 0) return []
+    return repository.save(newEntries.map((document) => repository.create({
+        providerId,
+        kind: 'provider_document',
+        label: document.label.trim() || 'Документ сервиса',
+        reference: document.reference.trim(),
+        expiresAt: document.expiresAt ?? null,
+        status: 'pending',
+        notes: 'Ожидает проверки регистрационных данных сервиса.',
+    })))
+}
+
 export async function listAdminAutoCareModerationEvidence(user: UserEntity, status?: string) {
     assertAdmin(user)
     const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
@@ -171,7 +211,7 @@ export async function decideAdminAutoCareModerationEvidence(
     input: { status: AutoCareModerationDecision; reason: string },
 ) {
     assertAdmin(user)
-    return AppDataSource.transaction(async (manager) => {
+    const result = await AppDataSource.transaction(async (manager) => {
         const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
         const evidence = await evidenceRepository.findOne({ where: { id: evidenceId }, lock: { mode: 'pessimistic_write' } })
         if (!evidence || !isAutoCareModerationEvidenceKind(evidence.kind)) {
@@ -227,4 +267,16 @@ export async function decideAdminAutoCareModerationEvidence(
 
         return toResponse(evidence, provider ?? undefined, location?.address ?? null, review ?? undefined)
     })
+    // Moderation is a durable trust input. Refresh after commit so public
+    // snapshots reflect an approval/rejection promptly without allowing a
+    // transient worker failure to roll back the moderator's decision.
+    try {
+        await reassessAutoCareProviderTrust(result.providerId)
+    } catch (error) {
+        logError('Could not refresh AutoCare trust after evidence decision', error, {
+            providerId: result.providerId,
+            evidenceId,
+        })
+    }
+    return result
 }

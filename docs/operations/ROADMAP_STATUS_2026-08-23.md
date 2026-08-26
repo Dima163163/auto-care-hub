@@ -24,8 +24,10 @@ product decision or a larger follow-up slice.
 - ✅ Market/zone scope, indexed bounding-box prefilter, SQL exact-distance
   filter and discovery keyset cursor contract.
 - ✅ Deterministic trust policy, rollout controls and persisted appeal decisions.
+- ✅ Concurrent p95/p99 discovery benchmark, broad-radius matrix, cache/rate
+  limit contracts and selected-market density check are implemented.
 - ❌ Production PostGIS/GiST decision, ranking rollout evidence and live
-  confirmed-visit metric calibration.
+  confirmed-visit metric calibration still require a production-like snapshot.
 
 ## 4. Booking, reviews and notifications
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, CloudOff, Inbox, LockKeyhole } from 'lucide-react'
+import { AlertTriangle, Ban, CloudOff, Inbox, KeyRound, LockKeyhole } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
@@ -14,6 +14,8 @@ export type StateCardVariant =
     | 'stale-error'
     | 'empty'
     | 'suspended'
+    | 'partial'
+    | 'session-expired'
 
 type StateCardProps = {
     title?: string
@@ -33,12 +35,14 @@ export function StateCard({
   className,
 }: StateCardProps) {
     const isError = variant === 'error' || variant === 'suspended'
-    const isAlert = isError || variant === 'offline' || variant === 'permission-denied' || variant === 'stale-error'
+    const isAlert = isError || variant === 'offline' || variant === 'permission-denied' || variant === 'stale-error' || variant === 'session-expired'
     const isLoading = variant === 'loading'
     const Icon = variant === 'offline'
         ? CloudOff
         : variant === 'permission-denied'
             ? LockKeyhole
+            : variant === 'session-expired'
+                ? KeyRound
             : variant === 'suspended'
                 ? Ban
                 : variant === 'empty'
@@ -58,6 +62,8 @@ export function StateCard({
                 isError && 'border-status-danger-border bg-status-danger-surface',
                 variant === 'offline' && 'border-status-warning-border bg-status-warning-surface',
                 variant === 'permission-denied' && 'border-status-neutral-border bg-status-neutral-surface',
+                variant === 'session-expired' && 'border-status-neutral-border bg-status-neutral-surface',
+                variant === 'partial' && 'border-status-warning-border bg-status-warning-surface',
                 variant === 'stale' && 'border-status-warning-border bg-status-warning-surface',
                 variant === 'stale-error' && 'border-status-warning-border bg-status-warning-surface',
                 isLoading && 'space-y-3',
@@ -83,7 +89,7 @@ export function StateCard({
                         'font-medium',
                         isError
                             ? 'text-status-danger-foreground'
-                            : variant === 'offline' || variant === 'stale' || variant === 'stale-error'
+                            : variant === 'offline' || variant === 'stale' || variant === 'stale-error' || variant === 'partial'
                                 ? 'text-status-warning-foreground'
                                 : 'text-foreground',
                     )}
@@ -100,7 +106,7 @@ export function StateCard({
                         'text-sm',
                         isError
                             ? 'text-status-danger-foreground'
-                            : variant === 'offline' || variant === 'stale' || variant === 'stale-error'
+                        : variant === 'offline' || variant === 'stale' || variant === 'stale-error' || variant === 'partial'
                                 ? 'text-status-warning-foreground'
                                 : 'text-muted-foreground',
                     )}

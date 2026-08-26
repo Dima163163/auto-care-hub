@@ -37,7 +37,9 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
     const radiusValue = Number(params.get('radius') ?? 25)
 
     return {
-        serviceId: params.get('service') ?? 'oil-change',
+        // An omitted service means “all services”. Keep this empty instead of
+        // silently narrowing the first page to oil change.
+        serviceId: params.get('service') ?? '',
         providerName: params.get('provider') ?? '',
         marketId: params.get('market') ?? 'ru-moscow',
         zoneId: params.get('zone') ?? '',

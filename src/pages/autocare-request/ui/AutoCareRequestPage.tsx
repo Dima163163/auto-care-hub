@@ -3,8 +3,9 @@ import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
 import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareRepairTimelineQuery, useGetAutoCareServiceConversationQuery, useGetMyAutoCareFleetsQuery } from '@/entities/automotive-service'
-import { routePaths } from '@/shared/constants/routes'
+import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useGetMeQuery } from '@/features/auth'
+import { useGetMyVehiclesQuery, type ClientVehicle } from '@/entities/user'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { formatCurrency, formatDateTime } from '@/shared/lib/locale-format'
 import { AutoCareRequestSkeleton } from '@/shared/ui/loading-skeleton'
@@ -22,9 +23,10 @@ export function AutoCareRequestPage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const location = useLocation()
-    const { data: user } = useGetMeQuery()
+    const { data: user, isLoading: isUserLoading } = useGetMeQuery()
     const requestedVehicleId = searchParams.get('vehicleId')
     const { data: fleets, isFetching: isFleetsFetching } = useGetMyAutoCareFleetsQuery(undefined, { skip: user?.role !== 'client' || !requestedVehicleId })
+    const { data: savedVehicles, isFetching: isVehiclesFetching } = useGetMyVehiclesQuery(undefined, { skip: user?.role !== 'client' || !requestedVehicleId })
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
     const [attachmentUploadErrorCount, setAttachmentUploadErrorCount] = useState(0)
     const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
@@ -37,11 +39,16 @@ export function AutoCareRequestPage() {
         [provider, searchParams],
     )
     const selectedVehicle = fleets?.flatMap((fleet) => fleet.vehicles).find((vehicle) => vehicle.id === requestedVehicleId)
-    const initialVehicle = toRequestVehicleSnapshot(selectedVehicle?.vehicleSnapshot)
+    const selectedSavedVehicle = savedVehicles?.find((vehicle) => vehicle.id === requestedVehicleId)
+    const initialVehicle = toRequestVehicleSnapshot(selectedSavedVehicle ?? selectedVehicle?.vehicleSnapshot)
 
     if (isLoading) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !offering || !data) {
         return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
+    }
+
+    if (requestedVehicleId && !isUserLoading && user?.role === 'client' && !isFleetsFetching && !isVehiclesFetching && !selectedSavedVehicle && !selectedVehicle) {
+        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><section className="mx-auto max-w-xl rounded-[var(--radius-panel)] border border-border bg-card p-6 text-center shadow-sm"><h1 className="text-2xl font-black text-foreground">{t('autocare.vehicleUnavailableTitle')}</h1><p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">{t('autocare.vehicleUnavailableDescription')}</p><Link to={ROUTES.profileVehicles} className="mt-5 inline-flex h-10 items-center rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground">{t('autocare.vehicleUnavailableBack')}</Link></section></main>
     }
 
     const handleSubmit = async (payload: RequestFormPayload) => {
@@ -57,6 +64,7 @@ export function AutoCareRequestPage() {
                 locationId: data.location.id,
                 offeringId: offering.id,
                 preferredAt: payload.preferredAt,
+                vehicleId: payload.vehicleId,
                 vehicleSnapshot: payload.vehicleSnapshot,
                 contactSnapshot: payload.contactSnapshot,
                 note: payload.note,
@@ -97,7 +105,7 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && isFleetsFetching ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? t('autocare.requestSubmitError') : undefined} />}</div>
+                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && (isFleetsFetching || isVehiclesFetching) ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm providerId={data.id} locationId={data.location.id} offeringId={offering.id} initialVehicle={initialVehicle} initialVehicleId={selectedSavedVehicle?.id ?? null} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? t('autocare.requestSubmitError') : undefined} />}</div>
                     <RequestOrderSummary provider={provider} offering={offering} />
                 </div>
             </div>
@@ -105,12 +113,23 @@ export function AutoCareRequestPage() {
     )
 }
 
-function toRequestVehicleSnapshot(snapshot: Record<string, unknown> | undefined): RequestFormPayload['vehicleSnapshot'] {
+function toRequestVehicleSnapshot(snapshot: Record<string, unknown> | ClientVehicle | undefined): RequestFormPayload['vehicleSnapshot'] {
     if (!snapshot) return null
-    const make = String(snapshot.makeLabel ?? snapshot.make ?? snapshot.brand ?? '').trim()
+    const make = String(snapshot.makeLabel ?? snapshot.make ?? snapshot.brand ?? snapshot.brandId ?? '').trim()
     const model = String(snapshot.modelLabel ?? snapshot.model ?? '').trim()
     const year = Number(snapshot.year)
-    return make && model && Number.isInteger(year) && year > 0 ? { make, model, year } : null
+    return make && model && Number.isInteger(year) && year > 0 ? {
+        make,
+        model,
+        year,
+        fuelType: typeof snapshot.fuelType === 'string' ? snapshot.fuelType : undefined,
+        engineDisplacement: typeof snapshot.engineDisplacement === 'number' ? snapshot.engineDisplacement : null,
+        horsepower: typeof snapshot.horsepower === 'number' ? snapshot.horsepower : null,
+        color: typeof snapshot.color === 'string' ? snapshot.color : undefined,
+        licensePlate: typeof snapshot.licensePlate === 'string' ? snapshot.licensePlate : null,
+        internalNumber: typeof snapshot.internalNumber === 'string' ? snapshot.internalNumber : null,
+        vin: typeof snapshot.vin === 'string' ? snapshot.vin : null,
+    } : null
 }
 
 function readFileAsBase64(file: File) {

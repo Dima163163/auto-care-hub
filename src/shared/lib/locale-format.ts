@@ -1,5 +1,9 @@
 import { getLocaleOption, normalizeLocale, type SupportedLocale } from '@/shared/config/i18n'
 
+export type LocalizedPluralForms = Partial<Record<Intl.LDMLPluralRule, string>> & {
+    other: string
+}
+
 export function getIntlLocale(locale: string | SupportedLocale): string {
     const normalized = normalizeLocale(locale) ?? 'en'
     return getLocaleOption(normalized).intlTag
@@ -15,4 +19,14 @@ export function formatCurrency(value: number, currency: string, locale: string |
 
 export function formatDateTime(value: string | number | Date, locale: string | SupportedLocale, options?: Intl.DateTimeFormatOptions): string {
     return new Intl.DateTimeFormat(getIntlLocale(locale), options).format(new Date(value))
+}
+
+export function formatPlural(
+    value: number,
+    locale: string | SupportedLocale,
+    forms: LocalizedPluralForms,
+): string {
+    const category = new Intl.PluralRules(getIntlLocale(locale)).select(value)
+
+    return forms[category] ?? forms.other
 }

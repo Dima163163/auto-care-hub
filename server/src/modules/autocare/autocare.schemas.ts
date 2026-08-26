@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { AutomotiveProviderChangeRequestKind } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
+import { AutoCareCapacityResourceType } from '../../entities/automotive/capacity-resource.entity.js'
 import { AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 
 const autoCareVehicleSnapshotSchema = z.object({
@@ -8,6 +9,13 @@ const autoCareVehicleSnapshotSchema = z.object({
     model: z.string().trim().min(1).max(80),
     year: z.coerce.number().int().min(1886).max(new Date().getFullYear() + 1),
     mileage: z.coerce.number().int().nonnegative().max(2_000_000).optional(),
+    fuelType: z.string().trim().max(40).optional(),
+    engineDisplacement: z.coerce.number().nonnegative().max(20).nullable().optional(),
+    horsepower: z.coerce.number().int().nonnegative().max(3_000).nullable().optional(),
+    color: z.string().trim().max(40).optional(),
+    licensePlate: z.string().trim().max(24).nullable().optional(),
+    internalNumber: z.string().trim().max(64).nullable().optional(),
+    vin: z.string().trim().toUpperCase().max(17).nullable().optional(),
 }).strict()
 
 export const autoCareDiscoveryQuerySchema = z.object({
@@ -51,6 +59,32 @@ export const autoCareLocationZonesQuerySchema = z.object({
 export const autoCareProviderParamsSchema = z.object({
     providerId: z.string().uuid(),
 })
+
+export const autoCareCapacityResourceParamsSchema = z.object({
+    providerId: z.string().uuid(),
+    resourceId: z.string().uuid(),
+})
+
+export const autoCareCapacityResourceQuerySchema = z.object({
+    locationId: z.string().uuid().optional(),
+})
+
+export const autoCareCapacityReservationQuerySchema = z.object({
+    locationId: z.string().uuid().optional(),
+    from: z.string().datetime({ offset: true }).optional(),
+    to: z.string().datetime({ offset: true }).optional(),
+})
+
+export const createAutoCareCapacityResourceSchema = z.object({
+    locationId: z.string().uuid(),
+    type: z.nativeEnum(AutoCareCapacityResourceType),
+    name: z.string().trim().min(1).max(120),
+    capacity: z.coerce.number().int().min(1).max(100).default(1),
+    active: z.boolean().default(true),
+    metadata: z.record(z.string(), z.unknown()).default({}),
+})
+
+export const updateAutoCareCapacityResourceSchema = createAutoCareCapacityResourceSchema.partial().omit({ locationId: true })
 
 export const autoCareProviderInvitationParamsSchema = z.object({
     providerId: z.string().uuid(),
@@ -146,6 +180,8 @@ export const updateAutoCareOfferSchema = z.object({
     description: z.string().trim().max(2_000).nullable(),
     priceFromMinor: z.number().int().nonnegative().max(100_000_000_00),
     bookingMode: z.enum(['request', 'instant']).optional(),
+    requiredResourceTypes: z.array(z.nativeEnum(AutoCareCapacityResourceType)).max(4).optional(),
+    requiredResourceIds: z.array(z.string().uuid()).max(8).optional(),
 })
 
 export const updateAdminAutoCareServiceDefinitionSchema = z.object({
@@ -277,6 +313,7 @@ export const createAutoCareServiceRequestSchema = z.object({
     locationId: z.string().uuid(),
     offeringId: z.string().uuid(),
     preferredAt: z.string().datetime({ offset: true }),
+    vehicleId: z.string().uuid().nullable().optional(),
     vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
     contactSnapshot: requestContactSnapshotSchema,
     note: z.string().trim().max(4_000).nullable().optional(),
@@ -482,6 +519,13 @@ export const ownerAutoCareProviderSchema = z.object({
     logoUrl: z.string().trim().regex(/^\/uploads\/autocare\/logos\/[a-f0-9-]+\.webp$/i).nullable().optional(),
     coverImageUrl: z.string().trim().regex(/^\/uploads\/autocare\/media\/cover\/[a-f0-9-]+\.webp$/i).nullable().optional(),
     galleryImageUrls: z.array(z.string().trim().regex(/^\/uploads\/autocare\/media\/gallery\/[a-f0-9-]+\.webp$/i)).max(12).optional(),
+    documents: z.array(z.object({
+        label: z.string().trim().min(1).max(160),
+        // The client may submit only an opaque private-storage reference. A
+        // public URL or inline document bytes are intentionally rejected.
+        reference: z.string().trim().regex(/^private:\/\/[A-Za-z0-9._/-]{1,500}$/),
+        expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+    })).max(20).optional(),
 }).superRefine((value, context) => {
     if (!value.isMultibrand && value.brandSpecializations.length === 0) {
         context.addIssue({ code: 'custom', path: ['brandSpecializations'], message: 'Choose at least one brand or enable multibrand service.' })

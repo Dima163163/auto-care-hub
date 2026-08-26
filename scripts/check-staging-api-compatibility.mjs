@@ -14,11 +14,18 @@ async function checkStaging(baseUrl) {
     if (!response.ok) throw new Error(`Staging OpenAPI request failed with HTTP ${response.status}.`)
     const document = await response.json()
     if (document.openapi !== '3.1.0') throw new Error(`Staging OpenAPI version ${String(document.openapi)} does not match 3.1.0.`)
-    for (const path of ['/health/live', '/health/ready', '/v1/markets', '/v1/discovery', '/openapi.json']) {
+    for (const path of ['/health/live', '/health/ready', '/v1/markets', '/v1/discovery/providers', '/openapi.json']) {
         if (!document.paths?.[path]) throw new Error(`Staging OpenAPI is missing required compatibility path ${path}.`)
     }
     const health = await fetch(`${origin}/health/live`, { headers: { accept: 'application/json' } })
     if (!health.ok) throw new Error(`Staging liveness check failed with HTTP ${health.status}.`)
+    const discoveryQuery = process.env.STAGING_DISCOVERY_QUERY?.trim() || 'radiusKm=25&limit=1'
+    const discovery = await fetch(`${origin}/v1/discovery/providers?${discoveryQuery}`, { headers: { accept: 'application/json' } })
+    if (!discovery.ok) throw new Error(`Staging discovery compatibility check failed with HTTP ${discovery.status}.`)
+    const cacheControl = discovery.headers.get('cache-control') ?? ''
+    if (!/\bmax-age=5\b/i.test(cacheControl) || !/\bstale-while-revalidate=15\b/i.test(cacheControl)) {
+        throw new Error(`Staging discovery response is missing the expected cache policy. Received: ${cacheControl || 'none'}.`)
+    }
     console.log(`Staging API compatibility passed for ${origin}.`)
 }
 

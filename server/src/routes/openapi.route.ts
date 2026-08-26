@@ -1297,6 +1297,8 @@ export function getOpenApiDocument() {
                         horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
                         color: { type: 'string', minLength: 1, maxLength: 40 },
                         vin: { type: ['string', 'null'], pattern: '^[A-HJ-NPR-Z0-9]{17}$' },
+                        licensePlate: { type: ['string', 'null'], maxLength: 24 },
+                        internalNumber: { type: ['string', 'null'], maxLength: 64 },
                     },
                 },
                 ClientVehiclePatch: {
@@ -1311,6 +1313,8 @@ export function getOpenApiDocument() {
                         horsepower: { type: ['integer', 'null'], minimum: 0, maximum: 3000 },
                         color: { type: 'string', minLength: 1, maxLength: 40 },
                         vin: { type: ['string', 'null'], pattern: '^[A-HJ-NPR-Z0-9]{17}$' },
+                        licensePlate: { type: ['string', 'null'], maxLength: 24 },
+                        internalNumber: { type: ['string', 'null'], maxLength: 64 },
                     },
                 },
                 ClientVehicle: {

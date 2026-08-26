@@ -39,6 +39,7 @@ describe('StateCard', () => {
         ['offline', 'No connection', 'offline'],
         ['permission denied', 'Access denied', 'permission-denied'],
         ['suspended', 'Service suspended', 'suspended'],
+        ['expired session', 'Session expired', 'session-expired'],
         ['stale error', 'Saved results shown', 'stale-error'],
     ] as const)('announces %s as a recoverable alert', (_label, title, variant) => {
         render(
@@ -61,5 +62,11 @@ describe('StateCard', () => {
 
         expect(screen.getByRole('status')).toHaveAttribute('data-state', variant)
         expect(screen.getByRole('status')).toHaveTextContent(title)
+    })
+
+    it('renders partial data as a non-blocking warning status', () => {
+        render(<StateCard variant="partial" title="Some data is loading" />)
+
+        expect(screen.getByRole('status')).toHaveAttribute('data-state', 'partial')
     })
 })

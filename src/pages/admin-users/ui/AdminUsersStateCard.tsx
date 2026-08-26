@@ -5,7 +5,7 @@ import { RetryButton } from '@/shared/ui/query-refresh-error'
 type AdminUsersStateCardProps = {
     description?: string
     onRetry?: () => void | Promise<unknown>
-    state: 'loading' | 'error' | 'empty' | 'offline' | 'permission-denied'
+    state: 'loading' | 'error' | 'empty' | 'offline' | 'permission-denied' | 'session-expired'
 }
 
 export function AdminUsersStateCard({
@@ -28,22 +28,28 @@ export function AdminUsersStateCard({
         )
     }
 
-    if (state === 'error' || state === 'offline' || state === 'permission-denied') {
+    if (state === 'error' || state === 'offline' || state === 'permission-denied' || state === 'session-expired') {
         return (
             <div role="alert" className="rounded-xl border bg-card p-8 shadow-sm">
                 <p className="font-medium text-destructive">
                     {state === 'permission-denied'
                         ? t('errors.FORBIDDEN')
+                        : state === 'session-expired'
+                            ? t('auth.sessionExpiredTitle')
                         : state === 'offline'
                             ? t('pwa.offlineTitle')
                             : t('adminUsers.failedToLoad')}
                 </p>
 
                 <p className="mt-2 text-sm text-muted-foreground">
-                    {state === 'offline' ? t('pwa.offlineDescription') : description}
+                    {state === 'offline'
+                        ? t('pwa.offlineDescription')
+                        : state === 'session-expired'
+                            ? t('auth.sessionExpiredDescription')
+                            : description}
                 </p>
                 {onRetry && state !== 'permission-denied' && (
-                    <RetryButton className="mt-5" onRetry={onRetry} label={t('common.retry')} />
+                    <RetryButton className="mt-5" onRetry={onRetry} label={state === 'session-expired' ? t('auth.signIn') : t('common.retry')} />
                 )}
             </div>
         )

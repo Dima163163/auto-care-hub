@@ -17,6 +17,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { logError } from '../../shared/observability/logger.js'
 import { getManagedProviderScopes, hasProviderWorkspacePermission } from './provider-access.service.js'
+import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
 
 function forbidden(message: string): never {
@@ -95,7 +96,7 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
         if (request.estimateSnapshot || request.acceptedQuoteAt) eligibleQuoteRequests.add(request.id)
     }
     const confirmed = requests.filter((request) => Boolean(request.clientConfirmedAt && request.providerConfirmedAt))
-    const completed = requests.filter((request) => request.status === ServiceRequestStatus.Closed && request.clientConfirmedAt && request.providerConfirmedAt)
+    const completed = requests.filter(isVerifiedCompletedVisit)
     const clientCounts = new Map<string, number>()
     for (const request of requests) clientCounts.set(request.clientId, (clientCounts.get(request.clientId) ?? 0) + 1)
     const repeatCustomers = [...clientCounts.values()].filter((count) => count > 1).length

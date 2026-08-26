@@ -19,6 +19,10 @@ describe('AutoCare result filters', () => {
         expect(filters.availableToday).toBe(false)
     })
 
+    it('leaves service unscoped when it is omitted so discovery can show all services', () => {
+        expect(getAutoCareResultFilters(new URLSearchParams('market=ru-moscow')).serviceId).toBe('')
+    })
+
     it('writes filter changes without losing the original search context', () => {
         const next = writeAutoCareResultFilters(new URLSearchParams('service=oil-change&market=ru-moscow'), { radiusKm: 50, minRating: '4.5', verifiedOnly: true, brandId: 'toyota' })
 

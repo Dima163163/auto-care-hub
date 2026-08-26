@@ -7,6 +7,7 @@ import type { UserRole } from '@/entities/user'
 import { useGetOwnerAutoCareWorkspaceAccessQuery } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { hasSessionExpired } from '@/shared/lib/auth-session-state'
 
 import { useGetMeQuery } from '../../api/authApi'
 import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
@@ -58,7 +59,7 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
     if (isError || !user) {
         return (
             <Navigate
-                to={ROUTES.login}
+                to={hasSessionExpired() ? `${ROUTES.login}?reason=session-expired` : ROUTES.login}
                 replace
                 state={{
                     from: location,

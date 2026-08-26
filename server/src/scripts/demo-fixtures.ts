@@ -13,6 +13,10 @@ export const DEMO_USERS = {
         name: 'Demo Owner',
         email: 'owner.demo@autocarehub.test',
     },
+    staff: {
+        name: 'Demo ProService Staff',
+        email: 'staff.demo@autocarehub.test',
+    },
     admin: {
         name: 'Demo Admin',
         email: 'admin.demo@autocarehub.test',

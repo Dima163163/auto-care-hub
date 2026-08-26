@@ -95,4 +95,36 @@ describe('calculateAutoCareTrustScore', () => {
         expect(result.factors.moderationPenalty).toBe(10)
         expect(result.badge).not.toBe('trusted')
     })
+
+    it('removes the trusted badge when a critical moderation violation is opened', () => {
+        const result = calculateAutoCareTrustScore({
+            verified: true,
+            rating: 4.9,
+            reviewCount: 40,
+            yearsActive: 8,
+            profileFields: 5,
+            verifiedEvidenceCount: 5,
+            activeGuaranteeClaims: 0,
+            completedInteractionCount: 30,
+            moderationViolationCount: 1,
+        })
+
+        expect(result.badge).not.toBe('trusted')
+    })
+
+    it('restores the trusted badge after the violation is resolved', () => {
+        const result = calculateAutoCareTrustScore({
+            verified: true,
+            rating: 4.9,
+            reviewCount: 40,
+            yearsActive: 8,
+            profileFields: 5,
+            verifiedEvidenceCount: 5,
+            activeGuaranteeClaims: 0,
+            completedInteractionCount: 30,
+            moderationViolationCount: 0,
+        })
+
+        expect(result.badge).toBe('trusted')
+    })
 })

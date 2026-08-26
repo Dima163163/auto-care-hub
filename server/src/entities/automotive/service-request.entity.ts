@@ -62,6 +62,8 @@ export type AutomotiveOfferingSnapshot = {
     warrantyText: string | null
     priceType: string
     bookingMode: 'request' | 'instant'
+    requiredResourceTypes?: string[]
+    requiredResourceIds?: string[]
 }
 
 @Entity('autocare_service_requests')
@@ -77,6 +79,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'uuid' }) definitionId!: string
     @Column({ type: 'uuid', nullable: true }) offeringId!: string | null
     @Column({ type: 'jsonb', nullable: true }) offeringSnapshot!: AutomotiveOfferingSnapshot | null
+    @Column({ type: 'uuid', nullable: true }) vehicleId!: string | null
     @Column({ type: 'jsonb', nullable: true }) vehicleSnapshot!: Record<string, unknown> | null
     @Column({ type: 'jsonb', nullable: true }) contactSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null

@@ -13,21 +13,24 @@
 - The reschedule/cancellation/no-show/booking concurrency matrix is explicit and
   validated as a contract; database race rows remain infrastructure-backed.
 - Deterministic discovery benchmarks cover 10,000 and 100,000 records. The
-  portable baseline reports p50/p95/max; PostGIS/GiST is deliberately marked
-  `not-run` until a PostGIS-enabled staging database exists.
+  portable baseline and database runner report p50/p95/p99/max with bounded
+  concurrency and failure gates; a separate density check reports selected
+  market supply by radius and category. PostGIS/GiST remains deliberately
+  skipped until a PostGIS-enabled staging database has the required geography
+  GiST index.
 - Operational checks verify encrypted backup, checksum and same-database
   restore guards, required alerts, and absence of Bookly runtime references.
 
 ## Verification completed locally
 
-- `npm --prefix server run test:unit` — 177 files, 538 tests passed.
+- `npm --prefix server run test:unit` — 177 files, 539 tests passed.
 - `npm --prefix server run build` — passed.
 - `npm run build` — Next.js production build passed.
 - `npm run lint` — passed.
 - `npm run check:api-contract` and `npm run check:api-parity` — passed.
 - `npm run test:ops-harness` — passed.
-- Synthetic benchmark (compiled Node runner): 10k p95 1.8 ms; 100k p95
-  21.3 ms on the local machine.
+- Synthetic benchmark (compiled Node runner): 10k p95 2.3 ms; 100k p95
+  19.8 ms on the local machine.
 
 ## Release gates requiring infrastructure
 

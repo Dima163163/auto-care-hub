@@ -76,6 +76,11 @@ describe('getApiErrorMessage', () => {
         ).toBe('Соединение прервано. Проверьте интернет и попробуйте еще раз.')
     })
 
+    it('localizes an expired session even when the server only returns HTTP 401', () => {
+        expect(getApiErrorMessage({ status: 401 }, 'Fallback message', 'ru')).toBe('Сессия истекла')
+        expect(getApiErrorMessage({ status: 401 }, 'Fallback message', 'en')).toBe('Your session has expired')
+    })
+
     it('returns fallback message when API message is not a string', () => {
         const error = {
             data: {
@@ -184,6 +189,8 @@ describe('getApiErrorMessage', () => {
         [{ data: { code: 'OFFLINE' } }, 'offline'],
         [{ data: { code: 'FORBIDDEN' } }, 'permission-denied'],
         [{ status: 403 }, 'permission-denied'],
+        [{ data: { code: 'SESSION_EXPIRED' } }, 'session-expired'],
+        [{ status: 401 }, 'session-expired'],
         [{ data: { code: 'ACCOUNT_SUSPENDED' } }, 'suspended'],
         [{ status: 423 }, 'suspended'],
         [{ data: { code: 'STALE_DATA' } }, 'stale'],

@@ -136,7 +136,7 @@ const common = { zh: {
         switchToLightTheme: '切换到浅色主题', notProvided: '未提供', tryAgainLater: '请稍后重试。', retry: '重试',
     } } as const
 
-const navigation = { zh: { home: '首页', features: '功能', cabinets: '房间', owners: '面向房主', pricing: '价格', about: '关于我们', profile: '个人资料', myBookings: '我的预订', favorites: '收藏', notifications: '通知', ownerDashboard: '房主工作台', ownerCabinets: '我的房间', ownerBookings: '预订', ownerServices: '服务', adminDashboard: '管理后台', adminUsers: '用户', adminOwners: '房主', adminCabinets: '房间', adminReviews: '评价', adminAuditLogs: '审计日志', ownerDashboardShort: '工作台', ownerCalendar: '日历' } } as const
+const navigation = { zh: { home: '首页', features: '功能', cabinets: '房间', services: '汽车服务', owners: '面向房主', pricing: '价格', about: '关于我们', profile: '个人资料', myBookings: '我的预订', favorites: '收藏', notifications: '通知', ownerDashboard: '房主工作台', ownerCabinets: '我的房间', ownerBookings: '预订', ownerServices: '服务', adminDashboard: '管理后台', adminUsers: '用户', adminOwners: '房主', adminCabinets: '房间', adminReviews: '评价', adminAuditLogs: '审计日志', ownerDashboardShort: '工作台', ownerCalendar: '日历' } } as const
 
 const auth = { zh: { signIn: '登录', logOut: '退出登录', createAccount: '创建账户', welcomeBack: '欢迎回来', signInTitle: '登录 AutoCare Hub', signInToContinue: '请登录后继续。', email: '电子邮箱', password: '密码', signingIn: '正在登录...', failedToSignIn: '登录失败。', alreadyHaveAccount: '已有账户？', forgotPasswordLink: '忘记密码？' } } as const
 

@@ -39,6 +39,7 @@ import {
 } from './automotive/provider-membership.entity.js'
 import { AutomotiveProviderInvitationEntity } from './automotive/provider-invitation.entity.js'
 import { AutoCareProviderDailyMetricEntity } from './automotive/provider-daily-metric.entity.js'
+import { AutoCareCapacityResourceEntity, AutoCareCapacityReservationEntity } from './automotive/capacity-resource.entity.js'
 import { AutomotiveProviderChangeRequestEntity } from './automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestEntity } from './automotive/catalog-gap-request.entity.js'
 import { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
@@ -105,6 +106,8 @@ export const entities = [
     AutomotiveProviderMembershipEntity,
     AutomotiveProviderInvitationEntity,
     AutoCareProviderDailyMetricEntity,
+    AutoCareCapacityResourceEntity,
+    AutoCareCapacityReservationEntity,
     AutomotiveProviderChangeRequestEntity,
     AutomotiveCatalogGapRequestEntity,
     AutomotiveProviderFavoriteEntity,
@@ -135,6 +138,12 @@ export const entities = [
 
 export { BookingEntity } from './booking/booking.entity.js'
 export { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
+export {
+    AutoCareCapacityResourceEntity,
+    AutoCareCapacityResourceType,
+    AutoCareCapacityReservationEntity,
+    AutoCareCapacityReservationStatus,
+} from './automotive/capacity-resource.entity.js'
 export {
     AutomotiveProviderChangeRequestEntity,
     AutomotiveProviderChangeRequestKind,

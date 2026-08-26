@@ -54,4 +54,28 @@ describe('auto care communication settings', () => {
         expect(() => ownerAutoCareProviderSchema.parse({ ...provider, communicationMode: 'phone_only' })).toThrow()
         expect(ownerAutoCareProviderSchema.parse({ ...provider, chatEnabled: false, communicationMode: 'phone_only', responseWindowMinutes: null }).communicationMode).toBe('phone_only')
     })
+
+    it('accepts opaque private document references and rejects public document URLs', () => {
+        const provider = {
+            ...base,
+            name: 'Documented Garage',
+            marketId: '00000000-0000-4000-8000-000000000001',
+            address: 'Samara, Lenina 1',
+            hours: 'Mon-Sun 09:00-20:00',
+            yearsActive: 1,
+            staffCount: 1,
+            isMultibrand: true,
+            brandSpecializations: [],
+            amenityIds: [],
+        }
+        const parsed = ownerAutoCareProviderSchema.parse({
+            ...provider,
+            documents: [{ label: 'Лицензия', reference: 'private://providers/docs/license.pdf', expiresAt: '2026-12-01T00:00:00Z' }],
+        })
+        expect(parsed.documents).toHaveLength(1)
+        expect(() => ownerAutoCareProviderSchema.parse({
+            ...provider,
+            documents: [{ label: 'Лицензия', reference: 'https://example.com/license.pdf' }],
+        })).toThrow()
+    })
 })

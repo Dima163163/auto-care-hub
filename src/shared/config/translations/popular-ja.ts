@@ -136,7 +136,7 @@ const common = { ja: {
         switchToLightTheme: 'ライトテーマに切り替え', notProvided: '未入力', tryAgainLater: '後でもう一度お試しください。', retry: '再試行',
     } } as const
 
-const navigation = { ja: { home: 'ホーム', features: '機能', cabinets: 'キャビネット', owners: 'オーナー向け', pricing: '料金', about: '概要', profile: 'プロフィール', myBookings: '予約一覧', favorites: 'お気に入り', notifications: '通知', ownerDashboard: 'オーナーダッシュボード', ownerCabinets: 'マイキャビネット', ownerBookings: '予約', ownerServices: 'サービス', adminDashboard: '管理ダッシュボード', adminUsers: 'ユーザー', adminOwners: 'オーナー', adminCabinets: 'キャビネット', adminReviews: 'レビュー', adminAuditLogs: '監査ログ', ownerDashboardShort: 'ダッシュボード', ownerCalendar: 'カレンダー' } } as const
+const navigation = { ja: { home: 'ホーム', features: '機能', cabinets: 'キャビネット', services: '自動車サービス', owners: 'オーナー向け', pricing: '料金', about: '概要', profile: 'プロフィール', myBookings: '予約一覧', favorites: 'お気に入り', notifications: '通知', ownerDashboard: 'オーナーダッシュボード', ownerCabinets: 'マイキャビネット', ownerBookings: '予約', ownerServices: 'サービス', adminDashboard: '管理ダッシュボード', adminUsers: 'ユーザー', adminOwners: 'オーナー', adminCabinets: 'キャビネット', adminReviews: 'レビュー', adminAuditLogs: '監査ログ', ownerDashboardShort: 'ダッシュボード', ownerCalendar: 'カレンダー' } } as const
 
 const auth = { ja: { signIn: 'ログイン', logOut: 'ログアウト', createAccount: 'アカウントを作成', welcomeBack: 'おかえりなさい', signInTitle: 'AutoCare Hubにログイン', signInToContinue: '続行するにはログインしてください。', email: 'メールアドレス', password: 'パスワード', signingIn: 'ログイン中...', failedToSignIn: 'ログインできませんでした。', alreadyHaveAccount: 'アカウントをお持ちですか？', forgotPasswordLink: 'パスワードをお忘れですか？' } } as const
 

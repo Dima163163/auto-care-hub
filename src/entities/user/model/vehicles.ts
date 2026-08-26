@@ -14,6 +14,8 @@ export type ClientVehicle = {
     horsepower: number | null
     color: string
     vin: string | null
+    licensePlate: string | null
+    internalNumber: string | null
     imageUrl: string
     isPrimary: boolean
     createdAt: string

@@ -77,6 +77,7 @@ function formatReviewDate(value: string) {
 export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile, reviewSummary?: AutoCareApiProviderReviews): ProviderProfile {
     return {
         id: profile.id,
+        status: profile.status,
         locationId: profile.location.id,
         name: profile.name,
         rating: reviewSummary?.averageRating ?? profile.rating,
@@ -130,5 +131,9 @@ export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile, 
         callbackEnabled: profile.callbackEnabled ?? true,
         requestPhotosEnabled: profile.requestPhotosEnabled ?? true,
         publicContactNote: profile.publicContactNote ?? null,
+        timezone: profile.location.timezone,
+        weeklySchedule: profile.location.weeklySchedule,
+        blackoutDates: profile.location.blackoutDates,
+        appointmentCapacity: profile.location.appointmentCapacity,
     }
 }

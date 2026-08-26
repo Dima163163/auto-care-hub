@@ -1,4 +1,5 @@
 import { ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
+import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 
 export type RankingCalibrationSnapshot = {
     providerId: string
@@ -9,6 +10,7 @@ export type RankingCalibrationSnapshot = {
 export type RankingCalibrationRequest = {
     providerId: string
     status: ServiceRequestStatus
+    completedAt?: Date | null
     clientConfirmedAt: Date | null
     providerConfirmedAt: Date | null
 }
@@ -78,7 +80,7 @@ export function buildRankingCalibrationReport(input: {
     const confirmedByProvider = new Map<string, number>()
     const noShowByProvider = new Map<string, number>()
     for (const request of input.requests) {
-        if (request.status === ServiceRequestStatus.Closed && request.clientConfirmedAt && request.providerConfirmedAt) {
+        if (isVerifiedCompletedVisit(request)) {
             confirmedByProvider.set(request.providerId, (confirmedByProvider.get(request.providerId) ?? 0) + 1)
         }
         if (request.status === ServiceRequestStatus.NoShow) {

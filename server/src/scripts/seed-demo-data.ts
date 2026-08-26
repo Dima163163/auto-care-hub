@@ -138,6 +138,14 @@ async function seedDemoData() {
             role: UserRole.Owner,
         }, passwordHash)
 
+        // Provider team members use the same base account role as owners.
+        // Their actual workspace access is constrained by a branch membership.
+        await upsertDemoUser({
+            name: DEMO_USERS.staff.name,
+            email: DEMO_USERS.staff.email,
+            role: UserRole.Owner,
+        }, passwordHash)
+
         await upsertDemoUser({
             name: DEMO_USERS.admin.name,
             email: DEMO_USERS.admin.email,

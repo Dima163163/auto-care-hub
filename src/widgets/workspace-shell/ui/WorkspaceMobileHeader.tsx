@@ -1,4 +1,4 @@
-import { Bell, CarFront, Menu, X } from 'lucide-react'
+import { Bell, Menu, X } from 'lucide-react'
 import { Link } from 'react-router'
 import { useEffect, useRef, useState } from 'react'
 
@@ -56,16 +56,6 @@ export function WorkspaceMobileHeader({ role }: WorkspaceMobileHeaderProps) {
             </Link>
 
             <div ref={menuRef} className="relative flex min-w-0 items-center gap-2">
-                {role === 'owner' && (
-                    <Link
-                        to={ROUTES.ownerAutoCareProviders}
-                        className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/85 transition-colors hover:bg-primary-foreground/15 hover:text-primary"
-                        aria-label={t('autocare.ownerProvidersTitle')}
-                        title={t('autocare.ownerProvidersTitle')}
-                    >
-                        <CarFront className="size-4" aria-hidden="true" />
-                    </Link>
-                )}
                 <button
                     type="button"
                     className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/85 transition-colors hover:bg-primary-foreground/15 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

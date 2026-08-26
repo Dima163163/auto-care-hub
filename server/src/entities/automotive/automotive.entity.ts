@@ -205,6 +205,9 @@ export class AutomotiveServiceOfferingEntity {
     @Column({ type: 'integer', nullable: true }) priceToMinor!: number | null
     @Column({ type: 'text' }) currencyCode!: string
     @Column({ type: 'integer' }) durationMinutes!: number
+    /** Resource requirements are evaluated atomically when a visit is confirmed. */
+    @Column('text', { array: true, default: () => "'{}'" }) requiredResourceTypes!: string[]
+    @Column('uuid', { array: true, default: () => "'{}'" }) requiredResourceIds!: string[]
     @Column({ type: 'jsonb', default: () => "'[]'" }) inclusions!: string[]
     @Column({ type: 'text', nullable: true }) warrantyText!: string | null
     @Column({ type: 'boolean', default: true }) active!: boolean

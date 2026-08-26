@@ -11,6 +11,7 @@ type RequestFormProps = {
     providerId: string
     locationId: string
     offeringId: string
+    initialVehicleId?: string | null
     initialVehicle?: RequestFormPayload['vehicleSnapshot']
     initialContact?: RequestFormPayload['contactSnapshot']
     onSubmit: (payload: RequestFormPayload) => void
@@ -18,11 +19,23 @@ type RequestFormProps = {
     errorMessage?: string
 }
 
-type EditableVehicle = { make: string; model: string; year: number }
+type EditableVehicle = {
+    make: string
+    model: string
+    year: number
+    fuelType?: string
+    engineDisplacement?: number | null
+    horsepower?: number | null
+    color?: string
+    licensePlate?: string | null
+    internalNumber?: string | null
+    vin?: string | null
+}
 
 export type RequestFormPayload = {
     preferredAt: string
-    vehicleSnapshot: { make: string; model: string; year: number } | null
+    vehicleSnapshot: EditableVehicle | null
+    vehicleId: string | null
     contactSnapshot: { name: string; email: string; phone: string }
     note: string | null
     files: File[]
@@ -30,7 +43,7 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, initialVehicle, initialContact, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, initialVehicle, initialVehicleId = null, initialContact, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
     const initialDate = searchParams.get('date') ?? ''
@@ -39,6 +52,7 @@ export function RequestForm({ providerId, locationId, offeringId, initialVehicle
     const [selectedTime, setSelectedTime] = useState(searchParams.get('time') ?? '')
     const [contactSnapshot, setContactSnapshot] = useState(initialContact ?? { name: '', phone: '', email: '' })
     const [vehicleSnapshot, setVehicleSnapshot] = useState<EditableVehicle>(initialVehicle ?? { make: '', model: '', year: new Date().getFullYear() })
+    const [vehicleId] = useState<string | null>(initialVehicleId)
     const [files, setFiles] = useState<File[]>([])
     const [note, setNote] = useState('')
     const availabilityDate = customDate || toDateInputValue(getFutureDate(Math.max(appointmentDates.indexOf(selectedDate), 0)))
@@ -55,7 +69,8 @@ export function RequestForm({ providerId, locationId, offeringId, initialVehicle
         date.setHours(hours, minutes, 0, 0)
         onSubmit({
             preferredAt: date.toISOString(),
-            vehicleSnapshot: vehicleSnapshot.make.trim() && vehicleSnapshot.model.trim() && vehicleSnapshot.year > 0 ? { make: vehicleSnapshot.make.trim(), model: vehicleSnapshot.model.trim(), year: vehicleSnapshot.year } : null,
+            vehicleId,
+            vehicleSnapshot: vehicleSnapshot.make.trim() && vehicleSnapshot.model.trim() && vehicleSnapshot.year > 0 ? { ...vehicleSnapshot, make: vehicleSnapshot.make.trim(), model: vehicleSnapshot.model.trim() } : null,
             contactSnapshot,
             note: note.trim() || null,
             files,
@@ -123,14 +138,14 @@ function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, ava
     )
 }
 
-function VehicleAndContacts({ values, onChange, vehicle, onVehicleChange }: { values: { name: string; phone: string; email: string }; onChange: (values: { name: string; phone: string; email: string }) => void; vehicle: { make: string; model: string; year: number }; onVehicleChange: (vehicle: { make: string; model: string; year: number }) => void }) {
+function VehicleAndContacts({ values, onChange, vehicle, onVehicleChange }: { values: { name: string; phone: string; email: string }; onChange: (values: { name: string; phone: string; email: string }) => void; vehicle: EditableVehicle; onVehicleChange: (vehicle: EditableVehicle) => void }) {
     const { t } = useTranslation()
     const [isEditingVehicle, setIsEditingVehicle] = useState(false)
 
     return (
         <section className="grid gap-5 border-t border-border pt-5">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-border p-4">
-                <div className="min-w-0 flex-1"><p className="text-xs font-bold text-muted-foreground">{t('autocare.providerVehicleLabel')}</p>{isEditingVehicle ? <div className="mt-2 grid gap-2 sm:grid-cols-3"><input value={vehicle.make} onChange={(event) => onVehicleChange({ ...vehicle, make: event.target.value })} placeholder={t('autocare.vehicleMake')} aria-label={t('autocare.vehicleMake')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /><input value={vehicle.model} onChange={(event) => onVehicleChange({ ...vehicle, model: event.target.value })} placeholder={t('autocare.vehicleModel')} aria-label={t('autocare.vehicleModel')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /><input type="number" min="1900" max={new Date().getFullYear() + 1} value={vehicle.year} onChange={(event) => onVehicleChange({ ...vehicle, year: Number(event.target.value) })} placeholder={t('autocare.vehicleYear')} aria-label={t('autocare.vehicleYear')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /></div> : <><p className="mt-1 text-sm font-black text-foreground">{vehicle.make && vehicle.model ? `${vehicle.make} ${vehicle.model}` : t('autocare.providerVehicleValue')}</p><p className="mt-1 text-xs font-medium text-muted-foreground">{vehicle.make && vehicle.model ? String(vehicle.year) : t('autocare.providerVehicleDetails')}</p></>}</div>
+                <div className="min-w-0 flex-1"><p className="text-xs font-bold text-muted-foreground">{t('autocare.providerVehicleLabel')}</p>{isEditingVehicle ? <div className="mt-2 grid gap-2 sm:grid-cols-3"><input value={vehicle.make} onChange={(event) => onVehicleChange({ ...vehicle, make: event.target.value })} placeholder={t('autocare.vehicleMake')} aria-label={t('autocare.vehicleMake')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /><input value={vehicle.model} onChange={(event) => onVehicleChange({ ...vehicle, model: event.target.value })} placeholder={t('autocare.vehicleModel')} aria-label={t('autocare.vehicleModel')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /><input type="number" min="1900" max={new Date().getFullYear() + 1} value={vehicle.year} onChange={(event) => onVehicleChange({ ...vehicle, year: Number(event.target.value) })} placeholder={t('autocare.vehicleYear')} aria-label={t('autocare.vehicleYear')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /></div> : <><p className="mt-1 text-sm font-black text-foreground">{vehicle.make && vehicle.model ? `${vehicle.make} ${vehicle.model}` : t('autocare.providerVehicleValue')}</p><p className="mt-1 text-xs font-medium text-muted-foreground">{vehicle.make && vehicle.model ? String(vehicle.year) : t('autocare.providerVehicleDetails')}</p>{vehicle.make && vehicle.model && (vehicle.licensePlate || vehicle.internalNumber || vehicle.vin) ? <p className="mt-1 text-[11px] font-semibold text-muted-foreground">{[vehicle.licensePlate, vehicle.internalNumber, vehicle.vin ? `VIN ${vehicle.vin}` : null].filter(Boolean).join(' · ')}</p> : null}</>}</div>
                 <button type="button" onClick={() => setIsEditingVehicle((value) => !value)} className="text-xs font-black text-primary">{t('autocare.requestChangeVehicle')}</button>
             </div>
                 <div><div className="flex items-center justify-between gap-3"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.requestContactTitle')}</h2><span className="inline-flex items-center gap-1.5 text-xs font-bold text-status-success-foreground"><Check className="size-3.5" />{t('autocare.requestDataSecure')}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><input required value={values.name} onChange={(event) => onChange({ ...values, name: event.target.value })} aria-label={t('autocare.requestNamePlaceholder')} placeholder={t('autocare.requestNamePlaceholder')} className="h-11 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" /><input required value={values.phone} onChange={(event) => onChange({ ...values, phone: event.target.value })} aria-label={t('autocare.requestPhonePlaceholder')} placeholder={t('autocare.requestPhonePlaceholder')} className="h-11 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" /><input type="email" required value={values.email} onChange={(event) => onChange({ ...values, email: event.target.value })} aria-label={t('autocare.requestEmailPlaceholder')} placeholder={t('autocare.requestEmailPlaceholder')} className="h-11 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" /></div></div>

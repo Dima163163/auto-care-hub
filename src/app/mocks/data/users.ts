@@ -70,6 +70,25 @@ export const mockUsers: User[] = [
         createdAt: '2026-01-05T09:15:00.000Z',
     },
     {
+        // Team members keep a normal account. Branch membership, rather than
+        // this global role, decides their provider and permission scope.
+        id: 'user-staff-proservice-1',
+        name: 'Илья Орлов',
+        email: 'ilya.orlov@proservice.test',
+        phone: '+7 999 321-45-67',
+        role: 'owner',
+        status: 'active',
+        avatarUrl: null,
+        provider: 'email',
+        locale: 'ru',
+        emailVerifiedAt: '2026-08-20T08:00:00.000Z',
+        emailNotifications: true,
+        bookingEmailNotifications: true,
+        preferredCity: 'Москва',
+        preferredCategories: [],
+        createdAt: '2026-08-20T08:00:00.000Z',
+    },
+    {
         id: 'user-admin-1',
         name: 'Admin User',
         email: 'admin@autocarehub.test',

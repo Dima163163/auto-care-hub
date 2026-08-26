@@ -12,6 +12,7 @@ describe('loading skeletons', () => {
         const region = screen.getByRole('status', { name: 'Loading services' })
 
         expect(region).toHaveAttribute('aria-busy', 'true')
+        expect(region.querySelector('.autocare-results-loading-surface')).not.toBeNull()
         expect(region.querySelectorAll('.animate-pulse')).not.toHaveLength(0)
     })
 
@@ -22,6 +23,13 @@ describe('loading skeletons', () => {
 
         expect(map).toHaveClass('autocare-map-skeleton')
         expect(map.children).toHaveLength(0)
+    })
+
+    it('reserves title and description space above the results grid', () => {
+        render(<AutoCareResultsSkeleton label="Loading services" />)
+
+        expect(screen.getByTestId('autocare-results-title-skeleton')).toBeVisible()
+        expect(screen.getByTestId('autocare-results-description-skeleton')).toBeVisible()
     })
 
     it('keeps discovery filters visible while the route is loading', () => {

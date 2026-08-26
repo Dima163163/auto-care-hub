@@ -42,6 +42,18 @@ describe('AutoCare mock catalog assets', () => {
         ]))
     })
 
+    it('covers different service catalogs so service filtering is observable', () => {
+        const catalogs = AUTOMOTIVE_MOCK_PROVIDERS.map((provider) => new Set(provider.offerings.map((offering) => offering.serviceSlug)))
+        const offeredServices = new Set(AUTOMOTIVE_MOCK_PROVIDERS.flatMap((provider) => provider.offerings.map((offering) => offering.serviceSlug)))
+
+        expect(AUTOMOTIVE_MOCK_SERVICES.every((service) => offeredServices.has(service.slug))).toBe(true)
+        expect(catalogs.some((catalog) => catalog.has('tire-service'))).toBe(true)
+        expect(catalogs.some((catalog) => catalog.has('air-conditioning'))).toBe(true)
+        expect(catalogs.some((catalog) => catalog.has('detailing'))).toBe(true)
+        expect(catalogs.some((catalog) => !catalog.has('tire-service'))).toBe(true)
+        expect(catalogs.some((catalog) => !catalog.has('detailing'))).toBe(true)
+    })
+
     it('falls back when an image is missing or unsafe', () => {
         expect(resolveMockAssetUrl(undefined, '/tmp/does-not-exist')).toBe(AUTOCARE_MOCK_FALLBACK_IMAGE)
         expect(resolveMockAssetUrl('https://example.com/image.webp', '/tmp/does-not-exist')).toBe(AUTOCARE_MOCK_FALLBACK_IMAGE)

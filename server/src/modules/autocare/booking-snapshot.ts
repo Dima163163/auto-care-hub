@@ -1,4 +1,4 @@
-import type { AutoCareBookingSnapshotResponse, AutoCareQuoteLineItemResponse } from './autocare.types.js'
+import type { AutoCareBookingSnapshotResponse, AutoCareQuoteLineItemResponse, AutoCareRequestSnapshot } from './autocare.types.js'
 
 export type AutoCareBookingSnapshotInput = {
     requestId: string
@@ -12,6 +12,8 @@ export type AutoCareBookingSnapshotInput = {
     providerId: string
     locationId: string
     createdAt: string
+    vehicleId?: string | null
+    vehicleSnapshot?: AutoCareRequestSnapshot | null
 }
 
 export function createAutoCareBookingSnapshot(input: AutoCareBookingSnapshotInput): AutoCareBookingSnapshotResponse {

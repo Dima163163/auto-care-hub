@@ -14,6 +14,8 @@ import {
     providerPreviews,
     supportsVehicleBrand,
     type AutoCareApiProvider,
+    type AutoCareCapacityReservation,
+    type AutoCareCapacityResource,
 } from '@/entities/automotive-service'
 import { emitMockAutoCareChatEvent, emitMockServiceChatEvent, type ServiceChatMessage } from '@/entities/automotive-service/lib/service-chat'
 
@@ -26,7 +28,7 @@ import {
 } from './data'
 import { mockSession, clearMockSession, setMockSession } from './session'
 import { parseMockJson } from './parseMockJson'
-import { isMockEmpty, mockScenarioResponse } from './mock-scenario'
+import { getMockScenario, isMockEmpty, isMockPartial, mockScenarioResponse } from './mock-scenario'
 
 const loginRequestSchema = z.object({
     email: z.string().email(),
@@ -95,6 +97,8 @@ const mockVehiclesByUser = new Map<string, ClientVehicle[]>([
         horsepower: 249,
         color: 'black',
         vin: 'WBA1234567890ABCD',
+        licensePlate: 'А123ВС163',
+        internalNumber: 'AC-001',
         imageUrl: getVehicleImage('bmw', 'X5'),
         isPrimary: true,
         createdAt: '2026-05-24T10:00:00.000Z',
@@ -462,6 +466,10 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
             address: provider.id === 'proservice-moscow' ? 'Москва, ул. Льва Толстого, 18' : 'Москва, Комсомольский пр-т, 45',
             zoneId: null,
             hours: 'Пн–Вс: 08:00–21:00',
+            timezone: 'Europe/Moscow',
+            appointmentCapacity: provider.id === 'formula-moscow' ? 1 : 6,
+            weeklySchedule: { mon: { open: '08:00', close: '21:00', closed: false }, tue: { open: '08:00', close: '21:00', closed: false }, wed: { open: '08:00', close: '21:00', closed: false }, thu: { open: '08:00', close: '21:00', closed: false }, fri: { open: '08:00', close: '21:00', closed: false }, sat: { open: '09:00', close: '18:00', closed: false }, sun: { open: '09:00', close: '18:00', closed: false } },
+            blackoutDates: [],
             latitude: provider.mapPosition?.[0] ?? 55.75,
             longitude: provider.mapPosition?.[1] ?? 37.61,
         },
@@ -481,6 +489,77 @@ type OwnerAutoCareProviderMock = AutoCareApiProvider & {
     servicePrices: Partial<Record<string, number>>
 }
 const ownerAutoCareProviders: OwnerAutoCareProviderMock[] = autoCareProviders.slice(0, 2).map((provider) => ({ ...provider }))
+
+// Resource-level capacity mirrors the real API contract so the owner calendar
+// can be exercised in mock mode as well.  Defaults are intentionally created
+// per branch (not per business) to make branch-scoped behaviour observable.
+const mockCapacityResources = new Map<string, AutoCareCapacityResource[]>()
+for (const provider of ownerAutoCareProviders) {
+    const now = new Date().toISOString()
+    const specialistCount = Math.max(1, Math.min(provider.staffCount, 4))
+    const bayCount = Math.max(1, Math.min(provider.location.appointmentCapacity ?? 1, 4))
+    const defaults: AutoCareCapacityResource[] = [
+        ...Array.from({ length: specialistCount }, (_, index) => ({
+            id: `mock-resource-${provider.id}-specialist-${index + 1}`,
+            providerId: provider.id,
+            locationId: provider.location.id,
+            type: 'specialist' as const,
+            name: `Специалист ${index + 1}`,
+            capacity: 1,
+            active: true,
+            metadata: {},
+            createdAt: now,
+            updatedAt: now,
+        })),
+        ...Array.from({ length: bayCount }, (_, index) => ({
+            id: `mock-resource-${provider.id}-bay-${index + 1}`,
+            providerId: provider.id,
+            locationId: provider.location.id,
+            type: 'bay' as const,
+            name: `Пост ${index + 1}`,
+            capacity: 1,
+            active: true,
+            metadata: {},
+            createdAt: now,
+            updatedAt: now,
+        })),
+    ]
+    mockCapacityResources.set(provider.id, defaults)
+}
+
+function getMockCapacityResources(providerId: string, locationId?: string) {
+    const resources = mockCapacityResources.get(providerId) ?? []
+    return locationId ? resources.filter((resource) => resource.locationId === locationId) : resources
+}
+
+function getMockCapacityReservations(providerId: string, locationId?: string, from?: string, to?: string) {
+    const resources = getMockCapacityResources(providerId, locationId)
+    const byType = new Map(resources.map((resource) => [resource.type, resource]))
+    const requests = mockAutoCareServiceRequests.filter((request) => request.providerId === providerId && request.status === 'accepted' && Boolean(request.preferredAt) && (!locationId || request.locationId === locationId))
+    const reservations: AutoCareCapacityReservation[] = []
+    for (const request of requests) {
+        if (!request.preferredAt) continue
+        const startsAt = new Date(request.preferredAt)
+        const endsAt = new Date(startsAt.getTime() + 60 * 60_000)
+        if (from && endsAt <= new Date(from)) continue
+        if (to && startsAt >= new Date(to)) continue
+        const resource = byType.get('bay') ?? resources[0]
+        if (!resource) continue
+        reservations.push({
+            id: `mock-reservation-${request.id}-${resource.id}`,
+            requestId: request.id,
+            resourceId: resource.id,
+            providerId,
+            locationId: request.locationId,
+            startsAt: startsAt.toISOString(),
+            endsAt: endsAt.toISOString(),
+            status: 'active',
+            releasedAt: null,
+            createdAt: request.createdAt,
+        })
+    }
+    return reservations
+}
 const mockAutoCareFavorites = new Map<string, Set<string>>([
     ['user-client-1', new Set(['api-proservice-moscow'])],
 ])
@@ -523,6 +602,7 @@ type MockAutoCareServiceRequest = {
         priceType: string
     } | null
     preferredAt: string | null
+    vehicleId?: string | null
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
@@ -544,6 +624,8 @@ type MockAutoCareServiceRequest = {
         locationId: string
         status: 'confirmed'
         createdAt: string
+        vehicleId?: string | null
+        vehicleSnapshot?: Record<string, string | number | null> | null
     } | null
     idempotencyKey: string | null
     idempotencyFingerprint: string
@@ -577,12 +659,37 @@ type MockAutoCareServiceRequest = {
 
 const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
     {
-        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, serviceDescription: 'Замена масла и масляного фильтра', offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021 }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, quoteHistory: [], idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
+        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, serviceDescription: 'Замена масла и масляного фильтра', offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleId: 'mock-vehicle-1', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel', engineDisplacement: 3, horsepower: 249, color: 'Черный', licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, quoteHistory: [], idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
     },
     {
         id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, serviceDescription: 'Диагностика тормозной системы', offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
     },
 ]
+mockAutoCareServiceRequests.push({
+    ...mockAutoCareServiceRequests[0]!,
+    id: 'client-request-closed',
+    status: 'closed',
+    preferredAt: '2026-08-10T09:30:00.000Z',
+    vehicleId: 'mock-vehicle-1',
+    vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel', engineDisplacement: 3, horsepower: 249, color: 'Черный', licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
+    completedAt: '2026-08-10T11:00:00.000Z',
+    booking: {
+        requestId: 'client-request-closed',
+        quoteVersion: 1,
+        amountMinor: 290_000,
+        currencyCode: 'RUB',
+        lineItems: [],
+        scheduledAt: '2026-08-10T09:30:00.000Z',
+        timezone: 'Europe/Moscow',
+        serviceSlug: 'oil-change',
+        providerId: 'api-proservice-moscow',
+        locationId: 'location-proservice-moscow',
+        status: 'confirmed',
+        createdAt: '2026-08-09T12:00:00.000Z',
+        vehicleId: 'mock-vehicle-1',
+        vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
+    },
+})
 const mockAutoCareMessages = new Map<string, ServiceChatMessage[]>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
 const mockAutoCareChatAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
@@ -776,15 +883,35 @@ type MockAutoCareCatalogGapRequest = {
 const mockAutoCareProviderInvitations: MockAutoCareProviderInvitation[] = []
 const mockAutoCareProviderChangeRequests: MockAutoCareProviderChangeRequest[] = []
 const mockAutoCareCatalogGapRequests: MockAutoCareCatalogGapRequest[] = []
-const mockAutoCareProviderMemberships = new Map<string, Array<{ id: string; providerId: string; userId: string; locationId: string | null; role: 'owner' | 'manager' | 'staff'; status: 'active' | 'revoked'; createdAt: string }>>()
+type MockAutoCareProviderMembership = {
+    id: string
+    providerId: string
+    userId: string
+    locationId: string | null
+    role: 'owner' | 'manager' | 'staff'
+    status: 'active' | 'revoked'
+    createdAt: string
+}
+
+const mockAutoCareProviderMemberships = new Map<string, MockAutoCareProviderMembership[]>([
+    ['api-proservice-moscow', [
+        { id: 'membership-owner-proservice', providerId: 'api-proservice-moscow', userId: 'user-owner-1', locationId: null, role: 'owner', status: 'active', createdAt: '2026-08-01T10:00:00.000Z' },
+        { id: 'membership-staff-proservice-moscow', providerId: 'api-proservice-moscow', userId: 'user-staff-proservice-1', locationId: 'location-proservice-moscow', role: 'staff', status: 'active', createdAt: '2026-08-20T08:00:00.000Z' },
+    ]],
+    ['api-autolux-moscow', [
+        { id: 'membership-owner-autolux', providerId: 'api-autolux-moscow', userId: 'user-owner-1', locationId: null, role: 'owner', status: 'active', createdAt: '2026-08-01T10:00:00.000Z' },
+    ]],
+])
 const mockAutoCareBonusPrograms = new Map<string, MockAutoCareBonusProgram>([
     ['api-proservice-moscow', { id: 'bonus-program-proservice', providerId: 'api-proservice-moscow', name: 'ProService Bonus', earnPercent: 5, maxEarnPointsPerVisit: null, expiresAfterDays: 365, active: true, createdAt: '2026-08-01T10:00:00.000Z', updatedAt: '2026-08-01T10:00:00.000Z' }],
 ])
 const mockAutoCareBonusAccounts: MockAutoCareBonusAccount[] = [{
-    id: 'bonus-account-client-proservice', clientId: 'user-client-1', providerId: 'api-proservice-moscow', balancePoints: 1450, earnedPoints: 1800, redeemedPoints: 350,
+    id: 'bonus-account-client-proservice', clientId: 'user-client-1', providerId: 'api-proservice-moscow', balancePoints: 1490, earnedPoints: 1800, redeemedPoints: 350,
     entries: [
-        { id: 'bonus-entry-1', type: 'earn', points: 1450, reason: 'Бонус за завершённый визит', requestId: null, expiresAt: '2027-08-01T10:00:00.000Z', createdAt: '2026-08-01T10:00:00.000Z' },
+        { id: 'bonus-entry-1', type: 'earn', points: 1800, reason: 'Бонус за завершённый визит', requestId: null, expiresAt: '2027-08-01T10:00:00.000Z', createdAt: '2026-08-01T10:00:00.000Z' },
         { id: 'bonus-entry-2', type: 'redeem', points: -350, reason: 'Списание при записи на услугу', requestId: null, expiresAt: null, createdAt: '2026-08-10T10:00:00.000Z' },
+        { id: 'bonus-entry-3', type: 'refund', points: 120, reason: 'Возврат бонусов после отмены записи', requestId: 'owner-request-2', expiresAt: '2027-08-15T10:00:00.000Z', createdAt: '2026-08-15T10:00:00.000Z' },
+        { id: 'bonus-entry-4', type: 'expire', points: -80, reason: 'Истёк срок действия бонусов', requestId: null, expiresAt: '2026-08-12T10:00:00.000Z', createdAt: '2026-08-12T10:00:00.000Z' },
     ],
 }]
 
@@ -805,6 +932,42 @@ function awardMockAutoCareBonus(item: MockAutoCareServiceRequest, actorId: strin
 
 function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
+}
+
+function getMockManagedProviderScopes(userId: string) {
+    return [...mockAutoCareProviderMemberships.entries()].flatMap(([providerId, memberships]) => {
+        const activeMemberships = memberships.filter((membership) => membership.userId === userId && membership.status === 'active')
+        if (!activeMemberships.length) return []
+        const providerWide = activeMemberships.some((membership) => membership.locationId === null)
+        return [{
+            providerId,
+            locationIds: providerWide ? null : activeMemberships.flatMap((membership) => membership.locationId ? [membership.locationId] : []),
+            roles: [...new Set(activeMemberships.map((membership) => membership.role))],
+        }]
+    })
+}
+
+function hasMockProviderLocationAccess(userId: string, providerId: string, locationId: string | null | undefined) {
+    return getMockManagedProviderScopes(userId).some((scope) => scope.providerId === providerId
+        && (scope.locationIds === null || (locationId !== null && locationId !== undefined && scope.locationIds.includes(locationId))))
+}
+
+function hasMockProviderRole(userId: string, providerId: string, allowedRoles: readonly MockAutoCareProviderMembership['role'][]) {
+    return getMockManagedProviderScopes(userId).some((scope) => scope.providerId === providerId
+        && scope.roles.some((role) => allowedRoles.includes(role)))
+}
+
+function toMockMemberResponse(membership: MockAutoCareProviderMembership) {
+    const user = mockUsers.find((candidate) => candidate.id === membership.userId)
+    return {
+        ...membership,
+        user: user ? {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatarUrl: user.avatarUrl,
+        } : null,
+    }
 }
 
 function toMockAutoCareFavorite(providerId: string, userId: string) {
@@ -1187,7 +1350,14 @@ function toClientReview(review: typeof mockReviews[number]) {
 }
 
 export const handlers = [
-    http.get('/api/auth/me', () => {
+    http.get('/api/auth/me', ({ request }) => {
+       if (getMockScenario(request) === 'expired-session') {
+           return HttpResponse.json(
+               { code: 'SESSION_EXPIRED', message: 'Mock session expired' },
+               { status: 401 },
+           )
+       }
+
        const currentUser = mockUsers.find(
            (user) => user.id === mockSession.currentUserId
        )
@@ -2462,7 +2632,9 @@ export const handlers = [
         if (scenario) return scenario
         if (isMockEmpty(request)) return HttpResponse.json({ items: [], nextCursor: null })
         const url = new URL(request.url)
-        const serviceId = url.searchParams.get('serviceId') ?? 'oil-change'
+        // No service filter means the catalog is unscoped: return every
+        // provider using a representative published offer below.
+        const serviceId = url.searchParams.get('serviceId') ?? ''
         const providerName = url.searchParams.get('providerName')?.trim().toLowerCase() ?? ''
         const radiusKm = Number(url.searchParams.get('radiusKm') ?? 25)
         const sort = url.searchParams.get('sort') ?? 'recommended'
@@ -2478,14 +2650,15 @@ export const handlers = [
         const brandId = url.searchParams.get('brandId') ?? ''
         const marketId = url.searchParams.get('marketId') ?? ''
         const zoneId = url.searchParams.get('zoneId') ?? ''
-        const definition = autoCareDefinitions.find((item) => item.slug === serviceId) ?? autoCareDefinitions[0]
         const items = autoCareProviders.map((provider, index) => ({
             provider,
-            offer: toAutoCareOffer(provider.id, definition?.slug ?? serviceId, provider.servicePrices?.[definition?.slug ?? serviceId] ?? providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType ?? definition?.priceType),
+            offer: serviceId
+                ? toAutoCareOffer(provider.id, serviceId, provider.servicePrices?.[serviceId] ?? providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType)
+                : provider.offers?.[0] ?? toAutoCareOffer(provider.id, provider.serviceIds?.[0] ?? autoCareDefinitions[0]?.slug ?? 'oil-change', providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType),
             distanceKm: providerPreviews[index]?.distance ? Number.parseFloat(providerPreviews[index]!.distance) : index + 1,
             nextSlot: providerPreviews[index]?.nextSlot ?? null,
         })).filter((item) => {
-            const hasService = item.provider.serviceIds?.includes(definition?.slug ?? serviceId) ?? true
+            const hasService = !serviceId || (item.provider.serviceIds?.includes(item.offer.serviceSlug) ?? true)
             const price = item.offer.priceFromMinor / 100
             const available = item.nextSlot?.toLowerCase().includes('today') ?? false
             const source = providerPreviews.find((preview) => `api-${preview.id}` === item.provider.id)
@@ -2496,7 +2669,7 @@ export const handlers = [
             const matchesMarket = !marketId || item.provider.location.marketId === marketId || providerMarket === requestedMarket
             const matchesZone = !zoneId || item.provider.location.zoneId === zoneId
             const matchesWarranty = !warrantyOnly || (source?.warrantyMonths ?? 0) > 0
-            const matchesPriceType = !priceType || source?.priceType === priceType
+            const matchesPriceType = !priceType || item.offer.priceType === priceType || source?.priceType === priceType
             const matchesProvider = !providerName || item.provider.name.toLowerCase().includes(providerName)
             return matchesProvider && hasService && matchesMarket && matchesZone && item.distanceKm <= radiusKm && price >= minPrice && price <= maxPrice && item.provider.rating >= minRating && (!availableToday || available) && (!verifiedOnly || item.provider.verified) && matchesWarranty && (!hasBonus || Boolean(item.provider.bonusSummary)) && matchesPriceType && matchesInclusion && matchesBrand
         })
@@ -2510,7 +2683,8 @@ export const handlers = [
             activity.impressions += 1
             mockAutoCareProviderActivity.set(item.provider.id, activity)
         })
-        return HttpResponse.json({ items, nextCursor: null })
+        const responseItems = isMockPartial(request) ? items.slice(0, Math.max(1, Math.ceil(items.length / 2))) : items
+        return HttpResponse.json({ items: responseItems, nextCursor: null, partial: isMockPartial(request) })
     }),
 
     http.get('/api/v1/favorites/providers', () => {
@@ -2604,7 +2778,7 @@ export const handlers = [
     http.post('/api/owner/broadcast-requests/:broadcastId/offers', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareBroadcastRequests.find((candidate) => candidate.id === params.broadcastId)
-        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (!user || user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as Record<string, unknown>
         const provider = ownerAutoCareProviders[0]
         const offer = { id: `broadcast-offer-${Date.now()}`, broadcastRequestId: item.id, providerId: provider.id, providerName: provider.name, locationId: provider.location.id, address: provider.location.address, offerSnapshot: body, status: 'pending', createdAt: new Date().toISOString() }
@@ -2740,12 +2914,13 @@ export const handlers = [
             locationId?: string
             offeringId?: string
             preferredAt?: string
+            vehicleId?: string | null
             vehicleSnapshot?: Record<string, string | number | null> | null
             contactSnapshot?: Record<string, string | number | null>
             note?: string | null
         }
         const idempotencyKey = request.headers.get('Idempotency-Key')
-        const fingerprint = JSON.stringify({ providerId: body.providerId, locationId: body.locationId, offeringId: body.offeringId, preferredAt: body.preferredAt, vehicleSnapshot: body.vehicleSnapshot ?? null, contactSnapshot: body.contactSnapshot, note: body.note ?? null })
+        const fingerprint = JSON.stringify({ providerId: body.providerId, locationId: body.locationId, offeringId: body.offeringId, preferredAt: body.preferredAt, vehicleId: body.vehicleId ?? null, vehicleSnapshot: body.vehicleSnapshot ?? null, contactSnapshot: body.contactSnapshot, note: body.note ?? null })
         if (idempotencyKey) {
             if (!/^[a-zA-Z0-9_-]{8,128}$/.test(idempotencyKey)) return HttpResponse.json({ message: 'Invalid Idempotency-Key.' }, { status: 400 })
             const existing = mockAutoCareServiceRequests.find((item) => item.clientId === user.id && item.idempotencyKey === idempotencyKey)
@@ -2790,6 +2965,7 @@ export const handlers = [
                 priceType: offer.priceType ?? definition.priceType,
             } : null,
             preferredAt: body.preferredAt,
+            vehicleId: body.vehicleId ?? null,
             vehicleSnapshot: body.vehicleSnapshot ?? null,
             contactSnapshot: body.contactSnapshot,
             note: body.note ?? null,
@@ -3006,7 +3182,7 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
-        const allowed = Boolean(item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
+        const allowed = Boolean(item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId && hasMockProviderLocationAccess(user.id, item.providerId, item.locationId))))
         if (!allowed || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const now = new Date().toISOString()
         const allMessages = mockAutoCareMessages.get(item.id) ?? []
@@ -3040,7 +3216,7 @@ export const handlers = [
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
-        const allowed = Boolean(item && (item.clientId === user?.id || (user?.role === 'owner' && provider?.id === item.providerId)))
+        const allowed = Boolean(item && (item.clientId === user?.id || (user?.role === 'owner' && provider?.id === item.providerId && hasMockProviderLocationAccess(user.id, item.providerId, item.locationId))))
         if (!user || !item || !allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { body?: string }
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
@@ -3065,7 +3241,7 @@ export const handlers = [
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
-        if (!user || user.role !== 'owner' || !item || provider?.id !== item.providerId) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (!user || user.role !== 'owner' || !item || provider?.id !== item.providerId || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { type?: 'discount' | 'alternative'; title?: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
         if (!body.type || !body.title?.trim() || (body.type === 'discount' && !body.discountPercent)) return HttpResponse.json({ message: 'Invalid service offer.' }, { status: 400 })
         const now = new Date().toISOString()
@@ -3103,7 +3279,7 @@ export const handlers = [
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
-        const allowed = Boolean(user && item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
+        const allowed = Boolean(user && item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId && hasMockProviderLocationAccess(user.id, item.providerId, item.locationId))))
         if (!allowed || !user || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
         if (!body.fileName || !body.contentType || !body.size || !body.contentBase64) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
@@ -3120,7 +3296,7 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
         const attachment = mockAutoCareAttachments.get(String(params.requestId))?.find((candidate) => candidate.id === params.attachmentId)
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
-        const allowed = Boolean(user && item && attachment && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)))
+        const allowed = Boolean(user && item && attachment && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId && hasMockProviderLocationAccess(user.id, item.providerId, item.locationId))))
         if (!allowed || !attachment) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })
         const [, encoded] = attachment.contentBase64.split(',', 2)
         const body = encoded ?? attachment.contentBase64
@@ -3164,7 +3340,7 @@ export const handlers = [
     http.post('/api/owner/service-requests/:requestId/reschedule', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
-        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (!user || user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json().catch(() => ({})) as { proposedAt?: string; reason?: string | null }
         const proposedAt = new Date(body.proposedAt ?? '')
         if (Number.isNaN(proposedAt.getTime()) || proposedAt.getTime() <= Date.now()) return HttpResponse.json({ message: 'The proposed visit time must be in the future.' }, { status: 400 })
@@ -3206,7 +3382,7 @@ export const handlers = [
     http.post('/api/owner/service-requests/:requestId/no-show', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
-        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (!user || user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         if (item.status === 'no_show') {
             const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
             return HttpResponse.json(response)
@@ -3227,7 +3403,7 @@ export const handlers = [
     http.post('/api/owner/service-requests/:requestId/complete', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
-        if (!user || user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (!user || user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         if (item.status === 'closed') {
             const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
             return HttpResponse.json(response)
@@ -3276,6 +3452,8 @@ export const handlers = [
                 locationId: item.locationId,
                 status: 'confirmed',
                 createdAt: acceptedAt,
+                vehicleId: item.vehicleId ?? null,
+                vehicleSnapshot: item.vehicleSnapshot,
             }
             : null
         item.updatedAt = acceptedAt
@@ -3307,7 +3485,9 @@ export const handlers = [
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (user.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view service requests.' }, { status: 403 })
-        const items = isMockEmpty(request) ? [] : mockAutoCareServiceRequests.filter((item) => autoCareProviders.some((provider) => provider.id === item.providerId)).map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
+        const items = isMockEmpty(request) ? [] : mockAutoCareServiceRequests
+            .filter((item) => hasMockProviderLocationAccess(user.id, item.providerId, item.locationId))
+            .map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
         return HttpResponse.json(items)
     }),
 
@@ -3315,7 +3495,7 @@ export const handlers = [
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         item.providerConfirmedAt ??= new Date().toISOString()
         item.status = 'accepted'
         item.updatedAt = new Date().toISOString()
@@ -3328,7 +3508,7 @@ export const handlers = [
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (user.role !== 'owner' || !item) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         if (item.status === 'accepted' || item.status === 'declined' || item.status === 'closed') return HttpResponse.json({ message: 'This service request cannot receive a new estimate.' }, { status: 409 })
         const body = await request.json() as { amountMinor?: number; currencyCode?: string; note?: string | null }
         const amountMinor = body.amountMinor
@@ -3352,30 +3532,84 @@ export const handlers = [
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
 
-        return HttpResponse.json(isMockEmpty(request) ? [] : ownerAutoCareProviders)
+        const scopes = getMockManagedProviderScopes(currentUser.id)
+        const providers = ownerAutoCareProviders.filter((provider) => scopes.some((scope) => scope.providerId === provider.id && (scope.locationIds === null || scope.locationIds.includes(provider.location.id))))
+        return HttpResponse.json(isMockEmpty(request) ? [] : providers)
+    }),
+
+    http.get('/api/owner/autocare-providers/:providerId/resources', ({ params, request }) => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const providerId = String(params.providerId)
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, providerId, ['owner', 'manager', 'staff'])) return HttpResponse.json({ message: 'You do not have access to this provider.' }, { status: 403 })
+        const locationId = new URL(request.url).searchParams.get('locationId') ?? undefined
+        return HttpResponse.json(getMockCapacityResources(providerId, locationId))
+    }),
+
+    http.get('/api/owner/autocare-providers/:providerId/resource-reservations', ({ params, request }) => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const providerId = String(params.providerId)
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, providerId, ['owner', 'manager', 'staff'])) return HttpResponse.json({ message: 'You do not have access to this provider.' }, { status: 403 })
+        const search = new URL(request.url).searchParams
+        return HttpResponse.json(getMockCapacityReservations(providerId, search.get('locationId') ?? undefined, search.get('from') ?? undefined, search.get('to') ?? undefined))
+    }),
+
+    http.post('/api/owner/autocare-providers/:providerId/resources', async ({ params, request }) => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const providerId = String(params.providerId)
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, providerId, ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage capacity resources.' }, { status: 403 })
+        const body = await request.json() as Partial<AutoCareCapacityResource>
+        if (typeof body.locationId !== 'string' || typeof body.name !== 'string' || !body.name.trim() || !['specialist', 'bay', 'lift', 'equipment'].includes(String(body.type)) || !Number.isInteger(body.capacity) || Number(body.capacity) < 1 || Number(body.capacity) > 100) return invalidMockBodyResponse()
+        const resources = getMockCapacityResources(providerId)
+        if (resources.some((resource) => resource.locationId === body.locationId && resource.name.toLowerCase() === body.name!.trim().toLowerCase())) return HttpResponse.json({ message: 'A resource with this name already exists.' }, { status: 409 })
+        const now = new Date().toISOString()
+        const created: AutoCareCapacityResource = { id: `mock-resource-${providerId}-${Date.now()}`, providerId, locationId: body.locationId, type: body.type as AutoCareCapacityResource['type'], name: body.name.trim(), capacity: Number(body.capacity), active: body.active !== false, metadata: body.metadata ?? {}, createdAt: now, updatedAt: now }
+        const next = [...resources, created]
+        mockCapacityResources.set(providerId, next)
+        return HttpResponse.json(created, { status: 201 })
+    }),
+
+    http.patch('/api/owner/autocare-providers/:providerId/resources/:resourceId', async ({ params, request }) => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const providerId = String(params.providerId)
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, providerId, ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage capacity resources.' }, { status: 403 })
+        const resources = getMockCapacityResources(providerId)
+        const index = resources.findIndex((resource) => resource.id === String(params.resourceId))
+        if (index < 0) return HttpResponse.json({ message: 'Capacity resource not found.' }, { status: 404 })
+        const body = await request.json() as Partial<AutoCareCapacityResource>
+        if (body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) return invalidMockBodyResponse()
+        if (body.capacity !== undefined && (!Number.isInteger(body.capacity) || body.capacity < 1 || body.capacity > 100)) return invalidMockBodyResponse()
+        if (body.type !== undefined && !['specialist', 'bay', 'lift', 'equipment'].includes(String(body.type))) return invalidMockBodyResponse()
+        const updated: AutoCareCapacityResource = { ...resources[index]!, ...(body.name === undefined ? {} : { name: body.name.trim() }), ...(body.capacity === undefined ? {} : { capacity: body.capacity }), ...(body.active === undefined ? {} : { active: body.active }), ...(body.type === undefined ? {} : { type: body.type as AutoCareCapacityResource['type'] }), ...(body.metadata === undefined ? {} : { metadata: body.metadata }), updatedAt: new Date().toISOString() }
+        if (resources.some((resource, resourceIndex) => resourceIndex !== index && resource.locationId === updated.locationId && resource.name.toLowerCase() === updated.name.toLowerCase())) return HttpResponse.json({ message: 'A resource with this name already exists.' }, { status: 409 })
+        const next = [...resources]
+        next[index] = updated
+        mockCapacityResources.set(providerId, next)
+        return HttpResponse.json(updated)
     }),
 
     http.get('/api/owner/workspace-access', () => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        const scopes = currentUser.role === 'owner'
-            ? ownerAutoCareProviders.map((provider) => ({ providerId: provider.id, locationIds: null, roles: ['owner'] }))
-            : []
+        const scopes = currentUser.role === 'owner' ? getMockManagedProviderScopes(currentUser.id) : []
         return HttpResponse.json({ allowed: scopes.length > 0, providerIds: scopes.map((scope) => scope.providerId), scopes })
     }),
 
     http.get('/api/owner/autocare-providers/:providerId/members', ({ params }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage provider members.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage provider members.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
-        return HttpResponse.json({ memberships: mockAutoCareProviderMemberships.get(String(params.providerId)) ?? [], invitations: mockAutoCareProviderInvitations.filter((invitation) => invitation.providerId === params.providerId) })
+        return HttpResponse.json({ memberships: (mockAutoCareProviderMemberships.get(String(params.providerId)) ?? []).map(toMockMemberResponse), invitations: mockAutoCareProviderInvitations.filter((invitation) => invitation.providerId === params.providerId) })
     }),
 
     http.post('/api/owner/autocare-providers/:providerId/members/invitations', async ({ params, request }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can invite provider members.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can invite provider members.' }, { status: 403 })
         const provider = ownerAutoCareProviders.find((candidate) => candidate.id === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         const body = await request.json() as { email?: unknown; role?: unknown; locationId?: unknown }
@@ -3393,7 +3627,7 @@ export const handlers = [
     http.delete('/api/owner/autocare-providers/:providerId/members/invitations/:invitationId', ({ params }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can revoke provider invitations.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can revoke provider invitations.' }, { status: 403 })
         const invitation = mockAutoCareProviderInvitations.find((candidate) => candidate.id === params.invitationId && candidate.providerId === params.providerId)
         if (!invitation) return HttpResponse.json({ message: 'Provider invitation not found.' }, { status: 404 })
         if (invitation.status === 'pending') { invitation.status = 'revoked'; invitation.revokedAt = new Date().toISOString() }
@@ -3401,13 +3635,13 @@ export const handlers = [
     }),
     http.delete('/api/owner/autocare-providers/:providerId/members/:membershipId', ({ params }) => {
         const currentUser = currentMockUser()
-        if (!currentUser || currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can revoke provider memberships.' }, { status: 403 })
+        if (!currentUser || currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can revoke provider memberships.' }, { status: 403 })
         const memberships = mockAutoCareProviderMemberships.get(String(params.providerId)) ?? []
         const membership = memberships.find((candidate) => candidate.id === String(params.membershipId))
         if (!membership) return HttpResponse.json({ message: 'Provider membership not found.' }, { status: 404 })
         membership.status = 'revoked'
         mockAutoCareProviderMemberships.set(String(params.providerId), memberships)
-        return HttpResponse.json(membership)
+        return HttpResponse.json(toMockMemberResponse(membership))
     }),
 
     http.post('/api/owner/autocare-provider-invitations/accept', async ({ request }) => {
@@ -3424,13 +3658,13 @@ export const handlers = [
         if (!memberships.some((candidate) => candidate.id === membership.id)) memberships.push(membership)
         mockAutoCareProviderMemberships.set(invitation.providerId, memberships)
         invitation.status = 'accepted'; invitation.acceptedAt = new Date().toISOString(); invitation.inviteToken = null
-        return HttpResponse.json({ membership, invitation })
+        return HttpResponse.json({ membership: toMockMemberResponse(membership), invitation })
     }),
 
     http.get('/api/owner/autocare-providers/:providerId/change-requests', ({ params }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage provider changes.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage provider changes.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         return HttpResponse.json(mockAutoCareProviderChangeRequests.filter((request) => request.providerId === params.providerId))
     }),
@@ -3438,7 +3672,7 @@ export const handlers = [
     http.post('/api/owner/autocare-providers/:providerId/change-requests', async ({ params, request }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can submit provider changes.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can submit provider changes.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         const body = await request.json() as { kind?: unknown; payload?: unknown }
         if (body.kind !== 'verification' && body.kind !== 'profile_update') return invalidMockBodyResponse()
@@ -3455,7 +3689,7 @@ export const handlers = [
     http.delete('/api/owner/autocare-providers/:providerId/change-requests/:requestId', ({ params }) => {
         const currentUser = currentMockUser()
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can cancel provider changes.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can cancel provider changes.' }, { status: 403 })
         const changeRequest = mockAutoCareProviderChangeRequests.find((candidate) => candidate.id === params.requestId && candidate.providerId === params.providerId)
         if (!changeRequest) return HttpResponse.json({ message: 'Provider change request not found.' }, { status: 404 })
         if (changeRequest.status === 'pending') { changeRequest.status = 'cancelled'; changeRequest.updatedAt = new Date().toISOString() }
@@ -3467,7 +3701,7 @@ export const handlers = [
         if (scenario) return scenario
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view automotive analytics.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner', 'manager'])) return HttpResponse.json({ message: 'Only provider owners and managers can view automotive analytics.' }, { status: 403 })
         const provider = ownerAutoCareProviders.find((item) => item.id === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         const requests = mockAutoCareServiceRequests.filter((item) => item.providerId === provider.id)
@@ -3502,14 +3736,14 @@ export const handlers = [
     http.get('/api/owner/autocare-providers/:providerId/bonus-program', ({ params }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage bonus programs.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage bonus programs.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         return HttpResponse.json(mockAutoCareBonusPrograms.get(String(params.providerId)) ?? null)
     }),
 
     http.get('/api/owner/autocare-providers/:providerId/bonus-liability', ({ params }) => {
         const currentUser = currentMockUser()
-        if (!currentUser || currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view bonus liability.' }, { status: 403 })
+        if (!currentUser || currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can view bonus liability.' }, { status: 403 })
         const accounts = mockAutoCareBonusAccounts.filter((account) => account.providerId === params.providerId)
         const entries = accounts.flatMap((account) => account.entries.map((entry) => ({
             ...entry,
@@ -3522,7 +3756,7 @@ export const handlers = [
     http.put('/api/owner/autocare-providers/:providerId/bonus-program', async ({ params, request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage bonus programs.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage bonus programs.' }, { status: 403 })
         const provider = ownerAutoCareProviders.find((candidate) => candidate.id === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         const body = await request.json() as { name?: string; earnPercent?: number; maxEarnPointsPerVisit?: number | null; expiresAfterDays?: number | null; active?: boolean }
@@ -3536,7 +3770,7 @@ export const handlers = [
 
     http.post('/api/owner/autocare-providers/:providerId/bonus-accounts/:clientId/grants', async ({ params, request }) => {
         const currentUser = currentMockUser()
-        if (!currentUser || currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can grant bonus points.' }, { status: 403 })
+        if (!currentUser || currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can grant bonus points.' }, { status: 403 })
         if (!ownerAutoCareProviders.some((provider) => provider.id === params.providerId)) return HttpResponse.json({ message: 'Automotive service not found.' }, { status: 404 })
         const idempotencyKey = request.headers.get('Idempotency-Key')
         if (!idempotencyKey || !/^[a-zA-Z0-9_-]{8,128}$/.test(idempotencyKey)) return HttpResponse.json({ message: 'Idempotency-Key is required when granting bonus points.' }, { status: 400 })
@@ -3562,7 +3796,7 @@ export const handlers = [
         const provider = ownerAutoCareProviders.find((item) => item.id === params.providerId)
         const offer = provider?.offers?.find((item) => item.id === params.offerId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can edit automotive service offers.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner', 'manager'])) return HttpResponse.json({ message: 'Only provider owners and managers can edit automotive service offers.' }, { status: 403 })
         if (!provider || !offer) return HttpResponse.json({ message: 'Automotive service offer not found.' }, { status: 404 })
 
         const body = await request.json() as { description?: unknown; priceFromMinor?: unknown }
@@ -3581,7 +3815,7 @@ export const handlers = [
         const providerId = String(params.providerId)
         const provider = ownerAutoCareProviders.find((item) => item.id === providerId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view automotive service reviews.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, providerId, ['owner', 'manager'])) return HttpResponse.json({ message: 'Only provider owners and managers can view automotive service reviews.' }, { status: 403 })
         if (!provider) return HttpResponse.json({ message: 'Automotive service provider not found.' }, { status: 404 })
 
         const now = Date.now()
@@ -3602,7 +3836,8 @@ export const handlers = [
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view automotive service reviews.' }, { status: 403 })
         const providerId = new URL(request.url).searchParams.get('providerId') || null
-        const selectedProviders = providerId ? ownerAutoCareProviders.filter((provider) => provider.id === providerId) : ownerAutoCareProviders
+        const allowedProviders = ownerAutoCareProviders.filter((provider) => hasMockProviderRole(currentUser.id, provider.id, ['owner', 'manager']))
+        const selectedProviders = providerId ? allowedProviders.filter((provider) => provider.id === providerId) : allowedProviders
         if (providerId && selectedProviders.length === 0) return HttpResponse.json({ message: 'Automotive service provider not found.' }, { status: 404 })
         const providerIds = new Set(selectedProviders.map((provider) => provider.id))
         const now = Date.now()
@@ -3622,7 +3857,7 @@ export const handlers = [
         const provider = ownerAutoCareProviders.find((item) => item.id === providerId)
         const review = mockFeaturedAutoCareReviews.find((item) => item.id === reviewId && item.providerId === providerId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can issue service promos.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, providerId, ['owner'])) return HttpResponse.json({ message: 'Only provider owners can issue service promos.' }, { status: 403 })
         if (!provider || !review) return HttpResponse.json({ message: 'Automotive review not found.' }, { status: 404 })
         if (!review.clientId) return HttpResponse.json({ message: 'This review is not linked to a client account yet.' }, { status: 409 })
 
@@ -3863,7 +4098,7 @@ export const handlers = [
     http.patch('/api/owner/autocare-providers/:providerId/communication-settings', async ({ params, request }) => {
         const currentUser = mockUsers.find((user) => user.id === mockSession.currentUserId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner'])) return HttpResponse.json({ message: 'Only provider owners can manage automotive service profiles.' }, { status: 403 })
         const provider = ownerAutoCareProviders.find((item) => item.id === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
         const body = await request.json() as Partial<Omit<AutoCareApiProvider, 'id' | 'location'>>

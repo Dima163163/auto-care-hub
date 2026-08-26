@@ -20,7 +20,10 @@ const provider = {
     amenityIds: ['waiting_room', 'wifi'],
     brandSpecializations: ['bmw'],
     isMultibrand: false,
-    location: { id: 'location-1', marketId: 'market-1', address: 'Moscow', hours: '08:00–21:00', latitude: 55.7, longitude: 37.6 },
+    location: {
+        id: 'location-1', marketId: 'market-1', address: 'Moscow', hours: '08:00–21:00', latitude: 55.7, longitude: 37.6,
+        timezone: 'Europe/Moscow', weeklySchedule: { mon: { open: '08:00', close: '21:00', closed: false } }, blackoutDates: ['2026-08-26'], appointmentCapacity: 4,
+    },
 }
 
 const offer = {
@@ -43,6 +46,11 @@ describe('AutoCare API mappers', () => {
         expect(result.offerings[0]?.serviceId).toBe('oil-change')
         expect(result.offerings[0]?.priceLabel).toMatch(/2.?900/)
         expect(result.about).toBe('Description')
+        expect(result.status).toBe('active')
+        expect(result.timezone).toBe('Europe/Moscow')
+        expect(result.weeklySchedule?.mon?.open).toBe('08:00')
+        expect(result.blackoutDates).toEqual(['2026-08-26'])
+        expect(result.appointmentCapacity).toBe(4)
     })
 
     it('uses public review aggregates and preserves customer media', () => {

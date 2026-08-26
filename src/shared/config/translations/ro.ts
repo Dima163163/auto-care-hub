@@ -30,6 +30,7 @@ export const roTranslations = {
         ...enTranslations.navigation,
         home: 'Acasă',
         cabinets: 'Cabinete',
+        services: 'Servicii auto',
         profile: 'Profil',
         myBookings: 'Rezervările mele',
         favorites: 'Favorite',

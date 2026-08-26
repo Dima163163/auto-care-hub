@@ -75,6 +75,8 @@ const clientVehicleInputSchema = z.object({
     horsepower: z.number().int().min(0).max(3000).nullable(),
     color: z.string().trim().min(1).max(40),
     vin: z.string().trim().toUpperCase().regex(/^[A-HJ-NPR-Z0-9]{17}$/).nullable(),
+    licensePlate: z.string().trim().max(24).nullable().optional(),
+    internalNumber: z.string().trim().max(64).nullable().optional(),
 })
 
 const clientVehiclePatchSchema = clientVehicleInputSchema.partial()

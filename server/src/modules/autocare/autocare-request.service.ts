@@ -23,6 +23,7 @@ import {
     type ServiceMessageOffer,
     ServiceRequestEntity,
     ServiceRequestStatus,
+    ClientVehicleEntity,
 } from '../../entities/index.js'
 import type { AutomotiveOfferingSnapshot } from '../../entities/automotive/service-request.entity.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
@@ -42,6 +43,7 @@ import type {
     CreateAutoCareServiceOfferInput,
     CreateAutoCareServiceQuoteInput,
     CreateAutoCareServiceRequestInput,
+    AutoCareRequestSnapshot,
     AutoCareServiceQuoteHistoryResponse,
     AutoCareBookingSnapshotResponse,
     AutoCareRescheduleResponse,
@@ -51,10 +53,13 @@ import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
 import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { canManageProvider, canManageProviderWithManager, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
-import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts } from './availability.js'
+import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts, zonedWallTimeToUtc } from './availability.js'
 import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
 import { awardAutoCareBonusForCompletedVisit, refundAutoCareBonusForCancelledRequest } from './autocare-bonus.service.js'
 import { hasAvailableAppointmentCapacity } from './capacity-reservation.js'
+import { hasAutoCareResourceAvailability, releaseAutoCareResources, reserveAutoCareResources } from './capacity-resource.service.js'
+import { reassessAutoCareProviderTrust } from './trust-score.service.js'
+import { logError } from '../../shared/observability/logger.js'
 
 function clientOnly(user: UserEntity) {
     if (user.role !== UserRole.Client) {
@@ -104,9 +109,26 @@ function isSameAutoCareServiceRequest(request: ServiceRequestEntity, input: Crea
         request.locationId === input.locationId &&
         request.offeringId === input.offeringId &&
         request.preferredAt?.toISOString() === new Date(input.preferredAt).toISOString() &&
-        JSON.stringify(request.vehicleSnapshot) === JSON.stringify(input.vehicleSnapshot ?? null) &&
+        request.vehicleId === (input.vehicleId ?? null) &&
+        (input.vehicleId ? true : JSON.stringify(request.vehicleSnapshot) === JSON.stringify(input.vehicleSnapshot ?? null)) &&
         JSON.stringify(request.contactSnapshot) === JSON.stringify(input.contactSnapshot) &&
         request.note === (input.note ?? null)
+}
+
+function createVehicleSnapshot(vehicle: ClientVehicleEntity): AutoCareRequestSnapshot {
+    return {
+        make: vehicle.brandId,
+        brandId: vehicle.brandId,
+        model: vehicle.model,
+        year: vehicle.year,
+        fuelType: vehicle.fuelType,
+        engineDisplacement: vehicle.engineDisplacement === null ? null : Number(vehicle.engineDisplacement),
+        horsepower: vehicle.horsepower,
+        color: vehicle.color,
+        vin: vehicle.vin,
+        licensePlate: vehicle.licensePlate,
+        internalNumber: vehicle.internalNumber,
+    }
 }
 
 function requestIdempotencyConflict(): never {
@@ -178,6 +200,8 @@ function createOfferingSnapshot(definition: AutomotiveServiceDefinitionEntity, o
         warrantyText: offering.warrantyText,
         priceType: definition.priceType,
         bookingMode: offering.bookingMode,
+        requiredResourceTypes: offering.requiredResourceTypes ?? [],
+        requiredResourceIds: offering.requiredResourceIds ?? [],
     }
 }
 
@@ -229,6 +253,7 @@ function requestResponse(
         priceFromMinor: snapshot?.priceFromMinor ?? offering?.priceFromMinor ?? null,
         currencyCode: snapshot?.currencyCode ?? offering?.currencyCode ?? null,
         preferredAt: request.preferredAt?.toISOString() ?? null,
+        vehicleId: request.vehicleId,
         vehicleSnapshot: request.vehicleSnapshot as AutoCareServiceRequestResponse['vehicleSnapshot'],
         contactSnapshot: request.contactSnapshot as AutoCareServiceRequestResponse['contactSnapshot'],
         note: request.note,
@@ -289,6 +314,8 @@ function toBookingSnapshotResponse(snapshot: Record<string, unknown> | null): Au
         locationId: snapshot.locationId,
         status: 'confirmed',
         createdAt: snapshot.createdAt,
+        ...(typeof snapshot.vehicleId === 'string' ? { vehicleId: snapshot.vehicleId } : {}),
+        ...(snapshot.vehicleSnapshot && typeof snapshot.vehicleSnapshot === 'object' ? { vehicleSnapshot: snapshot.vehicleSnapshot as AutoCareBookingSnapshotResponse['vehicleSnapshot'] } : {}),
         ...(typeof snapshot.bonusDiscountMinor === 'number' ? { bonusDiscountMinor: snapshot.bonusDiscountMinor } : {}),
         ...(typeof snapshot.payableAmountMinor === 'number' ? { payableAmountMinor: snapshot.payableAmountMinor } : {}),
     }
@@ -717,6 +744,18 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
                 scheduleMessage: 'The selected visit time is outside the service schedule.',
                 capacityMessage: 'The selected visit time is no longer available.',
             })
+            const offering = lockedRequest.offeringId
+                ? await manager.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: lockedRequest.offeringId, locationId: lockedRequest.locationId })
+                : null
+            await reserveAutoCareResources(manager, {
+                requestId: lockedRequest.id,
+                providerId: lockedRequest.providerId,
+                locationId: lockedRequest.locationId,
+                startsAt: lockedRequest.preferredAt,
+                durationMinutes: getRequestDurationMinutes(lockedRequest),
+                requiredResourceTypes: offering?.requiredResourceTypes ?? lockedRequest.offeringSnapshot?.requiredResourceTypes,
+                requiredResourceIds: offering?.requiredResourceIds ?? lockedRequest.offeringSnapshot?.requiredResourceIds,
+            })
         }
         lockedRequest.status = targetStatus
         lockedRequest.clientConfirmedAt = acceptedAt
@@ -744,6 +783,8 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
                 providerId: lockedRequest.providerId,
                 locationId: lockedRequest.locationId,
                 createdAt: acceptedAt.toISOString(),
+                vehicleId: lockedRequest.vehicleId,
+                vehicleSnapshot: lockedRequest.vehicleSnapshot as AutoCareRequestSnapshot | null,
             })
             : null
         lockedRequest.bookingCreatedAt = accepted ? acceptedAt : null
@@ -827,6 +868,11 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
     const requestRepository = AppDataSource.getRepository(ServiceRequestEntity)
+    const vehicle = input.vehicleId
+        ? await AppDataSource.getRepository(ClientVehicleEntity).findOneBy({ id: input.vehicleId, userId: user.id })
+        : null
+    if (input.vehicleId && !vehicle) notFound('Selected vehicle was not found.')
+    const vehicleSnapshot = vehicle ? createVehicleSnapshot(vehicle) : input.vehicleSnapshot ?? null
     if (input.idempotencyKey) {
         const existing = await requestRepository.findOneBy({ clientId: user.id, idempotencyKey: input.idempotencyKey })
         if (existing) {
@@ -867,7 +913,8 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
                 definitionId: definition.id,
                 offeringId: offering.id,
                 offeringSnapshot: createOfferingSnapshot(definition, offering),
-                vehicleSnapshot: input.vehicleSnapshot ?? null,
+                vehicleId: vehicle?.id ?? null,
+                vehicleSnapshot,
                 contactSnapshot: input.contactSnapshot,
                 preferredAt,
                 note: input.note ?? null,
@@ -888,10 +935,23 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
                         providerId: provider.id,
                         locationId: location.id,
                         createdAt: confirmationAt.toISOString(),
+                        vehicleId: vehicle?.id ?? null,
+                        vehicleSnapshot,
                     })
                     : null,
                 bookingCreatedAt: offering.bookingMode === AutomotiveBookingMode.Instant ? confirmationAt : null,
             }))
+            if (offering.bookingMode === AutomotiveBookingMode.Instant) {
+                await reserveAutoCareResources(manager, {
+                    requestId: createdRequest.id,
+                    providerId: provider.id,
+                    locationId: location.id,
+                    startsAt: preferredAt,
+                    durationMinutes: offering.durationMinutes,
+                    requiredResourceTypes: offering.requiredResourceTypes,
+                    requiredResourceIds: offering.requiredResourceIds,
+                })
+            }
             await appendRepairEventWithManager(manager, {
                 requestId: createdRequest.id,
                 actorId: user.id,
@@ -1092,7 +1152,20 @@ export async function getAutoCareAvailability(providerId: string, locationId: st
             const requestDuration = requestOfferings[index]?.durationMinutes ?? 60
             return start < requestStart + requestDuration && end > requestStart
         }).length
-        if (occupied < Math.max(1, location.appointmentCapacity)) slots.push({ startTime: formatClock(start), endTime: formatClock(end) })
+        if (occupied < Math.max(1, location.appointmentCapacity)) {
+            const startsAt = zonedWallTimeToUtc(date, `${formatClock(start)}`, timezone)
+            if (!startsAt) continue
+            const resourcesAvailable = await hasAutoCareResourceAvailability(AppDataSource.manager, {
+                requestId: undefined,
+                providerId,
+                locationId,
+                startsAt,
+                durationMinutes: offering.durationMinutes,
+                requiredResourceTypes: offering.requiredResourceTypes,
+                requiredResourceIds: offering.requiredResourceIds,
+            })
+            if (resourcesAvailable) slots.push({ startTime: formatClock(start), endTime: formatClock(end) })
+        }
     }
     return { date, timezone, durationMinutes: offering.durationMinutes, slots }
 }
@@ -1138,6 +1211,18 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
                 excludeRequestId: request.id,
                 scheduleMessage: 'The selected visit time is outside the service schedule.',
                 capacityMessage: 'The selected visit time is no longer available.',
+            })
+            const offering = request.offeringId
+                ? await manager.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: request.offeringId, locationId: request.locationId })
+                : null
+            await reserveAutoCareResources(manager, {
+                requestId: request.id,
+                providerId: request.providerId,
+                locationId: request.locationId,
+                startsAt: request.preferredAt,
+                durationMinutes: getRequestDurationMinutes(request),
+                requiredResourceTypes: offering?.requiredResourceTypes ?? request.offeringSnapshot?.requiredResourceTypes,
+                requiredResourceIds: offering?.requiredResourceIds ?? request.offeringSnapshot?.requiredResourceIds,
             })
             request.providerConfirmedAt ??= new Date()
             request.status = ServiceRequestStatus.Accepted
@@ -1202,6 +1287,19 @@ export async function decideAutoCareServiceReschedule(user: UserEntity, requestI
         pending.resolvedAt = new Date()
         if (decision === 'accept') {
             await assertAutoCareRescheduleSlot(manager, request, pending.proposedAt, true)
+            await releaseAutoCareResources(manager, request.id)
+            const offering = request.offeringId
+                ? await manager.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: request.offeringId, locationId: request.locationId })
+                : null
+            await reserveAutoCareResources(manager, {
+                requestId: request.id,
+                providerId: request.providerId,
+                locationId: request.locationId,
+                startsAt: pending.proposedAt,
+                durationMinutes: getRequestDurationMinutes(request),
+                requiredResourceTypes: offering?.requiredResourceTypes ?? request.offeringSnapshot?.requiredResourceTypes,
+                requiredResourceIds: offering?.requiredResourceIds ?? request.offeringSnapshot?.requiredResourceIds,
+            })
             request.preferredAt = pending.proposedAt
         }
         await rescheduleRepository.save(pending)
@@ -1227,6 +1325,7 @@ export async function markAutoCareServiceRequestNoShow(user: UserEntity, request
         request.noShowAt = new Date()
         request.noShowById = user.id
         request.noShowReason = reason?.trim() || null
+        await releaseAutoCareResources(manager, request.id)
         await manager.getRepository(ServiceRequestEntity).save(request)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'no_show', title: 'Заявка отмечена как неявка клиента', notes: request.noShowReason })
         await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'no-show', role: 'client', title: 'Визит отмечен как неявка', message: 'Сервис отметил, что визит не состоялся.' }, manager)
@@ -1251,12 +1350,23 @@ export async function completeAutoCareServiceRequest(user: UserEntity, requestId
         request.completedAt = now
         request.completedById = user.id
         request.completionNote = note?.trim() || null
+        await releaseAutoCareResources(manager, request.id)
         await manager.getRepository(ServiceRequestEntity).save(request)
         await awardAutoCareBonusForCompletedVisit(manager, request, user.id)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'completed', title: 'Сервис отметил визит завершённым', notes: request.completionNote })
         await notifyAutoCareParticipant({ userId: request.clientId, requestId, event: 'completed', role: 'client', title: 'Визит завершён', message: 'Сервис отметил услугу завершённой. Теперь можно оставить отзыв.' }, manager)
         return { request, changed: true }
     })
+    // Completion is the durable trust event. Refresh snapshots after commit so
+    // a successful booking is never rolled back by a transient trust failure.
+    try {
+        await reassessAutoCareProviderTrust(transactionResult.request.providerId)
+    } catch (error) {
+        logError('Could not refresh AutoCare trust after completed visit', error, {
+            providerId: transactionResult.request.providerId,
+            requestId,
+        })
+    }
     return hydrateRequest(transactionResult.request)
 }
 
@@ -1272,6 +1382,7 @@ export async function cancelAutoCareServiceRequest(user: UserEntity, requestId: 
         request.cancelledAt = new Date()
         request.cancelledById = user.id
         request.cancellationReason = reason?.trim() || null
+        await releaseAutoCareResources(manager, request.id)
         await manager.getRepository(ServiceRequestEntity).save(request)
         await refundAutoCareBonusForCancelledRequest(manager, request, user.id)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'cancelled', title: 'Клиент отменил заявку', notes: request.cancellationReason })

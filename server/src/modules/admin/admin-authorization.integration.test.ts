@@ -183,6 +183,11 @@ describe('Admin and workspace authorization integration', () => {
         expect(response.body.evidence).toEqual(expect.arrayContaining([
             expect.objectContaining({ id: evidence.id, label: evidence.label, status: 'approved' }),
         ]))
+        // Pending media is visible to moderators only; it must not leak into
+        // the public trust contract before a decision is recorded.
+        expect(response.body.evidence).not.toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: moderationEvidence.id }),
+        ]))
         const publicEvidence = response.body.evidence.find((item: { id: string }) => item.id === evidence.id)
         expect(publicEvidence).not.toHaveProperty('reference')
         expect(publicEvidence).not.toHaveProperty('notes')
@@ -239,6 +244,21 @@ describe('Admin and workspace authorization integration', () => {
             status: 'approved',
             provider: { id: provider.id, name: provider.name },
         })
+
+        // A moderation decision is durable before the trust refresh runs. The
+        // public contract must expose the approved evidence while still
+        // omitting its private storage reference and internal notes.
+        const trustAfterDecision = await request(app.server)
+            .get(`/v1/providers/${provider.id}/trust`)
+        expect(trustAfterDecision.status).toBe(200)
+        expect(trustAfterDecision.body.evidence).toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: moderationEvidence.id, status: 'approved' }),
+        ]))
+        const approvedEvidence = trustAfterDecision.body.evidence.find(
+            (item: { id: string }) => item.id === moderationEvidence.id,
+        )
+        expect(approvedEvidence).not.toHaveProperty('reference')
+        expect(approvedEvidence).not.toHaveProperty('notes')
     })
 
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {

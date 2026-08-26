@@ -7,7 +7,7 @@ import {
     useUpdateAdminUserStatusMutation,
     type UserStatus,
 } from '@/entities/user'
-import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import { getApiErrorMessage, getApiErrorState } from '@/shared/api/getApiErrorMessage'
 import { toast } from 'sonner'
 import { AdminUsersListItem } from '../../admin-users/ui/AdminUsersListItem'
 import { AdminUsersStateCard } from '../../admin-users/ui/AdminUsersStateCard'
@@ -29,6 +29,7 @@ export function AdminOwnersPage() {
 
     const owners = users.filter((user) => user.role === 'owner')
     const hasStaleOwners = owners.length > 0
+    const errorState = getApiErrorState(error)
 
     const handleStatusChange = async (id: string, status: UserStatus) => {
         try {
@@ -88,7 +89,13 @@ export function AdminOwnersPage() {
                     </div>
                 )}
 
-                {isError && !hasStaleOwners && (
+                {isError && !hasStaleOwners && errorState === 'session-expired' && (
+                    <div className="p-8">
+                        <AdminUsersStateCard onRetry={refetch} state="session-expired" />
+                    </div>
+                )}
+
+                {isError && !hasStaleOwners && errorState !== 'session-expired' && (
                     <div className="p-8">
                         <AdminUsersStateCard
                             onRetry={refetch}

@@ -42,6 +42,8 @@ type VehicleInput = {
     horsepower: number | null
     color: string
     vin: string | null
+    licensePlate?: string | null
+    internalNumber?: string | null
 }
 const repository = () => AppDataSource.getRepository(ClientVehicleEntity)
 function getVehicleImage(brandId: string, model: string) {
@@ -89,6 +91,8 @@ export async function createClientVehicle(user: UserEntity, input: VehicleInput)
         ...input,
         userId: user.id,
         vin: input.vin || null,
+        licensePlate: input.licensePlate || null,
+        internalNumber: input.internalNumber || null,
         imageUrl: getVehicleImage(input.brandId, input.model),
         isPrimary: existing === 0,
     })
@@ -113,6 +117,8 @@ export async function updateClientVehicle(user: UserEntity, id: string, input: P
     if (input.vin !== undefined) {
         vehicle.vin = input.vin || null
     }
+    if (input.licensePlate !== undefined) vehicle.licensePlate = input.licensePlate || null
+    if (input.internalNumber !== undefined) vehicle.internalNumber = input.internalNumber || null
 
     return toResponse(await repository().save(vehicle))
 }

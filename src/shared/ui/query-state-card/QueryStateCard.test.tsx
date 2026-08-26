@@ -15,10 +15,16 @@ function renderCard(state: ComponentProps<typeof QueryStateCard>['state']) {
 }
 
 describe('QueryStateCard', () => {
-    it.each(['offline', 'permission-denied', 'suspended', 'stale-error', 'error'] as const)('renders %s as an announced error state', (state) => {
+    it.each(['offline', 'permission-denied', 'suspended', 'session-expired', 'stale-error', 'error'] as const)('renders %s as an announced error state', (state) => {
         renderCard(state)
 
         expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    it('renders partial data as a non-blocking status', () => {
+        renderCard('partial')
+
+        expect(screen.getByRole('status')).toHaveAttribute('data-state', 'partial')
     })
 
     it('renders loading accessibly', () => {

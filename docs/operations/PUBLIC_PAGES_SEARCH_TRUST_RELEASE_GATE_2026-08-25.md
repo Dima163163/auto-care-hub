@@ -56,12 +56,14 @@ npm --prefix server test -- src/modules/autocare/autocare.routes.integration.tes
 npm --prefix server run benchmark:discovery -- --json
 ```
 
-The latest local benchmark on the seeded catalog recorded p50 **3.4 ms**, p95
-**5.1 ms** and max **10.6 ms** over 40 requests. This validates the current
-plan for the local pilot, but does not
-close the 10k/100k-row comparison requested for production. Before launch,
-load a production-like snapshot and rerun the benchmark at 10,000 and 100,000
-locations; adopt PostGIS/GiST only if that gate exceeds the agreed p95 budget.
+The database runner now executes a bounded concurrent radius matrix and records
+p50/p95/p99/max plus failed requests. The synthetic runner covers 10k and 100k
+rows for a deterministic baseline. Before launch, load a production-like
+snapshot and rerun `benchmark:discovery` with the agreed p95/p99 budgets;
+`check:discovery-density` must also pass for the selected market and radius.
+Adopt PostGIS/GiST only if the real geospatial benchmark (which requires both
+the extension and a geography GiST index) shows the portable strategy is no
+longer within budget.
 
 Discovery is protected by the public rate limiter, strict input bounds, a
 candidate cap and a SQL statement timeout. Production Redis outage behaviour
@@ -70,9 +72,17 @@ must still be verified in a multi-process staging run.
 ## Trust and moderation
 
 Trust rollout remains deterministic and independent of subscriptions,
-promotions and paid placement. The existing moderation evidence queue records
-decisions for provider media and reviews, and trust output is gated by market
-and percentage rollout configuration.
+promotions and paid placement. The moderation evidence queue records decisions
+for provider media, registration/provider documents and reviews; public trust
+responses expose only currently approved, non-expired evidence. Trust output is
+gated by market and percentage rollout configuration.
+
+Completed visits are counted only when the request is closed and both client
+and provider confirmations are present. Closing a visit schedules an immediate
+post-commit trust reassessment (with the bounded worker as a retry path), so a
+transient trust refresh failure cannot roll back a booking completion. Accepted
+provider/suspension appeals restore a suspended provider transactionally and
+trigger the same trust reassessment; every moderation decision remains audited.
 
 Local checks cover ranking inputs, approved-review/photo rendering, provider
 status states and bounded trust responses. The following evidence is still
@@ -82,7 +92,9 @@ required outside this repository run:
 2. calibration against completed/confirmed visits, cancellations, no-shows,
    complaints and repeat visits;
 3. an appeals rehearsal and a staged badge removal/rollout rollback;
-4. production-like moderation review of gallery and review evidence.
+4. production-like moderation review of gallery, review and provider-document
+   evidence;
+5. an independent threat review of the production deployment and its controls.
 
 The local reliability gate intentionally remains blocked when the seeded data
 does not meet those sample thresholds; it must not be reported as an SLA.

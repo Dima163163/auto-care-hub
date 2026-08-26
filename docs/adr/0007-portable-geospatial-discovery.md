@@ -25,7 +25,10 @@ unavailable exactly when it is needed most.
   the offering-first join.
 - `npm --prefix server run benchmark:discovery` is the release gate. It must be
   run against a restored production-like dataset before a new market is opened;
-  it reports p50/p95/max latency and fails above the configured p95 budget.
+  it reports p50/p95/p99/max latency and fails above the configured p95/p99 or
+  request-failure budget. The density check
+  (`npm --prefix server run check:discovery-density`) must also pass for the
+  selected market and radius before opening a market.
 
 ## Consequences
 
@@ -33,5 +36,6 @@ This is not a text-based approximation: it is an exact radius predicate with
 an index-friendly prefilter and works on standard PostgreSQL. PostGIS remains a
 planned optional cutover when production infrastructure explicitly guarantees
 the extension and benchmark data shows the native strategy is no longer within
-the agreed budget. The API contract, cursor fields and user-visible distance do
-not change during that cutover.
+the agreed budget. The geospatial benchmark compares both strategies at broad
+radii and reports whether a GiST geography index is present. The API contract,
+cursor fields and user-visible distance do not change during that cutover.

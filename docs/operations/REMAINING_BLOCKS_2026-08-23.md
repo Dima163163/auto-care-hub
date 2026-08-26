@@ -6,20 +6,28 @@ still requires a real environment, product decision or a later UI slice.
 ## Closed in code in this slice
 
 - UI state primitives support loading, empty, error, stale, offline,
-  permission-denied and suspended states; mock mode can switch these states via
+  permission-denied, suspended, partial and session-expired states; mock mode can switch these states via
   `localStorage.autocare.mockScenario` or `X-AutoCare-Mock-State`.
 - Results include an equivalent-offer comparison table, and service chat
   attachments open in an accessible viewer. Client requests expose quote
   history and provider-scoped bonus history.
 - Provider/client pages use the state card for common error and empty paths;
   provider reviews and details keep retry actions.
+- The discovery mock has an explicit partial-data response, and protected
+  routes redirect to a sign-in explanation after an expired real session.
+- PostgreSQL integration coverage now exercises concurrent repeated service
+  request submission with one idempotent persisted row.
 - Discovery uses a portable SQL bounding-box prefilter, market/zone scoping,
   exact distance checks and market/latitude/longitude indexes. PostGIS remains
   an optional infrastructure upgrade rather than a hidden requirement.
 - Trust rollout and appeal validation policies are covered by unit tests.
   Appeals now persist in PostgreSQL, support owner/client submission, user
-  history, admin filtering and audited accept/reject decisions. Mock handlers
-  expose the same routes and quality monitoring reports pending appeal count.
+  history, admin filtering and audited accept/reject decisions. Evidence is
+  provider-scoped, provider documents join the moderation queue, accepted
+  suspension appeals restore publication and trigger trust recalculation.
+  Verified completed-visit rules drive trust metrics and completion triggers a
+  post-commit snapshot refresh. Mock handlers expose the same routes and
+  quality monitoring reports pending appeal count.
 - Catalog/API parity remains green: 202 mock routes, 232 backend routes and
   both WebSocket routes are accounted for.
 

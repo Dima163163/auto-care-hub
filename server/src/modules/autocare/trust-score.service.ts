@@ -16,6 +16,8 @@ import {
     ServiceRequestStatus,
 } from '../../entities/index.js'
 import { calculateAutoCareTrustScore, type AutoCareTrustScore } from './trust-score.js'
+import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
+import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
 
 const TRUST_POLICY_VERSION = 'autocare-trust-v1'
 const TRUST_SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000
@@ -51,16 +53,14 @@ export async function reassessAutoCareProviderTrust(
     ])
     const nowMs = Date.now()
     const verifiedEvidenceCount = evidence.filter((item) =>
-        item.status === 'verified' && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
+        isApprovedAutoCareEvidenceStatus(item.status) && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
     ).length
     const reviewCount = reviews.length
     const rating = reviewCount > 0
         ? reviews.reduce((total, review) => total + review.rating, 0) / reviewCount
         : Number(provider.rating)
     const activeGuaranteeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status)).length
-    const completedInteractionCount = interactions.filter((request) =>
-        request.status === ServiceRequestStatus.Closed && Boolean(request.clientConfirmedAt && request.providerConfirmedAt),
-    ).length
+    const completedInteractionCount = interactions.filter(isVerifiedCompletedVisit).length
     const cancelledInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.Cancelled).length
     const noShowInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.NoShow).length
     const requestIds = interactions.map((request) => request.id)

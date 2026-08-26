@@ -129,6 +129,8 @@ export const clientVehicleSchema = z.object({
     horsepower: z.number().int().nullable(),
     color: z.string(),
     vin: z.string().nullable(),
+    licensePlate: z.string().nullable(),
+    internalNumber: z.string().nullable(),
     imageUrl: z.string(),
     isPrimary: z.boolean(),
     createdAt: z.string(),

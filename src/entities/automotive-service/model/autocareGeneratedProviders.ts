@@ -62,9 +62,23 @@ function createServicePrices(index: number) {
     ])) as Partial<Record<string, number>>
 }
 
+/**
+ * Give generated providers realistic catalog coverage instead of making every
+ * provider offer every service. Every fifth provider remains multibrand and
+ * full-catalog so the UI/API can exercise both specialist and universal shops.
+ */
+function getServiceIds(index: number) {
+    if (index % 5 === 0) return SERVICE_IDS
+    const first = (index * 7) % SERVICE_IDS.length
+    const count = 2 + (index % 5)
+    return Array.from({ length: count }, (_, offset) => SERVICE_IDS[(first + offset) % SERVICE_IDS.length]!)
+}
+
 function createProvider(index: number): ProviderPreview {
     const district = DISTRICTS[index % DISTRICTS.length]
     const servicePrices = createServicePrices(index)
+    const serviceIds = getServiceIds(index)
+    const primaryServiceId = serviceIds[0] ?? 'oil-change'
     const distance = Number((1.4 + ((index * 17) % 230) / 10).toFixed(1))
     const rating = Number((4.1 + ((index * 13) % 9) / 10).toFixed(1))
     const priceType = PRICE_TYPES[index % PRICE_TYPES.length]!
@@ -75,15 +89,15 @@ function createProvider(index: number): ProviderPreview {
         rating,
         reviewCount: 18 + ((index * 47) % 640),
         distance: `${distance.toFixed(1)} km`,
-        price: servicePrices['oil-change'] ?? SERVICE_BASE_PRICES['oil-change'],
-        priceTo: priceType === 'range' ? Math.round((servicePrices['oil-change'] ?? SERVICE_BASE_PRICES['oil-change']) * 1.2) : null,
+        price: servicePrices[primaryServiceId] ?? SERVICE_BASE_PRICES[primaryServiceId],
+        priceTo: priceType === 'range' ? Math.round((servicePrices[primaryServiceId] ?? SERVICE_BASE_PRICES[primaryServiceId]) * 1.2) : null,
         currency: 'RUB',
         nextSlot: index % 4 === 0 ? 'Tomorrow, 09:30' : `Today, ${String(10 + (index % 9)).padStart(2, '0')}:${index % 2 ? '30' : '00'}`,
         image: SERVICE_IMAGES[index % SERVICE_IMAGES.length],
         bonus: index % 5 === 0 ? '3% back' : index % 7 === 0 ? 'Free inspection' : undefined,
         verified: index % 6 !== 0,
         mapPosition: [55.69 + ((index * 19) % 120) / 1000, 37.48 + ((index * 31) % 240) / 1000],
-        serviceIds: SERVICE_IDS,
+        serviceIds,
         servicePrices,
         address: `Москва, ${district}, ул. Автомобильная, ${10 + (index % 80)}`,
         priceType,

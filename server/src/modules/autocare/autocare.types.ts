@@ -152,6 +152,8 @@ export type AutoCareOfferResponse = {
     priceToMinor: number | null
     currencyCode: string
     durationMinutes: number
+    requiredResourceTypes: string[]
+    requiredResourceIds: string[]
     inclusions: string[]
     warrantyText: string | null
     active: boolean
@@ -435,6 +437,8 @@ export type OwnerAutoCareProviderInput = {
     logoUrl?: string | null
     coverImageUrl?: string | null
     galleryImageUrls?: string[]
+    /** Opaque keys returned by private document storage; bytes never enter this payload. */
+    documents?: Array<{ label: string; reference: string; expiresAt?: string | null }>
 }
 
 export type UpdateAutoCareCommunicationSettingsInput = {
@@ -506,6 +510,7 @@ export type CreateAutoCareServiceRequestInput = {
     locationId: string
     offeringId: string
     preferredAt: string
+    vehicleId?: string | null
     vehicleSnapshot?: AutoCareRequestSnapshot | null
     contactSnapshot: AutoCareRequestSnapshot
     note?: string | null
@@ -526,6 +531,7 @@ export type AutoCareServiceRequestResponse = {
     priceFromMinor: number | null
     currencyCode: string | null
     preferredAt: string | null
+    vehicleId: string | null
     vehicleSnapshot: AutoCareRequestSnapshot | null
     contactSnapshot: AutoCareRequestSnapshot | null
     note: string | null
@@ -565,6 +571,8 @@ export type AutoCareBookingSnapshotResponse = {
     locationId: string
     status: 'confirmed'
     createdAt: string
+    vehicleId?: string | null
+    vehicleSnapshot?: AutoCareRequestSnapshot | null
     bonusDiscountMinor?: number
     payableAmountMinor?: number
 }

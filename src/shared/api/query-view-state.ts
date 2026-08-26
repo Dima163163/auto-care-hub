@@ -8,6 +8,8 @@ export type QueryViewState =
     | 'offline'
     | 'permission-denied'
     | 'suspended'
+    | 'partial'
+    | 'session-expired'
 
 export type QueryViewStateInput = {
     isLoading: boolean
@@ -19,6 +21,8 @@ export type QueryViewStateInput = {
     isPermissionDenied?: boolean
     isSuspended?: boolean
     isStale?: boolean
+    isPartial?: boolean
+    isSessionExpired?: boolean
 }
 
 export function resolveQueryViewState({
@@ -31,7 +35,13 @@ export function resolveQueryViewState({
     isPermissionDenied = false,
     isSuspended = false,
     isStale = false,
+    isPartial = false,
+    isSessionExpired = false,
 }: QueryViewStateInput): QueryViewState {
+    if (isSessionExpired) {
+        return 'session-expired'
+    }
+
     if (isPermissionDenied) {
         return 'permission-denied'
     }
@@ -50,6 +60,10 @@ export function resolveQueryViewState({
 
     if (isError) {
         return hasResults ? 'stale-error' : 'error'
+    }
+
+    if (isPartial) {
+        return 'partial'
     }
 
     if (isLoading || (isFetching && !hasData)) {
