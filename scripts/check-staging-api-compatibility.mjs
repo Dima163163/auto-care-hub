@@ -14,7 +14,19 @@ async function checkStaging(baseUrl) {
     if (!response.ok) throw new Error(`Staging OpenAPI request failed with HTTP ${response.status}.`)
     const document = await response.json()
     if (document.openapi !== '3.1.0') throw new Error(`Staging OpenAPI version ${String(document.openapi)} does not match 3.1.0.`)
-    for (const path of ['/health/live', '/health/ready', '/v1/markets', '/v1/discovery/providers', '/openapi.json']) {
+    for (const path of [
+        '/health/live',
+        '/health/ready',
+        '/v1/markets',
+        '/v1/discovery/providers',
+        '/v1/service-requests/{requestId}',
+        '/v1/service-requests/{requestId}/quote/accept',
+        '/v1/service-requests/{requestId}/quote/decline',
+        '/v1/service-requests/{requestId}/reschedule/decision',
+        '/owner/service-requests/{requestId}/quote',
+        '/owner/service-requests/{requestId}/reschedule',
+        '/openapi.json',
+    ]) {
         if (!document.paths?.[path]) throw new Error(`Staging OpenAPI is missing required compatibility path ${path}.`)
     }
     const health = await fetch(`${origin}/health/live`, { headers: { accept: 'application/json' } })

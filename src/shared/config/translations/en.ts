@@ -777,6 +777,7 @@ export const enTranslations = {
         clientServiceRequestsOpen: 'Open conversation',
         clientServiceRequestsConversation: 'Conversation',
         clientServiceRequestsQuote: 'Preliminary estimate',
+        clientServiceRequestsQuoteExpired: 'This estimate has expired. Ask the service to send a new one.',
         clientServiceRequestsAcceptQuote: 'Accept estimate',
         clientServiceRequestsDeclineQuote: 'Decline',
         clientServiceRequestsCancel: 'Cancel request',

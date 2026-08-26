@@ -606,8 +606,8 @@ type MockAutoCareServiceRequest = {
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
-    quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string } | null
-    quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string }>
+    quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'; validUntil?: string | null } | null
+    quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'; validUntil?: string | null }>
     acceptedQuoteVersion?: number | null
     acceptedQuoteSnapshot?: Record<string, unknown> | null
     acceptedQuoteAt?: string | null
@@ -662,7 +662,7 @@ const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
         id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, serviceDescription: 'Замена масла и масляного фильтра', offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleId: 'mock-vehicle-1', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel', engineDisplacement: 3, horsepower: 249, color: 'Черный', licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, quoteHistory: [], idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
     },
     {
-        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, serviceDescription: 'Диагностика тормозной системы', offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
+        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, serviceDescription: 'Диагностика тормозной системы', offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
     },
 ]
 mockAutoCareServiceRequests.push({
@@ -690,6 +690,19 @@ mockAutoCareServiceRequests.push({
         vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
     },
 })
+
+function expireMockAutoCareQuotes(now = Date.now()) {
+    for (const item of mockAutoCareServiceRequests) {
+        const latestQuote = item.quoteHistory.at(-1)
+        if (!latestQuote || latestQuote.status !== 'pending' || !latestQuote.validUntil) continue
+        if (Date.parse(latestQuote.validUntil) > now) continue
+        latestQuote.status = 'expired'
+        if (item.quote) item.quote.status = 'expired'
+        if (item.status === 'estimate_shared') item.status = 'awaiting_reply'
+        item.updatedAt = new Date(now).toISOString()
+    }
+}
+
 const mockAutoCareMessages = new Map<string, ServiceChatMessage[]>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
 const mockAutoCareChatAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
@@ -2991,6 +3004,7 @@ export const handlers = [
         if (scenario) return scenario
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        expireMockAutoCareQuotes()
         const items = isMockEmpty(request) ? [] : mockAutoCareServiceRequests.filter((item) => item.clientId === user.id).map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
         return HttpResponse.json(items)
     }),
@@ -3168,6 +3182,7 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        expireMockAutoCareQuotes()
         const provider = autoCareProviders.find((candidate) => candidate.id === item.providerId)
         const allowed = item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId)
         if (!allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
@@ -3372,7 +3387,10 @@ export const handlers = [
         reschedule.resolvedById = user.id
         reschedule.resolutionReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
         reschedule.resolvedAt = now
-        if (body.decision === 'accept') item.preferredAt = reschedule.proposedAt
+        if (body.decision === 'accept') {
+            item.preferredAt = reschedule.proposedAt
+            if (item.booking) item.booking.scheduledAt = reschedule.proposedAt
+        }
         item.updatedAt = now
         pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: body.decision === 'accept' ? 'Клиент подтвердил новое время' : 'Клиент отклонил новое время', message: body.decision === 'accept' ? 'Новое время визита подтверждено клиентом.' : 'Клиент отклонил предложенное время визита.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
@@ -3429,10 +3447,24 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (item.status === 'accepted' && item.acceptedQuoteVersion !== null && item.acceptedQuoteVersion !== undefined) {
+            const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+            return HttpResponse.json(response)
+        }
         if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
+        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
+        if (latestQuote.status && latestQuote.status !== 'pending') return HttpResponse.json({ message: 'This estimate is no longer available.' }, { status: 409 })
+        if (latestQuote.validUntil && new Date(latestQuote.validUntil).getTime() <= Date.now()) {
+            latestQuote.status = 'expired'
+            item.quote.status = 'expired'
+            item.status = 'awaiting_reply'
+            item.updatedAt = new Date().toISOString()
+            return HttpResponse.json({ message: 'This estimate has expired.' }, { status: 409 })
+        }
         item.status = 'accepted'
         const acceptedAt = new Date().toISOString()
-        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
+        latestQuote.status = 'accepted'
+        item.quote.status = 'accepted'
         const latestQuoteVersion = latestQuote && 'version' in latestQuote && typeof latestQuote.version === 'number' ? latestQuote.version : null
         item.clientConfirmedAt = acceptedAt
         item.acceptedQuoteVersion = latestQuoteVersion
@@ -3467,7 +3499,22 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        if (item.status === 'declined' && item.clientConfirmedAt) {
+            const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
+            return HttpResponse.json(response)
+        }
         if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
+        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
+        if (latestQuote.status && latestQuote.status !== 'pending') return HttpResponse.json({ message: 'This estimate is no longer available.' }, { status: 409 })
+        if (latestQuote.validUntil && new Date(latestQuote.validUntil).getTime() <= Date.now()) {
+            latestQuote.status = 'expired'
+            item.quote.status = 'expired'
+            item.status = 'awaiting_reply'
+            item.updatedAt = new Date().toISOString()
+            return HttpResponse.json({ message: 'This estimate has expired.' }, { status: 409 })
+        }
+        latestQuote.status = 'declined'
+        item.quote.status = 'declined'
         item.status = 'declined'
         item.clientConfirmedAt = new Date().toISOString()
         item.acceptedQuoteVersion = null
@@ -3484,6 +3531,7 @@ export const handlers = [
         if (scenario) return scenario
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        expireMockAutoCareQuotes()
         if (user.role !== 'owner') return HttpResponse.json({ message: 'Only owners can view service requests.' }, { status: 403 })
         const items = isMockEmpty(request) ? [] : mockAutoCareServiceRequests
             .filter((item) => hasMockProviderLocationAccess(user.id, item.providerId, item.locationId))
@@ -3510,13 +3558,19 @@ export const handlers = [
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         if (item.status === 'accepted' || item.status === 'declined' || item.status === 'closed') return HttpResponse.json({ message: 'This service request cannot receive a new estimate.' }, { status: 409 })
-        const body = await request.json() as { amountMinor?: number; currencyCode?: string; note?: string | null }
+        const body = await request.json() as { amountMinor?: number; currencyCode?: string; note?: string | null; validUntil?: string | null }
         const amountMinor = body.amountMinor
         const currencyCode = body.currencyCode
         if (typeof amountMinor !== 'number' || !Number.isInteger(amountMinor) || amountMinor <= 0 || !/^[A-Z]{3}$/.test(currencyCode ?? '')) return invalidMockBodyResponse()
+        if (body.validUntil !== undefined && body.validUntil !== null && (!Number.isFinite(Date.parse(body.validUntil)) || Date.parse(body.validUntil) <= Date.now())) return HttpResponse.json({ message: 'The estimate expiration must be in the future.' }, { status: 409 })
         const now = new Date().toISOString()
-        item.quote = { amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now }
-        item.quoteHistory.push({ id: `mock-quote-${Date.now()}`, version: item.quoteHistory.length + 1, amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now })
+        const validUntil = body.validUntil ?? null
+        for (const previousQuote of item.quoteHistory) {
+            if (previousQuote.status === 'pending') previousQuote.status = 'superseded'
+        }
+        const quoteId = `mock-quote-${Date.now()}`
+        item.quote = { amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now, status: 'pending', validUntil }
+        item.quoteHistory.push({ id: quoteId, version: item.quoteHistory.length + 1, amountMinor, currencyCode: currencyCode!, note: body.note?.trim() || null, createdAt: now, status: 'pending', validUntil })
         item.status = 'estimate_shared'
         item.updatedAt = now
         pushMockAutoCareNotification({ userId: item.clientId, requestId: item.id, role: 'client', title: 'Сервис прислал предварительную смету', message: 'Проверьте предварительную стоимость услуги.' })

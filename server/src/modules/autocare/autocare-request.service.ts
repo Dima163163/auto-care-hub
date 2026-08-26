@@ -14,6 +14,7 @@ import {
     AutoCareChatThreadType,
     AutoCareRepairEventEntity,
     AutoCareServiceQuoteEntity,
+    AutoCareQuoteStatus,
     AutoCareRescheduleRequestEntity,
     AutoCareRescheduleStatus,
     ServiceAttachmentEntity,
@@ -55,6 +56,7 @@ import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadU
 import { canManageProvider, canManageProviderWithManager, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts, zonedWallTimeToUtc } from './availability.js'
 import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
+import { getAutoCareQuoteLifecycleStatus, isAutoCareQuoteExpired } from './quote-policy.js'
 import { awardAutoCareBonusForCompletedVisit, refundAutoCareBonusForCancelledRequest } from './autocare-bonus.service.js'
 import { hasAvailableAppointmentCapacity } from './capacity-reservation.js'
 import { hasAutoCareResourceAvailability, releaseAutoCareResources, reserveAutoCareResources } from './capacity-resource.service.js'
@@ -239,6 +241,14 @@ function requestResponse(
     reschedule: AutoCareRescheduleResponse | null = null,
 ): AutoCareServiceRequestResponse {
     const snapshot = request.offeringSnapshot ?? (offering ? createOfferingSnapshot(definition, offering) : null)
+    const latestQuote = quoteHistory.at(-1)
+    const snapshotQuoteStatus = Object.values(AutoCareQuoteStatus).includes(request.estimateSnapshot?.quoteStatus as AutoCareQuoteStatus)
+        ? request.estimateSnapshot?.quoteStatus as AutoCareQuoteStatus
+        : AutoCareQuoteStatus.Pending
+    const quoteStatus = latestQuote?.status ?? getAutoCareQuoteLifecycleStatus(
+        snapshotQuoteStatus,
+        typeof request.estimateSnapshot?.validUntil === 'string' ? request.estimateSnapshot.validUntil : null,
+    )
     return {
         id: request.id,
         providerId: provider.id,
@@ -269,6 +279,7 @@ function requestResponse(
                 validUntil: typeof request.estimateSnapshot.validUntil === 'string' ? request.estimateSnapshot.validUntil : null,
                 priceLocked: request.estimateSnapshot.priceLocked === true,
                 createdAt: String(request.estimateSnapshot.createdAt ?? request.updatedAt.toISOString()),
+                status: quoteStatus,
             }
             : null,
         quoteHistory,
@@ -683,12 +694,17 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
             note: input.note ?? null,
             validUntil: input.validUntil ?? null,
             priceLocked: input.priceLocked ?? false,
+            quoteStatus: AutoCareQuoteStatus.Pending,
             createdAt: new Date().toISOString(),
         }
         lockedRequest.status = ServiceRequestStatus.EstimateShared
         const savedRequest = await manager.getRepository(ServiceRequestEntity).save(lockedRequest)
         const quoteRepository = manager.getRepository(AutoCareServiceQuoteEntity)
         const latestQuote = await quoteRepository.findOne({ where: { requestId }, order: { version: 'DESC' } })
+        await quoteRepository.update(
+            { requestId, status: AutoCareQuoteStatus.Pending },
+            { status: AutoCareQuoteStatus.Superseded },
+        )
         await quoteRepository.save(quoteRepository.create({
             requestId,
             providerId: lockedRequest.providerId,
@@ -697,6 +713,7 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
             currencyCode: input.currencyCode,
             snapshot: lockedRequest.estimateSnapshot,
             validUntil: input.validUntil ? new Date(input.validUntil) : null,
+            status: AutoCareQuoteStatus.Pending,
         }))
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'estimate_shared', title: 'Смета отправлена клиенту', notes: input.note, metadata: { amountMinor: input.amountMinor, currencyCode: input.currencyCode, priceLocked: input.priceLocked ?? false } })
         await notifyAutoCareParticipant({
@@ -725,14 +742,39 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
         const previousDecision = typeof lockedRequest.estimateSnapshot?.clientDecision === 'string'
             ? lockedRequest.estimateSnapshot.clientDecision
             : null
-        if (lockedRequest.status === targetStatus && previousDecision === targetStatus) {
+        if (lockedRequest.status === targetStatus && (
+            previousDecision === targetStatus ||
+            (accepted && lockedRequest.acceptedQuoteVersion !== null)
+        )) {
             const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-            return { request: lockedRequest, provider, changed: false }
+            return { request: lockedRequest, provider, changed: false, expired: false }
         }
         if (lockedRequest.status !== ServiceRequestStatus.EstimateShared || !lockedRequest.estimateSnapshot) conflict('There is no pending estimate for this service request.')
-        const validUntil = lockedRequest.estimateSnapshot.validUntil
-        if (typeof validUntil === 'string' && new Date(validUntil).getTime() <= Date.now()) conflict('This estimate has expired.')
-        const latestQuote = await manager.getRepository(AutoCareServiceQuoteEntity).findOne({ where: { requestId }, order: { version: 'DESC' } })
+        const quoteRepository = manager.getRepository(AutoCareServiceQuoteEntity)
+        const latestQuote = await quoteRepository.findOne({
+            where: { requestId },
+            order: { version: 'DESC' },
+            lock: { mode: 'pessimistic_write' },
+        })
+        if (!latestQuote) conflict('There is no pending estimate for this service request.')
+        const validUntil = latestQuote.validUntil ?? (
+            typeof lockedRequest.estimateSnapshot.validUntil === 'string'
+                ? new Date(lockedRequest.estimateSnapshot.validUntil)
+                : null
+        )
+        if (latestQuote.status === AutoCareQuoteStatus.Pending && isAutoCareQuoteExpired(validUntil)) {
+            latestQuote.status = AutoCareQuoteStatus.Expired
+            await quoteRepository.save(latestQuote)
+            lockedRequest.estimateSnapshot = {
+                ...lockedRequest.estimateSnapshot,
+                quoteStatus: AutoCareQuoteStatus.Expired,
+                expiredAt: new Date().toISOString(),
+            }
+            lockedRequest.status = ServiceRequestStatus.AwaitingReply
+            await manager.getRepository(ServiceRequestEntity).save(lockedRequest)
+            return { request: lockedRequest, provider: null, changed: false, expired: true }
+        }
+        if (latestQuote.status !== AutoCareQuoteStatus.Pending) conflict('This estimate is no longer available.')
         const acceptedAt = new Date()
         if (accepted) {
             if (!lockedRequest.preferredAt) conflict('Choose a visit time before accepting this estimate.')
@@ -757,9 +799,15 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
                 requiredResourceIds: offering?.requiredResourceIds ?? lockedRequest.offeringSnapshot?.requiredResourceIds,
             })
         }
+        latestQuote.status = accepted ? AutoCareQuoteStatus.Accepted : AutoCareQuoteStatus.Declined
+        await quoteRepository.save(latestQuote)
         lockedRequest.status = targetStatus
         lockedRequest.clientConfirmedAt = acceptedAt
-        lockedRequest.estimateSnapshot = { ...lockedRequest.estimateSnapshot, clientDecision: targetStatus }
+        lockedRequest.estimateSnapshot = {
+            ...lockedRequest.estimateSnapshot,
+            clientDecision: targetStatus,
+            quoteStatus: accepted ? AutoCareQuoteStatus.Accepted : AutoCareQuoteStatus.Declined,
+        }
         lockedRequest.acceptedQuoteVersion = accepted ? latestQuote?.version ?? null : null
         lockedRequest.acceptedQuoteSnapshot = accepted
             ? {
@@ -801,8 +849,9 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
                 message: accepted ? 'Клиент подтвердил предварительную стоимость услуги.' : 'Клиент попросил не продолжать по этой смете.',
             }, manager)
         }
-        return { request, provider, changed: true }
+        return { request, provider, changed: true, expired: false }
     })
+    if (transactionResult.expired) conflict('This estimate has expired.')
     const request = transactionResult.request
     return hydrateRequest(request)
 }
@@ -844,6 +893,7 @@ async function hydrateRequest(request: ServiceRequestEntity) {
         note: typeof quote.snapshot.note === 'string' ? quote.snapshot.note : null,
         validUntil: quote.validUntil?.toISOString() ?? null,
         priceLocked: quote.snapshot.priceLocked === true,
+        status: getAutoCareQuoteLifecycleStatus(quote.status, quote.validUntil),
         createdAt: quote.createdAt.toISOString(),
     })), pendingReschedule ? rescheduleResponse(pendingReschedule) : null)
 }
@@ -1301,6 +1351,12 @@ export async function decideAutoCareServiceReschedule(user: UserEntity, requestI
                 requiredResourceIds: offering?.requiredResourceIds ?? request.offeringSnapshot?.requiredResourceIds,
             })
             request.preferredAt = pending.proposedAt
+            if (request.bookingSnapshot) {
+                request.bookingSnapshot = {
+                    ...request.bookingSnapshot,
+                    scheduledAt: pending.proposedAt.toISOString(),
+                }
+            }
         }
         await rescheduleRepository.save(pending)
         await requestRepository.save(request)

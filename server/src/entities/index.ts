@@ -256,7 +256,7 @@ export {
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from './automotive/service-request.entity.js'
-export { AutoCareServiceQuoteEntity } from './automotive/service-quote.entity.js'
+export { AutoCareServiceQuoteEntity, AutoCareQuoteStatus } from './automotive/service-quote.entity.js'
 export { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from './automotive/autocare-reschedule-request.entity.js'
 export { PlatformReviewEntity, PlatformReviewStatus } from './platform-review/platform-review.entity.js'
 export {

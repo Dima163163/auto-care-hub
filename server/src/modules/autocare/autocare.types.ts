@@ -599,6 +599,7 @@ export type AutoCareServiceQuoteResponse = {
     note: string | null
     validUntil: string | null
     priceLocked: boolean
+    status: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'
     createdAt: string
 }
 
