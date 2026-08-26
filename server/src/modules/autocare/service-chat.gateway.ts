@@ -6,6 +6,8 @@ import { getRedisClient, isRedisEnabled } from '../../shared/redis/redis.js'
 import { logError } from '../../shared/observability/logger.js'
 
 type ChatEvent = {
+    /** Stable id used to de-duplicate a Redis redelivery after reconnect. */
+    eventId?: string
     type: 'message.created' | 'message.read' | 'offer.updated' | 'attachment.created' | 'presence'
     requestId?: string
     threadId?: string
@@ -13,6 +15,7 @@ type ChatEvent = {
 }
 
 const chatEventSchema = z.object({
+    eventId: z.string().uuid().optional(),
     type: z.enum(['message.created', 'message.read', 'offer.updated', 'attachment.created', 'presence']),
     requestId: z.string().uuid().optional(),
     threadId: z.string().uuid().optional(),
@@ -115,7 +118,8 @@ export function subscribeServiceChat(channelId: string, socket: WebSocket) {
 }
 
 export function broadcastServiceChat(channelId: string, event: ChatEvent) {
-    const serialized = serializeEvent(event)
+    const eventWithId: ChatEvent = { ...event, eventId: event.eventId ?? randomUUID() }
+    const serialized = serializeEvent(eventWithId)
     if (!serialized) return
     broadcastLocal(channelId, serialized)
     // A message can be created immediately after the first subscription. Wait
@@ -123,7 +127,7 @@ export function broadcastServiceChat(channelId: string, event: ChatEvent) {
     // the Redis publisher is still being initialized.
     void ensureRedisBridge().then(() => {
         if (!redisPublisher) return
-        const wire = JSON.stringify({ source: instanceId, event })
+        const wire = JSON.stringify({ source: instanceId, event: eventWithId })
         return redisPublisher.publish(channelName(channelId), wire).catch((error) => {
             logError('AutoCare chat Redis publish failed', error)
         })
@@ -131,7 +135,7 @@ export function broadcastServiceChat(channelId: string, event: ChatEvent) {
 }
 
 export function sendServiceChatEvent(socket: WebSocket, event: ChatEvent) {
-    const serialized = serializeEvent(event)
+    const serialized = serializeEvent({ ...event, eventId: event.eventId ?? randomUUID() })
     if (serialized && socket.readyState === 1) socket.send(serialized)
 }
 

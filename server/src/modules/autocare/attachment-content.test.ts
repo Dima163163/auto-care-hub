@@ -48,6 +48,21 @@ describe('AutoCare attachment normalization', () => {
         await expect(import('sharp').then(({ default: sharp }) => sharp(normalized).metadata())).resolves.toMatchObject({ width: 1, height: 1, format: 'png' })
     })
 
+    it('strips EXIF metadata during normalization', async () => {
+        const { default: sharp } = await import('sharp')
+        const source = await sharp({
+            create: {
+                width: 2,
+                height: 2,
+                channels: 3,
+                background: { r: 20, g: 40, b: 60 },
+            },
+        }).withMetadata({ exif: { IFD0: { Artist: 'AutoCare test' } } }).jpeg().toBuffer()
+        const normalized = await normalizeAutoCareAttachment(source, 'image/jpeg')
+        const metadata = await sharp(normalized).metadata()
+        expect(metadata.exif).toBeUndefined()
+    })
+
     it('rejects a magic-header payload that is not decodable', async () => {
         await expect(normalizeAutoCareAttachment(pngHeader, 'image/png')).rejects.toThrow('decodable image')
     })

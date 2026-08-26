@@ -28,15 +28,27 @@ async function runSubscriber() {
     }
     await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Timed out waiting for a Redis chat event.')), timeoutMs)
+        let received = 0
+        let unsubscribe: (() => void) | undefined
         const socket: SmokeSocket = {
             readyState: 1,
             send(payload) {
-                clearTimeout(timeout)
+                received += 1
                 process.stdout.write(`EVENT:${payload}\n`)
-                resolve()
+                // The publisher intentionally emits the same event id twice.
+                // Re-subscribe after the first delivery to emulate a reconnect;
+                // a real browser must then deduplicate the repeated event id.
+                if (received === 1) {
+                    unsubscribe?.()
+                    unsubscribe = subscribeServiceChat(channelId, socket as never)
+                }
+                if (received === 2) {
+                    clearTimeout(timeout)
+                    resolve()
+                }
             },
         }
-        subscribeServiceChat(channelId, socket as never)
+        unsubscribe = subscribeServiceChat(channelId, socket as never)
         process.stdout.write('READY\n')
     })
 }
@@ -46,18 +58,29 @@ async function runPublisher() {
         fail('Redis is not enabled; realtime smoke check requires REDIS_HOST or REDIS_URL.')
     }
     broadcastServiceChat(channelId, {
+        eventId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         type: 'presence',
         threadId: channelId,
         payload: { online: true, source: 'cross-process-smoke' },
     })
     await new Promise((resolve) => setTimeout(resolve, 100))
+    broadcastServiceChat(channelId, {
+        eventId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        type: 'presence',
+        threadId: channelId,
+        payload: { online: true, source: 'cross-process-smoke' },
+    })
+    await new Promise((resolve) => setTimeout(resolve, 200))
     await closeServiceChatGateway()
     await disconnectRedis()
 }
 
 function spawnRole(role: 'subscriber' | 'publisher', channel: string) {
     const scriptPath = fileURLToPath(import.meta.url)
-    return spawn(process.execPath, ['--import', 'tsx', scriptPath, role, channel], {
+    const scriptArgs = scriptPath.endsWith('.ts')
+        ? ['--import', 'tsx', scriptPath, role, channel]
+        : [scriptPath, role, channel]
+    return spawn(process.execPath, scriptArgs, {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: process.env,
     })
@@ -68,12 +91,14 @@ async function runCoordinator() {
         fail('Redis is not enabled; set REDIS_HOST or REDIS_URL before running this smoke check.')
     }
     const channel = randomUUID()
-    const subscriber = spawnRole('subscriber', channel)
-    let stdout = ''
+    const subscribers = [spawnRole('subscriber', channel), spawnRole('subscriber', channel)]
+    const outputs = subscribers.map(() => '')
     let stderr = ''
     let publisherStarted = false
     const cleanup = () => {
-        if (!subscriber.killed) subscriber.kill('SIGTERM')
+        for (const subscriber of subscribers) {
+            if (!subscriber.killed) subscriber.kill('SIGTERM')
+        }
     }
     await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
@@ -81,9 +106,8 @@ async function runCoordinator() {
             reject(new Error(`Timed out waiting for the cross-process Redis event. ${stderr}`))
         }, timeoutMs)
 
-        subscriber.stdout.on('data', (chunk: Buffer) => {
-            stdout += chunk.toString()
-            if (!stdout.includes('READY') || publisherStarted) return
+        const startPublisherWhenReady = () => {
+            if (publisherStarted || !outputs.every((output) => output.includes('READY'))) return
             publisherStarted = true
             const publisher = spawnRole('publisher', channel)
             publisher.stderr.on('data', (error: Buffer) => { stderr += error.toString() })
@@ -93,18 +117,42 @@ async function runCoordinator() {
                 cleanup()
                 reject(new Error(`Publisher process failed. ${stderr}`))
             })
-        })
-        subscriber.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
-        subscriber.once('exit', (code) => {
-            clearTimeout(timeout)
-            if (code !== 0 || !stdout.includes('EVENT:')) {
-                reject(new Error(`Subscriber process failed. ${stderr}`))
-                return
-            }
-            resolve()
+        }
+
+        subscribers.forEach((subscriber, index) => {
+            subscriber.stdout.on('data', (chunk: Buffer) => {
+                outputs[index] += chunk.toString()
+                startPublisherWhenReady()
+            })
+            subscriber.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
+            subscriber.once('exit', (code) => {
+                const output = outputs[index] ?? ''
+                if (code !== 0 || !output.includes('EVENT:')) {
+                    clearTimeout(timeout)
+                    cleanup()
+                    reject(new Error(`Subscriber process ${index + 1} failed. ${stderr}`))
+                    return
+                }
+                if (!subscribers.some((candidate) => candidate.exitCode === null)) {
+                    clearTimeout(timeout)
+                    const eventPayloads = outputs.map((output) => output.split('\n').filter((line) => line.startsWith('EVENT:')).map((line) => line.slice('EVENT:'.length)))
+                    const eventIds = eventPayloads.flatMap((payloads) => payloads.map((payload) => {
+                        try {
+                            return (JSON.parse(payload) as { eventId?: unknown }).eventId
+                        } catch {
+                            return null
+                        }
+                    }))
+                    if (eventPayloads.some((payloads) => payloads.length !== 2) || !eventIds[0] || eventIds.some((eventId) => eventId !== eventIds[0])) {
+                        reject(new Error(`Subscribers did not receive two identical event deliveries. ${outputs.join('\n')}`))
+                        return
+                    }
+                    resolve()
+                }
+            })
         })
     })
-    process.stdout.write('Cross-process Redis/WebSocket chat smoke check passed.\n')
+    process.stdout.write('Cross-process Redis/WebSocket chat smoke check passed (2 subscribers, repeated event identity).\n')
 }
 
 async function main() {

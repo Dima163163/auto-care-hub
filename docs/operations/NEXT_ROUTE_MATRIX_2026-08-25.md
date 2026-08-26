@@ -26,7 +26,7 @@ added to the client tree without a release-review entry.
 | Owner dynamic | `/owner/autocare-providers/:id`, `/owner/autocare-providers/:id/reviews`, `/owner/cabinets/:id/edit` | 200 | owner membership/branch scope |
 | Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/reviews`, `/admin/security-center` | 200 | admin or super-admin role |
 | Super-admin workspace | `/super-admin/dashboard` | 200 | super-admin role |
-| Hidden MVP chat routes | `/chats`, `/owner/chats`, `/admin/chats`, `/super-admin/chats` | 200 | feature flag keeps navigation hidden |
+| Chat routes | `/chats`, `/owner/chats`, `/admin/chats`, `/super-admin/chats` | 200 | navigation enabled by default; feature flag is an emergency rollback |
 | Unknown | any path outside the contract | 404 | Next `not-found` boundary |
 
 ## Canonical route inventory and runtime owners
@@ -44,7 +44,7 @@ mean that Vite is involved in production.
 | `/about` | `PublicLayout` | public company information |
 | `/favorites` | `PublicLayout` | public shell; auth action when needed |
 | `/notifications` | `PublicLayout` | authenticated client |
-| `/chats` | `PublicLayout` | authenticated client; MVP navigation hidden |
+| `/chats` | `PublicLayout` | authenticated client; navigation enabled by default |
 | `/blog` | `PublicLayout` | public blog |
 | `/partners` | `PublicLayout` | public partners |
 | `/contacts` | `PublicLayout` | public contacts |
@@ -76,7 +76,7 @@ mean that Vite is involved in production.
 | `/owner/reviews` | `OwnerLayout` | owner reviews |
 | `/owner/clients` | `OwnerLayout` | owner clients |
 | `/owner/services` | `OwnerLayout` | owner service catalog |
-| `/owner/chats` | `OwnerLayout` | owner chats; MVP navigation hidden |
+| `/owner/chats` | `OwnerLayout` | owner chats; navigation enabled by default |
 | `/admin/dashboard` | `AdminLayout` | admin or super-admin |
 | `/admin/users` | `AdminLayout` | admin or super-admin |
 | `/admin/owners` | `AdminLayout` | admin or super-admin |
@@ -85,9 +85,9 @@ mean that Vite is involved in production.
 | `/admin/platform-reviews` | `AdminLayout` | admin or super-admin |
 | `/admin/audit-logs` | `AdminLayout` | admin or super-admin |
 | `/admin/security-center` | `AdminLayout` | admin or super-admin |
-| `/admin/chats` | `AdminLayout` | admin or super-admin; MVP navigation hidden |
+| `/admin/chats` | `AdminLayout` | admin or super-admin; navigation enabled by default |
 | `/super-admin/dashboard` | `AdminLayout` | super-admin only |
-| `/super-admin/chats` | `AdminLayout` | super-admin only; MVP navigation hidden |
+| `/super-admin/chats` | `AdminLayout` | super-admin only; navigation enabled by default |
 
 ### Dynamic route variants
 

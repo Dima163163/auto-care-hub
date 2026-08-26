@@ -96,9 +96,14 @@ export async function ensureAutoCareRequestChatThread(request: ServiceRequestEnt
 async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEntity) {
     // The super administrator is the final escalation point and may inspect
     // and answer any conversation, including service-request attachments.
-    // Regular admins remain limited to support/escalation threads.
+    // Regular admins remain limited to support/escalation threads unless a
+    // conversation has been reported and is therefore in their moderation queue.
     if (user.role === UserRole.SuperAdmin) return
     if (user.role === UserRole.Admin && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return
+    if (user.role === UserRole.Admin) {
+        const report = await AppDataSource.getRepository(AutoCareChatReportEntity).findOneBy({ threadId: thread.id })
+        if (report) return
+    }
     if (thread.clientId === user.id) return
     if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return
     if (thread.providerId) {
@@ -183,7 +188,11 @@ export async function getMyAutoCareChats(user: UserEntity) {
     } else if (user.role === UserRole.SuperAdmin) {
         threads = await repository.find({ order: { updatedAt: 'DESC' } })
     } else if (user.role === UserRole.Admin) {
-        threads = await repository.find({ where: [{ type: AutoCareChatThreadType.Support }, { type: AutoCareChatThreadType.AdminEscalation }], order: { updatedAt: 'DESC' } })
+        const moderationReports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({ order: { createdAt: 'DESC' }, take: 100 })
+        const reportedThreadIds = [...new Set(moderationReports.map((report) => report.threadId))]
+        const reportedThreads = reportedThreadIds.length ? await repository.find({ where: { id: In(reportedThreadIds) }, order: { updatedAt: 'DESC' } }) : []
+        const operationalThreads = await repository.find({ where: [{ type: AutoCareChatThreadType.Support }, { type: AutoCareChatThreadType.AdminEscalation }], order: { updatedAt: 'DESC' } })
+        threads = [...new Map([...operationalThreads, ...reportedThreads].map((thread) => [thread.id, thread])).values()]
     }
     return Promise.all(threads.map((thread) => toThreadResponse(user, thread)))
 }
