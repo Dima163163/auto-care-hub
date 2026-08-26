@@ -19,6 +19,7 @@ import { logError } from '../../shared/observability/logger.js'
 import { getManagedProviderScopes, hasProviderWorkspacePermission } from './provider-access.service.js'
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
+import { env } from '../../config/env.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -124,6 +125,10 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
             impressions: Number(metrics?.impressions ?? 0),
             profileOpens: Number(metrics?.profileOpens ?? 0),
             available: isProviderWide,
+        },
+        privacy: {
+            consentRequired: true,
+            retentionDays: env.autoCareAnalyticsRetentionDays,
         },
     }
 }

@@ -9,6 +9,7 @@ import {
     AutomotiveServiceLocationEntity,
 } from '../../entities/index.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
+import type { OwnerAutoCareEvidenceResponse } from './autocare.types.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
@@ -203,6 +204,35 @@ export async function listAdminAutoCareModerationEvidence(user: UserEntity, stat
         addressByProviderId.get(item.providerId) ?? null,
         item.kind === 'review' && item.reference ? reviewById.get(item.reference) : undefined,
     ))
+}
+
+/**
+ * Owners can review the moderation state of evidence they submitted without
+ * receiving any other provider's rows. References are opaque private keys;
+ * they are never turned into public URLs by this endpoint.
+ */
+export async function listOwnerAutoCareEvidence(user: UserEntity, providerId: string): Promise<OwnerAutoCareEvidenceResponse[]> {
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: user.id })
+    if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
+        where: { providerId },
+        order: { createdAt: 'DESC' },
+        take: 100,
+    })
+    return evidence
+        .filter((item) => isAutoCareModerationEvidenceKind(item.kind))
+        .map((item) => ({
+            id: item.id,
+            providerId: item.providerId,
+            kind: item.kind,
+            label: item.label,
+            status: item.status,
+            reference: item.reference,
+            notes: item.notes,
+            expiresAt: item.expiresAt?.toISOString() ?? null,
+            createdAt: item.createdAt.toISOString(),
+            verifiedAt: item.verifiedAt?.toISOString() ?? null,
+        }))
 }
 
 export async function decideAdminAutoCareModerationEvidence(

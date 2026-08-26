@@ -218,6 +218,10 @@ export type AutoCareApiProvider = {
     trustBadge?: string | null
     trustReassessedAt?: string | null
     offers?: AutoCareApiOffer[]
+    locations?: Array<{
+        location: AutoCareApiProvider['location']
+        offers: AutoCareApiOffer[]
+    }>
 }
 
 export type AutoCareApiDiscoveryItem = {
@@ -272,6 +276,20 @@ export type AutoCareProviderAnalytics = {
     averageRating: number
     bonusLiabilityPoints: number
     tracking: { impressions: number; profileOpens: number; available: boolean }
+    privacy: { consentRequired: boolean; retentionDays: number }
+}
+
+export type OwnerAutoCareEvidence = {
+    id: string
+    providerId: string
+    kind: string
+    label: string
+    status: string
+    reference: string | null
+    notes: string | null
+    expiresAt: string | null
+    createdAt: string
+    verifiedAt: string | null
 }
 
 export type OwnerAutoCareBonusLiability = {
@@ -633,7 +651,15 @@ const autoCareProviderAnalyticsSchema = z.object({
     reviewCount: z.number().int().nonnegative(), averageRating: z.number().min(0).max(5),
     bonusLiabilityPoints: z.number().int().nonnegative(),
     tracking: z.object({ impressions: z.number().int().nonnegative(), profileOpens: z.number().int().nonnegative(), available: z.boolean() }),
+    privacy: z.object({ consentRequired: z.boolean(), retentionDays: z.number().int().positive() }),
 }).passthrough() satisfies z.ZodType<AutoCareProviderAnalytics>
+
+const ownerAutoCareEvidenceSchema = z.object({
+    id: z.string(), providerId: z.string(), kind: z.string(), label: z.string(), status: z.string(),
+    reference: z.string().nullable(), notes: z.string().nullable(), expiresAt: z.string().datetime({ offset: true }).nullable(),
+    createdAt: z.string().datetime({ offset: true }), verifiedAt: z.string().datetime({ offset: true }).nullable(),
+}).passthrough() satisfies z.ZodType<OwnerAutoCareEvidence>
+const ownerAutoCareEvidenceListSchema = z.array(ownerAutoCareEvidenceSchema)
 
 const autoCareProviderInvitationSchema = z.object({
     id: z.string(), providerId: z.string(), email: z.string().email(), locationId: z.string().nullable(),
@@ -739,6 +765,25 @@ const autoCareCapacityReservationSchema = z.object({
     createdAt: z.string().datetime({ offset: true }),
 }) satisfies z.ZodType<AutoCareCapacityReservation>
 
+const autoCareLocationSchema = z.object({
+    id: z.string(),
+    marketId: z.string(),
+    zoneId: z.string().nullable().optional(),
+    address: z.string(),
+    hours: z.string(),
+    appointmentCapacity: z.number().int().positive().optional(),
+    timezone: z.string().optional(),
+    weeklySchedule: z.record(z.string(), z.object({ open: z.string(), close: z.string(), closed: z.boolean() })).optional(),
+    blackoutDates: z.array(z.string()).optional(),
+    latitude: z.number().finite().nullable(),
+    longitude: z.number().finite().nullable(),
+    supportsMobile: z.boolean().optional(),
+    supportsPickup: z.boolean().optional(),
+    coverageRadiusKm: z.number().finite().nullable().optional(),
+    dispatchBasePriceMinor: z.number().finite().optional(),
+    etaMinutes: z.number().finite().nullable().optional(),
+})
+
 const autoCareProviderSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -773,33 +818,16 @@ const autoCareProviderSchema = z.object({
     amenityIds: z.array(z.string()),
     brandSpecializations: z.array(z.string()),
     isMultibrand: z.boolean(),
-    location: z.object({
-        id: z.string(),
-        marketId: z.string(),
-        zoneId: z.string().nullable().optional(),
-        address: z.string(),
-        hours: z.string(),
-        appointmentCapacity: z.number().int().positive().optional(),
-        timezone: z.string().optional(),
-        weeklySchedule: z.record(z.string(), z.object({ open: z.string(), close: z.string(), closed: z.boolean() })).optional(),
-        blackoutDates: z.array(z.string()).optional(),
-        latitude: z.number().finite().nullable(),
-        longitude: z.number().finite().nullable(),
-        supportsMobile: z.boolean().optional(),
-        supportsPickup: z.boolean().optional(),
-        coverageRadiusKm: z.number().finite().nullable().optional(),
-        dispatchBasePriceMinor: z.number().finite().optional(),
-        etaMinutes: z.number().finite().nullable().optional(),
-    }),
+    location: autoCareLocationSchema,
     trustScore: z.number().finite().optional(),
     trustBadge: z.string().nullable().optional(),
     trustReassessedAt: z.string().nullable().optional(),
     offers: z.array(autoCareOfferSchema).optional(),
+    locations: z.array(z.object({ location: autoCareLocationSchema, offers: z.array(autoCareOfferSchema) })).optional(),
 }).passthrough() satisfies z.ZodType<AutoCareApiProvider>
 
 const autoCareProviderProfileSchema = autoCareProviderSchema.extend({
     offers: z.array(autoCareOfferSchema),
-    locations: z.array(z.object({ location: autoCareProviderSchema.shape.location, offers: z.array(autoCareOfferSchema) })).optional(),
 }).passthrough() satisfies z.ZodType<AutoCareApiProviderProfile>
 const autoCareFavoriteSchema = z.object({
     id: z.string(),
@@ -1098,6 +1126,7 @@ export type CreateOwnerAutoCareProviderInput = {
     logoUrl?: string | null
     coverImageUrl?: string | null
     galleryImageUrls?: string[]
+    documents?: Array<{ label: string; reference: string; expiresAt?: string | null }>
 }
 
 export type AutoCareCapacityResource = {
@@ -1347,6 +1376,11 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/analytics`,
             transformResponse: (value: unknown) => autoCareProviderAnalyticsSchema.parse(value),
             providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `ANALYTICS_${providerId}` }],
+        }),
+        getOwnerAutoCareProviderEvidence: build.query<OwnerAutoCareEvidence[], string>({
+            query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/evidence`,
+            transformResponse: (value: unknown) => ownerAutoCareEvidenceListSchema.parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareProvider', id: `EVIDENCE_${providerId}` }],
         }),
         getOwnerAutoCareBonusLiability: build.query<OwnerAutoCareBonusLiability, string>({
             query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/bonus-liability`,
@@ -1802,6 +1836,7 @@ export const {
     useUpdateOwnerAutoCareCommunicationSettingsMutation,
     useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareProviderAnalyticsQuery,
+    useGetOwnerAutoCareProviderEvidenceQuery,
     useGetOwnerAutoCareBonusLiabilityQuery,
     useGetOwnerAutoCareProviderMembersQuery,
     useInviteAutoCareProviderMemberMutation,

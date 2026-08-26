@@ -38,6 +38,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
     const [selectedAmenities, setSelectedAmenities] = useState<AutomotiveAmenityId[]>([...defaultAutomotiveAmenityIds])
     const [additionalPhones, setAdditionalPhones] = useState<number[]>([])
     const nextPhoneId = useRef(0)
+    const [documents, setDocuments] = useState<number[]>([])
+    const nextDocumentId = useRef(0)
     const [logoPreview, setLogoPreview] = useState<string | null>(null)
     const [coverPreview, setCoverPreview] = useState<string | null>(null)
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
@@ -72,6 +74,11 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 optionalText(formData.get('phone')),
                 ...formData.getAll('additionalPhone').map((value) => optionalText(value)),
             ].filter((phone): phone is string => Boolean(phone)))]
+            const documentsPayload = formData.getAll('documentLabel').map((label, index) => ({
+                label: String(label).trim(),
+                reference: String(formData.getAll('documentReference')[index] ?? '').trim(),
+                expiresAt: String(formData.getAll('documentExpiresAt')[index] ?? '').trim() || null,
+            })).filter((document) => document.label && document.reference)
             const body: CreateOwnerAutoCareProviderInput = {
                 name: String(formData.get('name') ?? '').trim(),
                 description: String(formData.get('description') ?? '').trim() || undefined,
@@ -104,6 +111,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 logoUrl,
                 coverImageUrl: coverUrl,
                 galleryImageUrls: galleryUrls,
+                documents: documentsPayload,
             }
             await createProvider(body).unwrap()
             event.currentTarget.reset()
@@ -113,6 +121,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             setSelectedBrands([])
             setSelectedAmenities([...defaultAutomotiveAmenityIds])
             setAdditionalPhones([])
+            setDocuments([])
             setLogoPreview(null)
             setCoverPreview(null)
             setGalleryPreviews([])
@@ -216,6 +225,26 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                         <span className="mt-1 block text-xs font-medium text-muted-foreground">{t('autocare.ownerProviderGalleryHint')}</span>
                         {galleryPreviews.length > 0 && <div className="mt-3 grid grid-cols-4 gap-2">{galleryPreviews.map((preview) => <img key={preview} src={preview} alt="" className="aspect-square rounded-lg border object-cover" />)}</div>}
                     </Field>
+                </section>
+
+                <section className="border-t pt-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="text-sm font-bold">{locale === 'ru' ? 'Документы и подтверждения' : 'Documents and evidence'}</h3>
+                            <p className="mt-1 text-xs text-muted-foreground">{locale === 'ru' ? 'Добавьте ссылки на документы в приватном хранилище. Они попадут на проверку и не будут опубликованы.' : 'Add private storage references. Documents go to moderation and are never published.'}</p>
+                        </div>
+                        <Button type="button" variant="outline" disabled={documents.length >= 20} onClick={() => setDocuments((items) => [...items, nextDocumentId.current++])}>
+                            {locale === 'ru' ? 'Добавить документ' : 'Add document'}
+                        </Button>
+                    </div>
+                    {documents.length > 0 && <div className="mt-4 space-y-3">
+                        {documents.map((documentId, index) => <div key={`document-${documentId}`} className="grid gap-3 rounded-[var(--radius-card)] border border-border bg-background p-3 sm:grid-cols-[1fr_1.4fr_170px_auto] sm:items-end">
+                            <Field label={locale === 'ru' ? 'Название документа' : 'Document name'}><input required name="documentLabel" className={inputClassName} placeholder={locale === 'ru' ? 'Свидетельство ИП' : 'Business certificate'} /></Field>
+                            <Field label={locale === 'ru' ? 'Приватная ссылка' : 'Private reference'}><input required name="documentReference" pattern="^private://.*" className={inputClassName} placeholder="private://documents/..." /></Field>
+                            <Field label={locale === 'ru' ? 'Действует до' : 'Expires on'}><input name="documentExpiresAt" type="date" className={inputClassName} /></Field>
+                            <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label={`${locale === 'ru' ? 'Удалить документ' : 'Remove document'} ${index + 1}`} onClick={() => setDocuments((items) => items.filter((id) => id !== documentId))}>{locale === 'ru' ? 'Удалить' : 'Remove'}</Button>
+                        </div>)}
+                    </div>}
                 </section>
 
                 <section className="border-t pt-5">

@@ -930,6 +930,7 @@ export const enTranslations = {
         ownerProviderStatsTitle: 'Location statistics',
         ownerProviderStatsDescription: 'Detailed requests, bookings, conversion and revenue analytics will be available here as the owner workspace grows.',
         ownerProviderOpenDashboard: 'Open full dashboard',
+        ownerProviderOffersLabel: 'services',
         heroTitle: 'Find the best auto service near you',
         heroDescription: 'Compare prices, ratings and booking times in a few clicks',
         byService: 'By service',

@@ -48,7 +48,8 @@ function OwnerAutoCareProviderCard({ provider, locale, t }: { provider: AutoCare
         const amenity = automotiveAmenities.find((item) => item.id === id)
         return amenity ? [...items, amenity] : items
     }, [])
-    const offer = provider.offers?.find((item) => item.active) ?? provider.offers?.[0]
+    const offers = provider.locations?.flatMap((branch) => branch.offers) ?? provider.offers ?? []
+    const offer = offers.find((item) => item.active) ?? offers[0]
     const warranty = provider.warrantyText || offer?.warrantyText || t('autocare.qualityGuarantee')
     const responseMinutes = provider.responseWindowMinutes ?? 240
     const responseLabel = responseMinutes < 120 ? (ru ? `${responseMinutes} мин` : `${responseMinutes} min`) : responseMinutes < 1440 ? (ru ? `${Math.round(responseMinutes / 60)} ч` : `${Math.round(responseMinutes / 60)} hr`) : (ru ? 'В течение дня' : 'Within a day')
@@ -69,6 +70,7 @@ function OwnerAutoCareProviderCard({ provider, locale, t }: { provider: AutoCare
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5"><h2 className="truncate text-lg font-black tracking-tight md:text-xl">{provider.name}</h2>{provider.verified && <ShieldCheck className="size-4 shrink-0 text-primary" aria-label={t('autocare.trustedBadge')} />}</div>
                             <p className="mt-1 flex items-center gap-1.5 text-xs text-primary-foreground/75"><MapPin className="size-3.5 shrink-0" />{provider.location.address}</p>
+                            {provider.locations && provider.locations.length > 1 && <p className="mt-1 text-[11px] font-semibold text-primary-foreground/65">{provider.locations.length} {ru ? 'филиала' : 'branches'}</p>}
                         </div>
                     </div>
                     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${provider.status === 'active' ? 'bg-status-success-surface text-status-success-foreground' : 'bg-primary-foreground/10 text-primary-foreground/80'}`}><CheckCircle2 className="size-3" />{provider.status === 'active' ? t('autocare.ownerProviderPublished') : t('autocare.ownerProviderDraft')}</span>

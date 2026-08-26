@@ -545,7 +545,12 @@ export async function getOwnerAutoCareProviders(owner: UserEntity) {
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const locations = await locationRepository.findBy({ providerId: In(providers.map((provider) => provider.id)) })
     const visibleLocations = locations.filter((location) => isManagedProviderLocationAllowed(scopes, location.providerId, location.id))
-    const locationByProviderId = new Map(visibleLocations.map((location) => [location.providerId, location]))
+    const locationsByProviderId = new Map<string, AutomotiveServiceLocationEntity[]>()
+    for (const location of visibleLocations) {
+        const providerLocations = locationsByProviderId.get(location.providerId) ?? []
+        providerLocations.push(location)
+        locationsByProviderId.set(location.providerId, providerLocations)
+    }
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
     const offers = visibleLocations.length === 0
         ? []
@@ -563,11 +568,16 @@ export async function getOwnerAutoCareProviders(owner: UserEntity) {
     }
 
     return providers.flatMap((provider) => {
-        const location = locationByProviderId.get(provider.id)
+        const providerLocations = locationsByProviderId.get(provider.id) ?? []
+        const location = providerLocations[0]
         if (!location) return []
         return [{
             ...toProviderResponse(provider, location),
             offers: (offersByLocationId.get(location.id) ?? []).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
+            locations: providerLocations.map((branch) => ({
+                location: toProviderResponse(provider, branch).location,
+                offers: (offersByLocationId.get(branch.id) ?? []).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))),
+            })),
         }]
     })
 }
