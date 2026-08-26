@@ -1,8 +1,8 @@
 import { readPublicEnv } from './runtime-env'
 
 /**
- * Product-surface switches. Keep disabled MVP surfaces in the codebase so
- * they can be enabled after the free launch without restoring deleted UI.
+ * Product-surface switches. Keep rollout controls in the codebase so a
+ * surface can be enabled by default and rolled back without deleting its UI.
  */
 export const FEATURE_FLAGS = {
     providerPricing: readPublicEnv('VITE_ENABLE_PROVIDER_PRICING') === 'true',

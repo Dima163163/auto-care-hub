@@ -34,7 +34,7 @@ The provider may accept, request clarification, or decline. A customer can cance
 
 `not_started → open → awaiting_reply → estimate_shared → accepted | declined | closed`
 
-Images are attachments with upload progress, retry, validation errors, and a private access policy. Messages are scoped to a service request or booking; there is no unscoped provider/customer chat in MVP.
+Images are attachments with upload progress, retry, validation errors, and a private access policy. Messages are scoped to a service request, booking, or an explicitly created provider inquiry; support and moderation escalation threads use the same contract. Chat navigation is enabled by default in the MVP and can be disabled only through the emergency rollout flag.
 
 ### Provider profile and request panel
 

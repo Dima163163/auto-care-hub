@@ -748,7 +748,19 @@ type MockAutoCareChatBlock = {
     createdAt: string
     revokedAt: string | null
 }
-const mockAutoCareChatReports: MockAutoCareChatReport[] = []
+const mockAutoCareChatReports: MockAutoCareChatReport[] = [{
+    id: 'chat-report-demo-1',
+    threadId: 'chat-inquiry-proservice',
+    reporterId: 'user-client-1',
+    reportedUserId: 'user-owner-1',
+    category: 'other',
+    description: 'Проверочный отчёт для очереди модерации: клиент просит проверить переписку и вложения.',
+    status: 'pending',
+    reviewedById: null,
+    resolutionReason: null,
+    createdAt: '2026-08-14T08:25:00.000Z',
+    reviewedAt: null,
+}]
 const mockAutoCareChatBlocks: MockAutoCareChatBlock[] = []
 type MockAutoCareAppeal = {
     id: string
@@ -1001,10 +1013,11 @@ function mockChatThreadFromRequest(request: MockAutoCareServiceRequest): MockAut
 }
 
 function getMockAutoCareChatThreads(user: User) {
+    const reportedThreadIds = new Set(mockAutoCareChatReports.map((report) => report.threadId))
     const requestThreads = mockAutoCareServiceRequests
-        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)))
+        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && reportedThreadIds.has(`chat-request-${request.id}`)))
         .map(mockChatThreadFromRequest)
-    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && ['support', 'admin_escalation'].includes(thread.type)) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
+    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || reportedThreadIds.has(thread.id))) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
     return [...requestThreads, ...genericThreads].sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
 }
 

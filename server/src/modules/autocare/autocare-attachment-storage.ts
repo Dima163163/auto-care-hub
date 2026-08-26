@@ -2,6 +2,7 @@ import {
     CopyObjectCommand,
     DeleteObjectCommand,
     GetObjectCommand,
+    ListObjectsV2Command,
     PutObjectCommand,
     S3Client,
 } from '@aws-sdk/client-s3'
@@ -209,7 +210,30 @@ export async function removeAutoCareAttachmentObject(key: string) {
 type AttachmentObjectEntry = { key: string; lastModifiedAt: number }
 
 async function listScopeObjects(scope: AutoCareAttachmentScope) {
-    if (env.autoCareAttachments.storageProvider !== 'filesystem') return []
+    if (env.autoCareAttachments.storageProvider !== 'filesystem') {
+        const { client, bucket } = getS3Client()
+        const entries = new Map<string, AttachmentObjectEntry>()
+        for (const prefix of [`private/autocare-${scope}/`, `quarantine/autocare-${scope}/`]) {
+            let continuationToken: string | undefined
+            do {
+                const page = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: continuationToken }))
+                for (const object of page.Contents ?? []) {
+                    const storageKey = object.Key ?? ''
+                    const key = storageKey.startsWith('private/')
+                        ? storageKey.slice('private/'.length)
+                        : storageKey.startsWith('quarantine/')
+                            ? storageKey.slice('quarantine/'.length)
+                            : ''
+                    if (!attachmentKeyPattern.test(key) || !object.LastModified) continue
+                    const lastModifiedAt = object.LastModified.getTime()
+                    const previous = entries.get(key)
+                    entries.set(key, { key, lastModifiedAt: Math.max(previous?.lastModifiedAt ?? 0, lastModifiedAt) })
+                }
+                continuationToken = page.NextContinuationToken
+            } while (continuationToken)
+        }
+        return [...entries.values()]
+    }
     const scopeRoot = path.join(attachmentRoot, `autocare-${scope}`)
     let parentEntries
     try {

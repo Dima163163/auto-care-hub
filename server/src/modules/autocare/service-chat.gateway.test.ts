@@ -30,7 +30,20 @@ describe('AutoCare service chat gateway', () => {
         broadcastServiceChat(threadId, { type: 'presence', threadId, payload: { online: true } })
 
         expect(socket.send).toHaveBeenCalledWith(expect.stringContaining('"online":true'))
+        const wire = JSON.parse(socket.send.mock.calls[0]?.[0] as string) as { eventId?: string }
+        expect(wire.eventId).toMatch(/^[0-9a-f-]{36}$/)
         unsubscribe()
+    })
+
+    it('preserves a caller event id so cross-process redelivery can be deduplicated', () => {
+        const socket = createSocket()
+        const threadId = '33333333-3333-4333-8333-333333333333'
+        subscribeServiceChat(threadId, socket as never)
+        const eventId = '44444444-4444-4444-8444-444444444444'
+
+        broadcastServiceChat(threadId, { eventId, type: 'presence', threadId, payload: { online: false } })
+
+        expect(JSON.parse(socket.send.mock.calls[0]?.[0] as string)).toMatchObject({ eventId })
     })
 
     it('does not emit oversized realtime payloads', () => {

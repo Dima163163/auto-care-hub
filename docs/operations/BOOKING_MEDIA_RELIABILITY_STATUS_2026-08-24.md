@@ -38,5 +38,6 @@
 6. Configure the production email provider and send a reminder through the
    outbox. Browser push requires separate VAPID keys and persisted subscription
    records; it is deliberately not enabled without those credentials.
-7. Keep chat navigation disabled until the report/block workflow and moderation
-   policy are approved for the MVP release.
+7. Chat navigation is enabled by default for the MVP. Keep the feature flag
+   available as an emergency rollback while the production moderation policy
+   and operator runbook are signed off.
