@@ -353,11 +353,12 @@ export type CreateAutoCareAppealInput = { subject: AutoCareAppeal['subject']; su
 export type AdminAutoCareModerationEvidence = {
     id: string
     providerId: string
-    kind: 'provider_cover' | 'provider_gallery' | 'review'
+    kind: 'provider_cover' | 'provider_gallery' | 'provider_document' | 'registration_document' | 'review'
     label: string
     status: 'pending' | 'approved' | 'rejected'
     reference: string | null
     notes: string | null
+    expiresAt: string | null
     createdAt: string
     verifiedAt: string | null
     provider: { id: string; name: string; address: string | null }
@@ -925,9 +926,9 @@ const autoCareQualityMonitoringSchema = z.object({ generatedAt: z.string(), prov
 const autoCareAppealSchema = z.object({ id: z.string(), subject: z.enum(['provider', 'review', 'suspension', 'catalog']), subjectId: z.string(), submittedById: z.string(), providerId: z.string().nullable(), reason: z.string(), evidenceIds: z.array(z.string()), status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']), decidedById: z.string().nullable(), decisionReason: z.string().nullable(), createdAt: z.string(), decidedAt: z.string().nullable() }).passthrough()
 const autoCareAppealsSchema = z.array(autoCareAppealSchema)
 const adminAutoCareModerationEvidenceSchema = z.object({
-    id: z.string(), providerId: z.string(), kind: z.enum(['provider_cover', 'provider_gallery', 'review']), label: z.string(),
+    id: z.string(), providerId: z.string(), kind: z.enum(['provider_cover', 'provider_gallery', 'provider_document', 'registration_document', 'review']), label: z.string(),
     status: z.enum(['pending', 'approved', 'rejected']), reference: z.string().nullable(), notes: z.string().nullable(),
-    createdAt: z.string(), verifiedAt: z.string().nullable(),
+    expiresAt: z.string().nullable(), createdAt: z.string(), verifiedAt: z.string().nullable(),
     provider: z.object({ id: z.string(), name: z.string(), address: z.string().nullable() }),
     review: z.object({ id: z.string(), authorName: z.string(), vehicleLabel: z.string(), rating: z.number().int().min(1).max(5), text: z.string(), photoUrls: z.array(z.string()), createdAt: z.string(), status: z.enum(['pending', 'approved', 'rejected']) }).nullable(),
 }).passthrough() satisfies z.ZodType<AdminAutoCareModerationEvidence>

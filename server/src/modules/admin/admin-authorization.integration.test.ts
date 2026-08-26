@@ -169,11 +169,22 @@ describe('Admin and workspace authorization integration', () => {
         const permittedSchedule = await request(app.server)
             .get(`/owner/cabinets/${cabinet.id}/schedule`)
             .set('Authorization', `Bearer ${ownerToken}`)
+        const forbiddenEvidence = await request(app.server)
+            .get(`/owner/autocare-providers/${provider.id}/evidence`)
+            .set('Authorization', `Bearer ${otherOwnerToken}`)
+        const permittedEvidence = await request(app.server)
+            .get(`/owner/autocare-providers/${provider.id}/evidence`)
+            .set('Authorization', `Bearer ${ownerToken}`)
 
         expect(forbiddenMemberships.status).toBe(403)
         expect(permittedMemberships.status).toBe(200)
         expect(forbiddenSchedule.status).toBe(404)
         expect(permittedSchedule.status).toBe(200)
+        expect(forbiddenEvidence.status).toBe(404)
+        expect(permittedEvidence.status).toBe(200)
+        expect(permittedEvidence.body).toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: evidence.id, providerId: provider.id }),
+        ]))
     })
 
     it('returns a bounded public trust contract without private moderation evidence', async () => {
@@ -214,6 +225,40 @@ describe('Admin and workspace authorization integration', () => {
         })
     })
 
+    it('keeps market hierarchy and audit access separated by role', async () => {
+        const ownerToken = createAuthTokens(providerOwner).accessToken
+        const adminToken = createAuthTokens(admin).accessToken
+        const superAdminToken = createAuthTokens(superAdmin).accessToken
+
+        const ownerHierarchy = await request(app.server)
+            .get('/super-admin/market-hierarchy')
+            .set('Authorization', `Bearer ${ownerToken}`)
+        const adminHierarchy = await request(app.server)
+            .get('/super-admin/market-hierarchy')
+            .set('Authorization', `Bearer ${adminToken}`)
+        const superHierarchy = await request(app.server)
+            .get('/super-admin/market-hierarchy')
+            .set('Authorization', `Bearer ${superAdminToken}`)
+        const ownerAudit = await request(app.server)
+            .get('/admin/audit-logs')
+            .set('Authorization', `Bearer ${ownerToken}`)
+        const adminAudit = await request(app.server)
+            .get('/admin/audit-logs')
+            .query({ targetType: 'autocare_moderation_evidence', limit: 10 })
+            .set('Authorization', `Bearer ${adminToken}`)
+        const superEvidence = await request(app.server)
+            .get('/admin/autocare-moderation-evidence')
+            .set('Authorization', `Bearer ${superAdminToken}`)
+
+        expect(ownerHierarchy.status).toBe(403)
+        expect(adminHierarchy.status).toBe(403)
+        expect(superHierarchy.status).toBe(200)
+        expect(ownerAudit.status).toBe(403)
+        expect(adminAudit.status).toBe(200)
+        expect(adminAudit.body).toHaveProperty('items')
+        expect(superEvidence.status).toBe(200)
+    })
+
     it('provides an admin-only evidence decision with the related provider context', async () => {
         const ownerToken = createAuthTokens(providerOwner).accessToken
         const adminToken = createAuthTokens(admin).accessToken
@@ -224,6 +269,10 @@ describe('Admin and workspace authorization integration', () => {
         const list = await request(app.server)
             .get('/admin/autocare-moderation-evidence')
             .query({ status: 'pending' })
+            .set('Authorization', `Bearer ${adminToken}`)
+        const approvedDocuments = await request(app.server)
+            .get('/admin/autocare-moderation-evidence')
+            .query({ status: 'approved' })
             .set('Authorization', `Bearer ${adminToken}`)
         const decision = await request(app.server)
             .patch(`/admin/autocare-moderation-evidence/${moderationEvidence.id}/decision`)
@@ -236,6 +285,15 @@ describe('Admin and workspace authorization integration', () => {
             expect.objectContaining({
                 id: moderationEvidence.id,
                 provider: expect.objectContaining({ id: provider.id, name: provider.name }),
+            }),
+        ]))
+        expect(approvedDocuments.status).toBe(200)
+        expect(approvedDocuments.body).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                id: evidence.id,
+                kind: 'registration_document',
+                reference: 'private://authorization-test-document',
+                expiresAt: null,
             }),
         ]))
         expect(decision.status).toBe(200)

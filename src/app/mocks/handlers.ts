@@ -780,11 +780,12 @@ const mockAutoCareAppeals: MockAutoCareAppeal[] = [{ id: 'appeal-demo-1', subjec
 type MockAdminAutoCareModerationEvidence = {
     id: string
     providerId: string
-    kind: 'provider_cover' | 'provider_gallery' | 'review'
+    kind: 'provider_cover' | 'provider_gallery' | 'provider_document' | 'registration_document' | 'review'
     label: string
     status: 'pending' | 'approved' | 'rejected'
     reference: string | null
     notes: string | null
+    expiresAt: string | null
     createdAt: string
     verifiedAt: string | null
     provider: { id: string; name: string; address: string | null }
@@ -798,6 +799,7 @@ const mockAdminAutoCareModerationEvidence: MockAdminAutoCareModerationEvidence[]
     status: 'pending',
     reference: autoCareProviders[0]?.coverImageUrl ?? null,
     notes: 'Ожидает проверки публичного медиа.',
+    expiresAt: null,
     createdAt: '2026-08-18T09:30:00.000Z',
     verifiedAt: null,
     provider: { id: 'api-proservice-moscow', name: 'ProService', address: 'Москва, ул. Льва Толстого, 18' },
@@ -810,10 +812,24 @@ const mockAdminAutoCareModerationEvidence: MockAdminAutoCareModerationEvidence[]
     status: 'pending',
     reference: 'review-demo-evidence',
     notes: 'Ожидает модерации текста и приложенных материалов.',
+    expiresAt: null,
     createdAt: '2026-08-18T10:00:00.000Z',
     verifiedAt: null,
     provider: { id: 'api-proservice-moscow', name: 'ProService', address: 'Москва, ул. Льва Толстого, 18' },
     review: { id: 'review-demo-evidence', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Работы выполнили в согласованный срок, стоимость не изменилась.', photoUrls: [], createdAt: '2026-08-18T09:55:00.000Z', status: 'pending' },
+}, {
+    id: 'evidence-demo-provider-document',
+    providerId: 'api-proservice-moscow',
+    kind: 'provider_document',
+    label: 'Лицензия и регистрационные данные',
+    status: 'pending',
+    reference: 'private://provider-documents/api-proservice-moscow/license-2026.pdf',
+    notes: 'Ожидает проверки регистрационных данных сервиса.',
+    expiresAt: '2027-12-31T00:00:00.000Z',
+    createdAt: '2026-08-18T11:00:00.000Z',
+    verifiedAt: null,
+    provider: { id: 'api-proservice-moscow', name: 'ProService', address: 'Москва, ул. Льва Толстого, 18' },
+    review: null,
 }]
 const mockAutoCareChatMessages = new Map<string, ServiceChatMessage[]>([
     ['chat-inquiry-proservice', [{ id: 'chat-message-1', senderId: 'user-client-1', kind: 'text', body: 'Здравствуйте! Можно ли подобрать масло по VIN и сколько займёт работа?', offer: null, deliveredAt: '2026-08-14T08:16:00.000Z', readAt: null, createdAt: '2026-08-14T08:16:00.000Z' }, { id: 'chat-message-2', senderId: 'user-owner-1', kind: 'text', body: 'Да, пришлите VIN и фото текущего фильтра — проверим совместимость.', offer: null, deliveredAt: '2026-08-14T08:20:00.000Z', readAt: null, createdAt: '2026-08-14T08:20:00.000Z' }]],
@@ -2041,6 +2057,9 @@ export const handlers = [
     http.get('/api/admin/audit-logs', ({ request }) => {
         const url = new URL(request.url)
         const search = url.searchParams.get('search')?.trim().toLowerCase()
+        const action = url.searchParams.get('action')?.trim().toLowerCase()
+        const targetType = url.searchParams.get('targetType')?.trim().toLowerCase()
+        const actorId = url.searchParams.get('actorId')?.trim().toLowerCase()
         const auditLogs = [
             {
                 id: 'log-1',
@@ -2063,9 +2082,13 @@ export const handlers = [
                 createdAt: new Date(Date.now() - 3600000).toISOString(),
             },
         ]
-        const filteredLogs = search
-            ? auditLogs.filter((log) => JSON.stringify(log).toLowerCase().includes(search))
-            : auditLogs
+        const filteredLogs = auditLogs.filter((log) => {
+            if (search && !JSON.stringify(log).toLowerCase().includes(search)) return false
+            if (action && log.action.toLowerCase() !== action) return false
+            if (targetType && log.targetType.toLowerCase() !== targetType) return false
+            if (actorId && log.actor.id.toLowerCase() !== actorId) return false
+            return true
+        })
 
         if (url.searchParams.has('limit') || url.searchParams.has('cursor')) {
             return HttpResponse.json({ items: filteredLogs, nextCursor: null })
@@ -3814,7 +3837,7 @@ export const handlers = [
             status: item.status,
             reference: item.reference,
             notes: item.notes,
-            expiresAt: null,
+            expiresAt: item.expiresAt,
             createdAt: item.createdAt,
             verifiedAt: item.verifiedAt,
         })))

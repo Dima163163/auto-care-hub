@@ -40,11 +40,17 @@ export function AdminAuditLogsPage() {
     const { data: currentUser } = useGetMeQuery()
     const [loadAuditPage, { isFetching: isLoadingMore }] = useLazyGetAuditLogsPageQuery()
     const [query, setQuery] = useState(() => readAdminAuditFilter()?.query ?? '')
+    const [action, setAction] = useState('')
+    const [targetType, setTargetType] = useState('')
+    const [actorId, setActorId] = useState('')
     const deferredQuery = useDeferredValue(query)
     const auditQuery = useMemo(() => ({
         limit: AUDIT_LOG_PAGE_SIZE,
         search: deferredQuery.trim() || undefined,
-    }), [deferredQuery])
+        action: action.trim() || undefined,
+        targetType: targetType.trim() || undefined,
+        actorId: actorId.trim() || undefined,
+    }), [action, actorId, deferredQuery, targetType])
     const {
         data: auditPage,
         error: currentAuditError,
@@ -52,7 +58,7 @@ export function AdminAuditLogsPage() {
         isLoading: isCurrentAuditLoading,
         refetch: refetchCurrentAudit,
     } = useGetAuditLogsPageQuery(auditQuery)
-    const auditFilterKey = auditQuery.search ?? ''
+    const auditFilterKey = JSON.stringify(auditQuery)
     const [loadedAuditState, setLoadedAuditState] = useState<{
         filterKey: string
         items: AuditLog[]
@@ -122,7 +128,17 @@ export function AdminAuditLogsPage() {
         clearAdminAuditFilter()
         setSavedFilterQuery('')
         setQuery('')
+        setAction('')
+        setTargetType('')
+        setActorId('')
         toast.success(t('adminAuditLogs.filterCleared'))
+    }
+
+    const clearFilters = () => {
+        setQuery('')
+        setAction('')
+        setTargetType('')
+        setActorId('')
     }
 
     const exportCsv = () => {
@@ -233,7 +249,39 @@ export function AdminAuditLogsPage() {
                                 onChange={(event) => setQuery(event.target.value)}
                             />
                         </div>
+                        <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[42rem]">
+                            <input
+                                type="text"
+                                aria-label={t('adminAuditLogs.actionFilter')}
+                                placeholder={t('adminAuditLogs.actionFilter')}
+                                className="min-h-11 rounded-full border bg-background/50 px-4 py-2 text-sm outline-none ring-1 ring-primary/10 placeholder:text-muted-foreground"
+                                disabled={isAuditLoading}
+                                value={action}
+                                onChange={(event) => setAction(event.target.value)}
+                            />
+                            <input
+                                type="text"
+                                aria-label={t('adminAuditLogs.targetTypeFilter')}
+                                placeholder={t('adminAuditLogs.targetTypeFilter')}
+                                className="min-h-11 rounded-full border bg-background/50 px-4 py-2 text-sm outline-none ring-1 ring-primary/10 placeholder:text-muted-foreground"
+                                disabled={isAuditLoading}
+                                value={targetType}
+                                onChange={(event) => setTargetType(event.target.value)}
+                            />
+                            <input
+                                type="text"
+                                aria-label={t('adminAuditLogs.actorFilter')}
+                                placeholder={t('adminAuditLogs.actorFilter')}
+                                className="min-h-11 rounded-full border bg-background/50 px-4 py-2 text-sm outline-none ring-1 ring-primary/10 placeholder:text-muted-foreground"
+                                disabled={isAuditLoading}
+                                value={actorId}
+                                onChange={(event) => setActorId(event.target.value)}
+                            />
+                        </div>
                         <div className="flex flex-wrap items-center gap-2">
+                            <Button type="button" variant="ghost" size="sm" className="min-h-11" disabled={!query && !action && !targetType && !actorId} onClick={clearFilters}>
+                                {t('adminAuditLogs.clearFilters')}
+                            </Button>
                             <Button
                                 type="button"
                                 variant="outline"

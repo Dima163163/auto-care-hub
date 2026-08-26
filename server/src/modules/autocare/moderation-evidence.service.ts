@@ -29,6 +29,7 @@ type ModerationEvidenceResponse = {
     status: string
     reference: string | null
     notes: string | null
+    expiresAt: string | null
     createdAt: string
     verifiedAt: string | null
     provider: {
@@ -62,6 +63,7 @@ function toResponse(
         status: item.status,
         reference: item.reference,
         notes: item.notes,
+        expiresAt: item.expiresAt?.toISOString() ?? null,
         createdAt: item.createdAt.toISOString(),
         verifiedAt: item.verifiedAt?.toISOString() ?? null,
         provider: {

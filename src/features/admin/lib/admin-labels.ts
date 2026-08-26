@@ -4,6 +4,17 @@ import type { TranslationKey } from '@/shared/lib/i18n'
 type KnownAuditTargetType =
     | 'account_deletion_request'
     | 'cabinet'
+    | 'autocare_appeal'
+    | 'autocare_catalog_gap_request'
+    | 'autocare_chat_report'
+    | 'autocare_moderation_evidence'
+    | 'autocare_provider'
+    | 'autocare_provider_change_request'
+    | 'autocare_market'
+    | 'autocare_market_country'
+    | 'autocare_market_zone'
+    | 'autocare_location_zone'
+    | 'autocare_service_definition'
     | 'oauth_identity'
     | 'outbox_event'
     | 'review'
@@ -18,6 +29,17 @@ type KnownAuditTargetType =
 const auditTargetTypeTranslationKeys: Record<KnownAuditTargetType, TranslationKey> = {
     account_deletion_request: 'adminAuditLogs.targetTypes.account_deletion_request',
     cabinet: 'adminAuditLogs.targetTypes.cabinet',
+    autocare_appeal: 'adminAuditLogs.targetTypes.autocare_appeal',
+    autocare_catalog_gap_request: 'adminAuditLogs.targetTypes.autocare_catalog_gap_request',
+    autocare_chat_report: 'adminAuditLogs.targetTypes.autocare_chat_report',
+    autocare_moderation_evidence: 'adminAuditLogs.targetTypes.autocare_moderation_evidence',
+    autocare_provider: 'adminAuditLogs.targetTypes.autocare_provider',
+    autocare_provider_change_request: 'adminAuditLogs.targetTypes.autocare_provider_change_request',
+    autocare_market: 'adminAuditLogs.targetTypes.autocare_market',
+    autocare_market_country: 'adminAuditLogs.targetTypes.autocare_market_country',
+    autocare_market_zone: 'adminAuditLogs.targetTypes.autocare_market_zone',
+    autocare_location_zone: 'adminAuditLogs.targetTypes.autocare_location_zone',
+    autocare_service_definition: 'adminAuditLogs.targetTypes.autocare_service_definition',
     oauth_identity: 'adminAuditLogs.targetTypes.oauth_identity',
     outbox_event: 'adminAuditLogs.targetTypes.outbox_event',
     review: 'adminAuditLogs.targetTypes.review',
@@ -33,6 +55,21 @@ const auditTargetTypeTranslationKeys: Record<KnownAuditTargetType, TranslationKe
 const auditLogActionTranslationKeys: Record<KnownAuditLogAction, TranslationKey> = {
     admin_created: 'adminAuditLogs.actions.admin_created',
     cabinet_status_updated: 'adminAuditLogs.actions.cabinet_status_updated',
+    autocare_provider_status_updated: 'adminAuditLogs.actions.autocare_provider_status_updated',
+    autocare_provider_change_request_decided: 'adminAuditLogs.actions.autocare_provider_change_request_decided',
+    autocare_catalog_gap_request_decided: 'adminAuditLogs.actions.autocare_catalog_gap_request_decided',
+    autocare_market_updated: 'adminAuditLogs.actions.autocare_market_updated',
+    autocare_market_country_created: 'adminAuditLogs.actions.autocare_market_country_created',
+    autocare_market_country_updated: 'adminAuditLogs.actions.autocare_market_country_updated',
+    autocare_market_created: 'adminAuditLogs.actions.autocare_market_created',
+    autocare_market_zone_created: 'adminAuditLogs.actions.autocare_market_zone_created',
+    autocare_market_zone_updated: 'adminAuditLogs.actions.autocare_market_zone_updated',
+    autocare_service_definition_updated: 'adminAuditLogs.actions.autocare_service_definition_updated',
+    autocare_bonus_granted: 'adminAuditLogs.actions.autocare_bonus_granted',
+    autocare_appeal_decided: 'adminAuditLogs.actions.autocare_appeal_decided',
+    autocare_moderation_evidence_decided: 'adminAuditLogs.actions.autocare_moderation_evidence_decided',
+    chat_report_moderated: 'adminAuditLogs.actions.chat_report_moderated',
+    system_incident_status_updated: 'adminAuditLogs.actions.system_incident_status_updated',
     promo_subscription_issued: 'adminAuditLogs.actions.promo_subscription_issued',
     review_deleted: 'adminAuditLogs.actions.review_deleted',
     review_moderated: 'adminAuditLogs.actions.review_moderated',
