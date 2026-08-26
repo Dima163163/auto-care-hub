@@ -57,6 +57,7 @@ import { getAccountDeletionRetentionCutoff } from '../users/account-deletion-ret
 import { getOutboxHealthSummary } from '../outbox/outbox-health.service.js'
 import { getMaintenanceBacklogAgeMs } from './maintenance-backlog-policy.js'
 import { reassessAutoCareTrustScores } from '../autocare/trust-score.service.js'
+import { expireAutoCareServiceQuotes } from '../autocare/quote-expiry.service.js'
 import {
     runMaintenancePhaseWithFailurePolicy,
     type MaintenancePhase,
@@ -65,6 +66,10 @@ import {
 
 export type MaintenanceCycleResult = {
     remindersScheduled: number
+    quoteExpiry?: {
+        expired: number
+        requestsReopened: number
+    }
     outbox: {
         claimed: number
         completed: number
@@ -102,6 +107,7 @@ export function summarizeMaintenanceCycle(result: MaintenanceCycleResult) {
     const count = boundMaintenanceSummaryCount
     return {
         remindersScheduled: count(result.remindersScheduled),
+        ...(result.quoteExpiry ? { quoteExpiry: Object.fromEntries(Object.entries(result.quoteExpiry).map(([key, value]) => [key, count(value)])) } : {}),
         outbox: Object.fromEntries(Object.entries(result.outbox).map(([key, value]) => [key, count(value)])),
         authCleanup: Object.fromEntries(Object.entries(result.authCleanup).map(([key, value]) => [key, count(value)])),
         auditCleanup: Object.fromEntries(Object.entries(result.auditCleanup).map(([key, value]) => [key, count(value)])),
@@ -636,6 +642,11 @@ export async function runMaintenanceCycle(
             },
             0,
         )
+        const quoteExpiry = await runPhase(
+            'quote_expiry',
+            () => expireAutoCareServiceQuotes(now),
+            { expired: 0, requestsReopened: 0 },
+        )
         const outbox = await runPhase('outbox', async () => {
                 await measureMaintenanceOutboxBacklog(now.getTime())
                 const result = await processOutboxBatch(mailer, lease?.assertHeld)
@@ -681,6 +692,7 @@ export async function runMaintenanceCycle(
 
         return {
             remindersScheduled,
+            quoteExpiry,
             outbox,
             authCleanup,
             auditCleanup,

@@ -173,6 +173,7 @@ export function serializeUserDataExport(
             currencyCode: quote.currencyCode,
             snapshot: quote.snapshot,
             validUntil: serializeDate(quote.validUntil),
+            status: quote.status,
             createdAt: serializeDate(quote.createdAt),
         })),
         broadcasts: broadcasts.slice(0, MAX_EXPORT_RECORDS).map((broadcast) => ({

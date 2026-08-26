@@ -88,6 +88,7 @@ export function startBackgroundJobs(logger: FastifyBaseLogger, mailer: Mailer) {
             }
             if (
                 result.remindersScheduled > 0 ||
+                (result.quoteExpiry?.expired ?? 0) > 0 ||
                 result.outbox.claimed > 0 ||
                 result.authCleanup.tokens > 0 ||
                 result.authCleanup.sessions > 0 ||

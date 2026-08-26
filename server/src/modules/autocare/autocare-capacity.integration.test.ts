@@ -13,6 +13,7 @@ import {
     AutomotiveServiceOfferingEntity,
     AutoCareCapacityResourceEntity,
     AutoCareCapacityResourceType,
+    AutoCareQuoteStatus,
     AutoCareChatThreadEntity,
     AutoCareRescheduleRequestEntity,
     AutoCareRescheduleStatus,
@@ -20,6 +21,7 @@ import {
     OutboxEventEntity,
     ServiceRequestEntity,
     ServiceRequestStatus,
+    AutoCareServiceQuoteEntity,
 } from '../../entities/index.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
@@ -28,10 +30,14 @@ import {
     completeAutoCareServiceRequest,
     confirmOwnerAutoCareServiceRequest,
     createAutoCareServiceRequest,
+    createAutoCareServiceQuote,
+    acceptAutoCareServiceQuote,
+    declineAutoCareServiceQuote,
     decideAutoCareServiceReschedule,
     markAutoCareServiceRequestNoShow,
     requestAutoCareServiceReschedule,
 } from './autocare-request.service.js'
+import { expireAutoCareServiceQuotes } from './quote-expiry.service.js'
 
 describe('AutoCare appointment capacity integration', () => {
     const suffix = `${Date.now()}`
@@ -419,6 +425,145 @@ describe('AutoCare appointment capacity integration', () => {
             requestId: request.id,
             status: AutoCareRescheduleStatus.Accepted,
         })).toBe(1)
+    })
+
+    it('expires a quote, reopens the request and blocks late acceptance', async () => {
+        offering.bookingMode = AutomotiveBookingMode.Request
+        offering.requiredResourceTypes = []
+        offering.requiredResourceIds = []
+        await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).save(offering)
+
+        const preferredAt = new Date(Date.now() + 20 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(10, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Quote expiry flow',
+            idempotencyKey: `quote-expiry-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        const quoted = await createAutoCareServiceQuote(owner, request.id, {
+            amountMinor: 250_000,
+            currencyCode: 'USD',
+            validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
+            priceLocked: true,
+        })
+        const quoteId = quoted.quoteHistory.at(-1)?.id
+        expect(quoteId).toBeTruthy()
+        await AppDataSource.getRepository(AutoCareServiceQuoteEntity).update(
+            { id: quoteId! },
+            { validUntil: new Date(Date.now() - 1_000) },
+        )
+
+        const expiry = await expireAutoCareServiceQuotes(new Date(), 10)
+        expect(expiry).toEqual({ expired: 1, requestsReopened: 1 })
+        const persistedQuote = await AppDataSource.getRepository(AutoCareServiceQuoteEntity).findOneByOrFail({ id: quoteId! })
+        const persistedRequest = await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: request.id })
+        expect(persistedQuote.status).toBe(AutoCareQuoteStatus.Expired)
+        expect(persistedRequest.status).toBe(ServiceRequestStatus.AwaitingReply)
+        await expect(acceptAutoCareServiceQuote(client, request.id)).rejects.toMatchObject({ statusCode: 409 })
+
+        const requoted = await createAutoCareServiceQuote(owner, request.id, {
+            amountMinor: 260_000,
+            currencyCode: 'USD',
+            validUntil: new Date(Date.now() + 2 * 60 * 60 * 1_000).toISOString(),
+            priceLocked: true,
+        })
+        expect(requoted.status).toBe(ServiceRequestStatus.EstimateShared)
+        expect(requoted.quote?.status).toBe(AutoCareQuoteStatus.Pending)
+        expect(requoted.quoteHistory.map((quote) => quote.status)).toEqual([
+            AutoCareQuoteStatus.Expired,
+            AutoCareQuoteStatus.Pending,
+        ])
+    })
+
+    it('makes repeated quote acceptance idempotent and preserves the accepted price', async () => {
+        const preferredAt = new Date(Date.now() + 21 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(11, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Repeated quote acceptance',
+            idempotencyKey: `quote-repeat-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        const quoted = await createAutoCareServiceQuote(owner, request.id, {
+            amountMinor: 275_000,
+            currencyCode: 'USD',
+            validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
+            priceLocked: true,
+        })
+        const [first, repeated] = await Promise.all([
+            acceptAutoCareServiceQuote(client, request.id),
+            acceptAutoCareServiceQuote(client, request.id),
+        ])
+        expect(first.status).toBe(ServiceRequestStatus.Accepted)
+        expect(repeated.status).toBe(ServiceRequestStatus.Accepted)
+        expect(first.acceptedQuoteVersion).toBe(quoted.quoteHistory.at(-1)?.version)
+        expect(repeated.booking?.amountMinor).toBe(275_000)
+        expect(await AppDataSource.getRepository(AutoCareServiceQuoteEntity).countBy({ requestId: request.id, status: AutoCareQuoteStatus.Accepted })).toBe(1)
+    })
+
+    it('serializes concurrent accept and decline to one quote decision', async () => {
+        const preferredAt = new Date(Date.now() + 22 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(12, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Quote decision race',
+            idempotencyKey: `quote-race-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        await createAutoCareServiceQuote(owner, request.id, {
+            amountMinor: 285_000,
+            currencyCode: 'USD',
+            validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
+        })
+        const results = await Promise.allSettled([
+            acceptAutoCareServiceQuote(client, request.id),
+            declineAutoCareServiceQuote(client, request.id),
+        ])
+        expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+        const rejected = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+        expect(rejected).toBeDefined()
+        expect((rejected?.reason as AppError).statusCode).toBe(409)
+        expect(await AppDataSource.getRepository(AutoCareServiceQuoteEntity).countBy({ requestId: request.id, status: AutoCareQuoteStatus.Pending })).toBe(0)
+    })
+
+    it('updates the immutable booking schedule when an accepted quote is rescheduled', async () => {
+        const preferredAt = new Date(Date.now() + 23 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(13, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Accepted booking reschedule',
+            idempotencyKey: `quote-reschedule-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        await createAutoCareServiceQuote(owner, request.id, {
+            amountMinor: 295_000,
+            currencyCode: 'USD',
+            validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
+        })
+        await acceptAutoCareServiceQuote(client, request.id)
+        const proposedAt = new Date(Date.now() + 24 * 24 * 60 * 60 * 1_000)
+        proposedAt.setUTCHours(14, 0, 0, 0)
+        await requestAutoCareServiceReschedule(owner, request.id, { proposedAt: proposedAt.toISOString() })
+        const updated = await decideAutoCareServiceReschedule(client, request.id, 'accept')
+        expect(updated.preferredAt).toBe(proposedAt.toISOString())
+        expect(updated.booking?.scheduledAt).toBe(proposedAt.toISOString())
     })
 
     it('makes concurrent client cancellation retries idempotent', async () => {

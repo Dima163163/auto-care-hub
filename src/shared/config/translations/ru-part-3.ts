@@ -42,6 +42,7 @@ autocare: {
         clientServiceRequestsOpen: 'Открыть переписку',
         clientServiceRequestsConversation: 'Переписка',
         clientServiceRequestsQuote: 'Предварительная смета',
+        clientServiceRequestsQuoteExpired: 'Срок действия сметы истёк. Попросите сервис прислать новую.',
         clientServiceRequestsAcceptQuote: 'Принять смету',
         clientServiceRequestsDeclineQuote: 'Отклонить',
         clientServiceRequestsCancel: 'Отменить заявку',

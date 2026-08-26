@@ -4,6 +4,7 @@ import { classifyMaintenanceError, type MaintenanceErrorClass } from './maintena
 
 export type MaintenancePhase =
     | 'reminders'
+    | 'quote_expiry'
     | 'outbox'
     | 'auth_cleanup'
     | 'audit_cleanup'
