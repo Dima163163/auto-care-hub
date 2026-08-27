@@ -139,9 +139,9 @@ npm run check:e2e:browser
 
 Это исполняемая очередь без инфраструктуры. Каждый пункт завершается отдельным evidence-запуском и не помечается автоматически из старого отчёта.
 
-1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Login/logout/session-expiry smoke через запущенные MSW и real API ещё требует выполнения.
+1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Реальный demo login через API возвращает 200; logout/session-expiry smoke и MSW-путь ещё требуют выполнения.
 2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
-3. `[ ]` Пройти state matrix на real PostgreSQL: loading, empty, API error, stale, offline, expired session, partial response, permission denied и suspended; проверить сохранение введённых данных и retry без дубля.
+3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended, сохранение введённых данных и retry без дубля ещё требуют полного прогона.
 4. `[ ]` Закрыть весь client path: vehicleId/snapshot, unavailable/removed provider, три communication modes, edit review и bonuses redemption/expiry/refund/history.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
 6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
@@ -164,7 +164,8 @@ npm run check:e2e:browser
 - `[x]` Повторно пройдены server build, TypeScript, lint и server unit-suite: **179 файлов / 549 тестов**.
 - `[x]` Next route smoke на локальном release-сервере: **15/15** (публичные, динамические, 404, hydration/reload и protected redirect на desktop/mobile/tablet).
 - `[x]` Responsive Chromium matrix: **30/30** на ширинах 360–1440 px; проверка overflow и mobile navigation не выявила ошибок.
-- `[~]` Реальные PostgreSQL/API login и state matrix, ручные device/VoiceOver-проверки, production-инфраструктура и legacy monetization cleanup остаются незакрытыми.
+- `[x]` Повторяемый real prerequisite проверен: `demo:reset` → `demo:seed` → `autocare:seed` проходят, включая очистку новых AutoCare request/message/attachment/report/appeal зависимостей без ослабления production `RESTRICT`-связей; `/health/live` отвечает `ok`, demo login возвращает 200.
+- `[~]` Полная real API state matrix, ручные device/VoiceOver-проверки, production-инфраструктура и legacy monetization cleanup остаются незакрытыми.
 
 ---
 
@@ -229,7 +230,7 @@ npm run check:e2e:browser
 ## Исправлять сразу, если проявляются в локальном MVP
 
 - `[~]` **ADD-C01** Local Next origin configuration is fixed in `39e7711`: `localhost:4175` and `127.0.0.1:4175` are accepted only in non-production, while production remains explicit. Config assertion and server build pass; MSW/real API login, logout and session-expiry smoke are still pending.
-- `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Next route smoke 15/15 и route contract проходят; real authenticated owner/admin/super-admin runtime proof is still missing.
+- `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Next route smoke 15/15 и route contract проходят; demo reset и real API login 200 подтверждены, real authenticated owner/admin/super-admin runtime proof is still missing.
 - `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Automated supported-width matrix 30/30 без overflow проходит; ручная проверка фокуса/модалок/устройств ещё требуется.
 - `[~]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons. Shared search form and theme bootstrap were aligned at `70532d2`; all routes still require an audit.
 - `[~]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click. Idempotency contracts exist; real PostgreSQL/offline proof is still missing.

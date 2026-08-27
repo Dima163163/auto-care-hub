@@ -8,6 +8,7 @@ import { NotificationEntity } from '../entities/notification/notification.entity
 import { ReviewEntity } from '../entities/review/review.entity.js'
 import { SecurityTokenEntity } from '../entities/security-token/security-token.entity.js'
 import { ServiceEntity } from '../entities/service/service.entity.js'
+import { ServiceRequestEntity } from '../entities/automotive/service-request.entity.js'
 import { UserSessionEntity } from '../entities/user-session/user-session.entity.js'
 import { UserEntity } from '../entities/user/user.entity.js'
 import {
@@ -90,6 +91,62 @@ async function resetDemoData() {
 
             if (reviewWhere.length > 0) {
                 await manager.getRepository(ReviewEntity).delete(reviewWhere)
+            }
+
+            // AutoCare requests and supporting records are newer than the
+            // original demo reset flow. Remove demo-owned rows before users;
+            // the request FK intentionally uses RESTRICT so production data
+            // cannot disappear accidentally when a user is removed.
+            if (userIds.length > 0) {
+                await manager.query(
+                    'DELETE FROM "autocare_service_messages" WHERE "senderId" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_service_attachments" WHERE "uploadedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_chat_reports" WHERE "reporterId" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_chat_blocks" WHERE "blockerId" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_appeals" WHERE "submittedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_catalog_gap_requests" WHERE "requestedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_provider_change_requests" WHERE "requestedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_provider_invitations" WHERE "invitedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "autocare_reschedule_requests" WHERE "requestedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "booking_reschedule_requests" WHERE "requestedById" = ANY($1::uuid[]) OR "resolvedById" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "security_event_actions" WHERE "actor_id" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.query(
+                    'DELETE FROM "security_mitigations" WHERE "created_by" = ANY($1::uuid[])',
+                    [userIds],
+                )
+                await manager.getRepository(ServiceRequestEntity).delete({ clientId: In(userIds) })
             }
 
             if (bookingIds.length > 0) {
