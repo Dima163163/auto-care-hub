@@ -1,9 +1,11 @@
 # AutoCare Hub — план готовности к пилоту 100%
 
 **Статус:** канонический release-план
-**Обновлён:** 27 августа 2026
+**Обновлён:** 27 августа 2026 — тройная сверка кода, проверок и операционных документов
 **Владелец плана:** команда AutoCare Hub
 **Заменяет как go/no-go источник:** разрозненные статусы в `PROJECT_PLAN.md`. Исторические документы остаются доказательствами, но не меняют этот план.
+
+Состояние фиксируется только после доказательства: команды, результата, даты, окружения и commit SHA. Формулировка «контракт есть» не равна «подтверждено на staging» и не может закрыть инфраструктурный или пилотный пункт.
 
 ## 0. Граница продукта зафиксирована
 
@@ -27,6 +29,14 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 - `ADD-Cxx` — критичная: блокирует безопасность, данные, запись или основной UI. Исправляется сразу, если ломает текущий продукт; иначе — до открытия пилота.
 - `ADD-Nxx` — некритичная: не снижает безопасность и не блокирует закрытый пилот. Рассматривается после пилота.
 
+### Иерархия источников и проверка противоречий
+
+1. Этот файл — единственный источник статуса local MVP, пилота и go/no-go.
+2. `PROJECT_PLAN.md` — исторический продуктовый roadmap; он не подтверждает release readiness.
+3. Датированные evidence-документы — снимки конкретного запуска. Они могут подтверждать только указанную дату и окружение.
+4. Если старый документ и этот план расходятся, приоритет у этого плана до появления нового воспроизводимого доказательства.
+5. Immutable TypeORM-миграции не переписываются ради очистки терминов. Их наличие не означает доступность прежней функции.
+
 ## Текущая оценка после ревизии
 
 | Контур | Оценка | Пояснение |
@@ -36,6 +46,16 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 | Защита и сохранность данных для пилота | **≈ 45%** | Авторизационная модель продвинута, но медиа-хранилище, AV, backup/restore, Redis rehearsal и независимый review не закрыты. |
 
 Эти проценты не являются разрешением на публичный запуск. Разрешение определяется закрытием всех пунктов раздела 2 и `ADD-C`.
+
+### Результат тройной сверки 27.08.2026
+
+| Проход | Результат | Что это доказывает |
+| --- | --- | --- |
+| Инвентарь runtime | `check:next-runtime-boundary`, route inventory, route contract — PASS | Next.js является production boundary; документировано 56 маршрутов; сохранённые Vite-пакеты всё ещё имеют source references и требуют финальной классификации. |
+| Контракты API | API contract, OpenAPI shape/structure и mock/API parity — PASS | 227 mock-маршрутов покрыты backend; contract checks не подтверждают авторизацию и конкуренцию на real PostgreSQL. |
+| Legacy/scope | legacy cleanup, no-Bookly и legacy-provider runtime guards — PASS | Legacy provider runtime отсутствует; historical migrations сохранены. Отдельно найдены активные старые словари/типы subscription — `ADD-C16`. |
+| Production gates | `check:production-operations` — BLOCKED/MANUAL | Нет текущих production-like secrets, PostgreSQL/Redis/JWT, SMTP, S3/AV, bootstrap super-admin, Docker daemon и staging evidence. Это не ошибка проверки, а незакрытые внешние gates. |
+| Security/SEO contracts | security headers и repository SEO/media budget — PASS | Структурные контракты существуют; production Lighthouse/Open Graph и staging security evidence всё ещё не подтверждены. |
 
 ---
 
@@ -50,11 +70,12 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 - `[x]` Основные прямые URL, 404, protected redirect и динамические provider routes имеют Next route contract и smoke-тесты.
 - `[x]` Удалены неиспользуемые legacy page families: home/cabinet/provider-owner legacy UI и скрытая `/pricing` страница.
 - `[x]` Dev seed больше не создаёт legacy wellness-кабинеты, услуги и бронирования — только пользователей для AutoCare fixtures.
-- `[x]` Runtime-поверхность platform payments/tariffs/subscriptions удалена из маршрутов, feature flags, super-admin overview и mock/API DTO.
+- `[~]` Platform payment/monetization routes, provider SDK, webhooks и UI entrypoints удалены; обнаружены активные legacy strings/types для subscription/promo, их очистка обязательна по `ADD-C16`.
 - `[x]` Полная таблица URL и владельцев runtime содержит 56 route constants; inventory и route contract прошли 27.08.2026.
 - `[ ]` Перепроверить каждый dynamic URL: provider, request, legacy redirect, owner provider/reviews — c mock API и с real API.
-- `[ ]` Провести финальный import/dependency audit Vite и оставить только подтверждённо нужное для Vitest/PWA.
+- `[~]` `check:next-runtime-boundary` подтвердил Next.js production boundary и наличие source references у Vite-пакетов; финально классифицировать каждый reference как PWA/test либо удалить.
 - `[ ]` Рефакторинг `demo:reset`: убрать оставшийся legacy fixture cleanup только после безопасного AutoCare reset сценария и real-DB smoke.
+- `[ ]` Провести file-level legacy audit: удалить только файлы без import/runtime/docs replacement references; исторические migrations/evidence сначала перенести в архив или пометить как historical.
 
 ## 1.2 Основные сценарии клиента
 
@@ -113,6 +134,21 @@ npm run check:e2e:browser
 Текущий локальный evidence от 27.08.2026: frontend lint/build и 107 файлов / 379 тестов; backend build и полный server test suite; API parity 227/227, route inventory 56 и responsive matrix 30/30. Полная проверка с реальным API остаётся отдельным пунктом этого плана.
 
 Дополнительно обязательны локальные login smoke для **MSW** и **real API**. `CSRF_ORIGIN_MISMATCH` при корректной локальной конфигурации — `ADD-C01`.
+
+## 1.6 Порядок закрытия local MVP
+
+Это исполняемая очередь без инфраструктуры. Каждый пункт завершается отдельным evidence-запуском и не помечается автоматически из старого отчёта.
+
+1. `[ ]` Исправить `ADD-C01`: собрать таблицу разрешённых local origins для Next, MSW и Fastify; выполнить login/logout/session-expiry smoke в обоих режимах без ослабления production CSRF.
+2. `[ ]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API.
+3. `[ ]` Пройти state matrix на real PostgreSQL: loading, empty, API error, stale, offline, expired session, partial response, permission denied и suspended; проверить сохранение введённых данных и retry без дубля.
+4. `[ ]` Закрыть весь client path: vehicleId/snapshot, unavailable/removed provider, три communication modes, edit review и bonuses redemption/expiry/refund/history.
+5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
+6. `[ ]` Завершить route-wide loading audit: статические shell/form/map остаются видимыми, только server blocks показывают themed skeleton; ни на одном маршруте нет white screen или полноэкранного text loader.
+7. `[ ]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты.
+8. `[ ]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; приложения проверяются с длинными городами, услугами и названиями языков.
+9. `[ ]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; сохранить redacted evidence с commit SHA.
+10. `[ ]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; удалить активные legacy financial/monetization strings and types из runtime, сохранить только immutable migrations и явные «оплата напрямую сервису»/способы оплаты у сервиса.
 
 ---
 
@@ -177,10 +213,11 @@ npm run check:e2e:browser
 ## Исправлять сразу, если проявляются в локальном MVP
 
 - `[ ]` **ADD-C01** Local login is blocked by `CSRF_ORIGIN_MISMATCH` for a correctly configured Next/MSW or Next/API origin. Fix allow-list/configuration without weakening production CSRF.
-- `[ ]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens.
-- `[ ]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport.
-- `[ ]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons.
-- `[ ]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click.
+- `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Known owner calendar import error was repaired; route-wide runtime proof is still missing.
+- `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Current visible findings are being repaired; complete supported-width matrix is still required.
+- `[~]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons. Shared search form and theme bootstrap were aligned at `70532d2`; all routes still require an audit.
+- `[~]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click. Idempotency contracts exist; real PostgreSQL/offline proof is still missing.
+- `[ ]` **ADD-C16** Remove active legacy financial/monetization vocabulary and types (subscription/promo/commission/provider payout) from runtime translation registries, notification/audit UI contracts and current product documents. Keep only immutable historical migrations, plus customer-facing facts about paying the service directly and the service's accepted card/cash methods.
 
 ## Обязательны до открытия пилота
 
@@ -202,7 +239,7 @@ npm run check:e2e:browser
 - `[ ]` **ADD-N03** Chat real-time polish beyond REST/polling baseline.
 - `[ ]` **ADD-N04** Lighthouse-driven JS/CSS/media optimisation and full Open Graph audit.
 - `[ ]` **ADD-N05** Additional locales beyond RU/EN/ES/RO.
-- `[ ]` **ADD-N06** Native iOS/Android, fleet API, paid promotion, all payment/tariff/subscription functionality — explicitly outside product scope.
+- `[ ]` **ADD-N06** Native iOS/Android and fleet API — explicitly outside the pilot scope. Platform payment, tariff, subscription and paid-promotion functionality are excluded from the product, not backlog.
 
 ---
 
@@ -223,6 +260,13 @@ npm run check:e2e:browser
 
 ## Правило окончания
 
-**Локальный MVP готов** — когда раздел 1 зелёный и `ADD-C01…C05` закрыты.
+**Локальный MVP готов** — когда раздел 1 зелёный и `ADD-C01…C05`, `ADD-C16` закрыты.
 **Закрытый пилот готов** — когда раздел 2, все `ADD-C06…C15` и раздел 4 закрыты доказательствами.
 **Публичный бесплатный MVP готов** — только после успешного пилота, независимого security review, backup/restore, accessibility review и финального go/no-go.
+
+## 5. Правило ведения плана после этой ревизии
+
+- После каждого изменения сначала обновляется его строка в этом плане: статус, commit, команда и окружение.
+- Неподтверждённый риск добавляется как `ADD-Cxx` или `ADD-Nxx`, а не маскируется формулировкой «частично готово».
+- Проверка проходит три раза: статический аудит/контракты, local runtime, затем staging или ручное evidence там, где это необходимо.
+- Ни один инфраструктурный, privacy, legal или real-pilot пункт не переводится в `[x]` без отдельного внешнего доказательства.

@@ -1,5 +1,11 @@
 # Stable web release evidence
 
+> **Исторический evidence register. Не использовать как единственный release/go-no-go источник.**
+>
+> Для текущих статусов и незакрытых gates используется
+> [`PILOT_100_READINESS_PLAN.md`](PILOT_100_READINESS_PLAN.md). Этот файл хранит
+> только доказательства конкретных прошлых запусков.
+
 This is the evidence register for Phase 9 of `PROJECT_PLAN.md`. A repository
 check is not a production sign-off: items marked **external** require a named
 staging/production environment, participants, or an operational owner.

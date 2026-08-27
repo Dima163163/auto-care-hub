@@ -1,5 +1,11 @@
 # MVP verification slice — 25 Aug 2026
 
+> **Исторический локальный срез. Не использовать как текущий release/go-no-go статус.**
+>
+> Условия закрытия и актуальные статусы контролирует
+> [`PILOT_100_READINESS_PLAN.md`](PILOT_100_READINESS_PLAN.md). Результаты ниже
+> относятся только к указанной дате и окружению; внешние gates остаются внешними.
+
 ## Implemented in the feature branch
 
 - Conversation APIs and both chat UIs now load the latest messages first and

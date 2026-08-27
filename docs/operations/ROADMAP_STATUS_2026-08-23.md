@@ -1,5 +1,12 @@
 # Roadmap status — blocks 2–8
 
+> **Исторический implementation checkpoint. Не использовать как release/go-no-go статус.**
+>
+> Актуальный план, статусы и обязательные доказательства находятся в
+> [`PILOT_100_READINESS_PLAN.md`](PILOT_100_READINESS_PLAN.md). Некоторые строки
+> ниже подтверждают наличие contract/UI на дату записи, но не заменяют real API,
+> staging, security или pilot evidence.
+
 This is the implementation checkpoint for the current feature branch. A
 checkmark means the contract and local mock/real path are present and covered
 by automated checks. A cross means the item still needs an external gate,
