@@ -67,7 +67,7 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 
 - `[x]` Next.js является основным `dev`, `build` и `start` runtime.
 - `[x]` Vite сохранён только как совместимый PWA/test runtime, а не production entrypoint.
-- `[x]` Основные прямые URL, 404, protected redirect и динамические provider routes имеют Next route contract и smoke-тесты.
+- `[x]` Основные прямые URL, 404, protected redirect и динамические provider routes имеют Next route contract и smoke-тесты; 15/15 Next route smoke прошли 27.08.2026 на локальном Next release.
 - `[x]` Удалены неиспользуемые legacy page families: home/cabinet/provider-owner legacy UI и скрытая `/pricing` страница.
 - `[x]` Dev seed больше не создаёт legacy wellness-кабинеты, услуги и бронирования — только пользователей для AutoCare fixtures.
 - `[~]` Platform payment/monetization routes, provider SDK, webhooks и UI entrypoints удалены; обнаружены активные legacy strings/types для subscription/promo, их очистка обязательна по `ADD-C16`.
@@ -131,7 +131,7 @@ npm run check:responsive
 npm run check:e2e:browser
 ```
 
-Текущий локальный evidence от 27.08.2026: frontend lint/build и 107 файлов / 379 тестов; backend build и полный server test suite; API parity 227/227, route inventory 56 и responsive matrix 30/30. Полная проверка с реальным API остаётся отдельным пунктом этого плана.
+Текущий локальный evidence от 27.08.2026: frontend lint/build и 107 файлов / 379 тестов; backend build и unit-suite 179 файлов / 549 тестов; API parity 227/227, route inventory 56, Next route smoke 15/15 и responsive matrix 30/30. Полная проверка с реальным API остаётся отдельным пунктом этого плана.
 
 Дополнительно обязательны локальные login smoke для **MSW** и **real API**. `CSRF_ORIGIN_MISMATCH` при корректной локальной конфигурации — `ADD-C01`.
 
@@ -139,24 +139,32 @@ npm run check:e2e:browser
 
 Это исполняемая очередь без инфраструктуры. Каждый пункт завершается отдельным evidence-запуском и не помечается автоматически из старого отчёта.
 
-1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, а `.env.example` синхронизирован; config assertion и server build проходят. Login/logout/session-expiry smoke через запущенные MSW и real API ещё требует выполнения.
-2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Next route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
+1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Login/logout/session-expiry smoke через запущенные MSW и real API ещё требует выполнения.
+2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
 3. `[ ]` Пройти state matrix на real PostgreSQL: loading, empty, API error, stale, offline, expired session, partial response, permission denied и suspended; проверить сохранение введённых данных и retry без дубля.
 4. `[ ]` Закрыть весь client path: vehicleId/snapshot, unavailable/removed provider, три communication modes, edit review и bonuses redemption/expiry/refund/history.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
 6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
-7. `[ ]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты.
+7. `[~]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты. Automated Chromium matrix **30/30** (360–1440px) прошла без overflow и с корректной mobile navigation; ручная visual- и device-проверка остаётся.
 8. `[ ]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; приложения проверяются с длинными городами, услугами и названиями языков.
-9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 178 files/547 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate и redacted evidence с итоговым commit SHA ещё не сохранены.
+9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 179 files/549 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate и redacted evidence с итоговым commit SHA ещё не сохранены.
 10. `[ ]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; удалить активные legacy financial/monetization strings and types из runtime, сохранить только immutable migrations и явные «оплата напрямую сервису»/способы оплаты у сервиса.
 
 ### Результат первой исполняемой порции (27.08.2026)
 
 - `[x]` Локальный CORS allow-list для Next release-порта 4175 добавлен в non-production конфигурацию; production-ветка по-прежнему принимает только явно заданные origins.
-- `[x]` Проверены сборка сервера (`npm --prefix server run build`), TypeScript (`npx tsc --noEmit`) и unit-suite сервера: **178 файлов / 547 тестов**.
+- `[x]` Проверены сборка сервера (`npm --prefix server run build`), TypeScript (`npx tsc --noEmit`) и unit-suite сервера: **179 файлов / 549 тестов**.
 - `[x]` Повторно подтверждены route inventory, route contract, API parity, security headers, legacy cleanup, no-Bookly и repository SEO/performance checks.
 - `[~]` Фактический login smoke через запущенные PostgreSQL/API и браузерный MSW не закрыт: на момент порции API на `127.0.0.1:4000` и Next на `127.0.0.1:4175` не были запущены одновременно.
 - `[~]` Поэтому первая порция не объявляет локальный MVP готовым: остаются real API state matrix, dynamic URL matrix и финальная классификация legacy/Vite.
+
+### Результат второй исполняемой порции (27.08.2026)
+
+- `[x]` Добавлен regression-тест CORS-политики: development/test принимают локальные Next origins `localhost:4175` и `127.0.0.1:4175`, production принимает только явно заданные HTTPS origins.
+- `[x]` Повторно пройдены server build, TypeScript, lint и server unit-suite: **179 файлов / 549 тестов**.
+- `[x]` Next route smoke на локальном release-сервере: **15/15** (публичные, динамические, 404, hydration/reload и protected redirect на desktop/mobile/tablet).
+- `[x]` Responsive Chromium matrix: **30/30** на ширинах 360–1440 px; проверка overflow и mobile navigation не выявила ошибок.
+- `[~]` Реальные PostgreSQL/API login и state matrix, ручные device/VoiceOver-проверки, production-инфраструктура и legacy monetization cleanup остаются незакрытыми.
 
 ---
 
@@ -221,8 +229,8 @@ npm run check:e2e:browser
 ## Исправлять сразу, если проявляются в локальном MVP
 
 - `[~]` **ADD-C01** Local Next origin configuration is fixed in `39e7711`: `localhost:4175` and `127.0.0.1:4175` are accepted only in non-production, while production remains explicit. Config assertion and server build pass; MSW/real API login, logout and session-expiry smoke are still pending.
-- `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Known owner calendar import error was repaired; route-wide runtime proof is still missing.
-- `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Current visible findings are being repaired; complete supported-width matrix is still required.
+- `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Next route smoke 15/15 и route contract проходят; real authenticated owner/admin/super-admin runtime proof is still missing.
+- `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Automated supported-width matrix 30/30 без overflow проходит; ручная проверка фокуса/модалок/устройств ещё требуется.
 - `[~]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons. Shared search form and theme bootstrap were aligned at `70532d2`; all routes still require an audit.
 - `[~]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click. Idempotency contracts exist; real PostgreSQL/offline proof is still missing.
 - `[ ]` **ADD-C16** Remove active legacy financial/monetization vocabulary and types (subscription/promo/commission/provider payout) from runtime translation registries, notification/audit UI contracts and current product documents. Keep only immutable historical migrations, plus customer-facing facts about paying the service directly and the service's accepted card/cash methods.

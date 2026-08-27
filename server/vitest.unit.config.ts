@@ -23,6 +23,7 @@ export default defineConfig({
       'src/database/schema-contract.test.ts',
       'src/database/schema-contract-diagnostics.test.ts',
       'src/config/mail-config-policy.test.ts',
+      'src/config/cors-origin-policy.test.ts',
       'src/config/cabinet-uploads-path.test.ts',
       'src/config/translations/translations.test.ts',
       'src/config/runtime-mode-policy.test.ts',

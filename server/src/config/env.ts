@@ -507,7 +507,7 @@ function getOutboxTokenEncryptionKey(nodeEnv: NodeEnv) {
     return configuredKey
 }
 
-function getCorsOrigins(nodeEnv: NodeEnv, defaultOrigin: string) {
+export function getCorsOrigins(nodeEnv: NodeEnv, defaultOrigin: string) {
     const configuredOrigins = getListEnv('CORS_ORIGINS', [defaultOrigin]).map((origin) =>
         normalizeFrontendOrigin(origin, { allowHttpLoopback: nodeEnv !== 'production' }))
 

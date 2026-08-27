@@ -45,6 +45,22 @@ try {
                     undefined,
                     { timeout: 15_000 },
                 )
+                // The public mobile header mounts after the auth query has
+                // resolved on the home route. Wait for the actual trigger
+                // before asserting the compact navigation contract instead
+                // of sampling an intermediate shell frame.
+                if (width <= 1120) {
+                    await page.waitForFunction(() => {
+                        return Array.from(document.querySelectorAll(
+                            '[data-testid="mobile-home-menu"], [data-testid="desktop-public-mobile-menu-trigger"], button[aria-controls*="mobile-menu"]',
+                        )).some((element) => {
+                            if (!(element instanceof HTMLElement)) return false
+                            const style = window.getComputedStyle(element)
+                            const rect = element.getBoundingClientRect()
+                            return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+                        })
+                    }, undefined, { timeout: 10_000 })
+                }
                 // Data-backed sections mount after the shell. Give the route a
                 // bounded window to settle so a slow first request is not
                 // misreported as a layout failure.
