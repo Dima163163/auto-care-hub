@@ -139,16 +139,24 @@ npm run check:e2e:browser
 
 Это исполняемая очередь без инфраструктуры. Каждый пункт завершается отдельным evidence-запуском и не помечается автоматически из старого отчёта.
 
-1. `[ ]` Исправить `ADD-C01`: собрать таблицу разрешённых local origins для Next, MSW и Fastify; выполнить login/logout/session-expiry smoke в обоих режимах без ослабления production CSRF.
-2. `[ ]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API.
+1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, а `.env.example` синхронизирован; config assertion и server build проходят. Login/logout/session-expiry smoke через запущенные MSW и real API ещё требует выполнения.
+2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Next route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
 3. `[ ]` Пройти state matrix на real PostgreSQL: loading, empty, API error, stale, offline, expired session, partial response, permission denied и suspended; проверить сохранение введённых данных и retry без дубля.
 4. `[ ]` Закрыть весь client path: vehicleId/snapshot, unavailable/removed provider, три communication modes, edit review и bonuses redemption/expiry/refund/history.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
-6. `[ ]` Завершить route-wide loading audit: статические shell/form/map остаются видимыми, только server blocks показывают themed skeleton; ни на одном маршруте нет white screen или полноэкранного text loader.
+6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
 7. `[ ]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты.
 8. `[ ]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; приложения проверяются с длинными городами, услугами и названиями языков.
-9. `[ ]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; сохранить redacted evidence с commit SHA.
+9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 178 files/547 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate и redacted evidence с итоговым commit SHA ещё не сохранены.
 10. `[ ]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; удалить активные legacy financial/monetization strings and types из runtime, сохранить только immutable migrations и явные «оплата напрямую сервису»/способы оплаты у сервиса.
+
+### Результат первой исполняемой порции (27.08.2026)
+
+- `[x]` Локальный CORS allow-list для Next release-порта 4175 добавлен в non-production конфигурацию; production-ветка по-прежнему принимает только явно заданные origins.
+- `[x]` Проверены сборка сервера (`npm --prefix server run build`), TypeScript (`npx tsc --noEmit`) и unit-suite сервера: **178 файлов / 547 тестов**.
+- `[x]` Повторно подтверждены route inventory, route contract, API parity, security headers, legacy cleanup, no-Bookly и repository SEO/performance checks.
+- `[~]` Фактический login smoke через запущенные PostgreSQL/API и браузерный MSW не закрыт: на момент порции API на `127.0.0.1:4000` и Next на `127.0.0.1:4175` не были запущены одновременно.
+- `[~]` Поэтому первая порция не объявляет локальный MVP готовым: остаются real API state matrix, dynamic URL matrix и финальная классификация legacy/Vite.
 
 ---
 
@@ -212,7 +220,7 @@ npm run check:e2e:browser
 
 ## Исправлять сразу, если проявляются в локальном MVP
 
-- `[ ]` **ADD-C01** Local login is blocked by `CSRF_ORIGIN_MISMATCH` for a correctly configured Next/MSW or Next/API origin. Fix allow-list/configuration without weakening production CSRF.
+- `[~]` **ADD-C01** Local Next origin configuration is fixed in `39e7711`: `localhost:4175` and `127.0.0.1:4175` are accepted only in non-production, while production remains explicit. Config assertion and server build pass; MSW/real API login, logout and session-expiry smoke are still pending.
 - `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Known owner calendar import error was repaired; route-wide runtime proof is still missing.
 - `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Current visible findings are being repaired; complete supported-width matrix is still required.
 - `[~]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons. Shared search form and theme bootstrap were aligned at `70532d2`; all routes still require an audit.
