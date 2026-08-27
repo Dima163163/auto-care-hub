@@ -5,6 +5,7 @@ import {
     AutomotiveLocationZoneEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
+    AutomotiveServiceLocationEntity,
 } from '../../entities/index.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
@@ -112,6 +113,17 @@ export async function updateSuperAdminMarketCountry(actor: UserEntity, countryId
     return toMarketCountryResponse(await repository.save(country))
 }
 
+export async function deleteSuperAdminMarketCountry(actor: UserEntity, countryId: string): Promise<{ id: string }> {
+    assertSuperAdmin(actor)
+    const country = await getCountryOrFail(countryId)
+    const marketCount = await AppDataSource.getRepository(AutomotiveMarketEntity).countBy({ countryId: country.id })
+    if (marketCount > 0) {
+        throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Move or deactivate all cities before deleting this country.' })
+    }
+    await AppDataSource.getRepository(AutomotiveMarketCountryEntity).remove(country)
+    return { id: country.id }
+}
+
 async function getCountryOrFail(countryId: string) {
     const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: countryId })
     if (!country) {
@@ -172,6 +184,20 @@ export async function updateSuperAdminAutoCareMarketHierarchy(actor: UserEntity,
         launchReady: input.launchReady,
     })
     return toMarketResponse(await repository.save(market))
+}
+
+export async function deleteSuperAdminAutoCareMarket(actor: UserEntity, marketId: string): Promise<{ id: string }> {
+    assertSuperAdmin(actor)
+    const market = await getMarketOrFail(marketId)
+    const [zoneCount, locationCount] = await Promise.all([
+        AppDataSource.getRepository(AutomotiveLocationZoneEntity).countBy({ marketId: market.id }),
+        AppDataSource.getRepository(AutomotiveServiceLocationEntity).countBy({ marketId: market.id }),
+    ])
+    if (zoneCount > 0 || locationCount > 0) {
+        throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Remove all zones and service locations before deleting this city.' })
+    }
+    await AppDataSource.getRepository(AutomotiveMarketEntity).remove(market)
+    return { id: market.id }
 }
 
 async function getMarketOrFail(marketId: string) {
@@ -247,4 +273,22 @@ export async function updateSuperAdminAutoCareMarketZone(actor: UserEntity, zone
         active: input.active,
     })
     return toLocationZoneResponse(await repository.save(zone), 0)
+}
+
+export async function deleteSuperAdminAutoCareMarketZone(actor: UserEntity, zoneId: string): Promise<{ id: string }> {
+    assertSuperAdmin(actor)
+    const repository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
+    const zone = await repository.findOneBy({ id: zoneId })
+    if (!zone) {
+        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Market zone not found.' })
+    }
+    const [childCount, locationCount] = await Promise.all([
+        repository.countBy({ parentId: zone.id }),
+        AppDataSource.getRepository(AutomotiveServiceLocationEntity).countBy({ zoneId: zone.id }),
+    ])
+    if (childCount > 0 || locationCount > 0) {
+        throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Move child zones and service locations before deleting this zone.' })
+    }
+    await repository.remove(zone)
+    return { id: zone.id }
 }

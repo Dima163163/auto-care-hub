@@ -29,6 +29,10 @@ redacted artifacts.
   keyboard operation, burger navigation, Axe accessibility, all supported
   locales and owner workspace privacy controls. See
   `BROWSER_RELEASE_AUDIT_2026-08-25.md`.
+- [x] `npm run check:seo` verifies Next.js ISR/static provider prerender
+  contracts, rendered-route metadata requirements, JS/CSS budgets and public
+  map/image budgets. Production URL HTML and Lighthouse remain external
+  evidence gates.
 
 ## External sign-off still required
 
@@ -61,6 +65,8 @@ npm run lint
 npm run build
 npm run test
 npm run check:performance
+npm run check:seo
+npm run check:production-operations
 npm run check:staging-api
 # Required in a release job that has staging credentials/network access:
 REQUIRE_STAGING_API=true STAGING_API_BASE_URL=https://staging.example.com npm run check:staging-api

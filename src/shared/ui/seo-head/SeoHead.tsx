@@ -76,7 +76,9 @@ export function SeoHead() {
         if (locale !== 'en') canonical.searchParams.set('lang', locale)
         const canonicalUrl = canonical.href
         const isPrivate = pathname.startsWith('/profile') || pathname.startsWith('/owner') || pathname.startsWith('/admin') || pathname.startsWith('/chats') || pathname.startsWith('/onboarding') || pathname === ROUTES.notifications
-        const isSearch = pathname === ROUTES.serviceDiscovery
+        // The canonical discovery landing page is indexable; only filtered
+        // result states carry query parameters and should be noindex.
+        const isSearch = pathname === ROUTES.serviceDiscovery && window.location.search.length > 0
 
         document.title = copy.title
         setMeta('name', 'description', copy.description)

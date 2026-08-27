@@ -57,7 +57,11 @@ export function getMvpReadinessChecks(environment = process.env, renderSource = 
         ? check('Bootstrap super-admin', 'pass', 'bootstrap identity is explicitly configured')
         : check('Bootstrap super-admin', 'blocked', `missing or placeholder values: ${bootstrapMissing.join(', ')}`))
 
-    checks.push(check('External launch evidence', 'manual', 'verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, and privacy approval'))
+    checks.push(check(
+        'External launch evidence',
+        'manual',
+        'run npm run check:production-operations, then verify mailbox delivery, backup restore, monitoring alerts, WAF policy, browser CI, and privacy approval',
+    ))
 
     return checks
 }

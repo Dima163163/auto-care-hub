@@ -1,6 +1,8 @@
 # Production Readiness Checklist
 
 - [ ] Configure production-only secrets in the hosting provider; never commit `.env` files.
+- [x] Run `npm run check:production-operations` to verify repository operational
+      contracts; treat every `MANUAL` result as an external release gate.
 - [ ] Run `npm run lint`, `npm test`, `npm run build`, `npm --prefix server test`, and `npm --prefix server run build`.
 - [ ] Apply and verify database migrations before serving new application code.
 - [ ] Record `npm run check:migration-inventory` count and checksum with the

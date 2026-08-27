@@ -103,18 +103,9 @@ export function AutoCareResultsFilters({ filters, onChange, onReset, variant = '
                         ...inclusionOptions.map((option) => [option, t(`autocare.inclusion.${option}`)] as [string, string]),
                     ]}
                 />
-                <div className="flex items-end">
-                    <button
-                        type="button"
-                        onClick={() => update('hasBonus', !filters.hasBonus)}
-                        aria-pressed={filters.hasBonus}
-                        className={`inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-control)] border px-3 text-xs font-bold ${filters.hasBonus ? 'border-primary bg-primary text-primary-foreground' : isDark ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground hover:border-primary' : 'border-border bg-background text-foreground hover:border-primary'}`}
-                    >
-                        {t('autocare.bonusFilter')}
-                    </button>
-                </div>
-                <ToggleFilter active={filters.availableToday} onClick={() => update('availableToday', !filters.availableToday)} label={t('autocare.availableTodayLabel')} variant={variant} />
-                <ToggleFilter active={filters.verifiedOnly} onClick={() => update('verifiedOnly', !filters.verifiedOnly)} label={t('autocare.verifiedFilter')} variant={variant} />
+                <ToggleFilter active={filters.hasBonus} onClick={() => update('hasBonus', !filters.hasBonus)} label={t('autocare.bonusFilter')} variant={variant} fullWidth />
+                <ToggleFilter active={filters.availableToday} onClick={() => update('availableToday', !filters.availableToday)} label={t('autocare.availableTodayLabel')} variant={variant} fullWidth />
+                <ToggleFilter active={filters.verifiedOnly} onClick={() => update('verifiedOnly', !filters.verifiedOnly)} label={t('autocare.verifiedFilter')} variant={variant} fullWidth />
             </div>
 
             <div className={`mt-3 flex flex-wrap gap-2 border-t pt-3 ${isDark ? 'border-primary-foreground/15' : 'border-border'}`}>
@@ -138,7 +129,9 @@ function FilterInput({ label, value, onChange, placeholder, className, tone }: {
     )
 }
 
-function ToggleFilter({ active, onClick, label, variant }: { active: boolean; onClick: () => void; label: string; variant: 'light' | 'dark' }) {
+function ToggleFilter({ active, onClick, label, variant, fullWidth = false }: { active: boolean; onClick: () => void; label: string; variant: 'light' | 'dark'; fullWidth?: boolean }) {
     const inactiveClass = variant === 'dark' ? 'border-primary-foreground/15 bg-primary-foreground/[0.08] text-primary-foreground/75 hover:border-primary' : 'border-border bg-background text-muted-foreground hover:border-primary hover:text-primary'
-    return <button type="button" onClick={onClick} aria-pressed={active} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${active ? 'border-primary bg-primary text-primary-foreground' : inactiveClass}`}>{label}</button>
+    const layoutClass = fullWidth ? 'h-10 w-full self-end justify-center' : 'py-1.5'
+
+    return <button type="button" onClick={onClick} aria-pressed={active} className={`inline-flex items-center rounded-full border px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40 ${layoutClass} ${active ? 'border-primary bg-primary text-primary-foreground' : inactiveClass}`}>{label}</button>
 }

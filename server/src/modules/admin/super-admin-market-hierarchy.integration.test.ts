@@ -15,7 +15,7 @@ import { createAuthTokens } from '../auth/auth.service.js'
 
 describe('Super-admin market hierarchy integration', () => {
     const suffix = `${Date.now()}`
-    const countryCode = `Z${String.fromCharCode(65 + (Number(suffix) % 26))}`
+    let countryCode = ''
     let app: FastifyInstance
     let superAdmin: UserEntity
     let regularAdmin: UserEntity
@@ -26,6 +26,18 @@ describe('Super-admin market hierarchy integration', () => {
     beforeAll(async () => {
         app = await buildApp()
         await app.ready()
+        const countryRepository = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
+        const existingCodes = new Set((await countryRepository.find({ select: { code: true } })).map((country) => country.code))
+        const seed = Number(suffix.slice(-6)) || 1
+        for (let offset = 0; offset < 26 * 26; offset += 1) {
+            const value = (seed + offset) % (26 * 26)
+            const candidate = `${String.fromCharCode(65 + Math.floor(value / 26))}${String.fromCharCode(65 + (value % 26))}`
+            if (!existingCodes.has(candidate)) {
+                countryCode = candidate
+                break
+            }
+        }
+        if (!countryCode) throw new Error('Unable to allocate an unused market country code for integration test.')
         const users = AppDataSource.getRepository(UserEntity)
         ;[superAdmin, regularAdmin] = await users.save([
             users.create({ name: 'Market Hierarchy Super Admin', email: `market-hierarchy-super-${suffix}@example.com`, passwordHash: 'hash', role: UserRole.SuperAdmin, status: UserStatus.Active, emailVerifiedAt: new Date() }),
@@ -58,7 +70,7 @@ describe('Super-admin market hierarchy integration', () => {
             supportedLocales: ['en', 'ru'],
             timezone: 'Europe/Samara',
             currencyCode: 'EUR',
-            capabilities: { search: true, subscriptions: false },
+            capabilities: { search: true, chat: false },
             legalLinks: { privacy: 'https://example.test/privacy', terms: 'https://example.test/terms' },
         }
         const country = await request(app.server)
@@ -75,7 +87,7 @@ describe('Super-admin market hierarchy integration', () => {
                 ...profile,
                 names: { en: 'Integration land', ru: 'Интеграционная страна' },
                 active: true,
-                capabilities: { subscriptions: true },
+                capabilities: { paid_access: true },
             })
         expect(monetizationCapability.status).toBe(400)
 

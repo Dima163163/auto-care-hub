@@ -1,9 +1,11 @@
 schema_version: 1
 document:
   name: Legacy cabinet booking to AutoCare Hub migration map
-  status: proposed
-  updated: 2026-08-13
+  status: in_progress
+  updated: 2026-08-27
   audit: ../MIGRATION_AUDIT.md
+  cleanup_manifest: legacy-cleanup-manifest.json
+  cleanup_check: npm run check:legacy-cleanup
 
 strategy:
   mode: replace_vertical_slices_then_delete
@@ -188,10 +190,10 @@ quarantine_then_delete:
     reason: legacy_customer_booking_commission_conflicts_with_subscription_model
     may_reuse:
       - none
-    deletion_gate:
-      - repair_payment_scope_approved
-      - new_autocare_booking_has_no_dependency
-      - migrations_and_tests_green
+    deletion_status:
+      - deleted_2026_08_27_after_no_runtime_consumers_found
+      - replacement_coverage_checked_by_legacy_cleanup_manifest
+      - historical_migrations_preserved
 
   - current_area: legacy_financial_runtime
     reason: removed_from_runtime; AutoCare customers pay providers directly

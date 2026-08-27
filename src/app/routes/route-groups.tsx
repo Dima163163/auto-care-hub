@@ -47,7 +47,6 @@ import {
     PartnersPage,
     PasswordResetPage,
     PasswordSetupPage,
-    PricingPage,
     PrivacyPage,
     ProfileBookingsPage,
     ProfilePage,
@@ -65,7 +64,6 @@ export function renderPublicRoutes() {
             <Route path={ROUTES.platformReviews} element={<PlatformReviewsPage />} />
             <Route path={ROUTES.features} element={<FeaturesPage />} />
             <Route path={ROUTES.owners} element={<OwnersPage />} />
-            <Route path={ROUTES.pricing} element={<PricingPage />} />
             <Route path={ROUTES.about} element={<AboutPage />} />
             <Route path={ROUTES.favorites} element={<FavoritesPage />} />
             <Route path={ROUTES.blog} element={<BlogPage />} />

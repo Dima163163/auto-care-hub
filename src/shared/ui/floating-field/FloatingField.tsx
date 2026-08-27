@@ -18,12 +18,13 @@ type FloatingSelectProps = FloatingFieldBaseProps & SelectHTMLAttributes<HTMLSel
 }
 type FloatingInputProps = FloatingFieldBaseProps & InputHTMLAttributes<HTMLInputElement>
 
-const toneClasses: Record<FloatingFieldTone, { wrapper: string; label: string; labelSurface: string; control: string }> = {
+const toneClasses: Record<FloatingFieldTone, { wrapper: string; label: string; labelSurface: string; control: string; placeholder: string }> = {
     light: {
         wrapper: 'border-border bg-background text-foreground focus-within:ring-offset-background',
         label: 'text-muted-foreground',
         labelSurface: 'bg-white',
         control: 'text-foreground disabled:text-muted-foreground',
+        placeholder: 'text-muted-foreground',
     },
     dark: {
         wrapper: 'border-primary-foreground/15 bg-primary-foreground/[0.04] text-primary-foreground focus-within:ring-offset-hero-overlay',
@@ -32,6 +33,10 @@ const toneClasses: Record<FloatingFieldTone, { wrapper: string; label: string; l
         label: 'text-slate-700',
         labelSurface: 'bg-white',
         control: 'text-primary-foreground disabled:text-muted-foreground [&>option]:bg-hero-overlay [&>option]:text-primary-foreground',
+        // Dark-tone fields are used on the navy search surface even when the
+        // application itself is in light mode. Keep empty values readable
+        // instead of inheriting the light theme's dark muted foreground.
+        placeholder: 'text-primary-foreground/65',
     },
 }
 
@@ -55,11 +60,11 @@ function FloatingLabel({ label, tone, filled }: { label: string; tone: FloatingF
     return (
         <span
             className={cn(
-                'pointer-events-none absolute left-3 top-1/2 z-10 origin-left -translate-y-1/2 rounded-[3px] px-1 text-xs font-bold transition-[color,transform,top] duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-standard)]',
+                'pointer-events-none absolute left-3 z-10 origin-left whitespace-nowrap rounded-[3px] px-1 text-xs font-bold leading-none transition-[color,transform,top] duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-standard)]',
                 'group-focus-within:top-0 group-focus-within:-translate-y-1/2 group-focus-within:scale-90 group-focus-within:text-primary',
                 toneClasses[tone].label,
                 toneClasses[tone].labelSurface,
-                filled && 'top-0 -translate-y-1/2 scale-90',
+                filled ? 'top-0 -translate-y-1/2 scale-90' : 'top-1/2 -translate-y-1/2 scale-100',
             )}
         >
             {label}
@@ -82,10 +87,14 @@ export function FloatingSelect({ children, className, floatLabelWhenEmpty = fals
                     // The wrapper owns the rounded focus ring. Suppress the
                     // global focus-visible ring on the native control so it
                     // cannot paint a square ring over the rounded field.
-                    'select-with-icon h-12 w-full appearance-none bg-transparent pb-1 pt-4 text-sm font-bold outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60',
+                    'select-with-icon h-12 w-full appearance-none bg-transparent text-sm font-bold outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60',
+                    // When an empty field receives focus, the label moves onto
+                    // the border. Give the selected value the same top inset
+                    // as a filled field so the two texts never collide.
+                    filled ? 'pb-1 pt-5' : 'pb-1 pt-4 group-focus-within:pt-5',
                     leadingAdornment ? 'pl-9 pr-9' : 'px-3 pr-9',
                     toneClasses[tone].control,
-                    !hasValue && 'text-muted-foreground',
+                    !hasValue && toneClasses[tone].placeholder,
                     className,
                 )}
                 {...props}
@@ -111,7 +120,10 @@ export function FloatingInput({ className, label, leadingAdornment, tone = 'ligh
                 className={cn(
                     // Keep focus treatment on the rounded field wrapper; a
                     // second native ring would have square corners.
-                    'h-12 w-full bg-transparent pb-1 pt-4 text-sm font-bold outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-transparent focus:placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60',
+                    'h-12 w-full bg-transparent text-sm font-bold outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-transparent focus:placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60',
+                    // Match the select behavior: once the floating label is
+                    // lifted on focus, reserve a full line for the input text.
+                    filled ? 'pb-1 pt-5' : 'pb-1 pt-4 group-focus-within:pt-5',
                     leadingAdornment ? 'pl-9 pr-3' : 'px-3',
                     toneClasses[tone].control,
                     className,

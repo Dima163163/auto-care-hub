@@ -6,6 +6,35 @@
 >
 > Target architecture: `../ARCHITECTURE.md`
 
+## Legacy cleanup audit update — 2026-08-27
+
+The migration and replacement audit is now executable through the checked-in
+manifest at `docs/architecture/legacy-cleanup-manifest.json`:
+
+```bash
+npm run check:legacy-cleanup
+npm run test:legacy-cleanup
+```
+
+The audit currently passes with **123 TypeORM migrations**: 67 historical
+migrations before the AutoCare boundary (`1785700000000`) and 56 AutoCare
+migrations at or after that boundary. The migration filename/order inventory
+and checksum are recorded on every run. Historical payment and commission
+migrations remain immutable; they are not runtime dependencies and must not be
+deleted from a database that may contain legacy data.
+
+The only proven-unused legacy runtime found in this pass was the commission
+service and its unit test. Both files were removed after confirming that no
+application, worker, route or test imports them. The removal is recorded in
+`docs/archive/bookly/commission-removal-2026-08-27.md`.
+
+The legacy cabinet entities, compatibility modules and legacy page families
+remain explicitly retained. They still serve `/v1/cabinets`, `/v1/services`,
+`/v1/bookings`, export paths and redirect/compatibility coverage. The manifest
+requires replacement paths, tests and known consumers for these families and
+will block a future deletion until catalog, provider-location, booking,
+export/data migration and real API E2E gates are complete.
+
 ## Executive conclusion
 
 Starting the whole project again would discard substantial production-oriented
@@ -15,10 +44,11 @@ foundation and replace the legacy domain in reviewed vertical slices.
 
 The supplied `PROJECT_PLAN.md` and `ARCHITECTURE.md` described a greenfield
 Next.js/FastAPI/SQLAlchemy/Alembic/PostGIS monorepo. The copied repository is
-instead a React/Vite and Fastify/TypeORM project. The historical audit snapshot
-contained 67 TypeORM migration files; the current repository contains 93,
-hundreds of frontend/backend TypeScript files, existing production checks and
-deployed AutoCare Hub assumptions. The greenfield documents were useful for the
+instead a React/Vite and Fastify/TypeORM project. The initial audit snapshot
+contained 67 TypeORM migration files; the current repository contains 123,
+including the AutoCare migrations added since that snapshot, plus hundreds of
+frontend/backend TypeScript files, existing production checks and deployed
+AutoCare Hub assumptions. The greenfield documents were useful for the
 AutoCare domain model, but not as executable instructions for this repository.
 
 ## Git safety state

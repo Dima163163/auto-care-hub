@@ -24,6 +24,7 @@ describe('Floating fields', () => {
         )
 
         expect(screen.getByLabelText('Какая услуга нужна?').parentElement).toHaveAttribute('data-filled', 'true')
+        expect(screen.getByLabelText('Какая услуга нужна?').parentElement?.querySelector('span')).toHaveClass('top-0')
     })
 
     it('keeps the focus treatment on the whole input container', () => {
@@ -36,6 +37,34 @@ describe('Floating fields', () => {
         expect(input.parentElement?.querySelector('span')).toHaveClass('group-focus-within:top-0')
         expect(input).toHaveClass('placeholder:text-transparent')
         expect(input).toHaveClass('focus-visible:ring-0', 'focus-visible:ring-offset-0')
+    })
+
+    it('adds a top inset when an empty select label floats on focus', () => {
+        render(
+            <FloatingSelect label="Какая услуга нужна?" value="" onChange={() => undefined}>
+                <option value="">Выберите услугу, например, Замена тормозных колодок</option>
+            </FloatingSelect>,
+        )
+
+        const select = screen.getByLabelText('Какая услуга нужна?')
+        fireEvent.focus(select)
+
+        expect(select).toHaveClass('group-focus-within:pt-5')
+        expect(select.parentElement?.querySelector('span')).toHaveClass('whitespace-nowrap', 'leading-none')
+    })
+
+    it('keeps the label above a non-empty placeholder option when requested', () => {
+        render(
+            <FloatingSelect floatLabelWhenEmpty label="Какая услуга нужна?" value="" onChange={() => undefined}>
+                <option value="">Выберите услугу, например, Замена тормозных колодок</option>
+            </FloatingSelect>,
+        )
+
+        const select = screen.getByLabelText('Какая услуга нужна?')
+
+        expect(select.parentElement).toHaveAttribute('data-filled', 'true')
+        expect(select).toHaveClass('pt-5')
+        expect(select.parentElement?.querySelector('span')).toHaveClass('top-0')
     })
 
     it('keeps the native select ring suppressed so the rounded wrapper owns focus', () => {
@@ -51,7 +80,7 @@ describe('Floating fields', () => {
         expect(select.parentElement?.querySelector('span')).toHaveClass('bg-white', 'text-slate-700')
     })
 
-    it('uses muted text for an unselected dark select and keeps selected values prominent', () => {
+    it('uses readable muted text for an unselected dark select and keeps selected values prominent', () => {
         const { rerender } = render(
             <FloatingSelect label="Марка" value="" tone="dark" onChange={() => undefined}>
                 <option value="">Любая марка</option>
@@ -59,7 +88,7 @@ describe('Floating fields', () => {
             </FloatingSelect>,
         )
 
-        expect(screen.getByLabelText('Марка')).toHaveClass('text-muted-foreground')
+        expect(screen.getByLabelText('Марка')).toHaveClass('text-primary-foreground/65')
 
         rerender(
             <FloatingSelect label="Марка" value="bmw" tone="dark" onChange={() => undefined}>

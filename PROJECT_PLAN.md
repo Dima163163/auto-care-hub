@@ -1,8 +1,12 @@
 # AutoCare Hub — Project Plan
 
-> Status: working implementation roadmap
+> Status: historical implementation roadmap
 >
-> Updated: 2026-08-24 (portable geospatial ADR, trust rollout and moderation evidence)
+> Updated: 2026-08-27 (superseded as a release gate)
+>
+> **Canonical local-MVP and pilot go/no-go plan:**
+> [`docs/operations/PILOT_100_READINESS_PLAN.md`](docs/operations/PILOT_100_READINESS_PLAN.md).
+> This file remains a historical implementation timeline only.
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
@@ -28,8 +32,7 @@ The delivery order is:
 2. approve the AutoCare Hub design direction and screen mocks;
 3. replace the legacy domain with the automotive-service domain;
 4. ship and stabilize the responsive web application;
-5. activate provider subscriptions only after the free acquisition period is
-   understood and billing rules are approved;
+5. complete the local quality gate and data-security pilot gate;
 6. start iOS and Android only after the mobile-readiness gate passes.
 
 All implementation pushes target `dev` or a feature branch. No push, merge or
@@ -854,9 +857,9 @@ Goal: deliver the core marketplace value in the browser.
   quote and explicit customer/provider confirmation boundary.
 - [~] Validate accessibility, mobile web behavior and performance budgets.
   The Chromium release matrix now covers all maintained widths from 360 to
-  1440px, keyboard/Axe checks pass, and the route-level JS/CSS performance
-  budget gate is green. Physical-device evidence, production Lighthouse and
-  production map/media measurements remain external release gates.
+  1440px, keyboard/Axe checks pass, and the route-level JS/CSS plus public
+  map/media budget gates are green. Physical-device evidence, production
+  Lighthouse and deployed Open Graph checks remain external release gates.
 
 Exit gate:
 
@@ -1134,20 +1137,23 @@ Exit gate:
 
 Goal: prove the browser product is ready before monetization or native apps.
 
-- [ ] Real provider pilot in the first launch area. The executable sequence and
-  evidence table are documented in `docs/operations/PILOT_READINESS_RUNBOOK.md`;
-  real providers and a selected launch market are still required.
-- [ ] Real customer pilot across fixed-price and quote-required services. The
-  browser journeys are covered by mocks/integration tests; customer recruitment
-  and support evidence remain external.
+- [~] Real provider pilot in the first launch area. The executable sequence,
+  anonymized evidence gate and evidence table are documented in
+  `docs/operations/PILOT_READINESS_RUNBOOK.md` and
+  `docs/operations/PILOT_EVIDENCE_TEMPLATE.md`; two recruited providers and a
+  selected launch market are still required.
+- [~] Real customer pilot across fixed-price and quote-required services. The
+  browser journeys and evidence validator are implemented; 5–10 recruited
+  customers, real vehicles and support consent evidence remain external.
 - [ ] Validate catalog/price quality and supply density. The canonical catalog,
   comparison attributes and quality-monitoring aggregate now expose catalog,
   price-coverage and per-market supply metrics; pilot supply and price review
   remain external.
-- [ ] Validate provider response time and booking reliability. Instrumentation,
-  locked transitions and the pilot SLO checklist now expose response p50/p95,
-  confirmation reliability and conflict metrics; real traffic evidence is still
-  required.
+- [~] Validate provider response time and booking reliability. Instrumentation,
+  locked transitions, the pilot SLO checklist and `npm run check:pilot-evidence`
+  now expose response p50/p95, confirmation reliability,
+  cancellation/no-show and duplicate-request evidence; real traffic
+  measurements remain external.
 - [~] Complete security/privacy threat review, data export/deletion and retention.
   PII-aware logging, CSRF duplicate-header rejection, provider-scoped deletion
   invariants, private-media deletion and database-backed retention tests are
@@ -1161,10 +1167,10 @@ Goal: prove the browser product is ready before monetization or native apps.
   device, VoiceOver/TalkBack and full protected-cabinet keyboard evidence is
   still required.
 - [~] Complete performance, SEO/prerender, map and media budgets. The public
-  indexing contract and budget gate are recorded in
-  `docs/SEO_PRERENDER_MEDIA_BUDGET.md`; locale payload splitting and local
-  performance budgets pass, while production prerender/map/media measurements
-  remain.
+  indexing contract, selected Next.js ISR provider prerender and executable
+  `npm run check:seo` budget/metadata gate are recorded in
+  `docs/SEO_PRERENDER_MEDIA_BUDGET.md`; repository and local production-preview
+  checks pass, while deployed Lighthouse and production OG evidence remain.
 - [~] Complete dashboards, alerts, backups and restore rehearsal. Encrypted
   backup/restore scripts, an alert-rule template and the runbook are present;
   deployment alert routing, managed backup storage and a production-like timed
@@ -1174,11 +1180,14 @@ Goal: prove the browser product is ready before monetization or native apps.
   staging compatibility now fails closed without `STAGING_API_BASE_URL`, while
   a real staging probe and versioned deprecation evidence remain.
 - [~] Remove or archive proven-unused AutoCare Hub domain/payment code. The
-  legacy payment runtime is removed and the migration audit/no-legacy checks
-  are green; unused Bookly browser suites and the retired cabinet action-center
-  implementation are now reversible under `docs/archive/bookly/`. Inherited
-  runtime entities/migrations remain archived until replacement coverage proves
-  they can be deleted safely.
+  legacy payment runtime and its unused commission service are removed; the
+  migration audit, replacement manifest and no-legacy checks are green. Unused
+  Bookly browser suites and the retired cabinet action-center implementation
+  are reversible under `docs/archive/bookly/`. Inherited runtime entities,
+  compatibility modules and immutable migrations remain retained until the
+  executable replacement-coverage gates in
+  `docs/architecture/legacy-cleanup-manifest.json` prove they can be deleted
+  safely. Run `npm run check:legacy-cleanup` before each removal.
 
 Stable web criteria:
 

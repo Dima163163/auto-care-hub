@@ -49,6 +49,14 @@ async function run() {
         await client.send(new PutObjectCommand({ Bucket: bucket, Key: quarantineKey, Body: cleanPayload, ContentType: 'application/octet-stream', ServerSideEncryption: 'AES256' }))
         await client.send(new CopyObjectCommand({ Bucket: bucket, Key: privateKey, CopySource: encodeCopySource(bucket, quarantineKey), MetadataDirective: 'REPLACE', ContentType: 'application/octet-stream', ServerSideEncryption: 'AES256' }))
         const signedUrl = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: privateKey }), { expiresIn: env.autoCareAttachments.signedUrlTtlSeconds })
+        const signedUrlParameters = new URL(signedUrl).searchParams
+        const signedExpiry = Number(signedUrlParameters.get('X-Amz-Expires'))
+        if (signedUrlParameters.get('X-Amz-Signature') === null || signedExpiry !== env.autoCareAttachments.signedUrlTtlSeconds) {
+            throw new Error('Signed attachment URL is missing an expected signature or TTL.')
+        }
+        if (new URL(signedUrl).pathname.includes('/quarantine/')) {
+            throw new Error('Signed attachment URL must never expose a quarantine object.')
+        }
         const response = await fetch(signedUrl)
         if (!response.ok) throw new Error(`Signed attachment read returned HTTP ${response.status}.`)
         const received = Buffer.from(await response.arrayBuffer())

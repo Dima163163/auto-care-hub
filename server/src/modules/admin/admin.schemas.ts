@@ -196,7 +196,7 @@ const marketLegalLinksSchema = z.record(
     z.string().trim().url().max(2_000),
 ).refine((value) => Object.keys(value).length <= 24, 'A market can have at most 24 legal links.')
 
-const monetizationCapabilityKeys = ['subscriptions', 'promo_codes', 'billing'] as const
+const unsupportedCommercialCapabilityKeys = ['paid_access', 'commercial_codes', 'settlement'] as const
 
 function validateMarketProfile(value: {
     defaultLocale: string
@@ -210,9 +210,9 @@ function validateMarketProfile(value: {
     if (!normalizedLocales.includes(value.defaultLocale.toLowerCase())) {
         context.addIssue({ code: 'custom', path: ['defaultLocale'], message: 'defaultLocale must be included in supportedLocales.' })
     }
-    for (const key of monetizationCapabilityKeys) {
+    for (const key of unsupportedCommercialCapabilityKeys) {
         if (value.capabilities?.[key]) {
-            context.addIssue({ code: 'custom', path: ['capabilities', key], message: 'Monetization capabilities remain disabled until the monetization phase is approved.' })
+            context.addIssue({ code: 'custom', path: ['capabilities', key], message: 'Commercial capabilities are outside the AutoCare Hub product scope.' })
         }
     }
 }
@@ -289,6 +289,22 @@ export const createSuperAdminAutoCareMarketZoneSchema = z.object({
 })
 
 export const updateSuperAdminAutoCareMarketZoneSchema = createSuperAdminAutoCareMarketZoneSchema
+
+export const updateSuperAdminTrustPolicySchema = z.object({
+    policyVersion: z.string().trim().regex(/^autocare-trust-v[0-9]+$/),
+    trustedMinimumRating: z.number().finite().min(0).max(5),
+    trustedMinimumReviews: z.number().int().min(0).max(10_000),
+    trustedMinimumCompletedVisits: z.number().int().min(0).max(100_000),
+    trustedMaxNoShowRate: z.number().finite().min(0).max(1),
+    trustedMaxComplaintRate: z.number().finite().min(0).max(1),
+    trustedMaxResponseTimeMinutes: z.number().int().min(1).max(10_080),
+    reassessmentIntervalHours: z.number().int().min(1).max(720),
+    rollout: z.object({
+        enabled: z.boolean(),
+        marketIds: z.array(z.string().trim().min(1).max(120)).max(500),
+        percentage: z.number().int().min(0).max(100),
+    }),
+})
 
 export const updateAdminAutoCareProviderStatusSchema = z.object({
     status: z.nativeEnum(AutomotiveProviderStatus),

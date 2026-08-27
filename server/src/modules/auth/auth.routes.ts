@@ -255,7 +255,6 @@ export async function authRoutes(
                 request.log.error(
                     {
                         error,
-                        email: result.userEntity.email,
                     },
                     'Failed to send registration email verification'
                 )
@@ -462,7 +461,6 @@ export async function authRoutes(
                     request.log.error(
                         {
                             error,
-                            email: passwordResetToken.email,
                         },
                         'Failed to send password reset email'
                     )
@@ -544,7 +542,6 @@ export async function authRoutes(
                 request.log.error(
                     {
                         error,
-                        email: user.email,
                     },
                     'Failed to send email verification email'
                 )

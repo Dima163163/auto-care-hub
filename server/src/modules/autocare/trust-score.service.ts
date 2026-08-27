@@ -18,9 +18,7 @@ import {
 import { calculateAutoCareTrustScore, type AutoCareTrustScore } from './trust-score.js'
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
-
-const TRUST_POLICY_VERSION = 'autocare-trust-v1'
-const TRUST_SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000
+import { getAutoCareTrustPolicy } from '../admin/super-admin-trust-policy.service.js'
 
 function getProfileFieldCount(provider: AutomotiveProviderEntity) {
     return [
@@ -45,11 +43,12 @@ export async function reassessAutoCareProviderTrust(
     const provider = await providerRepository.findOneBy({ id: providerId })
     if (!provider) return null
 
-    const [evidence, reviews, claims, interactions] = await Promise.all([
+    const [evidence, reviews, claims, interactions, policy] = await Promise.all([
         manager.getRepository(AutoCareTrustEvidenceEntity).find({ where: { providerId } }),
         manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved, verifiedVisit: true } }),
         manager.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { providerId } }),
         manager.getRepository(ServiceRequestEntity).find({ where: { providerId } }),
+        getAutoCareTrustPolicy(),
     ])
     const nowMs = Date.now()
     const verifiedEvidenceCount = evidence.filter((item) =>
@@ -105,6 +104,7 @@ export async function reassessAutoCareProviderTrust(
         complaintRate,
         responseTimeMinutes,
         moderationViolationCount: criticalViolationCount,
+        policy,
     })
     const now = new Date()
     const inputCounters = {
@@ -145,15 +145,15 @@ export async function reassessAutoCareProviderTrust(
         const previous = latestByLocation.get(location.id)
         const sameInputs = previous !== undefined && JSON.stringify(previous.inputCounters) === JSON.stringify(inputCounters)
         const stillValid = previous !== undefined && previous.validUntil.getTime() > now.getTime()
-        if (sameInputs && previous.policyVersion === TRUST_POLICY_VERSION && previous.score === trust.score && previous.badge === trust.badge && stillValid) continue
+        if (sameInputs && previous.policyVersion === policy.policyVersion && previous.score === trust.score && previous.badge === trust.badge && stillValid) continue
         snapshots.push(await manager.getRepository(AutoCareTrustSnapshotEntity).save(manager.getRepository(AutoCareTrustSnapshotEntity).create({
             providerId,
             locationId: location.id,
-            policyVersion: TRUST_POLICY_VERSION,
+            policyVersion: policy.policyVersion,
             score: trust.score,
             badge: trust.badge,
             computedAt: now,
-            validUntil: new Date(now.getTime() + TRUST_SNAPSHOT_TTL_MS),
+            validUntil: new Date(now.getTime() + policy.reassessmentIntervalHours * 60 * 60 * 1_000),
             inputCounters,
             reasonCodes,
         })))

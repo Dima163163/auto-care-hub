@@ -22,6 +22,7 @@ tokens or production credentials.
 | Check | Pass condition | Artifact / metric | Owner | Status |
 | --- | --- | --- | --- | --- |
 | Provider/customer participants | At least two verified providers and consented customer journeys | Redacted participant IDs and run dates | Marketplace | ☐ |
+| Real pilot evidence gate | Anonymized evidence document passes `npm run check:pilot-evidence` | Gate output and evidence file checksum | Operations | ☐ |
 | Catalog coverage | Every pilot category has an active definition and provider offer | Catalog export and missing-price report | Marketplace | ☐ |
 | Price quality | Missing/stale prices and quote-required categories are within agreed thresholds | Price review export and threshold decision | Marketplace | ☐ |
 | Supply density | Providers and active offers meet the selected radius threshold | Discovery density export by zone | Marketplace | ☐ |

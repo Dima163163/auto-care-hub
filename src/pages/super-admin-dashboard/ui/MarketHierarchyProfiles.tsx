@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2, Globe2, Plus, Save } from 'lucide-react'
+import { Building2, Globe2, Plus, Save, Trash2 } from 'lucide-react'
 
 import type {
     AutoCareApiMarket,
@@ -23,12 +23,14 @@ type CountryProfileFormProps = {
     country?: AutoCareApiMarketCountry
     onSubmit: (input: CreateSuperAdminMarketCountryInput | UpdateSuperAdminMarketCountryInput) => Promise<unknown>
     state: SubmitState
+    onDelete?: () => Promise<unknown>
 }
 type CityProfileFormProps = {
     country: AutoCareApiMarketCountry
     city?: AutoCareApiMarket
     onSubmit: (input: CreateSuperAdminAutoCareMarketInput | UpdateSuperAdminAutoCareMarketHierarchyInput) => Promise<unknown>
     state: SubmitState
+    onDelete?: () => Promise<unknown>
 }
 
 const primaryButton = 'inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground disabled:opacity-60'
@@ -38,7 +40,7 @@ function ErrorMessage({ error }: { error: string | null }) {
     return error ? <p role="alert" className="mt-3 text-xs font-bold text-destructive">{error}</p> : null
 }
 
-export function CountryProfileForm({ country, onSubmit, state }: CountryProfileFormProps) {
+export function CountryProfileForm({ country, onSubmit, state, onDelete }: CountryProfileFormProps) {
     const [code, setCode] = useState(country?.code ?? '')
     const [names, setNames] = useState(JSON.stringify(country?.names ?? { ru: '', en: '' }, null, 2))
     const [active, setActive] = useState(country?.active ?? true)
@@ -61,11 +63,11 @@ export function CountryProfileForm({ country, onSubmit, state }: CountryProfileF
         </div>
         <div className="mt-3"><MarketProfileFields draft={profile} setDraft={setProfile} /></div>
         <label className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />Активна для создания городов и запуска</label>
-        <div className="mt-3 flex items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{country ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : country ? 'Сохранить страну' : 'Создать страну'}</button>{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
+        <div className="mt-3 flex flex-wrap items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{country ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : country ? 'Сохранить страну' : 'Создать страну'}</button>{onDelete && <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive" onClick={() => { if (window.confirm('Удалить страну? У страны не должно быть городов.')) void onDelete().catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось удалить страну.')) }}><Trash2 className="size-4" />Удалить</button>}{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
     </form>
 }
 
-export function CityProfileForm({ country, city, onSubmit, state }: CityProfileFormProps) {
+export function CityProfileForm({ country, city, onSubmit, state, onDelete }: CityProfileFormProps) {
     const [cityCode, setCityCode] = useState(city?.cityCode ?? '')
     const [cityName, setCityName] = useState(city?.cityName ?? '')
     const [regionCode, setRegionCode] = useState(city?.regionCode ?? '')
@@ -97,6 +99,6 @@ export function CityProfileForm({ country, city, onSubmit, state }: CityProfileF
         </div>
         <div className="mt-3"><MarketProfileFields draft={profile} setDraft={setProfile} /></div>
         <label className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground"><input type="checkbox" checked={launchReady} onChange={(event) => setLaunchReady(event.target.checked)} />Город готов к публичному запуску</label>
-        <div className="mt-3 flex items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{city ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : city ? 'Сохранить город' : 'Создать город'}</button>{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
+        <div className="mt-3 flex flex-wrap items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{city ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : city ? 'Сохранить город' : 'Создать город'}</button>{onDelete && <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive" onClick={() => { if (window.confirm('Удалить город? Сначала удалите его зоны и филиалы.')) void onDelete().catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось удалить город.')) }}><Trash2 className="size-4" />Удалить</button>}{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
     </form>
 }

@@ -30,7 +30,6 @@ const directRoutes = [
     '/profile/vehicles',
     '/profile/bookings',
     '/profile/reviews',
-    '/pricing',
     '/owner/dashboard',
     '/owner/autocare-providers',
     '/owner/cabinets',

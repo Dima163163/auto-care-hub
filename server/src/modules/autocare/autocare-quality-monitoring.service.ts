@@ -1,7 +1,6 @@
 import { In } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
-import { env } from '../../config/env.js'
 import {
     AutoCareTrustSnapshotEntity,
     AutoCareAppealEntity,
@@ -25,6 +24,7 @@ import { buildQualityMetrics } from './quality-metrics.js'
 import { buildRankingCalibrationReport, type RankingCalibrationReport } from './ranking-calibration.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
+import { getAutoCareTrustRollout } from '../admin/super-admin-trust-policy.service.js'
 
 export type AutoCareQualityMonitoringResponse = {
     generatedAt: string
@@ -55,7 +55,7 @@ function percent(value: number, total: number) {
 /** Aggregate-only telemetry; private review/chat content is never returned. */
 export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<AutoCareQualityMonitoringResponse> {
     assertAdmin(user)
-    const [providers, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals] = await Promise.all([
+    const [providers, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
         AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
         AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
         AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, providerId: true, status: true, completedAt: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
@@ -64,6 +64,7 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
         AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ select: { id: true, providerId: true, marketId: true } }),
         AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({ select: { locationId: true, definitionId: true, active: true, priceFromMinor: true, priceToMinor: true, currencyCode: true, description: true } }),
         AppDataSource.getRepository(AutoCareAppealEntity).countBy({ status: AutoCareAppealStatus.Pending }),
+        getAutoCareTrustRollout(),
     ])
     const requestIds = requests.map((request) => request.id)
     const messages = requestIds.length === 0
@@ -120,7 +121,7 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
                 requests,
                 reviews,
             }),
-            rollout: env.autoCareTrustRollout,
+            rollout,
         },
         ...quality,
         appeals: { available: true, pending: pendingAppeals },

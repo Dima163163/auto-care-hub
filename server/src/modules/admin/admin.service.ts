@@ -87,7 +87,6 @@ export type SuperAdminPlatformOverview = {
     }>
     providers: { total: number; active: number; draft: number; suspended: number; verified: number }
     users: { clients: number; owners: number; admins: number; superAdmins: number }
-    billing: { phase: 'launch'; subscriptionsEnabled: false; promoCodesEnabled: false }
 }
 
 export function getProviderTrustScore(provider: AutomotiveProviderEntity) {
@@ -161,7 +160,6 @@ export async function getSuperAdminPlatformOverview(actor: UserEntity): Promise<
             admins: users.filter((user) => user.role === UserRole.Admin).length,
             superAdmins: users.filter((user) => user.role === UserRole.SuperAdmin).length,
         },
-        billing: { phase: 'launch', subscriptionsEnabled: false, promoCodesEnabled: false },
     }
 }
 

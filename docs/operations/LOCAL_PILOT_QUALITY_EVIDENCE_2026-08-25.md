@@ -42,3 +42,16 @@ The single confirmed booking proves the local request → quote → accept →
 confirm path, but it must not be presented as a provider SLA. Closing this gate
 requires recruited services and customers, timestamps from their real actions,
 and a staging or production-like environment.
+
+## Real pilot evidence gate
+
+The fail-closed validator is now available:
+
+```bash
+PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json npm run check:pilot-evidence
+```
+
+No real evidence file is committed in this repository. The gate intentionally
+remains blocked until two verified providers, 5–10 consented customers, real
+vehicle/plate metadata, the complete request/quote/booking/review/bonus/
+complaint/support journey and measured response/booking metrics are collected.

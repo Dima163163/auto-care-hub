@@ -41,6 +41,7 @@ export const REQUIRED_SCHEMA_TABLES: readonly SchemaTable[] = [
     { tableName: 'autocare_chat_reports' },
     { tableName: 'autocare_chat_blocks' },
     { tableName: 'autocare_market_countries' },
+    { tableName: 'autocare_trust_policy' },
     { tableName: 'autocare_capacity_resources' },
     { tableName: 'autocare_capacity_reservations' },
     { tableName: 'migrations' },
@@ -111,6 +112,19 @@ export const REQUIRED_SCHEMA_COLUMNS: readonly SchemaColumn[] = [
     { tableName: 'autocare_markets', columnName: 'countryId' },
     { tableName: 'autocare_markets', columnName: 'capabilities' },
     { tableName: 'autocare_markets', columnName: 'legalLinks' },
+    { tableName: 'autocare_trust_policy', columnName: 'policyVersion' },
+    { tableName: 'autocare_trust_policy', columnName: 'trustedMinimumRating' },
+    { tableName: 'autocare_trust_policy', columnName: 'trustedMinimumReviews' },
+    { tableName: 'autocare_trust_policy', columnName: 'trustedMinimumCompletedVisits' },
+    { tableName: 'autocare_trust_policy', columnName: 'trustedMaxNoShowRate' },
+    { tableName: 'autocare_trust_policy', columnName: 'trustedMaxComplaintRate' },
+    { tableName: 'autocare_trust_policy', columnName: 'trustedMaxResponseTimeMinutes' },
+    { tableName: 'autocare_trust_policy', columnName: 'reassessmentIntervalHours' },
+    { tableName: 'autocare_trust_policy', columnName: 'rolloutEnabled' },
+    { tableName: 'autocare_trust_policy', columnName: 'rolloutMarketIds' },
+    { tableName: 'autocare_trust_policy', columnName: 'rolloutPercentage' },
+    { tableName: 'autocare_trust_policy', columnName: 'updatedById' },
+    { tableName: 'autocare_trust_policy', columnName: 'updatedAt' },
 ]
 
 export function getMissingSchemaTables(

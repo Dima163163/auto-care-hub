@@ -7,6 +7,10 @@ const publicCopy: Record<string, { title: string; description: string }> = {
         title: 'AutoCare Hub — Compare trusted automotive services',
         description: 'Compare prices, ratings and available appointments at trusted automotive services near you.',
     },
+    '/services': {
+        title: 'Find trusted automotive services | AutoCare Hub',
+        description: 'Search and compare automotive services by location, price, rating and available appointments.',
+    },
     '/for-owners': {
         title: 'For automotive service owners | AutoCare Hub',
         description: 'Create a service profile, receive qualified requests and grow your automotive business with AutoCare Hub.',
@@ -42,20 +46,25 @@ const publicCopy: Record<string, { title: string; description: string }> = {
 }
 
 const privatePrefixes = ['/admin', '/owner', '/profile', '/chats', '/onboarding', '/notifications']
-const noIndexRoutes = ['/services', '/login', '/register', '/forgot-password', '/password']
+const noIndexRoutes = ['/login', '/register', '/forgot-password', '/password']
 const indexRobots = { index: true, follow: true, other: { 'max-image-preview': 'large' } }
+
+type RouteMetadataOptions = {
+    hasSearchParams?: boolean
+}
 
 function normalizePathname(pathname: string) {
     const normalized = pathname.trim().replace(/\/{2,}/g, '/').replace(/\/$/, '')
     return normalized || '/'
 }
 
-export function getRouteMetadata(pathname: string): Metadata {
+export function getRouteMetadata(pathname: string, options: RouteMetadataOptions = {}): Metadata {
     const path = normalizePathname(pathname)
     const isPrivate = privatePrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
-    const isNoIndex = isPrivate || noIndexRoutes.some((prefix) => prefix === '/services'
-        ? path === prefix
-        : path === prefix || path.startsWith(`${prefix}/`))
+    const isServiceRequest = /^\/services\/[^/]+\/request$/.test(path)
+    const isSearchResult = path === '/services' && options.hasSearchParams === true
+    const isNoIndex = isPrivate || isServiceRequest || isSearchResult || noIndexRoutes.some((prefix) =>
+        path === prefix || path.startsWith(`${prefix}/`))
     const isProvider = path.startsWith('/services/') && path !== '/services'
     const copy = publicCopy[path] ?? (isProvider
         ? {

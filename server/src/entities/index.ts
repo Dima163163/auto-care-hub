@@ -67,6 +67,7 @@ import {
     AutoCareTrustEvidenceEntity,
     AutoCareTrustSnapshotEntity,
 } from './automotive/marketplace-enhancements.entity.js'
+import { AutoCareTrustPolicyEntity } from './automotive/trust-policy.entity.js'
 
 export const entities = [
     UserEntity,
@@ -134,6 +135,7 @@ export const entities = [
     AutoCareExpertQuestionEntity,
     AutoCareFleetAccountEntity,
     AutoCareFleetVehicleEntity,
+    AutoCareTrustPolicyEntity,
 ]
 
 export { BookingEntity } from './booking/booking.entity.js'
@@ -162,6 +164,7 @@ export {
     AutoCareChatReportStatus,
 } from './automotive/chat-moderation.entity.js'
 export { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from './automotive/appeal.entity.js'
+export { AutoCareTrustPolicyEntity } from './automotive/trust-policy.entity.js'
 export { CabinetEntity } from './cabinet/cabinet.entity.js'
 export { ReviewEntity } from './review/review.entity.js'
 export { SecurityTokenEntity } from './security-token/security-token.entity.js'

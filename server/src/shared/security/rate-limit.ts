@@ -67,7 +67,8 @@ const buckets = new Map<string, RateLimitState>()
 export function mustFailClosedForRedisRateLimitFailure(
     nodeEnv: typeof env.nodeEnv = env.nodeEnv,
 ) {
-    return nodeEnv === 'production'
+    if (nodeEnv !== env.nodeEnv) return nodeEnv === 'production'
+    return env.redis.rateLimitFailureMode === 'fail-closed'
 }
 
 function hashRateLimitValue(value: string) {

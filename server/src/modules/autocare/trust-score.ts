@@ -19,6 +19,29 @@ export type AutoCareTrustScoreInput = {
     priceAccuracyRate?: number
     /** Open critical moderation/safety/fraud violations. */
     moderationViolationCount?: number
+    policy?: AutoCareTrustPolicy
+}
+
+export type AutoCareTrustPolicy = {
+    policyVersion: string
+    trustedMinimumRating: number
+    trustedMinimumReviews: number
+    trustedMinimumCompletedVisits: number
+    trustedMaxNoShowRate: number
+    trustedMaxComplaintRate: number
+    trustedMaxResponseTimeMinutes: number
+    reassessmentIntervalHours: number
+}
+
+export const DEFAULT_AUTOCARE_TRUST_POLICY: AutoCareTrustPolicy = {
+    policyVersion: 'autocare-trust-v1',
+    trustedMinimumRating: 4.2,
+    trustedMinimumReviews: 5,
+    trustedMinimumCompletedVisits: 10,
+    trustedMaxNoShowRate: 0.1,
+    trustedMaxComplaintRate: 0.1,
+    trustedMaxResponseTimeMinutes: 120,
+    reassessmentIntervalHours: 24,
 }
 
 export type AutoCareTrustScore = {
@@ -45,6 +68,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  * recalculation jobs without duplicating business rules.
  */
 export function calculateAutoCareTrustScore(input: AutoCareTrustScoreInput): AutoCareTrustScore {
+    const policy = input.policy ?? DEFAULT_AUTOCARE_TRUST_POLICY
     const profile = clamp(input.profileFields, 0, 5) / 5 * 20
     const reviewCount = Math.max(input.reviewCount, 0)
     const adjustedRating = reviewCount > 0
@@ -71,13 +95,14 @@ export function calculateAutoCareTrustScore(input: AutoCareTrustScoreInput): Aut
     const qualitySignals = trend * 3 + responseSignal + priceSignal - complaintRate * 10
     const moderationPenalty = Math.min(Math.max(input.moderationViolationCount ?? 0, 0), 4) * 10
     const score = Math.round(clamp(profile + reviews + evidence + reliability + qualitySignals - claimsPenalty - moderationPenalty, 0, 100) * 10) / 10
-    const trustedRating = adjustedRating >= 4.2
-    const trustedReliability = noShowRate <= 0.1 && complaintRate <= 0.1
+    const trustedRating = adjustedRating >= policy.trustedMinimumRating
+    const trustedReliability = noShowRate <= policy.trustedMaxNoShowRate && complaintRate <= policy.trustedMaxComplaintRate
     const trustedPricing = input.priceAccuracyRate === undefined || input.priceAccuracyRate >= 0.9
+    const trustedResponseTime = input.responseTimeMinutes === undefined || input.responseTimeMinutes <= policy.trustedMaxResponseTimeMinutes
 
     return {
         score,
-        badge: input.verified && completedInteractions >= 10 && reviewCount >= 5 && trustedRating && trustedReliability && trustedPricing && (input.moderationViolationCount ?? 0) === 0 && score >= 80
+        badge: input.verified && completedInteractions >= policy.trustedMinimumCompletedVisits && reviewCount >= policy.trustedMinimumReviews && trustedRating && trustedReliability && trustedPricing && trustedResponseTime && (input.moderationViolationCount ?? 0) === 0 && score >= 80
             ? 'trusted'
             : input.verified && completedInteractions >= 1 && score >= 65
                 ? 'quality'

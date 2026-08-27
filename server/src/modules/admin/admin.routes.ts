@@ -61,6 +61,7 @@ import {
     updateSuperAdminAutoCareMarketHierarchySchema,
     updateSuperAdminAutoCareMarketZoneSchema,
     updateSuperAdminMarketCountrySchema,
+    updateSuperAdminTrustPolicySchema,
 } from './admin.schemas.js'
 import { updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
@@ -118,6 +119,7 @@ import type { CursorPage } from '../../shared/http/cursor-pagination.js'
 import type { AdminCabinet, AdminUser, CreateAdminResponse } from './admin.types.js'
 import type { AdminAutoCareProvider, SuperAdminPlatformOverview } from './admin.service.js'
 import { decideAdminProviderChangeRequest, listAdminProviderChangeRequests } from '../autocare/provider-change-request.service.js'
+import { getSuperAdminTrustPolicy, updateSuperAdminTrustPolicy } from './super-admin-trust-policy.service.js'
 import { AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import { decideAdminCatalogGapRequest, listAdminCatalogGapRequests, updateAdminAutoCareServiceDefinition } from '../autocare/catalog-gap.service.js'
@@ -132,6 +134,9 @@ import {
     createSuperAdminAutoCareMarket,
     createSuperAdminAutoCareMarketZone,
     createSuperAdminMarketCountry,
+    deleteSuperAdminAutoCareMarket,
+    deleteSuperAdminAutoCareMarketZone,
+    deleteSuperAdminMarketCountry,
     getSuperAdminMarketHierarchy,
     updateSuperAdminAutoCareMarketHierarchy,
     updateSuperAdminAutoCareMarketZone,
@@ -399,6 +404,14 @@ export async function adminRoutes(
         return result
     })
 
+    app.delete('/super-admin/market-countries/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminCountryParamsSchema, request.params)
+        const result = await deleteSuperAdminMarketCountry(user, params.id)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryDeleted, targetId: result.id, targetType: 'autocare_market_country', metadata: {}, request })
+        return result
+    })
+
     app.post('/super-admin/market-countries/:id/cities', async (request) => {
         const user = await requireAuth(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
@@ -415,6 +428,14 @@ export async function adminRoutes(
         return result
     })
 
+    app.delete('/super-admin/market-cities/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
+        const result = await deleteSuperAdminAutoCareMarket(user, params.id)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketDeleted, targetId: result.id, targetType: 'autocare_market', metadata: {}, request })
+        return result
+    })
+
     app.post('/super-admin/market-cities/:id/zones', async (request) => {
         const user = await requireAuth(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
@@ -428,6 +449,35 @@ export async function adminRoutes(
         const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
         const result = await updateSuperAdminAutoCareMarketZone(user, params.id, validateBody(updateSuperAdminAutoCareMarketZoneSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneUpdated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
+        return result
+    })
+
+    app.delete('/super-admin/market-zones/:id', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
+        const result = await deleteSuperAdminAutoCareMarketZone(user, params.id)
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneDeleted, targetId: result.id, targetType: 'autocare_location_zone', metadata: {}, request })
+        return result
+    })
+
+    app.get('/super-admin/trust-policy', async (request) => getSuperAdminTrustPolicy(await requireAuth(request)))
+
+    app.patch('/super-admin/trust-policy', async (request) => {
+        const user = await requireAuth(request)
+        const result = await updateSuperAdminTrustPolicy(user, validateBody(updateSuperAdminTrustPolicySchema, request.body))
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareTrustPolicyUpdated,
+            targetId: 'default',
+            targetType: 'autocare_trust_policy',
+            metadata: {
+                policyVersion: result.policyVersion,
+                rolloutEnabled: result.rollout.enabled,
+                rolloutPercentage: result.rollout.percentage,
+                rolloutMarketCount: result.rollout.marketIds.length,
+            },
+            request,
+        })
         return result
     })
 

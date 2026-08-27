@@ -1,5 +1,4 @@
 import { ROUTES } from '@/shared/constants/routes'
-import { isProviderPricingVisible } from '@/shared/config/features'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
 export interface FooterColumn {
@@ -25,7 +24,6 @@ export const footerColumns: FooterColumn[] = [
         titleKey: 'landing.footerOwners',
         items: [
             { labelKey: 'landing.footerOwners', to: ROUTES.owners },
-            ...(isProviderPricingVisible ? [{ labelKey: 'navigation.pricing' as const, to: ROUTES.pricing }] : []),
             { labelKey: 'landing.footerPartners', to: ROUTES.partners },
             { labelKey: 'landing.footerHelpCenter', to: ROUTES.help },
         ],

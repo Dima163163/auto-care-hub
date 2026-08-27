@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 
 const baseUrl = process.env.RESPONSIVE_BASE_URL ?? 'http://127.0.0.1:4175'
@@ -12,8 +13,18 @@ const routes = [
     { name: 'provider', path: '/services/api-proservice-moscow', required: ['header', 'footer', 'gallery'] },
 ]
 
-const chromiumPath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-    ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+const chromiumCandidates = [
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    chromium.executablePath(),
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+].filter((candidate) => typeof candidate === 'string' && candidate.length > 0)
+
+const chromiumPath = chromiumCandidates.find((candidate) => existsSync(candidate))
+
+if (!chromiumPath) {
+    throw new Error('No Chromium-compatible executable found. Run npm run check:e2e:browser for installation guidance.')
+}
 
 const browser = await chromium.launch({ headless: true, executablePath: chromiumPath })
 const results = []

@@ -20,6 +20,9 @@
   GiST index.
 - Operational checks verify encrypted backup, checksum and same-database
   restore guards, required alerts, and absence of Bookly runtime references.
+- `npm run check:production-operations` now provides one fail-closed report for
+  production runtime configuration, Docker, worker/outbox, backup/restore,
+  alerts, staging compatibility and rollback controls.
 
 ## Verification completed locally
 

@@ -37,8 +37,6 @@ export const ROUTES = {
     profileBookings: '/profile/bookings',
     profileReviews: '/profile/reviews',
 
-    pricing: '/pricing',
-
     ownerDashboard: '/owner/dashboard',
     ownerAutoCareProviders: '/owner/autocare-providers',
     ownerAutoCareProviderDetails: '/owner/autocare-providers/:id',

@@ -9,7 +9,10 @@ allow-list lives in `src/app/next/next-route-contract.ts` and prevents unknown
 paths from returning a false HTTP 200.
 
 The route constants in `src/shared/constants/routes.ts`, the server allow-list
-and this inventory are one contract. The `check:next-route-inventory` command
+and this inventory are one contract. Public routes in the catch-all page are
+selected for ISR with `generateStaticParams`; provider ids can be supplied at
+build time with `NEXT_PUBLIC_PRERENDER_PROVIDER_IDS` (comma-separated), while
+unknown provider ids remain dynamic. The `check:next-route-inventory` command
 fails if a route constant is not represented below, so a new route cannot be
 added to the client tree without a release-review entry.
 
@@ -66,7 +69,6 @@ mean that Vite is involved in production.
 | `/profile/vehicles` | `PublicLayout` | authenticated client garage |
 | `/profile/bookings` | `PublicLayout` | authenticated client bookings |
 | `/profile/reviews` | `PublicLayout` | authenticated client reviews |
-| `/pricing` | `PublicLayout` | public; monetization remains disabled |
 | `/owner/dashboard` | `OwnerLayout` | owner role |
 | `/owner/autocare-providers` | `OwnerLayout` | owner provider list |
 | `/owner/cabinets` | `OwnerLayout` | legacy redirect to provider list |
@@ -113,6 +115,16 @@ route:
 6. Confirm an unknown URL returns HTTP 404 and renders the branded not-found
    view after hydration.
 7. Confirm `/cabinets` and `/cabinets/:id` preserve their legacy redirect.
+
+## SEO and prerender verification
+
+Run `npm run build && npm run check:seo` to verify the static route artifacts,
+JS/CSS and image budgets, and the provider prerender contract. To validate
+crawler-visible HTML from a deployment, run
+`SEO_BASE_URL=https://staging.example.com npm run check:seo`; the command checks
+title, description, canonical, robots and Open Graph tags for every public and
+configured provider URL. Lighthouse remains an external evidence gate and is
+run against the production URL with the release browser profile.
 
 ## Runtime boundary
 

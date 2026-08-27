@@ -3,7 +3,6 @@ import {
     Building2,
     CalendarCheck2,
     ClipboardList,
-    CreditCard,
     Grid2X2,
     Headphones,
     MessageSquareText,
@@ -14,7 +13,6 @@ import {
 import { Link } from 'react-router'
 
 import { ROUTES } from '@/shared/constants/routes'
-import { isProviderPricingVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
@@ -88,7 +86,7 @@ const pageContent: Record<'features' | 'owners' | 'about', MarketingPageContent>
         primaryActionKey: 'marketing.owners.primaryAction',
         primaryTo: ROUTES.register,
         secondaryActionKey: 'marketing.owners.secondaryAction',
-        secondaryTo: ROUTES.pricing,
+        secondaryTo: ROUTES.help,
         highlights: [
             {
                 icon: Building2,
@@ -101,7 +99,7 @@ const pageContent: Record<'features' | 'owners' | 'about', MarketingPageContent>
                 textKey: 'marketing.owners.highlight2Text',
             },
             {
-                icon: CreditCard,
+                icon: CalendarCheck2,
                 titleKey: 'marketing.owners.highlight3Title',
                 textKey: 'marketing.owners.highlight3Text',
             },
@@ -181,14 +179,12 @@ function MarketingInfoPage({ content }: { content: MarketingPageContent }) {
                         >
                             {t(content.primaryActionKey)}
                         </Link>
-                        {(content.secondaryTo !== ROUTES.pricing || isProviderPricingVisible) && (
-                            <Link
-                                to={content.secondaryTo}
-                                className="rounded-md border-2 border-primary px-8 py-4 text-base font-bold text-primary hover:bg-primary/5"
-                            >
-                                {t(content.secondaryActionKey)}
-                            </Link>
-                        )}
+                        <Link
+                            to={content.secondaryTo}
+                            className="rounded-md border-2 border-primary px-8 py-4 text-base font-bold text-primary hover:bg-primary/5"
+                        >
+                            {t(content.secondaryActionKey)}
+                        </Link>
                     </div>
                 </div>
 

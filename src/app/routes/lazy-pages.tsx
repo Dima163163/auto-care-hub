@@ -216,12 +216,6 @@ export const OwnerServicesPage = lazy(() =>
     })),
 )
 
-export const PricingPage = lazy(() =>
-    import('@/pages/pricing').then((module) => ({
-        default: module.PricingPage,
-    })),
-)
-
 export const AdminDashboardPage = lazy(() =>
     import('@/pages/admin-dashboard').then((module) => ({
         default: module.AdminDashboardPage,

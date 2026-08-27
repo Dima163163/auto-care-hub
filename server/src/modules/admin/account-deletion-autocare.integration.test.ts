@@ -20,6 +20,7 @@ import {
     AutomotiveServiceLocationEntity,
     ServiceAttachmentEntity,
     ServiceAttachmentStatus,
+    ServiceMessageEntity,
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
@@ -34,6 +35,7 @@ import {
     saveAutoCareAttachmentObject,
 } from '../autocare/autocare-attachment-storage.js'
 import { updateAdminDeletionRequestStatus } from './account-deletion-admin.service.js'
+import { checkAutoCareDeletionInvariants } from '../users/account-deletion-invariants.js'
 
 const weeklySchedule = {
     mon: { open: '08:00', close: '21:00', closed: false },
@@ -56,7 +58,10 @@ describe('AutoCare account deletion retention invariants', () => {
     let definition: AutomotiveServiceDefinitionEntity
     let serviceRequest: ServiceRequestEntity
     let attachment: ServiceAttachmentEntity
+    let providerAttachment: ServiceAttachmentEntity
+    let providerMessage: ServiceMessageEntity
     let deletionRequest: AccountDeletionRequestEntity
+    let deletedOwnerEmail: string
 
     beforeAll(async () => {
         const users = AppDataSource.getRepository(UserEntity)
@@ -64,6 +69,7 @@ describe('AutoCare account deletion retention invariants', () => {
             users.create({ name: 'Deletion Super Admin', email: `deletion-super-${suffix}@example.com`, role: UserRole.SuperAdmin, status: UserStatus.Active, passwordHash: 'hash', emailVerifiedAt: new Date() }),
             users.create({ name: 'Deletion Provider Owner', email: `deletion-owner-${suffix}@example.com`, role: UserRole.Owner, status: UserStatus.Active, passwordHash: 'hash', emailVerifiedAt: new Date() }),
         ])
+        deletedOwnerEmail = deletedOwner.email
         const countries = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
         country = await countries.save(countries.create({
             code: `RETENTION-${suffix}`,
@@ -172,6 +178,24 @@ describe('AutoCare account deletion retention invariants', () => {
             checksum: null,
             status: ServiceAttachmentStatus.Ready,
         }))
+        const providerAttachmentKey = createAutoCareAttachmentObjectKey('requests', serviceRequest.id, randomUUID())
+        await saveAutoCareAttachmentObject(providerAttachmentKey, Buffer.from('provider attachment fixture'))
+        providerAttachment = await attachments.save(attachments.create({
+            requestId: serviceRequest.id,
+            threadId: null,
+            uploadedById: superAdmin.id,
+            objectKey: providerAttachmentKey,
+            contentType: 'image/jpeg',
+            bytes: 27,
+            checksum: null,
+            status: ServiceAttachmentStatus.Ready,
+        }))
+        providerMessage = await AppDataSource.getRepository(ServiceMessageEntity).save({
+            requestId: serviceRequest.id,
+            threadId: null,
+            senderId: superAdmin.id,
+            body: 'Provider response contains private client context',
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -187,6 +211,20 @@ describe('AutoCare account deletion retention invariants', () => {
             status: 'pending',
             tokenHash: 'a'.repeat(64),
             invitedById: deletedOwner.id,
+            expiresAt: new Date(Date.now() + 86_400_000),
+            acceptedAt: null,
+            revokedAt: null,
+        })
+        // An invitation can be addressed to the account without having been
+        // created by that account. Deletion must remove this pending PII too.
+        await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).save({
+            providerId: provider.id,
+            email: deletedOwner.email,
+            locationId: location.id,
+            role: AutomotiveProviderInvitationRole.Staff,
+            status: 'pending',
+            tokenHash: 'b'.repeat(64),
+            invitedById: superAdmin.id,
             expiresAt: new Date(Date.now() + 86_400_000),
             acceptedAt: null,
             revokedAt: null,
@@ -243,16 +281,23 @@ describe('AutoCare account deletion retention invariants', () => {
 
         expect(completed.status).toBe(AccountDeletionRequestStatus.Completed)
         expect(await AppDataSource.getRepository(ServiceAttachmentEntity).countBy({ id: attachment.id })).toBe(0)
+        expect(await AppDataSource.getRepository(ServiceAttachmentEntity).countBy({ id: providerAttachment.id })).toBe(0)
         await expect(readAutoCareAttachmentObject(attachment.objectKey)).rejects.toMatchObject({ statusCode: 404 })
+        await expect(readAutoCareAttachmentObject(providerAttachment.objectKey)).rejects.toMatchObject({ statusCode: 404 })
+        const redactedProviderMessage = await AppDataSource.getRepository(ServiceMessageEntity).findOneByOrFail({ id: providerMessage.id })
+        expect(redactedProviderMessage.body).toBeNull()
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).countBy({ invitedById: deletedOwner.id })).toBe(0)
+        expect(await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).countBy({ email: deletedOwnerEmail })).toBe(0)
 
         const updatedProvider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneByOrFail({ id: provider.id })
         const anonymized = await AppDataSource.getRepository(UserEntity).findOneByOrFail({ id: deletedOwner.id })
         expect(updatedProvider).toMatchObject({ ownerId: null, status: AutomotiveProviderStatus.Suspended })
         expect(anonymized).toMatchObject({ status: UserStatus.Blocked })
         expect(anonymized.email).not.toBe(`deletion-owner-${suffix}@example.com`)
+        const invariantResults = await checkAutoCareDeletionInvariants(AppDataSource, deletedOwner.id)
+        expect(invariantResults.every(({ count }) => count === 0)).toBe(true)
     })
 })

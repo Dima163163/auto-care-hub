@@ -24,7 +24,13 @@ providers, customers and production infrastructure.
    Before the go/no-go review, run `npm --prefix server run
    check:pilot-reliability` with the agreed SLO thresholds. Empty samples are
    blocked rather than treated as a passing zero.
-6. Hold a go/no-go review with product, support, security and the legal entity.
+6. Export an anonymized evidence document using
+   `docs/operations/PILOT_EVIDENCE_TEMPLATE.md` and run
+   `PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json npm run
+   check:pilot-evidence`. The gate rejects mock/demo provenance and requires
+   every provider, client, vehicle, lifecycle, photo, complaint, support,
+   bonus and reliability signal listed in the pilot scope.
+7. Hold a go/no-go review with product, support, security and the legal entity.
 
 ## Minimum evidence
 
@@ -42,6 +48,11 @@ real provider/customer sessions, response-time measurements or support sign-off.
 The latest disposable local run is recorded in
 `LOCAL_PILOT_QUALITY_EVIDENCE_2026-08-25.md`; its reliability gate remains
 blocked until real response samples are collected.
+
+The evidence gate is deliberately fail-closed when the file is absent, marked
+as mock, contains PII, has fewer than five clients, or omits a required
+journey. It is a release evidence validator, not a way to manufacture pilot
+activity.
 
 ## Stop conditions
 

@@ -39,6 +39,7 @@ import { findFallbackMarket, getFallbackServiceDefinitions, getFallbackZones, to
 import { AUTOMOTIVE_MOCK_MARKETS } from './autocare-mock-catalog.js'
 import { recordAutoCareProviderDiscoveryImpressions } from './autocare-analytics.service.js'
 import { getDiscoveryCache, getDiscoveryCacheKey, setDiscoveryCache } from './discovery-cache.js'
+import { getAutoCareTrustRollout } from '../admin/super-admin-trust-policy.service.js'
 import { ensureDefaultAutoCareResources, listAutoCareCapacityReservations, listAutoCareCapacityResources } from './capacity-resource.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareCommunicationSettingsInput, UpdateAutoCareReviewInput } from './autocare.types.js'
@@ -450,9 +451,10 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
         .filter((row) => !cursorValues || compareDiscoveryValues(discoverySortValues(row, sort), cursorValues, sort) > 0)
     const page = sorted.slice(0, limit + 1)
     const hasMore = page.length > limit
+    const trustRollout = await getAutoCareTrustRollout()
     const items = page.slice(0, limit).map((row) => toDiscoveryResponse({
         ...row,
-        trustEnabled: isRolloutEnabled(env.autoCareTrustRollout, {
+        trustEnabled: isRolloutEnabled(trustRollout, {
             marketId: market?.id ?? null,
             subjectKey: row.provider.id,
         }),
@@ -485,7 +487,8 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
         offersByLocation.set(location.id, offers.filter((offer) => offer.locationId === location.id).map((offer) => toOfferResponse(offer, definitionById.get(offer.definitionId))))
     }
     const firstLocation = locations[0]!
-    const trustEnabled = locations.some((location) => isRolloutEnabled(env.autoCareTrustRollout, {
+    const trustRollout = await getAutoCareTrustRollout()
+    const trustEnabled = locations.some((location) => isRolloutEnabled(trustRollout, {
         marketId: location.marketId,
         subjectKey: provider.id,
     }))

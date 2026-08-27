@@ -1,1 +1,0 @@
-export { OwnerCabinetEditPage } from './ui/OwnerCabinetEditPage'

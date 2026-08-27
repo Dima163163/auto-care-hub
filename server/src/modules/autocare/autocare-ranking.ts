@@ -17,7 +17,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 /**
- * Organic ranking is deliberately independent from subscriptions, promotions
+ * Organic ranking is deliberately independent from commercial placement
  * and any paid placement signal. Keep the inputs explicit so a future plan
  * field cannot silently affect discovery ordering.
  */

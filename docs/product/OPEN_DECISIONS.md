@@ -34,7 +34,7 @@ Remaining detail: choose the first concrete Russian city and initial pilot
 locations in Spain and Moldova/Transnistria.
 
 Why it matters: maps/geocoding, price formatting, provider verification,
-privacy, subscription billing and app-store availability depend on it.
+privacy and app-store availability depend on it.
 
 ## D-002 Legacy data
 
@@ -53,8 +53,8 @@ repair. The service confirmation is two-sided: the provider confirms the work
 or quote and the customer confirms the appointment and terms.
 
 Scope boundary: providers collect repair payment directly. AutoCare Hub
-facilitates discovery, messaging, confirmation, and booking status; provider
-subscriptions are a separate future billing product.
+facilitates discovery, messaging, confirmation, and booking status. The
+platform has no payment, commission, tariff or subscription product.
 
 ## D-004 Booking modes
 
@@ -108,33 +108,14 @@ earned value.
 Recommended technical invariant: provider-scoped immutable ledger, no transfer
 between providers and no cash withdrawal.
 
-## D-006 Subscription model
+## D-006 Platform monetisation
 
-Need:
+Status: removed from product scope on 2026-08-27.
 
-- plan names/features/limits;
-- allowed periods (for example 1/3/6/12 months);
-- permanent Free plan or paid-only after acquisition phase;
-- founding-partner treatment;
-- renewal, grace, cancellation and downgrade rules;
-- launch billing currency/currencies;
-- billing provider based on legal entity/country.
-
-Confirmed capabilities: super-admin manual grants and subscription promo codes.
-
-## D-007 Promo-code rules
-
-Need:
-
-- percent and/or fixed discount;
-- eligible plans/periods/countries;
-- validity window and redemption limits;
-- first purchase only or renewals too;
-- stacking with manual grants or other promotions;
-- treatment after refund/cancellation.
-
-Recommended default: no stacking of multiple promo codes; manual entitlement
-grants remain separate from billing discounts.
+AutoCare Hub does not plan platform tariffs, subscriptions, commissions,
+payment collection, payouts or paid promotion. This decision removes D-006
+from the launch decision queue; any future change requires a new explicit ADR,
+legal review and a separate product decision.
 
 ## D-008 Messaging and media
 
@@ -179,8 +160,10 @@ catch-all route. Add selected prerendered HTML for crawlable public routes
 before the production web gate. Vite remains a PWA/compatibility fallback.
 Runtime `SeoHead`, canonical links, locale alternates, robots and sitemap stay
 the source of truth for the route contract. The exact route list and noindex
-boundaries are recorded in `docs/product/MVP_POLICY_BASELINE.md`; the
-prerender build step remains a release-gate implementation task.
+boundaries are recorded in `docs/product/MVP_POLICY_BASELINE.md`. Selected
+public routes and configured provider profiles now use Next.js
+`generateStaticParams` with ISR; deployed HTML and Lighthouse evidence remain
+production release gates.
 
 ## D-011 Map/geocoding provider
 

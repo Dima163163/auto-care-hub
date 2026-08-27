@@ -69,6 +69,7 @@ const REQUIRED_COLUMNS_QUERY = `
         OR (table_name = 'autocare_chat_blocks' AND column_name IN ('threadId', 'blockedUserId', 'status'))
         OR (table_name = 'autocare_market_countries' AND column_name IN ('code', 'capabilities', 'legalLinks'))
         OR (table_name = 'autocare_markets' AND column_name IN ('countryId', 'capabilities', 'legalLinks'))
+        OR (table_name = 'autocare_trust_policy' AND column_name IN ('policyVersion', 'trustedMinimumRating', 'trustedMinimumReviews', 'trustedMinimumCompletedVisits', 'trustedMaxNoShowRate', 'trustedMaxComplaintRate', 'trustedMaxResponseTimeMinutes', 'reassessmentIntervalHours', 'rolloutEnabled', 'rolloutMarketIds', 'rolloutPercentage', 'updatedById', 'updatedAt'))
       )
 `
 

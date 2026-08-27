@@ -5,10 +5,10 @@ export type PopularLocale = 'es' | 'de' | 'fr' | 'pt' | 'zh' | 'ja' | 'ko' | 'ar
 type LongTailOverrides = {
     routeError: Partial<typeof enTranslations.routeError>
     pwa: Partial<typeof enTranslations.pwa>
-    commission: Partial<typeof enTranslations.commission>
     adminLayout: Partial<typeof enTranslations.adminLayout>
     favorites: Partial<typeof enTranslations.favorites>
     notifications: Partial<typeof enTranslations.notifications>
+    [key: string]: unknown
 }
 
 export const longTailPopular = {

@@ -15,11 +15,12 @@
 
 The Next.js App Router shell now hosts the web release and keeps route-level
 metadata/lazy chunks while the React Router feature tree migrates incrementally.
-Before launch,
-choose either selected static prerender for public routes or an SSR migration;
-do not introduce browser-only business logic into the API contract. Validate
-title, description, canonical, Open Graph and JSON-LD with a production-like
-preview server.
+Selected public routes and configured provider profiles are generated through
+`generateStaticParams` and served with a five-minute ISR window. Unknown
+provider ids remain dynamic (`dynamicParams=true`), so adding a provider does
+not require a frontend change. Do not introduce browser-only business logic
+into the API contract. Validate title, description, canonical, Open Graph and
+robots with a production-like preview server.
 
 ## Current budget and action
 
@@ -29,4 +30,14 @@ therefore checks the initial entry, the largest route chunk, the largest locale
 chunk and the largest CSS asset instead of summing every locale that a single
 browser never downloads. Full-build raw/gzip totals are still printed for
 trend monitoring. Map tiles, provider media and responsive variants remain
-lazy, bounded and cached with explicit offline fallbacks.
+lazy, bounded and cached with explicit offline fallbacks. The release check
+enforces the current budgets: 600 kB largest JS asset, 5.5 MB total JS,
+250 kB largest CSS asset, 350 kB map/location image, 2 MB largest public image
+and 7 MB total public raster media. Run `npm run check:seo` after
+`npm run build`; pass `--url` against a production deployment to validate
+rendered HTML metadata.
+
+`check:seo` intentionally leaves Lighthouse and deployed HTML as manual gates
+when no production URL is provided. Use `REQUIRE_PRODUCTION_SEO=true` in the
+release environment to fail closed until the Lighthouse JSON report and all
+public/provider URLs are captured.

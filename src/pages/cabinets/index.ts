@@ -1,1 +1,0 @@
-export { CabinetsPage } from './ui/CabinetsPage'

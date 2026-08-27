@@ -63,9 +63,9 @@ The initial badge is conservative and location-scoped. A location must have:
    exist, at least 90% must match the accepted quote snapshot.
 
 The badge expires when evidence becomes stale, a critical moderation event is
-open, or the current trust snapshot falls below the threshold. Subscription,
-promo code, manual commercial placement and self-reported review counts cannot
-raise the organic rank or create the badge. Every recalculation stores the
+open, or the current trust snapshot falls below the threshold. Paid placement,
+other commercial mechanics and self-reported review counts cannot raise the
+organic rank or create the badge. Every recalculation stores the
 policy version, counters and reason codes. The score also records recent rating
 trend and first-response time when those signals are available; missing signals
 are shown in reason codes rather than silently treated as positive evidence.
@@ -75,8 +75,8 @@ are shown in reason codes rather than silently treated as positive evidence.
 The web release uses the Next.js App Router shell for authenticated and public
 workspaces. The existing `SeoHead` contract remains the runtime metadata
 source while the React Router feature tree is migrated incrementally behind the
-Next catch-all route. The public release gate adds selected prerendered HTML
-for these crawlable routes:
+Next catch-all route. The public release gate uses selected prerendered HTML
+(ISR via `generateStaticParams`) for these crawlable routes:
 
 - `/`, `/services`, `/for-owners`, `/about`, `/help`, `/agreement`, `/rules`,
   `/privacy`, `/reviews`;

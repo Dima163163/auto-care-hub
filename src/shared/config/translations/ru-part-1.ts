@@ -73,7 +73,6 @@ navigation: {
         clientInfoDescription: 'Поиск, заявки и отзывы',
         ownerInfo: 'Для владельцев сервисов',
         ownerInfoDescription: 'Профиль, заявки и развитие',
-        pricing: 'Тарифы',
         about: 'О сервисе',
         aboutDescription: 'Как AutoCare Hub помогает водителям и сервисам',
         profile: 'Профиль',
@@ -105,20 +104,6 @@ navigation: {
         adminSecurityCenter: 'Центр безопасности',
         ownerDashboardShort: 'Панель',
         ownerCalendar: 'Календарь',
-    },
-
-commission: {
-        eyebrow: 'Простые условия для владельцев',
-        title: 'Без ежемесячной подписки',
-        description: 'AutoCare Hub зарабатывает только тогда, когда зарабатываете вы.',
-        perBooking: 'от каждого успешного бронирования',
-        mainDescription: 'Прозрачная комиссия 2% применяется к успешным онлайн-бронированиям. Нет ежемесячной платы и комиссии за отмененные или неоплаченные записи.',
-        ownerAction: 'Открыть кабинет владельца',
-        includesTitle: 'Что входит',
-        featureNoSubscription: 'Нет регулярной платы за подписку',
-        featureSuccessfulOnly: 'Комиссия только с оплаченных бронирований',
-        featureTransparent: 'Комиссия показывается до оплаты',
-        featurePayouts: 'Остаток суммы подготавливается к выплате владельцу',
     },
 
 adminLayout: {

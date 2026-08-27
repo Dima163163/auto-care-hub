@@ -2,7 +2,6 @@ import { ArrowRight, CalendarDays, MessageSquareText, ShieldCheck } from 'lucide
 import { Link } from 'react-router'
 
 import { ROUTES } from '@/shared/constants/routes'
-import { isProviderPricingVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 export function OwnersHero() {
@@ -17,7 +16,7 @@ export function OwnersHero() {
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">{t('marketing.owners.eyebrow')}</p>
                     <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-[-0.035em] sm:text-5xl">{t('marketing.owners.heroTitle')}</h1>
                     <p className="mt-5 max-w-xl text-lg font-medium leading-7 text-primary-foreground/80">{t('marketing.owners.heroDescription')}</p>
-                    <div className="mt-8 flex flex-wrap gap-3"><Link to={ROUTES.register} className="inline-flex h-12 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-5 text-sm font-black text-primary-foreground shadow-xl shadow-primary/25 hover:bg-primary/90">{t('marketing.owners.primaryAction')}<ArrowRight className="size-4" /></Link>{isProviderPricingVisible && <Link to={ROUTES.pricing} className="inline-flex h-12 items-center rounded-[var(--radius-control)] border border-primary-foreground/30 px-5 text-sm font-black text-primary-foreground hover:bg-primary-foreground/10">{t('marketing.owners.secondaryAction')}</Link>}</div>
+                    <div className="mt-8 flex flex-wrap gap-3"><Link to={ROUTES.register} className="inline-flex h-12 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-5 text-sm font-black text-primary-foreground shadow-xl shadow-primary/25 hover:bg-primary/90">{t('marketing.owners.primaryAction')}<ArrowRight className="size-4" /></Link><Link to={ROUTES.help} className="inline-flex h-12 items-center rounded-[var(--radius-control)] border border-primary-foreground/30 px-5 text-sm font-black text-primary-foreground hover:bg-primary-foreground/10">{t('marketing.owners.secondaryAction')}</Link></div>
                     <div className="mt-10 grid gap-4 sm:grid-cols-3"><OwnerBenefits /></div>
                 </div>
                 <RequestPreview />

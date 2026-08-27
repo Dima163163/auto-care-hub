@@ -237,6 +237,19 @@ type MockSuperAdminZone = {
     serviceCount: number
 }
 
+const mockSuperAdminTrustPolicy = {
+    policyVersion: 'autocare-trust-v1',
+    trustedMinimumRating: 4.2,
+    trustedMinimumReviews: 5,
+    trustedMinimumCompletedVisits: 10,
+    trustedMaxNoShowRate: 0.1,
+    trustedMaxComplaintRate: 0.1,
+    trustedMaxResponseTimeMinutes: 120,
+    reassessmentIntervalHours: 24,
+    rollout: { enabled: true, marketIds: [] as string[], percentage: 100 },
+    updatedAt: new Date().toISOString(),
+}
+
 const editableAutoCareMarkets = autoCareMarkets as unknown as MockSuperAdminMarket[]
 const superAdminMarketCountries: MockSuperAdminCountry[] = Array.from(
     new Map(editableAutoCareMarkets.map((market) => [market.countryCode, market])).values(),
@@ -624,6 +637,8 @@ type MockAutoCareServiceRequest = {
         locationId: string
         status: 'confirmed'
         createdAt: string
+        bonusDiscountMinor?: number
+        payableAmountMinor?: number
         vehicleId?: string | null
         vehicleSnapshot?: Record<string, string | number | null> | null
     } | null
@@ -686,6 +701,35 @@ mockAutoCareServiceRequests.push({
         locationId: 'location-proservice-moscow',
         status: 'confirmed',
         createdAt: '2026-08-09T12:00:00.000Z',
+        vehicleId: 'mock-vehicle-1',
+        vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
+    },
+})
+
+// A confirmed request is kept in the mock dataset so the client can exercise
+// bonus redemption without having to complete the full provider workflow.
+mockAutoCareServiceRequests.push({
+    ...mockAutoCareServiceRequests[0]!,
+    id: 'client-request-accepted',
+    status: 'accepted',
+    preferredAt: '2026-09-01T09:30:00.000Z',
+    clientConfirmedAt: '2026-08-25T09:00:00.000Z',
+    providerConfirmedAt: '2026-08-25T09:05:00.000Z',
+    completedAt: null,
+    completedById: null,
+    booking: {
+        requestId: 'client-request-accepted',
+        quoteVersion: 1,
+        amountMinor: 290_000,
+        currencyCode: 'RUB',
+        lineItems: [],
+        scheduledAt: '2026-09-01T09:30:00.000Z',
+        timezone: 'Europe/Moscow',
+        serviceSlug: 'oil-change',
+        providerId: 'api-proservice-moscow',
+        locationId: 'location-proservice-moscow',
+        status: 'confirmed',
+        createdAt: '2026-08-25T09:00:00.000Z',
         vehicleId: 'mock-vehicle-1',
         vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
     },
@@ -968,6 +1012,34 @@ function awardMockAutoCareBonus(item: MockAutoCareServiceRequest, actorId: strin
     account.balancePoints += points
     account.earnedPoints += points
     account.entries.unshift({ id: `bonus-entry-${Date.now()}`, type: 'earn', points, reason: 'Бонус за завершённый визит', requestId: item.id, expiresAt: program.expiresAfterDays ? new Date(Date.now() + program.expiresAfterDays * 86_400_000).toISOString() : null, createdAt })
+    void actorId
+}
+
+function reconcileMockAutoCareBonusAccount(account: MockAutoCareBonusAccount, now = Date.now()) {
+    let expiredPoints = 0
+    const expiredCandidates = account.entries.filter((entry) => (entry.type === 'earn' || entry.type === 'adjustment') && entry.points > 0 && entry.expiresAt && Date.parse(entry.expiresAt) <= now)
+    for (const entry of expiredCandidates) {
+        const idempotencyId = `bonus-expire-${entry.id}`
+        if (account.entries.some((candidate) => candidate.id === idempotencyId)) continue
+        const points = Math.min(entry.points, Math.max(account.balancePoints - expiredPoints, 0))
+        if (points <= 0) continue
+        account.entries.unshift({ id: idempotencyId, type: 'expire', points: -points, reason: 'Истёк срок действия бонусов', requestId: entry.requestId, expiresAt: null, createdAt: new Date(now).toISOString() })
+        expiredPoints += points
+    }
+    if (expiredPoints > 0) account.balancePoints -= expiredPoints
+}
+
+function refundMockAutoCareBonusForCancelledRequest(item: MockAutoCareServiceRequest, actorId: string) {
+    if (item.status !== 'cancelled') return
+    const account = mockAutoCareBonusAccounts.find((candidate) => candidate.clientId === item.clientId && candidate.providerId === item.providerId)
+    if (!account) return
+    const redeemed = account.entries.find((entry) => entry.requestId === item.id && entry.type === 'redeem')
+    if (!redeemed || account.entries.some((entry) => entry.id === `bonus-refund-${item.id}`)) return
+    const points = Math.abs(redeemed.points)
+    if (points <= 0) return
+    account.entries.unshift({ id: `bonus-refund-${item.id}`, type: 'refund', points, reason: 'Возврат бонусов после отмены записи', requestId: item.id, expiresAt: null, createdAt: new Date().toISOString() })
+    account.balancePoints += points
+    account.redeemedPoints = Math.max(0, account.redeemedPoints - points)
     void actorId
 }
 
@@ -2546,6 +2618,15 @@ export const handlers = [
         Object.assign(country, { names: body.names, defaultLocale: body.defaultLocale, supportedLocales: body.supportedLocales, timezone: body.timezone, currencyCode: body.currencyCode, capabilities: body.capabilities ?? {}, legalLinks: body.legalLinks ?? {}, active: body.active })
         return HttpResponse.json(country)
     }),
+    http.delete('/api/super-admin/market-countries/:id', ({ params }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can delete countries.' }, { status: 403 })
+        const index = superAdminMarketCountries.findIndex((item) => item.id === params.id)
+        if (index < 0) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Country not found.' }, { status: 404 })
+        const country = superAdminMarketCountries[index]
+        if (editableAutoCareMarkets.some((market) => market.countryCode === country.code)) return HttpResponse.json({ code: 'CONFLICT', message: 'Move or deactivate all cities before deleting this country.' }, { status: 409 })
+        superAdminMarketCountries.splice(index, 1)
+        return HttpResponse.json({ id: country.id })
+    }),
     http.post('/api/super-admin/market-countries/:id/cities', async ({ params, request }) => {
         if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage cities.' }, { status: 403 })
         const country = superAdminMarketCountries.find((item) => item.id === params.id)
@@ -2566,6 +2647,16 @@ export const handlers = [
         Object.assign(city, { cityCode: body.cityCode, cityName: body.cityName, regionCode: body.regionCode ?? null, regionName: body.regionName ?? null, centerLatitude: body.centerLatitude ?? null, centerLongitude: body.centerLongitude ?? null, currencyCode: body.currencyCode, defaultLocale: body.defaultLocale, supportedLocales: body.supportedLocales, timezone: body.timezone, capabilities: body.capabilities ?? {}, legalLinks: body.legalLinks ?? {}, launchReady: body.launchReady })
         return HttpResponse.json(toMockMarket(city))
     }),
+    http.delete('/api/super-admin/market-cities/:id', ({ params }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can delete cities.' }, { status: 403 })
+        const index = editableAutoCareMarkets.findIndex((item) => item.id === params.id)
+        if (index < 0) return HttpResponse.json({ code: 'NOT_FOUND', message: 'City not found.' }, { status: 404 })
+        const city = editableAutoCareMarkets[index]
+        const zones = autoCareLocationZones as unknown as MockSuperAdminZone[]
+        if (zones.some((zone) => zone.marketId === city.id)) return HttpResponse.json({ code: 'CONFLICT', message: 'Remove all zones before deleting this city.' }, { status: 409 })
+        editableAutoCareMarkets.splice(index, 1)
+        return HttpResponse.json({ id: city.id })
+    }),
     http.post('/api/super-admin/market-cities/:id/zones', async ({ params, request }) => {
         if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can manage zones.' }, { status: 403 })
         if (!editableAutoCareMarkets.some((item) => item.id === params.id)) return HttpResponse.json({ code: 'NOT_FOUND', message: 'City not found.' }, { status: 404 })
@@ -2585,6 +2676,16 @@ export const handlers = [
         if (!body.slug || !body.names || typeof body.names !== 'object' || !['district', 'neighborhood', 'service_area'].includes(body.zoneType ?? '') || typeof body.displayOrder !== 'number' || typeof body.active !== 'boolean') return invalidMockBodyResponse()
         Object.assign(zone, { parentId: body.parentId ?? null, slug: body.slug, zoneType: body.zoneType, names: body.names, centerLatitude: body.centerLatitude ?? null, centerLongitude: body.centerLongitude ?? null, radiusKm: body.radiusKm ?? null, imageUrl: body.imageUrl ?? null, displayOrder: body.displayOrder, active: body.active })
         return HttpResponse.json(toMockZone(zone))
+    }),
+    http.delete('/api/super-admin/market-zones/:id', ({ params }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only super-admins can delete zones.' }, { status: 403 })
+        const zones = autoCareLocationZones as unknown as MockSuperAdminZone[]
+        const index = zones.findIndex((item) => item.id === params.id)
+        if (index < 0) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Zone not found.' }, { status: 404 })
+        const zone = zones[index]
+        if (zones.some((item) => item.parentId === zone.id)) return HttpResponse.json({ code: 'CONFLICT', message: 'Move child zones before deleting this zone.' }, { status: 409 })
+        zones.splice(index, 1)
+        return HttpResponse.json({ id: zone.id })
     }),
     http.get('/api/v1/deployment-capabilities', () => HttpResponse.json(STATIC_DEPLOYMENT_CAPABILITIES)),
     http.get('/api/v1/markets/:marketId/zones', ({ params, request }) => {
@@ -2629,7 +2730,10 @@ export const handlers = [
         if (scenario) return scenario
         const user = currentMockUser()
         if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can view bonus balances.' }, { status: 403 })
-        return HttpResponse.json(isMockEmpty(request) ? [] : mockAutoCareBonusAccounts.filter((account) => account.clientId === user.id).map(({ clientId: _clientId, ...account }) => account))
+        if (isMockEmpty(request)) return HttpResponse.json([])
+        const accounts = mockAutoCareBonusAccounts.filter((account) => account.clientId === user.id)
+        accounts.forEach((account) => reconcileMockAutoCareBonusAccount(account))
+        return HttpResponse.json(accounts.map(({ clientId: _clientId, ...account }) => account))
     }),
 
     http.post('/api/v1/bonuses/redeem', async ({ request }) => {
@@ -2639,17 +2743,25 @@ export const handlers = [
         if (!body.providerId || !body.requestId || typeof body.points !== 'number' || !Number.isInteger(body.points) || body.points <= 0) return invalidMockBodyResponse()
         const points = body.points
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === body.requestId && candidate.clientId === user.id && candidate.providerId === body.providerId)
-        if (!item || !['accepted', 'closed'].includes(item.status)) return HttpResponse.json({ message: 'Bonuses can be redeemed only for a confirmed service request.' }, { status: 409 })
+        if (!item || item.status !== 'accepted') return HttpResponse.json({ message: 'Bonuses can be redeemed only for a confirmed service request.' }, { status: 409 })
         const account = mockAutoCareBonusAccounts.find((candidate) => candidate.clientId === user.id && candidate.providerId === body.providerId)
-        if (!account || account.balancePoints < points) return HttpResponse.json({ message: 'The bonus balance is too low for this redemption.' }, { status: 409 })
+        if (!account) return HttpResponse.json({ message: 'No bonus balance is available for this service.' }, { status: 409 })
+        reconcileMockAutoCareBonusAccount(account)
         if (account.entries.some((entry) => entry.requestId === item.id && entry.type === 'redeem')) {
             const { clientId: _clientId, ...response } = account
             return HttpResponse.json(response)
         }
+        const maximumPoints = item.booking ? Math.floor((item.booking.payableAmountMinor ?? item.booking.amountMinor) / 100) : 0
+        if (account.balancePoints < points) return HttpResponse.json({ message: 'The bonus balance is too low for this redemption.' }, { status: 409 })
+        if (maximumPoints === 0 || points > maximumPoints) return HttpResponse.json({ message: 'The bonus redemption exceeds the confirmed service amount.' }, { status: 409 })
         const now = new Date().toISOString()
         account.balancePoints -= points
         account.redeemedPoints += points
         account.entries.unshift({ id: `bonus-entry-${Date.now()}`, type: 'redeem', points: -points, reason: 'Списание бонусов при подтверждённой записи', requestId: item.id, expiresAt: null, createdAt: now })
+        if (item.booking) {
+            item.booking.bonusDiscountMinor = points * 100
+            item.booking.payableAmountMinor = Math.max(0, item.booking.amountMinor - points * 100)
+        }
         const { clientId: _clientId, ...response } = account
         return HttpResponse.json(response)
     }),
@@ -3383,6 +3495,7 @@ export const handlers = [
         item.cancelledById = user.id
         item.cancellationReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) || null : null
         item.updatedAt = now
+        refundMockAutoCareBonusForCancelledRequest(item, user.id)
         pushMockAutoCareNotification({ userId: 'user-owner-1', requestId: item.id, role: 'owner', title: 'Клиент отменил заявку', message: 'Клиент отменил заявку на услугу.' })
         const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
         return HttpResponse.json(response)
@@ -5119,7 +5232,33 @@ export const handlers = [
         const user = currentMockUser()
         if (!user || user.role !== 'super_admin') return HttpResponse.json({ message: 'Only super admin can use this endpoint.' }, { status: 403 })
         const providers = [...new Map([...autoCareProviders, ...ownerAutoCareProviders].map((provider) => [provider.id, provider])).values()]
-        return HttpResponse.json({ markets: [autoCareMarket], providers: { total: providers.length, active: providers.filter((provider) => provider.status === 'active').length, draft: providers.filter((provider) => provider.status === 'draft').length, suspended: providers.filter((provider) => provider.status === 'suspended').length, verified: providers.filter((provider) => provider.verified).length }, users: { clients: mockUsers.filter((item) => item.role === 'client').length, owners: mockUsers.filter((item) => item.role === 'owner').length, admins: mockUsers.filter((item) => item.role === 'admin').length, superAdmins: mockUsers.filter((item) => item.role === 'super_admin').length }, billing: { phase: 'launch', subscriptionsEnabled: false, promoCodesEnabled: false } })
+        return HttpResponse.json({ markets: [autoCareMarket], providers: { total: providers.length, active: providers.filter((provider) => provider.status === 'active').length, draft: providers.filter((provider) => provider.status === 'draft').length, suspended: providers.filter((provider) => provider.status === 'suspended').length, verified: providers.filter((provider) => provider.verified).length }, users: { clients: mockUsers.filter((item) => item.role === 'client').length, owners: mockUsers.filter((item) => item.role === 'owner').length, admins: mockUsers.filter((item) => item.role === 'admin').length, superAdmins: mockUsers.filter((item) => item.role === 'super_admin').length } })
+    }),
+
+    http.get('/api/super-admin/trust-policy', ({ request }) => {
+        const scenario = mockScenarioResponse(request)
+        if (scenario) return scenario
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ message: 'Only super admin can manage trust policy.' }, { status: 403 })
+        return HttpResponse.json(mockSuperAdminTrustPolicy)
+    }),
+
+    http.patch('/api/super-admin/trust-policy', async ({ request }) => {
+        if (!hasMockSuperAdminAccess()) return HttpResponse.json({ message: 'Only super admin can manage trust policy.' }, { status: 403 })
+        const body = await request.json() as Partial<typeof mockSuperAdminTrustPolicy>
+        if (typeof body.policyVersion !== 'string' || typeof body.trustedMinimumRating !== 'number' || typeof body.trustedMinimumReviews !== 'number' || typeof body.trustedMinimumCompletedVisits !== 'number' || typeof body.trustedMaxNoShowRate !== 'number' || typeof body.trustedMaxComplaintRate !== 'number' || typeof body.trustedMaxResponseTimeMinutes !== 'number' || typeof body.reassessmentIntervalHours !== 'number' || !body.rollout || typeof body.rollout.enabled !== 'boolean' || !Array.isArray(body.rollout.marketIds) || typeof body.rollout.percentage !== 'number') return invalidMockBodyResponse()
+        Object.assign(mockSuperAdminTrustPolicy, {
+            policyVersion: body.policyVersion,
+            trustedMinimumRating: body.trustedMinimumRating,
+            trustedMinimumReviews: body.trustedMinimumReviews,
+            trustedMinimumCompletedVisits: body.trustedMinimumCompletedVisits,
+            trustedMaxNoShowRate: body.trustedMaxNoShowRate,
+            trustedMaxComplaintRate: body.trustedMaxComplaintRate,
+            trustedMaxResponseTimeMinutes: body.trustedMaxResponseTimeMinutes,
+            reassessmentIntervalHours: body.reassessmentIntervalHours,
+            rollout: { enabled: body.rollout.enabled, marketIds: [...body.rollout.marketIds], percentage: body.rollout.percentage },
+            updatedAt: new Date().toISOString(),
+        })
+        return HttpResponse.json(mockSuperAdminTrustPolicy)
     }),
 
     http.get('/api/admin/cabinets', () => {

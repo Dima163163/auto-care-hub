@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-08-27",
+  "policy": "replace_vertical_slices_then_delete",
+  "historicalMigrationBoundary": 1785700000000,
+  "legacyFamilies": [
+    {
+      "id": "cabinet-entities",
+      "paths": [
+        "server/src/entities/cabinet",
+        "server/src/entities/service",
+        "server/src/entities/booking",
+        "server/src/entities/favorite-cabinet",
+        "server/src/entities/cabinet-image"
+      ],
+      "status": "retained_compatibility",
+      "replacementPaths": [
+        "server/src/entities/automotive",
+        "server/src/modules/autocare",
+        "src/entities/automotive-service"
+      ],
+      "coverageTests": [
+        "server/src/modules/autocare/autocare.routes.integration.test.ts",
+        "server/src/modules/autocare/autocare-discovery.test.ts",
+        "server/src/modules/autocare/concurrency-matrix.test.ts",
+        "src/entities/automotive-service/lib/autocareApiMappers.test.ts"
+      ],
+      "runtimeConsumers": [
+        "server/src/app.ts",
+      "server/src/modules/cabinets",
+      "server/src/modules/services",
+      "server/src/modules/bookings",
+      "server/src/modules/users"
+      ],
+      "deleteGate": "remove only after compatibility routes, exports and booking data have an approved AutoCare replacement"
+    },
+    {
+      "id": "legacy-cabinet-pages",
+      "paths": [
+        "src/pages/cabinets",
+        "src/pages/cabinet-details",
+        "src/pages/owner-cabinets",
+        "src/pages/owner-cabinet-create",
+        "src/pages/owner-cabinet-edit",
+        "src/pages/owner-bookings",
+        "src/pages/admin-cabinets"
+      ],
+      "status": "deleted",
+      "replacementPaths": [
+        "src/pages/autocare-results",
+        "src/pages/autocare-provider",
+        "src/pages/owner-autocare-providers",
+        "src/pages/owner-autocare-requests",
+        "src/pages/owner-services",
+        "src/pages/admin-dashboard"
+      ],
+      "coverageTests": [
+        "e2e/next-route-smoke.spec.ts",
+        "e2e/autocare-release-audit.spec.ts",
+        "scripts/check-next-route-inventory.mjs"
+      ],
+      "runtimeConsumers": [
+        "src/app/next/next-route-contract.ts",
+        "src/app/routes/route-groups.tsx",
+        "src/shared/constants/routes.ts"
+      ],
+      "deleteGate": "completed 2026-08-27; legacy URLs now keep only direct redirects to AutoCare routes"
+    },
+    {
+      "id": "legacy-cabinet-home-page",
+      "paths": [
+        "src/pages/home"
+      ],
+      "status": "deleted",
+      "replacementPaths": [
+        "src/pages/autocare-home"
+      ],
+      "coverageTests": [
+        "e2e/next-route-smoke.spec.ts",
+        "src/app/next/next-route-contract.test.ts"
+      ],
+      "runtimeConsumers": [
+        "src/app/routes/route-groups.tsx",
+        "src/app/next/next-route-contract.ts"
+      ],
+      "deleteGate": "completed 2026-08-27; the public home route renders AutoCareHomePage directly"
+    },
+    {
+      "id": "platform-commercial-surface",
+    "paths": [
+      "src/pages/pricing"
+      ],
+      "status": "deleted",
+      "replacementPaths": [
+        "src/pages/info",
+        "src/pages/owner-dashboard",
+        "server/src/modules/autocare/autocare-bonus.service.ts"
+      ],
+      "coverageTests": [
+        "src/app/next/next-route-contract.test.ts",
+        "e2e/next-route-smoke.spec.ts",
+        "server/src/modules/admin/admin-authorization.integration.test.ts"
+      ],
+      "runtimeConsumers": [],
+      "deleteGate": "completed 2026-08-27; AutoCare Hub does not operate payment, tariff, subscription, payout or commercial-access surfaces"
+    },
+    {
+      "id": "legacy-financial-runtime",
+      "paths": [
+        "server/src/modules/commission/commission.service.ts",
+        "server/src/modules/commission/commission.service.test.ts"
+      ],
+      "status": "deleted",
+      "replacementPaths": [
+        "server/src/modules/autocare/autocare-bonus.service.ts",
+        "server/src/entities/automotive/bonus.entity.ts"
+      ],
+      "coverageTests": [
+        "server/src/modules/autocare/autocare-bonus.service.test.ts",
+        "server/src/modules/autocare/autocare-bonus.integration.test.ts"
+      ],
+      "runtimeConsumers": [],
+      "deleteGate": "completed 2026-08-27; historical payment migrations remain immutable"
+    }
+  ],
+  "migrationPolicy": {
+    "path": "server/src/database/migrations",
+    "legacyBefore": 1785700000000,
+    "legacyAction": "preserve_immutable_history",
+    "replacementAfterOrAt": 1785700000000,
+    "requiredChecks": [
+      "npm run check:migration-inventory",
+      "npm --prefix server run check:migrations",
+      "npm --prefix server run schema:check",
+      "npm --prefix server run check:autocare-integrity -- --validate"
+    ]
+  }
+}

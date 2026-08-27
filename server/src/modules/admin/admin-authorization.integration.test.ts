@@ -205,7 +205,7 @@ describe('Admin and workspace authorization integration', () => {
         expect(publicEvidence).not.toHaveProperty('verifiedById')
     })
 
-    it('keeps platform billing controls super-admin scoped while subscriptions are disabled', async () => {
+    it('keeps platform overview super-admin scoped', async () => {
         const adminToken = createAuthTokens(admin).accessToken
         const superAdminToken = createAuthTokens(superAdmin).accessToken
 
@@ -218,11 +218,7 @@ describe('Admin and workspace authorization integration', () => {
 
         expect(forbidden.status).toBe(403)
         expect(overview.status).toBe(200)
-        expect(overview.body.billing).toEqual({
-            phase: 'launch',
-            subscriptionsEnabled: false,
-            promoCodesEnabled: false,
-        })
+        expect(overview.body).not.toHaveProperty('billing')
     })
 
     it('keeps market hierarchy and audit access separated by role', async () => {

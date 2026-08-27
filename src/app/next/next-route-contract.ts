@@ -38,7 +38,6 @@ const exactRoutes = [
     ROUTES.profileVehicles,
     ROUTES.profileBookings,
     ROUTES.profileReviews,
-    ROUTES.pricing,
     ROUTES.ownerDashboard,
     ROUTES.ownerAutoCareProviders,
     ROUTES.ownerCabinets,

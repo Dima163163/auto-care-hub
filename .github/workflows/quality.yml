@@ -130,6 +130,18 @@ jobs:
       - name: Check performance budget
         run: npm run check:performance
 
+      - name: Check SEO, prerender and media budgets
+        run: npm run check:seo
+
+      - name: Test SEO release checker
+        run: npm run test:seo
+
+      - name: Check legacy cleanup audit
+        run: npm run check:legacy-cleanup
+
+      - name: Test legacy cleanup audit
+        run: npm run test:legacy-cleanup
+
   backend:
     name: Backend build, migrations, test
     runs-on: ubuntu-latest

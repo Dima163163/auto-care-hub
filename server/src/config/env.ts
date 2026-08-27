@@ -34,6 +34,10 @@ import {
     resolveDeploymentMarket,
     type DeploymentCapabilities,
 } from './deployment-capabilities.js'
+import {
+    resolveRedisRateLimitFailureMode,
+    type RedisRateLimitFailureMode,
+} from './redis-rate-limit-policy.js'
 
 const NODE_ENVS = ['development', 'test', 'production'] as const
 
@@ -112,6 +116,7 @@ export type EnvConfig = {
         host: string
         port: number
         password: string | null
+        rateLimitFailureMode: RedisRateLimitFailureMode
     }
     auth: {
         jwtAccessSecret: string
@@ -390,6 +395,10 @@ function getDatabaseConfig(): EnvConfig['database'] {
 function getRedisConfig(nodeEnv: NodeEnv): EnvConfig['redis'] {
     const redisUrl = process.env.REDIS_URL
     const redisHost = process.env.REDIS_HOST
+    const rateLimitFailureMode = resolveRedisRateLimitFailureMode(
+        nodeEnv,
+        process.env.REDIS_RATE_LIMIT_FAILURE_MODE,
+    )
 
     if (!isValidEnvString(redisUrl) && !isValidEnvString(redisHost)) {
         if (nodeEnv === 'production') {
@@ -401,6 +410,7 @@ function getRedisConfig(nodeEnv: NodeEnv): EnvConfig['redis'] {
             host: 'localhost',
             port: getNumberEnv('REDIS_PORT', 6379),
             password: process.env.REDIS_PASSWORD ?? null,
+            rateLimitFailureMode,
         }
     }
 
@@ -411,6 +421,7 @@ function getRedisConfig(nodeEnv: NodeEnv): EnvConfig['redis'] {
             host: redisHost ?? 'localhost',
             port: getNumberEnv('REDIS_PORT', 6379),
             password: process.env.REDIS_PASSWORD ?? null,
+            rateLimitFailureMode,
         }
     }
 
@@ -424,6 +435,7 @@ function getRedisConfig(nodeEnv: NodeEnv): EnvConfig['redis'] {
         password: parsedUrl.password
             ? decodeURIComponent(parsedUrl.password)
             : null,
+        rateLimitFailureMode,
     }
 }
 
