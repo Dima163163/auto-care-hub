@@ -1,7 +1,10 @@
-import { Battery, ChevronDown, CircleGauge, MapPin, Menu, Moon, Search, ShieldCheck, Sun, Truck, Wrench, Zap } from 'lucide-react'
+import type { ReactNode } from 'react'
+
+import { Battery, CarFront, ChevronDown, CircleGauge, MapPin, Menu, Moon, Search, ShieldCheck, SlidersHorizontal, Sun, Truck, Wrench, Zap } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { BrandLogo } from '@/shared/ui/brand-logo'
+import { FloatingSelect } from '@/shared/ui/floating-field'
 
 type BootShellProps = {
     home?: boolean
@@ -10,15 +13,6 @@ type BootShellProps = {
 }
 
 export type BootWorkspaceRole = 'client' | 'owner' | 'admin' | 'super_admin'
-
-const filterFields = [
-    ['УСЛУГА', 'Выберите услугу', 'lg:col-span-6'],
-    ['ТОЧКА ПОИСКА', 'Рядом с вами', 'lg:col-span-6'],
-    ['МАРКА', 'Любая марка', 'lg:col-span-3'],
-    ['МОДЕЛЬ', 'Любая модель', 'lg:col-span-3'],
-    ['ГОД ВЫПУСКА', 'Любой год', 'lg:col-span-2'],
-    ['РАДИУС ПОИСКА', '25 км', 'lg:col-span-2'],
-] as const
 
 export function BootShell({ home = false, services = false, workspaceRole }: BootShellProps) {
     if (workspaceRole) {
@@ -183,39 +177,74 @@ function BootHeader() {
 
 function ServicesBootContent() {
     return (
-        <div className="mx-auto w-full max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-10">
-            <section aria-busy="true" aria-label="Загрузка поиска автоуслуг" className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-hero-overlay p-3 text-primary-foreground shadow-lg shadow-black/10 sm:p-4">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
-                    {filterFields.map(([label, value, className]) => <BootFilterField key={label} label={label} value={value} className={className} />)}
-                    <button type="button" disabled className="inline-flex h-10 items-center justify-center gap-1.5 self-end rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground opacity-60 lg:col-span-2"><Search className="size-3.5" />Начать поиск</button>
-                </div>
-                <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />Мы не передаём ваши данные третьим лицам</p>
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-primary-foreground/15 pt-4">
-                    {['Цена', 'Рейтинг 4,5+', 'До 10 км', 'Есть запись сегодня', 'Все фильтры'].map((label) => <button key={label} type="button" disabled className="h-9 rounded-[var(--radius-control)] border border-primary-foreground/15 bg-primary-foreground/[0.08] px-3 text-xs font-bold text-primary-foreground/60">{label}</button>)}
+        <>
+            <section className="relative left-1/2 w-screen -translate-x-1/2 bg-hero-overlay text-primary-foreground">
+                <div className="mx-auto w-full max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
+                    <section aria-busy="true" aria-label="Загрузка поиска автоуслуг" className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:p-4">
+                        <BootDiscoveryControls />
+                    </section>
                 </div>
             </section>
-            <div className="mt-6 space-y-2" aria-hidden="true">
-                <Skeleton data-testid="autocare-results-title-skeleton" className="h-7 w-72 max-w-full" />
-                <Skeleton data-testid="autocare-results-description-skeleton" className="h-4 w-[28rem] max-w-full" />
-            </div>
-            <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
-                <div className="order-2 grid gap-4 lg:order-1">
-                    {Array.from({ length: 4 }, (_, index) => <BootProviderCard key={index} />)}
+            <div className="mx-auto w-full max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-7 sm:py-9">
+                <div className="space-y-2" aria-hidden="true">
+                    <Skeleton data-testid="autocare-results-title-skeleton" className="h-7 w-72 max-w-full" />
+                    <Skeleton data-testid="autocare-results-description-skeleton" className="h-4 w-[28rem] max-w-full" />
                 </div>
-                <div data-testid="autocare-results-map-skeleton" className="autocare-map-skeleton order-1 min-h-[420px] rounded-[var(--radius-panel)] border border-border lg:order-2 lg:min-h-[min(70vh,720px)]" />
+                <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+                    <div className="order-2 grid gap-4 lg:order-1">
+                        {Array.from({ length: 4 }, (_, index) => <BootProviderCard key={index} />)}
+                    </div>
+                    <div data-testid="autocare-results-map-skeleton" className="autocare-map-skeleton order-1 min-h-[420px] rounded-[var(--radius-panel)] border border-border lg:order-2 lg:min-h-[min(70vh,720px)]" />
+                </div>
+            </div>
+        </>
+    )
+}
+
+function BootDiscoveryControls() {
+    return (
+        <div>
+            <div className="divide-y divide-primary-foreground/15">
+                <BootSearchFormSection icon={Wrench} title="Услуга">
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1.45fr)_minmax(9rem,0.55fr)]">
+                        <BootDiscoverySelect label="Какая услуга нужна?" value="Выберите услугу, например, Замена тормозных колодок" />
+                        <BootDiscoverySelect label="Радиус поиска" value="25 км" />
+                    </div>
+                </BootSearchFormSection>
+                <BootSearchFormSection icon={CarFront} title="Автомобиль">
+                    <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(8rem,0.55fr)]">
+                        <BootDiscoverySelect label="Марка" value="Любая марка" />
+                        <BootDiscoverySelect label="Модель" value="Любая модель" />
+                        <BootDiscoverySelect label="Год выпуска" value="Любой год" />
+                    </div>
+                </BootSearchFormSection>
+                <BootSearchFormSection icon={SlidersHorizontal} title="Все фильтры">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {['Цена', 'Рейтинг 4,5+', 'До 10 км', 'Есть запись сегодня', 'Все фильтры'].map((label) => <button key={label} type="button" disabled className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-primary-foreground/20 bg-primary-foreground/[0.08] px-3 text-xs font-bold text-primary-foreground/80 opacity-60">{label}</button>)}
+                    </div>
+                </BootSearchFormSection>
+            </div>
+            <div className="mt-4 border-t border-primary-foreground/15 pt-3">
+                <p className="text-xs font-black text-primary-foreground">Параметры поиска</p>
+                <p className="mt-2 text-xs font-medium text-primary-foreground/55">Дополнительные фильтры не выбраны</p>
+            </div>
+            <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />Мы не передаём ваши данные третьим лицам</p>
+            <div className="mt-4 flex justify-end border-t border-primary-foreground/15 pt-4">
+                <button type="button" disabled className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-5 text-sm font-black text-primary-foreground opacity-60 sm:w-auto sm:min-w-52"><Search className="size-4" />Начать поиск</button>
             </div>
         </div>
     )
 }
 
-function BootFilterField({ label, value, className }: { label: string; value: string; className: string }) {
-    return (
-        <label className={`relative grid min-w-0 gap-1 rounded-[var(--radius-control)] border border-primary-foreground/10 bg-primary-foreground/[0.04] px-3 py-2.5 ${className}`}>
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-foreground/50">{label}</span>
-            <select disabled defaultValue="boot" aria-label={label} className="select-with-icon h-5 w-full appearance-none bg-transparent pr-5 text-sm font-black text-primary-foreground/60 outline-none"><option value="boot">{value}</option></select>
-            <ChevronDown className="pointer-events-none absolute bottom-3 right-3 size-3.5 text-primary-foreground/45" aria-hidden="true" />
-        </label>
-    )
+function BootSearchFormSection({ icon: Icon, title, children }: { icon: typeof Wrench; title: string; children: ReactNode }) {
+    return <section className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:gap-4 sm:py-4" aria-label={title}>
+        <span className="flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary sm:size-10"><Icon className="size-4 sm:size-5" aria-hidden="true" /></span>
+        <div className="min-w-0"><h2 className="text-sm font-black text-primary-foreground">{title}</h2><div className="mt-2.5 min-w-0">{children}</div></div>
+    </section>
+}
+
+function BootDiscoverySelect({ label, value }: { label: string; value: string }) {
+    return <FloatingSelect floatLabelWhenEmpty label={label} tone="dark" value="" disabled aria-label={label}><option value="">{value}</option></FloatingSelect>
 }
 
 function BootProviderCard() {

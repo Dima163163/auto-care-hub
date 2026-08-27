@@ -24,16 +24,18 @@ describe('theme helpers', () => {
         expect(getInitialTheme(null, false)).toBe('light')
     })
 
-    it('applies the theme class and color scheme', () => {
+    it('applies the theme class, attribute and color scheme', () => {
         const toggle = vi.fn()
         const root = {
             classList: { toggle },
             style: { colorScheme: '' },
+            dataset: {},
         } as unknown as HTMLElement
 
         applyTheme(root, 'dark')
 
         expect(toggle).toHaveBeenCalledWith('dark', true)
+        expect(root.dataset.theme).toBe('dark')
         expect(root.style.colorScheme).toBe('dark')
     })
 })

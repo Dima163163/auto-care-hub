@@ -1,13 +1,10 @@
 import type { ReactNode } from 'react'
 
-import { CarFront, Check, ChevronDown, Search, ShieldCheck, SlidersHorizontal, Wrench, X } from 'lucide-react'
-import { useState } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
 
-import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, getVehicleModels, useGetVehicleCatalogQuery } from '@/entities/automotive-service'
+import { AutoCareDiscoveryControls } from '@/features/autocare-search/ui/AutoCareDiscoveryControls'
+import type { ActiveDiscoveryFilter } from '@/features/autocare-search/ui/AutoCareDiscoveryControls'
 import { useTranslation } from '@/shared/lib/useTranslation'
-import { FloatingSelect } from '@/shared/ui/floating-field'
-
-import { ResultsQuickFilters } from './ResultsQuickFilters'
 
 type ResultsToolbarProps = {
     selectedCount: number
@@ -42,37 +39,30 @@ type ResultsToolbarProps = {
     }
 }
 
-export type ActiveFilter = { key: 'serviceId' | 'providerName' | 'brandId' | 'radiusKm' | 'minRating' | 'minPrice' | 'maxPrice' | 'priceType' | 'availableToday' | 'verifiedOnly' | 'warrantyOnly' | 'hasBonus' | 'inclusion'; label: string }
+export type ActiveFilter = ActiveDiscoveryFilter
 
 export function ResultsToolbar({ selectedCount, providerCount, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
         <section className="relative left-1/2 w-screen -translate-x-1/2 bg-hero-overlay text-primary-foreground">
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
-                <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3 shadow-lg shadow-black/10 sm:p-4">
-                    <div className="divide-y divide-primary-foreground/15">
-                        <SearchFormSection icon={Wrench} title={t('autocare.serviceFilterLabel')}>
-                            <div className="grid gap-3 sm:grid-cols-[minmax(0,1.45fr)_minmax(9rem,0.55fr)]">
-                                <ServiceSelect serviceId={serviceId} onChange={onServiceChange} />
-                                <RadiusSelect radiusKm={radiusKm} onChange={onRadiusChange} />
-                            </div>
-                        </SearchFormSection>
-                        <SearchFormSection icon={CarFront} title={t('autocare.vehicleLabel')}>
-                            <VehicleSelects brandId={brandId} vehicleModel={vehicleModel} vehicleYear={vehicleYear} onChange={onVehicleChange} />
-                        </SearchFormSection>
-                        <SearchFormSection icon={SlidersHorizontal} title={t('autocare.filtersTitle')}>
-                            <ResultsQuickFilters dark activeCount={Math.max(0, activeFilters.length - 1)} {...quickFilters} onToggleFilters={() => setIsFiltersOpen((value) => !value)} />
-                            {isFiltersOpen && <div className="mt-3 rounded-[var(--radius-card)] border border-primary-foreground/15 bg-primary-foreground/[0.04] p-3 sm:p-4">{filterPanel}</div>}
-                        </SearchFormSection>
-                    </div>
-                    <p className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-primary-foreground/55"><ShieldCheck className="size-4 text-primary" />{t('autocare.searchPrivacy')}</p>
-                    <AppliedFilters filters={activeFilters} onClear={onResetFilters} onRemove={onRemoveFilter} />
-                    <div className="mt-4 flex justify-end border-t border-primary-foreground/15 pt-4">
-                        <button type="button" onClick={onStartSearch} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-5 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40 sm:w-auto sm:min-w-52"><Search className="size-4" />{t('autocare.startSearch')}</button>
-                    </div>
-                </div>
+                <AutoCareDiscoveryControls
+                    activeFilters={activeFilters}
+                    brandId={brandId}
+                    filterPanel={filterPanel}
+                    radiusKm={radiusKm}
+                    serviceId={serviceId}
+                    vehicleModel={vehicleModel}
+                    vehicleYear={vehicleYear}
+                    onRadiusChange={onRadiusChange}
+                    onRemoveFilter={onRemoveFilter}
+                    onResetFilters={onResetFilters}
+                    onServiceChange={onServiceChange}
+                    onStartSearch={onStartSearch}
+                    onVehicleChange={onVehicleChange}
+                    quickFilters={quickFilters}
+                />
             </div>
         </section>
 
@@ -90,44 +80,4 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
             </div>
         </div>
     </div>
-}
-
-function SearchFormSection({ icon: Icon, title, children }: { icon: typeof Wrench; title: string; children: ReactNode }) {
-    return <section className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:gap-4 sm:py-4" aria-label={title}>
-        <span className="flex size-9 items-center justify-center rounded-full bg-primary/15 text-primary sm:size-10"><Icon className="size-4 sm:size-5" aria-hidden="true" /></span>
-        <div className="min-w-0">
-            <h2 className="text-sm font-black text-primary-foreground">{title}</h2>
-            <div className="mt-2.5 min-w-0">{children}</div>
-        </div>
-    </section>
-}
-
-function VehicleSelects({ brandId, vehicleModel, vehicleYear, onChange }: { brandId: string; vehicleModel: string; vehicleYear: string; onChange: (vehicle: { brandId: string; vehicleModel: string; vehicleYear: string }) => void }) {
-    const { t, locale } = useTranslation()
-    const { data: remoteCatalog } = useGetVehicleCatalogQuery()
-    const brands = remoteCatalog ?? automotiveVehicleBrands
-    const models = remoteCatalog?.find((brand) => brand.id === brandId)?.models.map((model) => model.label) ?? getVehicleModels(brandId)
-    const years = Array.from({ length: 22 }, (_, index) => String(new Date().getFullYear() - index))
-    return <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(8rem,0.55fr)]">
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleMakeLabel')} tone="dark" value={brandId} onChange={(event) => onChange({ brandId: event.target.value, vehicleModel: '', vehicleYear: '' })}><option value="">{t('autocare.anyBrand')}</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</FloatingSelect>
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleModelLabel')} tone="dark" value={vehicleModel} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel: event.target.value, vehicleYear })}><option value="">{t('autocare.anyModel')}</option>{models.map((model) => <option key={model} value={model}>{model}</option>)}</FloatingSelect>
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleYearLabel')} tone="dark" value={vehicleYear} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel, vehicleYear: event.target.value })}><option value="">{t('autocare.anyYear')}</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</FloatingSelect>
-    </div>
-}
-
-function ServiceSelect({ serviceId, onChange }: { serviceId: string; onChange: (serviceId: string) => void }) {
-    const { t, locale } = useTranslation()
-
-    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.serviceLabel')} tone="dark" value={serviceId} onChange={(event) => onChange(event.target.value)}><option value="">{t('autocare.servicePlaceholder')}</option>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</FloatingSelect>
-}
-
-function RadiusSelect({ radiusKm, onChange }: { radiusKm: number; onChange: (radiusKm: number) => void }) {
-    const { t } = useTranslation()
-
-    return <FloatingSelect floatLabelWhenEmpty label={t('autocare.radiusLabel')} tone="dark" value={radiusKm} onChange={(event) => onChange(Number(event.target.value))}><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option></FloatingSelect>
-}
-
-function AppliedFilters({ filters, onClear, onRemove }: { filters: readonly ActiveFilter[]; onClear: () => void; onRemove: (key: ActiveFilter['key']) => void }) {
-    const { t } = useTranslation()
-    return <div className="mt-4 border-t border-primary-foreground/15 pt-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs font-black text-primary-foreground">{t('autocare.appliedFilters')}</p>{filters.length > 0 && <button type="button" onClick={onClear} className="text-xs font-bold text-primary-foreground hover:underline">{t('autocare.clearAllFilters')}</button>}</div><div className="mt-2 flex flex-wrap gap-2">{filters.length === 0 ? <span className="text-xs font-medium text-primary-foreground/55">{t('autocare.noActiveFilters')}</span> : filters.map((filter) => <button type="button" key={filter.key} onClick={() => onRemove(filter.key)} className="inline-flex items-center gap-1.5 rounded-full border border-primary-foreground/15 bg-primary-foreground/[0.08] px-3 py-1.5 text-xs font-bold text-primary-foreground hover:border-primary">{filter.label}<X className="size-3.5" /></button>)}</div></div>
 }

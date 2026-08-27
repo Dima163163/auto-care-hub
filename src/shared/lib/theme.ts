@@ -18,9 +18,12 @@ export function getInitialTheme(
 }
 
 export function applyTheme(
-    root: Pick<HTMLElement, 'classList' | 'style'>,
+    root: Pick<HTMLElement, 'classList' | 'style'> & Partial<Pick<HTMLElement, 'dataset'>>,
     theme: Theme,
 ) {
     root.classList.toggle('dark', theme === 'dark')
+    if (root.dataset) {
+        root.dataset.theme = theme
+    }
     root.style.colorScheme = theme
 }

@@ -23,8 +23,16 @@ describe('BootShell', () => {
     it('reserves the results title and description below the service filters', () => {
         render(<BootShell services />)
 
+        const form = screen.getByRole('region', { name: 'Загрузка поиска автоуслуг' })
+        const controls = form.querySelectorAll('select')
+
         expect(screen.getByTestId('autocare-results-title-skeleton')).toBeVisible()
         expect(screen.getByTestId('autocare-results-description-skeleton')).toBeVisible()
+        expect(screen.getByRole('heading', { name: 'Услуга' })).toBeVisible()
+        expect(screen.getByRole('heading', { name: 'Автомобиль' })).toBeVisible()
+        expect(screen.getByRole('heading', { name: 'Все фильтры' })).toBeVisible()
+        expect(controls).toHaveLength(5)
+        expect(Array.from(controls).every((control) => (control as HTMLSelectElement).disabled)).toBe(true)
     })
 
     it('renders the static home map immediately instead of a hero skeleton', () => {

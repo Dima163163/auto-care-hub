@@ -41,6 +41,9 @@ describe('loading skeletons', () => {
         expect(region).toHaveAttribute('aria-busy', 'true')
         expect(controls.length).toBeGreaterThanOrEqual(5)
         expect(controls.every((control) => (control as HTMLSelectElement).disabled)).toBe(true)
+        expect(screen.getByRole('heading', { name: /Услуга|Service/i })).toBeVisible()
+        expect(screen.getByRole('heading', { name: /Автомобиль|Vehicle/i })).toBeVisible()
+        expect(screen.getByRole('heading', { name: /Все фильтры|All filters/i })).toBeVisible()
         expect(screen.getByRole('button', { name: /Начать поиск|Start search/i })).toBeDisabled()
     })
 

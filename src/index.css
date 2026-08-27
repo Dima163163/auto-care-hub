@@ -187,7 +187,8 @@
     --severity-info-foreground: #1d4ed8;
 }
 
-.dark {
+.dark,
+:root[data-theme="dark"] {
     /* Midnight workshop palette: distinct surface levels keep cards readable over the pattern. */
     --background: #071525;
     --autocare-pattern-image: url('/images/autocare/patterns/autocare-theme-pattern-dark.webp');
@@ -404,11 +405,15 @@
 html {
     min-width: 320px;
     scroll-padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+    background-color: var(--background);
+    color: var(--foreground);
 }
 
 body {
     margin: 0;
     min-width: 320px;
+    background-color: var(--background);
+    color: var(--foreground);
 }
 
 .autocare-toolbar-select {
@@ -851,16 +856,17 @@ button:disabled[type="submit"][aria-label] {
     animation: autocarehub-skeleton-shimmer 1.8s linear infinite;
 }
 
-/* Keep the initial server-loading stage visually connected to the dark
-   discovery form. Individual cards still use theme-aware surface tokens. */
+/* The discovery form is intentionally dark, but the results area belongs to
+   the page surface. Keep that surface transparent so loading preserves the
+   same theme pattern and colour as the loaded results in both colour modes. */
 .autocare-results-loading-surface {
     position: relative;
     left: 50%;
     width: 100vw;
     transform: translateX(-50%);
     padding: clamp(1.25rem, 3vw, 2rem) var(--layout-gutter) clamp(1.5rem, 4vw, 2.75rem);
-    background: var(--hero-overlay);
-    color: var(--primary-foreground);
+    background: transparent;
+    color: var(--foreground);
 }
 
 .autocare-results-loading-content {
