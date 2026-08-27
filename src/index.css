@@ -102,6 +102,11 @@
     --type-heading-line: 1.15;
     --measure-readable: 68ch;
     --layout-public-max: 82rem;
+    /* Shared wide shell used by the public header, hero and discovery page.
+       Keeping this as a token prevents the results page from drifting wider
+       than the header while leaving narrower content sections unchanged. */
+    --layout-public-wide-max: 88.5rem;
+    --layout-public-gutter: clamp(1rem, 3.7vw, 3.5rem);
     --layout-operational-max: 98rem;
     --layout-gutter: clamp(1rem, 3vw, 2.25rem);
     --space-control: 0.75rem;
@@ -864,14 +869,14 @@ button:disabled[type="submit"][aria-label] {
     left: 50%;
     width: 100vw;
     transform: translateX(-50%);
-    padding: clamp(1.25rem, 3vw, 2rem) var(--layout-gutter) clamp(1.5rem, 4vw, 2.75rem);
+    padding: clamp(1.25rem, 3vw, 2rem) var(--layout-public-gutter) clamp(1.5rem, 4vw, 2.75rem);
     background: transparent;
     color: var(--foreground);
 }
 
 .autocare-results-loading-content {
     width: 100%;
-    max-width: var(--layout-operational-max);
+    max-width: var(--layout-public-wide-max);
     margin-inline: auto;
 }
 

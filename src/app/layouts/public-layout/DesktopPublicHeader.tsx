@@ -47,7 +47,7 @@ export function DesktopPublicHeader() {
 
     return (
         <header className="public-desktop-header sticky top-0 z-50 hidden h-[84px] shrink-0 overflow-x-clip border-b border-primary-foreground/10 bg-hero-overlay/95 text-primary-foreground backdrop-blur-md md:block">
-            <div className="public-desktop-header__inner mx-auto flex h-full min-w-0 max-w-[1416px] items-center px-[clamp(1rem,3.7vw,3.5rem)]">
+            <div className="public-desktop-header__inner mx-auto flex h-full min-w-0 max-w-[var(--layout-public-wide-max)] items-center px-[var(--layout-public-gutter)]">
                 <Link to={ROUTES.home} className="public-desktop-header__logo shrink-0" aria-label={t('navigation.home')}>
                     <BrandLogo size="lg" />
                 </Link>

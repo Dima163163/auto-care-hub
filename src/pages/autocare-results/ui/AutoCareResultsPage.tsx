@@ -150,7 +150,7 @@ export function AutoCareResultsPage() {
 
     return (
         <main>
-            <div className="mx-auto flex max-w-[var(--layout-operational-max)] flex-col px-[var(--layout-gutter)] py-6 sm:py-10">
+            <div className="mx-auto flex max-w-[var(--layout-public-wide-max)] flex-col px-[var(--layout-public-gutter)] py-6 sm:py-10">
                 <div className="shrink-0">
                     <ResultsToolbar
                         selectedCount={selectedIds.length}

@@ -20,7 +20,7 @@ export function AutoCareHero({ marketId, onMarketChange }: { marketId: string; o
         <section className="relative isolate min-h-[650px] overflow-hidden bg-hero-overlay text-primary-foreground lg:h-[735px]">
             <AutoCareHeroMap />
             <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-hero-overlay via-hero-overlay/85 to-hero-overlay/5 lg:via-[41%] lg:to-[68%]" aria-hidden="true" />
-            <div className="relative z-10 mx-auto h-full max-w-[1416px] px-[clamp(1rem,3.7vw,3.5rem)] pt-11 lg:pt-[46px]">
+            <div className="relative z-10 mx-auto h-full max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] pt-11 lg:pt-[46px]">
                 <div className="max-w-[545px]">
                     <h1 className="max-w-[520px] text-[clamp(2.25rem,3.05vw,2.72rem)] font-black leading-[1.17] tracking-[-0.035em]">{t('autocare.heroTitle')}</h1>
                     <p className="mt-3 max-w-[520px] text-[clamp(1.25rem,1.8vw,1.58rem)] font-extrabold leading-[1.35] text-primary">{t('autocare.heroDescription')}</p>

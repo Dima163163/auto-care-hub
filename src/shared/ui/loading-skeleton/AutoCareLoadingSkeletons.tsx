@@ -15,7 +15,7 @@ export function AutoCareResultsRouteSkeleton({ label }: { label: string }) {
         <LoadingRegion label={label} contentAriaHidden={false} className="min-h-[min(720px,calc(100vh-9rem))] py-6 sm:py-10">
             <div className="-mt-6 sm:-mt-10">
                 <section className="relative left-1/2 w-screen -translate-x-1/2 bg-hero-overlay text-primary-foreground">
-                    <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
+                    <div className="mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-5 sm:py-6">
                         <AutoCareDiscoveryControls
                             isLoading
                             activeFilters={[]}
@@ -36,7 +36,7 @@ export function AutoCareResultsRouteSkeleton({ label }: { label: string }) {
                     </div>
                 </section>
             </div>
-            <div className="mx-auto w-full max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)]">
+            <div className="mx-auto w-full max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)]">
                 <ResultsLoadingSurface><AutoCareResultsSkeletonContent /></ResultsLoadingSurface>
             </div>
         </LoadingRegion>

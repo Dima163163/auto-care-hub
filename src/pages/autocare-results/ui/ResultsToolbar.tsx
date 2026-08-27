@@ -44,9 +44,9 @@ export type ActiveFilter = ActiveDiscoveryFilter
 export function ResultsToolbar({ selectedCount, providerCount, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
 
-    return <div className="-mx-[var(--layout-gutter)] -mt-6 sm:-mt-10">
+    return <div className="-mx-[var(--layout-public-gutter)] -mt-6 sm:-mt-10">
         <section className="relative left-1/2 w-screen -translate-x-1/2 bg-hero-overlay text-primary-foreground">
-            <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-5 sm:py-6">
+            <div className="mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-5 sm:py-6">
                 <AutoCareDiscoveryControls
                     activeFilters={activeFilters}
                     brandId={brandId}
@@ -66,7 +66,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
             </div>
         </section>
 
-        <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] pt-7 sm:pt-9">
+        <div className="mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] pt-7 sm:pt-9">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <p className="text-sm font-semibold text-muted-foreground">{t('autocare.resultsEyebrow')}</p>

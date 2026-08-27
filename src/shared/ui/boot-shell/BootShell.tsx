@@ -157,8 +157,8 @@ function WorkspaceFieldSkeleton() {
 
 function BootHeader() {
     return (
-        <header className="sticky top-0 z-10 flex min-h-16 shrink-0 items-center border-b border-primary-foreground/10 bg-hero-overlay px-[var(--layout-gutter)] text-primary-foreground" aria-label="Навигация AutoCare Hub">
-            <div className="mx-auto flex w-full max-w-[var(--layout-public-max)] items-center justify-between gap-4">
+        <header className="sticky top-0 z-10 flex min-h-16 shrink-0 items-center border-b border-primary-foreground/10 bg-hero-overlay px-[var(--layout-public-gutter)] text-primary-foreground" aria-label="Навигация AutoCare Hub">
+            <div className="mx-auto flex w-full max-w-[var(--layout-public-wide-max)] items-center justify-between gap-4">
                 <BrandLogo size="sm" />
                 <nav className="hidden items-center gap-6 text-xs font-semibold text-primary-foreground/75 lg:flex">
                     <a href="/services" className="cursor-pointer transition-colors hover:text-primary">Автоуслуги</a>
@@ -276,7 +276,7 @@ function HomeBootContent() {
                 <div className="pointer-events-none absolute left-[71%] top-[48%] size-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/50 bg-primary/15 shadow-[0_0_34px_var(--hero-glow)] lg:size-56" aria-hidden="true">
                     <span className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-primary-foreground bg-primary shadow-[0_0_16px_var(--primary)]" />
                 </div>
-                <div className="relative z-10 mx-auto h-full max-w-[1416px] px-[clamp(1rem,3.7vw,3.5rem)] pt-11 lg:pt-[46px]">
+                <div className="relative z-10 mx-auto h-full max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] pt-11 lg:pt-[46px]">
                     <div className="max-w-[545px]">
                         <h1 className="max-w-[520px] text-[clamp(2.25rem,3.05vw,2.72rem)] font-black leading-[1.17] tracking-[-0.035em]">Найдите лучший<br />автосервис рядом</h1>
                         <p className="mt-3 max-w-[520px] text-[clamp(1.25rem,1.8vw,1.58rem)] font-extrabold leading-[1.35] text-primary">Сравните цены, рейтинги и время<br className="hidden sm:block" /> записи за пару кликов</p>
