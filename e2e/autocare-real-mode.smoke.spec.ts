@@ -64,6 +64,13 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page.getByRole('main')).toBeVisible()
     })
 
+    test('real API redirects a client away from an admin workspace', async ({ page }) => {
+        await signIn(page, 'client.demo@autocarehub.test')
+        await page.goto('/admin/dashboard')
+        await expect(page).toHaveURL(/\/profile(?:$|[/?#])/)
+        await expect(page.getByRole('main')).toBeVisible()
+    })
+
     test('real API opens owner dynamic provider and review routes', async ({ page }) => {
         await signIn(page, 'owner.demo@autocarehub.test')
         await page.goto('/owner/autocare-providers')
@@ -72,6 +79,14 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page.getByRole('main')).toBeVisible()
         await page.goto('/owner/autocare-providers/api-proservice-moscow/reviews')
         await expect(page.getByRole('main')).toBeVisible()
+    })
+
+    test('real API grants a branch-scoped staff member the owner workspace only', async ({ page }) => {
+        await signIn(page, 'staff.demo@autocarehub.test')
+        await page.goto('/owner/autocare-requests')
+        await expect(page.getByRole('main')).toBeVisible()
+        await page.goto('/admin/dashboard')
+        await expect(page).toHaveURL(/\/owner(?:$|[/?#])/)
     })
 
     test('real API opens admin workspaces', async ({ page }) => {

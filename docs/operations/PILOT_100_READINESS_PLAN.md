@@ -175,6 +175,13 @@ npm run check:e2e:browser
 - `[x]` Единый floating-field pattern поддерживает `floatLabelWhenEmpty` и для text input: во вкладке «По автосервису» подпись фиксируется над рамкой, а внутри остаётся читаемая подсказка; focused Vitest: **8/8**.
 - `[~]` Полная real API state matrix с fault injection и сценарии изменения данных остаются в очереди §1.6; конкретные smoke owner provider/reviews URL закрыты выше.
 
+### Результат четвёртой исполняемой порции (28.08.2026)
+
+- `[x]` Real-API Chromium smoke подтверждает доступ admin и super-admin к их рабочим пространствам через локальные Fastify/PostgreSQL/Redis: **2/2**.
+- `[x]` Добавлены role-regressions: client перенаправляется из `/admin/dashboard` в свой кабинет; branch-scoped staff получает owner workspace, но перенаправляется из admin. Real Chromium: **2/2**.
+- `[x]` Generated каталоги из изолированных real-Next запусков исключены из ESLint и Git через `.next-real-*`, поэтому они не создают ложные ошибки lint и не могут попасть в коммит.
+- `[~]` Fault injection для offline/error/stale/partial response, сохранение незавершённых форм и real PostgreSQL retry/idempotency остаются следующей частью state matrix.
+
 ---
 
 # 2. Готовность закрытого пилота

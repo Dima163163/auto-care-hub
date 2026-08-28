@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 .next
-.next-real-e2e
+.next-real-*
 *.local
 
 # Editor directories and files

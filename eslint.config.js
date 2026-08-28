@@ -12,6 +12,8 @@ export default defineConfig([
     '**/dist',
     '.next',
     '.next/**',
+    '.next-real-*',
+    '.next-real-*/**',
     'next-env.d.ts',
     'test-results',
     'test-results/**',
