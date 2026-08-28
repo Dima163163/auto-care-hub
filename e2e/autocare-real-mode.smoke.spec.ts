@@ -11,7 +11,7 @@ async function signIn(page: Page, email: string) {
     await expect(page).not.toHaveURL(/\/login/)
 }
 
-type InjectedRequestState = 'error' | 'offline' | 'permission-denied' | 'suspended'
+type InjectedRequestState = 'error' | 'offline' | 'permission-denied' | 'stale' | 'suspended'
 
 async function injectRequestState(page: Page, state: InjectedRequestState) {
     await page.route(/\/api\/v1\/service-requests\/my(?:\?|$)/, async (route) => {
@@ -20,12 +20,12 @@ async function injectRequestState(page: Page, state: InjectedRequestState) {
             return
         }
 
-        const status = state === 'permission-denied' ? 403 : state === 'suspended' ? 423 : 500
+        const status = state === 'permission-denied' ? 403 : state === 'suspended' ? 423 : state === 'stale' ? 503 : 500
         await route.fulfill({
             status,
             contentType: 'application/json',
             body: JSON.stringify({
-                code: state === 'permission-denied' ? 'FORBIDDEN' : state === 'suspended' ? 'ACCOUNT_SUSPENDED' : 'INTERNAL_ERROR',
+                code: state === 'permission-denied' ? 'FORBIDDEN' : state === 'suspended' ? 'ACCOUNT_SUSPENDED' : state === 'stale' ? 'STALE_DATA' : 'INTERNAL_ERROR',
                 message: `Injected ${state} response`,
             }),
         })
@@ -131,7 +131,7 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page.getByRole('main')).toBeVisible()
     })
 
-    for (const state of ['error', 'offline', 'permission-denied', 'suspended'] as const) {
+    for (const state of ['error', 'offline', 'permission-denied', 'stale', 'suspended'] as const) {
         test(`real client shell survives an injected ${state} request state`, async ({ page }) => {
             await signIn(page, 'client.demo@autocarehub.test')
             await injectRequestState(page, state)

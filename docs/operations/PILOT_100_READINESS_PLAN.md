@@ -141,7 +141,7 @@ npm run check:e2e:browser
 
 1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Реальный demo login через API возвращает 200; logout/session-expiry smoke и MSW-путь ещё требуют выполнения.
 2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
-3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended, сохранение введённых данных и retry без дубля ещё требуют полного прогона.
+3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям; stale response после cache-fill и real PostgreSQL retry без дубля ещё требуют полного прогона.
 4. `[ ]` Закрыть весь client path: vehicleId/snapshot, unavailable/removed provider, три communication modes, edit review и bonuses redemption/expiry/refund/history.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
 6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
@@ -193,6 +193,12 @@ npm run check:e2e:browser
 - `[x]` Real discovery partial response проверен: ответ discovery содержит реальные карточки сервисов и `partial: true`; UI оставляет карточки видимыми и показывает non-blocking состояние `data-state="partial"`. Chromium: **1/1**.
 - `[x]` Истечение уже активной сессии проверено отдельно: после client login инъецированный terminal `401 SESSION_EXPIRED` для `/api/auth/me` и `/api/auth/refresh` не показывает защищённую страницу, а переводит на `/login?reason=session-expired`. Chromium: **1/1**.
 - `[~]` Stale response после успешного cache-fill и сохранение текстовых полей формы при сбое остаются отдельной задачей. У helper `useFormDraft` есть размерный лимит и защита от невалидных данных, но формы создания сервиса требуют controlled migration без сохранения файлов.
+
+### Результат седьмой исполняемой порции (28.08.2026)
+
+- `[x]` Real-API fault injection для `503 STALE_DATA` в панели клиентских заявок подтверждает, что shell остаётся доступным и пользователь видит announced stale-state вместо white screen; Chromium: **1/1**.
+- `[x]` Форма добавления автомобиля владельца сохраняет только безопасный allow-list черновика: марку, модель и год. Госномер, внутренний номер и VIN намеренно не пишутся в browser storage; восстановленный черновик можно отбросить, а после успешного создания он очищается.
+- `[~]` Для закрытия state matrix остаются stale response после реального cache-fill, controlled draft для форм без файлов и PostgreSQL retry/idempotency после фактической сетевой ошибки.
 
 ---
 
