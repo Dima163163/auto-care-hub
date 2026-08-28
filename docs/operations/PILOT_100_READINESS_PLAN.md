@@ -140,14 +140,14 @@ npm run check:e2e:browser
 Это исполняемая очередь без инфраструктуры. Каждый пункт завершается отдельным evidence-запуском и не помечается автоматически из старого отчёта.
 
 1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Реальный demo login через API возвращает 200; logout/session-expiry smoke и MSW-путь ещё требуют выполнения.
-2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; representative real API public/client/owner/staff/admin/super-admin matrix **16/16** закрыта 28.08.2026, полный dynamic URL inventory и legacy redirects ещё остаются.
-3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям. Real-API Chromium smoke **16/16** подтвердил public/client/owner/staff/admin/super-admin shell и injected error/offline/stale/permission/suspended/expired/partial states; PostgreSQL retry/idempotency и stale response после cache-fill ещё требуют отдельного browser evidence.
+2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; representative real API public/client/owner/staff/admin/super-admin matrix **18/18** закрыта 28.08.2026, включая пять вариантов public provider/request URL; полный dynamic URL inventory и legacy redirects ещё остаются.
+3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям. Real-API Chromium smoke **18/18** подтвердил public/client/owner/staff/admin/super-admin shell и injected error/offline/stale/permission/suspended/expired/partial states; duplicate-click idempotency в PostgreSQL теперь подтверждена отдельным browser flow (оба ответа `200`, один ID, одна persisted-запись), а offline replay/timeout retry и stale response после cache-fill ещё требуют evidence.
 4. `[~]` Закрыть весь client path: vehicleId/snapshot и три communication modes покрыты unit/schema tests; unavailable/removed provider, edit review и bonuses redemption/expiry/refund/history остаются для полного маршрута.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
 6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
 7. `[~]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты. Automated Chromium matrix **30/30** (360–1440px) прошла без overflow и с корректной mobile navigation; ручная visual- и device-проверка остаётся.
 8. `[~]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; automated public/workspace keyboard, Axe, city listbox, 20 locales и ES/RO mobile matrix проходят. Upload/form errors и ручные VoiceOver/device checks остаются.
-9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 179 files/549 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate и redacted evidence с итоговым commit SHA ещё не сохранены.
+9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 179 files/549 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate **18/18** пройден 28.08.2026; единый redacted evidence с итоговым commit SHA ещё не сохранён.
 10. `[~]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; активные legacy financial/monetization strings and types удалены из runtime по `ADD-C16`; остаётся file-level классификация и безопасное удаление неиспользуемых legacy-файлов.
 
 ### Результат первой исполняемой порции (27.08.2026)
@@ -234,6 +234,13 @@ npm run check:e2e:browser
 - `[x]` Целевой повтор admin/super-admin login прошёл **2/2**. В тестовый helper добавлено уважение `Retry-After` при легитимном `429`, production login rate limit не изменён и не ослаблен.
 - `[~]` Остались отдельные gates: полный dynamic URL/legacy redirect inventory, PostgreSQL duplicate-click/offline replay idempotency, stale после cache-fill, ручная device/VoiceOver-проверка и production infrastructure.
 
+### Результат тринадцатой исполняемой порции (28.08.2026)
+
+- `[x]` Real API public route variants прошли Chromium: provider profile, trailing slash, request, request trailing slash и request с query-параметром услуги — **5/5** в одном smoke-тесте.
+- `[x]` Повторная заявка в реальном PostgreSQL проверена через браузерный API flow без параллельной ротации UI-сессии: одинаковый `Idempotency-Key` дал `200/200`, один и тот же request ID и ровно одну запись в `/v1/service-requests/my`.
+- `[x]` Полный real-API набор после добавления тестов прошёл **18/18** за 1.5 минуты: seed/reset, health, markets, discovery, public/client/owner/staff/admin/super-admin routes и fault-injection states.
+- `[~]` В local state matrix остаются offline replay/timeout retry для создания заявки, stale после cache-fill, полный dynamic/legacy inventory и ручные проверки устройств/VoiceOver; production infrastructure gates не менялись.
+
 ---
 
 # 2. Готовность закрытого пилота
@@ -269,7 +276,7 @@ npm run check:e2e:browser
 - `[ ]` Полная multi-actor concurrency matrix: create, accept quote, reschedule, cancel, no-show, complete и retry.
 - `[ ]` Quote expiry, repeated accept, reschedule after accepted quote и stale version handling.
 - `[ ]` Подтверждённый capacity policy: branch capacity обязательно; specialists/bays only if a service enables them.
-- `[ ]` Проверить idempotency с real PostgreSQL при duplicate click, offline replay и timeout retry.
+- `[~]` Проверить idempotency с real PostgreSQL при duplicate click, offline replay и timeout retry: duplicate click теперь подтверждён browser evidence (один ID/одна запись), offline replay и timeout retry ещё не покрыты.
 
 ## 2.4 Discovery, map and trust
 
@@ -300,7 +307,7 @@ npm run check:e2e:browser
 - `[~]` **ADD-C02** Any white screen, Runtime ReferenceError, unhandled rejection or missing route on public/auth/owner/admin screens. Next route smoke 15/15 и route contract проходят; demo reset и real API login 200 подтверждены, real authenticated owner/admin/super-admin runtime proof is still missing.
 - `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Automated supported-width matrix 30/30 без overflow проходит; ручная проверка фокуса/модалок/устройств ещё требуется.
 - `[~]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons. Shared search form and theme bootstrap were aligned at `70532d2`; all routes still require an audit.
-- `[~]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click. Idempotency contracts exist; real PostgreSQL/offline proof is still missing.
+- `[~]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click. Duplicate-click real PostgreSQL proof закрыт 28.08.2026 (оба ответа `200`, один ID, одна запись); offline recovery и timeout retry остаются до пилота.
 - `[x]` **ADD-C16** Active platform subscription/commission/payout vocabulary and types removed from runtime translation registries, notification/audit UI contracts and current product documents. Immutable historical migrations remain untouched; user-facing text now states that repairs are paid directly to the service. The service-owned review-resolution discount remains intentionally available and is not a platform promo program. Evidence: frontend lint, Next production build, backend build and focused notification/admin authorization tests passed 28.08.2026.
 
 ## Обязательны до открытия пилота

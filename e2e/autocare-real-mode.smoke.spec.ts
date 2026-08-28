@@ -152,6 +152,117 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page.getByRole('main')).toBeVisible()
     })
 
+    test('real API hydrates every public provider route variant', async ({ page }) => {
+        for (const route of [
+            '/services/api-proservice-moscow',
+            '/services/api-proservice-moscow/',
+            '/services/api-proservice-moscow/request',
+            '/services/api-proservice-moscow/request/',
+            '/services/api-proservice-moscow/request?service=oil-change',
+        ]) {
+            await page.goto(route)
+            await expect(page.getByRole('main'), route).toBeVisible()
+        }
+    })
+
+    test('real API keeps a repeated request idempotent in PostgreSQL', async ({ page }) => {
+        await signIn(page, 'client.demo@autocarehub.test')
+
+        const result = await page.evaluate(async () => {
+            const csrfResponse = await fetch('/api/auth/csrf')
+            const csrf = await csrfResponse.json() as { csrfToken?: string }
+            if (!csrf.csrfToken) throw new Error('Real API did not return a CSRF token.')
+
+            // Refresh once inside the test page and keep the returned access
+            // token local to this isolated API flow. Navigating to a cabinet
+            // can start another refresh rotation in parallel and revoke the
+            // session while the idempotency assertions are running.
+            const sessionResponse = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                headers: { 'x-csrf-token': csrf.csrfToken },
+            })
+            const session = await sessionResponse.json() as { accessToken?: string }
+            if (!session.accessToken) throw new Error('Real API did not return an access token.')
+            const token = session.accessToken
+            const authorization = { Authorization: `Bearer ${token}` }
+
+            const discoveryResponse = await fetch('/api/v1/discovery/providers?serviceId=oil-change&marketId=moscow&radiusKm=25&limit=8', {
+                headers: authorization,
+            })
+            const discovery = await discoveryResponse.json() as {
+                items?: Array<{
+                    provider?: { id?: string; location?: { id?: string } }
+                    offer?: { id?: string; bookingMode?: string }
+                }>
+            }
+            const item = discovery.items?.find((candidate) => candidate.offer?.bookingMode === 'request') ?? discovery.items?.[0]
+            const providerId = item?.provider?.id
+            const locationId = item?.provider?.location?.id
+            const offeringId = item?.offer?.id
+            if (!providerId || !locationId || !offeringId) {
+                throw new Error('Real discovery did not return a request-capable provider offering.')
+            }
+
+            const idempotencyKey = `real-e2e-request-${crypto.randomUUID()}`
+            const body = {
+                providerId,
+                locationId,
+                offeringId,
+                preferredAt: '2099-02-15T10:00:00+03:00',
+                vehicleId: null,
+                vehicleSnapshot: null,
+                contactSnapshot: {
+                    name: 'Demo Client',
+                    email: 'client.demo@autocarehub.test',
+                    phone: '+79990000000',
+                },
+                note: 'Real API idempotency smoke request.',
+            }
+            const headers = {
+                'content-type': 'application/json',
+                'x-csrf-token': csrf.csrfToken,
+                'idempotency-key': idempotencyKey,
+                ...authorization,
+            }
+            const firstResponse = await fetch('/api/v1/service-requests', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+            })
+            const firstPayload = await firstResponse.json() as unknown
+            const first = firstPayload as { id?: string }
+            const secondResponse = await fetch('/api/v1/service-requests', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+            })
+            const secondPayload = await secondResponse.json() as unknown
+            const second = secondPayload as { id?: string }
+            const requestsResponse = await fetch('/api/v1/service-requests/my', { headers: authorization })
+            const requestsPayload = await requestsResponse.json() as unknown
+            const requests = Array.isArray(requestsPayload) ? requestsPayload as Array<{ id?: string }> : []
+
+            return {
+                firstStatus: firstResponse.status,
+                secondStatus: secondResponse.status,
+                firstId: first.id,
+                secondId: second.id,
+                persistedCount: requests.filter((request) => request.id === first.id).length,
+                firstPayload,
+                secondPayload,
+                tokenLength: token.length,
+                requestsStatus: requestsResponse.status,
+                requestsPayloadType: Array.isArray(requestsPayload) ? 'array' : typeof requestsPayload,
+            }
+        })
+
+        expect(result.firstStatus, JSON.stringify(result)).toBe(200)
+        expect(result.secondStatus, JSON.stringify(result)).toBe(200)
+        expect(result.firstId).toBeTruthy()
+        expect(result.secondId).toBe(result.firstId)
+        expect(result.persistedCount).toBe(1)
+    })
+
     test('real API redirects a client away from an admin workspace', async ({ page }) => {
         await signIn(page, 'client.demo@autocarehub.test')
         await page.goto('/admin/dashboard')
