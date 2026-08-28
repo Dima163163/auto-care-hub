@@ -11,6 +11,50 @@ async function signIn(page: Page, email: string) {
     await expect(page).not.toHaveURL(/\/login/)
 }
 
+type InjectedRequestState = 'error' | 'offline' | 'permission-denied' | 'suspended'
+
+async function injectRequestState(page: Page, state: InjectedRequestState) {
+    await page.route(/\/api\/v1\/service-requests\/my(?:\?|$)/, async (route) => {
+        if (state === 'offline') {
+            await route.abort('internetdisconnected')
+            return
+        }
+
+        const status = state === 'permission-denied' ? 403 : state === 'suspended' ? 423 : 500
+        await route.fulfill({
+            status,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                code: state === 'permission-denied' ? 'FORBIDDEN' : state === 'suspended' ? 'ACCOUNT_SUSPENDED' : 'INTERNAL_ERROR',
+                message: `Injected ${state} response`,
+            }),
+        })
+    })
+}
+
+async function injectPartialDiscovery(page: Page) {
+    await page.route(/\/api\/v1\/discovery\/providers(?:\?|$)/, async (route) => {
+        const response = await route.fetch()
+        const payload = await response.json() as Record<string, unknown>
+
+        await route.fulfill({
+            response,
+            contentType: 'application/json',
+            body: JSON.stringify({ ...payload, partial: true }),
+        })
+    })
+}
+
+async function expireAuthenticatedSession(page: Page) {
+    await page.route(/\/api\/auth\/(?:me|refresh)(?:\?|$)/, async (route) => {
+        await route.fulfill({
+            status: 401,
+            contentType: 'application/json',
+            body: JSON.stringify({ code: 'SESSION_EXPIRED', message: 'Injected expired session' }),
+        })
+    })
+}
+
 test.describe('AutoCare real API smoke', () => {
     test('health, market catalog and discovery are available without MSW', async ({ page, request }) => {
         const liveness = await request.get(`${apiBaseUrl}/health/live`)
@@ -47,12 +91,28 @@ test.describe('AutoCare real API smoke', () => {
         expect('nextCursor' in payload).toBe(true)
     })
 
+    test('real discovery keeps available providers visible for a partial response', async ({ page }) => {
+        await injectPartialDiscovery(page)
+        await page.goto('/services?service=oil-change')
+        await expect(page.getByRole('main')).toBeVisible()
+        await expect(page.locator('[data-state="partial"]')).toBeVisible()
+        await expect(page.locator('#search-results article').first()).toBeVisible()
+    })
+
     test('real API keeps protected cabinets behind the expired-session boundary', async ({ page, request }) => {
         const meResponse = await request.get(`${apiBaseUrl}/auth/me`)
         expect(meResponse.status()).toBe(401)
 
         await page.goto('/profile')
         await expect(page).toHaveURL(/\/login(?:\?reason=session-expired)?$/)
+        await expect(page.getByRole('alert').filter({ hasText: /session(?: has)? expired|сессия истекла/i })).toBeVisible()
+    })
+
+    test('real API reports an expired active session instead of exposing a protected client page', async ({ page }) => {
+        await signIn(page, 'client.demo@autocarehub.test')
+        await expireAuthenticatedSession(page)
+        await page.goto('/profile/vehicles')
+        await expect(page).toHaveURL(/\/login\?reason=session-expired$/)
         await expect(page.getByRole('alert').filter({ hasText: /session(?: has)? expired|сессия истекла/i })).toBeVisible()
     })
 
@@ -70,6 +130,16 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page).toHaveURL(/\/profile(?:$|[/?#])/)
         await expect(page.getByRole('main')).toBeVisible()
     })
+
+    for (const state of ['error', 'offline', 'permission-denied', 'suspended'] as const) {
+        test(`real client shell survives an injected ${state} request state`, async ({ page }) => {
+            await signIn(page, 'client.demo@autocarehub.test')
+            await injectRequestState(page, state)
+            await page.goto('/profile/bookings')
+            await expect(page.getByRole('main')).toBeVisible()
+            await expect(page.getByRole('alert')).toBeVisible()
+        })
+    }
 
     test('real API opens owner dynamic provider and review routes', async ({ page }) => {
         await signIn(page, 'owner.demo@autocarehub.test')

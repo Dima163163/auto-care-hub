@@ -182,6 +182,18 @@ npm run check:e2e:browser
 - `[x]` Generated каталоги из изолированных real-Next запусков исключены из ESLint и Git через `.next-real-*`, поэтому они не создают ложные ошибки lint и не могут попасть в коммит.
 - `[~]` Fault injection для offline/error/stale/partial response, сохранение незавершённых форм и real PostgreSQL retry/idempotency остаются следующей частью state matrix.
 
+### Результат пятой исполняемой порции (28.08.2026)
+
+- `[x]` Fault injection на реальном API shell покрывает endpoint клиентских заявок: `500 error`, `offline`, `403 permission-denied` и `423 suspended`. Каждый сценарий сохраняет header/footer и `<main>`, показывает доступное состояние ошибки; Chromium: **4/4**.
+- `[x]` Добавлен единый тестовый helper для контролируемого отказа `/api/v1/service-requests/my`; он не меняет PostgreSQL-данные и остаётся применимым при real-API режиме.
+- `[~]` Stale/partial response, session-expiry после действующей сессии, сохранение введённой формы и real PostgreSQL retry/idempotency остаются в следующей порции.
+
+### Результат шестой исполняемой порции (28.08.2026)
+
+- `[x]` Real discovery partial response проверен: ответ discovery содержит реальные карточки сервисов и `partial: true`; UI оставляет карточки видимыми и показывает non-blocking состояние `data-state="partial"`. Chromium: **1/1**.
+- `[x]` Истечение уже активной сессии проверено отдельно: после client login инъецированный terminal `401 SESSION_EXPIRED` для `/api/auth/me` и `/api/auth/refresh` не показывает защищённую страницу, а переводит на `/login?reason=session-expired`. Chromium: **1/1**.
+- `[~]` Stale response после успешного cache-fill и сохранение текстовых полей формы при сбое остаются отдельной задачей. У helper `useFormDraft` есть размерный лимит и защита от невалидных данных, но формы создания сервиса требуют controlled migration без сохранения файлов.
+
 ---
 
 # 2. Готовность закрытого пилота
