@@ -3,7 +3,6 @@ import type { EntityId, ISODateString } from '@/shared/types/common'
 export type NotificationCategory =
     | 'booking'
     | 'moderation'
-    | 'subscription'
     | 'account'
     | 'security'
 

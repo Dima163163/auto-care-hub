@@ -53,7 +53,7 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 | --- | --- | --- |
 | Инвентарь runtime | `check:next-runtime-boundary`, route inventory, route contract — PASS | Next.js является production boundary; документировано 56 маршрутов; сохранённые Vite-пакеты всё ещё имеют source references и требуют финальной классификации. |
 | Контракты API | API contract, OpenAPI shape/structure и mock/API parity — PASS | 227 mock-маршрутов покрыты backend; contract checks не подтверждают авторизацию и конкуренцию на real PostgreSQL. |
-| Legacy/scope | legacy cleanup, no-Bookly и legacy-provider runtime guards — PASS | Legacy provider runtime отсутствует; historical migrations сохранены. Отдельно найдены активные старые словари/типы subscription — `ADD-C16`. |
+| Legacy/scope | legacy cleanup, no-Bookly и legacy-provider runtime guards — PASS | Legacy provider runtime отсутствует; historical migrations сохранены. Платформенные subscription/commission/payout типы и тексты удалены из активного runtime в локальном наборе `ADD-C16`. |
 | Production gates | `check:production-operations` — BLOCKED/MANUAL | Нет текущих production-like secrets, PostgreSQL/Redis/JWT, SMTP, S3/AV, bootstrap super-admin, Docker daemon и staging evidence. Это не ошибка проверки, а незакрытые внешние gates. |
 | Security/SEO contracts | security headers и repository SEO/media budget — PASS | Структурные контракты существуют; production Lighthouse/Open Graph и staging security evidence всё ещё не подтверждены. |
 
@@ -70,7 +70,7 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 - `[x]` Основные прямые URL, 404, protected redirect и динамические provider routes имеют Next route contract и smoke-тесты; 15/15 Next route smoke прошли 27.08.2026 на локальном Next release.
 - `[x]` Удалены неиспользуемые legacy page families: home/cabinet/provider-owner legacy UI и скрытая `/pricing` страница.
 - `[x]` Dev seed больше не создаёт legacy wellness-кабинеты, услуги и бронирования — только пользователей для AutoCare fixtures.
-- `[~]` Platform payment/monetization routes, provider SDK, webhooks и UI entrypoints удалены; обнаружены активные legacy strings/types для subscription/promo, их очистка обязательна по `ADD-C16`.
+- `[x]` Platform payment/monetization routes, provider SDK, webhooks и UI entrypoints удалены; активные subscription/commission/payout типы и тексты очищены по `ADD-C16`. Сервисная скидка для решения конкретного отзыва сохранена как отдельная неплатформенная функция.
 - `[x]` Полная таблица URL и владельцев runtime содержит 56 route constants; inventory и route contract прошли 27.08.2026.
 - `[ ]` Перепроверить каждый dynamic URL: provider, request, legacy redirect, owner provider/reviews — c mock API и с real API.
 - `[~]` `check:next-runtime-boundary` подтвердил Next.js production boundary и наличие source references у Vite-пакетов; финально классифицировать каждый reference как PWA/test либо удалить.
@@ -148,7 +148,7 @@ npm run check:e2e:browser
 7. `[~]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты. Automated Chromium matrix **30/30** (360–1440px) прошла без overflow и с корректной mobile navigation; ручная visual- и device-проверка остаётся.
 8. `[ ]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; приложения проверяются с длинными городами, услугами и названиями языков.
 9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 179 files/549 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate и redacted evidence с итоговым commit SHA ещё не сохранены.
-10. `[ ]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; удалить активные legacy financial/monetization strings and types из runtime, сохранить только immutable migrations и явные «оплата напрямую сервису»/способы оплаты у сервиса.
+10. `[~]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; активные legacy financial/monetization strings and types удалены из runtime по `ADD-C16`; остаётся file-level классификация и безопасное удаление неиспользуемых legacy-файлов.
 
 ### Результат первой исполняемой порции (27.08.2026)
 
@@ -234,7 +234,7 @@ npm run check:e2e:browser
 - `[~]` **ADD-C03** Any header, burger, floating-label, modal, gallery or filter overlap that blocks input/click on supported viewport. Automated supported-width matrix 30/30 без overflow проходит; ручная проверка фокуса/модалок/устройств ещё требуется.
 - `[~]` **ADD-C04** A static shell/form/map disappears during loading instead of preserving layout while data-only blocks show themed skeletons. Shared search form and theme bootstrap were aligned at `70532d2`; all routes still require an audit.
 - `[~]` **ADD-C05** Duplicate request/booking after retry, offline recovery or repeated click. Idempotency contracts exist; real PostgreSQL/offline proof is still missing.
-- `[ ]` **ADD-C16** Remove active legacy financial/monetization vocabulary and types (subscription/promo/commission/provider payout) from runtime translation registries, notification/audit UI contracts and current product documents. Keep only immutable historical migrations, plus customer-facing facts about paying the service directly and the service's accepted card/cash methods.
+- `[x]` **ADD-C16** Active platform subscription/commission/payout vocabulary and types removed from runtime translation registries, notification/audit UI contracts and current product documents. Immutable historical migrations remain untouched; user-facing text now states that repairs are paid directly to the service. The service-owned review-resolution discount remains intentionally available and is not a platform promo program. Evidence: frontend lint, Next production build, backend build and focused notification/admin authorization tests passed 28.08.2026.
 
 ## Обязательны до открытия пилота
 

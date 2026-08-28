@@ -14,7 +14,6 @@ import { UserEntity } from '../user/user.entity.js'
 export enum NotificationCategory {
     Booking = 'booking',
     Moderation = 'moderation',
-    Subscription = 'subscription',
     Account = 'account',
     Security = 'security',
 }

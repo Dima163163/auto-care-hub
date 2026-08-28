@@ -60,7 +60,7 @@ export function LandingHeroContent() {
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="flex size-5 items-center justify-center rounded-full border border-muted-foreground/30 text-xs">✓</span>
-                    {t('landing.noCommission')}
+                    {t('landing.directPayment')}
                 </div>
             </div>
         </div>

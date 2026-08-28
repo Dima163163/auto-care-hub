@@ -9,10 +9,9 @@ compatible offers by price, rating, distance, inclusions and availability,
 book a visit, or discuss complex work with a provider through a service-specific
 messenger with photo attachments and quotes.
 
-Provider participation is free during the initial acquisition phase. Later,
-AutoCare Hub will support provider subscriptions, super-admin subscription
-grants and subscription promo codes. Providers will also be able to run their
-own customer bonus programs.
+Provider participation is free. The platform does not process repair payments,
+charge commissions, sell subscriptions, or run payout flows. Providers may run
+their own customer bonus and service-discount programs.
 
 ## Repository status
 
@@ -51,8 +50,7 @@ Read before making changes:
 2. Design system and responsive mocks.
 3. Automotive domain and web vertical slices.
 4. Stable responsive web pilot/release.
-5. Provider subscription activation after the free phase is validated.
-6. iOS and Android after the mobile-readiness gate.
+5. iOS and Android after the mobile-readiness gate.
 
 ## Current technology
 
@@ -236,17 +234,15 @@ outside this repository at
 
 - Platform-controlled service catalog; providers configure offerings.
 - Provider organizations and physical locations are distinct.
-- Repair booking payments, provider subscriptions and customer bonuses are
-  separate bounded contexts.
-- The first release does not assume platform commission or split repair
-  payments.
+- Repair payments are agreed and paid directly to a provider; AutoCare Hub does
+  not process platform payments, commissions, subscriptions, or payouts.
+- Provider-funded customer bonuses are a separate bounded context.
 - Messages and customer damage photos are private by default.
-- Paid subscription status cannot silently influence organic ranking.
 - Native apps reuse the backend API and do not own business logic.
 
 ## Open decisions
 
 The project owner still needs to confirm launch market/currency/languages,
-legacy data retention, repair-payment scope, bonus rules, subscription periods,
-message/media retention, provider verification, SEO strategy and the new Git
+legacy data retention, bonus rules, message/media retention, provider
+verification, SEO strategy and the new Git
 repository URL. See `PROJECT_PLAN.md` for the full decision register.

@@ -19,7 +19,7 @@ const notificationLinkSchema = z.preprocess(
 
 const notificationSchema = z.object({
     id: z.string(),
-    category: z.enum(['booking', 'moderation', 'subscription', 'account', 'security']),
+    category: z.enum(['booking', 'moderation', 'account', 'security']),
     title: z.string(),
     message: z.string(),
     link: notificationLinkSchema,

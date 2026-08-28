@@ -395,8 +395,6 @@ export const roTranslations = {
             cabinet_status_updated: 'Starea cabinetului a fost actualizată',
             review_moderated: 'Recenzie moderată',
             review_deleted: 'Recenzie ștearsă',
-            subscription_created: 'Abonament creat',
-            promo_subscription_issued: 'Abonament promoțional emis',
             login_failed: 'Încercare de autentificare eșuată',
             account_locked: 'Cont blocat',
             refresh_token_reuse: 'Reutilizare a tokenului de reîmprospătare detectată',
