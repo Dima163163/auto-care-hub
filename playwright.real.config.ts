@@ -1,7 +1,17 @@
+import { existsSync } from 'node:fs'
+
 import { defineConfig, devices } from '@playwright/test'
 
-const localChromiumPath =
-    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? undefined
+const chromiumCandidates = [
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+].filter((candidate): candidate is string => Boolean(candidate?.trim()))
+
+const localChromiumPath = chromiumCandidates.find((candidate) => existsSync(candidate))
 const usePreviewServer = process.env.REAL_E2E_PREVIEW === 'true'
 
 export default defineConfig({
@@ -22,7 +32,7 @@ export default defineConfig({
     webServer: {
         command: usePreviewServer
             ? 'npm run preview -- --host 127.0.0.1 --port 5174'
-            : 'NEXT_PUBLIC_API_MODE=real NEXT_PUBLIC_API_BASE_URL=/api npm run dev -- --hostname 127.0.0.1 --port 5174',
+            : 'NEXT_DIST_DIR=.next-real-e2e NEXT_PUBLIC_API_MODE=real NEXT_PUBLIC_API_BASE_URL=/api npm run dev -- --hostname 127.0.0.1 --port 5174',
         url: 'http://127.0.0.1:5174',
         reuseExistingServer: usePreviewServer ? false : !process.env.CI,
     },

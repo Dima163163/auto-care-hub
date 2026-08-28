@@ -67,6 +67,17 @@ describe('Floating fields', () => {
         expect(select.parentElement?.querySelector('span')).toHaveClass('top-0')
     })
 
+    it('keeps an empty text-input label on the border when its placeholder must remain visible', () => {
+        render(<FloatingInput floatLabelWhenEmpty label="Какой автосервис?" placeholder="Начните вводить название сервиса" value="" onChange={() => undefined} />)
+
+        const input = screen.getByLabelText('Какой автосервис?')
+
+        expect(input.parentElement).toHaveAttribute('data-filled', 'true')
+        expect(input.parentElement?.querySelector('span')).toHaveClass('top-0')
+        expect(input).toHaveClass('pt-5')
+        expect(input).toHaveAttribute('placeholder', 'Начните вводить название сервиса')
+    })
+
     it('keeps the native select ring suppressed so the rounded wrapper owns focus', () => {
         render(
             <FloatingSelect label="Услуга" value="oil-change" tone="dark" onChange={() => undefined}>

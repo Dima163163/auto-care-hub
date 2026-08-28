@@ -1,6 +1,15 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 const apiBaseUrl = process.env.REAL_API_BASE_URL ?? 'http://127.0.0.1:4000'
+const demoPassword = '123456'
+
+async function signIn(page: Page, email: string) {
+    await page.goto('/login')
+    await page.locator('#email').fill(email)
+    await page.locator('#password').fill(demoPassword)
+    await page.getByRole('button', { name: /sign in|войти/i }).click()
+    await expect(page).not.toHaveURL(/\/login/)
+}
 
 test.describe('AutoCare real API smoke', () => {
     test('health, market catalog and discovery are available without MSW', async ({ page, request }) => {
@@ -44,6 +53,36 @@ test.describe('AutoCare real API smoke', () => {
 
         await page.goto('/profile')
         await expect(page).toHaveURL(/\/login(?:\?reason=session-expired)?$/)
-        await expect(page.getByText(/session expired|сессия истекла/i)).toBeVisible()
+        await expect(page.getByRole('alert').filter({ hasText: /session(?: has)? expired|сессия истекла/i })).toBeVisible()
+    })
+
+    test('real API opens client cabinet and dynamic request routes', async ({ page }) => {
+        await signIn(page, 'client.demo@autocarehub.test')
+        await page.goto('/profile/vehicles')
+        await expect(page.getByRole('main')).toBeVisible()
+        await page.goto('/services/api-proservice-moscow/request?service=oil-change')
+        await expect(page.getByRole('main')).toBeVisible()
+    })
+
+    test('real API opens owner dynamic provider and review routes', async ({ page }) => {
+        await signIn(page, 'owner.demo@autocarehub.test')
+        await page.goto('/owner/autocare-providers')
+        await expect(page.getByRole('main')).toBeVisible()
+        await page.goto('/owner/autocare-providers/api-proservice-moscow')
+        await expect(page.getByRole('main')).toBeVisible()
+        await page.goto('/owner/autocare-providers/api-proservice-moscow/reviews')
+        await expect(page.getByRole('main')).toBeVisible()
+    })
+
+    test('real API opens admin workspaces', async ({ page }) => {
+        await signIn(page, 'admin.demo@autocarehub.test')
+        await page.goto('/admin/dashboard')
+        await expect(page.getByRole('main')).toBeVisible()
+    })
+
+    test('real API opens super-admin workspace', async ({ page }) => {
+        await signIn(page, 'superadmin.demo@autocarehub.test')
+        await page.goto('/super-admin/dashboard')
+        await expect(page.getByRole('main')).toBeVisible()
     })
 })

@@ -67,7 +67,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:real": "npm --prefix server run demo:reset && npm --prefix server run demo:seed && npm --prefix server run autocare:seed && playwright test -c playwright.real.config.ts",
+    "test:e2e:real": "npm --prefix server run demo:reset && npm --prefix server run demo:seed && npm --prefix server run autocare:seed && node scripts/run-real-api-e2e.mjs",
     "test:e2e:pwa": "playwright test -c playwright.pwa.config.ts",
     "test:e2e:visual": "playwright test -c playwright.visual.config.ts",
     "test:e2e:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots"

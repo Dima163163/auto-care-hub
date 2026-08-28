@@ -16,7 +16,9 @@ type FloatingFieldBaseProps = {
 type FloatingSelectProps = FloatingFieldBaseProps & SelectHTMLAttributes<HTMLSelectElement> & {
     floatLabelWhenEmpty?: boolean
 }
-type FloatingInputProps = FloatingFieldBaseProps & InputHTMLAttributes<HTMLInputElement>
+type FloatingInputProps = FloatingFieldBaseProps & InputHTMLAttributes<HTMLInputElement> & {
+    floatLabelWhenEmpty?: boolean
+}
 
 const toneClasses: Record<FloatingFieldTone, { wrapper: string; label: string; labelSurface: string; control: string; placeholder: string }> = {
     light: {
@@ -106,12 +108,13 @@ export function FloatingSelect({ children, className, floatLabelWhenEmpty = fals
     )
 }
 
-export function FloatingInput({ className, label, leadingAdornment, tone = 'light', value, defaultValue, wrapperClassName, ...props }: FloatingInputProps) {
+export function FloatingInput({ className, floatLabelWhenEmpty = false, label, leadingAdornment, tone = 'light', value, defaultValue, wrapperClassName, ...props }: FloatingInputProps) {
     const filled = isFilled(value ?? defaultValue)
+    const labelIsFloated = floatLabelWhenEmpty || filled
 
     return (
-        <label data-filled={filled} className={getWrapperClassName(tone, filled, wrapperClassName)}>
-            <FloatingLabel label={label} tone={tone} filled={filled} />
+        <label data-filled={labelIsFloated} className={getWrapperClassName(tone, labelIsFloated, wrapperClassName)}>
+            <FloatingLabel label={label} tone={tone} filled={labelIsFloated} />
             {leadingAdornment ? <span className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-primary" aria-hidden="true">{leadingAdornment}</span> : null}
             <input
                 value={value}
@@ -123,7 +126,7 @@ export function FloatingInput({ className, label, leadingAdornment, tone = 'ligh
                     'h-12 w-full bg-transparent text-sm font-bold outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-transparent focus:placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60',
                     // Match the select behavior: once the floating label is
                     // lifted on focus, reserve a full line for the input text.
-                    filled ? 'pb-1 pt-5' : 'pb-1 pt-4 group-focus-within:pt-5',
+                    labelIsFloated ? 'pb-1 pt-5' : 'pb-1 pt-4 group-focus-within:pt-5',
                     leadingAdornment ? 'pl-9 pr-3' : 'px-3',
                     toneClasses[tone].control,
                     className,

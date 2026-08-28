@@ -167,6 +167,14 @@ npm run check:e2e:browser
 - `[x]` Повторяемый real prerequisite проверен: `demo:reset` → `demo:seed` → `autocare:seed` проходят, включая очистку новых AutoCare request/message/attachment/report/appeal зависимостей без ослабления production `RESTRICT`-связей; `/health/live` отвечает `ok`, demo login возвращает 200.
 - `[~]` Полная real API state matrix, ручные device/VoiceOver-проверки, production-инфраструктура и legacy monetization cleanup остаются незакрытыми.
 
+### Результат третьей исполняемой порции (28.08.2026)
+
+- `[x]` Real-API browser smoke запускается параллельно с интерактивным mock Next runtime через изолированный `NEXT_DIST_DIR=.next-real-e2e`; runner восстанавливает `next-env.d.ts` и удаляет только свой generated dist directory.
+- `[x]` Локальные PostgreSQL и Redis подтверждены real-API browser smoke: health/market/discovery без MSW, контракт selected market и boundary истёкшей сессии. Отдельные smoke для direct client vehicle + request и owner provider + reviews routes также проходят 28.08.2026.
+- `[x]` Базовые route smoke в mock shell повторно прошли: **15/15** на desktop, mobile и tablet для public, dynamic, 404, reload/hydration и protected redirect.
+- `[x]` Единый floating-field pattern поддерживает `floatLabelWhenEmpty` и для text input: во вкладке «По автосервису» подпись фиксируется над рамкой, а внутри остаётся читаемая подсказка; focused Vitest: **8/8**.
+- `[~]` Полная real API state matrix с fault injection и сценарии изменения данных остаются в очереди §1.6; конкретные smoke owner provider/reviews URL закрыты выше.
+
 ---
 
 # 2. Готовность закрытого пилота
