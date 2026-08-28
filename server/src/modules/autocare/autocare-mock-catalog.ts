@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { AutomotiveLocationZoneType, AutomotivePriceType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import { AutomotiveLocationZoneType, AutomotivePriceType, AutomotiveProviderStatus, type AutomotiveProviderCommunicationMode, type AutomotiveProviderResponseHours } from '../../entities/automotive/automotive.entity.js'
 
 export const AUTOCARE_MOCK_FALLBACK_IMAGE = '/images/autocare/placeholders/provider.svg'
 
@@ -15,6 +15,17 @@ export type AutomotiveMockProvider = {
     rating: number
     reviewCount: number
     bonusSummary?: string | null
+    phone?: string | null
+    phones?: string[]
+    email?: string | null
+    communicationMode?: AutomotiveProviderCommunicationMode
+    chatEnabled?: boolean
+    responseWindowMinutes?: number | null
+    responseHours?: AutomotiveProviderResponseHours
+    phoneBookingEnabled?: boolean
+    callbackEnabled?: boolean
+    requestPhotosEnabled?: boolean
+    publicContactNote?: string | null
     imageUrl?: string | null
     logoUrl?: string | null
     galleryImageUrls?: string[]
@@ -262,6 +273,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
     {
         key: 'proservice-moscow', name: 'ProService', description: 'Проверенный сервис с фотоотчётом и гарантией на выполненные работы.', verified: true,
         logoUrl: '/images/autocare/providers/logos/proservice.svg',
+        phone: '+7 495 123-45-67', phones: ['+7 495 123-45-67', '+7 495 123-45-68'], communicationMode: 'online', chatEnabled: true, responseWindowMinutes: 120, responseHours: 'working_hours', phoneBookingEnabled: true, callbackEnabled: true, requestPhotosEnabled: true, publicContactNote: 'Обычно отвечаем в течение 2 часов в рабочее время.',
         yearsActive: 8, staffCount: 24, rating: 4.7, reviewCount: 256, bonusSummary: '5% back', imageUrl: '/images/autocare/providers/proservice.webp', galleryImageUrls: ['/images/autocare/providers/proservice.webp'],
         amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
         address: 'Москва, ул. Льва Толстого, 18', hours: 'Пн–Вс: 08:00–21:00', latitude: 55.7337, longitude: 37.5876, zoneSlug: 'central',
@@ -274,6 +286,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
     {
         key: 'autolux-moscow', name: 'AutoLux', description: 'Диагностика, обслуживание и кузовные работы в одном месте.', verified: true,
         logoUrl: '/images/autocare/providers/logos/autolux.svg',
+        phone: '+7 495 234-56-78', phones: ['+7 495 234-56-78'], communicationMode: 'request_then_confirm', chatEnabled: true, responseWindowMinutes: 240, responseHours: 'working_hours', phoneBookingEnabled: true, callbackEnabled: true, requestPhotosEnabled: true, publicContactNote: 'Сначала уточним детали и подтвердим время по телефону.',
         yearsActive: 5, staffCount: 12, rating: 4.9, reviewCount: 412, imageUrl: '/images/autocare/providers/detailing.webp', galleryImageUrls: ['/images/autocare/providers/detailing.webp'],
         amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'card_payment', 'electric_charging'],
         address: 'Москва, Комсомольский пр-т, 45', hours: 'Пн–Вс: 09:00–22:00', latitude: 55.7104, longitude: 37.5838, zoneSlug: 'south',
@@ -285,6 +298,7 @@ export const AUTOMOTIVE_MOCK_PROVIDERS: readonly AutomotiveMockProvider[] = [
     },
     {
         key: 'formula-moscow', name: 'Formula Motion', description: 'Сервис для планового обслуживания, шин и сложной диагностики.', verified: false,
+        phone: '+7 495 345-67-89', phones: ['+7 495 345-67-89'], communicationMode: 'phone_only', chatEnabled: false, responseWindowMinutes: null, responseHours: 'working_hours', phoneBookingEnabled: true, callbackEnabled: true, requestPhotosEnabled: true, publicContactNote: 'Небольшая команда: для быстрой записи лучше позвонить.',
         yearsActive: 4, staffCount: 10, rating: 4.6, reviewCount: 189, bonusSummary: 'Free check',
         amenityIds: ['waiting_room', 'wifi', 'coffee', 'card_payment', 'pickup_delivery'],
         address: 'Москва, ул. Плющиха, 10', hours: 'Пн–Сб: 08:00–20:00', latitude: 55.7361, longitude: 37.5747, zoneSlug: 'central',

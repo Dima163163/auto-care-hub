@@ -15,7 +15,7 @@ export type PlatformReview = {
     createdAt: string
 }
 
-export type CreatePlatformReviewInput = { rating: number; text: string }
+export type CreatePlatformReviewInput = { rating: number; text: string; idempotencyKey?: string }
 export type RespondPlatformReviewInput = { reviewId: string; response: string }
 
 const platformReviewSchema = z.object({
@@ -42,7 +42,7 @@ export const platformReviewsApi = baseApi.injectEndpoints({
             providesTags: [{ type: 'PlatformReview', id: 'PUBLIC_LIST' }],
         }),
         createPlatformReview: build.mutation<PlatformReview, CreatePlatformReviewInput>({
-            query: (body) => ({ url: '/v1/platform-reviews', method: 'POST', body }),
+            query: ({ idempotencyKey, ...body }) => ({ url: '/v1/platform-reviews', method: 'POST', ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}), body }),
             transformResponse: (value: unknown) => platformReviewSchema.parse(value),
             invalidatesTags: [{ type: 'PlatformReview', id: 'MY_LIST' }],
         }),

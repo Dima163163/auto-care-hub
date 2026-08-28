@@ -8,7 +8,7 @@ import type { UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
-import { canManageProvider } from './provider-access.service.js'
+import { hasProviderWorkspacePermission } from './provider-access.service.js'
 import type { AutoCareCatalogGapRequestResponse, AutoCareServiceDefinitionResponse, CreateAutoCareCatalogGapRequestInput } from './autocare.types.js'
 import type { z } from 'zod'
 import type { updateAdminAutoCareServiceDefinitionSchema } from './autocare.schemas.js'
@@ -57,7 +57,12 @@ export async function updateAdminAutoCareServiceDefinition(
 }
 
 export async function createAutoCareCatalogGapRequest(user: UserEntity, input: CreateAutoCareCatalogGapRequestInput) {
-    if (input.providerId && !(await canManageProvider(user.id, input.providerId))) {
+    // A provider-specific catalog proposal changes the shared service
+    // definition surface. Require the explicit catalog capability instead of
+    // accepting any active membership (which would let branch staff submit a
+    // provider-wide catalog change). The omitted location keeps this usable
+    // for owners and catalog managers assigned to one or more branches.
+    if (input.providerId && !(await hasProviderWorkspacePermission(user.id, input.providerId, 'catalog'))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You cannot submit a catalog request for this provider.' })
     }
     const repository = AppDataSource.getRepository(AutomotiveCatalogGapRequestEntity)

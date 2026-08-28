@@ -8,11 +8,12 @@ import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import { createPlatformReviewSchema, platformReviewParamsSchema, platformReviewsQuerySchema, respondPlatformReviewSchema } from './platform-reviews.schemas.js'
 import { createPlatformReview, deletePlatformReview, getAdminPlatformReviews, getMyPlatformReviews, getPublicPlatformReviews, respondToPlatformReview } from './platform-reviews.service.js'
 import { platformReviewCreateRateLimitOptions } from './platform-reviews.rate-limit.js'
+import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
 
 export async function platformReviewsRoutes(app: FastifyInstance) {
     const createPlatformReviewRateLimit = createRateLimitPreHandler({ ...platformReviewCreateRateLimitOptions, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
     app.get('/v1/platform-reviews', async (request) => getPublicPlatformReviews(validateQuery(platformReviewsQuerySchema, request.query).limit))
-    app.post('/v1/platform-reviews', { preHandler: createPlatformReviewRateLimit }, async (request) => createPlatformReview(await requireVerifiedEmail(request), validateBody(createPlatformReviewSchema, request.body)))
+    app.post('/v1/platform-reviews', { preHandler: createPlatformReviewRateLimit }, async (request) => createPlatformReview(await requireVerifiedEmail(request), { ...validateBody(createPlatformReviewSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
     app.get('/v1/platform-reviews/my', async (request) => getMyPlatformReviews(await requireAuth(request)))
     app.get('/admin/platform-reviews', async (request) => getAdminPlatformReviews(await requireAuth(request)))
     app.post('/admin/platform-reviews/:reviewId/response', async (request) => {

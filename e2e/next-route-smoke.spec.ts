@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 const directRoutes = [
     '/',
@@ -59,11 +60,41 @@ const dynamicRoutes = [
     '/services/api-proservice-moscow/request',
     '/services/api-proservice-moscow/request/',
     '/services/api-proservice-moscow/request?service=oil-change',
+    '/services/api-proservice-moscow/request/?service=oil-change',
     '/cabinets/cabinet-1',
+    '/cabinets/cabinet-1/?from=filtered-catalog',
     '/owner/autocare-providers/provider-1',
+    '/owner/autocare-providers/provider-1/',
     '/owner/autocare-providers/provider-1/reviews',
+    '/owner/autocare-providers/provider-1/reviews/',
     '/owner/cabinets/provider-1/edit',
+    '/owner/cabinets/provider-1/edit/?tab=profile',
 ] as const
+
+const legacyRedirectRoutes = [
+    { path: '/cabinets', target: '/services' },
+    { path: '/cabinets/', target: '/services' },
+    { path: '/cabinets/cabinet-1', target: '/services' },
+    { path: '/cabinets/cabinet-1/', target: '/services' },
+    { path: '/owner/cabinets', target: '/owner/autocare-providers' },
+    { path: '/owner/cabinets/', target: '/owner/autocare-providers' },
+    { path: '/owner/cabinets/create', target: '/owner/autocare-providers' },
+    { path: '/owner/cabinets/create/', target: '/owner/autocare-providers' },
+    { path: '/owner/cabinets/provider-1/edit', target: '/owner/autocare-providers' },
+    { path: '/owner/cabinets/provider-1/edit/', target: '/owner/autocare-providers' },
+    { path: '/owner/bookings', target: '/owner/autocare-requests' },
+    { path: '/owner/bookings/', target: '/owner/autocare-requests' },
+    { path: '/admin/cabinets', target: '/admin/dashboard' },
+    { path: '/admin/cabinets/', target: '/admin/dashboard' },
+] as const
+
+async function signInAs(page: Page, email: string) {
+    await page.goto('/login')
+    await page.locator('#email').fill(email)
+    await page.locator('#password').fill('password123')
+    await page.getByRole('button', { name: /sign in|войти/i }).click()
+    await expect(page).not.toHaveURL(/\/login(?:\?|$)/)
+}
 
 test.describe('Next.js direct route runtime', () => {
     test('serves every representative route through the Next shell', async ({ request }) => {
@@ -105,5 +136,30 @@ test.describe('Next.js direct route runtime', () => {
 
         await expect(page).toHaveURL(/\/login$/)
         await expect(page.locator('#email')).toBeVisible()
+    })
+
+    test('preserves hydrated public and owner legacy redirects', async ({ page }) => {
+        test.setTimeout(90_000)
+
+        for (const route of legacyRedirectRoutes.slice(0, 4)) {
+            await page.goto(route.path)
+            await expect(page).toHaveURL(new RegExp(`${route.target.replace('/', '\\/')}(?:\\/)?$`))
+        }
+
+        await signInAs(page, 'sophia.miller@example.com')
+        for (const route of legacyRedirectRoutes.slice(4, 12)) {
+            await page.goto(route.path)
+            await expect(page).toHaveURL(new RegExp(`${route.target.replace('/', '\\/')}(?:\\/)?$`))
+        }
+    })
+
+    test('preserves hydrated admin legacy redirects', async ({ page }) => {
+        test.setTimeout(60_000)
+        await signInAs(page, 'admin@autocarehub.test')
+
+        for (const route of legacyRedirectRoutes.slice(12)) {
+            await page.goto(route.path)
+            await expect(page).toHaveURL(new RegExp(`${route.target.replace('/', '\\/')}(?:\\/)?$`))
+        }
     })
 })

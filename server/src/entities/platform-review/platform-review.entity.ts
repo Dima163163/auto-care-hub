@@ -16,9 +16,11 @@ export enum PlatformReviewStatus {
 
 @Entity('platform_reviews')
 @Index(['status', 'createdAt'])
+@Index('IDX_platform_reviews_client_idempotency_key', ['clientId', 'idempotencyKey'], { unique: true, where: '"idempotencyKey" IS NOT NULL' })
 export class PlatformReviewEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid', nullable: true }) clientId!: string | null
+    @Column({ type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'text' }) authorName!: string
     @Column({ type: 'text', nullable: true }) avatarUrl!: string | null
     @Column({ type: 'text' }) authorRole!: string

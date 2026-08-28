@@ -13,5 +13,5 @@ export type PlatformReviewResponse = {
     createdAt: string
 }
 
-export type CreatePlatformReviewInput = { rating: number; text: string }
+export type CreatePlatformReviewInput = { rating: number; text: string; idempotencyKey?: string }
 export type RespondPlatformReviewInput = { response: string }

@@ -176,7 +176,7 @@ export function getOpenApiDocument() {
             },
             '/v1/platform-reviews': {
                 get: { operationId: 'listPlatformReviews', security: [], parameters: [{ name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, default: 30 } }], responses: { '200': { description: 'Approved reviews about the AutoCare Hub platform.' } } },
-                post: { operationId: 'createPlatformReview', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Submitted platform review awaiting moderation.' } } },
+                post: { operationId: 'createPlatformReview', parameters: [{ name: 'Idempotency-Key', in: 'header', required: false, schema: { type: 'string', minLength: 8, maxLength: 128, pattern: '^[a-zA-Z0-9_-]+$' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Submitted platform review awaiting moderation.' } } },
             },
             '/v1/platform-reviews/my': {
                 get: { operationId: 'listMyPlatformReviews', responses: { '200': { description: 'Authenticated client platform reviews.' } } },

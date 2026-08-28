@@ -88,7 +88,10 @@ const requiredDeclarations = (scope) => semanticTokens
     .filter((token) => !new RegExp(`${token}\\s*:`).test(scope))
 
 const rootScope = stylesheet.match(/:root\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
-const darkScope = stylesheet.match(/\.dark\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+// The dark theme intentionally supports both the class and the data-theme
+// bootstrap attribute. Capture the shared declaration block instead of only
+// matching a standalone `.dark {` selector.
+const darkScope = stylesheet.match(/\.dark\s*,\s*:root\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
 const failures = [
     ...requiredDeclarations(rootScope).map((token) => `:root is missing ${token}`),
     ...requiredDeclarations(darkScope).map((token) => `.dark is missing ${token}`),

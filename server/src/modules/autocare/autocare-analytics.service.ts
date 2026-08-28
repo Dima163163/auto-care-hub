@@ -16,7 +16,7 @@ import type { UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { logError } from '../../shared/observability/logger.js'
-import { getManagedProviderScopes, hasProviderWorkspacePermission } from './provider-access.service.js'
+import { getManagedProviderPermissionScopes } from './provider-access.service.js'
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
 import { env } from '../../config/env.js'
@@ -39,11 +39,8 @@ function percent(value: number, total: number) {
  * client identity or private message content.
  */
 export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, providerId: string): Promise<AutoCareProviderAnalyticsResponse> {
-    const scope = (await getManagedProviderScopes(owner.id)).find((item) => item.providerId === providerId)
+    const scope = (await getManagedProviderPermissionScopes(owner.id, 'analytics')).find((item) => item.providerId === providerId)
     if (!scope) forbidden('You do not manage this automotive service.')
-    if (!(await hasProviderWorkspacePermission(owner.id, providerId, 'analytics'))) {
-        forbidden('You do not have permission to view service analytics.')
-    }
 
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
     if (!provider) notFound('Automotive service not found.')

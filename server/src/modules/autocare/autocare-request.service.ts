@@ -53,7 +53,7 @@ import { broadcastServiceChat } from './service-chat.gateway.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
 import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
-import { canManageProvider, canManageProviderWithManager, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts, zonedWallTimeToUtc } from './availability.js'
 import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
 import { getAutoCareQuoteLifecycleStatus, isAutoCareQuoteExpired } from './quote-policy.js'
@@ -106,14 +106,31 @@ function isMessageIdempotencyUniqueError(error: unknown) {
     return driverError?.code === '23505' && driverError.constraint === 'IDX_autocare_service_messages_idempotency'
 }
 
+/**
+ * JSONB does not promise to preserve the insertion order of object keys. Use a
+ * canonical representation for idempotency comparisons so a retried request
+ * is treated as the same payload even when PostgreSQL returns keys in a
+ * different order than the original JSON body.
+ */
+function stableJsonStringify(value: unknown): string {
+    if (Array.isArray(value)) return `[${value.map(stableJsonStringify).join(',')}]`
+    if (value !== null && typeof value === 'object') {
+        return `{${Object.entries(value as Record<string, unknown>)
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([key, item]) => `${JSON.stringify(key)}:${stableJsonStringify(item)}`)
+            .join(',')}}`
+    }
+    return JSON.stringify(value)
+}
+
 function isSameAutoCareServiceRequest(request: ServiceRequestEntity, input: CreateAutoCareServiceRequestInput) {
     return request.providerId === input.providerId &&
         request.locationId === input.locationId &&
         request.offeringId === input.offeringId &&
         request.preferredAt?.toISOString() === new Date(input.preferredAt).toISOString() &&
         request.vehicleId === (input.vehicleId ?? null) &&
-        (input.vehicleId ? true : JSON.stringify(request.vehicleSnapshot) === JSON.stringify(input.vehicleSnapshot ?? null)) &&
-        JSON.stringify(request.contactSnapshot) === JSON.stringify(input.contactSnapshot) &&
+        (input.vehicleId ? true : stableJsonStringify(request.vehicleSnapshot) === stableJsonStringify(input.vehicleSnapshot ?? null)) &&
+        stableJsonStringify(request.contactSnapshot) === stableJsonStringify(input.contactSnapshot) &&
         request.note === (input.note ?? null)
 }
 
@@ -510,7 +527,7 @@ export async function createAutoCareServiceOffer(user: UserEntity, requestId: st
         const lockedRequest = await requestRepository.findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!lockedRequest) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+        if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
         if (!serviceRequestOfferableStates.has(lockedRequest.status)) conflict('This service request cannot receive a new offer.')
 
         const messageRepository = manager.getRepository(ServiceMessageEntity)
@@ -607,7 +624,7 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
             if (!lockedRequest) notFound('Service request not found.')
             if (lockedRequest.clientId !== user.id) {
                 const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-                if (!provider || !(await canManageProvider(user.id, provider.id, lockedRequest.locationId))) {
+                if (!provider || !(await hasProviderWorkspacePermission(user.id, provider.id, 'requests', lockedRequest.locationId))) {
                     forbidden('You do not have access to this service request.')
                 }
             }
@@ -682,7 +699,7 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
         })
         if (!lockedRequest) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+        if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
         if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed, ServiceRequestStatus.Accepted].includes(lockedRequest.status)) conflict('This service request cannot receive a new estimate.')
         lockedRequest.estimateSnapshot = {
             amountMinor: input.amountMinor,
@@ -907,7 +924,7 @@ async function getRequest(requestId: string) {
 async function assertParticipant(user: UserEntity, request: ServiceRequestEntity) {
     if (request.clientId === user.id) return
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-    if (provider && await canManageProvider(user.id, provider.id, request.locationId)) return
+    if (provider && await hasProviderWorkspacePermission(user.id, provider.id, 'requests', request.locationId)) return
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service request.' })
 }
 
@@ -1048,7 +1065,7 @@ export async function getMyAutoCareServiceRequests(user: UserEntity) {
 }
 
 export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
-    const scopes = await getManagedProviderScopes(user.id)
+    const scopes = await getManagedProviderPermissionScopes(user.id, 'requests')
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
@@ -1248,7 +1265,7 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
+        if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', request.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
         if (!serviceRequestConfirmableStates.has(request.status)) conflict('This service request can no longer be confirmed.')
         const changed = !request.providerConfirmedAt || request.status !== ServiceRequestStatus.Accepted
         if (changed) {
@@ -1293,7 +1310,7 @@ export async function requestAutoCareServiceReschedule(user: UserEntity, request
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
+        if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', request.locationId))) forbidden('You do not manage this service request.')
         if (!serviceRequestReschedulableStates.has(request.status)) conflict('This service request cannot be rescheduled.')
         if (request.preferredAt?.getTime() === proposedAt.getTime()) conflict('Choose a different visit time.')
         await assertAutoCareRescheduleSlot(manager, request, proposedAt, false)
@@ -1373,7 +1390,7 @@ export async function markAutoCareServiceRequestNoShow(user: UserEntity, request
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
+        if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', request.locationId))) forbidden('You do not manage this service request.')
         if (request.status === ServiceRequestStatus.NoShow) return { request, changed: false }
         if (request.status !== ServiceRequestStatus.Accepted || !request.providerConfirmedAt || !request.preferredAt) conflict('Only confirmed visits can be marked as no-show.')
         if (request.preferredAt.getTime() > Date.now()) conflict('A visit can be marked as no-show only after its scheduled time.')
@@ -1395,7 +1412,7 @@ export async function completeAutoCareServiceRequest(user: UserEntity, requestId
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (!provider || !(await canManageProviderWithManager(manager, user.id, provider.id, request.locationId))) forbidden('You do not manage this service request.')
+        if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', request.locationId))) forbidden('You do not manage this service request.')
         if (request.status === ServiceRequestStatus.Closed) return { request, changed: false }
         if (request.status !== ServiceRequestStatus.Accepted || !request.clientConfirmedAt || !request.providerConfirmedAt || !request.preferredAt) {
             conflict('Only a confirmed visit can be completed.')

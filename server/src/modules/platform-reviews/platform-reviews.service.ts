@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../database/data-source.js'
+import type { QueryFailedError } from 'typeorm'
 import { PlatformReviewEntity, PlatformReviewStatus } from '../../entities/index.js'
 import { UserRole } from '../../entities/user/user.entity.js'
 import { isAdminRole, isSuperAdmin } from '../../shared/auth/roles.js'
@@ -13,6 +14,22 @@ function assertClient(user: UserEntity) {
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only administrators can moderate platform reviews.' })
+}
+
+function isIdempotencyUniqueError(error: unknown) {
+    const driverError = (error as QueryFailedError | undefined)?.driverError as
+        | { code?: unknown; constraint?: unknown }
+        | undefined
+
+    return driverError?.code === '23505' && driverError.constraint === 'IDX_platform_reviews_client_idempotency_key'
+}
+
+function idempotencyConflictError(): never {
+    throw new AppError({
+        statusCode: 409,
+        code: ERROR_CODES.Conflict,
+        message: 'Idempotency key was already used for another platform review.',
+    })
 }
 
 function toPlatformReviewResponse(review: PlatformReviewEntity): PlatformReviewResponse {
@@ -37,8 +54,18 @@ export async function getPublicPlatformReviews(limit: number) {
 
 export async function createPlatformReview(client: UserEntity, input: CreatePlatformReviewInput) {
     assertClient(client)
-    const review = AppDataSource.getRepository(PlatformReviewEntity).create({
+    const repository = AppDataSource.getRepository(PlatformReviewEntity)
+    if (input.idempotencyKey) {
+        const existing = await repository.findOneBy({ clientId: client.id, idempotencyKey: input.idempotencyKey })
+        if (existing) {
+            if (existing.rating !== input.rating || existing.text !== input.text) idempotencyConflictError()
+            return toPlatformReviewResponse(existing)
+        }
+    }
+
+    const review = repository.create({
         clientId: client.id,
+        idempotencyKey: input.idempotencyKey ?? null,
         authorName: client.name,
         avatarUrl: client.avatarUrl,
         authorRole: 'AutoCare Hub клиент',
@@ -49,7 +76,15 @@ export async function createPlatformReview(client: UserEntity, input: CreatePlat
         respondedById: null,
         organizationRespondedAt: null,
     })
-    return toPlatformReviewResponse(await AppDataSource.getRepository(PlatformReviewEntity).save(review))
+    try {
+        return toPlatformReviewResponse(await repository.save(review))
+    } catch (error) {
+        if (!input.idempotencyKey || !isIdempotencyUniqueError(error)) throw error
+        const existing = await repository.findOneBy({ clientId: client.id, idempotencyKey: input.idempotencyKey })
+        if (existing && existing.rating === input.rating && existing.text === input.text) return toPlatformReviewResponse(existing)
+        if (existing) idempotencyConflictError()
+        throw error
+    }
 }
 
 export async function getMyPlatformReviews(client: UserEntity) {

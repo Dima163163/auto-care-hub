@@ -160,15 +160,17 @@ function BootHeader() {
         <header className="sticky top-0 z-10 flex min-h-16 shrink-0 items-center border-b border-primary-foreground/10 bg-hero-overlay px-[var(--layout-public-gutter)] text-primary-foreground" aria-label="Навигация AutoCare Hub">
             <div className="mx-auto flex w-full max-w-[var(--layout-public-wide-max)] items-center justify-between gap-4">
                 <BrandLogo size="sm" />
-                <nav className="hidden items-center gap-6 text-xs font-semibold text-primary-foreground/75 lg:flex">
+                <nav className="hidden items-center gap-6 text-xs font-semibold text-primary-foreground/75 lg:flex" aria-label="Основная навигация">
                     <a href="/services" className="cursor-pointer transition-colors hover:text-primary">Автоуслуги</a>
                     <a href="/reviews" className="cursor-pointer transition-colors hover:text-primary">Отзывы</a>
                     <a href="/help" className="cursor-pointer transition-colors hover:text-primary">Помощь и информация</a>
                 </nav>
                 <div className="flex items-center gap-2" aria-hidden="true">
-                    <span className="hidden h-9 w-24 rounded-[var(--radius-control)] border border-primary-foreground/20 bg-primary-foreground/5 sm:block" />
-                    <span className="h-9 w-20 rounded-[var(--radius-control)] border border-primary-foreground/20 bg-primary-foreground/5" />
-                    <span className="size-9 rounded-full border border-primary-foreground/20 bg-primary-foreground/5" />
+                    <span className="hidden h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-primary-foreground/20 bg-primary-foreground/5 px-3 text-xs font-semibold sm:inline-flex"><MapPin className="size-3.5" />Москва<ChevronDown className="size-3" /></span>
+                    <span className="hidden h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-primary-foreground/20 bg-primary-foreground/5 px-3 text-xs font-semibold sm:inline-flex">RU<ChevronDown className="size-3" /></span>
+                    <span className="flex h-9 items-center gap-1.5 rounded-full border border-primary-foreground/20 bg-primary-foreground/5 px-2 text-primary-foreground/85"><Sun className="size-4" /><Moon className="size-4" /></span>
+                    <span className="inline-flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-primary-foreground/20 bg-primary-foreground/5 lg:hidden"><Menu className="size-4" /></span>
+                    <Skeleton aria-hidden="true" className="size-9 rounded-full bg-primary-foreground/15" />
                 </div>
             </div>
         </header>

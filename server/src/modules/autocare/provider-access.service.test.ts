@@ -12,7 +12,7 @@ import {
     AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
 } from '../../entities/index.js'
-import { canManageProvider, getManagedProviderIds, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { canManageProvider, getManagedProviderIds, getManagedProviderPermissionScopes, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 
 function membershipQuery(getOne: () => Promise<unknown>) {
     const query = {
@@ -103,7 +103,57 @@ describe('provider access boundary', () => {
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
 
         await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'requests', 'location-a')).resolves.toBe(true)
+        await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'chats', 'location-a')).resolves.toBe(true)
         await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'catalog', 'location-a')).resolves.toBe(false)
         await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'requests', 'location-b')).resolves.toBe(false)
+        await expect(hasProviderWorkspacePermission('staff-1', 'provider-1', 'chats', 'location-b')).resolves.toBe(false)
+    })
+
+    it('does not merge a manager role into a different branch assignment', async () => {
+        const providerRepository = { find: vi.fn().mockResolvedValue([]) }
+        const membershipRepository = {
+            find: vi.fn().mockResolvedValue([
+                { providerId: 'provider-1', locationId: 'location-a', role: AutomotiveProviderMembershipRole.Staff },
+                { providerId: 'provider-1', locationId: 'location-b', role: AutomotiveProviderMembershipRole.Manager },
+            ]),
+        }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        await expect(hasProviderWorkspacePermission('mixed-1', 'provider-1', 'reviews', 'location-a')).resolves.toBe(false)
+        await expect(hasProviderWorkspacePermission('mixed-1', 'provider-1', 'reviews', 'location-b')).resolves.toBe(true)
+        await expect(hasProviderWorkspacePermission('mixed-1', 'provider-1', 'requests', 'location-a')).resolves.toBe(true)
+        await expect(hasProviderWorkspacePermission('mixed-1', 'provider-1', 'requests', 'location-b')).resolves.toBe(true)
+    })
+
+    it('keeps aggregate permission scopes branch-specific for mixed-role users', async () => {
+        const providerRepository = { find: vi.fn().mockResolvedValue([]) }
+        const membershipRepository = {
+            find: vi.fn().mockResolvedValue([
+                { providerId: 'provider-1', locationId: 'location-a', role: AutomotiveProviderMembershipRole.Staff },
+                { providerId: 'provider-1', locationId: 'location-b', role: AutomotiveProviderMembershipRole.Manager },
+            ]),
+        }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        await expect(getManagedProviderPermissionScopes('mixed-1', 'reviews')).resolves.toEqual([
+            { providerId: 'provider-1', locationIds: ['location-b'], roles: [AutomotiveProviderMembershipRole.Manager] },
+        ])
+        await expect(getManagedProviderPermissionScopes('mixed-1', 'chats')).resolves.toEqual([
+            { providerId: 'provider-1', locationIds: ['location-a', 'location-b'], roles: [AutomotiveProviderMembershipRole.Staff, AutomotiveProviderMembershipRole.Manager] },
+        ])
+    })
+
+    it('keeps provider-wide manager permissions available on every branch', async () => {
+        const providerRepository = { find: vi.fn().mockResolvedValue([]) }
+        const membershipRepository = {
+            find: vi.fn().mockResolvedValue([
+                { providerId: 'provider-1', locationId: null, role: AutomotiveProviderMembershipRole.Manager },
+            ]),
+        }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        await expect(hasProviderWorkspacePermission('manager-1', 'provider-1', 'reviews', 'location-a')).resolves.toBe(true)
+        await expect(hasProviderWorkspacePermission('manager-1', 'provider-1', 'reviews', 'location-b')).resolves.toBe(true)
+        await expect(hasProviderWorkspacePermission('manager-1', 'provider-1', 'bonuses')).resolves.toBe(false)
     })
 })

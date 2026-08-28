@@ -15,10 +15,20 @@ export type ManagedProviderScope = {
     roles: AutomotiveProviderMembershipRole[]
 }
 
+type ManagedProviderAssignment = {
+    providerId: string
+    /** null means that the assignment is valid for every branch. */
+    locationId: string | null
+    role: AutomotiveProviderMembershipRole
+}
+
+type ProviderRepositoryGetter = typeof AppDataSource.getRepository
+
 export type ProviderWorkspacePermission =
     | 'analytics'
     | 'calendar'
     | 'catalog'
+    | 'chats'
     | 'profile'
     | 'requests'
     | 'reviews'
@@ -26,9 +36,9 @@ export type ProviderWorkspacePermission =
     | 'bonuses'
 
 const permissionsByRole: Record<AutomotiveProviderMembershipRole, readonly ProviderWorkspacePermission[]> = {
-    [AutomotiveProviderMembershipRole.Owner]: ['analytics', 'calendar', 'catalog', 'profile', 'requests', 'reviews', 'team', 'bonuses'],
-    [AutomotiveProviderMembershipRole.Manager]: ['analytics', 'calendar', 'catalog', 'requests', 'reviews'],
-    [AutomotiveProviderMembershipRole.Staff]: ['calendar', 'requests'],
+    [AutomotiveProviderMembershipRole.Owner]: ['analytics', 'calendar', 'catalog', 'chats', 'profile', 'requests', 'reviews', 'team', 'bonuses'],
+    [AutomotiveProviderMembershipRole.Manager]: ['analytics', 'calendar', 'catalog', 'chats', 'requests', 'reviews'],
+    [AutomotiveProviderMembershipRole.Staff]: ['calendar', 'chats', 'requests'],
 }
 
 /**
@@ -63,37 +73,93 @@ export async function canManageProviderWithManager(manager: EntityManager, userI
 }
 
 /**
- * Returns the effective branch scope for every provider managed by a user.
- * Direct owners and provider-wide memberships are represented by a null
- * locationIds value; branch memberships are merged into one bounded list.
+ * Keeps a role attached to the branch where it was granted. Aggregated scopes
+ * are useful for list queries, but cannot be used to authorize a mutation:
+ * merging `manager@branch-a` and `staff@branch-b` would otherwise make the
+ * manager permission valid on both branches.
  */
-export async function getManagedProviderScopes(userId: string): Promise<ManagedProviderScope[]> {
-    const directProviders = await AppDataSource.getRepository(AutomotiveProviderEntity).find({
+async function getManagedProviderAssignmentsWithRepository(getRepository: ProviderRepositoryGetter, userId: string): Promise<ManagedProviderAssignment[]> {
+    const directProviders = await getRepository(AutomotiveProviderEntity).find({
         where: { ownerId: userId },
         select: { id: true },
     })
-    const memberships = await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({
+    const directProviderIds = new Set(directProviders.map(({ id }) => id))
+    const memberships = await getRepository(AutomotiveProviderMembershipEntity).find({
         where: { userId, status: AutomotiveProviderMembershipStatus.Active },
         select: { providerId: true, locationId: true, role: true },
     })
+
+    return [
+        ...directProviders.map(({ id }) => ({ providerId: id, locationId: null, role: AutomotiveProviderMembershipRole.Owner })),
+        ...memberships
+            // Direct ownership is provider-wide and must not be downgraded or
+            // split by stale membership rows for the same user.
+            .filter(({ providerId }) => !directProviderIds.has(providerId))
+            .map(({ providerId, locationId, role }) => ({
+                providerId,
+                locationId,
+                role: role ?? AutomotiveProviderMembershipRole.Staff,
+            })),
+    ]
+}
+
+async function getManagedProviderAssignments(userId: string): Promise<ManagedProviderAssignment[]> {
+    return getManagedProviderAssignmentsWithRepository(AppDataSource.getRepository.bind(AppDataSource), userId)
+}
+
+function aggregateProviderScopes(assignments: ManagedProviderAssignment[]): ManagedProviderScope[] {
     const scopes = new Map<string, { locations: Set<string> | null; roles: Set<AutomotiveProviderMembershipRole> }>()
-    for (const provider of directProviders) {
-        scopes.set(provider.id, { locations: null, roles: new Set([AutomotiveProviderMembershipRole.Owner]) })
-    }
-    for (const membership of memberships) {
-        const existing = scopes.get(membership.providerId)
-        if (existing?.locations === null && existing.roles.has(AutomotiveProviderMembershipRole.Owner)) continue
+    for (const assignment of assignments) {
+        const existing = scopes.get(assignment.providerId)
         const scope = existing ?? { locations: new Set<string>(), roles: new Set<AutomotiveProviderMembershipRole>() }
-        scope.roles.add(membership.role ?? AutomotiveProviderMembershipRole.Staff)
-        if (membership.locationId === null) scope.locations = null
-        else if (scope.locations !== null) scope.locations.add(membership.locationId)
-        scopes.set(membership.providerId, scope)
+        scope.roles.add(assignment.role)
+        if (assignment.locationId === null) scope.locations = null
+        else if (scope.locations !== null) scope.locations.add(assignment.locationId)
+        scopes.set(assignment.providerId, scope)
     }
     return [...scopes.entries()].map(([providerId, scope]) => ({
         providerId,
         locationIds: scope.locations === null ? null : [...scope.locations],
         roles: [...scope.roles],
     }))
+}
+
+async function hasProviderWorkspacePermissionWithRepository(
+    getRepository: ProviderRepositoryGetter,
+    userId: string,
+    providerId: string,
+    permission: ProviderWorkspacePermission,
+    locationId?: string | null,
+) {
+    const assignments = (await getManagedProviderAssignmentsWithRepository(getRepository, userId)).filter((item) => item.providerId === providerId)
+    return assignments.some((assignment) => {
+        if (!permissionsByRole[assignment.role].includes(permission)) return false
+        if (locationId === undefined) return true
+        return locationId === null
+            ? assignment.locationId === null
+            : assignment.locationId === null || assignment.locationId === locationId
+    })
+}
+
+/**
+ * Returns the effective branch scope for every provider managed by a user.
+ * Direct owners and provider-wide memberships are represented by a null
+ * locationIds value; branch memberships are merged into one bounded list.
+ */
+export async function getManagedProviderScopes(userId: string): Promise<ManagedProviderScope[]> {
+    const assignments = await getManagedProviderAssignments(userId)
+    return aggregateProviderScopes(assignments)
+}
+
+/**
+ * Returns only the branches where a role is allowed to use the requested
+ * workspace capability. This must be used for aggregate views (analytics,
+ * reviews, catalog, etc.) so a user with different roles on different
+ * branches cannot widen a permission by merging those assignments first.
+ */
+export async function getManagedProviderPermissionScopes(userId: string, permission: ProviderWorkspacePermission): Promise<ManagedProviderScope[]> {
+    const assignments = (await getManagedProviderAssignments(userId)).filter((assignment) => permissionsByRole[assignment.role].includes(permission))
+    return aggregateProviderScopes(assignments)
 }
 
 export function isManagedProviderLocationAllowed(scopes: ManagedProviderScope[], providerId: string, locationId: string | null | undefined) {
@@ -114,9 +180,17 @@ export async function hasProviderWorkspacePermission(
     permission: ProviderWorkspacePermission,
     locationId?: string | null,
 ) {
-    const scope = (await getManagedProviderScopes(userId)).find((item) => item.providerId === providerId)
-    if (!scope || (locationId !== undefined && !isManagedProviderLocationAllowed([scope], providerId, locationId))) return false
-    return scope.roles.some((role) => permissionsByRole[role].includes(permission))
+    return hasProviderWorkspacePermissionWithRepository(AppDataSource.getRepository.bind(AppDataSource), userId, providerId, permission, locationId)
+}
+
+export async function hasProviderWorkspacePermissionWithManager(
+    manager: EntityManager,
+    userId: string,
+    providerId: string,
+    permission: ProviderWorkspacePermission,
+    locationId?: string | null,
+) {
+    return hasProviderWorkspacePermissionWithRepository(manager.getRepository.bind(manager), userId, providerId, permission, locationId)
 }
 
 /** Minimal capability endpoint for the web shell. Detailed authorization is

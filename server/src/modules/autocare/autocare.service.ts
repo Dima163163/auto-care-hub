@@ -29,7 +29,7 @@ import { decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cu
 import { assertAutoCareProviderLogoFileName, readAutoCareProviderLogo, saveAutoCareProviderLogo as persistAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { saveAutoCareProviderMedia as persistAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
-import { canManageProvider, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { getManagedProviderPermissionScopes, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getRecommendedScore } from './autocare-ranking.js'
 import { getDiscoverySlot } from './autocare-discovery.js'
 import { isRolloutEnabled } from './rollout-controls.js'
@@ -538,7 +538,11 @@ export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: st
 }
 
 export async function getOwnerAutoCareProviders(owner: UserEntity) {
-    const scopes = await getManagedProviderScopes(owner.id)
+    // The provider-management page exposes published offers and prices. Keep
+    // the aggregate list behind the catalog capability instead of the broad
+    // workspace membership check: staff may work requests/calendar but must
+    // not receive the catalog projection through a direct API call.
+    const scopes = await getManagedProviderPermissionScopes(owner.id, 'catalog')
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
@@ -599,10 +603,9 @@ async function filterReviewsByRequestLocations(reviews: AutomotiveReviewEntity[]
 
 export async function getOwnerAutoCareProviderReviews(owner: UserEntity, providerId: string): Promise<OwnerAutoCareProviderReviewsResponse> {
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
-    const scopes = await getManagedProviderScopes(owner.id)
+    const scopes = await getManagedProviderPermissionScopes(owner.id, 'reviews')
     const scope = scopes.find((item) => item.providerId === providerId)
     if (!provider || provider.status === AutomotiveProviderStatus.Suspended || !scope) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
-    if (!(await hasProviderWorkspacePermission(owner.id, providerId, 'reviews'))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have permission to view service reviews.' })
 
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
         where: { providerId: provider.id, status: AutomotiveReviewStatus.Approved },
@@ -656,12 +659,12 @@ export async function getOwnerAutoCareReviews(owner: UserEntity, providerId?: st
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     }
 
-    const managedScopes = await getManagedProviderScopes(owner.id)
-    const scopes = (await Promise.all(managedScopes.map(async (scope) => (
-        await hasProviderWorkspacePermission(owner.id, scope.providerId, 'reviews') ? scope : null
-    )))).flatMap((scope) => scope ? [scope] : [])
+    const scopes = await getManagedProviderPermissionScopes(owner.id, 'reviews')
     const allowedProviderIds = new Set(scopes.map((scope) => scope.providerId))
     const reviewProviders = selectedProviders.filter((provider) => allowedProviderIds.has(provider.id))
+    if (providerId && reviewProviders.length === 0) {
+        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    }
     const providerIds = reviewProviders.map((provider) => provider.id)
     const reviews = providerIds.length === 0
         ? []
@@ -710,7 +713,7 @@ export async function createOwnerAutoCareReviewPromo(owner: UserEntity, provider
     const request = review.serviceRequestId
         ? await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: review.serviceRequestId, providerId })
         : null
-    if (!provider || !(await canManageProvider(owner.id, providerId, request?.locationId ?? null))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    if (!provider || !(await hasProviderWorkspacePermission(owner.id, providerId, 'reviews', request?.locationId ?? null))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     if (!review.clientId) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review is not linked to a client account yet.' })
 
     const promoRepository = AppDataSource.getRepository(AutomotiveReviewPromoEntity)

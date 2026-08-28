@@ -24,16 +24,16 @@ const toneClasses: Record<FloatingFieldTone, { wrapper: string; label: string; l
     light: {
         wrapper: 'border-border bg-background text-foreground focus-within:ring-offset-background',
         label: 'text-muted-foreground',
-        labelSurface: 'bg-white',
+        labelSurface: 'bg-background',
         control: 'text-foreground disabled:text-muted-foreground',
         placeholder: 'text-muted-foreground',
     },
     dark: {
         wrapper: 'border-primary-foreground/15 bg-primary-foreground/[0.04] text-primary-foreground focus-within:ring-offset-hero-overlay',
-        // The small label plate stays white for consistent legibility over
-        // both themes; the field surface itself remains theme-specific.
-        label: 'text-slate-700',
-        labelSurface: 'bg-white',
+        // The label plate uses the same semantic dark surface as the search
+        // form, keeping the border clean without a light-theme flash.
+        label: 'text-primary-foreground',
+        labelSurface: 'bg-hero-overlay',
         control: 'text-primary-foreground disabled:text-muted-foreground [&>option]:bg-hero-overlay [&>option]:text-primary-foreground',
         // Dark-tone fields are used on the navy search surface even when the
         // application itself is in light mode. Keep empty values readable

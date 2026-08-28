@@ -34,7 +34,7 @@ import type {
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
 import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
-import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 
 function fail(statusCode: number, message: string): never {
@@ -111,7 +111,7 @@ async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEn
         const request = thread.requestId
             ? await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: thread.requestId, providerId: thread.providerId })
             : null
-        if (provider && await canManageProvider(user.id, provider.id, request?.locationId ?? null)) return
+        if (provider && await hasProviderWorkspacePermission(user.id, provider.id, 'chats', request?.locationId ?? null)) return
     }
     fail(403, 'You do not have access to this chat.')
 }
@@ -164,7 +164,7 @@ async function toThreadResponse(user: UserEntity, thread: AutoCareChatThreadEnti
 export async function getMyAutoCareChats(user: UserEntity) {
     const repository = AppDataSource.getRepository(AutoCareChatThreadEntity)
     let threads: AutoCareChatThreadEntity[] = []
-    const scopes = await getManagedProviderScopes(user.id)
+    const scopes = await getManagedProviderPermissionScopes(user.id, 'chats')
     if (user.role === UserRole.Client) {
         threads = await repository.find({ where: { clientId: user.id }, order: { updatedAt: 'DESC' } })
     }
@@ -212,7 +212,7 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
     }
     if (input.type === 'support') {
         const managesProvider = input.providerId
-            ? (await getManagedProviderScopes(user.id)).some((scope) => scope.providerId === input.providerId)
+            ? (await getManagedProviderPermissionScopes(user.id, 'chats')).some((scope) => scope.providerId === input.providerId)
             : false
         if (user.role !== UserRole.Client && !managesProvider) fail(403, 'Only clients and service workspace members can open a support chat.')
         if (input.providerId) {
@@ -505,7 +505,7 @@ export async function getAutoCareChatThreadForRequest(user: UserEntity, requestI
     if (!request) fail(404, 'Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (!provider || !(await canManageProvider(user.id, provider.id, request.locationId))) fail(403, 'You do not have access to this request chat.')
+        if (!provider || !(await hasProviderWorkspacePermission(user.id, provider.id, 'chats', request.locationId))) fail(403, 'You do not have access to this request chat.')
     }
     const thread = await ensureAutoCareRequestChatThread(request)
     return toThreadResponse(user, thread)

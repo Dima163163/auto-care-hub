@@ -88,7 +88,7 @@ describe('Floating fields', () => {
         const select = screen.getByLabelText('Услуга')
         expect(select).toHaveClass('focus-visible:ring-0', 'focus-visible:ring-offset-0')
         expect(select.parentElement).toHaveClass('rounded-[var(--radius-control)]')
-        expect(select.parentElement?.querySelector('span')).toHaveClass('bg-white', 'text-slate-700')
+        expect(select.parentElement?.querySelector('span')).toHaveClass('bg-hero-overlay', 'text-primary-foreground')
     })
 
     it('uses readable muted text for an unselected dark select and keeps selected values prominent', () => {
@@ -118,6 +118,6 @@ describe('Floating fields', () => {
         const label = input.parentElement?.querySelector('span')
 
         expect(input).toHaveValue('Рядом с вами')
-        expect(label).toHaveClass('bg-white')
+        expect(label).toHaveClass('bg-background')
     })
 })

@@ -94,6 +94,42 @@ async function signOutMockAccount(page: Page) {
 }
 
 test.describe('AutoCare stable-web release gate', () => {
+    test('mock auth session has a working login, me and logout boundary', async ({ page }) => {
+        await gotoStable(page, '/login')
+        await page.locator('#email').fill('sophia.miller@example.com')
+        await page.locator('#password').fill('password123')
+
+        const loginResponse = page.waitForResponse((response) =>
+            response.url().includes('/api/auth/login')
+            && response.request().method() === 'POST',
+        )
+        await page.getByRole('button', { name: /sign in|войти/i }).click()
+        expect((await loginResponse).status()).toBe(200)
+        await expect(page).toHaveURL(/\/owner\/dashboard$/)
+
+        const meResponse = await page.evaluate(async () => {
+            const response = await fetch('/api/auth/me')
+            return { status: response.status, body: await response.json() as { email?: string } }
+        })
+        expect(meResponse.status).toBe(200)
+        expect(meResponse.body.email).toBe('sophia.miller@example.com')
+
+        const logoutResponse = await page.evaluate(async () => {
+            const response = await fetch('/api/auth/logout', { method: 'POST' })
+            return { status: response.status }
+        })
+        expect(logoutResponse.status).toBe(200)
+
+        const afterLogout = await page.evaluate(async () => {
+            const response = await fetch('/api/auth/me')
+            return { status: response.status }
+        })
+        expect(afterLogout.status).toBe(401)
+
+        await page.goto('/owner/dashboard')
+        await expect(page).toHaveURL(/\/login(?:\?[^#]*)?$/)
+    })
+
     test('discovery shell stays usable across release breakpoints', async ({ page }) => {
         for (const width of guestWidths) {
             await page.setViewportSize({ width, height: 900 })
@@ -312,5 +348,61 @@ test.describe('AutoCare stable-web release gate', () => {
         await page.goto('/profile?tab=account')
         await expect(page.getByTestId('profile-privacy')).toBeVisible()
         await expectNoHorizontalOverflow(page)
+    })
+
+    test('owner onboarding exposes evidence, team and communication controls', async ({ page }) => {
+        await signInWithMockAccount(page, 'sophia.miller@example.com')
+        await page.goto('/owner/autocare-providers/api-proservice-moscow')
+        await expectWorkspaceShell(page)
+
+        await expect(page.getByRole('heading', { name: /onboarding and profile changes|подключение и изменения профиля/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /documents and evidence|документы и подтверждения/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /branch team|команда филиала/i })).toBeVisible()
+        await expect(page.getByTestId('owner-communication-settings')).toBeVisible()
+
+        const profileChangeForm = page.getByRole('heading', { name: /change public details|изменить публичные данные/i }).locator('..')
+        await expect(profileChangeForm.getByRole('button', { name: /add document|добавить документ/i })).toBeVisible()
+        await profileChangeForm.getByRole('button', { name: /add document|добавить документ/i }).click()
+        await expect(profileChangeForm.locator('input[name="documentLabel"]')).toBeVisible()
+        await expect(profileChangeForm.locator('input[name="documentReference"]')).toHaveAttribute('pattern', '^private://.*')
+        await expect(page.getByTestId('owner-chat-toggle')).toBeChecked()
+    })
+
+    test('admin moderation evidence requires a decision reason', async ({ page }) => {
+        await signInWithMockAccount(page, 'admin@autocarehub.test')
+        await page.goto('/admin/dashboard')
+        await expectWorkspaceShell(page)
+
+        const evidence = page.locator('#admin-moderation-evidence')
+        await expect(evidence.getByRole('heading', { name: /moderation evidence|материалы для модерации/i })).toBeVisible()
+        const pendingItem = evidence.locator('article').first()
+        await expect(pendingItem).toBeVisible()
+        await pendingItem.getByRole('button', { name: /approve|одобрить/i }).click()
+        await expect(pendingItem).toContainText(/add a note before|добавьте комментарий перед/i)
+
+        await pendingItem.getByRole('textbox', { name: /moderator note|комментарий модератора/i }).fill('Проверено в локальном release smoke.')
+        await pendingItem.getByRole('button', { name: /approve|одобрить/i }).click()
+        await expect(pendingItem).toContainText(/decision saved|решение сохранено/i)
+    })
+
+    test('super-admin market hierarchy exposes country, city and zone editors', async ({ page }) => {
+        await signInWithMockAccount(page, 'admin@autocarehub.test')
+        await page.goto('/super-admin/dashboard')
+        await expectWorkspaceShell(page)
+
+        const hierarchy = page.locator('section').filter({ has: page.getByRole('heading', { name: /countries, cities and zones|страны, города и зоны/i }) }).last()
+        await expect(hierarchy).toBeVisible()
+        await hierarchy.getByRole('button', { name: /new country|новая страна/i }).click()
+        await expect(hierarchy.getByRole('heading', { name: /new country|новая страна/i })).toBeVisible()
+        await expect(hierarchy.getByRole('textbox', { name: /country code|код страны/i })).toBeVisible()
+        await expect(hierarchy.getByRole('button', { name: /create country|создать страну/i })).toBeVisible()
+
+        await hierarchy.getByRole('button', { name: /new city|новый город/i }).click()
+        await expect(hierarchy.getByRole('heading', { name: /new city in|новый город в/i })).toBeVisible()
+        await expect(hierarchy.getByRole('button', { name: /create city|создать город/i })).toBeVisible()
+
+        await hierarchy.getByRole('button', { name: /add zone|добавить зону/i }).click()
+        await expect(hierarchy.getByRole('heading', { name: /new zone|новая зона/i })).toBeVisible()
+        await expect(hierarchy.getByRole('button', { name: /create zone|создать зону/i })).toBeVisible()
     })
 })

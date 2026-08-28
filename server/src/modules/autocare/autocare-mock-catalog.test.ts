@@ -54,6 +54,19 @@ describe('AutoCare mock catalog assets', () => {
         expect(catalogs.some((catalog) => !catalog.has('detailing'))).toBe(true)
     })
 
+    it('covers every customer contact mode in the seeded provider catalog', () => {
+        expect(AUTOMOTIVE_MOCK_PROVIDERS.map((provider) => provider.communicationMode)).toEqual([
+            'online',
+            'request_then_confirm',
+            'phone_only',
+        ])
+        const phoneOnly = AUTOMOTIVE_MOCK_PROVIDERS.find((provider) => provider.communicationMode === 'phone_only')
+        expect(phoneOnly?.chatEnabled).toBe(false)
+        expect(phoneOnly?.phoneBookingEnabled).toBe(true)
+        expect(phoneOnly?.phone || phoneOnly?.phones?.[0]).toMatch(/^\+7 /)
+        expect(AUTOMOTIVE_MOCK_PROVIDERS.filter((provider) => provider.communicationMode !== 'phone_only').every((provider) => (provider.responseWindowMinutes ?? 0) >= 120)).toBe(true)
+    })
+
     it('falls back when an image is missing or unsafe', () => {
         expect(resolveMockAssetUrl(undefined, '/tmp/does-not-exist')).toBe(AUTOCARE_MOCK_FALLBACK_IMAGE)
         expect(resolveMockAssetUrl('https://example.com/image.webp', '/tmp/does-not-exist')).toBe(AUTOCARE_MOCK_FALLBACK_IMAGE)

@@ -53,4 +53,15 @@ describe('BootShell', () => {
         expect(page.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0)
         expect(screen.getByText('Популярные автоуслуги')).toBeVisible()
     })
+
+    it('renders static public navigation while only the auth avatar waits for the server', () => {
+        render(<BootShell />)
+
+        const navigation = screen.getByRole('navigation', { name: 'Основная навигация' })
+        expect(navigation).toHaveTextContent('Автоуслуги')
+        expect(navigation).toHaveTextContent('Отзывы')
+        expect(navigation).toHaveTextContent('Помощь и информация')
+        expect(navigation.querySelectorAll('.animate-pulse')).toHaveLength(0)
+        expect(navigation.querySelectorAll('a')).toHaveLength(3)
+    })
 })

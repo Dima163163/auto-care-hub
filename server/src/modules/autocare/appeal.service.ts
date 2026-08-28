@@ -9,12 +9,13 @@ import {
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
+    ServiceRequestEntity,
 } from '../../entities/index.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
 import { UserRole, type UserEntity as User } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { canManageProvider } from './provider-access.service.js'
+import { hasProviderWorkspacePermission } from './provider-access.service.js'
 import { canTransitionAppeal, validateAppealInput } from './appeal-policy.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
@@ -47,7 +48,10 @@ async function assertSubjectAccess(user: User, subject: AutoCareAppealSubject, s
     if (subject === AutoCareAppealSubject.Review) {
         const review = await AppDataSource.getRepository(AutomotiveReviewEntity).findOneBy({ id: subjectId })
         if (!review) error(404, 'Review not found.')
-        const canManage = user.role === UserRole.Owner && await canManageProvider(user.id, review.providerId)
+        const request = review.serviceRequestId
+            ? await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: review.serviceRequestId, providerId: review.providerId })
+            : null
+        const canManage = user.role === UserRole.Owner && await hasProviderWorkspacePermission(user.id, review.providerId, 'reviews', request?.locationId ?? null)
         if (review.clientId !== user.id && !canManage) error(403, 'You cannot appeal this review.')
         return review.providerId
     }
@@ -57,7 +61,7 @@ async function assertSubjectAccess(user: User, subject: AutoCareAppealSubject, s
     const resolvedProviderId = providerId ?? subjectId
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: resolvedProviderId })
     if (!provider) error(404, 'Automotive service not found.')
-    if (user.role !== UserRole.Owner || !(await canManageProvider(user.id, resolvedProviderId))) error(403, 'Only the service owner can submit this appeal.')
+    if (user.role !== UserRole.Owner || !(await hasProviderWorkspacePermission(user.id, resolvedProviderId, 'profile', null))) error(403, 'Only the service owner can submit this appeal.')
     return resolvedProviderId
 }
 

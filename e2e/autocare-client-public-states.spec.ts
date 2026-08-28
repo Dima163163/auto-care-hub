@@ -59,8 +59,67 @@ async function useReviewFixture(page: Page, fixture: 'empty' | 'one' | 'photos')
     }, { reviewFixture: fixture })
 }
 
+async function useStaleAfterDiscoveryCacheFill(page: Page) {
+    await page.addInitScript(() => {
+        const originalFetch = window.fetch.bind(window)
+        let discoveryRequests = 0
+
+        window.fetch = (input, init) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : input.url
+
+            if (!url.includes('/v1/discovery/providers')) return originalFetch(input, init)
+
+            discoveryRequests += 1
+            if (discoveryRequests === 1) return originalFetch(input, init)
+
+            const requestHeaders = input instanceof Request ? input.headers : undefined
+            const headers = new Headers(requestHeaders)
+            new Headers(init?.headers).forEach((value, key) => headers.set(key, value))
+            headers.set('x-autocare-mock-state', 'stale')
+            return originalFetch(input, { ...init, headers })
+        }
+    })
+}
+
+async function failNextRequestSubmission(page: Page, failure: 'offline' | 'timeout') {
+    await page.addInitScript(({ failureMode }) => {
+        const originalFetch = window.fetch.bind(window)
+        let failed = false
+
+        window.fetch = (input, init) => {
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : input.url
+            const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+
+            if (failed || method !== 'POST' || !url.includes('/api/v1/service-requests')) {
+                return originalFetch(input, init)
+            }
+
+            failed = true
+            if (failureMode === 'offline') {
+                return Promise.reject(new TypeError('Failed to fetch'))
+            }
+
+            return new Promise((_, reject) => {
+                window.setTimeout(() => reject(new TypeError('Request timed out')), 250)
+            })
+        }
+    }, { failureMode: failure })
+}
+
 test.describe('public and client AutoCare states', () => {
     test('opens the provider gallery and the service comparison table', async ({ page }) => {
+        // The second navigation compiles the dynamic provider route on a cold
+        // Next dev server; keep this browser smoke deterministic without
+        // relaxing timeouts for the rest of the suite.
+        test.setTimeout(60_000)
         await page.goto('/services?service=oil-change')
         const compareButtons = page.getByRole('button', { name: /compare selected|сравнить выбранные/i })
         await expect(compareButtons.first()).toBeVisible()
@@ -105,6 +164,62 @@ test.describe('public and client AutoCare states', () => {
         await expect(page.getByRole('main')).toContainText(/failed to load|не удалось загрузить|not found|не найден/i)
         await expect(page.getByRole('button', { name: /retry|повторить/i })).toBeVisible()
     })
+
+    test('renders the public booking surface for every communication mode', async ({ page }) => {
+        const modes = [
+            { providerId: 'api-proservice-moscow', heading: /your booking|ваша запись/i },
+            { providerId: 'api-autolux-moscow', heading: /request first, confirm next|сначала заявка, затем подтверждение/i },
+            { providerId: 'api-formula-moscow', heading: /book by phone|запись по телефону/i },
+        ] as const
+
+        for (const { providerId, heading } of modes) {
+            await page.goto(`/services/${providerId}`)
+            await expect(page.getByRole('main')).toBeVisible()
+            await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+        }
+
+        await expect(page.getByRole('link', { name: /call the service|позвонить в сервис/i }).first()).toHaveAttribute('href', /^tel:/)
+    })
+
+    test('keeps cached discovery cards visible when a refresh becomes stale', async ({ page }) => {
+        await useStaleAfterDiscoveryCacheFill(page)
+
+        await page.goto('/services?service=oil-change')
+        const firstCard = page.locator('#search-results article').first()
+        await expect(firstCard).toBeVisible()
+
+        await page.getByRole('combobox').last().selectOption('price_asc')
+        await page.getByRole('button', { name: /start search|начать поиск/i }).click()
+
+        await expect(firstCard).toBeVisible()
+        const staleState = page.locator('[data-state="stale-error"]')
+        await expect(staleState).toBeVisible()
+        await expect(staleState).toContainText(/failed to load|не удалось загрузить/i)
+    })
+
+    for (const failure of ['offline', 'timeout'] as const) {
+        test(`allows a ${failure} request submission to be retried without losing the idempotency key`, async ({ page }) => {
+            test.setTimeout(60_000)
+            await signInAsClient(page)
+            await failNextRequestSubmission(page, failure)
+            await page.goto('/services/api-proservice-moscow/request?service=oil-change')
+
+            const form = page.locator('main form').first()
+            const confirmation = form.locator('input[type="checkbox"]')
+            await expect(confirmation).toBeVisible()
+            await confirmation.check()
+
+            const submit = form.getByRole('button', { name: /send appointment request|отправить запрос/i })
+            await expect(submit).toBeEnabled()
+            await submit.click()
+
+            await expect(form.getByRole('alert')).toContainText(/could not send|не удалось отправить/i)
+            await expect(form.getByRole('button', { name: /retry|повторить/i })).toBeEnabled()
+            await form.getByRole('button', { name: /retry|повторить/i }).click()
+
+            await expect(page.getByText(/request sent|запрос отправлен/i).first()).toBeVisible()
+        })
+    }
 
     test('renders bonus history, garage controls, and an attachment viewer for a client', async ({ page }) => {
         await signInAsClient(page)

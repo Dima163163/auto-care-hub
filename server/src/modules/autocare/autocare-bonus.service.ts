@@ -14,7 +14,7 @@ import {
 import { UserRole } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { canManageProvider, canManageProviderWithManager } from './provider-access.service.js'
+import { hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager } from './provider-access.service.js'
 import type { AutoCareBonusAccountResponse, AutoCareBonusLedgerEntryResponse, AutoCareBonusProgramResponse, GrantAutoCareBonusInput, OwnerAutoCareBonusLiabilityResponse, OwnerAutoCareBonusProgramInput, RedeemAutoCareBonusInput } from './autocare.types.js'
 
 /** Launch markets use two-decimal currencies. One bonus point therefore
@@ -125,7 +125,7 @@ export async function getMyAutoCareBonusAccounts(user: UserEntity) {
 
 export async function getOwnerAutoCareBonusProgram(user: UserEntity, providerId: string) {
     assertOwner(user)
-    if (!(await canManageProvider(user.id, providerId))) forbidden('You do not manage this automotive service.')
+    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
     const program = await AppDataSource.getRepository(AutoCareBonusProgramEntity).findOneBy({ providerId })
     return program ? toProgramResponse(program) : null
 }
@@ -134,7 +134,7 @@ export async function getOwnerAutoCareBonusProgram(user: UserEntity, providerId:
  * support, but never balance data of another provider. */
 export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerId: string): Promise<OwnerAutoCareBonusLiabilityResponse> {
     assertOwner(user)
-    if (!(await canManageProvider(user.id, providerId))) forbidden('You do not manage this automotive service.')
+    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
     const accountRepository = AppDataSource.getRepository(AutoCareBonusAccountEntity)
     const accounts = await accountRepository.find({ where: { providerId } })
     const entries = await AppDataSource.getRepository(AutoCareBonusLedgerEntity).find({
@@ -166,7 +166,7 @@ export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerI
 export async function upsertOwnerAutoCareBonusProgram(user: UserEntity, providerId: string, input: OwnerAutoCareBonusProgramInput) {
     assertOwner(user)
     const program = await AppDataSource.transaction(async (manager) => {
-        if (!(await canManageProviderWithManager(manager, user.id, providerId))) forbidden('You do not manage this automotive service.')
+        if (!(await hasProviderWorkspacePermissionWithManager(manager, user.id, providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
         if (!provider) notFound('Automotive service not found.')
         const bonusRepository = manager.getRepository(AutoCareBonusProgramEntity)
@@ -300,7 +300,7 @@ export async function redeemAutoCareBonus(user: UserEntity, input: RedeemAutoCar
 export async function grantAutoCareBonus(user: UserEntity, input: GrantAutoCareBonusInput, idempotencyKey: string | null) {
     assertOwner(user)
     return AppDataSource.transaction(async (manager) => {
-        if (!(await canManageProviderWithManager(manager, user.id, input.providerId))) forbidden('You do not manage this automotive service.')
+        if (!(await hasProviderWorkspacePermissionWithManager(manager, user.id, input.providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
         const client = await manager.getRepository(UserEntity).findOne({ where: { id: input.clientId, role: UserRole.Client }, select: { id: true } })
         if (!client) notFound('Client not found.')
         const accountRepository = manager.getRepository(AutoCareBonusAccountEntity)

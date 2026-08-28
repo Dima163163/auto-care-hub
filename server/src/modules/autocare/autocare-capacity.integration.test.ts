@@ -265,7 +265,12 @@ describe('AutoCare appointment capacity integration', () => {
 
         const [first, repeated] = await Promise.all([
             createAutoCareServiceRequest(client, input),
-            createAutoCareServiceRequest(client, input),
+            createAutoCareServiceRequest(client, {
+                ...input,
+                // PostgreSQL JSONB may return object keys in a different order;
+                // idempotency must compare the payload semantically.
+                contactSnapshot: { phone: '+10000000000', name: 'Capacity Client' },
+            }),
         ])
         createdRequestIds.push(first.id)
 
