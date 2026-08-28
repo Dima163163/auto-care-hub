@@ -141,8 +141,8 @@ npm run check:e2e:browser
 
 1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Реальный demo login через API возвращает 200; logout/session-expiry smoke и MSW-путь ещё требуют выполнения.
 2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
-3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям; stale response после cache-fill и real PostgreSQL retry без дубля ещё требуют полного прогона.
-4. `[ ]` Закрыть весь client path: vehicleId/snapshot, unavailable/removed provider, три communication modes, edit review и bonuses redemption/expiry/refund/history.
+3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям. PostgreSQL retry/idempotency для параллельной заявки, отмены, quote, reschedule и terminal transitions подтверждён; stale response после cache-fill ещё требует отдельного browser evidence.
+4. `[~]` Закрыть весь client path: vehicleId/snapshot и три communication modes покрыты unit/schema tests; unavailable/removed provider, edit review и bonuses redemption/expiry/refund/history остаются для полного маршрута.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
 6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
 7. `[~]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты. Automated Chromium matrix **30/30** (360–1440px) прошла без overflow и с корректной mobile navigation; ручная visual- и device-проверка остаётся.
@@ -199,6 +199,25 @@ npm run check:e2e:browser
 - `[x]` Real-API fault injection для `503 STALE_DATA` в панели клиентских заявок подтверждает, что shell остаётся доступным и пользователь видит announced stale-state вместо white screen; Chromium: **1/1**.
 - `[x]` Форма добавления автомобиля владельца сохраняет только безопасный allow-list черновика: марку, модель и год. Госномер, внутренний номер и VIN намеренно не пишутся в browser storage; восстановленный черновик можно отбросить, а после успешного создания он очищается.
 - `[~]` Для закрытия state matrix остаются stale response после реального cache-fill, controlled draft для форм без файлов и PostgreSQL retry/idempotency после фактической сетевой ошибки.
+
+### Результат восьмой исполняемой порции (28.08.2026)
+
+- `[x]` RTK Query browser listeners подключены централизованно: `refetchOnFocus` и `refetchOnReconnect` у разговора по заявке теперь фактически работают, а не остаются декларативной настройкой.
+- `[x]` Vehicle booking snapshot вынесен в pure-функцию и покрыт тестами: сохраняются марка, модель, год, топливо, двигатель, цвет, госномер, внутренний номер и VIN; неполный/удалённый автомобиль не формирует snapshot.
+- `[x]` Safety allow-list черновика автомобиля покрыт отдельно: в browser storage не могут попасть госномер, внутренний номер или VIN. Focused Vitest: **7/7**; lint, TypeScript и production Next build проходят.
+- `[~]` Для закрытия state matrix остаются real stale после cache-fill, controlled draft для иных форм без файлов и PostgreSQL retry/idempotency после фактической сетевой ошибки.
+
+### Результат девятой исполняемой порции (28.08.2026)
+
+- `[x]` PostgreSQL integration matrix подтверждает повторную идемпотентную заявку без дубля, capacity филиала и специалиста, serializable reschedule, quote expiry/requote/repeated accept/race, перенос принятой сметы, retry отмены и race `no-show`/`complete`: server Vitest **18/18**.
+- `[x]` Три режима связи сервиса подтверждены на schema/UI уровне: `online`, `request_then_confirm` и `phone_only`; малый сервис без чата не обязан обещать время ответа, а phone-only требует телефонной записи. Frontend Vitest: **3/3**.
+- `[~]` Для полного client path остаются browser evidence удалённого автомобиля/сервиса, редактирование отзыва и весь UI-flow бонусов; real stale после cache-fill также остаётся отдельно.
+
+### Результат десятой исполняемой порции (28.08.2026)
+
+- `[x]` Mock E2E получил изолированный runner с собственным `.next-mock-e2e`: он не конкурирует с открытым интерактивным Next-сервером, восстанавливает generated `next-env.d.ts` и удаляет только свой build output.
+- `[x]` Chromium smoke галереи сервиса и comparison table прошёл в этом изолированном режиме; Playwright report: `passed`.
+- `[~]` Полная matrix public/client E2E запускается небольшими группами из-за ограничения длительности внешней среды; это не меняет продуктовый runtime и не блокирует локальную работу пользователя.
 
 ---
 

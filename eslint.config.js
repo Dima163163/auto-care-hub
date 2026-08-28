@@ -14,6 +14,8 @@ export default defineConfig([
     '.next/**',
     '.next-real-*',
     '.next-real-*/**',
+    '.next-mock-*',
+    '.next-mock-*/**',
     'next-env.d.ts',
     'test-results',
     'test-results/**',

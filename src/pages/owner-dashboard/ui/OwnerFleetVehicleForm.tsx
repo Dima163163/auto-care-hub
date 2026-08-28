@@ -14,23 +14,18 @@ import { readFormDraft } from '@/shared/lib/form-draft'
 import { useFormDraft } from '@/shared/lib/useFormDraft'
 import { FormDraftNotice } from '@/shared/ui/form-draft-notice/FormDraftNotice'
 
+import {
+    createFleetVehicleDraft,
+    EMPTY_FLEET_VEHICLE_DRAFT,
+    parseFleetVehicleDraft,
+    type FleetVehicleDraftSource,
+} from './owner-fleet-vehicle-draft'
+
 type Props = {
     fleetId: string
     locale: string
     onCancel: () => void
     onCreated: () => void
-}
-
-type FleetVehicleDraft = {
-    brandId: string
-    modelId: string
-    year: string
-}
-
-const EMPTY_DRAFT: FleetVehicleDraft = {
-    brandId: '',
-    modelId: '',
-    year: '',
 }
 
 export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: Props) {
@@ -49,11 +44,14 @@ export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: 
     const selectedBrand = useMemo(() => brands.find((brand) => brand.id === brandId), [brandId, brands])
     const selectedModel = useMemo(() => selectedBrand?.models.find((model) => model.id === modelId), [modelId, selectedBrand])
     const years = useMemo(() => getSelectableYears(selectedModel?.yearsFrom, selectedModel?.yearsTo), [selectedModel])
-    const draftValues = useMemo<FleetVehicleDraft>(() => ({
+    const draftValues = useMemo(() => createFleetVehicleDraft({
         brandId,
         modelId,
         year,
-    }), [brandId, modelId, year])
+        registrationNumber,
+        internalReference,
+        vin,
+    } satisfies FleetVehicleDraftSource), [brandId, internalReference, modelId, registrationNumber, vin, year])
     const hasDraftableValues = Boolean(brandId || modelId || year)
     const { clearDraft } = useFormDraft({
         storageKey,
@@ -79,9 +77,9 @@ export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: 
 
     const discardDraft = () => {
         clearDraft()
-        setBrandId(EMPTY_DRAFT.brandId)
-        setModelId(EMPTY_DRAFT.modelId)
-        setYear(EMPTY_DRAFT.year)
+        setBrandId(EMPTY_FLEET_VEHICLE_DRAFT.brandId)
+        setModelId(EMPTY_FLEET_VEHICLE_DRAFT.modelId)
+        setYear(EMPTY_FLEET_VEHICLE_DRAFT.year)
         setRegistrationNumber('')
         setInternalReference('')
         setVin('')
@@ -131,19 +129,6 @@ export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: 
             <button type="submit" disabled={!selectedBrand || !year || createState.isLoading} className="h-8 rounded-[var(--radius-control)] bg-primary px-2.5 text-xs font-black text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60">{copy.save}</button>
         </div>
     </form>
-}
-
-function parseFleetVehicleDraft(value: unknown): FleetVehicleDraft | null {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-
-    const source = value as Record<string, unknown>
-    const read = (key: keyof FleetVehicleDraft) => typeof source[key] === 'string' ? source[key] : ''
-
-    return {
-        brandId: read('brandId'),
-        modelId: read('modelId'),
-        year: read('year'),
-    }
 }
 
 function TextField({ label, value, maxLength, onChange }: { label: string; value: string; maxLength: number; onChange: (value: string) => void }) {

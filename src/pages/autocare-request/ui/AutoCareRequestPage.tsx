@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { mapAutoCareProviderProfile, ServiceRequestChat, useAcceptAutoCareServiceQuoteMutation, useCreateAutoCareServiceAttachmentMutation, useCreateAutoCareServiceRequestMutation, useDeclineAutoCareServiceQuoteMutation, useGetAutoCareProviderProfileQuery, useGetAutoCareRepairTimelineQuery, useGetAutoCareServiceConversationQuery, useGetMyAutoCareFleetsQuery } from '@/entities/automotive-service'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useGetMeQuery } from '@/features/auth'
-import { useGetMyVehiclesQuery, type ClientVehicle } from '@/entities/user'
+import { useGetMyVehiclesQuery } from '@/entities/user'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { formatCurrency, formatDateTime } from '@/shared/lib/locale-format'
 import { AutoCareRequestSkeleton } from '@/shared/ui/loading-skeleton'
@@ -16,6 +16,7 @@ import { RequestForm, type RequestFormPayload } from './RequestForm'
 import { RequestOrderSummary, RequestSummary } from './RequestSummary'
 import { RequestSteps } from './RequestSteps'
 import { GuaranteeClaimCard } from './GuaranteeClaimCard'
+import { toRequestVehicleSnapshot } from './request-vehicle-snapshot'
 
 export function AutoCareRequestPage() {
     const { id = '' } = useParams()
@@ -111,25 +112,6 @@ export function AutoCareRequestPage() {
             </div>
         </main>
     )
-}
-
-function toRequestVehicleSnapshot(snapshot: Record<string, unknown> | ClientVehicle | undefined): RequestFormPayload['vehicleSnapshot'] {
-    if (!snapshot) return null
-    const make = String(snapshot.makeLabel ?? snapshot.make ?? snapshot.brand ?? snapshot.brandId ?? '').trim()
-    const model = String(snapshot.modelLabel ?? snapshot.model ?? '').trim()
-    const year = Number(snapshot.year)
-    return make && model && Number.isInteger(year) && year > 0 ? {
-        make,
-        model,
-        year,
-        fuelType: typeof snapshot.fuelType === 'string' ? snapshot.fuelType : undefined,
-        engineDisplacement: typeof snapshot.engineDisplacement === 'number' ? snapshot.engineDisplacement : null,
-        horsepower: typeof snapshot.horsepower === 'number' ? snapshot.horsepower : null,
-        color: typeof snapshot.color === 'string' ? snapshot.color : undefined,
-        licensePlate: typeof snapshot.licensePlate === 'string' ? snapshot.licensePlate : null,
-        internalNumber: typeof snapshot.internalNumber === 'string' ? snapshot.internalNumber : null,
-        vin: typeof snapshot.vin === 'string' ? snapshot.vin : null,
-    } : null
 }
 
 function readFileAsBase64(file: File) {
