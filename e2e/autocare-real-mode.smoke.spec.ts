@@ -7,7 +7,35 @@ async function signIn(page: Page, email: string) {
     await page.goto('/login')
     await page.locator('#email').fill(email)
     await page.locator('#password').fill(demoPassword)
-    await page.getByRole('button', { name: /sign in|войти/i }).click()
+
+    const loginButton = page.getByRole('button', { name: /sign in|войти/i })
+    const loginResponse = page.waitForResponse((response) =>
+        response.url().includes('/api/auth/login')
+        && response.request().method() === 'POST',
+    )
+    await loginButton.click()
+
+    const response = await loginResponse
+    if (response.status() === 429) {
+        // The real suite intentionally exercises several isolated sessions.
+        // They share a loopback IP, so a long run can legitimately hit the
+        // production login limiter. Honour Retry-After instead of weakening
+        // the server policy or masking a failed login.
+        const retryAfterSeconds = Number(response.headers()['retry-after'] ?? '1')
+        const retryAfterMs = Math.min(
+            Math.max(Number.isFinite(retryAfterSeconds) ? retryAfterSeconds * 1_000 : 1_000, 1_000),
+            75_000,
+        )
+        await page.waitForTimeout(retryAfterMs + 100)
+
+        const retryResponse = page.waitForResponse((retry) =>
+            retry.url().includes('/api/auth/login')
+            && retry.request().method() === 'POST',
+        )
+        await loginButton.click()
+        await expect((await retryResponse).ok()).toBe(true)
+    }
+
     await expect(page).not.toHaveURL(/\/login/)
 }
 

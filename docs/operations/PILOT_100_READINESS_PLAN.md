@@ -109,8 +109,8 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 - `[~]` Пройти real API state matrix: offline, expired session, partial response, retry и повторная отправка в PostgreSQL.
 - `[x]` Автоматическая Chromium matrix на 360, 390, 414, 540, 682, 768, 790, 1024, 1280 и 1440px: 30 route/width checks без horizontal overflow; header/footer/map/gallery и Escape в галерее проверены 27.08.2026.
 - `[~]` Ручная визуальная приёмка форм, модалок и таблицы автомобилей на тех же ширинах остаётся перед пилотом.
-- `[~]` Полный keyboard/Axe pass: Tab order, Escape, Enter/Space, visible focus, listbox города, custom select, upload и form errors.
-- `[~]` Проверить RU/EN/ES/RO, длинные города/услуги/языки, plural/date/currency/timezone.
+- `[~]` Полный keyboard/Axe pass: automated public/workspace Tab order, Escape, listbox города, custom select и profile tabs покрыты; upload/form-errors и ручной проход устройств остаются.
+- `[x]` Автоматически проверены все 20 зарегистрированных локалей, включая RU/EN/ES/RO, длинные города/услуги/языки и отсутствие overflow; ручная проверка plural/date/currency/timezone остаётся отдельным external gate.
 - `[E]` VoiceOver/TalkBack и реальные телефоны требуют ручной проверки на устройствах.
 
 ## 1.5 Локальные quality gates
@@ -140,13 +140,13 @@ npm run check:e2e:browser
 Это исполняемая очередь без инфраструктуры. Каждый пункт завершается отдельным evidence-запуском и не помечается автоматически из старого отчёта.
 
 1. `[~]` Исправить `ADD-C01`: origins `localhost:4175` и `127.0.0.1:4175` добавлены только для non-production в `server/src/config/env.ts`, `.env.example` синхронизирован, а регрессионные tests подтверждают, что production не получает loopback origins (`39e7711` + follow-up test). Реальный demo login через API возвращает 200; logout/session-expiry smoke и MSW-путь ещё требуют выполнения.
-2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; real API matrix ещё не закрыта.
-3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям. PostgreSQL retry/idempotency для параллельной заявки, отмены, quote, reschedule и terminal transitions подтверждён; stale response после cache-fill ещё требует отдельного browser evidence.
+2. `[~]` Пройти dynamic URL matrix для provider, request, legacy redirect, owner provider/reviews через mock и real API. Mock/Next route smoke 15/15, route inventory (56 constants), route contract и API parity проходят; representative real API public/client/owner/staff/admin/super-admin matrix **16/16** закрыта 28.08.2026, полный dynamic URL inventory и legacy redirects ещё остаются.
+3. `[~]` Пройти state matrix на real PostgreSQL: локальные миграции, `demo:reset`, `demo:seed`, `autocare:seed` и `/health/live` проходят; loading, empty, API error, stale, offline, expired session, partial response, permission denied, suspended и безопасное сохранение незавершённых полей подтверждаются по частям. Real-API Chromium smoke **16/16** подтвердил public/client/owner/staff/admin/super-admin shell и injected error/offline/stale/permission/suspended/expired/partial states; PostgreSQL retry/idempotency и stale response после cache-fill ещё требуют отдельного browser evidence.
 4. `[~]` Закрыть весь client path: vehicleId/snapshot и три communication modes покрыты unit/schema tests; unavailable/removed provider, edit review и bonuses redemption/expiry/refund/history остаются для полного маршрута.
 5. `[ ]` Закрыть owner/admin/super-admin local workflows: onboarding/change request, branch scope, capacity/calendar/work queue, evidence/moderation/audit и countries/cities/zones.
 6. `[~]` Завершить route-wide loading audit: shared search form/theme bootstrap и themed skeleton-поведение зафиксированы в `70532d2`, focused loading tests проходят; ни на одном маршруте не должно быть white screen или полноэкранного text loader — route-wide evidence ещё не собрано.
 7. `[~]` Выполнить supported-width visual/interaction matrix и устранить все блокирующие overlap/focus/modal/dropdown дефекты. Automated Chromium matrix **30/30** (360–1440px) прошла без overflow и с корректной mobile navigation; ручная visual- и device-проверка остаётся.
-8. `[ ]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; приложения проверяются с длинными городами, услугами и названиями языков.
+8. `[~]` Выполнить keyboard/Axe/localization matrix RU/EN/ES/RO; automated public/workspace keyboard, Axe, city listbox, 20 locales и ES/RO mobile matrix проходят. Upload/form errors и ручные VoiceOver/device checks остаются.
 9. `[~]` Выполнить полный local quality gate из §1.5 одним воспроизводимым запуском; frontend 107 files/379 tests, backend unit 179 files/549 tests, builds, API parity, route/legacy/security checks проходят. Combined real-API gate и redacted evidence с итоговым commit SHA ещё не сохранены.
 10. `[~]` Провести финальный legacy scope pass: классифицировать каждый Vite/legacy file; активные legacy financial/monetization strings and types удалены из runtime по `ADD-C16`; остаётся file-level классификация и безопасное удаление неиспользуемых legacy-файлов.
 
@@ -218,6 +218,21 @@ npm run check:e2e:browser
 - `[x]` Mock E2E получил изолированный runner с собственным `.next-mock-e2e`: он не конкурирует с открытым интерактивным Next-сервером, восстанавливает generated `next-env.d.ts` и удаляет только свой build output.
 - `[x]` Chromium smoke галереи сервиса и comparison table прошёл в этом изолированном режиме; Playwright report: `passed`.
 - `[~]` Полная matrix public/client E2E запускается небольшими группами из-за ограничения длительности внешней среды; это не меняет продуктовый runtime и не блокирует локальную работу пользователя.
+
+### Результат одиннадцатой исполняемой порции (28.08.2026)
+
+- `[x]` Automated Chromium public keyboard audit прошёл **1/1** для home, discovery и provider routes; статичный dashboard preview не ошибочно считается интерактивной формой.
+- `[x]` Axe, discovery filters/sort и city listbox (Arrow/Home/End/Escape) прошли **3/3**.
+- `[x]` Все 20 зарегистрированных локалей прошли **1/1**: `html[lang]`, отсутствие missing translation keys и horizontal overflow; ES/RO long-label mobile smoke — **1/1**.
+- `[x]` Полный responsive matrix повторно прошёл **30/30** на 360, 390, 414, 540, 682, 768, 790, 1024, 1280 и 1440px без overflow.
+- `[~]` В этой порции изменён только release-аудит: тест не требует больше трёх tabbable элементов от статичного landing preview и ждёт lazy locale hydration. Реальные устройства, VoiceOver/TalkBack и upload/form-error остаются ручными/следующими проверками.
+- `[x]` Workspace keyboard smoke прошёл **1/1** для owner/client/admin/super-admin маршрутов; profile communication, tabs, privacy и notification controls дополнительно прошли **5/5**.
+
+### Результат двенадцатой исполняемой порции (28.08.2026)
+
+- `[x]` Real-API Chromium smoke после чистого `demo:reset` → `demo:seed` → `autocare:seed` прошёл **16/16** за 54.7s на PostgreSQL/Redis без MSW: health/markets/discovery, partial discovery, client cabinet/dynamic request, client→admin redirect, injected error/offline/stale/permission-denied/suspended, expired session, owner provider/reviews, branch-scoped staff, admin и super-admin workspaces.
+- `[x]` Целевой повтор admin/super-admin login прошёл **2/2**. В тестовый helper добавлено уважение `Retry-After` при легитимном `429`, production login rate limit не изменён и не ослаблен.
+- `[~]` Остались отдельные gates: полный dynamic URL/legacy redirect inventory, PostgreSQL duplicate-click/offline replay idempotency, stale после cache-fill, ручная device/VoiceOver-проверка и production infrastructure.
 
 ---
 
