@@ -10,6 +10,9 @@
 
 ## Restore rehearsal
 
+Record the run in `BACKUP_RESTORE_EVIDENCE_TEMPLATE.md`; the archive, checksum
+and evidence must be stored under separate access controls.
+
 1. Create a timestamped restore target isolated from production.
 2. Restore PostgreSQL and verify migration version, AutoCare constraints,
    booking snapshots, trust snapshots, audit logs and retention metadata.
@@ -47,3 +50,10 @@ plain gzip archive unless `ALLOW_UNENCRYPTED_LOCAL_RESTORE=true` is supplied
 for a deliberately local-only exercise. Likewise, an unencrypted backup needs
 the explicit `ALLOW_UNENCRYPTED_LOCAL_BACKUP=true` opt-out. Neither opt-out is
 allowed in staging or production.
+
+Each backup archive receives a per-run suffix, so concurrent jobs cannot
+overwrite the same timestamped file. The checksum records only the archive
+basename and restore verifies it from the archive directory, allowing an
+approved operator to move the archive and checksum together before an
+isolated restore. The restore pipeline uses `ON_ERROR_STOP=1` and a single
+transaction so a failed import cannot leave a partially restored database.

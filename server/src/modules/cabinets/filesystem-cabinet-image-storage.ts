@@ -1,12 +1,25 @@
-import { createReadStream } from 'node:fs'
-import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { createReadStream, lstatSync } from 'node:fs'
+import { lstat, mkdir, readdir, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
+import { AppError } from '../../shared/errors/app-error.js'
+import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import {
     assertSafeCabinetImageObjectKey,
     type CabinetImageObjectEntry,
     type CabinetImageStorageProvider,
 } from './cabinet-image-storage-provider.js'
+
+export const MAX_CABINET_IMAGE_BYTES = 1_048_576
+
+function cabinetImageNotFound(): never {
+    throw new AppError({
+        statusCode: 404,
+        code: ERROR_CODES.NotFound,
+        message: 'Cabinet image not found.',
+    })
+}
 
 export function getCabinetImageObjectPath(rootDir: string, key: string) {
     assertSafeCabinetImageObjectKey(key)
@@ -17,8 +30,16 @@ export class FileSystemCabinetImageStorage implements CabinetImageStorageProvide
     constructor(private readonly rootDir: string) {}
 
     async put(key: string, content: Buffer) {
-        await mkdir(this.rootDir, { recursive: true })
-        await writeFile(getCabinetImageObjectPath(this.rootDir, key), content)
+        const target = getCabinetImageObjectPath(this.rootDir, key)
+        await mkdir(this.rootDir, { recursive: true, mode: 0o700 })
+        const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`
+        try {
+            await writeFile(temporary, content, { flag: 'wx', mode: 0o600 })
+            await rename(temporary, target)
+        } catch (error) {
+            await unlink(temporary).catch(() => undefined)
+            throw error
+        }
     }
 
     async remove(key: string) {
@@ -40,7 +61,8 @@ export class FileSystemCabinetImageStorage implements CabinetImageStorageProvide
 
             try {
                 assertSafeCabinetImageObjectKey(entry.name)
-                const fileStat = await stat(getCabinetImageObjectPath(this.rootDir, entry.name))
+                const fileStat = await lstat(getCabinetImageObjectPath(this.rootDir, entry.name))
+                if (!fileStat.isFile()) continue
                 result.push({ key: entry.name, lastModifiedAt: fileStat.mtimeMs })
             } catch {
                 // Ignore unrelated files in the provider directory.
@@ -51,6 +73,14 @@ export class FileSystemCabinetImageStorage implements CabinetImageStorageProvide
     }
 
     createReadStream(key: string) {
-        return createReadStream(getCabinetImageObjectPath(this.rootDir, key))
+        const target = getCabinetImageObjectPath(this.rootDir, key)
+        try {
+            const file = lstatSync(target)
+            if (!file.isFile() || file.size > MAX_CABINET_IMAGE_BYTES) cabinetImageNotFound()
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') cabinetImageNotFound()
+            throw error
+        }
+        return createReadStream(target)
     }
 }

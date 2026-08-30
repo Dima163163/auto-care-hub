@@ -5,7 +5,7 @@ import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicl
 import { getApiErrorState } from '@/shared/api/getApiErrorMessage'
 import { resolveQueryViewState } from '@/shared/api/query-view-state'
 import { useTranslation } from '@/shared/lib/useTranslation'
-import { AutoCareResultsSkeleton } from '@/shared/ui/loading-skeleton'
+import { AutoCareResultsDataSkeleton } from '@/shared/ui/loading-skeleton'
 import { StateCard } from '@/shared/ui/state-card'
 import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
 import { QueryStateCard } from '@/shared/ui/query-state-card'
@@ -187,7 +187,10 @@ export function AutoCareResultsPage() {
                     <QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} />
                 </div>
 
-                {discoveryState === 'loading' ? <AutoCareResultsSkeleton label={t('common.loading')} /> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
+                {discoveryState === 'loading' ? <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]" aria-busy="true">
+                    <section className="order-2 flex flex-col gap-4 lg:order-1" role="status" aria-label={t('common.loading')}><AutoCareResultsDataSkeleton /></section>
+                    <div id="comparison-map" className="order-1 min-h-0 lg:order-2 lg:h-[min(70vh,720px)] lg:self-start"><AutoCareMapPreview providers={[]} serviceId={filters.serviceId} selectedProviders={[]} focusedProviderId={null} onFocusProvider={() => undefined} onRemove={() => undefined} /></div>
+                </div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
                     <section className="order-2 flex flex-col gap-4 lg:order-1">
                         <div className="flex shrink-0 items-center justify-between gap-3">
                             <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>

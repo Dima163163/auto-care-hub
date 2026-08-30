@@ -315,6 +315,34 @@ describe('Admin and workspace authorization integration', () => {
         expect(approvedEvidence).not.toHaveProperty('notes')
     })
 
+    it('audits sensitive moderation queue reads without copying private payloads', async () => {
+        const adminToken = createAuthTokens(admin).accessToken
+        const requests = [
+            ['/admin/autocare-appeals', AuditAction.AutoCareAppealsViewed, 'autocare_appeals'],
+            ['/admin/autocare-moderation-evidence', AuditAction.AutoCareModerationQueueViewed, 'autocare_moderation_evidence'],
+            ['/admin/chat-reports', AuditAction.AutoCareChatReportsViewed, 'autocare_chat_reports'],
+            ['/admin/platform-reviews', AuditAction.PlatformReviewsViewed, 'platform_reviews'],
+        ] as const
+
+        for (const [path, action, targetType] of requests) {
+            const response = await request(app.server)
+                .get(path)
+                .set('Authorization', `Bearer ${adminToken}`)
+            expect(response.status).toBe(200)
+
+            const audit = await AppDataSource.getRepository(AuditLogEntity).findOne({
+                where: { actorId: admin.id, action, targetType },
+                order: { createdAt: 'DESC' },
+            })
+            expect(audit).toEqual(expect.objectContaining({ actorId: admin.id, targetType }))
+            expect(audit?.metadata).toEqual(expect.objectContaining({ itemCount: expect.any(Number) }))
+            expect(audit?.metadata).not.toHaveProperty('reason')
+            expect(audit?.metadata).not.toHaveProperty('text')
+            expect(audit?.metadata).not.toHaveProperty('phone')
+            expect(audit?.metadata).not.toHaveProperty('photoUrls')
+        }
+    })
+
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {
         const ownerToken = createAuthTokens(providerOwner).accessToken
         const adminToken = createAuthTokens(admin).accessToken

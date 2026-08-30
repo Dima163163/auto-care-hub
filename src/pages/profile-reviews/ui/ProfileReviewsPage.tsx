@@ -9,6 +9,7 @@ import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
 import { ProfileNavigation } from '@/widgets/profile-navigation/ui/ProfileNavigation'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { ReviewsSkeleton } from '@/shared/ui/loading-skeleton'
 
 import { ProfileReviewCard } from './ProfileReviewCard'
 import { AutoCareReviewResolutionPanel } from './AutoCareReviewResolutionPanel'
@@ -33,7 +34,7 @@ export function ProfileReviewsPage() {
                     title={t('review.myReviewsTitle')}
                 />
 
-                <StateCard variant="loading" description={t('review.loading')} />
+                <ReviewsSkeleton label={t('review.loading')} count={2} />
             </section>
         )
     }
@@ -80,6 +81,7 @@ export function ProfileReviewsPage() {
 
             {reviews.length === 0 ? (
                 <StateCard
+                    variant="empty"
                     title={t('review.emptyMyReviewsTitle')}
                     description={t('review.emptyMyReviewsDescription')}
                     action={

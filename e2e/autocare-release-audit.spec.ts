@@ -368,6 +368,18 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(page.getByTestId('owner-chat-toggle')).toBeChecked()
     })
 
+    test('owner requests keep the compact branch calendar visible without resource editor', async ({ page }) => {
+        await signInWithMockAccount(page, 'sophia.miller@example.com')
+        await gotoStable(page, '/owner/autocare-requests')
+
+        const calendar = page.getByTestId('owner-capacity-calendar')
+        await expect(calendar).toBeVisible()
+        await expect(calendar.getByRole('heading', { name: /branch calendar|календарь филиала/i })).toBeVisible()
+        await expect(calendar.getByText(/select a date|выберите дату/i)).toBeVisible()
+        await expect(page.getByTestId('owner-capacity-resources')).toHaveCount(0)
+        await expectNoHorizontalOverflow(page)
+    })
+
     test('admin moderation evidence requires a decision reason', async ({ page }) => {
         await signInWithMockAccount(page, 'admin@autocarehub.test')
         await page.goto('/admin/dashboard')

@@ -41,6 +41,7 @@ export function AutoCareProviderPage() {
         isSuspended: providerErrorState === 'suspended',
         isStale: providerErrorState === 'stale',
         isSessionExpired: providerErrorState === 'session-expired',
+        isPartial: Boolean(data?.partial),
     })
     const reviewsErrorState = getApiErrorState(reviewsQuery.error)
     const reviewsState = resolveQueryViewState({
@@ -60,14 +61,14 @@ export function AutoCareProviderPage() {
 
     if (providerState === 'loading') return <main className="min-h-full bg-background"><ProviderProfileSkeleton label={t('common.loading')} /></main>
     if (!provider) {
-        const unavailableState = providerState === 'empty' || providerState === 'success' || providerState === 'refreshing' ? 'error' : providerState
-        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><QueryStateCard state={unavailableState} error={providerQuery.error} onRetry={() => { void refetch() }} /></main>
+        const unavailableState = providerState === 'success' || providerState === 'refreshing' ? 'empty' : providerState
+        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><QueryStateCard state={unavailableState} error={providerQuery.error} emptyTitle={t('autocare.providerNotFound')} emptyDescription={t('autocare.providerNoOffersDescription')} suspendedTitle={t('autocare.providerSuspendedTitle')} suspendedDescription={t('autocare.providerSuspendedDescription')} onRetry={() => { void refetch() }} /></main>
     }
-    if (provider.status === 'suspended') return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><StateCard variant="suspended" title={t('autocare.providerNotFound')} description={t('common.tryAgainLater')} /></main>
+    if (provider.status === 'suspended') return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><StateCard variant="suspended" title={t('autocare.providerSuspendedTitle')} description={t('autocare.providerSuspendedDescription')} /></main>
     if (provider.status === 'draft') return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><StateCard variant="empty" title={t('autocare.providerNotFound')} description={t('autocare.providerNoOffersDescription')} /></main>
     if (!selectedOffering) return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20"><StateCard variant="empty" title={t('autocare.providerNoOffersTitle')} description={t('autocare.providerNoOffersDescription')} /></main>
 
-    return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6">{providerState === 'stale-error' && <QueryStateCard state="stale-error" error={providerQuery.error} onRetry={() => { void refetch() }} />}<QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} /><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} trustError={trustQuery.error} onRetryTrust={() => { void trustQuery.refetch() }} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} state={reviewsState} error={reviewsQuery.error} onRetry={() => { void reviewsQuery.refetch() }} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>
+    return <><ProviderHero provider={provider} /><ProviderSectionNavigation /><main className="mx-auto grid max-w-[var(--layout-operational-max)] gap-6 px-[var(--layout-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]"><div className="grid content-start gap-6">{providerState === 'stale-error' && <QueryStateCard state="stale-error" error={providerQuery.error} onRetry={() => { void refetch() }} />}{providerState === 'partial' && <QueryStateCard state="partial" onRetry={() => { void refetch() }} />}<QueryRefreshStatus isRefreshing={isFetching && !isLoading} label={t('common.refreshing')} /><ProviderOfferings provider={provider} selectedServiceId={selectedOffering.serviceId} onSelect={setSelectedServiceId} /><ProviderAbout provider={provider} trust={trust} trustError={trustQuery.error} onRetryTrust={() => { void trustQuery.refetch() }} /><ProviderLocation provider={provider} /><ProviderReviews provider={provider} state={reviewsState} error={reviewsQuery.error} onRetry={() => { void reviewsQuery.refetch() }} /></div><ProviderRequestPanel provider={provider} offering={selectedOffering} /></main></>
 }
 
 function ProviderAbout({ provider, trust, trustError, onRetryTrust }: { provider: NonNullable<ReturnType<typeof mapAutoCareProviderProfile>>; trust?: AutoCareTrustResponse; trustError?: unknown; onRetryTrust: () => void }) {

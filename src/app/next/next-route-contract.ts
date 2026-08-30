@@ -34,6 +34,7 @@ const exactRoutes = [
     ROUTES.passwordReset,
     ROUTES.verifyEmail,
     ROUTES.onboarding,
+    ROUTES.ownerInvitationAccept,
     ROUTES.profile,
     ROUTES.profileVehicles,
     ROUTES.profileBookings,

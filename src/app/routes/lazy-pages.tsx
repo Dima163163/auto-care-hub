@@ -108,6 +108,12 @@ export const OnboardingPage = lazy(() =>
     })),
 )
 
+export const OwnerProviderInvitationAcceptPage = lazy(() =>
+    import('@/pages/owner-provider-invitation').then((module) => ({
+        default: module.OwnerProviderInvitationAcceptPage,
+    })),
+)
+
 export const LoginCallbackPage = lazy(() =>
     import('@/pages/login-callback').then((module) => ({
         default: module.LoginCallbackPage,

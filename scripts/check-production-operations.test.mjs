@@ -7,6 +7,7 @@ import {
     formatProductionOperationsReport,
     getProductionOperationsChecks,
     loadEnvironmentFile,
+    isSafePersistentMediaPath,
 } from './check-production-operations.mjs'
 
 const completeProductionEnvironment = {
@@ -62,4 +63,10 @@ test('dotenv loader parses quoted values and preserves explicit process values',
     const parsed = loadEnvironmentFile('.env.example')
     assert.equal(parsed.NEXT_PUBLIC_API_MODE, 'mock')
     assert.equal(parsed.VITE_DEPLOYMENT_MARKET, 'ru')
+})
+
+test('persistent media path rejects relative and root directories', () => {
+    assert.equal(isSafePersistentMediaPath('/var/data/autocarehub/uploads'), true)
+    assert.equal(isSafePersistentMediaPath('/'), false)
+    assert.equal(isSafePersistentMediaPath('uploads/cabinets'), false)
 })

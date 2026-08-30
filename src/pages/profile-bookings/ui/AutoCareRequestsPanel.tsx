@@ -15,6 +15,7 @@ import {
     type AutoCareServiceRequest,
     type RedeemAutoCareBonusInput,
 } from '@/entities/automotive-service'
+import { validateAutoCareReview } from '@/entities/automotive-service/lib/review-input-validation'
 import { getApiErrorMessage, getApiErrorState } from '@/shared/api/getApiErrorMessage'
 import { resolveQueryViewState } from '@/shared/api/query-view-state'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -130,18 +131,24 @@ function ReviewComposer({ requestId }: { requestId: string }) {
     const [text, setText] = useState('')
     const [createReview, state] = useCreateAutoCareReviewMutation()
     const [submitted, setSubmitted] = useState(false)
+    const [validationError, setValidationError] = useState<'rating' | 'text' | null>(null)
     const isRu = locale === 'ru'
     const submit = async () => {
-        if (text.trim().length < 10) return
+        const validation = validateAutoCareReview(rating, text)
+        if (!validation.valid) {
+            setValidationError(validation.reason)
+            return
+        }
+        setValidationError(null)
         try {
-            await createReview({ requestId, rating: Number(rating), text: text.trim() }).unwrap()
+            await createReview({ requestId, rating: validation.rating, text: validation.text }).unwrap()
             setSubmitted(true)
         } catch {
             // RTK Query state exposes the retryable error below.
         }
     }
     if (submitted) return <p className="mb-4 rounded-[var(--radius-card)] bg-status-success-surface px-3 py-2 text-xs font-bold text-status-success-foreground">{isRu ? 'Спасибо! Отзыв отправлен на проверку.' : 'Thank you! Your review is pending moderation.'}</p>
-    return <div className="mb-4 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-4"><p className="text-sm font-black text-foreground">{isRu ? 'Расскажите о визите' : 'Share your visit experience'}</p><div className="mt-3 grid gap-2 sm:grid-cols-[120px_1fr_auto]"><select value={rating} onChange={(event) => setRating(event.target.value)} className="select-with-icon h-10 appearance-none rounded-[var(--radius-control)] border border-border bg-background px-3 pr-8 text-sm font-bold"><option value="5">5 ★</option><option value="4">4 ★</option><option value="3">3 ★</option><option value="2">2 ★</option><option value="1">1 ★</option></select><textarea value={text} onChange={(event) => setText(event.target.value)} rows={2} minLength={10} maxLength={4000} placeholder={isRu ? 'Что понравилось или что можно улучшить?' : 'What went well or could improve?'} className="min-h-10 rounded-[var(--radius-control)] border border-border bg-background px-3 py-2 text-sm" /><button type="button" disabled={state.isLoading || text.trim().length < 10} onClick={() => void submit()} className="h-10 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground disabled:opacity-60">{isRu ? 'Отправить' : 'Submit'}</button></div>{state.isError ? <p className="mt-2 text-xs font-semibold text-destructive">{isRu ? 'Не удалось отправить отзыв. Попробуйте ещё раз.' : 'Could not submit the review. Please retry.'}</p> : null}</div>
+    return <div className="mb-4 rounded-[var(--radius-card)] border border-primary/20 bg-primary/5 p-4"><p className="text-sm font-black text-foreground">{isRu ? 'Расскажите о визите' : 'Share your visit experience'}</p><div className="mt-3 grid gap-2 sm:grid-cols-[120px_1fr_auto]"><select value={rating} onChange={(event) => { setValidationError(null); setRating(event.target.value) }} aria-label={isRu ? 'Оценка' : 'Rating'} aria-invalid={validationError === 'rating' || undefined} className="select-with-icon h-10 appearance-none rounded-[var(--radius-control)] border border-border bg-background px-3 pr-8 text-sm font-bold"><option value="5">5 ★</option><option value="4">4 ★</option><option value="3">3 ★</option><option value="2">2 ★</option><option value="1">1 ★</option></select><textarea value={text} onChange={(event) => { setValidationError(null); setText(event.target.value) }} rows={2} minLength={10} maxLength={1000} aria-label={isRu ? 'Текст отзыва' : 'Review text'} aria-invalid={validationError === 'text' || undefined} aria-describedby={validationError ? 'autocare-review-validation' : undefined} placeholder={isRu ? 'Что понравилось или что можно улучшить?' : 'What went well or could improve?'} className="min-h-10 rounded-[var(--radius-control)] border border-border bg-background px-3 py-2 text-sm" /><button type="button" disabled={state.isLoading} onClick={() => void submit()} className="h-10 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground disabled:opacity-60">{isRu ? 'Отправить' : 'Submit'}</button></div>{validationError ? <p id="autocare-review-validation" role="alert" className="mt-2 text-xs font-semibold text-destructive">{validationError === 'rating' ? (isRu ? 'Оценка должна быть от 1 до 5.' : 'Rating must be between 1 and 5.') : (isRu ? 'Текст отзыва должен содержать от 10 до 1 000 символов.' : 'Review text must contain 10 to 1,000 characters.')}</p> : null}{state.isError ? <p role="alert" className="mt-2 text-xs font-semibold text-destructive">{isRu ? 'Не удалось отправить отзыв. Попробуйте ещё раз.' : 'Could not submit the review. Please retry.'}</p> : null}</div>
 }
 
 function Status({ status }: { status: AutoCareServiceRequest['status'] }) { const { t } = useTranslation(); return <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{t(`autocare.ownerRequestStatus.${status}` as const)}</span> }

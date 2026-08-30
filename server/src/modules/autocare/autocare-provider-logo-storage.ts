@@ -1,5 +1,5 @@
-import { createReadStream } from 'node:fs'
-import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { createReadStream, lstatSync } from 'node:fs'
+import { lstat, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -15,6 +15,20 @@ const logoPattern = /^([a-f0-9-]+)\.webp$/i
 
 function logoError(message: string) {
     return new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message })
+}
+
+function providerLogoNotFound(): never {
+    throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider logo not found.' })
+}
+
+async function assertRegularProviderLogoFile(filePath: string) {
+    try {
+        const file = await lstat(filePath)
+        if (!file.isFile() || file.size > MAX_LOGO_BYTES) providerLogoNotFound()
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerLogoNotFound()
+        throw error
+    }
 }
 
 export function decodeAutoCareProviderLogo(contentBase64: string) {
@@ -38,8 +52,16 @@ export async function saveAutoCareProviderLogo(content: Buffer) {
     }
     if (normalized.length > MAX_LOGO_BYTES) throw logoError('Provider logo is too large.')
     const fileName = `${randomUUID()}.webp`
-    await mkdir(logoRoot, { recursive: true })
-    await writeFile(path.join(logoRoot, fileName), normalized)
+    await mkdir(logoRoot, { recursive: true, mode: 0o700 })
+    const target = path.join(logoRoot, fileName)
+    const temporary = `${target}.${process.pid}.${Date.now()}.tmp`
+    try {
+        await writeFile(temporary, normalized, { flag: 'wx', mode: 0o600 })
+        await rename(temporary, target)
+    } catch (error) {
+        await unlink(temporary).catch(() => undefined)
+        throw error
+    }
     return `/uploads/autocare/logos/${fileName}`
 }
 
@@ -54,19 +76,34 @@ export function getAutoCareProviderLogoFileName(value: string) {
 
 export function createAutoCareProviderLogoReadStream(fileName: string) {
     assertAutoCareProviderLogoFileName(fileName)
-    return createReadStream(path.join(logoRoot, fileName))
+    const target = path.join(logoRoot, fileName)
+    try {
+        const file = lstatSync(target)
+        if (!file.isFile() || file.size > MAX_LOGO_BYTES) providerLogoNotFound()
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerLogoNotFound()
+        throw error
+    }
+    return createReadStream(target)
 }
 
 export async function readAutoCareProviderLogo(fileName: string) {
     assertAutoCareProviderLogoFileName(fileName)
+    const target = path.join(logoRoot, fileName)
+    await assertRegularProviderLogoFile(target)
     try {
-        return await readFile(path.join(logoRoot, fileName))
+        return await readFile(target)
     } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider logo not found.' })
-        }
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerLogoNotFound()
         throw error
     }
+}
+
+export async function removeAutoCareProviderLogo(fileName: string) {
+    assertAutoCareProviderLogoFileName(fileName)
+    await unlink(path.join(logoRoot, fileName)).catch((error: unknown) => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    })
 }
 
 export async function cleanupOrphanedAutoCareProviderLogos(input: {

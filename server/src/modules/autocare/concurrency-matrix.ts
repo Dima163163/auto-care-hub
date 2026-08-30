@@ -1,4 +1,4 @@
-export type AutoCareConcurrencyOperation = 'reschedule' | 'cancellation' | 'no_show' | 'booking'
+export type AutoCareConcurrencyOperation = 'reschedule' | 'cancellation' | 'no_show' | 'booking' | 'quote'
 
 export type AutoCareConcurrencyScenario = {
     id: string
@@ -17,10 +17,11 @@ export type AutoCareConcurrencyScenario = {
  */
 export const AUTOCARE_CONCURRENCY_MATRIX: readonly AutoCareConcurrencyScenario[] = [
     { id: 'reschedule-two-client-decisions', operation: 'reschedule', actors: ['client-a', 'client-b'], expectedCommitted: 1, expectedConflicts: 1, retryIsIdempotent: true, requiresDatabaseLock: true },
-    { id: 'cancel-client-and-owner', operation: 'cancellation', actors: ['client', 'owner'], expectedCommitted: 1, expectedConflicts: 1, retryIsIdempotent: true, requiresDatabaseLock: true },
+    { id: 'cancel-client-retry', operation: 'cancellation', actors: ['client', 'client'], expectedCommitted: 1, expectedConflicts: 0, retryIsIdempotent: true, requiresDatabaseLock: true },
     { id: 'no-show-two-owner-retries', operation: 'no_show', actors: ['owner', 'owner'], expectedCommitted: 1, expectedConflicts: 0, retryIsIdempotent: true, requiresDatabaseLock: true },
     { id: 'instant-booking-same-resource', operation: 'booking', actors: ['client-a', 'client-b'], expectedCommitted: 1, expectedConflicts: 1, retryIsIdempotent: false, requiresDatabaseLock: true },
     { id: 'multi-actor-request-confirmation', operation: 'booking', actors: ['owner-a', 'owner-b'], expectedCommitted: 1, expectedConflicts: 1, retryIsIdempotent: true, requiresDatabaseLock: true },
+    { id: 'quote-accept-decline', operation: 'quote', actors: ['client', 'client'], expectedCommitted: 1, expectedConflicts: 1, retryIsIdempotent: true, requiresDatabaseLock: true },
 ]
 
 export function validateConcurrencyMatrix(matrix: readonly AutoCareConcurrencyScenario[] = AUTOCARE_CONCURRENCY_MATRIX) {

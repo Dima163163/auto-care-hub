@@ -63,6 +63,9 @@ type NextClientAppProps = {
 }
 
 function getBootWorkspaceRole(pathname: string): BootWorkspaceRole | undefined {
+    // Invitation acceptance is authenticated but does not require an owner
+    // workspace yet: invitees may be new managers or staff members.
+    if (pathname === ROUTES.ownerInvitationAccept) return undefined
     if (pathname.startsWith('/owner/')) return 'owner'
     if (pathname.startsWith('/super-admin/')) return 'super_admin'
     if (pathname.startsWith('/admin/')) return 'admin'

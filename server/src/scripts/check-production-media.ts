@@ -19,12 +19,24 @@ function encodeCopySource(bucket: string, key: string) {
 
 async function scan(content: Buffer, expectedCode: number) {
     const exitCode = await new Promise<number>((resolve, reject) => {
-        const process = spawn(env.autoCareAttachments.clamavCommand, ['--no-summary', '-'], {
+        const scanner = spawn(env.autoCareAttachments.clamavCommand, ['--no-summary', '-'], {
             stdio: ['pipe', 'ignore', 'pipe'],
         })
-        process.once('error', reject)
-        process.once('close', (code) => resolve(code ?? -1))
-        process.stdin.end(content)
+        let settled = false
+        const finish = (callback: () => void) => {
+            if (settled) return
+            settled = true
+            clearTimeout(timeout)
+            callback()
+        }
+        const timeout = setTimeout(() => {
+            scanner.kill('SIGKILL')
+            finish(() => reject(new Error(`ClamAV preflight timed out after ${env.autoCareAttachments.scanTimeoutMs} ms.`)))
+        }, env.autoCareAttachments.scanTimeoutMs)
+        timeout.unref()
+        scanner.once('error', (error) => finish(() => reject(error)))
+        scanner.once('close', (code) => finish(() => resolve(code ?? -1)))
+        scanner.stdin.end(content)
     })
     if (exitCode !== expectedCode) throw new Error(`ClamAV preflight returned exit code ${exitCode}; expected ${expectedCode}.`)
 }

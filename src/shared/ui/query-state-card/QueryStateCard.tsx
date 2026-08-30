@@ -12,6 +12,8 @@ type QueryStateCardProps = {
     onRetry?: () => void | Promise<unknown>
     emptyTitle?: string
     emptyDescription?: string
+    suspendedTitle?: string
+    suspendedDescription?: string
     loading?: ReactNode
     className?: string
 }
@@ -22,6 +24,8 @@ export function QueryStateCard({
     onRetry,
     emptyTitle,
     emptyDescription,
+    suspendedTitle,
+    suspendedDescription,
     loading,
     className,
 }: QueryStateCardProps) {
@@ -52,7 +56,7 @@ export function QueryStateCard({
     }
 
     if (state === 'suspended') {
-        return <StateCard className={className} variant="suspended" title={t('auth.accountBlocked')} description={t('auth.accountBlockedDescription')} />
+        return <StateCard className={className} variant="suspended" title={suspendedTitle ?? t('auth.accountBlocked')} description={suspendedDescription ?? t('auth.accountBlockedDescription')} />
     }
 
     if (state === 'partial') {

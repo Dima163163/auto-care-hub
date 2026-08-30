@@ -36,6 +36,7 @@ import {
     NotFoundPage,
     NotificationsPage,
     OnboardingPage,
+    OwnerProviderInvitationAcceptPage,
     OwnerAutoCareRequestsPage,
     OwnerClientsPage,
     OwnerAutoCareProvidersPage,
@@ -94,6 +95,7 @@ export function renderAuthenticatedPublicRoutes() {
         >
             <Route path={ROUTES.profile} element={<ProfilePage />} />
             <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
+            <Route path={ROUTES.ownerInvitationAccept} element={<OwnerProviderInvitationAcceptPage />} />
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.chats} element={<ChatsPage workspace="client" />} />
         </Route>

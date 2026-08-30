@@ -22,6 +22,15 @@ describe('structured error logging', () => {
         expect(serializeError('not-an-error')).toEqual({ name: 'UnknownError' })
     })
 
+    it('redacts contact and vehicle PII embedded in diagnostics', () => {
+        expect(serializeError(new Error(
+            'Unable to notify sofia.miller@example.com at +7 (999) 123-45-67 for VIN JTM1234567890ABCD',
+        ))).toEqual({
+            name: 'Error',
+            message: 'Unable to notify [REDACTED_EMAIL] at [REDACTED_PHONE] for VIN [REDACTED_VIN]',
+        })
+    })
+
     it('preserves useful causes from aggregate startup failures', () => {
         expect(serializeError(new AggregateError([
             new Error('connect ECONNREFUSED 127.0.0.1:5432'),

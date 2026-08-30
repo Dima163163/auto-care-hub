@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
     isSensitiveLogKey,
     sanitizeLogMetadata,
+    sanitizeLogString,
 } from './sensitive-data.js'
 
 describe('sensitive log metadata', () => {
@@ -66,5 +67,18 @@ describe('sensitive log metadata', () => {
             contactSnapshot: '[REDACTED]',
             serviceRequestId: 'request-123',
         })
+    })
+
+    it('redacts raw PII embedded in messages while preserving operational addresses', () => {
+        expect(sanitizeLogString(
+            'Failed for sofia.miller@example.com, phone +7 (999) 123-45-67, VIN JTM1234567890ABCD; database 127.0.0.1:5432',
+        )).toBe(
+            'Failed for [REDACTED_EMAIL], phone [REDACTED_PHONE], VIN [REDACTED_VIN]; database 127.0.0.1:5432',
+        )
+        expect(sanitizeLogString(
+            'Migration id 1787550983850 and request id 3f60b204-562d-4201-8288-ecbae79b2001',
+        )).toBe(
+            'Migration id 1787550983850 and request id 3f60b204-562d-4201-8288-ecbae79b2001',
+        )
     })
 })

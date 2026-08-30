@@ -8,6 +8,7 @@ const ignoredFiles = new Set([
   'check-no-bookly-runtime.mjs',
   'check-no-bookly-runtime.test.mjs',
   'check-legacy-cleanup.mjs',
+  'check-local-mvp.mjs',
 ])
 const matches = []
 

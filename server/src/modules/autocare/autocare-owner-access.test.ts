@@ -4,27 +4,30 @@ const mocks = vi.hoisted(() => ({
     getRepository: vi.fn(),
     getManagedProviderPermissionScopes: vi.fn(),
     getManagedProviderScopes: vi.fn(),
+    hasProviderWorkspacePermission: vi.fn(),
 }))
 
 vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 vi.mock('./provider-access.service.js', () => ({
     getManagedProviderPermissionScopes: mocks.getManagedProviderPermissionScopes,
     getManagedProviderScopes: mocks.getManagedProviderScopes,
-    hasProviderWorkspacePermission: vi.fn(),
+    hasProviderWorkspacePermission: mocks.hasProviderWorkspacePermission,
     hasProviderWorkspacePermissionWithManager: vi.fn(),
     isManagedProviderLocationAllowed: vi.fn(),
 }))
 
 import { UserRole } from '../../entities/user/user.entity.js'
+import { getOwnerAutoCareProviderAnalytics } from './autocare-analytics.service.js'
 import { getMyAutoCareChats } from './autocare-chat.service.js'
 import { getOwnerAutoCareServiceRequests } from './autocare-request.service.js'
-import { getOwnerAutoCareProviders } from './autocare.service.js'
+import { getOwnerAutoCareCapacityResources, getOwnerAutoCareProviderReviews, getOwnerAutoCareProviders } from './autocare.service.js'
 
 describe('owner provider catalog access', () => {
     beforeEach(() => {
         mocks.getRepository.mockReset()
         mocks.getManagedProviderPermissionScopes.mockReset()
         mocks.getManagedProviderScopes.mockReset()
+        mocks.hasProviderWorkspacePermission.mockReset()
     })
 
     it('does not expose provider profiles or offers to a staff-only scope without catalog permission', async () => {
@@ -57,5 +60,29 @@ describe('owner provider catalog access', () => {
 
         await expect(getMyAutoCareChats({ id: 'membership-without-chats', role: UserRole.Owner } as never)).resolves.toEqual([])
         expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith('membership-without-chats', 'chats')
+    })
+
+    it('does not expose provider analytics without the analytics capability', async () => {
+        mocks.getManagedProviderPermissionScopes.mockResolvedValue([])
+
+        await expect(getOwnerAutoCareProviderAnalytics({ id: 'staff-1' } as never, 'provider-1')).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith('staff-1', 'analytics')
+        expect(mocks.getRepository).not.toHaveBeenCalled()
+    })
+
+    it('does not expose capacity resources without the calendar capability', async () => {
+        mocks.hasProviderWorkspacePermission.mockResolvedValue(false)
+
+        await expect(getOwnerAutoCareCapacityResources({ id: 'membership-without-calendar' } as never, 'provider-1', 'location-b')).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('membership-without-calendar', 'provider-1', 'calendar', 'location-b')
+        expect(mocks.getRepository).not.toHaveBeenCalled()
+    })
+
+    it('does not expose provider reviews without the reviews capability', async () => {
+        mocks.getRepository.mockReturnValue({ findOneBy: vi.fn().mockResolvedValue({ id: 'provider-1', status: 'active' }) })
+        mocks.getManagedProviderPermissionScopes.mockResolvedValue([])
+
+        await expect(getOwnerAutoCareProviderReviews({ id: 'staff-1' } as never, 'provider-1')).rejects.toMatchObject({ statusCode: 404 })
+        expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith('staff-1', 'reviews')
     })
 })

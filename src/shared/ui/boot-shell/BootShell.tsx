@@ -22,7 +22,7 @@ export function BootShell({ home = false, services = false, workspaceRole }: Boo
     return (
         <div className="autocare-app-surface flex min-h-screen flex-col overflow-x-clip bg-background text-foreground">
             <BootHeader />
-            <main className="min-h-0 flex-1">
+            <main className="min-h-0 flex-1" aria-busy="true" aria-label="Загрузка страницы">
                 {home ? <HomeBootContent /> : services ? <ServicesBootContent /> : <GenericBootContent />}
             </main>
             <BootFooter />
@@ -350,8 +350,8 @@ function HomeBootSearchForm() {
     return (
         <form aria-busy="true" aria-label="Подготовка поиска автоуслуг" className="mt-6 overflow-hidden rounded-[12px] border-[5px] border-primary-foreground/20 bg-transparent text-foreground shadow-2xl shadow-black/30">
             <div className="grid grid-cols-2 bg-map-overlay/65 text-primary-foreground backdrop-blur-[2px]">
-                <span className="flex h-[52px] items-center justify-center gap-2 rounded-tr-[10px] bg-background text-base font-black text-primary"><Wrench className="size-5" />По услуге</span>
-                <span className="flex h-[52px] items-center justify-center gap-2 text-base font-black text-primary-foreground/85"><ShieldCheck className="size-5" />По автосервису</span>
+                <span className="flex h-[52px] items-center justify-center gap-2 rounded-tl-[10px] bg-background text-base font-black text-primary"><Wrench className="size-5" />По услуге</span>
+                <span className="flex h-[52px] items-center justify-center gap-2 rounded-tr-[10px] text-base font-black text-primary-foreground/85"><ShieldCheck className="size-5" />По автосервису</span>
             </div>
             <div className="bg-background px-5 pb-3 pt-4">
                 <BootSearchSelect label="Какая услуга нужна?" value="Выберите услугу, например, Замена тормозных колодок" />

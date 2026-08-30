@@ -20,6 +20,14 @@ function hasStrongSecret(value, minimumLength = 32) {
     return hasConfiguredValue(normalized) && normalized.length >= minimumLength
 }
 
+export function isSafePersistentMediaPath(value) {
+    const normalized = String(value ?? '').trim()
+    if (!normalized || !normalized.startsWith('/')) return false
+
+    const canonical = resolve(normalized)
+    return canonical !== resolve('/')
+}
+
 function check(name, status, detail) {
     return { name, status, detail }
 }
@@ -75,9 +83,9 @@ function getRuntimeConfigurationChecks(environment) {
         : check('SMTP configuration', 'blocked', `missing or placeholder values: ${missingSmtp.join(', ')}`))
 
     const cabinetUploadsDir = String(environment.CABINET_UPLOADS_DIR ?? '').trim()
-    checks.push(hasConfiguredValue(cabinetUploadsDir)
+    checks.push(hasConfiguredValue(cabinetUploadsDir) && isSafePersistentMediaPath(cabinetUploadsDir)
         ? check('Persistent media storage path', 'pass', 'CABINET_UPLOADS_DIR is explicit; mount durability is still an infrastructure gate')
-        : check('Persistent media storage path', 'blocked', 'set CABINET_UPLOADS_DIR to an approved persistent volume path'))
+        : check('Persistent media storage path', 'blocked', 'set CABINET_UPLOADS_DIR to an approved absolute non-root persistent volume path'))
 
     const attachmentProvider = String(environment.AUTOCARE_ATTACHMENT_STORAGE_PROVIDER ?? '').trim().toLowerCase()
     if (nodeEnv === 'production' && attachmentProvider !== 's3') {
@@ -154,6 +162,22 @@ const OPERATIONAL_CONTRACTS = [
             'docs/RELEASE_CHECKLIST.md': ['Record the migration inventory checksum', 'rollback owner'],
         },
         detail: 'forward migrations, migration-free start and rollback runbook are documented',
+    },
+    {
+        name: 'Redis fail-closed incident guidance',
+        files: {
+            'docs/INCIDENT_RUNBOOK.md': [
+                'Production rate limits fail closed',
+                'must not fall back to a process-local bucket',
+                'A local-memory fallback is permitted',
+                'enabled in production',
+            ],
+            'server/src/shared/security/rate-limit.ts': [
+                'mustFailClosedForRedisRateLimitFailure',
+                'Rate limiting is temporarily unavailable',
+            ],
+        },
+        detail: 'incident response guidance matches the production Redis fail-closed implementation',
     },
 ]
 

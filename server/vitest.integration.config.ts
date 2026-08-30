@@ -15,6 +15,7 @@ export default defineConfig({
             'src/modules/jobs/maintenance-lease.integration.test.ts',
             'src/modules/oauth/oauth-link-callback.integration.test.ts',
             'src/modules/users/account-deletion.service.integration.test.ts',
+            'src/modules/admin/account-deletion-autocare.integration.test.ts',
             'src/modules/users/users.routes.integration.test.ts',
             'src/modules/autocare/autocare.routes.integration.test.ts',
             'src/modules/autocare/autocare-capacity.integration.test.ts',

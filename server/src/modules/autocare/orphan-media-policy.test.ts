@@ -25,4 +25,23 @@ describe('selectOrphanAutoCareMedia', () => {
             gracePeriodMs: 1,
         })).toHaveLength(200)
     })
+
+    it('selects the oldest eligible files first with a stable tie-breaker', () => {
+        expect(selectOrphanAutoCareMedia({
+            entries: [
+                { fileName: 'z.webp', lastModifiedAt: 1_000 },
+                { fileName: 'a.webp', lastModifiedAt: 1_000 },
+                { fileName: 'new.webp', lastModifiedAt: 9_500 },
+                { fileName: 'old.webp', lastModifiedAt: 0 },
+            ],
+            referencedFileNames: new Set(),
+            now: 10_000,
+            gracePeriodMs: 2_000,
+            limit: 3,
+        })).toEqual([
+            { fileName: 'old.webp', lastModifiedAt: 0 },
+            { fileName: 'a.webp', lastModifiedAt: 1_000 },
+            { fileName: 'z.webp', lastModifiedAt: 1_000 },
+        ])
+    })
 })

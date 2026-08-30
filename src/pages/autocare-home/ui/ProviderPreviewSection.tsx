@@ -201,18 +201,22 @@ function ProviderCard({ provider }: { provider: HomeProvider }) {
     return (
         <article className="relative flex min-h-[352px] flex-col rounded-[9px] border border-border bg-card px-4 pb-4 pt-5">
             {provider.tag ? <span className={`absolute left-3 top-0 -translate-y-1/2 rounded px-2 py-1 text-[0.68rem] font-semibold ${provider.tag === 'best' ? 'bg-status-success-surface text-status-success-foreground' : 'bg-status-warning-surface text-status-warning-foreground'}`}>{provider.tag === 'best' ? t('autocare.bestValue') : t('autocare.highestRating')}</span> : null}
-            <div className="flex items-center gap-2">
+            <div className="flex min-h-[40px] items-start gap-2">
                 <ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-6" />
-                <h3 className="text-[1.02rem] font-black">{provider.name}</h3>
-                {provider.verified ? <BadgeCheck className="size-4 fill-primary text-primary-foreground" /> : null}
-                {provider.trustBadge === 'trusted' ? <span className="rounded-full bg-status-success-surface px-1.5 py-0.5 text-[9px] font-black text-status-success-foreground">{t('autocare.trustBadgeLabel')}</span> : null}
+                <h3 className="min-w-0 flex-1 line-clamp-2 text-[1.02rem] font-black leading-5">{provider.name}</h3>
+                {provider.verified ? <BadgeCheck className="mt-0.5 size-4 shrink-0 fill-primary text-primary-foreground" /> : null}
+                {provider.trustBadge === 'trusted' ? <span className="shrink-0 rounded-full bg-status-success-surface px-1.5 py-0.5 text-[9px] font-black leading-4 text-status-success-foreground">{t('autocare.trustBadgeLabel')}</span> : null}
             </div>
-            <p className="mt-3 flex items-center gap-1 text-sm"><strong className="text-rating-foreground">{provider.rating}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="size-3.5 fill-rating-fill text-rating-fill" />)}<span className="ml-1 text-xs text-muted-foreground">({t('autocare.reviews', { count: provider.reviews })})</span></p>
-            <p className="mt-3 flex items-center gap-2 text-xs font-medium text-muted-foreground"><MapPin className="size-3.5" />{provider.distance}<span>·</span>{provider.address}</p>
-            <p className="mt-6 flex items-center gap-2 text-lg font-black">{t('autocare.fromPrice', { price: provider.price })}{provider.oldPrice ? <><span className="text-xs font-medium text-muted-foreground line-through">{provider.oldPrice}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs text-status-danger-foreground">{provider.discount}</span></> : null}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{t('autocare.partsIncluded')}</p>
-            <p className="mt-5 text-xs text-muted-foreground">{t('autocare.nearestBooking')}</p>
-            <p className="mt-1 text-base font-black">{provider.next}</p>
+            <p className="mt-3 flex min-h-[20px] items-center gap-1 text-sm"><strong className="text-rating-foreground">{provider.rating}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="size-3.5 fill-rating-fill text-rating-fill" />)}<span className="ml-1 text-xs text-muted-foreground">({t('autocare.reviews', { count: provider.reviews })})</span></p>
+            <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{provider.distance}<span className="px-1">·</span>{provider.address}</span></p>
+            <div className="mt-6 min-h-[44px]">
+                <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{t('autocare.fromPrice', { price: provider.price })}{provider.oldPrice ? <><span className="text-xs font-medium text-muted-foreground line-through">{provider.oldPrice}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs leading-4 text-status-danger-foreground">{provider.discount}</span></> : null}</p>
+                <p className="mt-1 text-xs leading-4 text-muted-foreground">{t('autocare.partsIncluded')}</p>
+            </div>
+            <div className="mt-5 min-h-[36px]">
+                <p className="text-xs leading-4 text-muted-foreground">{t('autocare.nearestBooking')}</p>
+                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{provider.next}</p>
+            </div>
             <Link to={routePaths.serviceProviderDetails(provider.id)} className="mt-auto flex h-[42px] items-center justify-center rounded-[6px] bg-primary text-sm font-bold text-primary-foreground">{t('autocare.bookAction')}</Link>
             <Link to={routePaths.serviceProviderDetails(provider.id)} className="mt-3 text-center text-xs font-semibold text-primary">{t('autocare.detailsAction')}</Link>
         </article>

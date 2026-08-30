@@ -10,6 +10,7 @@ import { SecurityTokenEntity } from '../../entities/security-token/security-toke
 import { OAuthIdentityEntity } from '../../entities/oauth-identity/oauth-identity.entity.js'
 import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
+import { CabinetEntity, CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
 import { NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { ClientVehicleEntity } from '../../entities/user/client-vehicle.entity.js'
 import {
@@ -36,6 +37,9 @@ import { getAdminDeletionListLimit } from './account-deletion-list-policy.js'
 import { getAnonymizedIdentity, ANONYMIZED_REVIEW_TEXT } from '../users/account-anonymization-policy.js'
 import { isAccountDeletionReady } from '../users/account-deletion-retention.js'
 import { removeAutoCareAttachmentObject } from '../autocare/autocare-attachment-storage.js'
+import { getAutoCareProviderLogoFileName, removeAutoCareProviderLogo } from '../autocare/autocare-provider-logo-storage.js'
+import { getAutoCareProviderMediaFileName, removeAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
+import { deleteUploadedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { assertAutoCareDeletionInvariants } from '../users/account-deletion-invariants.js'
 
 async function anonymizeAccount(manager: EntityManager, userId: string) {
@@ -58,6 +62,41 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     for (const attachment of attachments) {
         await removeAutoCareAttachmentObject(attachment.objectKey)
     }
+
+    const ownedProviders = await manager.getRepository(AutomotiveProviderEntity).find({
+        where: { ownerId: userId },
+        select: { logoUrl: true, coverImageUrl: true, galleryImageUrls: true },
+    })
+    // Provider media is public by URL, so it must be removed before the
+    // account is anonymized. If storage deletion fails, the transaction rolls
+    // back and the provider keeps its references for a safe retry.
+    for (const provider of ownedProviders) {
+        const logoFileName = provider.logoUrl ? getAutoCareProviderLogoFileName(provider.logoUrl) : null
+        if (logoFileName) await removeAutoCareProviderLogo(logoFileName)
+        const coverFileName = provider.coverImageUrl
+            ? getAutoCareProviderMediaFileName(provider.coverImageUrl, 'cover')
+            : null
+        if (coverFileName) await removeAutoCareProviderMedia('cover', coverFileName)
+        for (const galleryUrl of provider.galleryImageUrls ?? []) {
+            const galleryFileName = getAutoCareProviderMediaFileName(galleryUrl, 'gallery')
+            if (galleryFileName) await removeAutoCareProviderMedia('gallery', galleryFileName)
+        }
+    }
+
+    const ownedCabinets = await manager.getRepository(CabinetEntity).find({
+        where: { ownerId: userId },
+        select: { id: true, photos: true },
+    })
+    // Legacy cabinets remain referenced by historical bookings, so they
+    // cannot be removed safely. Make them non-public and delete their
+    // uploaded image objects before the account is anonymized instead.
+    for (const cabinet of ownedCabinets) {
+        if (cabinet.photos.length > 0) await deleteUploadedCabinetImages(cabinet.photos)
+    }
+    await manager.getRepository(CabinetEntity).update(
+        { ownerId: userId },
+        { status: CabinetStatus.Blocked, photos: [] },
+    )
 
     const identity = getAnonymizedIdentity(userId)
     user.name = identity.name
@@ -103,7 +142,15 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     // preserving the business profile for an explicit future transfer.
     await manager.getRepository(AutomotiveProviderEntity).update(
         { ownerId: userId },
-        { phone: null, phones: [], email: null, publicContactNote: null },
+        {
+            phone: null,
+            phones: [],
+            email: null,
+            publicContactNote: null,
+            logoUrl: null,
+            coverImageUrl: null,
+            galleryImageUrls: [],
+        },
     )
     await manager.getRepository(AutomotiveProviderEntity).update(
         { ownerId: userId },
@@ -113,15 +160,31 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     // Preserve immutable booking/financial references, but redact free text and
     // private AutoCare payloads that are not needed for settlement/audit.
     await manager.query('UPDATE "reviews" SET "text" = $1 WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
-    await manager.query('UPDATE "audit_logs" SET "actor_id" = NULL WHERE "actor_id" = $1', [userId])
+    await manager.query('UPDATE "audit_logs" SET "actor_id" = NULL, "metadata" = \'{"redacted": true}\'::jsonb WHERE "actor_id" = $1', [userId])
     await manager.query('UPDATE "platform_reviews" SET "authorName" = $1, "avatarUrl" = NULL, "text" = $2, "organizationResponse" = NULL WHERE "clientId" = $3', [identity.name, ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "platform_reviews" SET "respondedById" = NULL WHERE "respondedById" = $1', [userId])
     await manager.query('UPDATE "autocare_reviews" SET "authorName" = $1, "vehicleLabel" = $1, "avatarUrl" = NULL, "photoUrls" = \'{}\', "text" = $2, "clientId" = NULL WHERE "clientId" = $3', [identity.name, ANONYMIZED_REVIEW_TEXT, userId])
     await manager.query('UPDATE "autocare_review_promos" SET "clientId" = NULL, "redeemedById" = NULL WHERE "clientId" = $1 OR "redeemedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_service_requests" SET "contactSnapshot" = NULL, "vehicleSnapshot" = NULL, "note" = NULL WHERE "clientId" = $1', [userId])
+    await manager.query(
+        `UPDATE "autocare_service_requests"
+            SET "contactSnapshot" = NULL,
+                "vehicleSnapshot" = NULL,
+                "note" = NULL,
+                "cancelledById" = NULL,
+                "noShowById" = NULL,
+                "completedById" = NULL
+          WHERE "clientId" = $1
+             OR "cancelledById" = $1
+             OR "noShowById" = $1
+             OR "completedById" = $1`,
+        [userId],
+    )
     await manager.query('UPDATE "autocare_service_quotes" SET "snapshot" = jsonb_build_object(\'redacted\', true) WHERE "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)', [userId])
     await manager.query('UPDATE "autocare_broadcast_requests" SET "issueDescription" = $1, "vehicleSnapshot" = NULL, "photoUrls" = \'{}\' WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
     await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_guarantee_claims" SET "resolvedById" = NULL WHERE "resolvedById" = $1', [userId])
     await manager.query('UPDATE "autocare_expert_questions" SET "symptoms" = $1, "vehicleSnapshot" = NULL, "answer" = NULL WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_expert_questions" SET "answeredById" = NULL WHERE "answeredById" = $1', [userId])
     await manager.query('UPDATE "autocare_fleet_accounts" SET "notes" = NULL WHERE "ownerId" = $1', [userId])
     await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = \'{}\', "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $2)', [identity.name, userId])
     await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "noShowReason" = NULL, "completionNote" = NULL WHERE "clientId" = $1', [userId])
@@ -133,15 +196,37 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)`,
         [userId],
     )
-    await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "reportedUserId" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
+    await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
     await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
     await manager.query('UPDATE "autocare_chat_threads" SET "subject" = $2, "clientId" = NULL, "createdById" = NULL WHERE "clientId" = $1 OR "createdById" = $1', [userId, ANONYMIZED_REVIEW_TEXT])
-    await manager.query('UPDATE "autocare_repair_events" SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = \'{}\' WHERE "actorId" = $1', [userId, ANONYMIZED_REVIEW_TEXT])
+    await manager.query(
+        `UPDATE "autocare_repair_events"
+            SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = '{}'::jsonb
+          WHERE "actorId" = $1
+             OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
+        [userId, ANONYMIZED_REVIEW_TEXT],
+    )
     await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL WHERE "verifiedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = \'{"redacted": true}\'::jsonb WHERE "requestedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = \'{}\'::jsonb, "comparisonAttributes" = \'[]\'::jsonb, "rationale" = $1 WHERE "requestedById" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
-    await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\' WHERE "submittedById" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
-    await manager.query('UPDATE "autocare_reschedule_requests" SET "reason" = NULL WHERE "requestedById" = $1', [userId])
+    await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = \'{"redacted": true}\'::jsonb, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $1', [userId])
+    await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
+    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = \'{}\'::jsonb, "comparisonAttributes" = \'[]\'::jsonb, "rationale" = $1, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
+    await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL WHERE "submittedById" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL WHERE "decidedById" = $1', [userId])
+    await manager.query(
+        `UPDATE "autocare_reschedule_requests"
+            SET "reason" = NULL, "resolvedById" = NULL, "resolutionReason" = NULL
+          WHERE "requestedById" = $1
+             OR "resolvedById" = $1
+             OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
+        [userId],
+    )
+    await manager.query('UPDATE "booking_reschedule_requests" SET "resolvedById" = NULL, "resolutionReason" = NULL WHERE "requestedById" = $1 OR "resolvedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
+    await manager.query('UPDATE "booking_status_history" SET "changedById" = NULL, "reason" = NULL WHERE "changedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
+    await manager.query('UPDATE "bookings" SET "comment" = NULL, "cancellationReason" = NULL, "ownerNote" = NULL WHERE "clientId" = $1', [userId])
+    await manager.query('UPDATE "autocare_trust_policy" SET "updatedById" = NULL WHERE "updatedById" = $1', [userId])
+    await manager.query('UPDATE "autocare_bonus_ledger" SET "actorId" = NULL WHERE "actorId" = $1', [userId])
+    await manager.query('UPDATE "security_event_actions" SET "assignee_id" = NULL WHERE "assignee_id" = $1', [userId])
     await manager.query('UPDATE "security_events" SET "user_id" = NULL WHERE "user_id" = $1', [userId])
     await assertAutoCareDeletionInvariants(manager, userId)
     return user

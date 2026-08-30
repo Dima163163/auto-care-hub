@@ -224,6 +224,8 @@ export type AutoCareApiProvider = {
         location: AutoCareApiProvider['location']
         offers: AutoCareApiOffer[]
     }>
+    /** True when the API intentionally returned a usable subset while another projection is still loading. */
+    partial?: boolean
 }
 
 export type AutoCareApiDiscoveryItem = {
@@ -566,6 +568,10 @@ export type DecideAutoCareCatalogGapRequestInput = { id: string; status: 'approv
 
 export type CreateAutoCareProviderInvitationInput = { providerId: string; email: string; role: 'manager' | 'staff'; locationId?: string | null }
 export type AcceptAutoCareProviderInvitationInput = { token: string }
+export type AutoCareProviderInvitationAcceptResponse = {
+    membership: AutoCareProviderMember
+    invitation: AutoCareProviderInvitation
+}
 
 export type IssueAutoCareReviewPromoInput = {
     providerId: string
@@ -1452,13 +1458,16 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareProviderMembersSchema.shape.memberships.element.parse(value),
             invalidatesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareProvider', id: `MEMBERS_${providerId}` }],
         }),
-        acceptAutoCareProviderInvitation: build.mutation<unknown, AcceptAutoCareProviderInvitationInput>({
+        acceptAutoCareProviderInvitation: build.mutation<AutoCareProviderInvitationAcceptResponse, AcceptAutoCareProviderInvitationInput>({
             query: (body) => ({ url: '/owner/autocare-provider-invitations/accept', method: 'POST', body }),
             transformResponse: (value: unknown) => z.object({
                 membership: z.object({ id: z.string(), providerId: z.string(), userId: z.string(), user: z.object({ id: z.string(), name: z.string(), email: z.string().email(), avatarUrl: z.string().nullable() }).nullable(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']) }).passthrough(),
                 invitation: autoCareProviderInvitationSchema,
             }).parse(value),
-            invalidatesTags: [{ type: 'AutoCareProvider', id: 'OWNER_LIST' }],
+            invalidatesTags: [
+                { type: 'AutoCareProvider', id: 'OWNER_LIST' },
+                { type: 'AutoCareProvider', id: 'WORKSPACE_ACCESS' },
+            ],
         }),
         getOwnerAutoCareProviderChangeRequests: build.query<AutoCareProviderChangeRequest[], string>({
             query: (providerId) => `/owner/autocare-providers/${encodeURIComponent(providerId)}/change-requests`,

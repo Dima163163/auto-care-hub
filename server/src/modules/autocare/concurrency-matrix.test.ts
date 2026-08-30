@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { AUTOCARE_CONCURRENCY_MATRIX, validateConcurrencyMatrix } from './concurrency-matrix.js'
 
 describe('AutoCare concurrency matrix', () => {
-    it('covers booking, reschedule, cancellation and no-show actors', () => {
-        expect(new Set(AUTOCARE_CONCURRENCY_MATRIX.map((scenario) => scenario.operation))).toEqual(new Set(['booking', 'reschedule', 'cancellation', 'no_show']))
+    it('covers booking, quote, reschedule, cancellation and no-show actors', () => {
+        expect(new Set(AUTOCARE_CONCURRENCY_MATRIX.map((scenario) => scenario.operation))).toEqual(new Set(['booking', 'quote', 'reschedule', 'cancellation', 'no_show']))
         expect(validateConcurrencyMatrix()).toBe(true)
     })
 

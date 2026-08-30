@@ -59,6 +59,7 @@ import { requireAuth } from './require-auth.js'
 import { enqueuePasswordResetEmailSafely } from '../outbox/email-outbox.service.js'
 import { enqueueEmailVerificationSafely } from '../outbox/email-verification-outbox.service.js'
 import { getEmailLocale } from '../../shared/i18n/request-locale.js'
+import { serializeError } from '../../shared/observability/logger.js'
 import {
     SecurityEventSeverity,
     SecurityEventType,
@@ -254,7 +255,7 @@ export async function authRoutes(
             } catch (error) {
                 request.log.error(
                     {
-                        error,
+                        error: serializeError(error),
                     },
                     'Failed to send registration email verification'
                 )
@@ -460,7 +461,7 @@ export async function authRoutes(
                 } catch (error) {
                     request.log.error(
                         {
-                            error,
+                            error: serializeError(error),
                         },
                         'Failed to send password reset email'
                     )
@@ -541,7 +542,7 @@ export async function authRoutes(
             } catch (error) {
                 request.log.error(
                     {
-                        error,
+                        error: serializeError(error),
                     },
                     'Failed to send email verification email'
                 )

@@ -8,7 +8,7 @@ import type {
     UpdateSuperAdminAutoCareMarketZoneInput,
 } from '@/entities/automotive-service'
 
-import { parseNames } from './market-hierarchy-form-utils'
+import { parseNames, parseOptionalFiniteNumber } from './market-hierarchy-form-utils'
 
 type SubmitState = { isLoading: boolean; isSuccess: boolean }
 type ZoneInput = CreateSuperAdminAutoCareMarketZoneInput | UpdateSuperAdminAutoCareMarketZoneInput
@@ -37,8 +37,13 @@ function ZoneForm({ city, zones, zone, onSubmit, onDelete, state }: { city: Auto
     const submit = async () => {
         try {
             setError(null)
-            const toNumberOrNull = (value: string) => value.trim() ? Number(value) : null
-            const base = { parentId: parentId || null, slug: slug.trim().toLowerCase(), zoneType, names: parseNames(names), centerLatitude: toNumberOrNull(latitude), centerLongitude: toNumberOrNull(longitude), radiusKm: toNumberOrNull(radius), imageUrl: zone?.imageUrl ?? null, displayOrder: Number(displayOrder), active }
+            const centerLatitude = parseOptionalFiniteNumber(latitude, 'Широта', -90, 90)
+            const centerLongitude = parseOptionalFiniteNumber(longitude, 'Долгота', -180, 180)
+            if ((centerLatitude === null) !== (centerLongitude === null)) throw new Error('Широту и долготу нужно указывать вместе.')
+            const radiusKm = parseOptionalFiniteNumber(radius, 'Радиус', 0, 20_000)
+            const parsedDisplayOrder = parseOptionalFiniteNumber(displayOrder, 'Порядок', 0, 1_000_000)
+            if (parsedDisplayOrder === null) throw new Error('Укажите порядок зоны.')
+            const base = { parentId: parentId || null, slug: slug.trim().toLowerCase(), zoneType, names: parseNames(names), centerLatitude, centerLongitude, radiusKm, imageUrl: zone?.imageUrl ?? null, displayOrder: parsedDisplayOrder, active }
             await onSubmit(zone ? { id: zone.id, ...base } : { marketId: city.id, ...base })
         } catch (reason) {
             setError(reason instanceof Error ? reason.message : 'Не удалось сохранить зону.')

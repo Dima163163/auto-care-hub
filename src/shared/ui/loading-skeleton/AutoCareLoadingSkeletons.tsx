@@ -9,6 +9,18 @@ export function AutoCareResultsSkeleton({ label }: { label: string }) {
     return <LoadingRegion label={label}><ResultsLoadingSurface><AutoCareResultsSkeletonContent /></ResultsLoadingSurface></LoadingRegion>
 }
 
+/**
+ * Data-only placeholder for the already mounted discovery route.
+ *
+ * The map is a stable part of the page shell and mounts immediately, so the
+ * route must not replace it with a second placeholder while discovery data is
+ * loading. Keep this variant deliberately free of map markup and use it next
+ * to the real map in `AutoCareResultsPage`.
+ */
+export function AutoCareResultsDataSkeleton() {
+    return <div data-testid="autocare-results-data-skeleton" className="space-y-5" aria-hidden="true"><div className="space-y-2"><Skeleton data-testid="autocare-results-title-skeleton" className="h-7 w-72 max-w-full" /><Skeleton data-testid="autocare-results-description-skeleton" className="h-4 w-[28rem] max-w-full" /></div><div className="grid gap-4">{Array.from({ length: 4 }, (_, index) => <ProviderCardSkeleton key={index} />)}</div></div>
+}
+
 /** Keep the discovery controls visible while the lazy route module is loading. */
 export function AutoCareResultsRouteSkeleton({ label }: { label: string }) {
     return (

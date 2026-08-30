@@ -240,6 +240,61 @@ test.describe('public and client AutoCare states', () => {
         await expect(page.getByRole('dialog')).toBeVisible()
     })
 
+    test('redeems client bonus points against a confirmed booking without duplicating the ledger entry', async ({ page }) => {
+        await signInAsClient(page)
+        await page.goto('/profile/bookings')
+
+        const bonus = page.locator('details').filter({ hasText: /бонусы сервиса|service bonuses/i }).first()
+        await expect(bonus).toBeVisible()
+        const points = bonus.locator('input[type="number"]')
+        await points.fill('100')
+        const redeem = bonus.getByRole('button', { name: /списать|redeem/i })
+        await expect(redeem).toBeEnabled()
+        await redeem.click()
+        await expect(bonus).toContainText(/Списание|Redeemed/)
+
+        const beforeRetry = await bonus.locator('li').filter({ hasText: /Списание|Redeemed/ }).count()
+        await redeem.click()
+        await expect.poll(() => bonus.locator('li').filter({ hasText: /Списание|Redeemed/ }).count()).toBe(beforeRetry)
+    })
+
+    test('shows refund and expiry balances with filterable bonus history', async ({ page }) => {
+        await signInAsClient(page)
+        await page.goto('/profile/bookings')
+
+        const bonus = page.locator('details').filter({ hasText: /бонусы сервиса|service bonuses/i }).first()
+        await expect(bonus).toBeVisible()
+        await expect(bonus).toContainText(/Возвращено: 120|Refunded: 120/i)
+        await expect(bonus).toContainText(/Истекло: 80|Expired: 80/i)
+
+        const historyFilter = bonus.getByRole('combobox', { name: /фильтр операций|transaction filter/i })
+        await historyFilter.selectOption('refund')
+        await expect(bonus.locator('li').filter({ hasText: /Возврат|Refund/i }).first()).toBeVisible()
+        await historyFilter.selectOption('expire')
+        await expect(bonus.locator('li').filter({ hasText: /Истечение срока|Expired/i }).first()).toBeVisible()
+    })
+
+    test('accepts a pending quote once and preserves the booking snapshot on repeat', async ({ page }) => {
+        await signInAsClient(page)
+        await page.goto('/profile/bookings')
+
+        await page.getByRole('button', { name: /Диагностика тормозной системы/ }).first().click()
+        const accept = page.getByRole('button', { name: /Принять смету|Accept estimate/i })
+        await expect(accept).toBeVisible()
+        await accept.click()
+        await expect(page.getByText(/Запись подтверждена|Booking confirmed/i).first()).toBeVisible()
+        await expect(page.getByRole('button', { name: /Принять смету|Accept estimate/i })).toHaveCount(0)
+    })
+
+    test('shows an expired quote without an acceptance action', async ({ page }) => {
+        await signInAsClient(page)
+        await page.goto('/profile/bookings')
+
+        await page.getByRole('button', { name: /Тормозная диагностика — смета истекла|Brake diagnostics — estimate expired/i }).click()
+        await expect(page.getByText(/Срок действия сметы истёк|This estimate has expired/i)).toBeVisible()
+        await expect(page.getByRole('button', { name: /Принять смету|Accept estimate/i })).toHaveCount(0)
+    })
+
     for (const scenario of ['error', 'stale', 'offline', 'permission-denied', 'suspended'] as const) {
         test(`uses a recoverable ${scenario} state without breaking the client shell`, async ({ page }) => {
             await signInAsClient(page)

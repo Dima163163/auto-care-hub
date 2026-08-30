@@ -11,6 +11,8 @@ import {
     useMarkAutoCareServiceConversationReadMutation,
     type AutoCareServiceMessage,
 } from '@/entities/automotive-service'
+import { validateChatAttachment } from '@/entities/automotive-service/lib/chat-attachment'
+import { validateChatOffer } from '@/entities/automotive-service/lib/chat-offer-validation'
 import { useGetMeQuery } from '@/features/auth'
 import { API_BASE_URL } from '@/shared/config/api'
 import { getApiErrorState } from '@/shared/api/getApiErrorMessage'
@@ -20,7 +22,6 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency } from '@/shared/lib/locale-format'
 import { Dialog, DialogContent, DialogTitle } from '@/shared/ui/dialog'
-import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
 import { QueryStateCard } from '@/shared/ui/query-state-card'
 
 type ServiceRequestChatProps = { requestId: string; ownerMode?: boolean }
@@ -99,10 +100,22 @@ export function ServiceRequestChat({ requestId, ownerMode = false }: ServiceRequ
 
     const submitOffer = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!offerTitle.trim()) return
         setActionError(null)
+        const validation = validateChatOffer({
+            type: offerType,
+            title: offerTitle,
+            description: offerDescription,
+            discountPercent,
+            couponCode,
+            amount: offerAmount,
+        })
+        if (!validation.valid) {
+            setActionError(t('autocare.chatOfferValidation'))
+            return
+        }
+
         try {
-            await createOffer({ requestId, type: offerType, title: offerTitle.trim(), description: offerDescription.trim() || null, discountPercent: offerType === 'discount' ? Number(discountPercent) : null, couponCode: offerType === 'discount' ? couponCode.trim().toUpperCase() || null : null, amountMinor: offerType === 'alternative' && offerAmount ? Math.round(Number(offerAmount) * 100) : null, currencyCode: offerType === 'alternative' && offerAmount ? 'RUB' : null, expiresAt: offerType === 'discount' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null }).unwrap()
+            await createOffer({ requestId, type: offerType, title: validation.title, description: validation.description, discountPercent: validation.discountPercent, couponCode: validation.couponCode, amountMinor: validation.amountMinor, currencyCode: validation.currencyCode, expiresAt: offerType === 'discount' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null }).unwrap()
             setShowOffer(false)
             setOfferDescription('')
         } catch {
@@ -112,18 +125,21 @@ export function ServiceRequestChat({ requestId, ownerMode = false }: ServiceRequ
 
     const upload = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
-        const contentType = file ? getSupportedImageMimeType(file) : undefined
-        if (!file || !contentType) {
+        const validation = validateChatAttachment(file)
+        if (!file || !validation.valid) {
             setActionError(t('autocare.chatUploadError'))
+            event.target.value = ''
             return
         }
         setActionError(null)
         try {
             const contentBase64 = await readFileAsBase64(file)
-            await uploadAttachment({ requestId, fileName: file.name, contentType, size: file.size, contentBase64 }).unwrap()
+            await uploadAttachment({ requestId, fileName: file.name, contentType: validation.contentType, size: file.size, contentBase64 }).unwrap()
             event.target.value = ''
         } catch {
             setActionError(t('autocare.chatUploadError'))
+        } finally {
+            event.target.value = ''
         }
     }
 

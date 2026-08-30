@@ -5,7 +5,11 @@ import { useSearchParams } from 'react-router'
 import { useGetAutoCareAvailabilityQuery, type AutoCareAvailability } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { DateInputTrigger } from '@/shared/ui/date-input-trigger'
-import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
+
+import {
+    MAX_REQUEST_ATTACHMENTS,
+    selectRequestImageFiles,
+} from '../lib/request-attachments'
 
 type RequestFormProps = {
     providerId: string
@@ -54,6 +58,7 @@ export function RequestForm({ providerId, locationId, offeringId, initialVehicle
     const [vehicleSnapshot, setVehicleSnapshot] = useState<EditableVehicle>(initialVehicle ?? { make: '', model: '', year: new Date().getFullYear() })
     const [vehicleId] = useState<string | null>(initialVehicleId)
     const [files, setFiles] = useState<File[]>([])
+    const [attachmentIssue, setAttachmentIssue] = useState<{ invalidCount: number; tooManyCount: number } | null>(null)
     const [note, setNote] = useState('')
     const availabilityDate = customDate || toDateInputValue(getFutureDate(Math.max(appointmentDates.indexOf(selectedDate), 0)))
     const { data: availability, isError: isAvailabilityError, isFetching: isAvailabilityLoading } = useGetAutoCareAvailabilityQuery({ providerId, locationId, offeringId, date: availabilityDate })
@@ -81,7 +86,7 @@ export function RequestForm({ providerId, locationId, offeringId, initialVehicle
         <form onSubmit={handleSubmit} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
             <AppointmentPicker locale={locale} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={availability} isLoading={isAvailabilityLoading} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { setCustomDate(value); setSelectedDate('') }} onTimeChange={setSelectedTime} />
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} vehicle={vehicleSnapshot} onVehicleChange={setVehicleSnapshot} />
-            <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} />
+            <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} attachmentIssue={attachmentIssue} onAttachmentIssueChange={setAttachmentIssue} />
             <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
             {errorMessage && <p role="alert" className="rounded-[var(--radius-control)] bg-status-danger-surface px-3 py-2 text-sm font-semibold text-status-danger-foreground">{errorMessage}</p>}
             <button type="submit" disabled={isSubmitting || isAvailabilityLoading || !effectiveSelectedTime} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : errorMessage ? t('common.retry') : t('autocare.requestSubmit')}</button>
@@ -165,8 +170,12 @@ function toDateInputValue(date: Date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function RequestDetails({ note, onNoteChange, files, onFilesChange }: { note: string; onNoteChange: (note: string) => void; files: File[]; onFilesChange: (files: File[]) => void }) {
+function RequestDetails({ note, onNoteChange, files, onFilesChange, attachmentIssue, onAttachmentIssueChange }: { note: string; onNoteChange: (note: string) => void; files: File[]; onFilesChange: (files: File[]) => void; attachmentIssue: { invalidCount: number; tooManyCount: number } | null; onAttachmentIssueChange: (issue: { invalidCount: number; tooManyCount: number } | null) => void }) {
     const { t } = useTranslation()
+    const attachmentMessages = [
+        attachmentIssue?.invalidCount ? t('autocare.requestAttachmentInvalid', { count: attachmentIssue.invalidCount }) : null,
+        attachmentIssue?.tooManyCount ? t('autocare.requestAttachmentLimit', { count: MAX_REQUEST_ATTACHMENTS }) : null,
+    ].filter((message): message is string => Boolean(message))
 
-    return <section className="border-t border-border pt-5"><label className="grid gap-2 text-xs font-bold text-foreground">{t('autocare.requestNoteLabel')}<textarea rows={4} maxLength={4000} value={note} onChange={(event) => onNoteChange(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.requestNotePlaceholder')} /></label><label className="mt-4 flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{files.length ? `${t('autocare.requestAttachPhoto')} (${files.length})` : t('autocare.requestAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => { const next = Array.from(event.target.files ?? []).filter((file) => getSupportedImageMimeType(file)).slice(0, 6); onFilesChange(next); event.target.value = '' }} /></label></section>
+    return <section className="border-t border-border pt-5"><label className="grid gap-2 text-xs font-bold text-foreground">{t('autocare.requestNoteLabel')}<textarea rows={4} maxLength={4000} value={note} onChange={(event) => onNoteChange(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.requestNotePlaceholder')} /></label><label htmlFor="request-attachments" className={`mt-4 flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed px-3 text-xs font-bold transition ${attachmentIssue ? 'border-status-warning-border bg-status-warning-surface text-status-warning-foreground' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`}><Camera className="size-4 text-primary" />{files.length ? `${t('autocare.requestAttachPhoto')} (${files.length})` : t('autocare.requestAttachPhoto')}<input id="request-attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" aria-invalid={Boolean(attachmentIssue)} aria-describedby={attachmentIssue ? 'requestAttachmentError' : undefined} onChange={(event) => { const selection = selectRequestImageFiles(Array.from(event.target.files ?? [])); onFilesChange(selection.files); onAttachmentIssueChange(selection.invalidCount || selection.tooManyCount ? { invalidCount: selection.invalidCount, tooManyCount: selection.tooManyCount } : null); event.target.value = '' }} /></label>{attachmentMessages.length > 0 ? <p id="requestAttachmentError" role="alert" className="mt-2 text-xs font-semibold text-status-warning-foreground">{attachmentMessages.join(' ')}</p> : null}</section>
 }

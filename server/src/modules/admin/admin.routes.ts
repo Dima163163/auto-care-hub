@@ -252,7 +252,16 @@ export async function adminRoutes(
 
     app.get('/admin/autocare-appeals', async (request) => {
         const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
-        return listAdminAutoCareAppeals(await requireAuth(request), query)
+        const user = await requireAuth(request)
+        const result = await listAdminAutoCareAppeals(user, query)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareAppealsViewed,
+            targetType: 'autocare_appeals',
+            metadata: { itemCount: result.length, status: query.status ?? null, subject: query.subject ?? null },
+            request,
+        })
+        return result
     })
 
     app.patch('/admin/autocare-appeals/:id/decision', async (request) => {
@@ -266,7 +275,16 @@ export async function adminRoutes(
 
     app.get('/admin/autocare-moderation-evidence', async (request) => {
         const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
-        return listAdminAutoCareModerationEvidence(await requireAuth(request), query.status)
+        const user = await requireAuth(request)
+        const result = await listAdminAutoCareModerationEvidence(user, query.status)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareModerationQueueViewed,
+            targetType: 'autocare_moderation_evidence',
+            metadata: { itemCount: result.length, status: query.status ?? null },
+            request,
+        })
+        return result
     })
 
     app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {
@@ -299,7 +317,16 @@ export async function adminRoutes(
 
     app.get('/admin/autocare-provider-change-requests', async (request) => {
         const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
-        return listAdminProviderChangeRequests(await requireAuth(request), query.status, query.kind)
+        const user = await requireAuth(request)
+        const result = await listAdminProviderChangeRequests(user, query.status, query.kind)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareProviderChangesViewed,
+            targetType: 'autocare_provider_change_requests',
+            metadata: { itemCount: result.length, status: query.status ?? null, kind: query.kind ?? null },
+            request,
+        })
+        return result
     })
 
     app.patch('/admin/autocare-provider-change-requests/:id/decision', async (request) => {
@@ -320,7 +347,16 @@ export async function adminRoutes(
 
     app.get('/admin/catalog-gap-requests', async (request) => {
         const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
-        return listAdminCatalogGapRequests(await requireAuth(request), query.status)
+        const user = await requireAuth(request)
+        const result = await listAdminCatalogGapRequests(user, query.status)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareCatalogGapsViewed,
+            targetType: 'autocare_catalog_gap_requests',
+            metadata: { itemCount: result.length, status: query.status ?? null },
+            request,
+        })
+        return result
     })
 
     app.patch('/admin/catalog-gap-requests/:id/decision', async (request) => {
@@ -341,7 +377,16 @@ export async function adminRoutes(
 
     app.get('/admin/chat-reports', async (request) => {
         const query = validateQuery(adminChatReportsQuerySchema, request.query)
-        return listAdminAutoCareChatReports(await requireAuth(request), query.status)
+        const user = await requireAuth(request)
+        const result = await listAdminAutoCareChatReports(user, query.status)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareChatReportsViewed,
+            targetType: 'autocare_chat_reports',
+            metadata: { itemCount: result.length, status: query.status ?? null },
+            request,
+        })
+        return result
     })
 
     app.patch('/admin/chat-reports/:id/decision', async (request) => {

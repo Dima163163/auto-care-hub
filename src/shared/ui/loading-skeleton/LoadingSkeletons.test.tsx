@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { I18nProvider } from '@/shared/lib/i18n-provider'
 
-import { AutoCareResultsRouteSkeleton, AutoCareResultsSkeleton, CardsGridSkeleton, ProviderProfileSkeleton } from './index'
+import { AutoCareResultsDataSkeleton, AutoCareResultsRouteSkeleton, AutoCareResultsSkeleton, CardsGridSkeleton, ProviderProfileSkeleton } from './index'
 
 describe('loading skeletons', () => {
     it('announces a results loading region without exposing placeholder content', () => {
@@ -30,6 +30,15 @@ describe('loading skeletons', () => {
 
         expect(screen.getByTestId('autocare-results-title-skeleton')).toBeVisible()
         expect(screen.getByTestId('autocare-results-description-skeleton')).toBeVisible()
+    })
+
+    it('keeps the data placeholder free of a nested map skeleton', () => {
+        render(<AutoCareResultsDataSkeleton />)
+
+        const dataSkeleton = screen.getByTestId('autocare-results-data-skeleton')
+
+        expect(dataSkeleton.querySelector('[data-testid="autocare-results-map-skeleton"]')).toBeNull()
+        expect(dataSkeleton.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0)
     })
 
     it('keeps discovery filters visible while the route is loading', () => {

@@ -24,7 +24,10 @@ export function AutoCareSearchForm({ marketId, markets, onMarketChange }: AutoCa
         navigate(routePaths.serviceDiscovery({ service: mode === 'service' ? serviceId : undefined, provider: mode === 'provider' ? providerName : undefined, market: marketId, radius }))
     }
 
-    const tabClass = (tab: SearchMode) => `flex h-[52px] items-center justify-center gap-2 text-base font-black transition ${mode === tab ? 'rounded-tr-[10px] bg-background text-primary' : 'bg-transparent text-primary-foreground/85 hover:bg-primary-foreground/10'}`
+    const tabClass = (tab: SearchMode) => {
+        const activeRadius = tab === 'service' ? 'rounded-tl-[10px]' : 'rounded-tr-[10px]'
+        return `flex h-[52px] items-center justify-center gap-2 text-base font-black transition ${mode === tab ? `${activeRadius} bg-background text-primary` : 'bg-transparent text-primary-foreground/85 hover:bg-primary-foreground/10'}`
+    }
 
     return (
         <form onSubmit={handleSubmit} className="overflow-hidden rounded-[12px] border-[5px] border-primary-foreground/20 bg-transparent text-foreground shadow-2xl shadow-black/30">

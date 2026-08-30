@@ -9,6 +9,7 @@ describe('Next route contract', () => {
         expect(isNextRoutePath('/')).toBe(true)
         expect(isNextRoutePath('/services')).toBe(true)
         expect(isNextRoutePath('/profile/bookings')).toBe(true)
+        expect(isNextRoutePath('/owner/invitations/accept')).toBe(true)
         expect(isNextRoutePath('/owner/autocare-providers/provider-1/reviews')).toBe(true)
         expect(isNextRoutePath('/admin/security-center')).toBe(true)
         expect(isNextRoutePath('/super-admin/dashboard')).toBe(true)

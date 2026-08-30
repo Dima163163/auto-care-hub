@@ -88,10 +88,12 @@ Demo-data CLI output is separate from the production service log path.
 
 ### Redis outage
 
-The MVP rate limiter falls back to local memory when Redis is unavailable.
-Confirm that the API remains healthy, then restore Redis before scaling the
-backend horizontally. Do not treat the fallback as a permanent production
-configuration.
+Production rate limits fail closed when Redis is unavailable: security-sensitive
+requests return `503` and must not fall back to a process-local bucket. Confirm
+that the API remains healthy, restore Redis, and verify the distributed limiter
+before scaling the backend horizontally. A local-memory fallback is permitted
+only for explicitly configured development/test environments and must never be
+enabled in production.
 
 ### Email delivery outage
 

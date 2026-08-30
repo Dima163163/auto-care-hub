@@ -75,6 +75,7 @@ export type EnvConfig = {
         signedUrlTtlSeconds: number
         antivirusMode: AutoCareAttachmentAntivirusMode
         clamavCommand: string
+        scanTimeoutMs: number
         s3: {
             endpoint: string | null
             region: string
@@ -601,6 +602,7 @@ export const env: EnvConfig = {
         signedUrlTtlSeconds: getBoundedPositiveNumberEnv('AUTOCARE_ATTACHMENT_SIGNED_URL_TTL_SECONDS', 300, 3_600),
         antivirusMode: autoCareAttachmentAntivirusMode,
         clamavCommand: getOptionalEnv('AUTOCARE_ATTACHMENT_CLAMAV_COMMAND', 'clamdscan'),
+        scanTimeoutMs: getBoundedPositiveNumberEnv('AUTOCARE_ATTACHMENT_SCAN_TIMEOUT_MS', 30_000, 120_000),
         s3: {
             endpoint: isValidEnvString(process.env.AUTOCARE_ATTACHMENT_S3_ENDPOINT)
                 ? process.env.AUTOCARE_ATTACHMENT_S3_ENDPOINT!.trim()

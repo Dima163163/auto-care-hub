@@ -268,7 +268,7 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
     }
     const [messages, attachments] = await Promise.all([
         messageQuery.getMany(),
-        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { threadId: thread.id, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' } }),
     ])
     const hasMore = messages.length > limit
     const page = [...(hasMore ? messages.slice(0, limit) : messages)].reverse()
@@ -461,7 +461,7 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
     const rawContent = decodeAutoCareAttachment(input)
     const content = await normalizeAutoCareAttachment(rawContent, input.contentType)
     const objectKey = createAutoCareAttachmentObjectKey('chats', thread.id, randomUUID())
-    await saveAutoCareAttachmentObject(objectKey, content)
+    await saveAutoCareAttachmentObject(objectKey, content, input.contentType)
     try {
         const attachment = await AppDataSource.transaction(async (manager) => {
             const lockedThread = await manager.getRepository(AutoCareChatThreadEntity).findOne({ where: { id: thread.id }, lock: { mode: 'pessimistic_write' } })
@@ -490,9 +490,9 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
 
 export async function getAutoCareChatAttachment(user: UserEntity, chatId: string, attachmentId: string) {
     const thread = await getThread(user, chatId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id }, { id: attachmentId, requestId: thread.requestId }] : { id: attachmentId, threadId: thread.id }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { id: attachmentId, requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
     if (!attachment) fail(404, 'Chat attachment not found.')
-    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey)
+    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey, attachment.contentType)
     return {
         ...attachment,
         signedUrl,

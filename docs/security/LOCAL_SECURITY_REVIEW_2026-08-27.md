@@ -30,6 +30,14 @@ retention approval.
   integrity checker cover provider, branch, media, review, bonus and workflow
   tables. Pending `NOT VALID` constraints can be validated as part of release
   migration.
+- Sensitive AutoCare reads and changes produce dedicated audit actions for
+  request/contact access, evidence and attachment views, offer price updates,
+  communication-mode changes, review discounts, and membership/invitation
+  changes. Admin queue reads (appeals, evidence, provider changes, catalog
+  gaps, chat reports and platform reviews), media uploads and owner membership
+  list reads are also traced. Audit metadata contains technical IDs and
+  bounded flags/counts only; it does not copy phone numbers, message bodies,
+  vehicle identifiers, upload URLs or media.
 
 ## Local verification commands
 
@@ -42,7 +50,21 @@ npm --prefix server run check:autocare-integrity -- --validate
 npm --prefix server run check:account-deletion-retention
 npm --prefix server run check:redis-rate-limit
 npm --prefix server run check:production-media
+npm run check:threat-surface
+npm run check:migration-validation
 ```
+
+`check:threat-surface` is a source-level regression gate for the highest-risk
+surfaces: the global request/CSRF boundary, public discovery rate limiting,
+AutoCare uploads, authenticated WebSockets, platform-review abuse controls and
+admin moderation queues. It is deterministic and does not claim to replace an
+independent penetration test or a staging replay.
+
+`check:migration-validation` inventories every executable AutoCare constraint
+created with `NOT VALID` and verifies that `check:autocare-integrity --validate`
+is wired into the release migration command and checklist. It does not claim
+that a remote database has already been validated; that still requires the
+release job and recorded staging/production evidence.
 
 `check:production-media` is intentionally a production-like preflight: it
 requires S3 credentials and ClamAV, scans a clean payload and the EICAR test
@@ -52,6 +74,10 @@ the URL never points at `quarantine/`, downloads the object and cleans it up.
 `check:account-deletion-retention` checks the most recent completed deletion
 requests (up to 1,000) against every invariant. It is safe to run repeatedly;
 it does not mutate data.
+
+The request/attachment and owner branch integration suites also exercise the
+new audit actions after successful authorization. A failed authorization does
+not create a sensitive-read audit entry.
 
 `check:redis-rate-limit` verifies the configured distributed Redis endpoint is
 reachable while the failure mode is `fail-closed`. The actual production

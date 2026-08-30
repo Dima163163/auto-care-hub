@@ -3,6 +3,7 @@ import path from 'node:path'
 
 const stylesheetPath = path.resolve('src/index.css')
 const stylesheet = await readFile(stylesheetPath, 'utf8')
+const packageManifest = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'))
 
 const sourceRoot = path.resolve('src')
 const sourceExtensions = new Set(['.ts', '.tsx'])
@@ -84,6 +85,25 @@ const foundationTokens = [
     '--motion-ease-standard',
 ]
 
+const typographyContract = [
+    {
+        label: 'Commissioner font import',
+        value: '@import "@fontsource-variable/commissioner";',
+    },
+    {
+        label: 'IBM Plex Sans font import',
+        value: '@import "@fontsource-variable/ibm-plex-sans";',
+    },
+    {
+        label: 'display font token',
+        value: "--font-display: 'Commissioner Variable'",
+    },
+    {
+        label: 'body font token',
+        value: "--font-body: 'IBM Plex Sans Variable'",
+    },
+]
+
 const requiredDeclarations = (scope) => semanticTokens
     .filter((token) => !new RegExp(`${token}\\s*:`).test(scope))
 
@@ -98,7 +118,25 @@ const failures = [
     ...foundationTokens
         .filter((token) => !new RegExp(`${token}\\s*:`).test(rootScope))
         .map((token) => `:root is missing foundation ${token}`),
+    ...typographyContract
+        .filter(({ value }) => !stylesheet.includes(value))
+        .map(({ label }) => `typography contract is missing ${label}`),
 ]
+
+const fontDependencies = [
+    '@fontsource-variable/commissioner',
+    '@fontsource-variable/ibm-plex-sans',
+]
+const declaredDependencies = {
+    ...(packageManifest.dependencies ?? {}),
+    ...(packageManifest.devDependencies ?? {}),
+}
+
+for (const dependency of fontDependencies) {
+    if (!declaredDependencies[dependency]) {
+        failures.push(`typography dependency ${dependency} is not declared`)
+    }
+}
 
 for (const filePath of await collectSourceFiles(sourceRoot)) {
     const relativePath = path.relative(process.cwd(), filePath)
@@ -136,6 +174,12 @@ try {
     await readFile(path.resolve('docs/design/design-token-contract.md'), 'utf8')
 } catch {
     failures.push('docs/design/design-token-contract.md is missing')
+}
+
+try {
+    await readFile(path.resolve('docs/design/font-license-contract.md'), 'utf8')
+} catch {
+    failures.push('docs/design/font-license-contract.md is missing')
 }
 
 if (failures.length > 0) {

@@ -1,5 +1,5 @@
-import { createReadStream } from 'node:fs'
-import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { createReadStream, lstatSync } from 'node:fs'
+import { lstat, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -20,6 +20,20 @@ function mediaError(message: string) {
 
 function mediaRoot(kind: AutoCareProviderMediaKind) {
     return path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'media', kind)
+}
+
+function providerMediaNotFound(): never {
+    throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider image not found.' })
+}
+
+async function assertRegularProviderMediaFile(filePath: string) {
+    try {
+        const file = await lstat(filePath)
+        if (!file.isFile() || file.size > MAX_MEDIA_BYTES) providerMediaNotFound()
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerMediaNotFound()
+        throw error
+    }
 }
 
 export function decodeAutoCareProviderMedia(contentBase64: string) {
@@ -43,8 +57,16 @@ export async function saveAutoCareProviderMedia(kind: AutoCareProviderMediaKind,
     }
     if (normalized.length > MAX_MEDIA_BYTES) throw mediaError('Provider image is too large.')
     const fileName = `${randomUUID()}.webp`
-    await mkdir(mediaRoot(kind), { recursive: true })
-    await writeFile(path.join(mediaRoot(kind), fileName), normalized)
+    await mkdir(mediaRoot(kind), { recursive: true, mode: 0o700 })
+    const target = path.join(mediaRoot(kind), fileName)
+    const temporary = `${target}.${process.pid}.${Date.now()}.tmp`
+    try {
+        await writeFile(temporary, normalized, { flag: 'wx', mode: 0o600 })
+        await rename(temporary, target)
+    } catch (error) {
+        await unlink(temporary).catch(() => undefined)
+        throw error
+    }
     return `/uploads/autocare/media/${kind}/${fileName}`
 }
 
@@ -52,19 +74,42 @@ export function assertAutoCareProviderMediaFileName(fileName: string) {
     if (!mediaPattern.test(fileName)) throw mediaError('Invalid provider image file name.')
 }
 
+export function getAutoCareProviderMediaFileName(value: string, kind: AutoCareProviderMediaKind) {
+    const prefix = `/uploads/autocare/media/${kind}/`
+    const fileName = value.startsWith(prefix) ? value.slice(prefix.length) : null
+    return fileName && mediaPattern.test(fileName) ? fileName : null
+}
+
 export async function readAutoCareProviderMedia(kind: AutoCareProviderMediaKind, fileName: string) {
     assertAutoCareProviderMediaFileName(fileName)
+    const target = path.join(mediaRoot(kind), fileName)
+    await assertRegularProviderMediaFile(target)
     try {
-        return await readFile(path.join(mediaRoot(kind), fileName))
+        return await readFile(target)
     } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider image not found.' })
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerMediaNotFound()
         throw error
     }
 }
 
 export function createAutoCareProviderMediaReadStream(kind: AutoCareProviderMediaKind, fileName: string) {
     assertAutoCareProviderMediaFileName(fileName)
-    return createReadStream(path.join(mediaRoot(kind), fileName))
+    const target = path.join(mediaRoot(kind), fileName)
+    try {
+        const file = lstatSync(target)
+        if (!file.isFile() || file.size > MAX_MEDIA_BYTES) providerMediaNotFound()
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerMediaNotFound()
+        throw error
+    }
+    return createReadStream(target)
+}
+
+export async function removeAutoCareProviderMedia(kind: AutoCareProviderMediaKind, fileName: string) {
+    assertAutoCareProviderMediaFileName(fileName)
+    await unlink(path.join(mediaRoot(kind), fileName)).catch((error: unknown) => {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    })
 }
 
 export async function cleanupOrphanedAutoCareProviderMedia(input: {

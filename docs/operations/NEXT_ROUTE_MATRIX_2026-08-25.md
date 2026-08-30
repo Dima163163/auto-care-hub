@@ -24,7 +24,8 @@ added to the client tree without a release-review entry.
 | Public dynamic | `/services/:providerId`, `/services/:providerId/request` | 200 | client booking guard where required |
 | Legacy public redirects | `/cabinets`, `/cabinets/:id` | 200 | React Router redirect to discovery |
 | Guest auth | `/login`, `/register`, `/forgot-password`, `/password/reset` | 200 | `RequireGuest` redirects authenticated users |
-| Authenticated client | `/profile`, `/profile/vehicles`, `/profile/bookings`, `/profile/reviews`, `/notifications` | 200 | `RequireAuth` redirects to `/login` |
+| Authenticated utilities | `/onboarding`, `/owner/invitations/accept`, `/notifications` | 200 | `RequireAuth` redirects to `/login` |
+| Authenticated client | `/profile`, `/profile/vehicles`, `/profile/bookings`, `/profile/reviews` | 200 | `RequireAuth` redirects to `/login` |
 | Owner workspace | `/owner/dashboard`, `/owner/services`, `/owner/autocare-requests`, `/owner/clients` | 200 | owner role and workspace access |
 | Owner dynamic | `/owner/autocare-providers/:id`, `/owner/autocare-providers/:id/reviews`, `/owner/cabinets/:id/edit` | 200 | owner membership/branch scope |
 | Admin workspace | `/admin/dashboard`, `/admin/users`, `/admin/reviews`, `/admin/security-center` | 200 | admin or super-admin role |
@@ -65,6 +66,7 @@ mean that Vite is involved in production.
 | `/password/reset` | `AuthLayout` | tokenized auth utility |
 | `/verify-email` | `AuthLayout` | tokenized auth utility |
 | `/onboarding` | `PublicLayout` | authenticated client onboarding |
+| `/owner/invitations/accept` | `PublicLayout` | authenticated invite acceptance; does not require workspace membership |
 | `/profile` | `PublicLayout` | authenticated client |
 | `/profile/vehicles` | `PublicLayout` | authenticated client garage |
 | `/profile/bookings` | `PublicLayout` | authenticated client bookings |

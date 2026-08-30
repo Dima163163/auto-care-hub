@@ -681,6 +681,28 @@ const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
         id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, serviceDescription: 'Диагностика тормозной системы', offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
     },
 ]
+
+// Keep an expired estimate in the mock dataset so the client can verify that
+// an unavailable quote is clearly explained and cannot be accepted again.
+mockAutoCareServiceRequests.push({
+    ...mockAutoCareServiceRequests[1]!,
+    id: 'client-request-expired-quote',
+    serviceLabels: { ru: 'Тормозная диагностика — смета истекла', en: 'Brake diagnostics — estimate expired' },
+    status: 'awaiting_reply',
+    quote: {
+        ...mockAutoCareServiceRequests[1]!.quote!,
+        status: 'expired',
+        validUntil: '2026-08-01T12:00:00.000Z',
+    },
+    quoteHistory: [{
+        ...mockAutoCareServiceRequests[1]!.quoteHistory[0]!,
+        id: 'mock-quote-expired-v1',
+        status: 'expired',
+        validUntil: '2026-08-01T12:00:00.000Z',
+    }],
+    updatedAt: '2026-08-01T12:00:00.000Z',
+})
+
 mockAutoCareServiceRequests.push({
     ...mockAutoCareServiceRequests[0]!,
     id: 'client-request-closed',
@@ -966,7 +988,22 @@ type MockAutoCareCatalogGapRequest = {
     createdAt: string
     updatedAt: string
 }
-const mockAutoCareProviderInvitations: MockAutoCareProviderInvitation[] = []
+// A deterministic pending invitation keeps the acceptance flow testable in
+// mock mode without first creating data in the owner UI. The invitee is the
+// seeded branch-scoped staff account from data/users.ts.
+const mockAutoCareProviderInvitations: MockAutoCareProviderInvitation[] = [{
+    id: 'provider-invite-staff-proservice',
+    providerId: 'api-proservice-moscow',
+    email: 'ilya.orlov@proservice.test',
+    locationId: 'location-proservice-moscow',
+    role: 'staff',
+    status: 'pending',
+    expiresAt: '2026-09-05T10:00:00.000Z',
+    acceptedAt: null,
+    revokedAt: null,
+    createdAt: '2026-08-29T10:00:00.000Z',
+    inviteToken: 'mock-invite-staff-proservice',
+}]
 const mockAutoCareProviderChangeRequests: MockAutoCareProviderChangeRequest[] = []
 const mockAutoCareCatalogGapRequests: MockAutoCareCatalogGapRequest[] = []
 type MockAutoCareProviderMembership = {
@@ -3081,7 +3118,7 @@ export const handlers = [
         const activity = mockAutoCareProviderActivity.get(provider.id) ?? { impressions: 0, profileOpens: 0 }
         activity.profileOpens += 1
         mockAutoCareProviderActivity.set(provider.id, activity)
-        return HttpResponse.json({ ...provider, offers })
+        return HttpResponse.json({ ...provider, offers, partial: isMockPartial(request) })
     }),
 
     http.get('/api/v1/providers/:providerId/reviews', ({ params, request }) => {
@@ -3108,6 +3145,8 @@ export const handlers = [
     }),
 
     http.get('/api/v1/providers/:providerId/availability', ({ params, request }) => {
+        const scenario = mockScenarioResponse(request)
+        if (scenario) return scenario
         const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
         const url = new URL(request.url)
         const date = url.searchParams.get('date')

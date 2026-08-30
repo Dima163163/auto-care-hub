@@ -221,14 +221,15 @@ export function getRateLimitHeaders(
     return headers
 }
 
-async function checkRateLimitRedis(
+export async function checkRateLimitRedis(
     identifier: string,
-    options: RateLimitOptions
+    options: RateLimitOptions,
+    redisClient?: ReturnType<typeof getRedisClient>,
 ): Promise<RateLimitResult> {
-    const redis = getRedisClient()
     const bucketKey = `ratelimit:${options.scope}:${identifier}`
 
     try {
+        const redis = redisClient ?? getRedisClient()
         const pipeline = redis.pipeline()
         pipeline.incr(bucketKey)
         pipeline.pttl(bucketKey)

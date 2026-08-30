@@ -412,7 +412,7 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
     const [response, messagePage, attachments] = await Promise.all([
         hydrateRequest(request),
         messagesQuery.getMany(),
-        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: { requestId, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' } }),
     ])
     const hasMore = messagePage.length > limit
     const messages = [...(hasMore ? messagePage.slice(0, limit) : messagePage)].reverse()
@@ -617,7 +617,7 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
     const rawContent = decodeAutoCareAttachment(input)
     const content = await normalizeAutoCareAttachment(rawContent, input.contentType)
     const objectKey = createAutoCareAttachmentObjectKey('requests', request.id, randomUUID())
-    await saveAutoCareAttachmentObject(objectKey, content)
+    await saveAutoCareAttachmentObject(objectKey, content, input.contentType)
     try {
         const attachment = await AppDataSource.transaction(async (manager) => {
             const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
@@ -662,9 +662,9 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
 
 export async function getAutoCareServiceAttachment(user: UserEntity, requestId: string, attachmentId: string) {
     await getParticipantRequest(user, requestId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
     if (!attachment) notFound('Service attachment not found.')
-    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey)
+    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey, attachment.contentType)
     return {
         ...attachment,
         signedUrl,

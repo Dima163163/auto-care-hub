@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-08-30",
+  "unknownPolicy": "fail",
+  "entries": [
+    {
+      "id": "archived-product-history",
+      "pattern": "^docs/archive/bookly/",
+      "disposition": "retained_archive",
+      "reason": "Historical implementation notes and archived suites are retained for traceability and are not runtime code."
+    },
+    {
+      "id": "archived-translation-history",
+      "pattern": "^docs/archive/translations/",
+      "disposition": "retained_archive",
+      "reason": "Superseded translation snapshots are documentation history and are not imported by the application."
+    },
+    {
+      "id": "historical-migrations",
+      "pattern": "^server/src/database/migrations/\\d+.*(?:legacy|subscription|bookingpayment)",
+      "flags": "i",
+      "disposition": "retained_immutable",
+      "reason": "Applied database migrations cannot be rewritten or deleted without a reviewed data migration."
+    },
+    {
+      "id": "pwa-and-test-tooling",
+      "pattern": "^(vite\\.config\\.ts|src/vite-env\\.d\\.ts)$",
+      "disposition": "retained_tooling",
+      "reason": "Vite is retained only for the PWA/test compatibility runtime; Next.js remains the production boundary."
+    },
+    {
+      "id": "visual-baseline-snapshots",
+      "pattern": "^e2e/__screenshots__/.*pricing-",
+      "disposition": "retained_baseline",
+      "reason": "Existing visual snapshots are regression evidence and are not reachable product routes."
+    },
+    {
+      "id": "archived-design-proposals",
+      "pattern": "^docs/design/proposals/.*/pricing-",
+      "disposition": "retained_archive",
+      "reason": "Superseded design proposals document the removed commercial surface and have no runtime consumer."
+    },
+    {
+      "id": "legacy-demo-asset",
+      "pattern": "^public/images/cabinets/.*wellness",
+      "flags": "i",
+      "disposition": "candidate_review",
+      "reason": "The asset is not referenced by the AutoCare runtime; remove only after confirming no external documentation depends on it."
+    }
+  ]
+}

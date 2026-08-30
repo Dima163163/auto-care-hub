@@ -76,4 +76,18 @@ describe('csrf token protection', () => {
             headers: { 'x-csrf-token': ['matching-token', 'attacker-value'] },
         })).toThrow(AppError)
     })
+
+    it('rejects duplicate CSRF headers regardless of value order', () => {
+        expect(() => assertValidCsrfToken({
+            cookies: { autocarehub_csrf_token: 'matching-token' },
+            headers: { 'x-csrf-token': ['attacker-value', 'matching-token'] },
+        })).toThrow(AppError)
+    })
+
+    it('rejects repeated identical CSRF headers as ambiguous', () => {
+        expect(() => assertValidCsrfToken({
+            cookies: { autocarehub_csrf_token: 'matching-token' },
+            headers: { 'x-csrf-token': ['matching-token', 'matching-token'] },
+        })).toThrow(AppError)
+    })
 })

@@ -27,6 +27,7 @@ const directRoutes = [
     '/password/reset',
     '/verify-email',
     '/onboarding',
+    '/owner/invitations/accept',
     '/profile',
     '/profile/vehicles',
     '/profile/bookings',

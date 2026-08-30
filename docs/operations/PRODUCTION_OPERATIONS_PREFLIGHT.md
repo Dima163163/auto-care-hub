@@ -43,7 +43,7 @@ alert delivery, and application rollback. Use
 commit, migration checksum, RPO/RTO and the incident owner.
 
 Production also requires `NODE_ENV=production`, PostgreSQL/Redis/JWT,
-SMTP, an explicit persistent `CABINET_UPLOADS_DIR`, an S3 attachment provider,
+SMTP, an explicit absolute non-root persistent `CABINET_UPLOADS_DIR`, an S3 attachment provider,
 an outbox encryption key and bootstrap super-admin identity. The preflight
 fails closed when these values are absent or still contain example
 placeholders.

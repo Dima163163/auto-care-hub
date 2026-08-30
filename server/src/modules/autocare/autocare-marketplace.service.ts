@@ -1,4 +1,4 @@
-import { In, IsNull, type QueryFailedError } from 'typeorm'
+import { In, type QueryFailedError } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
@@ -14,8 +14,6 @@ import {
     AutoCareTrustSnapshotEntity,
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
-    AutomotiveProviderMembershipEntity,
-    AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
@@ -39,7 +37,7 @@ import type {
     CreateAutoCareBroadcastOfferInput,
     CreateAutoCareBroadcastRequestInput,
 } from './autocare.types.js'
-import { canManageProvider, getManagedProviderScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { calculateAutoCareTrustScore } from './trust-score.js'
 import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
 
@@ -60,7 +58,7 @@ function requireClient(user: UserEntity) {
 }
 
 async function requireProviderWorkspace(user: UserEntity) {
-    if ((await getManagedProviderScopes(user.id)).length === 0) {
+    if ((await getManagedProviderPermissionScopes(user.id, 'requests')).length === 0) {
         forbidden('Only service workspace members can use this workflow.')
     }
 }
@@ -256,7 +254,7 @@ export async function getAutoCareRepairTimeline(user: UserEntity, requestId: str
     if (!request) notFound('Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
-        if (!provider || !(await canManageProvider(user.id, provider.id, request.locationId))) forbidden('You do not have access to this repair timeline.')
+        if (!provider || !(await hasProviderWorkspacePermission(user.id, provider.id, 'requests', request.locationId))) forbidden('You do not have access to this repair timeline.')
     }
     return (await AppDataSource.getRepository(AutoCareRepairEventEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } })).map(toRepairEventResponse)
 }
@@ -293,7 +291,7 @@ async function getBroadcastOrThrow(id: string) {
 
 export async function assertOwnerBroadcastAccess(user: UserEntity, request: AutoCareBroadcastRequestEntity) {
     if (request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) return
-    const managedScopes = await getManagedProviderScopes(user.id)
+    const managedScopes = await getManagedProviderPermissionScopes(user.id, 'requests')
     if (managedScopes.length === 0) forbidden('You do not have access to this broadcast request.')
     const managedProviderIds = managedScopes.map(({ providerId }) => providerId)
     const providers = managedProviderIds.length === 0
@@ -333,7 +331,7 @@ export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId:
     if (!definition) notFound('Service definition not found.')
     const ownedScopes = request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin
         ? null
-        : await getManagedProviderScopes(user.id)
+        : await getManagedProviderPermissionScopes(user.id, 'requests')
     const ownedProviderIds = ownedScopes?.map(({ providerId }) => providerId) ?? null
     const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
         where: ownedProviderIds ? { broadcastRequestId: request.id, providerId: In(ownedProviderIds) } : { broadcastRequestId: request.id },
@@ -374,7 +372,7 @@ export async function getMyAutoCareBroadcastRequests(user: UserEntity) {
 
 export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
     await requireProviderWorkspace(user)
-    const scopes = await getManagedProviderScopes(user.id)
+    const scopes = await getManagedProviderPermissionScopes(user.id, 'requests')
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
@@ -405,13 +403,7 @@ export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId
             const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId })
             if (!location) notFound('Provider location not found.')
             const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: location.providerId, status: AutomotiveProviderStatus.Active })
-            const membership = provider
-                ? await manager.getRepository(AutomotiveProviderMembershipEntity).findOne({ where: [
-                    { providerId: provider.id, userId: user.id, locationId: IsNull(), status: AutomotiveProviderMembershipStatus.Active },
-                    { providerId: provider.id, userId: user.id, locationId: location.id, status: AutomotiveProviderMembershipStatus.Active },
-                ] })
-                : null
-            if (!provider || (provider.ownerId !== user.id && !membership)) forbidden('This location is not managed by the current owner.')
+            if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', location.id))) forbidden('This location is not managed by the current owner.')
             const definitionOffer = await manager.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ locationId: location.id, definitionId: request.serviceDefinitionId, active: true })
             if (!definitionOffer) conflict('This provider does not publish the requested service at this location.')
 

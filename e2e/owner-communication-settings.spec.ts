@@ -38,4 +38,37 @@ test.describe('owner communication settings', () => {
         await expect(page.getByRole('switch', { name: /чаты клиентов|customer chat/i }).first()).toBeChecked()
         await expect(page.getByRole('switch', { name: /запись по телефону|phone bookings/i }).first()).toBeVisible()
     })
+
+    test('invites a branch manager and surfaces duplicate-scope errors', async ({ page }) => {
+        await page.goto('/login')
+        await page.locator('#email').fill('sophia.miller@example.com')
+        await page.locator('#password').fill('password123')
+        await page.getByRole('button', { name: /sign in|войти/i }).click()
+        await expect(page).toHaveURL(/\/owner\/dashboard$/)
+
+        await page.goto('/owner/autocare-providers/api-proservice-moscow')
+        const team = page.locator('section').filter({ has: page.getByRole('heading', { name: /команда филиала|branch team/i }) }).last()
+        await expect(team).toBeVisible()
+
+        const email = `qa.manager+${Date.now()}@autocarehub.test`
+        await team.getByLabel(/email сотрудника|staff email/i).fill(email)
+        await team.getByLabel(/роль|role/i).selectOption('manager')
+        await team.getByRole('button', { name: /пригласить|invite/i }).click()
+        await expect(team.getByRole('status')).toContainText(/приглашение создано|invitation created/i)
+        await expect(team).toContainText(email)
+
+        await team.getByLabel(/email сотрудника|staff email/i).fill(email)
+        await team.getByRole('button', { name: /пригласить|invite/i }).click()
+        await expect(team.getByRole('alert')).toContainText(/pending invitation|ожидает/i)
+
+        await team.getByTestId('owner-invitation-revoke').click()
+        await expect(team.getByRole('status')).toContainText(/доступ отозван|access revoked/i)
+        await expect(team.getByTestId('owner-invitation-revoke')).toHaveCount(0)
+
+        const revokeMember = team.getByTestId('owner-member-revoke').first()
+        await expect(revokeMember).toBeVisible()
+        await revokeMember.click()
+        await expect(team.getByRole('status')).toContainText(/доступ отозван|access revoked/i)
+        await expect(team.getByTestId('owner-member-revoke')).toHaveCount(0)
+    })
 })

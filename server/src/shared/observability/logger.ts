@@ -1,6 +1,10 @@
 import type { FastifyBaseLogger } from 'fastify'
 
-import { isSensitiveLogKey, sanitizeLogMetadata } from './sensitive-data.js'
+import {
+    isSensitiveLogKey,
+    sanitizeLogMetadata,
+    sanitizeLogString,
+} from './sensitive-data.js'
 
 type SafeLogMetadata = Record<string, boolean | number | string | null | undefined>
 
@@ -25,7 +29,7 @@ export function serializeError(error: unknown) {
             name: error.name,
             message: isSensitiveLogKey(message)
                 ? '[REDACTED_ERROR_MESSAGE]'
-                : message || 'Unknown error',
+                : sanitizeLogString(message) || 'Unknown error',
         }
     }
 

@@ -15,7 +15,18 @@ export async function platformReviewsRoutes(app: FastifyInstance) {
     app.get('/v1/platform-reviews', async (request) => getPublicPlatformReviews(validateQuery(platformReviewsQuerySchema, request.query).limit))
     app.post('/v1/platform-reviews', { preHandler: createPlatformReviewRateLimit }, async (request) => createPlatformReview(await requireVerifiedEmail(request), { ...validateBody(createPlatformReviewSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
     app.get('/v1/platform-reviews/my', async (request) => getMyPlatformReviews(await requireAuth(request)))
-    app.get('/admin/platform-reviews', async (request) => getAdminPlatformReviews(await requireAuth(request)))
+    app.get('/admin/platform-reviews', async (request) => {
+        const user = await requireAuth(request)
+        const result = await getAdminPlatformReviews(user)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.PlatformReviewsViewed,
+            targetType: 'platform_reviews',
+            metadata: { itemCount: result.length },
+            request,
+        })
+        return result
+    })
     app.post('/admin/platform-reviews/:reviewId/response', async (request) => {
         const user = await requireAuth(request)
         const params = validateParams(platformReviewParamsSchema, request.params)

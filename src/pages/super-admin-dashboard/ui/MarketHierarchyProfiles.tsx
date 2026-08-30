@@ -14,6 +14,7 @@ import { MarketProfileFields } from './MarketProfileFields'
 import {
     createMarketProfileDraft,
     parseNames,
+    parseOptionalFiniteNumber,
     toMarketProfileInput,
     type MarketProfileDraft,
 } from './market-hierarchy-form-utils'
@@ -80,8 +81,10 @@ export function CityProfileForm({ country, city, onSubmit, state, onDelete }: Ci
     const submit = async () => {
         try {
             setError(null)
-            const toNullableNumber = (value: string) => value.trim() ? Number(value) : null
-            const base = { ...toMarketProfileInput(profile), cityCode: cityCode.trim().toLowerCase(), cityName: cityName.trim(), regionCode: regionCode.trim() || null, regionName: regionName.trim() || null, centerLatitude: toNullableNumber(latitude), centerLongitude: toNullableNumber(longitude), launchReady }
+            const centerLatitude = parseOptionalFiniteNumber(latitude, 'Широта', -90, 90)
+            const centerLongitude = parseOptionalFiniteNumber(longitude, 'Долгота', -180, 180)
+            if ((centerLatitude === null) !== (centerLongitude === null)) throw new Error('Широту и долготу нужно указывать вместе.')
+            const base = { ...toMarketProfileInput(profile), cityCode: cityCode.trim().toLowerCase(), cityName: cityName.trim(), regionCode: regionCode.trim() || null, regionName: regionName.trim() || null, centerLatitude, centerLongitude, launchReady }
             await onSubmit(city ? { id: city.id, ...base } : { countryId: country.id, ...base })
         } catch (reason) {
             setError(reason instanceof Error ? reason.message : 'Не удалось сохранить город.')

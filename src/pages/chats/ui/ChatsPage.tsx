@@ -14,6 +14,7 @@ import {
     type AutoCareChatThread,
     type AutoCareServiceMessage,
 } from '@/entities/automotive-service'
+import { validateChatAttachment } from '@/entities/automotive-service/lib/chat-attachment'
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { API_BASE_URL } from '@/shared/config/api'
@@ -21,7 +22,6 @@ import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { ChatConversationSkeleton, SplitListSkeleton } from '@/shared/ui/loading-skeleton'
-import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
 
 type ChatsPageProps = { workspace?: 'client' | 'owner' | 'admin' | 'super_admin' }
 
@@ -101,6 +101,8 @@ function GenericChatConversation({ chatId }: { chatId: string }) {
     const [markRead] = useMarkAutoCareChatReadMutation()
     const [uploadAttachment, uploadState] = useCreateAutoCareChatAttachmentMutation()
     const [message, setMessage] = useState('')
+    const [attachmentError, setAttachmentError] = useState(false)
+    const [messageError, setMessageError] = useState(false)
     useEffect(() => {
         void markRead(chatId)
         return connectAutoCareChat(chatId, () => { void refetch(); void markRead(chatId) })
@@ -110,10 +112,39 @@ function GenericChatConversation({ chatId }: { chatId: string }) {
         if (!data) return
         dispatchMessages({ chatId, pageKey: beforeCursor ?? 'latest', messages: data.messages })
     }, [beforeCursor, chatId, data])
-    const submit = async (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!message.trim()) return; await sendMessage({ chatId, body: message.trim() }).unwrap(); setMessage('') }
-    const upload = async (event: React.ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; const contentType = file ? getSupportedImageMimeType(file) : undefined; if (!file || !contentType) return; await uploadAttachment({ chatId, fileName: file.name, contentType, size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap(); event.target.value = '' }
+    const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        const body = message.trim()
+        if (!body) return
+
+        setMessageError(false)
+        try {
+            await sendMessage({ chatId, body }).unwrap()
+            setMessage('')
+        } catch {
+            // Keep the draft in place so a transient API failure can be retried.
+            setMessageError(true)
+        }
+    }
+    const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        const validation = validateChatAttachment(file)
+        if (!file || !validation.valid) {
+            setAttachmentError(true)
+            event.target.value = ''
+            return
+        }
+        setAttachmentError(false)
+        try {
+            await uploadAttachment({ chatId, fileName: file.name, contentType: validation.contentType, size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()
+        } catch {
+            setAttachmentError(true)
+        } finally {
+            event.target.value = ''
+        }
+    }
     if (isLoading) return <ChatConversationSkeleton label={t('common.loading')} />
-    return <section className="flex min-h-[620px] flex-col overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><header className="flex items-center justify-between border-b border-border px-5 py-4"><div className="flex min-w-0 items-center gap-3"><span className="flex size-10 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span><div className="min-w-0"><h2 className="truncate text-sm font-black text-foreground">{data?.thread.subject ?? t('autocare.chatWorkspaceGeneral')}</h2><p className="text-[11px] font-semibold text-muted-foreground">{data?.thread.providerName ?? t('autocare.chatWorkspaceGeneral')}</p></div></div><span className="text-[11px] font-bold text-status-success-foreground">● {t('autocare.chatOnline')}</span></header><div className="flex-1 space-y-3 overflow-y-auto bg-secondary/50 p-5">{data?.previousCursor ? <button type="button" onClick={() => setBeforeCursor(data.previousCursor ?? undefined)} disabled={isFetching} className="mx-auto flex h-8 items-center rounded-[var(--radius-control)] border border-border bg-card px-3 text-xs font-black text-primary disabled:opacity-60">{isFetching ? t('autocare.chatLoading') : t('autocare.chatLoadOlder')}</button> : null}{messages.length === 0 ? <p className="text-center text-sm text-muted-foreground">{t('autocare.chatEmpty')}</p> : messages.map((item) => <div key={item.id} className={`max-w-[82%] rounded-[var(--radius-card)] px-4 py-3 text-sm ${item.senderId === data?.thread.clientId ? 'bg-background text-foreground' : 'ml-auto bg-primary text-primary-foreground'}`}><p>{item.body}</p><p className="mt-2 text-[10px] opacity-70">{formatChatDate(item.createdAt, locale)}{item.readAt ? ' · ✓✓' : ' · ✓'}</p></div>)}{data?.attachments.length ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{data.attachments.map((attachment) => <img key={attachment.id} src={attachment.url.startsWith('data:') || attachment.url.startsWith('http') ? attachment.url : `${API_BASE_URL}${attachment.url}`} alt={t('autocare.chatDescription')} className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" loading="lazy" />)}</div> : null}</div><form className="flex items-end gap-2 border-t border-border p-4" onSubmit={(event) => void submit(event)}><label className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-control)] border border-border text-muted-foreground hover:border-primary hover:text-primary"><Paperclip className="size-4" /><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void upload(event)} className="sr-only" /></label><textarea rows={2} value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t('autocare.chatPlaceholder')} className="min-h-10 min-w-0 flex-1 resize-none rounded-[var(--radius-control)] border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40" /><button type="submit" disabled={sendState.isLoading || !message.trim()} aria-label={t('autocare.chatSend')} className="inline-flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary text-primary-foreground disabled:opacity-50"><Send className="size-4" /></button></form><p className="border-t border-border px-4 py-2 text-[10px] text-muted-foreground">{uploadState.isLoading ? t('autocare.chatUploading') : t('autocare.chatAttachmentHint')}</p></section>
+    return <section className="flex min-h-[620px] flex-col overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><header className="flex items-center justify-between border-b border-border px-5 py-4"><div className="flex min-w-0 items-center gap-3"><span className="flex size-10 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span><div className="min-w-0"><h2 className="truncate text-sm font-black text-foreground">{data?.thread.subject ?? t('autocare.chatWorkspaceGeneral')}</h2><p className="text-[11px] font-semibold text-muted-foreground">{data?.thread.providerName ?? t('autocare.chatWorkspaceGeneral')}</p></div></div><span className="text-[11px] font-bold text-status-success-foreground">● {t('autocare.chatOnline')}</span></header><div className="flex-1 space-y-3 overflow-y-auto bg-secondary/50 p-5">{data?.previousCursor ? <button type="button" onClick={() => setBeforeCursor(data.previousCursor ?? undefined)} disabled={isFetching} className="mx-auto flex h-8 items-center rounded-[var(--radius-control)] border border-border bg-card px-3 text-xs font-black text-primary disabled:opacity-60">{isFetching ? t('autocare.chatLoading') : t('autocare.chatLoadOlder')}</button> : null}{messages.length === 0 ? <p className="text-center text-sm text-muted-foreground">{t('autocare.chatEmpty')}</p> : messages.map((item) => <div key={item.id} className={`max-w-[82%] rounded-[var(--radius-card)] px-4 py-3 text-sm ${item.senderId === data?.thread.clientId ? 'bg-background text-foreground' : 'ml-auto bg-primary text-primary-foreground'}`}><p>{item.body}</p><p className="mt-2 text-[10px] opacity-70">{formatChatDate(item.createdAt, locale)}{item.readAt ? ' · ✓✓' : ' · ✓'}</p></div>)}{data?.attachments.length ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{data.attachments.map((attachment) => <img key={attachment.id} src={attachment.url.startsWith('data:') || attachment.url.startsWith('http') ? attachment.url : `${API_BASE_URL}${attachment.url}`} alt={t('autocare.chatDescription')} className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" loading="lazy" />)}</div> : null}</div><form className="flex items-end gap-2 border-t border-border p-4" onSubmit={(event) => void submit(event)}><label aria-label={t('autocare.chatAttachFile')} className="inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-control)] border border-border text-muted-foreground hover:border-primary hover:text-primary has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"><Paperclip className="size-4" /><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void upload(event)} disabled={sendState.isLoading || uploadState.isLoading} aria-invalid={attachmentError} aria-describedby={attachmentError ? 'genericChatActionError' : undefined} className="sr-only" /></label><textarea rows={2} value={message} onChange={(event) => { setMessageError(false); setMessage(event.target.value) }} placeholder={t('autocare.chatPlaceholder')} aria-invalid={messageError || undefined} aria-describedby={messageError ? 'genericChatActionError' : undefined} className="min-h-10 min-w-0 flex-1 resize-none rounded-[var(--radius-control)] border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40" /><button type="submit" disabled={sendState.isLoading || !message.trim()} aria-label={t('autocare.chatSend')} className="inline-flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary text-primary-foreground disabled:opacity-50"><Send className="size-4" /></button></form>{(attachmentError || messageError) && <p id="genericChatActionError" role="alert" className="border-t border-destructive/20 bg-destructive/5 px-4 py-2 text-[11px] font-bold text-destructive">{messageError ? t('autocare.chatSendError') : t('autocare.chatUploadError')}</p>}<p className="border-t border-border px-4 py-2 text-[10px] text-muted-foreground">{uploadState.isLoading ? t('autocare.chatUploading') : t('autocare.chatAttachmentHint')}</p></section>
 }
 
 type ConversationMessagesState = { chatId: string; pages: Map<string, AutoCareServiceMessage[]>; items: AutoCareServiceMessage[] }

@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { env } from '../../config/env.js'
 import {
     checkRateLimit,
     clearRateLimitBuckets,
     createRateLimitPreHandler,
+    checkRateLimitRedis,
     getEmailRateLimitIdentifier,
     assertValidRateLimitOptions,
     getRateLimitHeaders,
@@ -15,7 +17,7 @@ import {
 } from './rate-limit'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-vi.mock('../redis/redis', () => ({
+vi.mock('../redis/redis.js', () => ({
     getRedisClient: vi.fn(),
     isRedisEnabled: vi.fn(() => false),
 }))
@@ -105,6 +107,74 @@ describe('Redis outage policy', () => {
         expect(mustFailClosedForRedisRateLimitFailure('production')).toBe(true)
         expect(mustFailClosedForRedisRateLimitFailure('development')).toBe(false)
         expect(mustFailClosedForRedisRateLimitFailure('test')).toBe(false)
+    })
+
+    it('fails closed without mutating a local bucket when Redis is unavailable in fail-closed mode', async () => {
+        const pipeline = {
+            incr: vi.fn().mockReturnThis(),
+            pttl: vi.fn().mockReturnThis(),
+            exec: vi.fn().mockRejectedValue(new Error('redis unavailable')),
+        }
+        const redis = {
+            pipeline: vi.fn(() => pipeline),
+        }
+        const originalMode = env.redis.rateLimitFailureMode
+
+        env.redis.rateLimitFailureMode = 'fail-closed'
+
+        try {
+            const options = {
+                maxRequests: 2,
+                scope: 'redis-outage-sensitive',
+                windowMs: 1_000,
+            }
+
+            expect(mustFailClosedForRedisRateLimitFailure()).toBe(true)
+            await expect(checkRateLimitRedis('ip:203.0.113.10', options, redis as never)).rejects.toMatchObject({
+                statusCode: 503,
+                message: 'Rate limiting is temporarily unavailable. Please try again later.',
+            })
+            expect(pipeline.exec).toHaveBeenCalledOnce()
+            expect(checkRateLimit('ip:203.0.113.10', options, 1_000)).toMatchObject({
+                allowed: true,
+                remaining: 1,
+            })
+        } finally {
+            env.redis.rateLimitFailureMode = originalMode
+        }
+    })
+
+    it('keeps the local fallback only when fail-open is explicitly selected outside production', async () => {
+        const pipeline = {
+            incr: vi.fn().mockReturnThis(),
+            pttl: vi.fn().mockReturnThis(),
+            exec: vi.fn().mockRejectedValue(new Error('redis unavailable')),
+        }
+        const redis = {
+            pipeline: vi.fn(() => pipeline),
+        }
+        const originalMode = env.redis.rateLimitFailureMode
+
+        env.redis.rateLimitFailureMode = 'fail-open'
+
+        try {
+            const options = {
+                maxRequests: 1,
+                scope: 'redis-outage-local',
+                windowMs: 1_000,
+            }
+
+            await expect(checkRateLimitRedis('ip:203.0.113.11', options, redis as never)).resolves.toMatchObject({
+                allowed: true,
+                remaining: 0,
+            })
+            await expect(checkRateLimitRedis('ip:203.0.113.11', options, redis as never)).resolves.toMatchObject({
+                allowed: false,
+                remaining: 0,
+            })
+        } finally {
+            env.redis.rateLimitFailureMode = originalMode
+        }
     })
 })
 

@@ -7,11 +7,13 @@ const requiredFiles = [
   'server/scripts/restore.sh',
   'docs/operations/alerts.example.yml',
   'docs/operations/BACKUP_RESTORE_RUNBOOK.md',
+  'docs/operations/BACKUP_RESTORE_EVIDENCE_TEMPLATE.md',
 ]
 const requiredFragments = {
-  'server/scripts/backup.sh': ['openssl enc -aes-256-cbc', 'shasum -a 256', 'BACKUP_ENCRYPTION_PASSWORD_FILE'],
-  'server/scripts/restore.sh': ['shasum -a 256 -c', 'ALLOW_SAME_DATABASE_RESTORE', '--set ON_ERROR_STOP=1'],
+  'server/scripts/backup.sh': ['umask 077', 'RUN_SUFFIX=', 'BACKUP_ENCRYPTION_PASSWORD_FILE', '.autocare-backup-directory', 'mv "$STAGED_BACKUP_FILE" "$BACKUP_FILE"', 'cd "$BACKUP_DIR"', 'basename "$BACKUP_FILE"', 'shasum -a 256'],
+  'server/scripts/restore.sh': ['umask 077', 'BACKUP_DIRECTORY=', 'CHECKSUM_BASENAME=', 'cd "$BACKUP_DIRECTORY"', 'shasum -a 256 -c', 'ALLOW_SAME_DATABASE_RESTORE', '--set ON_ERROR_STOP=1', '--single-transaction'],
   'docs/operations/alerts.example.yml': ['AutoCareApiUnavailable', 'AutoCareOutboxDeadLetter', 'AutoCareBackupExpired'],
+  'docs/operations/BACKUP_RESTORE_EVIDENCE_TEMPLATE.md': ['RPO', 'RTO', 'checksum', 'Isolated restore target'],
 }
 
 for (const relativePath of requiredFiles) {

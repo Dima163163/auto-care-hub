@@ -31,6 +31,7 @@ export const ROUTES = {
     passwordReset: '/password/reset',
     verifyEmail: '/verify-email',
     onboarding: '/onboarding',
+    ownerInvitationAccept: '/owner/invitations/accept',
 
     profile: '/profile',
     profileVehicles: '/profile/vehicles',

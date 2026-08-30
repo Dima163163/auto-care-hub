@@ -129,6 +129,7 @@ export async function runLegacyCleanupChecks() {
         ...(await checkMigrations(manifest)),
         runStaticGuard('Legacy runtime guard', 'check-no-bookly-runtime.mjs'),
         runStaticGuard('Legacy payment runtime guard', 'check-no-legacy-provider.mjs'),
+        runStaticGuard('Legacy file classification', 'check-legacy-file-classification.mjs'),
     ]
 }
 

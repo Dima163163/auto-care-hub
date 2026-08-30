@@ -17,7 +17,7 @@ describe('logger mailer', () => {
 
         expect(logger.info).toHaveBeenCalledWith({
             mail: {
-                to: 'client@example.com',
+                to: '[REDACTED_EMAIL]',
                 subject: 'Set password',
                 text: 'Open https://autocarehub.example/password/setup?token=[REDACTED]',
                 html: '<a href="https://autocarehub.example/password/setup?token=[REDACTED]">Open</a>',

@@ -17,6 +17,9 @@ const requiredFragments = [
   ['src/pages/security-center/ui/SecurityCenterPage.tsx', 'max-md:z-[1100]'],
   ['src/pages/security-center/ui/SecurityCenterPage.tsx', 'max-md:pb-[calc(1.25rem+var(--mobile-nav-height)+env(safe-area-inset-bottom))]'],
   ['src/pages/security-center/ui/SecurityCenterPage.tsx', 'fixed inset-0 z-[1050]'],
+  ['src/pages/autocare-home/ui/AutoCareSearchForm.tsx', "tab === 'service' ? 'rounded-tl-[10px]' : 'rounded-tr-[10px]'"],
+  ['src/shared/ui/boot-shell/BootShell.tsx', 'rounded-tl-[10px]'],
+  ['src/shared/ui/boot-shell/BootShell.tsx', 'rounded-tr-[10px]'],
 ]
 
 const missing = requiredFragments.filter(([relativePath, fragment]) => {
