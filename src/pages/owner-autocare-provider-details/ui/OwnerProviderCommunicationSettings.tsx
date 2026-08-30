@@ -31,7 +31,11 @@ export function OwnerProviderCommunicationSettings({ provider, locale }: Props) 
     const set = <K extends keyof Settings>(key: K, value: Settings[K]) => setSettings((current) => ({ ...current, [key]: value }))
     const submit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        await update({ providerId: provider.id, ...settings }).unwrap()
+        try {
+            await update({ providerId: provider.id, ...settings }).unwrap()
+        } catch {
+            return
+        }
     }
     const inputClass = 'h-10 w-full rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring'
     return <section data-testid="owner-communication-settings" className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm">

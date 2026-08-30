@@ -1,4 +1,5 @@
 import { BadgeCheck, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
 
 import {
     useCancelOwnerAutoCareProviderChangeRequestMutation,
@@ -25,15 +26,29 @@ export function OwnerProviderOnboardingPanel({ provider, locale }: Props) {
     const ru = locale === 'ru'
     const query = useGetOwnerAutoCareProviderChangeRequestsQuery(provider.id)
     const [createRequest, createState] = useCreateOwnerAutoCareProviderChangeRequestMutation()
-    const [cancelRequest] = useCancelOwnerAutoCareProviderChangeRequestMutation()
+    const [cancelRequest, cancelState] = useCancelOwnerAutoCareProviderChangeRequestMutation()
+    const [cancelError, setCancelError] = useState<string | null>(null)
     const verificationPending = query.data?.some((request) => request.status === 'pending' && request.kind === 'verification') ?? false
     const profilePending = query.data?.some((request) => request.status === 'pending' && request.kind === 'profile_update') ?? false
 
     const requestVerification = async () => {
-        await createRequest({ providerId: provider.id, kind: 'verification' }).unwrap()
+        try {
+            await createRequest({ providerId: provider.id, kind: 'verification' }).unwrap()
+        } catch {
+            return
+        }
     }
     const submitProfileUpdate = async (payload: Record<string, unknown>) => {
         await createRequest({ providerId: provider.id, kind: 'profile_update', payload }).unwrap()
+    }
+
+    const cancel = async (requestId: string) => {
+        setCancelError(null)
+        try {
+            await cancelRequest({ providerId: provider.id, requestId }).unwrap()
+        } catch (reason) {
+            setCancelError(getApiErrorMessage(reason, ru ? 'Не удалось отменить запрос.' : 'Could not cancel the request.'))
+        }
     }
 
     if (query.isLoading) return <StateCard variant="loading" title={ru ? 'Загружаем этапы подключения…' : 'Loading onboarding…'} />
@@ -52,6 +67,7 @@ export function OwnerProviderOnboardingPanel({ provider, locale }: Props) {
         {!provider.verified && <button type="button" disabled={createState.isLoading || verificationPending} onClick={() => void requestVerification()} className="mt-5 inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-xs font-black text-primary-foreground disabled:opacity-50"><BadgeCheck className="size-4" />{verificationPending ? (ru ? 'Есть заявка на проверке' : 'A request is already pending') : (ru ? 'Отправить на проверку' : 'Submit for verification')}</button>}
         <OwnerProviderProfileChangeForm provider={provider} locale={locale} disabled={createState.isLoading || profilePending} onSubmit={submitProfileUpdate} />
         {createState.error && <p className="mt-3 text-xs font-bold text-destructive">{getApiErrorMessage(createState.error, ru ? 'Не удалось отправить запрос.' : 'Could not submit the request.')}</p>}
-        <div className="mt-5 space-y-2">{query.data?.map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-border p-3"><div><p className="text-sm font-bold text-foreground">{request.kind === 'verification' ? (ru ? 'Проверка сервиса' : 'Service verification') : (ru ? 'Изменение профиля' : 'Profile update')}</p><p className="mt-1 text-xs text-muted-foreground">{new Intl.DateTimeFormat(ru ? 'ru-RU' : 'en-US', { dateStyle: 'medium' }).format(new Date(request.createdAt))}{request.reviewReason ? ` · ${request.reviewReason}` : ''}</p></div><div className="flex items-center gap-2"><span className="rounded-full bg-secondary px-2 py-1 text-[11px] font-black text-foreground">{statusLabel[request.status][ru ? 'ru' : 'en']}</span>{request.status === 'pending' && <button type="button" onClick={() => void cancelRequest({ providerId: provider.id, requestId: request.id })} className="text-xs font-black text-destructive hover:underline">{ru ? 'Отменить' : 'Cancel'}</button>}</div></div>)}</div>
+        {cancelError && <p role="alert" className="mt-3 text-xs font-bold text-destructive">{cancelError}</p>}
+        <div className="mt-5 space-y-2">{query.data?.map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-border p-3"><div><p className="text-sm font-bold text-foreground">{request.kind === 'verification' ? (ru ? 'Проверка сервиса' : 'Service verification') : (ru ? 'Изменение профиля' : 'Profile update')}</p><p className="mt-1 text-xs text-muted-foreground">{new Intl.DateTimeFormat(ru ? 'ru-RU' : 'en-US', { dateStyle: 'medium' }).format(new Date(request.createdAt))}{request.reviewReason ? ` · ${request.reviewReason}` : ''}</p></div><div className="flex items-center gap-2"><span className="rounded-full bg-secondary px-2 py-1 text-[11px] font-black text-foreground">{statusLabel[request.status][ru ? 'ru' : 'en']}</span>{request.status === 'pending' && <button type="button" disabled={cancelState.isLoading} onClick={() => void cancel(request.id)} className="text-xs font-black text-destructive hover:underline disabled:opacity-50">{cancelState.isLoading ? (ru ? 'Отменяем…' : 'Cancelling…') : (ru ? 'Отменить' : 'Cancel')}</button>}</div></div>)}</div>
     </section>
 }

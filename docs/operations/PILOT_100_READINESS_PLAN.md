@@ -1118,3 +1118,37 @@ npm run check:e2e:browser
 - `[x]` Для public layout отдельно проверяется discovery-shaped `AutoCareResultsRouteSkeleton` и generic `PageContentSkeleton`; workspace и auth layouts обязаны сохранять соответствующую тему (`workspace`/`auth`).
 - `[x]` `npm run check:loading-shell`, regression suite и `git diff --check` проходят: **15/15** source controls и **2/2** regression tests.
 - `[~]` Реальный браузерный переход с искусственной задержкой для каждого layout и visual/device evidence остаются ручным gate из-за ограничения sandbox (`listen EPERM`).
+
+### Результат сто первой исполняемой порции (30.08.2026)
+
+- `[x]` Owner-заявки больше не оставляют unhandled rejection при отказе quote, reschedule, no-show или complete API: каждый `unwrap()` перехватывается в обработчике действия.
+- `[x]` При отказе мутации черновик quote и выбранное время переноса сохраняются, а существующие inline retryable errors остаются источником обратной связи для пользователя.
+- `[x]` Ошибка подтверждения заявки теперь также выводится в доступном `role="alert"`; кнопки не создают ложное состояние успеха.
+- `[x]` Добавлена компонентная регрессия отказов owner actions: **1 файл / 1 тест PASS**; полный frontend suite — **127 файлов / 438 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный staging replay отказов и повторных действий с несколькими владельцами остаётся внешним gate §2.3 и `ADD-C02`, `ADD-C06`, `ADD-C08`.
+
+### Результат сто второй исполняемой порции (30.08.2026)
+
+- `[x]` Сохранение режима связи владельца теперь перехватывает отказ API, поэтому `unwrap()` не создаёт unhandled rejection и форма остаётся доступной для повторной отправки.
+- `[x]` Ошибка сохранения продолжает отображаться через существующий доступный `role="alert"`, без маскировки отказа и без ложного сообщения об успехе.
+- `[x]` Добавлена компонентная регрессия rejected-save для communication settings: **1 файл / 1 тест PASS**.
+- `[x]` Полный frontend suite после порции: **128 файлов / 439 тестов PASS**; TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный staging replay изменения communication mode и параллельные действия нескольких владельцев остаются внешними gates `ADD-C06`, §2.3 и `ADD-C15`.
+
+### Результат сто третьей исполняемой порции (30.08.2026)
+
+- `[x]` Owner onboarding теперь безопасно обрабатывает отказ отправки verification-запроса; ошибка не становится unhandled rejection, а кнопку можно использовать повторно.
+- `[x]` Отмена pending change-request переведена на `unwrap()` с явным `role="alert"` при конфликте/отказе API и disabled-состоянием на время операции.
+- `[x]` Profile change form перехватывает отказ родительского mutation-handler и не очищает локальный draft, поэтому повторная отправка не требует повторного ввода данных.
+- `[x]` Добавлены component regressions onboarding/profile-change: **3 теста PASS**; полный frontend suite — **130 файлов / 442 теста PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный staging workflow moderation/acceptance, email delivery и multi-owner replay остаются внешними gates `ADD-C06`, `ADD-C11`, §2.2.
+
+### Результат сто четвёртой исполняемой порции (30.08.2026)
+
+- `[x]` Админская модерация отзывов теперь перехватывает отказ публикации ответа и удаления отзыва через `try/catch`; rejected `unwrap()` больше не создаёт unhandled promise rejection.
+- `[x]` Ошибка действия показывается в доступном `role="alert"`, draft ответа сохраняется для повторной отправки, а сообщение об успехе не появляется после неудачной публикации.
+- `[x]` Добавлена component regression для отказов ответа и удаления отзыва: **1 файл / 1 тест PASS**; полный frontend suite — **131 файл / 443 теста PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный staging moderation replay с несколькими администраторами, audit evidence и подтверждением прав super-admin остаётся внешним gate `ADD-C11`, §2.2.

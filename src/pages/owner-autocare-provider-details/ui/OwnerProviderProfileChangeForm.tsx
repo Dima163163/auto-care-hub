@@ -89,21 +89,25 @@ export function OwnerProviderProfileChangeForm({ provider, locale, disabled, onS
             reference: String(documentReferences[index] ?? '').trim(),
             expiresAt: String(documentExpiries[index] ?? '').trim() || null,
         })).filter((document) => document.label && document.reference)
-        await onSubmit({
-            name: draftText.name.trim(),
-            description: draftText.description.trim() || null,
-            phones: strings(values.get('phones')),
-            email: String(values.get('email') ?? '').trim() || null,
-            websiteUrl: draftText.websiteUrl.trim() || null,
-            metroStation: draftText.metroStation.trim() || null,
-            warrantyText: draftText.warrantyText.trim() || null,
-            yearsActive: numberOrZero(draftText.yearsActive),
-            staffCount: numberOrZero(draftText.staffCount),
-            workstationCount: numberOrZero(draftText.workstationCount),
-            brandSpecializations: strings(draftText.brandSpecializations),
-            isMultibrand,
-            documents: documentsPayload,
-        })
+        try {
+            await onSubmit({
+                name: draftText.name.trim(),
+                description: draftText.description.trim() || null,
+                phones: strings(values.get('phones')),
+                email: String(values.get('email') ?? '').trim() || null,
+                websiteUrl: draftText.websiteUrl.trim() || null,
+                metroStation: draftText.metroStation.trim() || null,
+                warrantyText: draftText.warrantyText.trim() || null,
+                yearsActive: numberOrZero(draftText.yearsActive),
+                staffCount: numberOrZero(draftText.staffCount),
+                workstationCount: numberOrZero(draftText.workstationCount),
+                brandSpecializations: strings(draftText.brandSpecializations),
+                isMultibrand,
+                documents: documentsPayload,
+            })
+        } catch {
+            return
+        }
         clearDraft()
         setIsDirty(false)
         setIsDraftRestored(false)
