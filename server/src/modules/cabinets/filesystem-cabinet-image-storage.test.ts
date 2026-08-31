@@ -1,9 +1,10 @@
-import { mkdtemp, rm, symlink, truncate, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, rm, symlink, truncate, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import {
     FileSystemCabinetImageStorage,
     MAX_CABINET_IMAGE_BYTES,
@@ -52,6 +53,24 @@ describe('filesystem cabinet image storage', () => {
         ]))
     })
 
+    it('rejects empty and oversized writes before touching storage', async () => {
+        const root = await mkdtemp(path.join(os.tmpdir(), 'autocarehub-images-'))
+        roots.push(root)
+        const storage = new FileSystemCabinetImageStorage(root)
+
+        await expect(storage.put('a1b2c3.webp', Buffer.alloc(0)))
+            .rejects.toMatchObject({
+                statusCode: 400,
+                code: ERROR_CODES.CabinetImageInvalidContent,
+            })
+        await expect(storage.put('d4e5f6.webp', Buffer.alloc(MAX_CABINET_IMAGE_BYTES + 1)))
+            .rejects.toMatchObject({
+                statusCode: 400,
+                code: ERROR_CODES.CabinetImageTooLarge,
+            })
+        await expect(readdir(root)).resolves.toEqual([])
+    })
+
     it('rejects symlink objects before opening a read stream', async () => {
         const root = await mkdtemp(path.join(os.tmpdir(), 'autocarehub-images-'))
         roots.push(root)
@@ -76,5 +95,23 @@ describe('filesystem cabinet image storage', () => {
         await truncate(target, MAX_CABINET_IMAGE_BYTES + 1)
 
         expect(() => storage.createReadStream(key)).toThrow(/not found/i)
+
+        const emptyKey = 'c3d4e5.webp'
+        await writeFile(getCabinetImageObjectPath(root, emptyKey), Buffer.alloc(0))
+        expect(() => storage.createReadStream(emptyKey)).toThrow(/not found/i)
+    })
+
+    it('fails closed when the storage root is a symlink before writing', async () => {
+        const base = await mkdtemp(path.join(os.tmpdir(), 'autocarehub-images-config-'))
+        const externalRoot = await mkdtemp(path.join(os.tmpdir(), 'autocarehub-images-external-'))
+        const root = path.join(base, 'uploads')
+        roots.push(base, externalRoot)
+
+        await symlink(externalRoot, root)
+        const storage = new FileSystemCabinetImageStorage(root)
+
+        await expect(storage.put('abc.webp', Buffer.from('image')))
+            .rejects.toMatchObject({ statusCode: 404 })
+        await expect(readdir(externalRoot)).resolves.toEqual([])
     })
 })

@@ -32,8 +32,8 @@ import type {
     CreateAutoCareChatMessageInput,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
-import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
+import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, resolveAutoCareAttachmentContentType } from './attachment-content.js'
+import { assertAutoCareAttachmentObjectKeyOwnedBy, createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 
@@ -60,14 +60,24 @@ function messageResponse(message: ServiceMessageEntity): AutoCareServiceMessageR
 }
 
 function attachmentResponse(attachment: ServiceAttachmentEntity, chatId: string): AutoCareServiceAttachmentResponse {
+    const contentType = resolveAutoCareAttachmentContentType(attachment.contentType)
     return {
         id: attachment.id,
         uploadedById: attachment.uploadedById,
-        contentType: attachment.contentType,
+        contentType,
         bytes: attachment.bytes,
         status: attachment.status,
         url: `/v1/chats/${chatId}/attachments/${attachment.id}`,
         createdAt: attachment.createdAt.toISOString(),
+    }
+}
+
+function safeAttachmentResponse(attachment: ServiceAttachmentEntity, chatId: string) {
+    try {
+        return attachmentResponse(attachment, chatId)
+    } catch (error) {
+        if (error instanceof AppError && error.code === ERROR_CODES.NotFound) return null
+        throw error
     }
 }
 
@@ -284,7 +294,10 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
     return {
         thread: await toThreadResponse(user, thread),
         messages: page.map(messageResponse),
-        attachments: attachments.map((attachment) => attachmentResponse(attachment, thread.id)),
+        attachments: attachments.flatMap((attachment) => {
+            const response = safeAttachmentResponse(attachment, thread.id)
+            return response ? [response] : []
+        }),
         nextCursor: hasMore && lastMessage && !isLatestPage && !beforeCursor ? encodeCursor({ createdAt: lastMessage.createdAt.toISOString(), id: lastMessage.id }) : null,
         previousCursor: hasMore && firstMessage ? encodeCursor({ createdAt: firstMessage.createdAt.toISOString(), id: firstMessage.id }) : null,
     }
@@ -490,13 +503,19 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
 
 export async function getAutoCareChatAttachment(user: UserEntity, chatId: string, attachmentId: string) {
     const thread = await getThread(user, chatId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { id: attachmentId, requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { id: attachmentId, requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, bytes: true, checksum: true } })
     if (!attachment) fail(404, 'Chat attachment not found.')
-    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey, attachment.contentType)
+    assertAutoCareAttachmentObjectKeyOwnedBy(attachment.objectKey, [
+        { scope: 'chats', parentId: thread.id },
+        ...(thread.requestId ? [{ scope: 'requests' as const, parentId: thread.requestId }] : []),
+    ])
+    const contentType = resolveAutoCareAttachmentContentType(attachment.contentType)
+    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey, contentType, attachment.checksum, attachment.bytes)
     return {
         ...attachment,
+        contentType,
         signedUrl,
-        content: signedUrl ? null : await readAutoCareAttachmentObject(attachment.objectKey),
+        content: signedUrl ? null : await readAutoCareAttachmentObject(attachment.objectKey, attachment.checksum, attachment.bytes),
     }
 }
 

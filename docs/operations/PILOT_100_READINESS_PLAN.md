@@ -1375,3 +1375,335 @@ npm run check:e2e:browser
 - `[x]` После расширения real suite отдельные сценарии timeout-retry и owner/admin state повторно проходят; один aggregate dev-run не использован как evidence из-за зависшего Next dev worker после 22 успешных тестов. Это ограничение тестового процесса, не production runtime; preview mode также исключён из evidence, потому что не поднимает API proxy этого проекта.
 - `[x]` `MVP_MANUAL_ACCEPTANCE_CHECKLIST.md` синхронизирован с текущим evidence: `MVP-01`, `MVP-02` и `MVP-04` отмечены закрытыми автоматическими прогонами; ручные `MVP-05/MVP-06` оставлены внешними gates.
 - `[~]` Локальный MVP теперь **96%**. Единственные оставшиеся обязательные пункты — `MVP-05` (ручная visual/keyboard приёмка владельца) и `MVP-06` (VoiceOver/TalkBack на реальных телефонах); автоматизация не может честно закрыть их вместо реальных устройств.
+
+### Результат сто тридцать второй исполняемой порции (31.08.2026)
+
+- `[x]` Server pilot scripts теперь одинаково подхватывают `server/.env` при запуске из корня через `npm --prefix server run …`; значения процесса сохраняют приоритет, вывод dotenv приглушён и секреты не печатаются.
+- `[x]` Локальный pilot-quality preflight прошёл: 4 активных провайдера, 23 активных предложения, 100% coverage предложений и 100% coverage цен.
+- `[x]` Cross-process Redis/WebSocket smoke прошёл с двумя подписчиками и повторной доставкой одного `eventId`; это частичное evidence для `PILOT-06`.
+- `[x]` Backend unit regression после изменения загрузки окружения: **183 файла / 583 теста**, backend build PASS.
+- `[x]` Backend tooling tests для Docker/операционного preflight прошли **5/5**; unavailable daemon остаётся корректным внешним blocker без утечки stderr.
+- `[x]` Локальные результаты и внешние blockers вынесены в `docs/operations/PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md`; demo-данные не засчитываются как реальные SLA или pilot evidence.
+- `[~]` Pilot reliability намеренно остаётся заблокированным до реальных samples: 0 response samples, 1 локальное подтверждение; mock/demo данные не засчитываются как SLA.
+- `[~]` `PILOT-01…PILOT-11` и `SEC-01…SEC-10` не переведены в `[x]`: staging secrets, S3/ClamAV, SMTP, backup vault, alerts, две API-реплики, реальные сервисы/клиенты и независимый review требуют внешнего доступа и фактических доказательств.
+
+### Результат сто тридцать третьей исполняемой порции (31.08.2026)
+
+- `[x]` Общий frontend regression повторён после pilot changes: lint без предупреждений, **145 файлов / 461 тест**, Next production build и `git diff --check` PASS.
+- `[x]` Operations harness и production-contract tests прошли **9/9**; security controls прошли **5/5**.
+- `[x]` `check:staging-api` подтвердил локальный API parity contract; внешний probe пропущен только потому, что `STAGING_API_BASE_URL` не задан.
+- `[x]` Добавлена проверка содержимого real-pilot evidence: PII-подобные ключи и email/телефон/VIN значения блокируются даже при `piiRedacted: true`; anonymized identifiers и capture flags разрешены regression-тестами.
+- `[~]` Процент пилота остаётся **58%**: локальные contracts и catalog quality не заменяют staging/production evidence, реальные response samples, сервисы, клиентов и go/no-go.
+
+### Результат сто тридцать четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Финально проверена защита real-pilot evidence: валидатор отклоняет PII-подобные ключи и email/телефон/VIN значения даже при установленном `piiRedacted=true`; anonymized identifiers, `plateCaptured`/`vinCaptured` и числовой `reviewPhotoCount` проходят regression **5/5**.
+- `[x]` Повторная проверка server-local dotenv загрузки подтверждает детерминированный запуск pilot scripts из корня и из `server/`; process environment имеет приоритет, секреты не выводятся.
+- `[x]` Локальное evidence собрано в [`PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md`](./PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md) и включает quality, realtime smoke, backend unit/build, operations/security harness и staging API parity contract.
+- `[~]` Все внешние пункты `PILOT-01…PILOT-11` и `SEC-01…SEC-10` остаются в исходных статусах: для их закрытия нужны staging/production secrets, две API-реплики, private media/AV, backup vault/restore, SMTP/alerts, независимый review и реальные участники пилота. Фиктивные evidence-файлы не создаются.
+
+### Результат сто тридцать пятой исполняемой порции (31.08.2026)
+
+- `[x]` Повторный production-operations preflight с `--env-file server/.env` подтвердил, что все repository controls (worker, outbox/dead-letter, backup/restore harness, alerts, rollback и Redis fail-closed guidance) проходят; секреты и значения конфигурации не выводятся.
+- `[x]` Локальный Docker availability check корректно возвращает блокирующее состояние без утечки Docker stderr; запуск staging/production service-backed smoke не имитировался.
+- `[~]` Статусы и проценты пилота не меняются: `PILOT-01…PILOT-11` и `SEC-01…SEC-10` требуют фактической инфраструктуры, реальных сервисов/клиентов и подписанного evidence. Новых обязательных задач не добавлено.
+
+### Результат сто тридцать шестой исполняемой порции (31.08.2026)
+
+- `[x]` Production-policy rehearsal Redis повторён с синтетической конфигурацией без вывода секретов: распределённый limiter доступен и `fail-closed` подтверждён.
+- `[x]` Account-deletion/retention checker завершился без нарушений invariant; в локальной базе нет завершённых удалений, поэтому результат не засчитывается как staging rehearsal.
+- `[~]` Production media preflight корректно остановлен до внешней операции: локальный runtime не настроен на S3 + ClamAV. Это ожидаемый blocker `PILOT-03/SEC-02`, а не причина разрешать filesystem storage в production.
+
+### Результат сто тридцать седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Полный `npm run quality:backend` завершён: migration order/inventory/validation, legacy/payment guards, demo-reset, API/OpenAPI parity, route/runtime boundaries, threat surface, loading/state/client/capacity contracts, backend tooling, unit tests и TypeScript build прошли.
+- `[x]` В рамках aggregate gate повторно подтверждены owner-route authorization, branch denial, idempotency/retry, theme-aware loading shell, compact capacity calendar и отсутствие Bookly/payment runtime.
+- `[~]` Это repository-level evidence и не закрывает внешние `PILOT-01…PILOT-11`/`SEC-01…SEC-10`; staging, real providers/clients, backup restore, media AV и независимый review остаются обязательными условиями.
+
+### Результат сто тридцать восьмой исполняемой порции (31.08.2026)
+
+- `[x]` PostgreSQL/Redis integration-набор повторно прошёл: **14 файлов / 60 тестов**. Проверены branch denial, booking/quote переходы, invitation/moderation и иерархия рынков на service-backed тестовом окружении.
+- `[~]` Повторный `npm run test:e2e:real` не засчитан как evidence: demo reset/seed завершились, но API не удалось запустить из-за недоступного PostgreSQL на `127.0.0.1:5433` и отсутствующего Docker daemon; последующие browser timeout вызваны отсутствующим backend, а не изменением UI-кода.
+- `[x]` Зафиксировано, что локальная автоматическая часть порции закрыта без ослабления production-проверок; проценты и обязательный scope не изменены.
+- `[~]` Для real API replay нужен доступный PostgreSQL/Docker и запущенный backend; после восстановления инфраструктуры прогон повторяется с clean demo seed.
+
+### Результат сто тридцать девятой исполняемой порции (31.08.2026)
+
+- `[x]` В `test:e2e:real` добавлен обязательный health-preflight `check:real-api`: проверяется `/health/live` до запуска Playwright, поддерживается base path и ограничивается HTTP(S)-origin без query/fragment.
+- `[x]` Ошибки недоступного API теперь завершают прогон сразу с безопасной диагностикой и командами восстановления; сетевые ошибки не протоколируются вместе с потенциальными credentials.
+- `[x]` Добавлен root script `npm run check:real-api` и regression-набор **5/5** для URL validation, healthy/non-success responses, timeout/connection error и отсутствия утечки секретов; frontend lint PASS.
+- `[x]` `test:e2e:real` проверяет API **до** `demo:reset`/seed, поэтому недоступная инфраструктура не запускает лишнюю очистку локальных demo-данных; runner повторяет health-check перед браузером.
+- `[x]` Health-preflight включён в `test:ops-harness`, поэтому общий operations quality gate теперь не может пропустить сломанный real-API runner.
+- `[x]` После изменения повторно подтверждено: недоступный текущий backend определяется preflight до браузерных тестов, поэтому ложные UI timeout-ошибки больше не маскируют инфраструктурный blocker.
+- `[~]` Автоматический real API replay по-прежнему требует доступных PostgreSQL/Redis и запущенного backend; preflight повышает диагностируемость, но не подменяет staging evidence.
+
+### Результат сто сороковой исполняемой порции (31.08.2026)
+
+- `[x]` Общий operations harness расширен real-API preflight regression и прошёл **14/14** тестов; проверяются Docker/backup/restore/production controls, Bookly guard и безопасная диагностика недоступного API.
+- `[x]` Повторно прошли frontend lint и `git diff --check`; изменение runner не затрагивает runtime auth, storage policy или payment exclusions.
+- `[~]` Real API, staging и production evidence остаются внешними gates: локальный preflight лишь предотвращает ложный браузерный шум и случайный demo reset при недоступном backend.
+
+### Результат сто сорок первой исполняемой порции (31.08.2026)
+
+- `[x]` Закрыт локальный privacy-gap account deletion: произвольная причина удаления теперь очищается в той же транзакции перед завершением anonymization и больше не остаётся в admin queue.
+- `[x]` Добавлен интеграционный retention regression для `completed` + `reason = null` с проверкой сохранённой записи после reload; rollback semantics и pending/cancelled причины не меняются.
+- `[~]` Запуск этого service-backed regression в текущей среде заблокирован недоступным PostgreSQL `127.0.0.1:5433`; TypeScript build и backend unit **183/583** проходят.
+- `[~]` Фактическая staging/production deletion rehearsal и object-store lifecycle по-прежнему требуют внешней БД, private storage и backup evidence; локальный фикс не подменяет этот gate.
+
+### Результат сто сорок второй исполняемой порции (31.08.2026)
+
+- `[x]` Account deletion теперь удаляет pending/failed outbox-события удалённого пользователя или его прежнего email и редактирует payload уже завершённых/dead-letter событий до `{ redacted: true }`.
+- `[x]` В `AUTOCARE_DELETION_INVARIANTS` добавлена проверка, что оставшиеся outbox payload с `userId` уже помечены `redacted`; in-flight необезличенное событие блокирует завершение удаления.
+- `[x]` Обновлён integration regression для pending notification и completed email payload; in-flight worker rows намеренно не переписываются без lease-контроля.
+- `[x]` Backend unit **183/583** и build проходят; frontend lint и `git diff --check` проходят.
+- `[~]` Service-backed запуск нового retention regression ожидает доступный PostgreSQL `127.0.0.1:5433`; staging worker race и backup/restore остаются внешними gates.
+
+### Результат сто сорок третьей исполняемой порции (31.08.2026)
+
+- `[x]` При отклонении `provider_cover`/`provider_gallery` moderation evidence ссылка удаляется из профиля транзакционно, а соответствующий локальный media object удаляется сразу после commit.
+- `[x]` Ошибка удаления объекта не откатывает уже принятую moderation decision: orphan cleanup повторит удаление, при этом внутренняя ошибка не попадает в ответ модератору.
+- `[x]` Добавлен regression для namespace-safe media target (`4/4` unit tests); backend build проходит.
+- `[~]` Реальная private storage ACL/S3 lifecycle и staging-проверка rejected media остаются внешним gate `ADD-C07`; локальное удаление не подменяет production evidence.
+
+### Результат сто сорок четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Добавлена единая output-policy для provider media: публичный mapper принимает только сгенерированные `/uploads/autocare/...` ссылки и ограниченный набор bundled `/images/autocare/providers/...` assets; внешние URL, protocol-relative ссылки, query/path traversal и неподходящие namespaces отбрасываются.
+- `[x]` `getAutoCareProviderProfile` больше не переопределяет очищенный `coverImageUrl` сырым значением entity, поэтому профиль и discovery используют одну и ту же media policy.
+- `[x]` Moderation queue теперь создаёт evidence только для application-generated cover/gallery uploads; bundled demo assets считаются доверенными build-артефактами, а произвольные внешние ссылки не становятся moderation evidence.
+- `[x]` Добавлены regression-тесты для очистки public media, deduplication gallery и фильтрации moderation references; полный backend unit после добавления policy прошёл **184 файла / 587 тестов**, backend build, lint и `git diff --check` зелёные.
+- `[~]` S3/private ACL, AV quarantine, signed URLs и миграция уже сохранённых legacy/external media требуют staging storage и остаются внешним gate `PILOT-03/SEC-02`; output-policy не выдаёт такие ссылки клиенту, но не заменяет очистку исторических строк в production базе.
+
+### Результат сто сорок пятой исполняемой порции (31.08.2026)
+
+- `[x]` Review photo URLs теперь проходят ту же строгую output-policy: внешние и повреждённые ссылки не выдаются ни в публичном review response, ни в moderation evidence viewer; bundled provider assets и application-generated media остаются разрешёнными.
+- `[x]` `createAutoCareBroadcastRequest` больше не принимает публичные `http(s)` photo URLs: до включения private uploader разрешены только opaque `private://autocare/(requests|broadcasts)/...` references. OpenAPI contract обновлён тем же pattern.
+- `[x]` Добавлены schema/output regression-тесты для внешних review/broadcast URL, private reference и deduplicated approved assets.
+- `[x]` Полный backend unit после изменения прошёл **184 файла / 589 тестов**, backend build, frontend lint и `git diff --check` зелёные.
+- `[~]` Private review/broadcast uploader, signed read access, AV quarantine и migration/cleanup исторических URL требуют staging S3/ClamAV; до этого API безопасно отклоняет публичные ссылки и не раскрывает legacy external media.
+
+### Результат сто сорок шестой исполняемой порции (31.08.2026)
+
+- `[x]` Opaque broadcast media references дополнительно ограничены безопасными path-сегментами: `..`, пустые сегменты, traversal и завершающий slash не проходят schema/OpenAPI contract.
+- `[x]` Regression расширен path-traversal кейсом; targeted schema/policy tests **11/11**, backend build и `git diff --check` PASS.
+- `[~]` Реальный private uploader и signed URL lifecycle по-прежнему не включены; этот guard предотвращает небезопасные ссылки до staging-интеграции и не засчитывает её как выполненную.
+
+### Результат сто сорок седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Единая `PRIVATE_REFERENCE_PATTERN` применена к owner provider documents и provider change-request payload; document references с traversal, пустыми сегментами, внешними URL и неоднозначными разделителями отклоняются.
+- `[x]` Moderation queue отклоняет invalid private references до записи evidence, а admin/provider-change responses не возвращают legacy malformed document references.
+- `[x]` Добавлены regression-тесты для private reference normalization, schema traversal и output redaction; полный backend unit — **184 файла / 590 тестов**, backend build, lint и `git diff --check` PASS.
+- `[~]` Фактическая выдача документа модератору через signed private URL, AV quarantine и S3 ACL остаётся staging gate; сейчас наружу выдаётся только безопасный opaque key, без bytes или public URL.
+
+### Результат сто сорок восьмой исполняемой порции (31.08.2026)
+
+- `[x]` Чтение chat/service-request attachments теперь принимает только безопасные image content types (`image/jpeg`, `image/png`, `image/webp`); legacy или изменённая в базе строка с `text/html` скрывается как `404`, не попадая в inline response или signed URL.
+- `[x]` Redirect на private signed URL помечается `cache-control: private, no-store` и `content-disposition: inline`; прямой filesystem-ответ сохраняет `no-store`, `nosniff`, `ETag` и тот же content-type policy.
+- `[x]` Добавлены regression-проверки allow-list content type и HTTP headers для готового attachment; backend unit после изменения прошёл **184 файла / 591 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Service-backed HTTP header regression в `provider-branch-access.integration.test.ts` подготовлен, но текущий запуск заблокирован отсутствующим PostgreSQL на `127.0.0.1:5433` (`EPERM`); это не засчитывается как новое integration evidence.
+- `[~]` Фактический S3 signed URL response, private ACL и cross-tenant replay остаются staging gates `PILOT-03/SEC-01/SEC-02`; локальная policy не выдаёт доступ к произвольному object key и не заменяет внешний storage evidence.
+
+### Результат сто сорок девятой исполняемой порции (31.08.2026)
+
+- `[x]` Retention cleanup теперь перед удалением object store проверяет количество строк, ссылающихся на тот же `objectKey`; shared object не удаляется, пока остаётся другая attachment-запись.
+- `[x]` Если объект уже стал orphan (`0` ссылок), metadata-строка удаляется, а сам файл оставляется orphan sweep до его grace period; это предотвращает преждевременную потерю данных при гонке cleanup.
+- `[x]` Добавлен regression для reference-count policy (`1` удаляется, `0/2/NaN` сохраняются); полный backend unit — **184 файла / 592 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная concurrent retention rehearsal и проверка object-store delete/restore остаются staging gates `PILOT-04/SEC-02/SEC-03`; локальный guard не заменяет backup/restore evidence.
+
+### Результат сто пятидесятой исполняемой порции (31.08.2026)
+
+- `[x]` При выдаче chat/service-request attachment `objectKey` теперь обязан соответствовать parent UUID (`autocare-chats/<threadId>/...` или `autocare-requests/<requestId>/...`); корректная роль без такой связи получает `404`, а не bytes чужого обращения.
+- `[x]` Chat endpoint допускает только собственный thread key и request key связанного service-request; account deletion удаляет object store только при единственной ссылке и только в разрешённом parent scope.
+- `[x]` Добавлены regression-тесты для parent binding и cross-scope denial; полный backend unit — **184 файла / 593 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный HTTP replay двух филиалов и проверка shared-key/retention race на PostgreSQL остаются staging gates `SEC-01/SEC-03`; текущая среда не предоставила PostgreSQL `127.0.0.1:5433`.
+
+### Результат сто пятьдесят первой исполняемой порции (31.08.2026)
+
+- `[x]` Пользовательская data export больше не содержит внутренний `objectKey` private storage; экспорт сохраняет пользовательские метаданные вложения (id, тип, размер, checksum, статус) без раскрытия пути хранения.
+- `[x]` Добавлен regression для export privacy и проверки, что `passwordHash` и private object key не попадают в JSON; полный backend unit — **184 файла / 594 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный export/deletion/restore rehearsal и проверка политики хранения остаются внешним gate `SEC-03/SEC-07`; изменение не удаляет пользовательское содержимое из исходных данных и не меняет payment scope.
+
+### Результат сто пятьдесят второй исполняемой порции (31.08.2026)
+
+- `[x]` Добавлена PostgreSQL-миграция `1786280000000-HardenAutoCareAttachmentIntegrity`: новые вложения обязаны использовать разрешённый MIME, opaque object-key формата и parent scope своего request/thread.
+- `[x]` Существующая parent-проверка теперь заменяется на scope-aware `CHK_autocare_attachments_parent`; все новые записи проверяются сразу, а legacy rows оставлены `NOT VALID` до контролируемого backfill/validation.
+- `[x]` TypeORM entity checks и schema-contract policy синхронизированы с миграцией; attachment checks и `FK_autocare_attachments_thread` теперь входят в обязательный schema gate.
+- `[x]` Добавлен migration regression: **2/2**; полный backend unit — **185 файлов / 596 тестов**, migration-order check, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Фактическое применение/`VALIDATE CONSTRAINT` в PostgreSQL, исправление legacy rows и service-backed replay требуют staging database; локальный PostgreSQL в этой порции недоступен, поэтому это не считается внешним runtime evidence.
+
+### Результат сто пятьдесят третьей исполняемой порции (31.08.2026)
+
+- `[x]` Upload-путь получил единый runtime guard content type: `decodeAutoCareAttachment` и `normalizeAutoCareAttachment` теперь отклоняют неподдерживаемый MIME до чтения или нормализации байтов.
+- `[x]` Это закрывает обход TypeScript/Zod-контрактов при прямом вызове сервиса и не позволяет неизвестному MIME попасть в magic-byte fallback или metadata storage.
+- `[x]` Добавлен regression для `text/html` на decode/normalize и отдельной assertion-функции; targeted attachment tests **12/12**, полный backend unit — **185 файлов / 597 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальное сохранение в PostgreSQL/S3 и AV quarantine по-прежнему требуют staging storage/database; runtime guard не подменяет `SEC-02/SEC-03` evidence.
+
+### Результат сто пятьдесят четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` При чтении attachment из filesystem теперь проверяется SHA-256 против checksum из БД; повреждённый или подменённый объект скрывается как `404` до отправки bytes.
+- `[x]` Для S3 signed URL добавлена `HeadObject`-проверка приватной metadata `sha256`; отсутствующая или несовпадающая metadata не позволяет подписать ссылку.
+- `[x]` Проверка принимает только валидный 64-символьный SHA-256, поддерживает legacy `null` checksum без ложного отказа и не раскрывает причину integrity failure наружу.
+- `[x]` Regression покрывает корректный/несовпадающий filesystem checksum и S3 metadata; storage tests **12/12**, полный backend unit — **185 файлов / 599 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный S3 signed download после выдачи URL и race между `HeadObject` и GET требуют staging object-store rehearsal; локальный preflight не заменяет `SEC-02/SEC-03` evidence.
+
+### Результат сто пятьдесят пятой исполняемой порции (31.08.2026)
+
+- `[x]` Для attachment read добавлена сверка фактической длины объекта с `bytes` из БД; усечённый или дописанный filesystem/S3 object не отправляется клиенту.
+- `[x]` Перед S3 signed URL проверяется `ContentLength` через `HeadObject`; ожидаемый размер должен быть безопасным и совпадать с metadata объекта.
+- `[x]` Проверка сохраняет совместимость с legacy `null` checksum и не выделяет память по значению `ContentLength` из внешнего object store.
+- `[x]` Добавлен regression для byte-length guard; storage tests **13/13**, полный backend unit — **185 файлов / 600 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный S3 object mutation после `HeadObject` и concurrent read race требуют staging object-store rehearsal; это остаётся внешним `SEC-02/SEC-03` gate.
+
+### Результат сто пятьдесят шестой исполняемой порции (31.08.2026)
+
+- `[x]` S3 integrity preflight теперь запускается при наличии любого DB metadata: checksum **или** `bytes`; legacy attachment без checksum больше не получает signed URL без проверки `ContentLength`.
+- `[x]` Добавлен явный helper `hasAutoCareAttachmentIntegrityMetadata`, чтобы nullable checksum не мог отключить size preflight.
+- `[x]` Regression покрывает checksum-only, bytes-only и полностью legacy metadata; storage tests **14/14**, полный backend unit — **185 файлов / 601 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Race после `HeadObject` и фактическая S3 GET-проверка остаются staging object-store gate; приложение не может атомарно связать последующий браузерный GET с предварительным HEAD.
+
+### Результат сто пятьдесят седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Retention cleanup теперь проверяет parent scope перед удалением object store: `objectKey` обязан принадлежать request/thread той же строки.
+- `[x]` Legacy/malformed attachment row очищается из БД, но чужой или невалидный object store key не удаляется; это защищает shared/foreign media от ошибочного retention delete.
+- `[x]` Добавлен regression для foreign request key, собственного key и malformed key; storage tests **15/15**, полный backend unit — **185 файлов / 602 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная concurrent retention race и object-store restore остаются staging gates `SEC-02/SEC-03`; локальный guard не заменяет backup/restore rehearsal.
+
+### Результат сто пятьдесят восьмой исполняемой порции (31.08.2026)
+
+- `[x]` Перед S3 signed URL проверяется private storage state: объект с metadata `state=quarantine` больше не подписывается.
+- `[x]` Если S3 возвращает сохранённый `Content-Type`, он должен совпадать с безопасным MIME из attachment metadata; несовпадение скрывается как `404`.
+- `[x]` Legacy object без этих optional metadata не ломается, но новые private uploads уже записывают `state=private`, `sha256` и content type.
+- `[x]` Добавлены regression для quarantine state, private state и MIME mismatch; storage tests **16/16**, полный backend unit — **185 файлов / 603 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Фактическая S3 ACL/bucket-policy проверка и race после `HeadObject` остаются staging gates `SEC-01/SEC-02`.
+
+### Результат сто пятьдесят девятой исполняемой порции (31.08.2026)
+
+- `[x]` Добавлено DB-level ограничение checksum attachment: значение может быть `NULL` для legacy rows либо ровно 64 hex-символа SHA-256.
+- `[x]` TypeORM entity и schema-contract policy синхронизированы с `CHK_autocare_attachments_checksum`; новый malformed checksum физически не сохраняется после применения миграции.
+- `[x]` Добавлена отдельная миграция `1786290000000-HardenAutoCareAttachmentChecksum` и regression **2/2**; migration-order check, полный backend unit — **186 файлов / 605 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Применение миграции и backfill/`VALIDATE CONSTRAINT` legacy checksum требуют staging PostgreSQL; локальная БД в этой порции не запускалась.
+
+### Результат сто шестидесятой исполняемой порции (31.08.2026)
+
+- `[x]` Низкоуровневый `saveAutoCareAttachmentObject` теперь принимает только разрешённый image MIME и передаёт в S3 именно нормализованный content type.
+- `[x]` Invalid `application/octet-stream` и произвольные MIME отклоняются до создания directory/file или запроса к S3; service upload и test fixtures используют явный MIME.
+- `[x]` Добавлен regression на отсутствие filesystem side effect; storage tests **17/17**, полный backend unit — **186 файлов / 606 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` AV quarantine, private bucket ACL и реальный S3 upload остаются staging gates `SEC-01/SEC-02`; storage helper guard не выдаётся за production media evidence.
+
+### Результат сто шестьдесят первой исполняемой порции (31.08.2026)
+
+- `[x]` Локальное чтение attachment теперь открывает файл с `O_NOFOLLOW` и валидирует размер уже открытого inode; подмена файла symlink между предварительной проверкой и чтением не может увести чтение во внешний путь.
+- `[x]` Обработаны `ENOENT`, `ELOOP` и `ENOTDIR` как безопасный `404`; file handle закрывается в `finally`, а лимит размера повторно проверяется после чтения.
+- `[x]` Существующий symlink regression продолжает проходить; полный backend unit — **186 файлов / 606 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Защита касается локального filesystem fallback; атомарность private S3 GET, bucket policy и object-store race по-прежнему требуют staging evidence `SEC-01/SEC-02`.
+
+### Результат сто шестьдесят второй исполняемой порции (31.08.2026)
+
+- `[x]` Чтение provider cover/gallery media теперь открывает файл с `O_NOFOLLOW` и проверяет размер уже открытого inode; symlink/TOCTOU-подмена не может направить bytes за пределы media root.
+- `[x]` Streaming API использует тот же безопасный file descriptor с `autoClose`, а ошибки `ENOENT`, `ELOOP` и `ENOTDIR` скрываются как `404`; oversize повторно блокируется до выдачи.
+- `[x]` Существующие symlink и oversized media regressions прошли; полный backend unit — **186 файлов / 606 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Production private media, S3 signed access, AV quarantine и bucket policy остаются внешними staging gates `SEC-01/SEC-02`; локальная защита не считается production storage evidence.
+
+### Результат сто шестьдесят третьей исполняемой порции (31.08.2026)
+
+- `[x]` Provider media orphan cleanup теперь использует `lstat`, поэтому symlink, directory и oversized entry не попадают в кандидаты удаления.
+- `[x]` Retention не следует по symlink при сборе `mtime` и не удаляет внешний файл; добавлен regression с orphan-файлом и symlink на внешний target.
+- `[x]` Provider storage tests **5/5**, полный backend unit — **186 файлов / 607 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Production object storage retention, concurrent cleanup и backup/restore остаются staging gates `SEC-02/SEC-03`; локальный filesystem cleanup не заменяет внешний rehearsal.
+
+### Результат сто шестьдесят четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Provider media cover/gallery теперь проверяют media root до записи, чтения, streaming и удаления: symlink или не-директория не принимаются.
+- `[x]` Перед созданием нового каталога выполняется boundary check, поэтому подменённый root не получает даже временный upload; добавлен regression с symlink root и внешним target.
+- `[x]` Provider storage tests **6/6**, полный backend unit — **186 файлов / 608 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Защита локального root не заменяет private S3 bucket policy, signed access, AV quarantine и production storage rehearsal (`SEC-01/SEC-02`).
+
+### Результат сто шестьдесят пятой исполняемой порции (31.08.2026)
+
+- `[x]` Provider logo storage получил тот же root boundary и TOCTOU guard: чтение открывает файл с `O_NOFOLLOW`, streaming использует проверенный descriptor, а root symlink блокируется до записи.
+- `[x]` Logo orphan cleanup использует `lstat` и пропускает symlink, directory и oversized entry; удаление не следует по ссылке к внешнему target.
+- `[x]` Добавлены regressions для symlink logo, symlink root и cleanup; logo storage tests **5/5**, полный backend unit — **186 файлов / 610 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Production logo bucket policy, private media migration, AV quarantine и backup/restore остаются staging gates `SEC-01/SEC-02/SEC-03`.
+
+### Результат сто шестьдесят шестой исполняемой порции (31.08.2026)
+
+- `[x]` Filesystem cabinet image storage получил root boundary: symlink или не-директория не допускаются перед `put`, `remove`, `list` и streaming.
+- `[x]` Cabinet image stream открывает объект через `O_NOFOLLOW` и проверяет размер открытого inode; symlink/TOCTOU-подмена не выдаёт bytes.
+- `[x]` Добавлен regression на symlink storage root; cabinet storage regressions и полный backend unit — **186 файлов / 611 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Production cabinet media migration, private object storage, bucket policy и backup/restore остаются staging gates `SEC-01/SEC-02/SEC-03`.
+
+### Результат сто шестьдесят седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Для `autocare_service_attachments.objectKey` добавлен non-unique индекс `IDX_autocare_attachments_object_key`, ускоряющий reference-count проверки retention и account deletion без запрета shared legacy rows.
+- `[x]` Миграция `1786300000000-AddAutoCareAttachmentObjectKeyIndex` добавлена в inventory; TypeORM entity и schema-contract query/policy синхронизированы.
+- `[x]` Migration regression **2/2** включён в unit config; полный backend unit — **187 файлов / 613 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Применение индекса на staging PostgreSQL и production-like query plan остаются внешним migration/benchmark gate; локальная БД недоступна.
+
+### Результат сто шестьдесят восьмой исполняемой порции (31.08.2026)
+
+- `[x]` Низкоуровневый `FileSystemCabinetImageStorage.put` теперь проверяет фактический размер `Buffer` до проверки root, создания каталога и временного файла: пустой объект отклоняется, а размер больше `MAX_CABINET_IMAGE_BYTES` возвращает стабильный `CABINET_IMAGE_TOO_LARGE`.
+- `[x]` Ошибка пустого содержимого возвращает `CABINET_IMAGE_INVALID_CONTENT`; оба guard-а используют тот же HTTP 400 контракт, что и upload validation, поэтому прямой вызов storage не обходит API-ограничения.
+- `[x]` Добавлен regression на empty/oversized writes и отсутствие файлового side effect; cabinet storage tests **7/7**, полный backend unit — **187 файлов / 614 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` MIME/magic-byte/decode-проверки по-прежнему выполняются upload/service-слоем; private production object storage, AV quarantine и backup/restore остаются внешними staging gates `SEC-01/SEC-02/SEC-03`.
+
+### Результат сто шестьдесят девятой исполняемой порции (31.08.2026)
+
+- `[x]` Filesystem private attachments больше не создают весь путь через `mkdir(..., recursive)` до проверки: каталоги root/scope/parent создаются по одному с `lstat`-проверкой и закрываются при symlink или не-директории.
+- `[x]` Attachment root вычисляется из актуального `CABINET_UPLOADS_DIR`, поэтому смена storage-конфигурации не оставляет stale boundary; запись в подменённый root отклоняется до внешнего side effect.
+- `[x]` Добавлен regression с symlink filesystem root и проверкой, что внешний каталог остаётся пустым; attachment storage tests **18/18**, полный backend unit — **187 файлов / 615 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полная атомарность filesystem write при атаке с заменой каталога между проверками требует staging threat review; production private S3/AV, backup/restore и независимый security review остаются внешними gates.
+
+### Результат сто семидесятой исполняемой порции (31.08.2026)
+
+- `[x]` Перед выдачей S3 signed URL теперь всегда выполняется `HeadObject`, включая legacy attachment rows без checksum/bytes; отсутствие integrity metadata больше не отключает preflight.
+- `[x]` Head metadata проверяет безопасный диапазон `ContentLength`, приватное состояние объекта и допустимый `Content-Type`; `quarantine`, oversized/empty object и MIME mismatch не получают signed URL.
+- `[x]` Добавлен pure regression для legacy и unsafe S3 metadata; attachment storage tests **19/19**, полный backend unit — **187 файлов / 616 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный S3 bucket policy, permission на `HeadObject`, race между HEAD и последующим GET и независимый security review остаются staging gates `SEC-01/SEC-02/SEC-08`.
+
+### Результат сто семьдесят первой исполняемой порции (31.08.2026)
+
+- `[x]` Private attachment reads теперь отклоняют пустой объект на всех путях: filesystem inode/content, S3 `ContentLength`, streamed body и `transformToByteArray`.
+- `[x]` Вынесен единый `assertAutoCareAttachmentStoredByteLength`: проверяются safe integer, диапазон `1..10 MB` и фактический размер, включая legacy rows без DB metadata.
+- `[x]` Regression расширен для пустого filesystem объекта, `ContentLength=0`, NaN и boundary cases; attachment storage tests **19/19**, полный backend unit — **187 файлов / 616 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная S3 GET после HEAD и object-store race остаются staging gates `SEC-02`; private bucket policy и независимый review не подменяются локальными тестами.
+
+### Результат сто семьдесят второй исполняемой порции (31.08.2026)
+
+- `[x]` Public provider media, provider logos и legacy cabinet image streams теперь отклоняют пустые файлы так же, как oversized и symlink объекты.
+- `[x]` Guard проверяется по уже открытому inode и по фактически прочитанному содержимому там, где storage возвращает `Buffer`; пустой объект не выдаётся клиенту с успешным `200`.
+- `[x]` Regression расширен для cover/gallery, logo и cabinet stream; три storage suites **18/18**, полный backend unit — **187 файлов / 616 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальные CDN/S3 object policies, media quarantine и production retention остаются внешними `SEC-02/SEC-03` gates.
+
+### Результат сто семьдесят третьей исполняемой порции (31.08.2026)
+
+- `[x]` Provider media и logo file names получили верхний лимит 128 символов; UUID‑имена текущего runtime остаются совместимыми.
+- `[x]` Ограничение применяется в filename assertions, URL namespace parsing и orphan cleanup, поэтому длинный или подменённый путь не доходит до `lstat`/`unlink`.
+- `[x]` Добавлены regressions для чрезмерно длинных media/logo names; provider media/logo suites **11/11**, полный backend unit — **187 файлов / 616 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` WAF/proxy request-size и staging threat review остаются внешними perimeter gates `SEC-02/SEC-06`; локальный filename bound не заменяет их.
+
+### Результат сто семьдесят четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Account-deletion outbox invariant теперь проверяет не только `userId`, но и исходные `email`/`toEmail`, которые уже учитываются в фактической redaction-операции.
+- `[x]` Инвариант получает оригинальный email до анонимизации пользователя; при retention-проверке без email передаётся `NULL`, поэтому проверка не подставляет анонимизированный адрес и не создаёт ложных совпадений.
+- `[x]` Добавлены regressions на SQL-поля `userId`/`email`/`toEmail`, режим параметров и передачу исходного email; полный backend unit — **187 файлов / 617 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Retention rehearsal для уже завершённых удалений без сохранённого исходного email всё ещё требует staging evidence; production backup/restore и независимый security review остаются внешними gates `SEC-03/SEC-08`.
+
+### Результат сто семьдесят пятой исполняемой порции (31.08.2026)
+
+- `[x]` Outbox redaction и deletion invariant теперь сопоставляют email-идентификаторы через `LOWER(TRIM(...))`; регистр и случайные пробелы не позволяют payload обойти удаление.
+- `[x]` Integration fixture расширен payload-ом с uppercase/whitespace email, чтобы проверять реальный путь очистки, а не только exact-match случай.
+- `[x]` Добавлен regression на нормализованное SQL-сопоставление; полный backend unit — **187 файлов / 617 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Service-backed deletion regression и retention для уже завершённых аккаунтов требуют PostgreSQL/staging; локальный SQL-контракт не заменяет production backup/restore и worker-race rehearsal.
+
+### Результат сто семьдесят шестой исполняемой порции (31.08.2026)
+
+- `[x]` Provider profile change requests получили единый строгий валидатор payload, синхронизированный с owner-профилем: длины строк, email/URL, числовые диапазоны и размеры коллекций ограничены до записи в JSONB.
+- `[x]` Телефоны, amenities и brand specializations нормализуются с trim/deduplication; документы ограничены 20 элементами, принимают только opaque private references и валидный ISO datetime с offset.
+- `[x]` Добавлены regression-тесты на корректную нормализацию и отказ oversized/invalid/public payload; новый policy suite **9/9**, полный backend unit — **188 файлов / 626 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Фактический HTTP replay owner/admin change-request в staging PostgreSQL и private document storage остаётся внешним moderation/security gate; локальный policy не выдаёт signed document access.
+
+### Результат сто семьдесят седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Для appeals добавлен partial unique index `UQ_autocare_appeals_pending_subject` по `submittedById + subject + subjectId` при `status = 'pending'`; это закрывает дубль unresolved appeal на уровне PostgreSQL при параллельных запросах.
+- `[x]` `createAutoCareAppeal` теперь воспринимает PostgreSQL `23505` только как возможную гонку дублей, возвращает строку, победившую в гонке, и повторно выбрасывает конфликт, если причина не относится к pending appeal.
+- `[x]` Entity, schema-contract inventory и migration `1786310000000-AddAutoCareAppealPendingUniqueIndex` синхронизированы; policy/migration regressions прошли **10/10**, полный backend unit — **189 файлов / 629 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Перед применением миграции на staging нужно проверить и вручную разрешить уже существующие pending-дубли; применение на production PostgreSQL и multi-process concurrency rehearsal остаются внешними gates `SEC-06/SEC-08`.

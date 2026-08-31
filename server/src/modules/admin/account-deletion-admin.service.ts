@@ -36,11 +36,40 @@ import { metrics } from '../../shared/observability/metrics.js'
 import { getAdminDeletionListLimit } from './account-deletion-list-policy.js'
 import { getAnonymizedIdentity, ANONYMIZED_REVIEW_TEXT } from '../users/account-anonymization-policy.js'
 import { isAccountDeletionReady } from '../users/account-deletion-retention.js'
-import { removeAutoCareAttachmentObject } from '../autocare/autocare-attachment-storage.js'
+import { isAutoCareAttachmentObjectKeyOwnedBy, removeAutoCareAttachmentObject, shouldDeleteAutoCareAttachmentObject } from '../autocare/autocare-attachment-storage.js'
 import { getAutoCareProviderLogoFileName, removeAutoCareProviderLogo } from '../autocare/autocare-provider-logo-storage.js'
 import { getAutoCareProviderMediaFileName, removeAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
 import { deleteUploadedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { assertAutoCareDeletionInvariants } from '../users/account-deletion-invariants.js'
+
+async function redactAccountDeletionOutboxEvents(
+    manager: EntityManager,
+    userId: string,
+    originalEmail: string,
+) {
+    const recipientMatch = `(event."payload" ->> 'userId' = $1 OR LOWER(TRIM(event."payload" ->> 'email')) = LOWER(TRIM($2)) OR LOWER(TRIM(event."payload" ->> 'toEmail')) = LOWER(TRIM($2)))`
+
+    // Pending and retryable notifications must not be delivered after the
+    // account has been anonymized. Delete only those not currently claimed by
+    // a worker; an in-flight event is handled by the worker lease/retention
+    // path and is never treated as deletion proof.
+    await manager.query(
+        `DELETE FROM "outbox_events" event
+          WHERE event."status" IN ('pending', 'failed')
+            AND ${recipientMatch}`,
+        [userId, originalEmail],
+    )
+
+    // Completed/dead-letter rows are retained for operational history, but
+    // their payload must not keep the deleted user's address or identifiers.
+    await manager.query(
+        `UPDATE "outbox_events" event
+            SET "payload" = '{"redacted": true}'::jsonb
+          WHERE event."status" IN ('completed', 'dead_letter')
+            AND ${recipientMatch}`,
+        [userId, originalEmail],
+    )
+}
 
 async function anonymizeAccount(manager: EntityManager, userId: string) {
     const userRepository = manager.getRepository(UserEntity)
@@ -48,19 +77,38 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     if (!user) return null
 
     const originalEmail = user.email
+    await redactAccountDeletionOutboxEvents(manager, userId, originalEmail)
     const attachments = await manager.query(
-        `SELECT "objectKey"
+        `SELECT "objectKey", "requestId", "threadId"
            FROM "autocare_service_attachments"
           WHERE "uploadedById" = $1
              OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)
              OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)`,
         [userId],
-    ) as Array<{ objectKey: string }>
+    ) as Array<{ objectKey: string; requestId: string | null; threadId: string | null }>
+    const attachmentKeys = [...new Set(attachments.map(({ objectKey }) => objectKey))]
+    const referenceRows = attachmentKeys.length === 0
+        ? []
+        : await manager.query(
+            `SELECT "objectKey", COUNT(*)::int AS "count"
+               FROM "autocare_service_attachments"
+              WHERE "objectKey" = ANY($1::text[])
+              GROUP BY "objectKey"`,
+            [attachmentKeys],
+        ) as Array<{ objectKey: string; count: number }>
+    const referenceCounts = new Map(referenceRows.map(({ objectKey, count }) => [objectKey, count]))
     // Privacy wins over availability here. If object deletion fails, the
     // transaction is rolled back and completion can safely be retried because
     // object deletion is idempotent.
     for (const attachment of attachments) {
-        await removeAutoCareAttachmentObject(attachment.objectKey)
+        const scopes = [
+            ...(attachment.requestId ? [{ scope: 'requests' as const, parentId: attachment.requestId }] : []),
+            ...(attachment.threadId ? [{ scope: 'chats' as const, parentId: attachment.threadId }] : []),
+        ]
+        if (shouldDeleteAutoCareAttachmentObject(referenceCounts.get(attachment.objectKey) ?? 0)
+            && isAutoCareAttachmentObjectKeyOwnedBy(attachment.objectKey, scopes)) {
+            await removeAutoCareAttachmentObject(attachment.objectKey)
+        }
     }
 
     const ownedProviders = await manager.getRepository(AutomotiveProviderEntity).find({
@@ -228,7 +276,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query('UPDATE "autocare_bonus_ledger" SET "actorId" = NULL WHERE "actorId" = $1', [userId])
     await manager.query('UPDATE "security_event_actions" SET "assignee_id" = NULL WHERE "assignee_id" = $1', [userId])
     await manager.query('UPDATE "security_events" SET "user_id" = NULL WHERE "user_id" = $1', [userId])
-    await assertAutoCareDeletionInvariants(manager, userId)
+    await assertAutoCareDeletionInvariants(manager, userId, originalEmail)
     return user
 }
 
@@ -381,6 +429,10 @@ export async function updateAdminDeletionRequestStatus(
 
         const now = new Date()
         if (status === AccountDeletionRequestStatus.Completed) {
+            // The reason is user-provided free text and may contain PII. Keep
+            // it only while the request is pending; a completed deletion must
+            // not retain it in the admin queue after the account is anonymized.
+            deletionRequest.reason = null
             const anonymizedUser = await anonymizeAccount(manager, deletionRequest.userId)
             if (anonymizedUser) deletionRequest.user = anonymizedUser
         }

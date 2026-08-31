@@ -8,7 +8,7 @@ type QueryExecutor = Pick<EntityManager, 'query'>
 export type AccountDeletionInvariant = {
     name: string
     sql: string
-    parameterMode?: 'user' | 'user_and_anonymized' | 'anonymized'
+    parameterMode?: 'user' | 'user_and_email' | 'anonymized'
 }
 
 export type AccountDeletionInvariantResult = AccountDeletionInvariant & {
@@ -38,6 +38,15 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
                OR request."clientId" = $1
                OR thread."clientId" = $1
                OR thread."createdById" = $1`,
+    },
+    {
+        name: 'account-related outbox user payloads are redacted',
+        sql: `SELECT COUNT(*)::int AS count
+            FROM "outbox_events" event
+            WHERE (event."payload" ->> 'userId' = $1
+              OR ($2::text IS NOT NULL AND (LOWER(TRIM(event."payload" ->> 'email')) = LOWER(TRIM($2)) OR LOWER(TRIM(event."payload" ->> 'toEmail')) = LOWER(TRIM($2)))))
+              AND COALESCE(event."payload" ->> 'redacted', 'false') <> 'true'`,
+        parameterMode: 'user_and_email',
     },
     { name: 'bonus accounts are removed', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_bonus_accounts" WHERE "clientId" = $1' },
     { name: 'bonus ledger entries are removed', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_bonus_ledger" WHERE "clientId" = $1' },
@@ -212,14 +221,17 @@ function getCount(row: unknown) {
 export async function checkAutoCareDeletionInvariants(
     executor: QueryExecutor = AppDataSource,
     userId: string,
+    originalEmail?: string | null,
 ): Promise<AccountDeletionInvariantResult[]> {
     const results: AccountDeletionInvariantResult[] = []
     for (const invariant of AUTOCARE_DELETION_INVARIANTS) {
         const parameters = invariant.parameterMode === 'anonymized'
             ? [ANONYMIZED_REVIEW_TEXT]
-            : invariant.parameterMode === 'user_and_anonymized' || invariant.sql.includes('$2')
-                ? [userId, ANONYMIZED_REVIEW_TEXT]
-                : [userId]
+            : invariant.parameterMode === 'user_and_email'
+                ? [userId, originalEmail ?? null]
+                : invariant.sql.includes('$2')
+                    ? [userId, ANONYMIZED_REVIEW_TEXT]
+                    : [userId]
         const rows = await executor.query(invariant.sql, parameters) as unknown[]
         results.push({ ...invariant, count: getCount(rows[0]) })
     }
@@ -229,8 +241,9 @@ export async function checkAutoCareDeletionInvariants(
 export async function assertAutoCareDeletionInvariants(
     executor: QueryExecutor,
     userId: string,
+    originalEmail?: string | null,
 ) {
-    const failures = (await checkAutoCareDeletionInvariants(executor, userId))
+    const failures = (await checkAutoCareDeletionInvariants(executor, userId, originalEmail))
         .filter(({ count }) => count > 0)
     if (failures.length > 0) {
         throw new Error(

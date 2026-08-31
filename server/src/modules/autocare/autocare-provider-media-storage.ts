@@ -1,5 +1,5 @@
-import { createReadStream, lstatSync } from 'node:fs'
-import { lstat, mkdir, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { closeSync, constants as fsConstants, createReadStream, fstatSync, lstatSync, openSync } from 'node:fs'
+import { lstat, mkdir, open, readdir, rename, unlink, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -12,7 +12,12 @@ import { selectOrphanAutoCareMedia } from './orphan-media-policy.js'
 export type AutoCareProviderMediaKind = 'cover' | 'gallery'
 
 const MAX_MEDIA_BYTES = 6 * 1024 * 1024
+const MAX_MEDIA_FILE_NAME_LENGTH = 128
 const mediaPattern = /^([a-f0-9-]+)\.webp$/i
+
+function isProviderMediaFileName(fileName: string) {
+    return fileName.length <= MAX_MEDIA_FILE_NAME_LENGTH && mediaPattern.test(fileName)
+}
 
 function mediaError(message: string) {
     return new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message })
@@ -26,13 +31,62 @@ function providerMediaNotFound(): never {
     throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider image not found.' })
 }
 
-async function assertRegularProviderMediaFile(filePath: string) {
+async function assertProviderMediaRoot(kind: AutoCareProviderMediaKind, allowMissing = false) {
+    const root = mediaRoot(kind)
+    const parent = path.dirname(root)
     try {
-        const file = await lstat(filePath)
-        if (!file.isFile() || file.size > MAX_MEDIA_BYTES) providerMediaNotFound()
+        const parentEntry = await lstat(parent)
+        if (parentEntry.isSymbolicLink() || !parentEntry.isDirectory()) providerMediaNotFound()
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            if (allowMissing) return false
+            providerMediaNotFound()
+        }
+        throw error
+    }
+    try {
+        const rootEntry = await lstat(root)
+        if (rootEntry.isSymbolicLink() || !rootEntry.isDirectory()) providerMediaNotFound()
+        return true
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            if (allowMissing) return false
+            providerMediaNotFound()
+        }
+        throw error
+    }
+}
+
+function assertProviderMediaRootSync(kind: AutoCareProviderMediaKind) {
+    const root = mediaRoot(kind)
+    const parent = path.dirname(root)
+    try {
+        const parentEntry = lstatSync(parent)
+        if (parentEntry.isSymbolicLink() || !parentEntry.isDirectory()) providerMediaNotFound()
+        const rootEntry = lstatSync(root)
+        if (rootEntry.isSymbolicLink() || !rootEntry.isDirectory()) providerMediaNotFound()
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerMediaNotFound()
         throw error
+    }
+}
+
+async function readRegularProviderMediaFile(filePath: string) {
+    let handle: Awaited<ReturnType<typeof open>> | null = null
+    try {
+        const openFlags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0)
+        handle = await open(filePath, openFlags)
+        const file = await handle.stat()
+        if (!file.isFile() || file.size < 1 || file.size > MAX_MEDIA_BYTES) providerMediaNotFound()
+        const content = await handle.readFile()
+        if (content.length < 1 || content.length > MAX_MEDIA_BYTES) providerMediaNotFound()
+        return content
+    } catch (error) {
+        if (error instanceof AppError) throw error
+        if (['ENOENT', 'ELOOP', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) providerMediaNotFound()
+        throw error
+    } finally {
+        await handle?.close().catch(() => undefined)
     }
 }
 
@@ -57,8 +111,11 @@ export async function saveAutoCareProviderMedia(kind: AutoCareProviderMediaKind,
     }
     if (normalized.length > MAX_MEDIA_BYTES) throw mediaError('Provider image is too large.')
     const fileName = `${randomUUID()}.webp`
-    await mkdir(mediaRoot(kind), { recursive: true, mode: 0o700 })
-    const target = path.join(mediaRoot(kind), fileName)
+    const root = mediaRoot(kind)
+    await assertProviderMediaRoot(kind, true)
+    await mkdir(root, { recursive: true, mode: 0o700 })
+    await assertProviderMediaRoot(kind)
+    const target = path.join(root, fileName)
     const temporary = `${target}.${process.pid}.${Date.now()}.tmp`
     try {
         await writeFile(temporary, normalized, { flag: 'wx', mode: 0o600 })
@@ -71,42 +128,52 @@ export async function saveAutoCareProviderMedia(kind: AutoCareProviderMediaKind,
 }
 
 export function assertAutoCareProviderMediaFileName(fileName: string) {
-    if (!mediaPattern.test(fileName)) throw mediaError('Invalid provider image file name.')
+    if (!isProviderMediaFileName(fileName)) throw mediaError('Invalid provider image file name.')
 }
 
 export function getAutoCareProviderMediaFileName(value: string, kind: AutoCareProviderMediaKind) {
     const prefix = `/uploads/autocare/media/${kind}/`
     const fileName = value.startsWith(prefix) ? value.slice(prefix.length) : null
-    return fileName && mediaPattern.test(fileName) ? fileName : null
+    return fileName && isProviderMediaFileName(fileName) ? fileName : null
+}
+
+export function getAutoCareProviderMediaStorageTarget(
+    reference: string,
+    kind: AutoCareProviderMediaKind,
+) {
+    const fileName = getAutoCareProviderMediaFileName(reference, kind)
+    return fileName ? { kind, fileName } : null
 }
 
 export async function readAutoCareProviderMedia(kind: AutoCareProviderMediaKind, fileName: string) {
     assertAutoCareProviderMediaFileName(fileName)
+    await assertProviderMediaRoot(kind)
     const target = path.join(mediaRoot(kind), fileName)
-    await assertRegularProviderMediaFile(target)
-    try {
-        return await readFile(target)
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerMediaNotFound()
-        throw error
-    }
+    return readRegularProviderMediaFile(target)
 }
 
 export function createAutoCareProviderMediaReadStream(kind: AutoCareProviderMediaKind, fileName: string) {
     assertAutoCareProviderMediaFileName(fileName)
+    assertProviderMediaRootSync(kind)
     const target = path.join(mediaRoot(kind), fileName)
+    let fileDescriptor: number | undefined
     try {
-        const file = lstatSync(target)
-        if (!file.isFile() || file.size > MAX_MEDIA_BYTES) providerMediaNotFound()
+        const openFlags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0)
+        fileDescriptor = openSync(target, openFlags)
+        const file = fstatSync(fileDescriptor)
+        if (!file.isFile() || file.size < 1 || file.size > MAX_MEDIA_BYTES) providerMediaNotFound()
+        return createReadStream(target, { fd: fileDescriptor, autoClose: true })
     } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') providerMediaNotFound()
+        if (fileDescriptor !== undefined) closeSync(fileDescriptor)
+        if (error instanceof AppError) throw error
+        if (['ENOENT', 'ELOOP', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) providerMediaNotFound()
         throw error
     }
-    return createReadStream(target)
 }
 
 export async function removeAutoCareProviderMedia(kind: AutoCareProviderMediaKind, fileName: string) {
     assertAutoCareProviderMediaFileName(fileName)
+    if (!(await assertProviderMediaRoot(kind, true))) return
     await unlink(path.join(mediaRoot(kind), fileName)).catch((error: unknown) => {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
     })
@@ -121,6 +188,7 @@ export async function cleanupOrphanedAutoCareProviderMedia(input: {
     const root = mediaRoot(input.kind)
     let names: string[]
     try {
+        if (!(await assertProviderMediaRoot(input.kind, true))) return { scanned: 0, removed: 0, failed: 0 }
         names = await readdir(root)
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { scanned: 0, removed: 0, failed: 0 }
@@ -130,11 +198,15 @@ export async function cleanupOrphanedAutoCareProviderMedia(input: {
     const referenced = new Set(input.referencedUrls
         .filter((value) => value.startsWith(prefix))
         .map((value) => value.slice(prefix.length))
-        .filter((value) => mediaPattern.test(value)))
+        .filter(isProviderMediaFileName))
     const entries = (await Promise.allSettled(names
-        .filter((fileName) => mediaPattern.test(fileName))
-        .map(async (fileName) => ({ fileName, lastModifiedAt: (await stat(path.join(root, fileName))).mtimeMs }))))
-        .flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
+        .filter(isProviderMediaFileName)
+        .map(async (fileName) => {
+            const file = await lstat(path.join(root, fileName))
+            if (!file.isFile() || file.size > MAX_MEDIA_BYTES) return null
+            return { fileName, lastModifiedAt: file.mtimeMs }
+        })))
+        .flatMap((result) => result.status === 'fulfilled' && result.value ? [result.value] : [])
     const candidates = selectOrphanAutoCareMedia({ entries, referencedFileNames: referenced, now: (input.now ?? new Date()).getTime(), gracePeriodMs: input.gracePeriodMs })
     let failed = 0
     for (const candidate of candidates) {

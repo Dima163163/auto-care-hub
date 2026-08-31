@@ -18,3 +18,17 @@ export function canTransitionAppeal(status: AppealStatus, next: AppealStatus) {
     if (status === 'pending') return next === 'accepted' || next === 'rejected' || next === 'withdrawn'
     return false
 }
+
+/**
+ * PostgreSQL uses 23505 for unique-index conflicts. Keeping this guard
+ * deliberately narrow lets callers recover only the duplicate they can
+ * safely reconcile, while rethrowing every other persistence failure.
+ */
+export function isPostgresUniqueViolation(error: unknown) {
+    return Boolean(
+        error
+        && typeof error === 'object'
+        && 'code' in error
+        && (error as { code?: unknown }).code === '23505',
+    )
+}

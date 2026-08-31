@@ -51,8 +51,8 @@ import type {
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
-import { createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
+import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, resolveAutoCareAttachmentContentType } from './attachment-content.js'
+import { assertAutoCareAttachmentObjectKeyOwnedBy, createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { getScheduleForDate, isValidTimeZone, localDateRangeToUtc, localDateTimeParts, zonedWallTimeToUtc } from './availability.js'
 import { createAutoCareBookingSnapshot } from './booking-snapshot.js'
@@ -428,15 +428,23 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
     return {
         request: response,
         messages: messages.map(messageResponse),
-        attachments: attachments.map((attachment) => ({
-            id: attachment.id,
-            uploadedById: attachment.uploadedById,
-            contentType: attachment.contentType,
-            bytes: attachment.bytes,
-            status: attachment.status,
-            url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`,
-            createdAt: attachment.createdAt.toISOString(),
-        })),
+        attachments: attachments.flatMap((attachment) => {
+            try {
+                const contentType = resolveAutoCareAttachmentContentType(attachment.contentType)
+                return [{
+                    id: attachment.id,
+                    uploadedById: attachment.uploadedById,
+                    contentType,
+                    bytes: attachment.bytes,
+                    status: attachment.status,
+                    url: `/v1/service-requests/${requestId}/attachments/${attachment.id}`,
+                    createdAt: attachment.createdAt.toISOString(),
+                }]
+            } catch (error) {
+                if (error instanceof AppError && error.code === ERROR_CODES.NotFound) return []
+                throw error
+            }
+        }),
         nextCursor: hasMore && lastMessage
             && !isLatestPage && !beforeCursor
             ? encodeCursor({ createdAt: lastMessage.createdAt.toISOString(), id: lastMessage.id })
@@ -662,13 +670,16 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
 
 export async function getAutoCareServiceAttachment(user: UserEntity, requestId: string, attachmentId: string) {
     await getParticipantRequest(user, requestId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, checksum: true } })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: attachmentId, requestId, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, bytes: true, checksum: true } })
     if (!attachment) notFound('Service attachment not found.')
-    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey, attachment.contentType)
+    assertAutoCareAttachmentObjectKeyOwnedBy(attachment.objectKey, [{ scope: 'requests', parentId: requestId }])
+    const contentType = resolveAutoCareAttachmentContentType(attachment.contentType)
+    const signedUrl = await getAutoCareAttachmentSignedDownloadUrl(attachment.objectKey, contentType, attachment.checksum, attachment.bytes)
     return {
         ...attachment,
+        contentType,
         signedUrl,
-        content: signedUrl ? null : await readAutoCareAttachmentObject(attachment.objectKey),
+        content: signedUrl ? null : await readAutoCareAttachmentObject(attachment.objectKey, attachment.checksum, attachment.bytes),
     }
 }
 

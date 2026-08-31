@@ -61,7 +61,7 @@ MVP-01 final evidence: migration order/inventory PASS, `demo:reset` → `demo:se
 | `[ ]` | `PILOT-10` — реальные клиентские сценарии | +3% | Владелец продукта + Codex | 5–10 согласившихся клиентов прошли search → request → quote → booking → reschedule/cancel/no-show → complete → review/photo → bonus → support. |
 | `[ ]` | `PILOT-11` — метрики и go/no-go | +2% | Владелец продукта | Собраны response/confirmation/cancel/no-show/duplicate/upload/mail/complaint метрики; нет P0/P1; есть письменное go/no-go. |
 
-Текущее доказательство старта: `npm run check:mvp-readiness` корректно блокируется без четырёх конфигураций: PostgreSQL/Redis/JWT, SMTP, persistent media storage и bootstrap super-admin. Это не дефект кода и не повод менять список.
+Текущее доказательство старта: `npm run check:mvp-readiness` корректно блокируется без четырёх конфигураций: PostgreSQL/Redis/JWT, SMTP, persistent media storage и bootstrap super-admin. Это не дефект кода и не повод менять список. Локальный pilot-quality preflight 31.08.2026 прошёл для текущего каталога: 4 активных провайдера, 23 предложения, 100% покрытия предложений и цен. Локальный cross-process Redis/WebSocket smoke также прошёл с двумя подписчиками и повторной доставкой одного `eventId`; это частичное evidence для `PILOT-06`, но не заменяет две staging-реплики, Redis outage/reconnect и fail-closed rehearsal.
 
 ## 3. Безопасность и сохранность данных — оставшиеся 55%
 

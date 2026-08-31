@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest'
 
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment } from './attachment-content.js'
+import { assertAutoCareAttachmentContentType, assertAutoCareAttachmentQuota, decodeAutoCareAttachment, isAutoCareAttachmentContentType, normalizeAutoCareAttachment, resolveAutoCareAttachmentContentType } from './attachment-content.js'
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const onePixelPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
 
 describe('AutoCare attachment content validation', () => {
+    it('rejects unsupported content types before decoding or normalization', async () => {
+        expect(() => assertAutoCareAttachmentContentType('text/html')).toThrowError(expect.objectContaining({ statusCode: 422 }))
+        expect(() => decodeAutoCareAttachment({
+            contentBase64: 'AAAA',
+            contentType: 'text/html',
+            size: 3,
+        } as never)).toThrowError(expect.objectContaining({ statusCode: 422 }))
+        await expect(normalizeAutoCareAttachment(Buffer.from('not-an-image'), 'text/html' as never))
+            .rejects.toMatchObject({ statusCode: 422 })
+    })
+
+    it('allows only browser-safe image content types for attachment responses', () => {
+        expect(resolveAutoCareAttachmentContentType('image/jpeg')).toBe('image/jpeg')
+        expect(resolveAutoCareAttachmentContentType('image/png')).toBe('image/png')
+        expect(resolveAutoCareAttachmentContentType('image/webp')).toBe('image/webp')
+        expect(isAutoCareAttachmentContentType('image/png')).toBe(true)
+        expect(isAutoCareAttachmentContentType('text/html')).toBe(false)
+        expect(() => resolveAutoCareAttachmentContentType('text/html')).toThrowError(expect.objectContaining({ statusCode: 404 }))
+    })
+
     it('accepts content whose declared type and byte length match', () => {
         const contentBase64 = pngHeader.toString('base64')
         expect(decodeAutoCareAttachment({ contentBase64, contentType: 'image/png', size: pngHeader.length })).toEqual(pngHeader)

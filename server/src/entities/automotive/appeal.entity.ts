@@ -18,6 +18,7 @@ export enum AutoCareAppealStatus {
 @Index(['status', 'createdAt'])
 @Index(['submittedById', 'createdAt'])
 @Index(['subject', 'subjectId', 'status'])
+@Index('UQ_autocare_appeals_pending_subject', ['submittedById', 'subject', 'subjectId'], { unique: true, where: '"status" = \'pending\'' })
 export class AutoCareAppealEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'enum', enum: AutoCareAppealSubject, enumName: 'autocare_appeal_subject' }) subject!: AutoCareAppealSubject

@@ -1,12 +1,16 @@
 import { spawnSync } from 'node:child_process'
 import { lstat, readFile, rm, writeFile } from 'node:fs/promises'
 
+import { assertRealApiReachable } from './check-real-api.mjs'
+
 const nextEnvPath = new URL('../next-env.d.ts', import.meta.url)
 const nextRealDistPath = new URL('../.next-real-e2e/', import.meta.url)
 const originalNextEnv = await readFile(nextEnvPath, 'utf8')
 
 let exitCode = 1
 try {
+    await assertRealApiReachable()
+
     const result = spawnSync(
         process.platform === 'win32' ? 'npx.cmd' : 'npx',
         ['playwright', 'test', '-c', 'playwright.real.config.ts', ...process.argv.slice(2)],

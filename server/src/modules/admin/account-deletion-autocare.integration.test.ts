@@ -25,6 +25,8 @@ import {
     ServiceMessageEntity,
     ServiceRequestEntity,
     ServiceRequestStatus,
+    OutboxEventEntity,
+    OutboxEventStatus,
 } from '../../entities/index.js'
 import { CabinetEntity, CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
 import {
@@ -83,6 +85,8 @@ describe('AutoCare account deletion retention invariants', () => {
     let providerMessage: ServiceMessageEntity
     let repairEvent: AutoCareRepairEventEntity
     let deletionRequest: AccountDeletionRequestEntity
+    let pendingOutboxId: string
+    let completedOutboxId: string
     let deletedOwnerEmail: string
     let providerLogoUrl: string | null = null
     let providerCoverUrl: string | null = null
@@ -228,7 +232,7 @@ describe('AutoCare account deletion retention invariants', () => {
             completionNote: 'Private completion context',
         }))
         const attachmentKey = createAutoCareAttachmentObjectKey('requests', serviceRequest.id, randomUUID())
-        await saveAutoCareAttachmentObject(attachmentKey, Buffer.from('private attachment fixture'))
+        await saveAutoCareAttachmentObject(attachmentKey, Buffer.from('private attachment fixture'), 'image/png')
         const attachments = AppDataSource.getRepository(ServiceAttachmentEntity)
         attachment = await attachments.save(attachments.create({
             requestId: serviceRequest.id,
@@ -241,7 +245,7 @@ describe('AutoCare account deletion retention invariants', () => {
             status: ServiceAttachmentStatus.Ready,
         }))
         const providerAttachmentKey = createAutoCareAttachmentObjectKey('requests', serviceRequest.id, randomUUID())
-        await saveAutoCareAttachmentObject(providerAttachmentKey, Buffer.from('provider attachment fixture'))
+        await saveAutoCareAttachmentObject(providerAttachmentKey, Buffer.from('provider attachment fixture'), 'image/png')
         providerAttachment = await attachments.save(attachments.create({
             requestId: serviceRequest.id,
             threadId: null,
@@ -328,6 +332,33 @@ describe('AutoCare account deletion retention invariants', () => {
             completedAt: null,
             requestedAt: new Date(Date.now() - 31 * 86_400_000),
         }))
+        const outbox = AppDataSource.getRepository(OutboxEventEntity)
+        const pendingOutbox = await outbox.save(outbox.create({
+            type: 'notification.create',
+            payload: { userId: deletedOwner.id, title: 'Private notification' },
+            idempotencyKey: `retention-pending-outbox-${suffix}`,
+            status: OutboxEventStatus.Pending,
+            attempts: 0,
+            availableAt: new Date(),
+            lockedAt: null,
+            processedAt: null,
+            lastError: null,
+        }))
+        pendingOutboxId = pendingOutbox.id
+        const completedOutbox = await outbox.save(outbox.create({
+            type: 'email.send',
+            // Providers may normalize addresses differently while handing a
+            // message to the outbox. Deletion must match case/whitespace too.
+            payload: { email: `  ${deletedOwner.email.toUpperCase()}  `, recipientName: deletedOwner.name },
+            idempotencyKey: `retention-completed-outbox-${suffix}`,
+            status: OutboxEventStatus.Completed,
+            attempts: 1,
+            availableAt: new Date(),
+            lockedAt: null,
+            processedAt: new Date(),
+            lastError: null,
+        }))
+        completedOutboxId = completedOutbox.id
     })
 
     afterAll(async () => {
@@ -343,6 +374,7 @@ describe('AutoCare account deletion retention invariants', () => {
             if (fileName) await deleteUploadedCabinetImages([legacyCabinetPhotoUrl]).catch(() => undefined)
         }
         await AppDataSource.getRepository(AccountDeletionRequestEntity).delete({ id: deletionRequest?.id })
+        await AppDataSource.getRepository(OutboxEventEntity).delete([pendingOutboxId, completedOutboxId].filter(Boolean))
         await AppDataSource.getRepository(CabinetEntity).delete({ id: legacyCabinet?.id })
         await AppDataSource.getRepository(ServiceRequestEntity).delete({ id: serviceRequest?.id })
         await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider?.id })
@@ -361,6 +393,16 @@ describe('AutoCare account deletion retention invariants', () => {
         )
 
         expect(completed.status).toBe(AccountDeletionRequestStatus.Completed)
+        expect(completed.reason).toBeNull()
+        expect(await AppDataSource.getRepository(AccountDeletionRequestEntity).findOneByOrFail({ id: deletionRequest.id })).toMatchObject({
+            status: AccountDeletionRequestStatus.Completed,
+            reason: null,
+        })
+        expect(await AppDataSource.getRepository(OutboxEventEntity).findOneBy({ id: pendingOutboxId })).toBeNull()
+        expect(await AppDataSource.getRepository(OutboxEventEntity).findOneByOrFail({ id: completedOutboxId })).toMatchObject({
+            status: OutboxEventStatus.Completed,
+            payload: { redacted: true },
+        })
         expect(await AppDataSource.getRepository(ServiceAttachmentEntity).countBy({ id: attachment.id })).toBe(0)
         expect(await AppDataSource.getRepository(ServiceAttachmentEntity).countBy({ id: providerAttachment.id })).toBe(0)
         await expect(readAutoCareAttachmentObject(attachment.objectKey)).rejects.toMatchObject({ statusCode: 404 })

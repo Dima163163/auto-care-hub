@@ -25,6 +25,36 @@ const detachedActorInvariantNames = [
 ]
 
 describe('AutoCare account deletion chat scope', () => {
+    it('requires account-related outbox user payloads to be redacted', () => {
+        const invariant = AUTOCARE_DELETION_INVARIANTS.find(({ name }) => name === 'account-related outbox user payloads are redacted')
+
+        expect(invariant?.sql).toContain('"outbox_events"')
+        expect(invariant?.sql).toContain("'userId'")
+        expect(invariant?.sql).toContain("'email'")
+        expect(invariant?.sql).toContain("'toEmail'")
+        expect(invariant?.sql).toContain('LOWER(TRIM')
+        expect(invariant?.sql).toContain("'redacted'")
+        expect(invariant?.parameterMode).toBe('user_and_email')
+    })
+
+    it('passes the original email to outbox retention checks', async () => {
+        const calls: Array<{ sql: string; parameters: unknown[] }> = []
+        const executor = {
+            query: async (sql: string, parameters: unknown[] = []) => {
+                calls.push({ sql, parameters })
+                return [{ count: 0 }]
+            },
+        } as Parameters<typeof checkAutoCareDeletionInvariants>[0]
+
+        await checkAutoCareDeletionInvariants(executor, 'user-42', 'deleted@example.com')
+
+        const invariant = AUTOCARE_DELETION_INVARIANTS.find(({ name }) => name === 'account-related outbox user payloads are redacted')
+        expect(calls.find(({ sql }) => sql === invariant?.sql)?.parameters).toEqual([
+            'user-42',
+            'deleted@example.com',
+        ])
+    })
+
     it('keeps legacy cabinets private after owner deletion', () => {
         const invariant = AUTOCARE_DELETION_INVARIANTS.find(({ name }) => name === 'legacy cabinets are blocked and images removed')
 

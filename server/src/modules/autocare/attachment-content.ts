@@ -5,15 +5,38 @@ import sharp from 'sharp'
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 export const MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD = 20
 export const MAX_AUTOMOTIVE_ATTACHMENT_BYTES_PER_THREAD = 50 * 1024 * 1024
+export const AUTOCARE_ATTACHMENT_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+export type AutoCareAttachmentContentType = (typeof AUTOCARE_ATTACHMENT_CONTENT_TYPES)[number]
 
 type AttachmentContentInput = {
     contentBase64: string
-    contentType: 'image/jpeg' | 'image/png' | 'image/webp'
+    contentType: AutoCareAttachmentContentType
     size: number
 }
 
 function invalidAttachment(message: string): never {
     throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message })
+}
+
+/**
+ * Attachment rows are user-controlled at the database boundary. Keep the
+ * response content type on the image allow-list even if a legacy or tampered
+ * row bypassed the upload schema. Invalid rows are hidden like missing media
+ * instead of being rendered inline as an arbitrary browser document.
+ */
+export function resolveAutoCareAttachmentContentType(value: string): AutoCareAttachmentContentType {
+    if (isAutoCareAttachmentContentType(value)) return value
+    throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Attachment not found.' })
+}
+
+export function isAutoCareAttachmentContentType(value: string): value is AutoCareAttachmentContentType {
+    return AUTOCARE_ATTACHMENT_CONTENT_TYPES.includes(value as AutoCareAttachmentContentType)
+}
+
+export function assertAutoCareAttachmentContentType(value: string): asserts value is AutoCareAttachmentContentType {
+    if (!isAutoCareAttachmentContentType(value)) {
+        invalidAttachment('Attachment content type is invalid.')
+    }
 }
 
 export function assertAutoCareAttachmentQuota(input: {
@@ -36,6 +59,7 @@ function matchesMagicBytes(content: Buffer, contentType: AttachmentContentInput[
 }
 
 export function decodeAutoCareAttachment(input: AttachmentContentInput) {
+    assertAutoCareAttachmentContentType(input.contentType)
     if (!Number.isSafeInteger(input.size) || input.size < 1 || input.size > MAX_ATTACHMENT_BYTES) {
         invalidAttachment('Attachment size is invalid.')
     }
@@ -59,6 +83,7 @@ export function decodeAutoCareAttachment(input: AttachmentContentInput) {
  * animated images, and makes the stored bytes match the declared content type.
  */
 export async function normalizeAutoCareAttachment(content: Buffer, contentType: AttachmentContentInput['contentType']) {
+    assertAutoCareAttachmentContentType(contentType)
     try {
         const metadata = await sharp(content, { failOn: 'error', limitInputPixels: 40_000_000 }).metadata()
         const width = metadata.width ?? 0

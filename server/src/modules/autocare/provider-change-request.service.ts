@@ -16,13 +16,8 @@ import { queueProviderDocumentModerationEvidence } from './moderation-evidence.s
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareProviderChangeRequestResponse, CreateAutoCareProviderChangeRequestInput } from './autocare.types.js'
-
-const profileFields = new Set([
-    'name', 'description', 'phone', 'phones', 'email', 'websiteUrl', 'metroStation',
-    'warrantyText', 'yearsActive', 'staffCount', 'workstationCount', 'amenityIds',
-    'brandSpecializations', 'isMultibrand',
-    'documents',
-])
+import { normalizePrivateReference } from './private-reference-policy.js'
+import { normalizeProviderProfileChangePayload } from './provider-change-request-policy.js'
 
 function assertOwner(user: UserEntity) {
     if (user.role !== 'owner') throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only a service owner can submit provider changes.' })
@@ -33,60 +28,30 @@ function assertAdmin(user: UserEntity) {
 }
 
 function toResponse(request: AutomotiveProviderChangeRequestEntity): AutoCareProviderChangeRequestResponse {
+    const payload = { ...request.payload }
+    if (Array.isArray(payload.documents)) {
+        payload.documents = payload.documents.flatMap((item) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) return []
+            const document = item as { label?: unknown; reference?: unknown; expiresAt?: unknown }
+            const reference = typeof document.reference === 'string' ? normalizePrivateReference(document.reference) : null
+            return reference && typeof document.label === 'string'
+                ? [{ label: document.label, reference, expiresAt: document.expiresAt ?? null }]
+                : []
+        })
+    }
     return {
         id: request.id,
         providerId: request.providerId,
         requestedById: request.requestedById,
         kind: request.kind,
         status: request.status,
-        payload: request.payload,
+        payload,
         reviewedById: request.reviewedById,
         reviewReason: request.reviewReason,
         reviewedAt: request.reviewedAt?.toISOString() ?? null,
         createdAt: request.createdAt.toISOString(),
         updatedAt: request.updatedAt.toISOString(),
     }
-}
-
-function normalizeProfilePayload(payload: Record<string, unknown>) {
-    const unknownKeys = Object.keys(payload).filter((key) => !profileFields.has(key))
-    if (unknownKeys.length > 0) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `Unsupported provider profile fields: ${unknownKeys.join(', ')}.` })
-    const normalized: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(payload)) {
-        if (['name', 'description', 'phone', 'email', 'websiteUrl', 'metroStation', 'warrantyText'].includes(key)) {
-            if (value !== null && typeof value !== 'string') throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${key} must be a string or null.` })
-            normalized[key] = typeof value === 'string' ? value.trim() : value
-            continue
-        }
-        if (['yearsActive', 'staffCount', 'workstationCount'].includes(key)) {
-            if (!Number.isInteger(value) || Number(value) < 0) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${key} must be a non-negative integer.` })
-            normalized[key] = value
-            continue
-        }
-        if (key === 'isMultibrand') {
-            if (typeof value !== 'boolean') throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'isMultibrand must be a boolean.' })
-            normalized[key] = value
-            continue
-        }
-        if (key === 'documents') {
-            if (!Array.isArray(value)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'documents must be an array.' })
-            const documents = value.map((item) => {
-                if (!item || typeof item !== 'object' || Array.isArray(item)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Each document must be an object.' })
-                const document = item as { label?: unknown; reference?: unknown; expiresAt?: unknown }
-                if (typeof document.label !== 'string' || document.label.trim().length < 1 || document.label.trim().length > 160) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document label is invalid.' })
-                if (typeof document.reference !== 'string' || !/^private:\/\/[A-Za-z0-9._/-]{1,500}$/.test(document.reference.trim())) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document reference must be a private storage reference.' })
-                if (document.expiresAt !== undefined && document.expiresAt !== null && (typeof document.expiresAt !== 'string' || Number.isNaN(Date.parse(document.expiresAt)))) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document expiration date is invalid.' })
-                return { label: document.label.trim(), reference: document.reference.trim(), expiresAt: document.expiresAt ?? null }
-            })
-            normalized[key] = documents.slice(0, 20)
-            continue
-        }
-        if (['phones', 'amenityIds', 'brandSpecializations'].includes(key)) {
-            if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${key} must be an array of strings.` })
-            normalized[key] = [...new Set(value.map((item) => item.trim()).filter(Boolean))]
-        }
-    }
-    return normalized
 }
 
 async function getOwnedProvider(user: UserEntity, providerId: string) {
@@ -108,7 +73,7 @@ export async function createOwnerProviderChangeRequest(user: UserEntity, provide
     const repository = AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity)
     const existing = await repository.findOneBy({ providerId, kind: input.kind, status: AutomotiveProviderChangeRequestStatus.Pending })
     if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A provider change request of this type is already pending.' })
-    const payload = input.kind === AutomotiveProviderChangeRequestKind.ProfileUpdate ? normalizeProfilePayload(input.payload ?? {}) : {}
+    const payload = input.kind === AutomotiveProviderChangeRequestKind.ProfileUpdate ? normalizeProviderProfileChangePayload(input.payload ?? {}) : {}
     return toResponse(await repository.save(repository.create({ providerId, requestedById: user.id, kind: input.kind, status: AutomotiveProviderChangeRequestStatus.Pending, payload })))
 }
 
@@ -139,7 +104,7 @@ export async function decideAdminProviderChangeRequest(admin: UserEntity, reques
                 provider.verified = true
                 if (provider.status === AutomotiveProviderStatus.Draft) provider.status = AutomotiveProviderStatus.Active
             } else {
-                const changes = normalizeProfilePayload(request.payload)
+                const changes = normalizeProviderProfileChangePayload(request.payload)
                 const documents = Array.isArray(changes.documents) ? changes.documents as Array<{ label: string; reference: string; expiresAt: string | null }> : []
                 for (const [key, value] of Object.entries(changes)) {
                     if (key === 'documents') continue

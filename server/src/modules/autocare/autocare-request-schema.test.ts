@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { autoCareDiscoveryQuerySchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
+import { autoCareDiscoveryQuerySchema, createAutoCareBroadcastRequestSchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
 
 const validRequest = {
     providerId: '11111111-1111-4111-8111-111111111111',
@@ -73,5 +73,12 @@ describe('AutoCare service request schema', () => {
             warrantyOnly: false,
             hasBonus: false,
         })
+    })
+
+    it('rejects public broadcast photo URLs until private media storage is available', () => {
+        const base = { serviceDefinitionId: 'oil-change', issueDescription: 'Нужна диагностика двигателя' }
+        expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, photoUrls: ['https://evil.example/photo.webp'] }).success).toBe(false)
+        expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, photoUrls: ['private://autocare/requests/../photo'] }).success).toBe(false)
+        expect(createAutoCareBroadcastRequestSchema.parse({ ...base, photoUrls: ['private://autocare/requests/request-1/photo-1'] }).photoUrls).toEqual(['private://autocare/requests/request-1/photo-1'])
     })
 })

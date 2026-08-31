@@ -17,6 +17,7 @@ import type {
     AutoCareProviderResultResponse,
     AutoCareServiceDefinitionResponse,
 } from './autocare.types.js'
+import { normalizeAutoCareProviderPublicMedia } from './autocare-public-media-policy.js'
 
 /**
  * PostgreSQL returns NUMERIC columns as strings. Keep that database detail out
@@ -148,6 +149,7 @@ export function toProviderResponse(
         : provider.phone
             ? [provider.phone]
             : []
+    const publicMedia = normalizeAutoCareProviderPublicMedia(provider)
 
     return {
         id: provider.id,
@@ -177,10 +179,10 @@ export function toProviderResponse(
         requestPhotosEnabled: provider.requestPhotosEnabled,
         publicContactNote: provider.publicContactNote,
         warrantyText: provider.warrantyText,
-        logoUrl: provider.logoUrl,
-        coverImageUrl: provider.coverImageUrl,
-        galleryImageUrls: provider.galleryImageUrls.length > 0
-            ? provider.galleryImageUrls
+        logoUrl: publicMedia.logoUrl,
+        coverImageUrl: publicMedia.coverImageUrl,
+        galleryImageUrls: publicMedia.galleryImageUrls.length > 0
+            ? publicMedia.galleryImageUrls
             : ['/images/autocare/placeholders/provider.svg'],
         amenityIds: provider.amenityIds,
         brandSpecializations: provider.brandSpecializations,

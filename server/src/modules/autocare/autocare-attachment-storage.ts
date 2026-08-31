@@ -2,6 +2,7 @@ import {
     CopyObjectCommand,
     DeleteObjectCommand,
     GetObjectCommand,
+    HeadObjectCommand,
     ListObjectsV2Command,
     PutObjectCommand,
     S3Client,
@@ -9,7 +10,8 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { spawn } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { lstat, mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises'
+import { constants as fsConstants } from 'node:fs'
+import { lstat, mkdir, open, readdir, rename, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { env } from '../../config/env.js'
@@ -17,13 +19,23 @@ import { AppDataSource } from '../../database/data-source.js'
 import { ServiceAttachmentEntity } from '../../entities/automotive/service-request.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { resolveAutoCareAttachmentContentType } from './attachment-content.js'
 
 type AutoCareAttachmentScope = 'requests' | 'chats'
+export type AutoCareAttachmentObjectScope = {
+    scope: AutoCareAttachmentScope
+    parentId: string
+}
 
 const attachmentKeyPattern = /^autocare-(requests|chats)\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.bin$/i
-const attachmentRoot = path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'attachments')
+const attachmentParentIdPattern = /^[a-f0-9-]{36}$/i
+const attachmentChecksumPattern = /^[a-f0-9]{64}$/i
 export const MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES = 10 * 1024 * 1024
 let s3Client: S3Client | null = null
+
+function getAttachmentRoot() {
+    return path.resolve(env.cabinetUploadsDir, '..', 'autocare', 'attachments')
+}
 
 function attachmentNotFound(): never {
     throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Attachment not found.' })
@@ -74,38 +86,175 @@ export function assertSafeAutoCareAttachmentObjectKey(key: string) {
     }
 }
 
+export function isAutoCareAttachmentObjectKeyOwnedBy(key: string, scopes: readonly AutoCareAttachmentObjectScope[]) {
+    if (!attachmentKeyPattern.test(key)) return false
+    return scopes.some(({ scope, parentId }) => attachmentParentIdPattern.test(parentId)
+        && key.startsWith(`autocare-${scope}/${parentId}/`))
+}
+
+export function assertAutoCareAttachmentObjectKeyOwnedBy(key: string, scopes: readonly AutoCareAttachmentObjectScope[]) {
+    if (!isAutoCareAttachmentObjectKeyOwnedBy(key, scopes)) attachmentNotFound()
+}
+
+function normalizeAttachmentChecksum(value: string | null | undefined) {
+    if (!value || !attachmentChecksumPattern.test(value)) attachmentNotFound()
+    return value.toLowerCase()
+}
+
+export function assertAutoCareAttachmentChecksum(content: Buffer, expectedChecksum: string | null | undefined) {
+    if (expectedChecksum === null || expectedChecksum === undefined) return
+    const actualChecksum = createHash('sha256').update(content).digest('hex')
+    if (actualChecksum !== normalizeAttachmentChecksum(expectedChecksum)) attachmentNotFound()
+}
+
+export function assertAutoCareAttachmentByteLength(actualBytes: number, expectedBytes: number | null | undefined) {
+    if (expectedBytes === null || expectedBytes === undefined) return
+    if (!Number.isSafeInteger(expectedBytes)
+        || expectedBytes < 1
+        || expectedBytes > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES
+        || actualBytes !== expectedBytes) {
+        attachmentNotFound()
+    }
+}
+
+export function assertAutoCareAttachmentStoredByteLength(actualBytes: number) {
+    if (!Number.isSafeInteger(actualBytes)
+        || actualBytes < 1
+        || actualBytes > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES) {
+        attachmentNotFound()
+    }
+}
+
+export function assertAutoCareAttachmentSize(content: Buffer, expectedBytes: number | null | undefined) {
+    assertAutoCareAttachmentByteLength(content.length, expectedBytes)
+}
+
+export function assertAutoCareAttachmentChecksumMetadata(
+    metadata: Record<string, string> | undefined,
+    expectedChecksum: string | null | undefined,
+) {
+    if (expectedChecksum === null || expectedChecksum === undefined) return
+    const metadataChecksum = Object.entries(metadata ?? {})
+        .find(([key]) => key.toLowerCase() === 'sha256')?.[1]
+    if (normalizeAttachmentChecksum(metadataChecksum) !== normalizeAttachmentChecksum(expectedChecksum)) {
+        attachmentNotFound()
+    }
+}
+
+function getAttachmentMetadataValue(metadata: Record<string, string> | undefined, name: string) {
+    return Object.entries(metadata ?? {})
+        .find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+}
+
+export function assertAutoCareAttachmentPrivateState(metadata: Record<string, string> | undefined) {
+    const state = getAttachmentMetadataValue(metadata, 'state')
+    if (state && state !== 'private') attachmentNotFound()
+}
+
+export function assertAutoCareAttachmentStoredContentType(
+    storedContentType: string | undefined,
+    expectedContentType: string,
+) {
+    if (storedContentType && storedContentType !== expectedContentType) attachmentNotFound()
+}
+
+export function assertAutoCareAttachmentHeadMetadata(
+    metadata: {
+        ContentLength?: number
+        ContentType?: string
+        Metadata?: Record<string, string>
+    },
+    expectedContentType: string,
+    expectedChecksum: string | null | undefined,
+    expectedBytes: number | null | undefined,
+) {
+    if (metadata.ContentLength !== undefined) {
+        assertAutoCareAttachmentStoredByteLength(metadata.ContentLength)
+        if (expectedBytes !== null && expectedBytes !== undefined) {
+            assertAutoCareAttachmentByteLength(metadata.ContentLength, expectedBytes)
+        }
+    } else if (expectedBytes !== null && expectedBytes !== undefined) {
+        attachmentNotFound()
+    }
+    assertAutoCareAttachmentPrivateState(metadata.Metadata)
+    assertAutoCareAttachmentStoredContentType(metadata.ContentType, expectedContentType)
+    assertAutoCareAttachmentChecksumMetadata(metadata.Metadata, expectedChecksum)
+}
+
+export function hasAutoCareAttachmentIntegrityMetadata(
+    expectedChecksum: string | null | undefined,
+    expectedBytes: number | null | undefined,
+) {
+    return (expectedChecksum !== null && expectedChecksum !== undefined)
+        || (expectedBytes !== null && expectedBytes !== undefined)
+}
+
 export function getAutoCareAttachmentObjectPath(key: string) {
     assertSafeAutoCareAttachmentObjectKey(key)
-    return path.join(attachmentRoot, key)
+    return path.join(getAttachmentRoot(), key)
 }
 
 async function assertFilesystemDirectory(directoryPath: string) {
     try {
         const entry = await lstat(directoryPath)
-        if (!entry.isDirectory()) attachmentNotFound()
+        if (entry.isSymbolicLink() || !entry.isDirectory()) attachmentNotFound()
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') attachmentNotFound()
         throw error
     }
 }
 
+async function ensureFilesystemDirectory(directoryPath: string): Promise<void> {
+    const normalizedPath = path.resolve(directoryPath)
+    try {
+        const entry = await lstat(normalizedPath)
+        if (entry.isSymbolicLink() || !entry.isDirectory()) attachmentNotFound()
+        return
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    }
+
+    const parentPath = path.dirname(normalizedPath)
+    if (parentPath === normalizedPath) attachmentNotFound()
+    await ensureFilesystemDirectory(parentPath)
+    try {
+        await mkdir(normalizedPath, { mode: 0o700 })
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    }
+    await assertFilesystemDirectory(normalizedPath)
+}
+
 async function assertFilesystemAttachmentParent(key: string) {
     const [scope, parent] = key.split('/')
     if (!scope || !parent) attachmentNotFound()
-    await assertFilesystemDirectory(attachmentRoot)
-    await assertFilesystemDirectory(path.join(attachmentRoot, scope))
-    await assertFilesystemDirectory(path.join(attachmentRoot, scope, parent))
+    const root = getAttachmentRoot()
+    await assertFilesystemDirectory(root)
+    await assertFilesystemDirectory(path.join(root, scope))
+    await assertFilesystemDirectory(path.join(root, scope, parent))
 }
 
-async function assertReadableFilesystemAttachment(key: string) {
+async function readRegularFilesystemAttachment(key: string) {
     await assertFilesystemAttachmentParent(key)
     const objectPath = getAutoCareAttachmentObjectPath(key)
+    let handle: Awaited<ReturnType<typeof open>> | null = null
     try {
-        const entry = await lstat(objectPath)
-        if (!entry.isFile() || entry.size > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES) attachmentNotFound()
+        // Open and validate the same inode. The no-follow flag closes the
+        // lstat/read TOCTOU window that could otherwise expose a symlink target.
+        const openFlags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0)
+        handle = await open(objectPath, openFlags)
+        const entry = await handle.stat()
+        if (!entry.isFile()) attachmentNotFound()
+        assertAutoCareAttachmentStoredByteLength(entry.size)
+        const content = await handle.readFile()
+        assertAutoCareAttachmentStoredByteLength(content.length)
+        return content
     } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') attachmentNotFound()
+        if (error instanceof AppError) throw error
+        if (['ENOENT', 'ELOOP', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) attachmentNotFound()
         throw error
+    } finally {
+        await handle?.close().catch(() => undefined)
     }
 }
 
@@ -166,9 +315,10 @@ async function scanAutoCareAttachment(content: Buffer) {
 export async function saveAutoCareAttachmentObject(
     key: string,
     content: Buffer,
-    contentType = 'application/octet-stream',
+    contentType: string,
 ) {
     assertSafeAutoCareAttachmentObjectKey(key)
+    const safeContentType = resolveAutoCareAttachmentContentType(contentType)
     if (content.length < 1 || content.length > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES) {
         throw new AppError({
             statusCode: 422,
@@ -178,7 +328,7 @@ export async function saveAutoCareAttachmentObject(
     }
     if (env.autoCareAttachments.storageProvider === 'filesystem') {
         const target = getAutoCareAttachmentObjectPath(key)
-        await mkdir(path.dirname(target), { recursive: true, mode: 0o700 })
+        await ensureFilesystemDirectory(path.dirname(target))
         await assertFilesystemAttachmentParent(key)
         const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`
         try {
@@ -201,7 +351,7 @@ export async function saveAutoCareAttachmentObject(
             Bucket: bucket,
             Key: quarantineKey,
             Body: content,
-            ContentType: contentType,
+            ContentType: safeContentType,
             ContentDisposition: 'inline',
             ChecksumSHA256: checksumBase64,
             Metadata: { sha256: checksumHex, state: 'quarantine' },
@@ -213,7 +363,7 @@ export async function saveAutoCareAttachmentObject(
             Key: getPrivateObjectKey(key),
             CopySource: encodeCopySource(bucket, quarantineKey),
             MetadataDirective: 'REPLACE',
-            ContentType: contentType,
+            ContentType: safeContentType,
             ContentDisposition: 'inline',
             Metadata: { sha256: checksumHex, state: 'private' },
             ServerSideEncryption: 'AES256',
@@ -223,16 +373,17 @@ export async function saveAutoCareAttachmentObject(
     }
 }
 
-export async function readAutoCareAttachmentObject(key: string) {
+export async function readAutoCareAttachmentObject(
+    key: string,
+    expectedChecksum?: string | null,
+    expectedBytes?: number | null,
+) {
     assertSafeAutoCareAttachmentObjectKey(key)
     if (env.autoCareAttachments.storageProvider === 'filesystem') {
-        await assertReadableFilesystemAttachment(key)
-        try {
-            return await readFile(getAutoCareAttachmentObjectPath(key))
-        } catch (error) {
-            if ((error as NodeJS.ErrnoException).code === 'ENOENT') attachmentNotFound()
-            throw error
-        }
+        const content = await readRegularFilesystemAttachment(key)
+        assertAutoCareAttachmentSize(content, expectedBytes)
+        assertAutoCareAttachmentChecksum(content, expectedChecksum)
+        return content
     }
 
     try {
@@ -242,7 +393,9 @@ export async function readAutoCareAttachmentObject(key: string) {
             Key: getPrivateObjectKey(key),
         }))
         if (!response.Body) attachmentNotFound()
-        if (response.ContentLength !== undefined && response.ContentLength > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES) {
+        if (response.ContentLength !== undefined) assertAutoCareAttachmentStoredByteLength(response.ContentLength)
+        if (response.ContentLength !== undefined && expectedBytes !== null && expectedBytes !== undefined
+            && response.ContentLength !== expectedBytes) {
             attachmentNotFound()
         }
         const body = response.Body
@@ -255,26 +408,49 @@ export async function readAutoCareAttachmentObject(key: string) {
                 if (bytes > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES) attachmentNotFound()
                 chunks.push(buffer)
             }
-            return Buffer.concat(chunks, bytes)
+            const content = Buffer.concat(chunks, bytes)
+            assertAutoCareAttachmentStoredByteLength(content.length)
+            assertAutoCareAttachmentSize(content, expectedBytes)
+            assertAutoCareAttachmentChecksum(content, expectedChecksum)
+            return content
         }
         const content = await body.transformToByteArray()
-        if (content.byteLength > MAX_AUTOCARE_ATTACHMENT_STORAGE_BYTES) attachmentNotFound()
-        return Buffer.from(content)
+        assertAutoCareAttachmentStoredByteLength(content.byteLength)
+        const buffer = Buffer.from(content)
+        assertAutoCareAttachmentSize(buffer, expectedBytes)
+        assertAutoCareAttachmentChecksum(buffer, expectedChecksum)
+        return buffer
     } catch (error) {
         if ((error as { name?: string }).name === 'NoSuchKey') attachmentNotFound()
         throw error
     }
 }
 
-export async function getAutoCareAttachmentSignedDownloadUrl(key: string, contentType: string) {
+export async function getAutoCareAttachmentSignedDownloadUrl(
+    key: string,
+    contentType: string,
+    expectedChecksum?: string | null,
+    expectedBytes?: number | null,
+) {
     assertSafeAutoCareAttachmentObjectKey(key)
+    const safeContentType = resolveAutoCareAttachmentContentType(contentType)
     if (env.autoCareAttachments.storageProvider === 'filesystem') return null
     const { client, bucket } = getS3Client()
+    try {
+        const metadata = await client.send(new HeadObjectCommand({
+            Bucket: bucket,
+            Key: getPrivateObjectKey(key),
+        }))
+        assertAutoCareAttachmentHeadMetadata(metadata, safeContentType, expectedChecksum, expectedBytes)
+    } catch (error) {
+        if (['NoSuchKey', 'NotFound'].includes((error as { name?: string }).name ?? '')) attachmentNotFound()
+        throw error
+    }
     return getSignedUrl(client, new GetObjectCommand({
         Bucket: bucket,
         Key: getPrivateObjectKey(key),
         ResponseContentDisposition: 'inline',
-        ResponseContentType: contentType,
+        ResponseContentType: safeContentType,
         ResponseCacheControl: 'private, no-store',
     }), { expiresIn: env.autoCareAttachments.signedUrlTtlSeconds })
 }
@@ -340,7 +516,7 @@ async function listScopeObjects(scope: AutoCareAttachmentScope) {
         }
         return entries
     }
-    const scopeRoot = path.join(attachmentRoot, `autocare-${scope}`)
+    const scopeRoot = path.join(getAttachmentRoot(), `autocare-${scope}`)
     let parentEntries
     try {
         const scopeEntry = await lstat(scopeRoot)
@@ -374,6 +550,29 @@ export function selectAutoCareAttachmentCleanupCandidates(input: {
     const referenced = new Set(input.referencedKeys.filter((key) => attachmentKeyPattern.test(key)))
     return input.entries.filter((entry) => entry.lastModifiedAt < input.cutoff
         && (entry.storageTier === 'quarantine' || !referenced.has(entry.key)))
+}
+
+/**
+ * A malformed import or a concurrent repair must not let retention delete an
+ * object still referenced by another attachment row. An orphan (zero rows) is
+ * deliberately left for the orphan sweep, which has its own grace period.
+ */
+export function shouldDeleteAutoCareAttachmentObject(referenceCount: number) {
+    return Number.isSafeInteger(referenceCount) && referenceCount === 1
+}
+
+export function shouldDeleteAutoCareAttachmentObjectForRow(input: {
+    objectKey: string
+    requestId: string | null
+    threadId: string | null
+    referenceCount: number
+}) {
+    const scopes: AutoCareAttachmentObjectScope[] = [
+        ...(input.requestId ? [{ scope: 'requests' as const, parentId: input.requestId }] : []),
+        ...(input.threadId ? [{ scope: 'chats' as const, parentId: input.threadId }] : []),
+    ]
+    return shouldDeleteAutoCareAttachmentObject(input.referenceCount)
+        && isAutoCareAttachmentObjectKeyOwnedBy(input.objectKey, scopes)
 }
 
 export async function cleanupOrphanedAutoCareAttachmentObjects(input: {
@@ -423,7 +622,15 @@ export async function cleanupExpiredAutoCareAttachments(input: {
     let removed = 0
     for (const attachment of attachments) {
         try {
-            await removeAutoCareAttachmentObject(attachment.objectKey)
+            const referenceCount = await repository.countBy({ objectKey: attachment.objectKey })
+            if (shouldDeleteAutoCareAttachmentObjectForRow({
+                objectKey: attachment.objectKey,
+                requestId: attachment.requestId,
+                threadId: attachment.threadId,
+                referenceCount,
+            })) {
+                await removeAutoCareAttachmentObject(attachment.objectKey)
+            }
             await repository.delete({ id: attachment.id })
             removed += 1
         } catch {

@@ -16,7 +16,7 @@ import { UserRole, type UserEntity as User } from '../../entities/user/user.enti
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { hasProviderWorkspacePermission } from './provider-access.service.js'
-import { canTransitionAppeal, validateAppealInput } from './appeal-policy.js'
+import { canTransitionAppeal, isPostgresUniqueViolation, validateAppealInput } from './appeal-policy.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareAppealResponse } from './autocare.types.js'
@@ -91,16 +91,26 @@ export async function createAutoCareAppeal(user: User, input: { subject: AutoCar
     const repository = AppDataSource.getRepository(AutoCareAppealEntity)
     const duplicate = await repository.findOne({ where: { submittedById: user.id, subject: input.subject, subjectId: input.subjectId, status: AutoCareAppealStatus.Pending } })
     if (duplicate) return toResponse(duplicate)
-    const saved = await repository.save(repository.create({
-        subject: input.subject,
-        subjectId: input.subjectId,
-        submittedById: user.id,
-        providerId,
-        reason: parsed.value.reason,
-        evidenceIds: parsed.value.evidenceIds,
-        status: AutoCareAppealStatus.Pending,
-    }))
-    return toResponse(saved)
+    try {
+        const saved = await repository.save(repository.create({
+            subject: input.subject,
+            subjectId: input.subjectId,
+            submittedById: user.id,
+            providerId,
+            reason: parsed.value.reason,
+            evidenceIds: parsed.value.evidenceIds,
+            status: AutoCareAppealStatus.Pending,
+        }))
+        return toResponse(saved)
+    } catch (saveError) {
+        // Two requests can pass the read-before-write check concurrently.
+        // The partial unique index is the authority; reconcile its conflict
+        // with the row that won the race instead of surfacing a 500.
+        if (!isPostgresUniqueViolation(saveError)) throw saveError
+        const concurrent = await repository.findOne({ where: { submittedById: user.id, subject: input.subject, subjectId: input.subjectId, status: AutoCareAppealStatus.Pending } })
+        if (concurrent) return toResponse(concurrent)
+        throw saveError
+    }
 }
 
 export async function getMyAutoCareAppeals(user: User) {

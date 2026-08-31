@@ -20,6 +20,13 @@ import {
 } from './moderation-evidence-policy.js'
 import { reassessAutoCareProviderTrust } from './trust-score.service.js'
 import { logError } from '../../shared/observability/logger.js'
+import {
+    removeAutoCareProviderMedia,
+    getAutoCareProviderMediaStorageTarget,
+    type AutoCareProviderMediaKind,
+} from './autocare-provider-media-storage.js'
+import { normalizeAutoCareProviderPublicMediaReference, normalizeAutoCareReviewPhotoUrls, selectAutoCareProviderModerationMedia } from './autocare-public-media-policy.js'
+import { isSafePrivateReference, normalizePrivateReference } from './private-reference-policy.js'
 
 type ModerationEvidenceResponse = {
     id: string
@@ -55,13 +62,20 @@ function toResponse(
     address: string | null,
     review: AutomotiveReviewEntity | undefined,
 ): ModerationEvidenceResponse {
+    const reference = item.kind === 'provider_document' || item.kind === 'registration_document'
+        ? normalizePrivateReference(item.reference)
+        : item.kind === 'provider_cover'
+            ? normalizeAutoCareProviderPublicMediaReference(item.reference, 'cover')
+            : item.kind === 'provider_gallery'
+                ? normalizeAutoCareProviderPublicMediaReference(item.reference, 'gallery')
+                : item.reference
     return {
         id: item.id,
         providerId: item.providerId,
         kind: item.kind,
         label: item.label,
         status: item.status,
-        reference: item.reference,
+        reference,
         notes: item.notes,
         expiresAt: item.expiresAt?.toISOString() ?? null,
         createdAt: item.createdAt.toISOString(),
@@ -77,7 +91,7 @@ function toResponse(
             vehicleLabel: review.vehicleLabel,
             rating: review.rating,
             text: review.text,
-            photoUrls: review.photoUrls,
+            photoUrls: normalizeAutoCareReviewPhotoUrls(review.photoUrls),
             createdAt: review.createdAt.toISOString(),
             status: review.status,
         } : null,
@@ -94,10 +108,7 @@ export async function queueProviderMediaModerationEvidence(
     manager: EntityManager,
     provider: Pick<AutomotiveProviderEntity, 'id' | 'coverImageUrl' | 'galleryImageUrls'>,
 ) {
-    const entries = [
-        ...(provider.coverImageUrl ? [{ kind: 'provider_cover', label: 'Главное фото сервиса', reference: provider.coverImageUrl }] : []),
-        ...provider.galleryImageUrls.map((reference, index) => ({ kind: 'provider_gallery', label: `Фото сервиса ${index + 1}`, reference })),
-    ]
+    const entries = selectAutoCareProviderModerationMedia(provider)
     if (entries.length === 0) return []
 
     const repository = manager.getRepository(AutoCareTrustEvidenceEntity)
@@ -136,6 +147,9 @@ export async function queueProviderDocumentModerationEvidence(
     const entries = documents
         .filter((document) => document.reference.trim().length > 0)
         .slice(0, 20)
+    if (entries.some((document) => !isSafePrivateReference(document.reference))) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document reference must be a private storage reference.' })
+    }
     if (entries.length === 0) return []
 
     const repository = manager.getRepository(AutoCareTrustEvidenceEntity)
@@ -299,6 +313,24 @@ export async function decideAdminAutoCareModerationEvidence(
 
         return toResponse(evidence, provider ?? undefined, location?.address ?? null, review ?? undefined)
     })
+    if (input.status === 'rejected' && (result.kind === 'provider_cover' || result.kind === 'provider_gallery') && result.reference) {
+        const kind: AutoCareProviderMediaKind = result.kind === 'provider_cover' ? 'cover' : 'gallery'
+        const target = getAutoCareProviderMediaStorageTarget(result.reference, kind)
+        if (target) {
+            try {
+                await removeAutoCareProviderMedia(target.kind, target.fileName)
+            } catch (error) {
+                // The provider reference is already removed transactionally;
+                // orphan cleanup will retry storage deletion without exposing
+                // a failed moderation decision to the moderator.
+                logError('Could not remove rejected provider media', error, {
+                    providerId: result.providerId,
+                    evidenceId,
+                    kind: target.kind,
+                })
+            }
+        }
+    }
     // Moderation is a durable trust input. Refresh after commit so public
     // snapshots reflect an approval/rejection promptly without allowing a
     // transient worker failure to roll back the moderator's decision.

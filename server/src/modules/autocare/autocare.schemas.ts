@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PRIVATE_REFERENCE_PATTERN } from './private-reference-policy.js'
 import { AutomotiveProviderChangeRequestKind } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
 import { AutoCareCapacityResourceType } from '../../entities/automotive/capacity-resource.entity.js'
@@ -421,7 +422,9 @@ export const createAutoCareBroadcastRequestSchema = z.object({
     marketId: z.string().trim().min(1).max(120).nullable().optional(),
     issueDescription: z.string().trim().min(10).max(4_000),
     vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
-    photoUrls: z.array(z.string().url().max(500)).max(12).optional(),
+    // Broadcast photos must be opaque private-media references. Public URLs
+    // are rejected until the signed private-media uploader is enabled.
+    photoUrls: z.array(z.string().trim().regex(/^private:\/\/autocare\/(?:requests|broadcasts)\/[A-Za-z0-9][A-Za-z0-9_-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/).max(500)).max(12).optional(),
     preferredAt: z.string().datetime({ offset: true }).nullable().optional(),
     maxProviders: z.number().int().min(1).max(10).default(5),
 })
@@ -532,7 +535,7 @@ export const ownerAutoCareProviderSchema = z.object({
         label: z.string().trim().min(1).max(160),
         // The client may submit only an opaque private-storage reference. A
         // public URL or inline document bytes are intentionally rejected.
-        reference: z.string().trim().regex(/^private:\/\/[A-Za-z0-9._/-]{1,500}$/),
+        reference: z.string().trim().max(500).regex(PRIVATE_REFERENCE_PATTERN),
         expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
     })).max(20).optional(),
 }).superRefine((value, context) => {

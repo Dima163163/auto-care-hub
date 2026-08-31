@@ -42,6 +42,7 @@ import { getDiscoveryCache, getDiscoveryCacheKey, setDiscoveryCache } from './di
 import { getAutoCareTrustRollout } from '../admin/super-admin-trust-policy.service.js'
 import { ensureDefaultAutoCareResources, listAutoCareCapacityReservations, listAutoCareCapacityResources } from './capacity-resource.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
+import { normalizeAutoCareReviewPhotoUrls } from './autocare-public-media-policy.js'
 import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareCommunicationSettingsInput, UpdateAutoCareReviewInput } from './autocare.types.js'
 
 export type AutoCareCapacityResourceInput = {
@@ -183,7 +184,7 @@ function toAutoCareReviewResponse(review: AutomotiveReviewEntity, options: { exp
         rating: review.rating,
         text: review.text,
         avatarUrl: review.avatarUrl,
-        photoUrls: review.photoUrls,
+        photoUrls: normalizeAutoCareReviewPhotoUrls(review.photoUrls),
         createdAt: review.createdAt.toISOString(),
         serviceRequestId: review.serviceRequestId,
         serviceSlug: review.serviceSlug,
@@ -494,7 +495,6 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
     }))
     return {
         ...toProviderResponse(provider, firstLocation, { trustEnabled }),
-        coverImageUrl: provider.coverImageUrl,
         offers: offersByLocation.get(firstLocation.id) ?? [],
         locations: locations.map((location) => ({ location: toProviderResponse(provider, location, { trustEnabled }).location, offers: offersByLocation.get(location.id) ?? [] })),
     }

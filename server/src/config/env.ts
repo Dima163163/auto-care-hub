@@ -1,5 +1,13 @@
-import 'dotenv/config'
+import { config as loadDotenv } from 'dotenv'
+import { fileURLToPath } from 'node:url'
 import type { SignOptions } from 'jsonwebtoken'
+
+// `npm --prefix server run …` keeps the caller's working directory (usually
+// the repository root). Load the server-local env file explicitly first so
+// pilot/operations scripts behave the same from the root and from `server/`.
+// Existing process values still win because dotenv never overwrites by default.
+loadDotenv({ path: fileURLToPath(new URL('../../.env', import.meta.url)), quiet: true })
+loadDotenv({ quiet: true })
 
 import { validateTrustedProxyConfig } from '../shared/security/trusted-proxy.js'
 import { validateOAuthRedirectUri } from '../shared/security/oauth-redirect.js'

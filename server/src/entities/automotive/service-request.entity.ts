@@ -154,7 +154,15 @@ export enum ServiceAttachmentStatus {
 
 @Entity('autocare_service_attachments')
 @Index(['requestId', 'createdAt'])
+@Index('IDX_autocare_attachments_object_key', ['objectKey'])
 @Check('CHK_autocare_service_attachments_bytes', '"bytes" BETWEEN 1 AND 10485760')
+@Check('CHK_autocare_attachments_content_type', '"contentType" IN (\'image/jpeg\', \'image/png\', \'image/webp\')')
+@Check('CHK_autocare_attachments_object_key', '"objectKey" ~ \'^autocare-(requests|chats)/[a-f0-9-]{36}/[a-f0-9-]{36}[.]bin$\'')
+@Check('CHK_autocare_attachments_checksum', '"checksum" IS NULL OR "checksum" ~ \'^[a-f0-9]{64}$\'')
+@Check(
+    'CHK_autocare_attachments_parent',
+    `(("requestId" IS NOT NULL AND split_part("objectKey", '/', 1) = 'autocare-requests' AND split_part("objectKey", '/', 2) = "requestId") OR ("threadId" IS NOT NULL AND split_part("objectKey", '/', 1) = 'autocare-chats' AND split_part("objectKey", '/', 2) = "threadId"))`,
+)
 export class ServiceAttachmentEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid', nullable: true }) requestId!: string | null

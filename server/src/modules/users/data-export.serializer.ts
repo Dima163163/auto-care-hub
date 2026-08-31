@@ -239,7 +239,6 @@ export function serializeUserDataExport(
             id: attachment.id,
             requestId: attachment.requestId,
             threadId: attachment.threadId,
-            objectKey: attachment.objectKey,
             contentType: attachment.contentType,
             bytes: attachment.bytes,
             checksum: attachment.checksum,

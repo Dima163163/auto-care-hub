@@ -443,6 +443,9 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
 
         expect(ready.status).toBe(200)
         expect(ready.headers['content-type']).toContain('image/png')
+        expect(ready.headers['cache-control']).toBe('private, no-store')
+        expect(ready.headers['content-disposition']).toContain('inline')
+        expect(ready.headers['x-content-type-options']).toBe('nosniff')
         expect(anotherBranch.status).toBe(403)
         expect(rejected.status).toBe(404)
         expect(conversation.body.attachments.map((item: { id: string }) => item.id)).toEqual([attachmentA.id])

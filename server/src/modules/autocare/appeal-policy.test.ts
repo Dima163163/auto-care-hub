@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { canTransitionAppeal, validateAppealInput } from './appeal-policy.js'
+import { canTransitionAppeal, isPostgresUniqueViolation, validateAppealInput } from './appeal-policy.js'
 
 describe('appeal policy', () => {
     it('normalizes reasons and caps evidence references', () => {
@@ -16,5 +16,11 @@ describe('appeal policy', () => {
         expect(validateAppealInput({ subject: 'review', reason: 'too short' }).ok).toBe(false)
         expect(canTransitionAppeal('pending', 'accepted')).toBe(true)
         expect(canTransitionAppeal('accepted', 'rejected')).toBe(false)
+    })
+
+    it('recognizes only PostgreSQL unique-index conflicts', () => {
+        expect(isPostgresUniqueViolation({ code: '23505' })).toBe(true)
+        expect(isPostgresUniqueViolation({ code: '23503' })).toBe(false)
+        expect(isPostgresUniqueViolation(new Error('duplicate'))).toBe(false)
     })
 })

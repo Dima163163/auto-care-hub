@@ -93,6 +93,39 @@ function finiteNonNegative(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
+const PII_KEY_PATTERN = /(?:^|_)(?:email|phone|mobile|telephone|vin|plate|license|address|street|full_name|first_name|last_name|author_name|message|chat|photo(?:_bytes|_data)?)(?:$|_)/i
+const PII_VALUE_PATTERNS = [
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
+    /(?:^|\D)\+?\d[\d\s().-]{7,}\d(?:$|\D)/,
+    /\b[A-HJ-NPR-Z0-9]{17}\b/i,
+]
+
+function findPiiPath(value: unknown, currentPath = '$'): string | null {
+    if (typeof value === 'string') {
+        // ISO timestamps are expected evidence metadata, not phone numbers.
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null
+        return PII_VALUE_PATTERNS.some((pattern) => pattern.test(value)) ? currentPath : null
+    }
+    if (Array.isArray(value)) {
+        for (const [index, item] of value.entries()) {
+            const match = findPiiPath(item, `${currentPath}[${index}]`)
+            if (match) return match
+        }
+        return null
+    }
+    if (!isRecord(value)) return null
+    for (const [key, child] of Object.entries(value)) {
+        const childPath = `${currentPath}.${key}`
+        const normalizedKey = key.replace(/[A-Z]/g, (character) => `_${character.toLowerCase()}`)
+        const isCaptureFlag = /^(?:plate|vin)_captured$/.test(normalizedKey) && typeof child === 'boolean'
+        const isPhotoCount = normalizedKey === 'review_photo_count' && typeof child === 'number'
+        if (!isCaptureFlag && !isPhotoCount && PII_KEY_PATTERN.test(normalizedKey)) return childPath
+        const match = findPiiPath(child, childPath)
+        if (match) return match
+    }
+    return null
+}
+
 function validateParticipants(input: PilotEvidenceInput): PilotEvidenceCheck[] {
     const providers = Array.isArray(input.providers) ? input.providers : []
     const clients = Array.isArray(input.clients) ? input.clients : []
@@ -258,7 +291,9 @@ export function evaluatePilotEvidence(input: unknown): PilotEvidenceCheck[] {
     checks.push(...validateParticipants(typed), ...validateJourneys(typed), ...validateMetrics(typed))
 
     const privacy: Record<string, unknown> = isRecord(typed.privacy) ? typed.privacy : {}
-    if (privacy.piiRedacted === true && finiteNonNegative(privacy.evidenceRetentionDays) && Number(privacy.evidenceRetentionDays) > 0) checks.push(pass('Privacy evidence', 'PII is redacted and a retention period is recorded'))
+    const piiPath = findPiiPath(input)
+    if (piiPath) checks.push(blocked('Privacy evidence', `PII-like field detected at ${piiPath}; remove it before submitting evidence`))
+    else if (privacy.piiRedacted === true && finiteNonNegative(privacy.evidenceRetentionDays) && Number(privacy.evidenceRetentionDays) > 0) checks.push(pass('Privacy evidence', 'PII is redacted and a retention period is recorded'))
     else checks.push(blocked('Privacy evidence', 'PII must be redacted and evidenceRetentionDays must be positive'))
 
     return checks

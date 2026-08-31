@@ -58,4 +58,24 @@ describe('real pilot evidence policy', () => {
         })
         expect(checks.some((check) => check.name === 'Idempotency evidence' && check.status === 'blocked')).toBe(true)
     })
+
+    it('rejects obvious PII even when the redaction flag is set', () => {
+        const input = {
+            ...baseEvidence,
+            clients: baseEvidence.clients.map((client, index) => index === 0
+                ? { ...client, email: 'client@example.com' }
+                : client),
+        }
+        const checks = evaluatePilotEvidence(input)
+        expect(checks.some((check) => check.name === 'Privacy evidence' && check.status === 'blocked' && check.detail.includes('clients[0].email'))).toBe(true)
+    })
+
+    it('keeps anonymized identifiers and vehicle metadata valid', () => {
+        const checks = evaluatePilotEvidence({ ...baseEvidence, collectedAt: '2026-08-27T13:00:00.000+03:00' })
+        expect(checks.find((check) => check.name === 'Privacy evidence')).toEqual({
+            name: 'Privacy evidence',
+            status: 'pass',
+            detail: 'PII is redacted and a retention period is recorded',
+        })
+    })
 })

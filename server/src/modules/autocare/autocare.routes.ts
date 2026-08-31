@@ -381,7 +381,12 @@ export async function autoCareRoutes(app: FastifyInstance) {
             metadata: { chatId: params.chatId, contentType: attachment.contentType },
             request,
         })
-        if (attachment.signedUrl) return reply.redirect(attachment.signedUrl)
+        if (attachment.signedUrl) {
+            return reply
+                .header('cache-control', 'private, no-store')
+                .header('content-disposition', 'inline')
+                .redirect(attachment.signedUrl)
+        }
         return reply
             .header('cache-control', 'private, no-store')
             .header('x-content-type-options', 'nosniff')
@@ -503,7 +508,12 @@ export async function autoCareRoutes(app: FastifyInstance) {
             metadata: { requestId: params.requestId, contentType: attachment.contentType },
             request,
         })
-        if (attachment.signedUrl) return reply.redirect(attachment.signedUrl)
+        if (attachment.signedUrl) {
+            return reply
+                .header('cache-control', 'private, no-store')
+                .header('content-disposition', 'inline')
+                .redirect(attachment.signedUrl)
+        }
         return reply
             .header('cache-control', 'private, no-store')
             .header('x-content-type-options', 'nosniff')

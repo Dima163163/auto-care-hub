@@ -21,4 +21,5 @@ describe('AutoCare moderation evidence policy', () => {
         expect(isApprovedAutoCareEvidenceStatus('pending')).toBe(false)
         expect(isApprovedAutoCareEvidenceStatus('rejected')).toBe(false)
     })
+
 })

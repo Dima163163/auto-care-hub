@@ -77,5 +77,9 @@ describe('auto care communication settings', () => {
             ...provider,
             documents: [{ label: 'Лицензия', reference: 'https://example.com/license.pdf' }],
         })).toThrow()
+        expect(() => ownerAutoCareProviderSchema.parse({
+            ...provider,
+            documents: [{ label: 'Лицензия', reference: 'private://providers/../license.pdf' }],
+        })).toThrow()
     })
 })

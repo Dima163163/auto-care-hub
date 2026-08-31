@@ -40,6 +40,7 @@ export const REQUIRED_SCHEMA_TABLES: readonly SchemaTable[] = [
     { tableName: 'autocare_catalog_gap_requests' },
     { tableName: 'autocare_chat_reports' },
     { tableName: 'autocare_chat_blocks' },
+    { tableName: 'autocare_appeals' },
     { tableName: 'autocare_market_countries' },
     { tableName: 'autocare_trust_policy' },
     { tableName: 'autocare_capacity_resources' },
@@ -225,9 +226,11 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
     { tableName: 'autocare_chat_blocks', indexName: 'IDX_autocare_chat_blocks_thread_status' },
     { tableName: 'autocare_chat_blocks', indexName: 'IDX_autocare_chat_blocks_blocked_status' },
     { tableName: 'autocare_chat_blocks', indexName: 'UQ_autocare_chat_blocks_scope', unique: true },
+    { tableName: 'autocare_appeals', indexName: 'UQ_autocare_appeals_pending_subject', unique: true, columns: ['submittedById', 'subject', 'subjectId'] },
     { tableName: 'autocare_market_countries', indexName: 'UQ_autocare_market_countries_code', unique: true, columns: ['code'] },
     { tableName: 'autocare_markets', indexName: 'IDX_autocare_markets_country', columns: ['countryId', 'cityName'] },
     { tableName: 'autocare_service_requests', indexName: 'IDX_autocare_service_requests_vehicle', columns: ['clientId', 'vehicleId', 'createdAt'] },
+    { tableName: 'autocare_service_attachments', indexName: 'IDX_autocare_attachments_object_key', columns: ['objectKey'] },
     { tableName: 'autocare_capacity_resources', indexName: 'IDX_autocare_capacity_resources_location_active_type', columns: ['locationId', 'active', 'type'] },
     { tableName: 'autocare_capacity_resources', indexName: 'UQ_autocare_capacity_resources_provider_location_name', unique: true, columns: ['providerId', 'locationId', 'name'] },
     { tableName: 'autocare_capacity_reservations', indexName: 'IDX_autocare_capacity_reservations_resource_status_range', columns: ['resourceId', 'status', 'startsAt', 'endsAt'] },
@@ -367,6 +370,11 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
     { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_resource', onDelete: 'CASCADE' },
     { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_provider', onDelete: 'CASCADE' },
     { tableName: 'autocare_capacity_reservations', constraintName: 'FK_autocare_capacity_reservations_location', onDelete: 'CASCADE' },
+    { tableName: 'autocare_service_attachments', constraintName: 'CHK_autocare_attachments_parent' },
+    { tableName: 'autocare_service_attachments', constraintName: 'CHK_autocare_attachments_content_type' },
+    { tableName: 'autocare_service_attachments', constraintName: 'CHK_autocare_attachments_object_key' },
+    { tableName: 'autocare_service_attachments', constraintName: 'CHK_autocare_attachments_checksum' },
+    { tableName: 'autocare_service_attachments', constraintName: 'FK_autocare_attachments_thread', onDelete: 'CASCADE' },
 ]
 
 export function getMissingSchemaColumns(
