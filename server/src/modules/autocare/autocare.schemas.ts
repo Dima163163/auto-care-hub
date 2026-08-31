@@ -18,6 +18,15 @@ const autoCareVehicleSnapshotSchema = z.object({
     vin: z.string().trim().toUpperCase().max(17).nullable().optional(),
 }).strict()
 
+// Query strings arrive as text. `z.coerce.boolean()` treats every non-empty
+// string (including "false") as true, which silently activates optional
+// discovery filters when the browser serializes their false values.
+const autoCareQueryBooleanSchema = z.preprocess((value) => {
+    if (value === 'true') return true
+    if (value === 'false') return false
+    return value
+}, z.boolean())
+
 export const autoCareDiscoveryQuerySchema = z.object({
     serviceId: z.string().trim().min(1).max(120).optional(),
     providerName: z.string().trim().min(1).max(160).optional(),
@@ -31,10 +40,10 @@ export const autoCareDiscoveryQuerySchema = z.object({
     maxPrice: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
     minRating: z.coerce.number().finite().min(0).max(5).optional(),
     priceType: z.enum(['fixed', 'from', 'range', 'quote_required']).optional(),
-    availableToday: z.coerce.boolean().optional(),
-    verifiedOnly: z.coerce.boolean().optional(),
-    warrantyOnly: z.coerce.boolean().optional(),
-    hasBonus: z.coerce.boolean().optional(),
+    availableToday: autoCareQueryBooleanSchema.optional(),
+    verifiedOnly: autoCareQueryBooleanSchema.optional(),
+    warrantyOnly: autoCareQueryBooleanSchema.optional(),
+    hasBonus: autoCareQueryBooleanSchema.optional(),
     inclusion: z.string().trim().min(1).max(80).optional(),
     brandId: z.string().trim().min(1).max(80).optional(),
 }).superRefine((value, context) => {

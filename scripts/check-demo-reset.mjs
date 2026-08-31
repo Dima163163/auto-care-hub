@@ -22,6 +22,8 @@ const REQUIRED_FIXTURE_GUARDS = [
 
 const FORBIDDEN_BROAD_OPERATIONS = [
     'TRUNCATE',
+    'AuditLogEntity).delete',
+    'DELETE FROM "audit_logs"',
     'DELETE FROM "autocare_markets"',
     'DELETE FROM "autocare_location_zones"',
     'DELETE FROM "autocare_service_definitions"',

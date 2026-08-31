@@ -52,15 +52,7 @@ export function LandingHeroContent() {
             <div className="mt-10 flex flex-wrap items-center justify-center min-[1260px]:justify-start gap-x-6 gap-y-3 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <span className="flex size-5 items-center justify-center rounded-full border border-muted-foreground/30 text-xs">✓</span>
-                    {t('landing.noCard')}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="flex size-5 items-center justify-center rounded-full border border-muted-foreground/30 text-xs">✓</span>
                     {t('landing.fastStart')}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="flex size-5 items-center justify-center rounded-full border border-muted-foreground/30 text-xs">✓</span>
-                    {t('landing.directPayment')}
                 </div>
             </div>
         </div>

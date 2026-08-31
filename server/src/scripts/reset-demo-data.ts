@@ -3,7 +3,6 @@ import type { EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../database/data-source.js'
 import { AutomotiveProviderEntity, AutomotiveServiceLocationEntity } from '../entities/automotive/automotive.entity.js'
-import { AuditLogEntity } from '../entities/audit-log/audit-log.entity.js'
 import { BookingEntity } from '../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../entities/cabinet/cabinet.entity.js'
 import { NotificationEntity } from '../entities/notification/notification.entity.js'
@@ -175,24 +174,31 @@ async function resetDemoData() {
                 : []
             const bookingIds = idsOf(bookings)
 
-            const auditTargetIds = [
-                ...userIds,
-                ...cabinetIds,
-                ...serviceIds,
-                ...bookingIds,
-            ]
-
             if (userIds.length > 0) {
-                await manager.getRepository(AuditLogEntity).delete([
-                    { actorId: In(userIds) },
-                    { targetId: In(auditTargetIds) },
-                ])
+                // Security events are immutable, but account deletion/reset
+                // must detach their user reference and redact network PII.
+                // The trigger accepts this exact mutation only while the
+                // transaction-local privacy cleanup flag is enabled.
+                await manager.query(`SELECT set_config('app.security_event_privacy_cleanup', 'on', true)`)
+                await manager.query(
+                    `UPDATE "security_events"
+                        SET "user_id" = NULL,
+                            "ip_address" = NULL,
+                            "user_agent" = NULL,
+                            "metadata" = (COALESCE("metadata", '{}'::jsonb) - 'ipAddress')
+                                || jsonb_build_object('privacyRedactedAt', CURRENT_TIMESTAMP::text)
+                      WHERE "user_id" = ANY($1::uuid[])`,
+                    [userIds],
+                )
                 await manager.getRepository(NotificationEntity).delete({ userId: In(userIds) })
                 await manager.getRepository(SecurityTokenEntity).delete({ userId: In(userIds) })
                 await manager.getRepository(UserSessionEntity).delete({ userId: In(userIds) })
-            } else if (auditTargetIds.length > 0) {
-                await manager.getRepository(AuditLogEntity).delete({ targetId: In(auditTargetIds) })
             }
+
+            // Audit logs are append-only by design. Keep historical demo
+            // entries instead of bypassing the database trigger; fixture
+            // ownership and reset safety are preserved by deleting only
+            // mutable demo-owned records below.
 
             const reviewWhere = [
                 ...(bookingIds.length > 0 ? [{ bookingId: In(bookingIds) }] : []),

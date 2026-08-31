@@ -16,6 +16,7 @@ import {
     AutomotiveMarketEntity,
     AutomotivePriceType,
     AutomotiveProviderEntity,
+    AutomotiveProviderChangeRequestEntity,
     AutomotiveProviderInvitationEntity,
     AutomotiveProviderMembershipEntity,
     AutomotiveProviderMembershipRole,
@@ -43,6 +44,7 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
     const suffix = `${Date.now()}`
     let app: FastifyInstance
     let owner: UserEntity
+    let admin: UserEntity
     let manager: UserEntity
     let staff: UserEntity
     let client: UserEntity
@@ -80,8 +82,9 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
             status: UserStatus.Active,
             emailVerifiedAt: new Date(),
         })
-        ;[owner, manager, staff, client, invitee] = await userRepository.save([
+        ;[owner, admin, manager, staff, client, invitee] = await userRepository.save([
             createUser('Branch Owner', UserRole.Owner),
+            createUser('Branch Admin', UserRole.Admin),
             createUser('Branch Manager', UserRole.Owner),
             createUser('Branch Staff', UserRole.Owner),
             createUser('Branch Client', UserRole.Client),
@@ -303,6 +306,7 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
 
     afterAll(async () => {
         if (!AppDataSource.isInitialized) return
+        if (provider) await AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity).delete({ providerId: provider.id })
         if (provider) await AppDataSource.getRepository(AutoCareCapacityResourceEntity).delete({ providerId: provider.id })
         const attachments = [attachmentA, attachmentB, rejectedAttachmentA].filter((item): item is ServiceAttachmentEntity => Boolean(item))
         if (attachments.length > 0) {
@@ -320,7 +324,7 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
         if (provider) await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider.id })
         if (market) await AppDataSource.getRepository(AutomotiveMarketEntity).delete({ id: market.id })
         if (country) await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: country.id })
-        await AppDataSource.getRepository(UserEntity).delete([owner?.id, manager?.id, staff?.id, client?.id, invitee?.id].filter((id): id is string => Boolean(id)))
+        await AppDataSource.getRepository(UserEntity).delete([owner?.id, admin?.id, manager?.id, staff?.id, client?.id, invitee?.id].filter((id): id is string => Boolean(id)))
         await app.close()
     })
 
@@ -472,5 +476,37 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
 
         expect(revoked.status).toBe(200)
         expect(revoked.body).toMatchObject({ id: accepted.body.membership.id, locationId: locationA.id, status: 'revoked' })
+    })
+
+    it('replays an owner change request through an admin decision with a reason', async () => {
+        const requestedDescription = `Approved branch profile ${suffix}`
+        const pending = await request(app.server)
+            .post(`/owner/autocare-providers/${provider.id}/change-requests`)
+            .set('Authorization', `Bearer ${token(owner)}`)
+            .send({ kind: 'profile_update', payload: { description: requestedDescription } })
+
+        expect(pending.status).toBe(200)
+        expect(pending.body).toMatchObject({
+            providerId: provider.id,
+            requestedById: owner.id,
+            kind: 'profile_update',
+            status: 'pending',
+            payload: { description: requestedDescription },
+        })
+
+        const decision = await request(app.server)
+            .patch(`/admin/autocare-provider-change-requests/${pending.body.id}/decision`)
+            .set('Authorization', `Bearer ${token(admin)}`)
+            .send({ status: 'approved', reason: 'The updated profile content is accurate.' })
+
+        expect(decision.status).toBe(200)
+        expect(decision.body).toMatchObject({
+            id: pending.body.id,
+            status: 'approved',
+            reviewedById: admin.id,
+            reviewReason: 'The updated profile content is accurate.',
+        })
+        await expect(AppDataSource.getRepository(AutomotiveProviderEntity).findOneByOrFail({ id: provider.id }))
+            .resolves.toMatchObject({ description: requestedDescription })
     })
 })

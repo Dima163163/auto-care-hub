@@ -9,7 +9,7 @@ let exitCode = 1
 try {
     const result = spawnSync(
         process.platform === 'win32' ? 'npx.cmd' : 'npx',
-        ['playwright', 'test', '-c', 'playwright.real.config.ts'],
+        ['playwright', 'test', '-c', 'playwright.real.config.ts', ...process.argv.slice(2)],
         { stdio: 'inherit' },
     )
     if (result.error) throw result.error

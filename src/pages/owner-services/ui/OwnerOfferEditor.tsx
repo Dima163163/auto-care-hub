@@ -91,7 +91,7 @@ export function OwnerOfferEditor({ providerId, offer, labels, onCancel, onSaved 
                 </select>
             </label>
             <p className="text-[11px] font-semibold leading-4 text-muted-foreground">{labels.priceSnapshotNotice}</p>
-            {validationError ? <p className="text-xs font-bold text-destructive">{updateState.error ? getApiErrorMessage(updateState.error, validationError) : validationError}</p> : null}
+            {validationError ? <p role="alert" className="text-xs font-bold text-destructive">{updateState.error ? getApiErrorMessage(updateState.error, validationError) : validationError}</p> : null}
             <div className="flex flex-wrap gap-2">
                 <button type="submit" disabled={updateState.isLoading} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-primary px-3 text-xs font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"><Save className="size-3.5" />{labels.save}</button>
                 <button type="button" onClick={onCancel} disabled={updateState.isLoading} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-xs font-black text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"><X className="size-3.5" />{labels.cancel}</button>

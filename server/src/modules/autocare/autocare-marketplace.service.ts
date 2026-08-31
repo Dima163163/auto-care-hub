@@ -202,7 +202,10 @@ export async function getAutoCareProviderTrust(providerId: string) {
     }) : null
     return {
         providerId,
-        score: latestSnapshot?.score ?? Number(provider.trustScore),
+        // PostgreSQL numeric columns are returned as strings by node-postgres;
+        // normalize the public scalar just like the snapshot list below so the
+        // API contract remains numeric for all persisted trust snapshots.
+        score: Number(latestSnapshot?.score ?? provider.trustScore),
         badge: latestSnapshot?.badge ?? provider.trustBadge,
         reassessedAt: provider.trustReassessedAt?.toISOString() ?? null,
         evidence: publicEvidence.map((item): AutoCareTrustEvidenceResponse => ({

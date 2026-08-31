@@ -242,7 +242,6 @@ function TrustStrip() {
         ['✓', t('autocare.verifiedTrust'), t('autocare.trustVerifiedText')],
         ['▱', t('autocare.trustStandardTitle'), t('autocare.trustStandardText')],
         ['☆', t('autocare.realReviewsTrust'), t('autocare.trustReviewsText')],
-        ['▣', t('autocare.trustPaymentTitle'), t('autocare.trustPaymentText')],
     ]
-    return <section className="mt-8 grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">{items.map(([icon, title, text]) => <div key={title} className="flex gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-black text-primary">{icon}</span><div><p className="text-xs font-black text-foreground">{title}</p><p className="mt-1 text-[11px] font-medium leading-4 text-muted-foreground">{text}</p></div></div>)}</section>
+    return <section className="mt-8 grid gap-4 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3">{items.map(([icon, title, text]) => <div key={title} className="flex gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-black text-primary">{icon}</span><div><p className="text-xs font-black text-foreground">{title}</p><p className="mt-1 text-[11px] font-medium leading-4 text-muted-foreground">{text}</p></div></div>)}</section>
 }

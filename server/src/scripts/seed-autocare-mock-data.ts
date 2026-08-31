@@ -144,6 +144,10 @@ async function seedAutoCareMockData() {
                     zoneId: input.zoneSlug ? (marketZones.get(input.zoneSlug) ?? null) : null,
                     address: input.address,
                     hours: input.hours,
+                    // Keep demo appointment validation in the market's local timezone.
+                    // Without this explicit value the entity default (UTC) makes a
+                    // Moscow-time preferred slot look outside of working hours.
+                    timezone: market.timezone,
                     latitude: input.latitude,
                     longitude: input.longitude,
                     supportsMobile: input.amenityIds.includes('pickup_delivery'),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
+import { autoCareDiscoveryQuerySchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
 
 const validRequest = {
     providerId: '11111111-1111-4111-8111-111111111111',
@@ -54,5 +54,24 @@ describe('AutoCare service request schema', () => {
     it('accepts only the two supported booking modes for provider offerings', () => {
         expect(updateAutoCareOfferSchema.parse({ description: null, priceFromMinor: 2_900_00, bookingMode: 'instant' }).bookingMode).toBe('instant')
         expect(updateAutoCareOfferSchema.safeParse({ description: null, priceFromMinor: 2_900_00, bookingMode: 'manual' }).success).toBe(false)
+    })
+
+    it('parses false discovery query flags as false instead of enabling filters', () => {
+        const parsed = autoCareDiscoveryQuerySchema.parse({
+            serviceId: 'oil-change',
+            marketId: 'ru-moscow',
+            radiusKm: '25',
+            availableToday: 'false',
+            verifiedOnly: 'false',
+            warrantyOnly: 'false',
+            hasBonus: 'false',
+        })
+
+        expect(parsed).toMatchObject({
+            availableToday: false,
+            verifiedOnly: false,
+            warrantyOnly: false,
+            hasBonus: false,
+        })
     })
 })

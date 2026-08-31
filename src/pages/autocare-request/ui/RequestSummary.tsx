@@ -60,7 +60,7 @@ export function RequestOrderSummary({ provider, offering }: RequestSelectionProp
                 <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestDateTimeTitle')}</p><p className="mt-1 font-black text-foreground">{t('autocare.providerToday')}, {currentDate} · 10:00</p></div>
             </div>
             <div className="border-t border-border bg-secondary/45 p-5"><div className="flex items-end justify-between gap-4"><p className="text-lg font-black text-foreground">Итого</p><p className="text-2xl font-black text-foreground">{offering.priceLabel}</p></div><ul className="mt-4 grid gap-2 text-xs font-semibold text-status-success-foreground">{offering.includes.slice(0, 3).map((item) => <li key={item} className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0" />{item}</li>)}</ul></div>
-            <div className="grid gap-3 p-5"><p className="flex gap-2 text-xs font-semibold leading-5 text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-primary" />{t('autocare.requestProviderConfirmation')}</p><p className="text-xs font-medium leading-5 text-muted-foreground">{t('autocare.requestDirectPayment')}</p></div>
+            <div className="grid gap-3 p-5"><p className="flex gap-2 text-xs font-semibold leading-5 text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-primary" />{t('autocare.requestProviderConfirmation')}</p></div>
         </aside>
     )
 }

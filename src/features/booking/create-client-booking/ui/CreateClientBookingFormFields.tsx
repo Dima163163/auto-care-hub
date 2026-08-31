@@ -205,7 +205,7 @@ export function CreateClientBookingFormFields({
                     {...register('comment')}
                 />
                 {errors.comment?.message && (
-                    <p id="comment-error" className="mt-1 text-sm text-destructive">
+                    <p id="comment-error" role="alert" className="mt-1 text-sm text-destructive">
                         {errors.comment.message}
                     </p>
                 )}

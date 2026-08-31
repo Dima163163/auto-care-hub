@@ -21,3 +21,17 @@ test('demo reset contract fails when shared catalog deletion is introduced', () 
     assert.equal(evaluation.passed, false)
     assert.deepEqual(evaluation.forbidden, ['DELETE FROM "autocare_markets"'])
 })
+
+test('demo reset contract fails when append-only audit deletion is introduced', () => {
+    const evaluation = evaluateDemoResetSource([
+        'DEMO_USER_EMAILS',
+        'AUTOMOTIVE_MOCK_PROVIDERS',
+        'provider.ownerId === null',
+        "demoUserIdSet.has(provider.ownerId ?? '')",
+        'ANY($1::uuid[])',
+        'ids: string[]',
+        'manager.getRepository(AuditLogEntity).delete',
+    ].join('\n'))
+    assert.equal(evaluation.passed, false)
+    assert.deepEqual(evaluation.forbidden, ['AuditLogEntity).delete'])
+})

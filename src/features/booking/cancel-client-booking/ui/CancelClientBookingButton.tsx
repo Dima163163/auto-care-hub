@@ -22,11 +22,13 @@ export function CancelClientBookingButton({ booking }: CancelClientBookingButton
     const { t } = useTranslation()
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
     const [reason, setReason] = useState('')
+    const [error, setError] = useState<string | null>(null)
 
     const [cancelMyBooking, { isLoading }] =
         useCancelMyBookingMutation()
 
     const handleConfirmCancelBooking = async () => {
+        setError(null)
         try {
             await cancelMyBooking({ id: booking.id, reason }).unwrap()
 
@@ -38,6 +40,7 @@ export function CancelClientBookingButton({ booking }: CancelClientBookingButton
                 t('booking.failedToCancelBooking'),
             )
 
+            setError(message)
             toast.error(message)
         }
     }
@@ -54,7 +57,7 @@ export function CancelClientBookingButton({ booking }: CancelClientBookingButton
                 size="sm"
                 className="min-h-11"
                 disabled={isLoading}
-                onClick={() => setIsConfirmOpen(true)}
+                onClick={() => { setError(null); setIsConfirmOpen(true) }}
             >
                 {t('booking.cancelBooking')}
             </Button>
@@ -69,7 +72,7 @@ export function CancelClientBookingButton({ booking }: CancelClientBookingButton
                 loadingLabel={t('booking.cancelling')}
                 isLoading={isLoading}
                 confirmVariant="destructive"
-                onCancel={() => setIsConfirmOpen(false)}
+                onCancel={() => { setError(null); setIsConfirmOpen(false) }}
                 onConfirm={() => void handleConfirmCancelBooking()}
             >
                 <p className="font-medium">
@@ -85,11 +88,14 @@ export function CancelClientBookingButton({ booking }: CancelClientBookingButton
                     <textarea
                         id={`cancel-reason-${booking.id}`}
                         value={reason}
-                        onChange={(event) => setReason(event.target.value)}
+                        onChange={(event) => { setError(null); setReason(event.target.value) }}
+                        aria-invalid={Boolean(error) || undefined}
+                        aria-describedby={error ? `cancel-error-${booking.id}` : undefined}
                         className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                         placeholder={t('booking.cancellationReasonPlaceholder')}
                     />
                 </label>
+                {error ? <p id={`cancel-error-${booking.id}`} role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p> : null}
             </ConfirmDialog>
         </>
     )

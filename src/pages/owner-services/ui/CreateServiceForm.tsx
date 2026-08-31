@@ -77,7 +77,7 @@ export function CreateServiceForm({
             </div>
 
             {formError && (
-                <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+                <div role="alert" className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
                     <p className="text-sm font-medium text-destructive">
                         {formError}
                     </p>

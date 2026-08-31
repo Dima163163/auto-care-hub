@@ -8,13 +8,14 @@ import { OwnerProviderOnboardingPanel } from './OwnerProviderOnboardingPanel'
 
 const mocks = vi.hoisted(() => ({
     create: vi.fn(() => ({ unwrap: vi.fn().mockRejectedValue(new Error('temporary failure')) })),
+    createState: { isLoading: false, error: null as unknown },
     cancel: vi.fn(() => ({ unwrap: vi.fn().mockRejectedValue({ data: { message: 'Request already changed.' } }) })),
     queryData: [{ id: 'change-1', kind: 'verification', status: 'pending', createdAt: '2026-08-29T09:00:00.000Z', reviewReason: null }],
 }))
 
 vi.mock('@/entities/automotive-service', () => ({
     useCancelOwnerAutoCareProviderChangeRequestMutation: () => [mocks.cancel, { isLoading: false }],
-    useCreateOwnerAutoCareProviderChangeRequestMutation: () => [mocks.create, { isLoading: false, error: null }],
+    useCreateOwnerAutoCareProviderChangeRequestMutation: () => [mocks.create, mocks.createState],
     useGetOwnerAutoCareProviderChangeRequestsQuery: () => ({
         data: mocks.queryData,
         isLoading: false,
@@ -42,6 +43,7 @@ const provider = {
 describe('OwnerProviderOnboardingPanel', () => {
     beforeEach(() => {
         mocks.create.mockClear()
+        mocks.createState.error = null
         mocks.cancel.mockClear()
         mocks.queryData = [{ id: 'change-1', kind: 'verification', status: 'pending', createdAt: '2026-08-29T09:00:00.000Z', reviewReason: null }]
     })
@@ -73,5 +75,14 @@ describe('OwnerProviderOnboardingPanel', () => {
 
         expect(mocks.create).toHaveBeenCalledWith({ providerId: 'provider-1', kind: 'verification' })
         expect(screen.getByRole('button', { name: 'Отправить на проверку' })).toBeEnabled()
+    })
+
+    it('announces a rejected onboarding request as an accessible alert', async () => {
+        mocks.queryData = []
+        mocks.createState.error = { data: { message: 'Проверка сервиса временно недоступна.' } }
+
+        render(<OwnerProviderOnboardingPanel provider={provider} locale="ru" />)
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Проверка сервиса временно недоступна.')
     })
 })

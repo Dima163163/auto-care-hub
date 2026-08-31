@@ -8,6 +8,7 @@ type QueryExecutor = Pick<EntityManager, 'query'>
 export type AccountDeletionInvariant = {
     name: string
     sql: string
+    parameterMode?: 'user' | 'user_and_anonymized' | 'anonymized'
 }
 
 export type AccountDeletionInvariantResult = AccountDeletionInvariant & {
@@ -170,31 +171,35 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_service_attachments" attachment
             JOIN "autocare_chat_threads" thread ON thread."id" = attachment."threadId"
-            WHERE thread."subject" = $2`,
+            WHERE thread."subject" = $1`,
+        parameterMode: 'anonymized',
     },
     {
         name: 'anonymized chat message payloads are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_service_messages" message
             JOIN "autocare_chat_threads" thread ON thread."id" = message."threadId"
-            WHERE thread."subject" = $2
+            WHERE thread."subject" = $1
               AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
+        parameterMode: 'anonymized',
     },
     {
         name: 'anonymized chat report payloads are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_chat_reports" report
             JOIN "autocare_chat_threads" thread ON thread."id" = report."threadId"
-            WHERE thread."subject" = $2
+            WHERE thread."subject" = $1
               AND (report."description" IS NOT NULL OR report."reportedUserId" IS NOT NULL OR report."reviewedById" IS NOT NULL OR report."resolutionReason" IS NOT NULL)`,
+        parameterMode: 'anonymized',
     },
     {
         name: 'anonymized chat block reasons are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_chat_blocks" block
             JOIN "autocare_chat_threads" thread ON thread."id" = block."threadId"
-            WHERE thread."subject" = $2
+            WHERE thread."subject" = $1
               AND block."reason" IS NOT NULL`,
+        parameterMode: 'anonymized',
     },
 ]
 
@@ -210,9 +215,11 @@ export async function checkAutoCareDeletionInvariants(
 ): Promise<AccountDeletionInvariantResult[]> {
     const results: AccountDeletionInvariantResult[] = []
     for (const invariant of AUTOCARE_DELETION_INVARIANTS) {
-        const parameters = invariant.sql.includes('$2')
-            ? [userId, ANONYMIZED_REVIEW_TEXT]
-            : [userId]
+        const parameters = invariant.parameterMode === 'anonymized'
+            ? [ANONYMIZED_REVIEW_TEXT]
+            : invariant.parameterMode === 'user_and_anonymized' || invariant.sql.includes('$2')
+                ? [userId, ANONYMIZED_REVIEW_TEXT]
+                : [userId]
         const rows = await executor.query(invariant.sql, parameters) as unknown[]
         results.push({ ...invariant, count: getCount(rows[0]) })
     }

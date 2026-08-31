@@ -48,7 +48,7 @@ export function CreateServiceFormFields({
                 </select>
 
                 {errors.cabinetId && (
-                    <p className="mt-2 text-sm text-destructive">
+                    <p role="alert" className="mt-2 text-sm text-destructive">
                         {errors.cabinetId.message}
                     </p>
                 )}
@@ -68,7 +68,7 @@ export function CreateServiceFormFields({
                 />
 
                 {errors.title && (
-                    <p className="mt-2 text-sm text-destructive">
+                    <p role="alert" className="mt-2 text-sm text-destructive">
                         {errors.title.message}
                     </p>
                 )}
@@ -89,7 +89,7 @@ export function CreateServiceFormFields({
                 />
 
                 {errors.durationMinutes && (
-                    <p className="mt-2 text-sm text-destructive">
+                    <p role="alert" className="mt-2 text-sm text-destructive">
                         {errors.durationMinutes.message}
                     </p>
                 )}
@@ -110,7 +110,7 @@ export function CreateServiceFormFields({
                 />
 
                 {errors.price && (
-                    <p className="mt-2 text-sm text-destructive">
+                    <p role="alert" className="mt-2 text-sm text-destructive">
                         {errors.price.message}
                     </p>
                 )}
@@ -130,7 +130,7 @@ export function CreateServiceFormFields({
                 />
 
                 {errors.description && (
-                    <p className="mt-2 text-sm text-destructive">
+                    <p role="alert" className="mt-2 text-sm text-destructive">
                         {errors.description.message}
                     </p>
                 )}

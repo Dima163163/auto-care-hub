@@ -97,7 +97,7 @@ function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { 
                     <span className="flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span>
                     <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{offer.priceType === 'quote_required' ? labels.estimate : labels.from}</span>
                 </div>
-                <div className="mt-4 flex items-start justify-between gap-3"><h3 className="text-sm font-black text-foreground">{title}</h3><EditOfferButton label={labels.edit} onClick={() => setIsEditing(true)} /></div>
+                <div className="mt-4 flex items-start justify-between gap-3"><h2 className="text-sm font-black text-foreground">{title}</h2><EditOfferButton label={labels.edit} onClick={() => setIsEditing(true)} /></div>
                 {offer.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{offer.description}</p> : null}
                 <p className="mt-2 text-lg font-black text-foreground">{offer.priceType === 'quote_required' ? labels.estimate : price}</p>
                 <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? '—'}</p>

@@ -60,7 +60,7 @@ export function ProfileReviewEditForm({
             </div>
 
             {error && (
-                <p className="text-sm font-medium text-destructive">
+                <p role="alert" className="text-sm font-medium text-destructive">
                     {error}
                 </p>
             )}

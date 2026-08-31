@@ -92,4 +92,28 @@ describe('ChatsPage', () => {
         expect(screen.queryByRole('alert')).not.toBeInTheDocument()
         expect(textbox).not.toHaveAttribute('aria-invalid', 'true')
     })
+
+    it('exposes a retryable error when creating a support chat fails', async () => {
+        const user = userEvent.setup()
+        const previousChats = mocks.chats
+        mocks.chats = []
+        mocks.createChat.mockReset().mockImplementation(() => ({
+            unwrap: vi.fn().mockRejectedValue(new Error('support unavailable')),
+        }))
+        const unhandled: unknown[] = []
+        const onUnhandled = (reason: unknown) => unhandled.push(reason)
+        process.on('unhandledRejection', onUnhandled)
+
+        try {
+            renderPage()
+            await user.click(screen.getAllByRole('button', { name: 'autocare.chatWorkspaceSupport' })[0]!)
+
+            expect(await screen.findByRole('alert')).toHaveTextContent('support unavailable')
+            expect(screen.getByRole('button', { name: 'common.retry' })).toBeVisible()
+            expect(unhandled).toEqual([])
+        } finally {
+            process.off('unhandledRejection', onUnhandled)
+            mocks.chats = previousChats
+        }
+    })
 })

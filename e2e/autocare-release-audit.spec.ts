@@ -187,6 +187,67 @@ test.describe('AutoCare stable-web release gate', () => {
         expect(results.violations).toEqual([])
     })
 
+    test('protected workspaces satisfy the automated accessibility contract', async ({ page }) => {
+        test.setTimeout(120_000)
+        await page.addInitScript(() => {
+            window.localStorage.setItem('autocare-hub-locale', 'en')
+            window.localStorage.setItem('autocare-hub-theme', 'dark')
+        })
+        await signInWithMockAccount(page, 'sophia.miller@example.com')
+
+        for (const route of ['/owner/dashboard', '/owner/autocare-requests', '/owner/services'] as const) {
+            await gotoStable(page, route)
+            await expectWorkspaceShell(page)
+            const results = await new AxeBuilder({ page }).analyze()
+            expect(results.violations, `${route} accessibility violations`).toEqual([])
+        }
+
+        await signOutMockAccount(page)
+        await signInWithMockAccount(page, 'admin@autocarehub.test')
+        for (const route of ['/admin/dashboard', '/super-admin/dashboard'] as const) {
+            await gotoStable(page, route)
+            await expectWorkspaceShell(page)
+            const results = await new AxeBuilder({ page }).analyze()
+            expect(results.violations, `${route} accessibility violations`).toEqual([])
+        }
+    })
+
+    test('theme switcher and discovery focus use the rounded control surface', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.localStorage.setItem('autocare-hub-locale', 'en')
+            window.localStorage.setItem('autocare-hub-theme', 'dark')
+        })
+        await page.goto('/services?service=oil-change')
+        await expectStableShell(page)
+        await expect(page.locator('html')).toHaveClass(/dark/)
+        await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+
+        const themeSwitcher = page.locator('[data-theme-switcher]').first()
+        await expect(themeSwitcher).toHaveAttribute('aria-checked', 'true')
+        await themeSwitcher.click()
+        await expect(page.locator('html')).not.toHaveClass(/dark/)
+        await expect(themeSwitcher).toHaveAttribute('aria-checked', 'false')
+
+        // FloatingSelect keeps its visible label in a decorative span, so the
+        // native select does not expose a reliable accessible name in every
+        // locale. Identify the service control by its stable option value.
+        const serviceSelect = page.locator('select').filter({ has: page.locator('option[value="oil-change"]') }).first()
+        await serviceSelect.focus()
+        await expect(serviceSelect).toBeFocused()
+        const focusSurface = serviceSelect.locator('xpath=..')
+        await expect(focusSurface).toHaveClass(/rounded-\[var\(--radius-control\)\]/)
+        const focusStyles = await Promise.all([
+            serviceSelect.evaluate((element) => getComputedStyle(element).outlineStyle),
+            focusSurface.evaluate((element) => ({
+                borderRadius: getComputedStyle(element).borderRadius,
+                boxShadow: getComputedStyle(element).boxShadow,
+            })),
+        ])
+        expect(focusStyles[0]).toBe('none')
+        expect(focusStyles[1].borderRadius).not.toBe('0px')
+        expect(focusStyles[1].boxShadow).not.toBe('none')
+    })
+
     test('public pages expose a usable keyboard order', async ({ page }) => {
         for (const route of ['/', '/services?service=oil-change', '/services/api-proservice-moscow']) {
             await page.setViewportSize({ width: 1280, height: 900 })
@@ -356,7 +417,7 @@ test.describe('AutoCare stable-web release gate', () => {
         await expectWorkspaceShell(page)
 
         await expect(page.getByRole('heading', { name: /onboarding and profile changes|подключение и изменения профиля/i })).toBeVisible()
-        await expect(page.getByRole('heading', { name: /documents and evidence|документы и подтверждения/i })).toBeVisible()
+        await expect(page.getByRole('heading', { level: 2, name: /documents and evidence|документы и подтверждения/i })).toBeVisible()
         await expect(page.getByRole('heading', { name: /branch team|команда филиала/i })).toBeVisible()
         await expect(page.getByTestId('owner-communication-settings')).toBeVisible()
 
@@ -406,8 +467,9 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(hierarchy).toBeVisible()
         await hierarchy.getByRole('button', { name: /new country|новая страна/i }).click()
         await expect(hierarchy.getByRole('heading', { name: /new country|новая страна/i })).toBeVisible()
-        await expect(hierarchy.getByRole('textbox', { name: /country code|код страны/i })).toBeVisible()
-        await expect(hierarchy.getByRole('button', { name: /create country|создать страну/i })).toBeVisible()
+        const newCountryForm = hierarchy.locator('form').filter({ hasText: /new country|новая страна/i }).first()
+        await expect(newCountryForm.getByRole('textbox', { name: /country code|код страны/i })).toBeVisible()
+        await expect(newCountryForm.getByRole('button', { name: /create country|создать страну/i })).toBeVisible()
 
         await hierarchy.getByRole('button', { name: /new city|новый город/i }).click()
         await expect(hierarchy.getByRole('heading', { name: /new city in|новый город в/i })).toBeVisible()

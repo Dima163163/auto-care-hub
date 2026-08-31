@@ -1,9 +1,9 @@
 # AutoCare Hub — план готовности к пилоту 100%
 
-**Статус:** канонический release-план
+**Статус:** журнал доказательств и история исполнения
 **Обновлён:** 30 августа 2026 — тройная сверка кода, проверок и операционных документов
 **Владелец плана:** команда AutoCare Hub
-**Заменяет как go/no-go источник:** разрозненные статусы в `PROJECT_PLAN.md`. Исторические документы остаются доказательствами, но не меняют этот план.
+**Финальный go/no-go источник:** [`PILOT_SCOPE_FREEZE.md`](./PILOT_SCOPE_FREEZE.md). Этот документ сохраняет исторические порции и команды как доказательства, но не меняет фиксированный scope и проценты без явной новой версии freeze.
 
 Состояние фиксируется только после доказательства: команды, результата, даты, окружения и commit SHA. Формулировка «контракт есть» не равна «подтверждено на staging» и не может закрыть инфраструктурный или пилотный пункт.
 
@@ -31,13 +31,15 @@ AutoCare Hub — бесплатная платформа поиска, срав�
 
 ### Иерархия источников и проверка противоречий
 
-1. Этот файл — единственный источник статуса local MVP, пилота и go/no-go.
-2. `PROJECT_PLAN.md` — исторический продуктовый roadmap; он не подтверждает release readiness.
-3. Датированные evidence-документы — снимки конкретного запуска. Они могут подтверждать только указанную дату и окружение.
-4. Если старый документ и этот план расходятся, приоритет у этого плана до появления нового воспроизводимого доказательства.
+1. `PILOT_SCOPE_FREEZE.md` — единственный источник фиксированного scope, процентов и go/no-go.
+2. Этот файл — журнал исторических evidence-порций; он подтверждает только конкретную дату и окружение.
+3. `PROJECT_PLAN.md` — исторический продуктовый roadmap; он не подтверждает release readiness.
+4. Если старый документ и scope freeze расходятся, приоритет у scope freeze до явного выпуска новой версии freeze.
 5. Immutable TypeORM-миграции не переписываются ради очистки терминов. Их наличие не означает доступность прежней функции.
 
 ## Текущая оценка после ревизии
+
+> Это снимок на дату ревизии. Дальнейшие проценты и список обязательных условий фиксируются только в [`PILOT_SCOPE_FREEZE.md`](./PILOT_SCOPE_FREEZE.md).
 
 | Контур | Оценка | Пояснение |
 | --- | ---: | --- |
@@ -1152,3 +1154,224 @@ npm run check:e2e:browser
 - `[x]` Добавлена component regression для отказов ответа и удаления отзыва: **1 файл / 1 тест PASS**; полный frontend suite — **131 файл / 443 теста PASS**.
 - `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
 - `[~]` Реальный staging moderation replay с несколькими администраторами, audit evidence и подтверждением прав super-admin остаётся внешним gate `ADD-C11`, §2.2.
+
+### Результат сто пятой исполняемой порции (30.08.2026)
+
+- `[x]` Клиентская форма отзыва теперь перехватывает отказ `createPlatformReview` через `try/catch`; `unwrap()` больше не приводит к unhandled promise rejection.
+- `[x]` При ошибке отправки введённый текст сохраняется, сообщение об успехе не показывается, а доступный `role="alert"` даёт retryable обратную связь с деталями API.
+- `[x]` Добавлена component regression для отклонённой отправки отзыва: **1 файл / 1 тест PASS**; полный frontend suite — **132 файла / 444 теста PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный moderation turnaround, duplicate/idempotency replay и staging-проверка клиентских отзывов остаются внешними gates `ADD-C08`, `ADD-C11`, §2.2.
+
+### Результат сто шестой исполняемой порции (30.08.2026)
+
+- `[x]` Решение клиента по quote теперь безопасно обрабатывается на странице follow-up после заявки и в кабинете «Мои заявки»: отказ accept/decline перехватывается, поэтому не возникает unhandled promise rejection.
+- `[x]` Ошибка quote выводится в доступном `role="alert"`, кнопки остаются доступными для повторной попытки, а UI не показывает ложное подтверждение принятия или отклонения.
+- `[x]` Добавлены regressions для обеих поверхностей клиентского quote-flow: **2 файла / 2 теста PASS**; полный frontend suite — **134 файла / 446 тестов PASS**.
+- `[x]` Добавлена отдельная i18n-подпись `clientServiceRequestsQuoteError` для RU и EN.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный quote expiry/replay с несколькими клиентами и staging concurrency остаются внешними gates `ADD-C06`, `ADD-C08`, §2.3.
+
+### Результат сто седьмой исполняемой порции (30.08.2026)
+
+- `[x]` Решение клиента по переносу визита в кабинете заявок теперь выполняется через отдельный async-handler с `try/catch`; rejected `unwrap()` не создаёт unhandled promise rejection.
+- `[x]` Ошибка переноса отображается в доступном `role="alert"`, повторная попытка остаётся доступной, а устаревшая ошибка quote очищается при новом действии (и наоборот).
+- `[x]` Расширена component regression клиентского кабинета: quote accept/decline и reschedule accept покрыты отказами API без unhandled rejection; полный frontend suite — **134 файла / 446 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный multi-actor reschedule/cancellation matrix, conflict replay и staging booking evidence остаются внешним gate `ADD-C06`, §2.3.
+
+### Результат сто восьмой исполняемой порции (30.08.2026)
+
+- `[x]` Создание гарантийного обращения после визита теперь перехватывает отказ API; прямой `unwrap()` больше не создаёт unhandled promise rejection.
+- `[x]` Введён retryable `role="alert"` с API-сообщением, введённое описание обращения сохраняется до успешного создания, а ошибка очищается при редактировании.
+- `[x]` Добавлена component regression для отклонённого guarantee claim: **1 файл / 1 тест PASS**; полный frontend suite — **135 файлов / 447 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальная обработка гарантийных обращений, SLA поддержки и production moderation evidence остаются внешними gates `ADD-C11`, §2.2.
+
+### Результат сто девятой исполняемой порции (30.08.2026)
+
+- `[x]` Owner-предложение в панели broadcast-запросов теперь перехватывает отказ создания offer через `try/catch`; unhandled promise rejection исключён.
+- `[x]` При отказе API введён доступный `role="alert"`, сумма предложения сохраняется для повторной отправки, а ошибка очищается при редактировании или выборе другого запроса.
+- `[x]` Добавлена component regression для rejected broadcast offer: **1 файл / 1 тест PASS**; полный frontend suite — **136 файлов / 448 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный multi-provider broadcast replay, конкурентная отправка предложений и staging confirmation остаются внешними gates `ADD-C02`, `ADD-C06`, §2.3.
+
+### Результат сто десятой исполняемой порции (30.08.2026)
+
+- `[x]` Mounted-панель автопарков владельца теперь перехватывает отказ создания fleet через `try/catch`; rejected `unwrap()` не создаёт unhandled promise rejection.
+- `[x]` При отказе API введён доступный `role="alert"` с деталями ошибки, название автопарка сохраняется для повторной отправки, а ошибка очищается при редактировании.
+- `[x]` Добавлена component regression для rejected fleet creation: **1 файл / 1 тест PASS**; полный frontend suite — **137 файлов / 449 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Автопарки и fleet/B2B остаются post-MVP scope (`ADD-N10`); real multi-owner replay и staging authorization для этого экрана остаются внешними gates `ADD-C01`, `ADD-C02`, §2.3.
+
+### Результат сто одиннадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Создание support/provider/admin чатов в рабочем пространстве теперь выполняется через обработанный async-handler; отказ `createChat` не оставляет unhandled promise rejection.
+- `[x]` Для ошибок создания чата добавлен доступный retryable `role="alert"`; кнопка повторной попытки сбрасывает защиту автостарта provider-чата, а выбранный/введённый контекст не теряется.
+- `[x]` Добавлена component regression отклонённого создания support-чата без unhandled rejection: **1 файл / 1 новый тест PASS**; полный frontend suite — **137 файлов / 450 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Multi-process Redis/WebSocket reconnect, signed media и staging chat moderation остаются внешними gates `ADD-C03`, `ADD-C04`, §2.4.
+
+### Результат сто двенадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Решение клиента по offer в `ServiceRequestChat` теперь выполняется отдельным async-handler с `try/catch`; rejected `decideOffer().unwrap()` больше не создаёт unhandled promise rejection.
+- `[x]` При конфликте или закрытом предложении сообщение API показывается через доступный `role="alert"`, кнопки остаются retryable, а ложное состояние успеха не показывается.
+- `[x]` Добавлена i18n-подпись `chatOfferDecisionError` для RU и EN и component regression rejected offer decision: **1 файл / 1 тест PASS**.
+- `[x]` Полный frontend suite после порции — **138 файлов / 451 тест PASS**; TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный multi-actor offer replay, Redis/WebSocket delivery и staging moderation остаются внешними gates `ADD-C06`, `ADD-C08`, §2.4.
+
+### Результат сто тринадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Отмена клиентской записи теперь сохраняет причину и открытый диалог при отказе API; `cancelMyBooking().unwrap()` остаётся обработанным, а retry не требует повторного открытия формы.
+- `[x]` Ошибка отмены дублируется доступным inline `role="alert"`; поле причины получает `aria-invalid`/`aria-describedby`, ошибка очищается при редактировании и повторном открытии диалога.
+- `[x]` Добавлена component regression rejected cancellation: **1 файл / 1 тест PASS**; полный frontend suite после порции — **139 файлов / 452 теста PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный multi-actor cancel/reschedule matrix, idempotency replay и staging booking evidence остаются внешними gates `ADD-C06`, `ADD-C17`, §2.3.
+
+### Результат сто четырнадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Диалог выпуска скидки в кабинете владельца теперь перехватывает отказ `issuePromo`; rejected `unwrap()` больше не создаёт unhandled promise rejection и не закрывает форму.
+- `[x]` Ошибка выпуска промокода и недоступность clipboard отображаются через доступный `role="alert"`; значения скидки и срока сохраняются для повторной попытки, а ошибка очищается при редактировании или повторном открытии.
+- `[x]` Кнопка копирования промокода теперь проверяет наличие Clipboard API и обрабатывает отклонённый `writeText`, не показывая ложное состояние «скопировано».
+- `[x]` Добавлена component regression для rejected promo issue: **1 файл / 1 тест PASS**; полный frontend suite после порции — **140 файлов / 453 теста PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Промокоды остаются post-MVP scope (`ADD-N07`); production abuse limits, audit evidence и payment-free rollout проверяются отдельными staging gates.
+
+### Результат сто пятнадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Runtime-интерфейс очищен от пользовательских подписей про оплату: landing hero, results trust strip, профиль сервиса, summary заявки, booking panel и карточка визита больше не рекламируют и не описывают платёжный flow.
+- `[x]` Из активной модели удобств удалено `card_payment`; mock-профили и mock API больше не создают эту capability, а иконка и default-набор синхронизированы.
+- `[x]` Owner-маркетинг больше не обещает «бесплатный старт» или «скрытые платежи»; формулировки заменены на нейтральный быстрый старт и настройку профиля.
+- `[x]` Удалены ставшие неиспользуемыми runtime-ключи payment/direct-payment из RU и EN каталога переводов; исторические и юридические документы сохранены неизменными.
+- `[x]` TypeScript и targeted frontend regression suite: **11 файлов / 26 тестов PASS**; runtime-поиск подтверждает отсутствие активных payment/card_payment/direct-payment UI-ссылок.
+- `[~]` Юридическая редактура текстов, где payment упоминается как граница ответственности платформы, остаётся отдельным согласуемым product/legal gate; платёжные системы в продукт не добавляются.
+
+### Результат сто шестнадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Ошибка onboarding-запроса владельца теперь объявляется через доступный `role="alert"`, одинаково для проверки сервиса и отправки изменения профиля.
+- `[x]` Ошибка не блокирует повторную попытку и не меняет существующий mutation-flow; добавлена component regression для rejected onboarding request: **1 файл / 1 новый тест PASS**.
+- `[x]` Полный frontend suite после порции — **140 файлов / 454 теста PASS**; TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Staging authorization и реальная moderation evidence для onboarding остаются внешними gates `ADD-C01`, `ADD-C11`, §2.2.
+
+### Результат сто семнадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Post-MVP resource-панель больше не оставляет unhandled rejection при добавлении или переключении специалиста/поста/подъёмника/оборудования.
+- `[x]` Ошибка мутации показывается через `role="alert"`; введённые название и вместимость ресурса сохраняются для повторной попытки и очищаются только после успешного добавления.
+- `[x]` Добавлены regressions для rejected create и toggle resource: **1 файл / 2 теста PASS**.
+- `[x]` Полный frontend suite после порции — **141 файл / 456 тестов PASS**; TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Панель ресурсов по-прежнему скрыта из compact MVP и остаётся post-MVP `ADD-N02`; исправление не включает подъёмники или оборудование в пользовательский scope.
+
+### Результат сто восемнадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Expert Question и Multi-provider request cards сохраняют введённый текст при отклонении API и используют сообщение сервера вместо безличного fallback, когда оно доступно.
+- `[x]` Ошибка multi-provider запроса теперь объявляется через доступный `role="alert"`; оба действия остаются retryable и не создают unhandled promise rejection.
+- `[x]` Добавлена component regression для обоих клиентских сценариев: **1 файл / 2 теста PASS**.
+- `[x]` Полный frontend suite после порции — **142 файла / 458 тестов PASS**; TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальная broadcast idempotency, multi-provider concurrency и production SLA поддержки остаются внешними gates `ADD-C06`, `ADD-C08`, §2.3.
+
+### Результат сто девятнадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Ошибки переноса визита, отметки no-show и завершения визита в кабинете владельца теперь объявляются через доступный `role="alert"`, а не только визуальным красным текстом.
+- `[x]` Existing retryable mutation-flow не изменён: введённая дата переноса и остальные данные формы сохраняются после отказа API; unhandled promise rejection не возникает.
+- `[x]` Regression расширена проверкой доступных alerts для owner request actions; полный frontend suite — **142 файла / 458 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Multi-actor reschedule/no-show/completion matrix, idempotency replay и staging authorization остаются внешними gates `ADD-C06`, `ADD-C17`, `ADD-C18`, §2.3.
+
+### Результат сто двадцатой исполняемой порции (30.08.2026)
+
+- `[x]` Ошибки загрузки каталога услуг владельца теперь объявляются через доступный `role="alert"` и сохраняют кнопку повторной попытки.
+- `[x]` Ошибка сохранения цены/режима записи в редакторе предложения и ошибки валидации формы создания услуги теперь доступны скринридерам; значения редактора сохраняются до успешного сохранения.
+- `[x]` Ошибка редактирования клиентского отзыва теперь объявляется через `role="alert"`, не закрывает форму и остаётся retryable.
+- `[x]` Добавлены component regressions для сохранения цены при отклонённом API и доступного сообщения ошибки отзыва: **2 файла / 2 теста PASS**; полный frontend suite — **144 файла / 460 тестов PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Полные authorization/integration проверки owner service mutations и реальный moderation evidence для отзывов остаются внешними gates `ADD-C01`, `ADD-C11`, §2.1–§2.2.
+
+### Результат сто двадцать первой исполняемой порции (30.08.2026)
+
+- `[x]` Ошибки валидации клиентской и owner-записи теперь объявляются через доступные `role="alert"` в общих booking-полях; ошибка комментария клиента также связана с полем и объявляется скринридеру.
+- `[x]` Ошибка создания owner-записи в заголовке формы и ошибки загрузки списка клиентов владельца теперь доступны как alerts с сохранённой retry-кнопкой.
+- `[x]` Добавлена component regression для двух общих booking field wrappers; полный frontend suite — **145 файлов / 461 тест PASS**.
+- `[x]` TypeScript, ESLint `--max-warnings=0`, Next production build и `git diff --check` проходят.
+- `[~]` Реальный booking retry/idempotency, cross-branch authorization и multi-actor transition matrix остаются внешними gates `ADD-C01`, `ADD-C06`, `ADD-C17`, §2.3.
+
+### Результат сто двадцать второй исполняемой порции (30.08.2026)
+
+- `[x]` Полный локальный MVP quality gate повторно пройден на commit `ae62e3296d91`: frontend lint, frontend tests, Next production build, backend build, API/route/legacy/security/loading/state/client/design/interaction contracts и responsive Chromium matrix — PASS.
+- `[x]` Runtime gate запускался с разрешённым loopback-портом; это устраняет только ограничение sandbox `listen EPERM` и не меняет код, origin policy или production preflight.
+- `[x]` Результат привязан к `MVP-03` и ручному checklist `MVP_MANUAL_ACCEPTANCE_CHECKLIST.md`; evidence обновлено без изменения обязательного scope и процентов.
+- `[~]` `MVP-01` clean PostgreSQL reset/seed, `MVP-02` real-API fault matrix и `MVP-04` real owner/admin/super-admin replay по-прежнему требуют доступного Docker/PostgreSQL runtime; ручные `MVP-05/MVP-06` gates не закрываются автоматическим прогоном.
+
+### Результат сто двадцать третьей исполняемой порции (30.08.2026)
+
+- `[x]` Mock Chromium workflow для `MVP-04` повторно прошёл **4/4**: owner onboarding/evidence/team/communication, compact branch calendar без resource editor, admin moderation decision с обязательной причиной и super-admin country → city → zone editors.
+- `[x]` Прогон выполнен командой `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "owner onboarding|owner requests|admin moderation|super-admin market" --reporter=line` с разрешённым loopback-портом; код и production authorization policy не ослаблялись.
+- `[x]` Результат добавлен в `PILOT_SCOPE_FREEZE.md` как дополнительное mock-доказательство; обязательный scope и текущие проценты не изменены.
+- `[~]` Реальный local API replay onboarding/change-request, invitation accept/revoke, moderation mutation и branch denial остаётся внешним gate `MVP-01/MVP-04` до восстановления Docker/PostgreSQL.
+
+### Результат сто двадцать четвёртой исполняемой порции (30.08.2026)
+
+- `[x]` `npm run check:state-matrix` повторно прошёл **6/6** source invariants: recoverable client states, real-state coverage contract, reviews/attachments, communication modes, retry/idempotency и mobile shell.
+- `[x]` Объединённый mock Chromium state smoke прошёл **7/7**: error, stale, offline, permission-denied и suspended client states, а также offline/timeout retry без потери idempotency key.
+- `[x]` Прогон выполнен с разрешённым loopback-портом; production rate limits, CSRF и retry policy не изменялись.
+- `[x]` Evidence добавлено в `PILOT_SCOPE_FREEZE.md`; новые обязательные пункты и изменение процентов не добавлялись.
+- `[~]` Полная `MVP-02` real-API matrix остаётся внешним gate: нужен clean PostgreSQL reset/seed и реальный replay `MVP-01`.
+
+### Результат сто двадцать пятой исполняемой порции (30.08.2026)
+
+- `[x]` `npm run check:client-path` повторно прошёл **7/7** source checks: vehicle identity snapshot, immutable booking snapshot, bonus lifecycle, quote lifecycle, review resolution, reviews shell и browser regression coverage.
+- `[x]` Mock Chromium client-path smoke прошёл **5/5**: garage/attachment viewer, idempotent bonus redemption, refund/expiry history, accepted quote with preserved booking snapshot и expired quote без action.
+- `[x]` Evidence обновлено в `PILOT_SCOPE_FREEZE.md`; данные, бонусные операции и quote UI проверены без изменения production payment scope.
+- `[~]` Real API vehicleId/snapshot persistence, удаление автомобиля/сервиса, edit review/photo и staging bonus lifecycle остаются внешними gates `MVP-02`, §1.2 и §2.2.
+
+### Результат сто двадцать шестой исполняемой порции (30.08.2026)
+
+- `[x]` `npm run check:loading-shell` повторно прошёл **15/15** source controls для public, owner, admin и auth layout: shape-matched form, disabled controls, map surface и light/dark skeleton tokens.
+- `[x]` Loading-shell node regression прошёл **2/2**, а component suite для loading skeletons, boot shell и state card — **24/24**.
+- `[x]` Проверено, что загрузка сохраняет основной контейнер и форму, оставляет поля видимыми/disabled и не подменяет карту вложенными skeletons; белые skeleton surfaces в dark theme не допускаются контрактом.
+- `[x]` Evidence добавлено в `PILOT_SCOPE_FREEZE.md`; обязательный scope и проценты не изменены.
+- `[~]` Browser transition с искусственной задержкой и ручная visual/device verification остаются external gates `MVP-05/MVP-06`; исходная среда должна разрешать loopback browser session.
+
+### Результат сто двадцать седьмой исполняемой порции (30.08.2026)
+
+- `[x]` `npm run check:interaction-contract` прошёл **16 invariants**, `npm run check:design-tokens` — **15 semantic roles / 26 foundation tokens** с light/dark overrides.
+- `[x]` Mock Chromium keyboard/focus/Escape smoke прошёл **3/3**: protected workspace tab order, city listbox arrows/Home/End/Escape и gallery Escape с возвратом focus на trigger.
+- `[x]` Проверены rounded focus-visible surfaces, отсутствие native square outline, disabled controls и стабильная тема; production authorization и rate limits не менялись.
+- `[x]` Evidence обновлено в `PILOT_SCOPE_FREEZE.md`, обязательный scope и проценты не изменены.
+- `[~]` Ручная visual/keyboard приёмка владельца и VoiceOver/TalkBack на реальных устройствах остаются внешними gates `MVP-05/MVP-06`.
+
+### Результат сто двадцать восьмой исполняемой порции (30.08.2026)
+
+- `[x]` Legacy cleanup повторно прошёл: manifest/replacement coverage **5/5**, migration inventory **124/124**, historical migrations **67** с checksum и AutoCare replacement migrations **57**.
+- `[x]` `npm run check:no-bookly-runtime`, `npm run check:no-legacy-provider` и file-level classification подтвердили отсутствие активного Bookly/payment runtime и классификацию всех **75** legacy/compatibility файлов.
+- `[x]` Безопасных файлов для удаления без потери replacement/coverage не найдено; immutable migrations, archives, PWA/test tooling и compatibility entities сохранены по explicit disposition.
+- `[x]` Evidence добавлено в `PILOT_SCOPE_FREEZE.md`; обязательный scope, платёжное исключение и проценты не изменены.
+- `[~]` Удаление historical migrations/archives требует отдельного подтверждения миграций и не выполняется автоматически.
+
+### Результат сто двадцать девятой исполняемой порции (30.08.2026)
+
+- `[x]` Полный mock release audit `e2e/autocare-release-audit.spec.ts` прошёл **18/18** за 3 минуты с разрешённым loopback-портом.
+- `[x]` Aggregate smoke включает auth boundary, responsive discovery, keyboard/focus/Escape, 20 locales, RU/EN/ES/RO mobile, owner services/privacy/onboarding, compact calendar, admin moderation reason и super-admin hierarchy.
+- `[x]` Существующие production payment exclusions и authorization policy не изменялись; результат добавлен в `PILOT_SCOPE_FREEZE.md` как mock evidence.
+- `[~]` Полный release audit не закрывает внешний real API replay, manual visual acceptance и VoiceOver/TalkBack gates `MVP-01/MVP-02/MVP-04/MVP-05/MVP-06`.
+
+### Результат сто тридцатой исполняемой порции (30.08.2026)
+
+- `[x]` Полный `npm run check:local-mvp` повторно прошёл: frontend lint/tests, Next production build, backend build, API/route/legacy/security/loading/state/client/design/interaction contracts и responsive Chromium matrix.
+- `[x]` Повторная TCP-проверка подтверждает отсутствие локального real runtime: Docker daemon unavailable, PostgreSQL `5433`, Redis `6379` и API `4000` недоступны.
+- `[x]` Зафиксировано, что это внешний блокер инфраструктуры, а не причина ослаблять production preflight или считать `MVP-01/MVP-02/MVP-04` закрытыми.
+- `[x]` Evidence обновлено в `PILOT_SCOPE_FREEZE.md`; обязательный scope, проценты и payment exclusions не изменены.
+- `[~]` Для продолжения real-API части нужен запуск Docker Desktop и штатного `npm run server:db:up`; после этого выполняется `npm run test:e2e:real` с clean demo seed.
+
+### Результат сто тридцать первой исполняемой порции (31.08.2026)
+
+- `[x]` Закрыт `MVP-01`: локальные PostgreSQL и Redis подняты; `demo:reset` → `demo:seed` → `autocare:seed` выполняются без ручной коррекции, а health/catalog/read smoke входит в real browser suite.
+- `[x]` Закрыт `MVP-02`: базовый `npm run test:e2e:real` прошёл **22/22** на реальном API; добавленный owner/admin recoverable-state сценарий прошёл отдельно **1/1**. Проверены public/client/owner/admin/super-admin маршруты, partial/stale/error/suspended/permission-denied states, expired session, offline/timeout retry и idempotent request в PostgreSQL.
+- `[x]` Исправлены три реальные contract/runtime ошибки, обнаруженные во время replay: timezone demo-филиалов задаётся из рынка, строковые query-флаги `false` не превращаются в `true`, а PostgreSQL numeric trust score нормализуется в number до публичного API. Для каждого случая добавлен regression.
+- `[x]` Стабилизирован real e2e runner: он передаёт точечные Playwright аргументы, выдерживает корректный `429 Retry-After` без ослабления login rate limit и даёт partial-state загрузке достаточный browser timeout.
+- `[x]` Закрыт `MVP-04`: расширенный `npm --prefix server run test:integration` прошёл **14 файлов / 60 тестов** на PostgreSQL/Redis. В набор включены branch denial, owner change request → admin decision с обязательной причиной, invitation accept/revoke, moderation evidence и country → city → zone.
+- `[x]` В `provider-branch-access.integration.test.ts` добавлен реальный transaction replay изменения профиля владельцем и одобрения администратором; проверяются статус, причина, actor и фактическое сохранение профиля.
+- `[x]` Финальный `npm run check:local-mvp` PASS: lint, frontend tests, Next production build, backend build, API/route/legacy/security/loading/state/client/design/interaction contracts и responsive Chromium matrix.
+- `[x]` После добавления owner/admin recoverable-state проверки полный gate повторён ещё раз: **21/21 checks PASS**, frontend regression **145 файлов / 461 тест**, `npm run lint -- --max-warnings=0`, Next build, backend build и `git diff --check` зелёные.
+- `[x]` После расширения real suite отдельные сценарии timeout-retry и owner/admin state повторно проходят; один aggregate dev-run не использован как evidence из-за зависшего Next dev worker после 22 успешных тестов. Это ограничение тестового процесса, не production runtime; preview mode также исключён из evidence, потому что не поднимает API proxy этого проекта.
+- `[x]` `MVP_MANUAL_ACCEPTANCE_CHECKLIST.md` синхронизирован с текущим evidence: `MVP-01`, `MVP-02` и `MVP-04` отмечены закрытыми автоматическими прогонами; ручные `MVP-05/MVP-06` оставлены внешними gates.
+- `[~]` Локальный MVP теперь **96%**. Единственные оставшиеся обязательные пункты — `MVP-05` (ручная visual/keyboard приёмка владельца) и `MVP-06` (VoiceOver/TalkBack на реальных телефонах); автоматизация не может честно закрыть их вместо реальных устройств.

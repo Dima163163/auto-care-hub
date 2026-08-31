@@ -57,7 +57,7 @@ describe('AutoCare broadcast ownership', () => {
             providerId: 'provider-1',
             locationId: 'location-1',
             policyVersion: 'autocare-trust-v1',
-            score: 82,
+            score: '82.5',
             badge: 'quality',
             computedAt: new Date('2026-08-20T12:00:00.000Z'),
             validUntil: new Date('2026-08-21T12:00:00.000Z'),
@@ -84,7 +84,7 @@ describe('AutoCare broadcast ownership', () => {
 
         const result = await getAutoCareProviderTrust('provider-1')
 
-        expect(result.score).toBe(82)
+        expect(result.score).toBe(82.5)
         expect(result.snapshots).toHaveLength(1)
         expect(result.factors.confidence).toBeGreaterThan(0)
         expect(mocks.getRepository).toHaveBeenCalledTimes(3)

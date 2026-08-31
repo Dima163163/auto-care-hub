@@ -473,7 +473,7 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         isMultibrand: provider.isMultibrand,
         coverImageUrl: provider.image ?? null,
         galleryImageUrls: provider.image ? [provider.image] : [],
-        amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee', 'card_payment'],
+        amenityIds: ['waiting_room', 'customer_parking', 'wifi', 'online_booking', 'coffee'],
         location: {
             id: `location-${provider.id}`,
             marketId: autoCareMarket.id,

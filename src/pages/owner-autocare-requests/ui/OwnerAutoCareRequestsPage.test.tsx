@@ -90,6 +90,7 @@ describe('OwnerAutoCareRequestsPage', () => {
             expect(unhandled).toEqual([])
             expect(screen.getByDisplayValue('2500')).toBeInTheDocument()
             expect(reschedule).toHaveValue('2026-08-31T12:00')
+            expect(screen.getAllByRole('alert').length).toBeGreaterThanOrEqual(4)
         } finally {
             process.off('unhandledRejection', onUnhandled)
         }

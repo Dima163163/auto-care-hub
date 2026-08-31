@@ -15,8 +15,12 @@ async function signIn(page: Page, email: string) {
     )
     await loginButton.click()
 
-    const response = await loginResponse
-    if (response.status() === 429) {
+    let response = await loginResponse
+    // Each test intentionally creates an isolated session. The backend keeps
+    // the production IP limiter enabled, so a long serial smoke run may share
+    // the loopback bucket. Wait for the advertised window rather than turning
+    // the limiter off or accepting a failed sign-in.
+    while (response.status() === 429) {
         // The real suite intentionally exercises several isolated sessions.
         // They share a loopback IP, so a long run can legitimately hit the
         // production login limiter. Honour Retry-After instead of weakening
@@ -33,9 +37,10 @@ async function signIn(page: Page, email: string) {
             && retry.request().method() === 'POST',
         )
         await loginButton.click()
-        await expect((await retryResponse).ok()).toBe(true)
+        response = await retryResponse
     }
 
+    await expect(response.ok(), await response.text()).toBe(true)
     await expect(page).not.toHaveURL(/\/login/)
 }
 
@@ -151,6 +156,11 @@ async function findRequestCapableProviderId(page: Page) {
 }
 
 test.describe('AutoCare real API smoke', () => {
+    // A valid rate-limit response can require waiting for a one-minute window.
+    // Keeping the full real suite serial makes its database evidence
+    // deterministic, so give every case enough time to honour that response.
+    test.describe.configure({ timeout: 120_000 })
+
     test('health, market catalog and discovery are available without MSW', async ({ page, request }) => {
         const liveness = await request.get(`${apiBaseUrl}/health/live`)
         expect(liveness.ok()).toBe(true)
@@ -228,9 +238,9 @@ test.describe('AutoCare real API smoke', () => {
     test('real discovery keeps available providers visible for a partial response', async ({ page }) => {
         await injectPartialDiscovery(page)
         await page.goto('/services?service=oil-change')
-        await expect(page.getByRole('main')).toBeVisible()
-        await expect(page.locator('[data-state="partial"]')).toBeVisible()
-        await expect(page.locator('#search-results article').first()).toBeVisible()
+        await expect(page.getByRole('main')).toBeVisible({ timeout: 15_000 })
+        await expect(page.locator('[data-state="partial"]')).toBeVisible({ timeout: 15_000 })
+        await expect(page.locator('#search-results article').first()).toBeVisible({ timeout: 15_000 })
     })
 
     test('real discovery keeps cached providers visible when refresh becomes stale', async ({ page }) => {
@@ -510,6 +520,36 @@ test.describe('AutoCare real API smoke', () => {
             await expect(page.getByRole('main')).toBeVisible()
             await expect(page.getByRole('alert')).toBeVisible()
         }
+    })
+
+    test('real owner and admin shells preserve a recoverable error state', async ({ page }) => {
+        const ownerRequestsPattern = /\/api\/owner\/service-requests(?:\?|$)/
+        await signIn(page, 'owner.demo@autocarehub.test')
+        await page.route(ownerRequestsPattern, async (route) => {
+            await route.fulfill({
+                status: 503,
+                contentType: 'application/json',
+                body: JSON.stringify({ code: 'STALE_DATA', message: 'Injected owner state' }),
+            })
+        })
+        await page.goto('/owner/autocare-requests')
+        await expect(page.getByRole('main')).toBeVisible()
+        await expect(page.getByRole('alert')).toBeVisible()
+        await page.unroute(ownerRequestsPattern)
+
+        await page.context().clearCookies()
+        const adminProvidersPattern = /\/api\/admin\/autocare-providers(?:\?|$)/
+        await signIn(page, 'admin.demo@autocarehub.test')
+        await page.route(adminProvidersPattern, async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Injected admin state' }),
+            })
+        })
+        await page.goto('/admin/dashboard')
+        await expect(page.getByRole('main')).toBeVisible()
+        await expect(page.getByRole('alert')).toBeVisible()
     })
 
     test('real API opens owner dynamic provider and review routes', async ({ page }) => {

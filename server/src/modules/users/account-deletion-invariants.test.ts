@@ -4,6 +4,7 @@ import {
     AUTOCARE_DELETION_INVARIANTS,
     checkAutoCareDeletionInvariants,
 } from './account-deletion-invariants.js'
+import { ANONYMIZED_REVIEW_TEXT } from './account-anonymization-policy.js'
 
 const chatScopedInvariantNames = [
     'account-related attachment metadata is removed',
@@ -67,6 +68,25 @@ describe('AutoCare account deletion chat scope', () => {
         for (const invariant of invariants) {
             expect(invariant.sql).toContain('= $1')
             expect(invariant.sql).not.toContain('$2')
+        }
+    })
+
+    it('binds anonymized thread checks to the redaction marker parameter', async () => {
+        const calls: Array<{ sql: string; parameters: unknown[] }> = []
+        const executor = {
+            query: async (sql: string, parameters: unknown[] = []) => {
+                calls.push({ sql, parameters })
+                return [{ count: 0 }]
+            },
+        } as Parameters<typeof checkAutoCareDeletionInvariants>[0]
+
+        await checkAutoCareDeletionInvariants(executor, 'user-42')
+
+        const anonymizedChecks = AUTOCARE_DELETION_INVARIANTS.filter(({ parameterMode }) => parameterMode === 'anonymized')
+        expect(anonymizedChecks.length).toBeGreaterThan(0)
+        for (const invariant of anonymizedChecks) {
+            expect(invariant.sql).toContain('thread."subject" = $1')
+            expect(calls.find(({ sql }) => sql === invariant.sql)?.parameters).toEqual([ANONYMIZED_REVIEW_TEXT])
         }
     })
 })

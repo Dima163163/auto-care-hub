@@ -12,6 +12,7 @@ describe('security event privacy migration', () => {
         expect(query.mock.calls[0]?.[0]).toContain("app.security_event_privacy_cleanup")
         expect(query.mock.calls[0]?.[0]).toContain("NEW.metadata ? 'privacyRedactedAt'")
         expect(query.mock.calls[0]?.[0]).toContain("NEW.ip_address IS NULL")
+        expect(query.mock.calls[0]?.[0]).toContain('NEW.user_id IS NULL OR NEW.user_id IS NOT DISTINCT FROM OLD.user_id')
     })
 
     it('restores append-only security events on rollback', async () => {

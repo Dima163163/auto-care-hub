@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { LifeBuoy, MessageCircle, Paperclip, Plus, Send, Wrench } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 
@@ -18,6 +18,7 @@ import { validateChatAttachment } from '@/entities/automotive-service/lib/chat-a
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { API_BASE_URL } from '@/shared/config/api'
+import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -33,6 +34,8 @@ export function ChatsPage({ workspace }: ChatsPageProps) {
     const { data: threads = [], isLoading } = useGetAutoCareChatsQuery()
     const [createChat, createState] = useCreateAutoCareChatMutation()
     const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('chat'))
+    const [chatActionError, setChatActionError] = useState<unknown>(null)
+    const providerCreationAttemptedRef = useRef<string | null>(null)
     const requestId = searchParams.get('request')
     const providerId = searchParams.get('providerId')
     const providerThread = providerId ? threads.find((thread) => thread.providerId === providerId && thread.type === 'provider_inquiry') : undefined
@@ -52,20 +55,39 @@ export function ChatsPage({ workspace }: ChatsPageProps) {
     const activeThread = threads.find((thread) => thread.id === activeId) ?? null
 
     useEffect(() => {
-        if (!providerId || role !== 'client' || createState.isLoading) return
+        if (!providerId || role !== 'client' || createState.isLoading || providerCreationAttemptedRef.current === providerId) return
         const existing = threads.find((thread) => thread.providerId === providerId && thread.type === 'provider_inquiry')
         if (existing) {
             setSearchParams({ chat: existing.id })
             return
         }
-        void createChat({ type: 'provider_inquiry', providerId, subject: t('autocare.chatWorkspaceGeneral') }).unwrap().then((thread) => {
-            setSearchParams({ chat: thread.id })
-        })
+        providerCreationAttemptedRef.current = providerId
+        const startProviderChat = async () => {
+            try {
+                setChatActionError(null)
+                const thread = await createChat({ type: 'provider_inquiry', providerId, subject: t('autocare.chatWorkspaceGeneral') }).unwrap()
+                setSearchParams({ chat: thread.id })
+            } catch (error) {
+                setChatActionError(error)
+            }
+        }
+        void startProviderChat()
     }, [createChat, createState.isLoading, providerId, role, setSearchParams, t, threads])
 
     const selectThread = (thread: AutoCareChatThread) => {
+        setChatActionError(null)
         setSelectedId(thread.id)
         setSearchParams({ chat: thread.id })
+    }
+
+    const createStandaloneChat = async (type: 'support' | 'admin_escalation') => {
+        setChatActionError(null)
+        try {
+            const thread = await createChat({ type, subject: type === 'support' ? t('autocare.chatWorkspaceSupportSubject') : t('autocare.chatWorkspaceEscalation') }).unwrap()
+            selectThread(thread)
+        } catch (error) {
+            setChatActionError(error)
+        }
     }
 
     const openSupport = () => {
@@ -73,14 +95,19 @@ export function ChatsPage({ workspace }: ChatsPageProps) {
             selectThread(supportThread)
             return
         }
-        void createChat({ type: 'support', subject: t('autocare.chatWorkspaceSupportSubject') }).unwrap().then(selectThread)
+        void createStandaloneChat('support')
+    }
+
+    const retryChatAction = () => {
+        setChatActionError(null)
+        providerCreationAttemptedRef.current = null
     }
 
     if (isLoading) {
         return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><div className="mx-auto max-w-7xl"><PageHeader eyebrow={t('autocare.chatWorkspaceEyebrow')} title={t('autocare.chatWorkspaceTitle')} description={t('autocare.chatWorkspaceDescription')} /><div className="mt-6"><SplitListSkeleton label={t('common.loading')} /></div></div></main>
     }
 
-    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><div className="mx-auto max-w-7xl"><PageHeader eyebrow={t('autocare.chatWorkspaceEyebrow')} title={t('autocare.chatWorkspaceTitle')} description={t('autocare.chatWorkspaceDescription')} /><div className="mt-6 grid min-h-[620px] gap-4 lg:grid-cols-[minmax(260px,0.34fr)_minmax(0,1fr)]"><aside className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><div className="flex items-center justify-between border-b border-border px-4 py-4"><h2 className="text-sm font-black text-foreground">{t('autocare.chatWorkspaceTitle')}</h2><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-black text-primary">{threads.length}</span></div><div className="max-h-[600px] overflow-y-auto p-2">{canOpenSupport && <SupportThreadItem active={supportThread?.id === activeId} isLoading={createState.isLoading} unreadCount={supportThread?.unreadCount ?? 0} onSelect={openSupport} t={t} />}{orderedThreads.length === 0 && !supportThread && !canOpenSupport ? <p className="p-4 text-sm text-muted-foreground">{t('autocare.chatWorkspaceEmpty')}</p> : orderedThreads.map((thread) => <ThreadItem key={thread.id} thread={thread} active={thread.id === activeId} onSelect={() => selectThread(thread)} t={t} pinned={thread.type === 'support'} />)}</div></aside><section className="min-w-0">{activeThread?.requestId ? <ServiceRequestChat requestId={activeThread.requestId} ownerMode={role === 'owner'} /> : activeThread ? <GenericChatConversation key={activeThread.id} chatId={activeThread.id} /> : <div className="flex min-h-[620px] items-center justify-center rounded-[var(--radius-panel)] border border-dashed border-border bg-card p-8 text-center"><div><MessageCircle className="mx-auto size-9 text-primary" /><p className="mt-4 text-sm font-black text-foreground">{t('autocare.chatWorkspaceSelect')}</p><QuickChatAction role={role} onCreate={(type) => void createChat({ type, subject: type === 'support' ? t('autocare.chatWorkspaceSupportSubject') : t('autocare.chatWorkspaceEscalation') }).unwrap().then(selectThread)} t={t} /></div></div>}</section></div></div></main>
+    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><div className="mx-auto max-w-7xl"><PageHeader eyebrow={t('autocare.chatWorkspaceEyebrow')} title={t('autocare.chatWorkspaceTitle')} description={t('autocare.chatWorkspaceDescription')} />{chatActionError ? <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive"><span>{getApiErrorMessage(chatActionError, t('common.tryAgainLater'))}</span><button type="button" onClick={retryChatAction} className="rounded-[var(--radius-control)] border border-destructive/30 px-3 py-1.5 text-xs font-black text-destructive hover:bg-destructive/10">{t('common.retry')}</button></div> : null}<div className="mt-6 grid min-h-[620px] gap-4 lg:grid-cols-[minmax(260px,0.34fr)_minmax(0,1fr)]"><aside className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><div className="flex items-center justify-between border-b border-border px-4 py-4"><h2 className="text-sm font-black text-foreground">{t('autocare.chatWorkspaceTitle')}</h2><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-black text-primary">{threads.length}</span></div><div className="max-h-[600px] overflow-y-auto p-2">{canOpenSupport && <SupportThreadItem active={supportThread?.id === activeId} isLoading={createState.isLoading} unreadCount={supportThread?.unreadCount ?? 0} onSelect={openSupport} t={t} />}{orderedThreads.length === 0 && !supportThread && !canOpenSupport ? <p className="p-4 text-sm text-muted-foreground">{t('autocare.chatWorkspaceEmpty')}</p> : orderedThreads.map((thread) => <ThreadItem key={thread.id} thread={thread} active={thread.id === activeId} onSelect={() => selectThread(thread)} t={t} pinned={thread.type === 'support'} />)}</div></aside><section className="min-w-0">{activeThread?.requestId ? <ServiceRequestChat requestId={activeThread.requestId} ownerMode={role === 'owner'} /> : activeThread ? <GenericChatConversation key={activeThread.id} chatId={activeThread.id} /> : <div className="flex min-h-[620px] items-center justify-center rounded-[var(--radius-panel)] border border-dashed border-border bg-card p-8 text-center"><div><MessageCircle className="mx-auto size-9 text-primary" /><p className="mt-4 text-sm font-black text-foreground">{t('autocare.chatWorkspaceSelect')}</p><QuickChatAction role={role} onCreate={(type) => void createStandaloneChat(type)} t={t} /></div></div>}</section></div></div></main>
 }
 
 function SupportThreadItem({ active, isLoading, unreadCount, onSelect, t }: { active: boolean; isLoading: boolean; unreadCount: number; onSelect: () => void; t: (key: TranslationKey, params?: Record<string, string | number>) => string }) {
