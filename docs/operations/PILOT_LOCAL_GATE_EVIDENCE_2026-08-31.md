@@ -1753,3 +1753,24 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` `RELEASE_EVIDENCE_FILE` и `PUBLISHED_MIGRATION_MANIFEST` намеренно не
   создавались: immutable release SHA, applied inventory и external approvals
   по-прежнему обязательны для promotion.
+
+## Порция 313 (06.09.2026) — полный локальный MVP runtime gate
+
+- `[x]` `check:local-mvp -- --json` дал **41/41 automated PASS** на commit
+  `9f7f71044792`: lint, frontend/backend build, unit/API parity, route and
+  accessibility contracts, migration/schema/integrity, Redis/concurrency,
+  responsive matrix **30/30** и loading/state/client-path checks.
+- `[x]` Mock browser suite — **156/156 PASS** (Chromium, mobile, tablet).
+  Production Next + real Fastify/PostgreSQL/Redis smoke покрыт теми же 23
+  тестами в чистых группах **11/11 + 7/7 + 5/5 PASS**; повторяемый request
+  idempotency, offline/timeout retry и owner/admin/super-admin/staff RBAC
+  подтверждены. Real helper теперь дожидается успешной `auth/me` hydration и
+  service-request response перед быстрым переходом между workspace routes.
+- `[x]` Повторная миграция, schema check, AutoCare integrity validation и
+  migration smoke завершены успешно; 130 migration files, 125 applied до
+  текущего локального head, pending constraints отсутствуют.
+- `[~]` Full real suite на одном loopback IP намеренно упирается в production
+  refresh limit 30/min; это штатная защита. Групповой прогон очищал только
+  `ratelimit:auth:*` Redis keys между группами и не изменял PostgreSQL data.
+  Staging/applied migration manifest, deployed HTML/Lighthouse, backup restore,
+  multi-process Redis/WS, pilot/legal/device evidence остаются внешними gates.
