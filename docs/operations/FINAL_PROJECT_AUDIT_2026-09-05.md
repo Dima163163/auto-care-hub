@@ -266,3 +266,12 @@ staging, реальные устройства, MFA/SSO, restore, legal и pilot
 упоминает подписки. `translations.test.ts` — **9/9 PASS**, TypeScript, ESLint и
 `git diff --check` — PASS. V2-MVP-10 остаётся `[~]`: контакты, demo-only данные,
 права на контент и legal acceptance требуют отдельного подтверждения.
+
+## Follow-up после аудита — порция 307
+
+Видимые EN/RU landing и owner-dashboard подписи синхронизированы с automotive
+scope: убраны beauty/wellness, legacy cabinet и free/no-card обещания из mock
+карточек, категорий, onboarding и growth-плашки. Полный frontend unit после
+изменения — **149 файлов / 471 тест**, TypeScript, ESLint и `git diff --check` —
+PASS. V2-MVP-10 остаётся `[~]` до проверки реальных контактов, demo-only данных,
+прав на контент и legal acceptance.

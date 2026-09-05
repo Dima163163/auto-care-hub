@@ -1674,3 +1674,15 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   `npm run lint` и `git diff --check` — PASS.
 - `[~]` V2-MVP-10 не закрыт полностью: проверка контактов, demo-only данных,
   прав на контент и legal acceptance остаётся внешним gate.
+
+## Порция 307 (05.09.2026) — landing и dashboard copy
+
+- `[x]` Видимые EN/RU landing и owner-dashboard подписи больше не показывают
+  beauty/wellness или legacy cabinet сценарии: mock-услуги, категории,
+  статистика, guide-тексты и growth-плашка говорят об автосервисах и заявках.
+- `[x]` Убраны маркетинговые free/no-card обещания из onboarding и owner CTA;
+  прямые сервисные бонусы и юридическое описание оплаты не менялись.
+- `[x]` Полный frontend unit — **149 файлов / 471 тест**, translation regression
+  — **9/9**, TypeScript, ESLint и `git diff --check` — PASS.
+- `[~]` V2-MVP-10 остаётся внешним gate для контактов, demo-only данных, прав на
+  контент и legal acceptance.

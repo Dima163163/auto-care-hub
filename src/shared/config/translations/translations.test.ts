@@ -201,12 +201,34 @@ describe('translation coverage', () => {
 
     it('keeps owner marketing copy aligned with the automotive pilot scope', () => {
         const launchLocales = [translations.en, translations.ru]
-        const staleCommercialCopy = /renting cabinets|cabinet cards|monetiz|plans and paid|подписк|монетиза|сда[её]т кабинеты|карточки кабинетов|тарифы и платн/i
+        const staleCommercialCopy = /renting cabinets|cabinet cards|monetiz|plans and paid|\bfree\b|\bno card\b|подписк|монетиза|сда[её]т кабинеты|карточки кабинетов|тарифы и платн|бесплат|без карты/i
 
         for (const locale of launchLocales) {
             const ownerCopy = Object.values(locale.marketing.owners).filter((value): value is string => typeof value === 'string').join(' ')
             expect(ownerCopy).not.toMatch(staleCommercialCopy)
             expect(locale.info.partners.point3).not.toMatch(staleCommercialCopy)
+
+            const landingCopy = [
+                locale.landing.desktopResultsCount,
+                locale.landing.guideSafetyText,
+                locale.landing.guideRulesText,
+                locale.landing.desktopClientGuideText,
+                locale.landing.desktopClientStepOne,
+                locale.landing.desktopOwnerGuideText,
+                locale.landing.modernCabinet,
+                locale.landing.mobileAvailableCount,
+                locale.landing.mobileResultCategory,
+                locale.landing.mobileGuideDescription,
+                locale.landing.startFree,
+                locale.landing.withoutCard,
+                locale.landing.cabinets,
+                locale.landing.dashboardCabinets,
+                locale.landing.statsCabinets,
+                locale.landing.footerCabinets,
+                locale.landing.mobileQuickSearch,
+            ].join(' ')
+            expect(landingCopy).not.toMatch(/\bcabinets?\b|\bspaces?\b|beauty|wellness|\bfree\b|\bno card\b|кабинет|простран|красот|бесплат|без карты/i)
+            expect(locale.ownerDashboard.growth.freePlan).not.toMatch(staleCommercialCopy)
         }
     })
 
