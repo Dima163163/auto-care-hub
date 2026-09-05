@@ -39,10 +39,18 @@ export function evaluateHistoricalMigrationImmutability({ fileNames, modifiedPat
     }
 }
 
-function getWorkingTreeMigrationChanges(root) {
+export function getWorkingTreeMigrationCommands() {
     const args = ['--name-only', '--', migrationRelativePath]
+    return [
+        ['diff', ...args],
+        ['diff', '--cached', ...args],
+        ['ls-files', '--others', '--exclude-standard', '--', migrationRelativePath],
+    ]
+}
+
+function getWorkingTreeMigrationChanges(root) {
     const changed = new Set()
-    for (const command of [['diff', ...args], ['ls-files', '--others', '--exclude-standard', '--', migrationRelativePath]]) {
+    for (const command of getWorkingTreeMigrationCommands()) {
         try {
             const output = execFileSync('git', command, { cwd: root, encoding: 'utf8' })
             for (const fileName of output.split(/\r?\n/).map((value) => value.trim()).filter(Boolean)) changed.add(fileName)

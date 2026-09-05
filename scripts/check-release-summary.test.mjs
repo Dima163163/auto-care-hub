@@ -4,7 +4,15 @@ import assert from 'node:assert/strict'
 import {
     buildLocalReleaseSummary,
     evaluateHistoricalMigrationImmutability,
+    getWorkingTreeMigrationCommands,
 } from './check-release-summary.mjs'
+
+test('migration immutability scans unstaged, staged and untracked paths', () => {
+    const commands = getWorkingTreeMigrationCommands().map((command) => command.join(' '))
+    assert.ok(commands.includes('diff --name-only -- server/src/database/migrations'))
+    assert.ok(commands.includes('diff --cached --name-only -- server/src/database/migrations'))
+    assert.ok(commands.includes('ls-files --others --exclude-standard -- server/src/database/migrations'))
+})
 
 test('historical migration immutability fails closed when a pre-boundary file changes', () => {
     const clean = evaluateHistoricalMigrationImmutability({
