@@ -316,3 +316,13 @@ completion path при navigation/logout/provider change, сохраняя idemp
 targeted RequestForm/RequestPage — **3/3**, local MVP static — **39 PASS** плюс
 ожидаемый manual responsive gate. Реальные slow-network identity-switch,
 storage rollback и deployed browser evidence остаются внешним условием C014.
+
+## Follow-up после аудита — порция 312
+
+`check-release-summary` получил отдельный staged migration scan рядом с
+unstaged/untracked paths. Regression проверяет все три источника изменений;
+promotion validator по-прежнему требует clean immutable SHA, artifact hash,
+applied migration manifest и signed external evidence. Локальный summary дал
+**8 PASS** с `productionClaims=false` и корректным dirty manifest; C005/C007
+усилены на локальном provenance-уровне, но release promotion остаётся внешним
+NO-GO без applied inventory и approvals.

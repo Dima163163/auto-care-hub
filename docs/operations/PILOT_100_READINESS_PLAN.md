@@ -2607,3 +2607,12 @@ npm run check:e2e:browser
   static checks PASS.
 - `[~]` Slow-network real API, deployed browser identity-switch и private
   storage cleanup/replay остаются внешними условиями `CHANGE-C014`.
+
+### Результат следующей исполняемой порции (05.09.2026)
+
+- `[x]` Release summary учитывает unstaged, staged и untracked migration paths;
+  historical immutability больше не обходится подготовленным к commit diff.
+- `[x]` Release summary/promotion regressions PASS; local report остаётся
+  `productionClaims=false` и явно содержит dirty provenance manifest.
+- `[~]` Clean immutable SHA, artifact/applied migration hashes, signed evidence
+  и approvals остаются внешними условиями `CHANGE-C005…C007`.

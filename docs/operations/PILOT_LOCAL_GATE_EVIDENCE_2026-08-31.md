@@ -1740,3 +1740,16 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   matrix остаётся отдельным manual gate.
 - `[~]` Slow-network real API, identity switch на deployed browser и partial
   private-storage cleanup остаются staging/production evidence conditions.
+
+## Порция 312 (05.09.2026) — staged migration provenance guard
+
+- `[x]` Local release summary теперь проверяет исторические migration edits в
+  unstaged, staged и untracked состояниях; staged diff больше не может обойти
+  immutability guard перед сборкой evidence.
+- `[x]` `check-release-summary.test.mjs` и `check-release-promotion.test.mjs` —
+  **6/6 PASS**; `check:release-summary -- --json` — **8 local PASS**,
+  `productionClaims=false`, dirty provenance содержит manifest SHA и список
+  изменённых файлов.
+- `[~]` `RELEASE_EVIDENCE_FILE` и `PUBLISHED_MIGRATION_MANIFEST` намеренно не
+  создавались: immutable release SHA, applied inventory и external approvals
+  по-прежнему обязательны для promotion.
