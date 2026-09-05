@@ -35,6 +35,12 @@ const sourceMap = {
         'shows an expired quote without an acceptance action',
         "await page.goto('/profile/bookings')",
     ].join('\n'),
+    requestPage: [
+        'requestOperationRef', 'latestContextKeyRef', 'operation.inFlight',
+        'Promise.allSettled(payload.files.map',
+        'const contentBase64 = await readFileAsBase64(file)',
+        "throw new Error('Request context changed.')",
+    ].join('\n'),
 }
 
 test('client path contract covers snapshots, bonuses, reviews and browser smoke', () => {

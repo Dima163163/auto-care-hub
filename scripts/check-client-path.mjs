@@ -110,6 +110,19 @@ export function evaluateClientPath(sourceMap) {
             ],
             'Chromium smoke keeps the real client path, bonus redemption and attachment viewer covered',
         ),
+        check(
+            'Request operation ownership',
+            sourceMap.requestPage,
+            [
+                'requestOperationRef',
+                'latestContextKeyRef',
+                'operation.inFlight',
+                'Promise.allSettled(payload.files.map',
+                'const contentBase64 = await readFileAsBase64(file)',
+                "throw new Error('Request context changed.')",
+            ],
+            'request create and attachment upload remain bound to the current identity/provider/branch context',
+        ),
     ]
 }
 
@@ -120,6 +133,7 @@ export function loadClientPathSources(root = PROJECT_ROOT) {
         reviewResolution: 'src/pages/profile-reviews/ui/AutoCareReviewResolutionPanel.tsx',
         reviewsPage: 'src/pages/profile-reviews/ui/ProfileReviewsPage.tsx',
         e2e: 'e2e/autocare-client-public-states.spec.ts',
+        requestPage: 'src/pages/autocare-request/ui/AutoCareRequestPage.tsx',
     }
 
     return Object.fromEntries(Object.entries(files).map(([name, relativePath]) => [

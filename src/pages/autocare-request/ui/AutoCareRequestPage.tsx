@@ -91,12 +91,14 @@ export function AutoCareRequestPage() {
                     throw new Error(t('autocare.requestUnsupportedImage', { name: file.name }))
                 }
 
+                const contentBase64 = await readFileAsBase64(file)
+                if (latestContextKeyRef.current !== requestContextKey) throw new Error('Request context changed.')
                 return createAttachment({
                     requestId: result.id,
                     fileName: file.name,
                     contentType,
                     size: file.size,
-                    contentBase64: await readFileAsBase64(file),
+                    contentBase64,
                 }).unwrap()
             }))
             if (latestContextKeyRef.current !== requestContextKey) return false
