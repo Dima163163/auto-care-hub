@@ -12,6 +12,8 @@ describe('AutoCare attachment integrity migration', () => {
         expect(statements.some((sql) => sql.includes('CHK_autocare_attachments_content_type'))).toBe(true)
         expect(statements.some((sql) => sql.includes('CHK_autocare_attachments_object_key'))).toBe(true)
         expect(statements.some((sql) => sql.includes('split_part("objectKey"'))).toBe(true)
+        expect(statements.some((sql) => sql.includes('split_part("objectKey", \'/\', 2) = "requestId"::text'))).toBe(true)
+        expect(statements.some((sql) => sql.includes('split_part("objectKey", \'/\', 2) = "threadId"::text'))).toBe(true)
         expect(statements.every((sql) => sql.includes('NOT VALID') || sql.includes('DROP CONSTRAINT'))).toBe(true)
     })
 

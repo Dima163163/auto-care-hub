@@ -161,7 +161,7 @@ export enum ServiceAttachmentStatus {
 @Check('CHK_autocare_attachments_checksum', '"checksum" IS NULL OR "checksum" ~ \'^[a-f0-9]{64}$\'')
 @Check(
     'CHK_autocare_attachments_parent',
-    `(("requestId" IS NOT NULL AND split_part("objectKey", '/', 1) = 'autocare-requests' AND split_part("objectKey", '/', 2) = "requestId") OR ("threadId" IS NOT NULL AND split_part("objectKey", '/', 1) = 'autocare-chats' AND split_part("objectKey", '/', 2) = "threadId"))`,
+    `(("requestId" IS NOT NULL AND split_part("objectKey", '/', 1) = 'autocare-requests' AND split_part("objectKey", '/', 2) = "requestId"::text) OR ("threadId" IS NOT NULL AND split_part("objectKey", '/', 1) = 'autocare-chats' AND split_part("objectKey", '/', 2) = "threadId"::text))`,
 )
 export class ServiceAttachmentEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
