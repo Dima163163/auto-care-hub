@@ -9,6 +9,12 @@ async function signIn(page: Page, email: string) {
     await page.locator('#password').fill(demoPassword)
 
     const loginButton = page.getByRole('button', { name: /sign in|войти/i })
+    const sessionHydrated = page.waitForResponse((response) =>
+        response.url().includes('/api/auth/me')
+        && response.request().method() === 'GET'
+        && response.status() === 200,
+        { timeout: 10_000 },
+    ).catch(() => null)
     const loginResponse = page.waitForResponse((response) =>
         response.url().includes('/api/auth/login')
         && response.request().method() === 'POST',
@@ -42,6 +48,11 @@ async function signIn(page: Page, email: string) {
 
     await expect(response.ok(), await response.text()).toBe(true)
     await expect(page).not.toHaveURL(/\/login/)
+    // Login resets the RTK API cache after the token response is normalized.
+    // Wait for the post-reset session query before navigating again; otherwise
+    // a fast route change can abort the hydration request and look like an
+    // expired session in branch-scoped owner flows.
+    await sessionHydrated
 }
 
 type InjectedRequestState = 'error' | 'offline' | 'permission-denied' | 'stale' | 'suspended'
@@ -564,7 +575,16 @@ test.describe('AutoCare real API smoke', () => {
 
     test('real API grants a branch-scoped staff member the owner workspace only', async ({ page }) => {
         await signIn(page, 'staff.demo@autocarehub.test')
+
+        const ownerRequestsLoaded = page.waitForResponse((response) =>
+            response.url().includes('/api/owner/service-requests')
+            && response.request().method() === 'GET'
+            && response.status() === 200,
+            { timeout: 10_000 },
+        )
         await page.goto('/owner/autocare-requests')
+        await ownerRequestsLoaded
+        await expect(page).toHaveURL(/\/owner\/autocare-requests(?:[/?#]|$)/)
         await expect(page.getByRole('main')).toBeVisible()
         await page.goto('/admin/dashboard')
         await expect(page).toHaveURL(/\/owner(?:$|[/?#])/)
