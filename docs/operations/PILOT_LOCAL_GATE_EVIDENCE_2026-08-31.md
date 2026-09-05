@@ -1696,3 +1696,16 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   — **9/9**, TypeScript, ESLint и `git diff --check` — PASS.
 - `[~]` V2-MVP-10 по-прежнему требует внешней проверки контактов, demo-only
   данных, прав на контент и legal acceptance.
+
+## Порция 309 (05.09.2026) — schema-aware pilot evidence PII guard
+
+- `[x]` `validatePilotEvidenceEnvelope` больше не сканирует имена безопасных
+  metadata-ключей как PII: `plateCaptured`, `vinCaptured` и `reviewPhotoCount`
+  проходят только как безопасные boolean/числовые значения.
+- `[x]` Проверка теперь рекурсивно отклоняет реальные email, phone, VIN, plate,
+  message и secret values; опубликованный anonymized evidence template принят
+  отдельной regression.
+- `[x]` `node --test scripts/pilot-metrics-tools.test.mjs` — **6/6 PASS**;
+  `npm run check:pilot-evidence-toolkit` и `git diff --check` — PASS.
+- `[~]` Реальный staging/production pilot evidence по-прежнему не создаётся
+  локально и требует внешних участников, consent и подписанного release gate.

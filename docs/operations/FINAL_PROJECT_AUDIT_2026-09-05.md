@@ -282,3 +282,14 @@ Owner-dashboard labels `mobileAddSpace`, `mobileMySpaces` и moderation
 descriptions переведены с legacy «spaces» на service locations/точки сервиса.
 Полный frontend unit — **149 файлов / 471 тест**, TypeScript, ESLint и
 `git diff --check` — PASS; внешние staging и legal gates без изменений.
+
+## Follow-up после аудита — порция 309
+
+`validatePilotEvidenceEnvelope` переведён на schema-aware проверку значений:
+безопасные metadata-ключи `plateCaptured`, `vinCaptured` и `reviewPhotoCount`
+больше не блокируются по имени, а реальные email/phone/VIN/plate/message/secret
+values по-прежнему отклоняются. Полный `PILOT_EVIDENCE_TEMPLATE.md` принят
+отдельной regression; `pilot-metrics-tools.test.mjs` — **6/6 PASS**,
+`check:pilot-evidence-toolkit` и `git diff --check` — PASS. Реальный pilot
+evidence и внешний go/no-go gate не создавались; CHANGE-C011 закрыт на уровне
+локального validator contract и остаётся внешним evidence condition.
