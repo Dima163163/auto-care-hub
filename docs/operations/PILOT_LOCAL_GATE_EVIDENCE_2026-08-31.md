@@ -1767,8 +1767,9 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   подтверждены. Real helper теперь дожидается успешной `auth/me` hydration и
   service-request response перед быстрым переходом между workspace routes.
 - `[x]` Повторная миграция, schema check, AutoCare integrity validation и
-  migration smoke завершены успешно; 130 migration files, 125 applied до
-  текущего локального head, pending constraints отсутствуют.
+  migration smoke завершены успешно; inventory содержит 130 migration files,
+  `migration:show` показывает все 130 применёнными на локальном head, pending
+  constraints отсутствуют.
 - `[~]` Full real suite на одном loopback IP намеренно упирается в production
   refresh limit 30/min; это штатная защита. Групповой прогон очищал только
   `ratelimit:auth:*` Redis keys между группами и не изменял PostgreSQL data.
