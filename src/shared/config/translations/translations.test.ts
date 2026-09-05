@@ -229,6 +229,13 @@ describe('translation coverage', () => {
             ].join(' ')
             expect(landingCopy).not.toMatch(/\bcabinets?\b|\bspaces?\b|beauty|wellness|\bfree\b|\bno card\b|кабинет|простран|красот|бесплат|без карты/i)
             expect(locale.ownerDashboard.growth.freePlan).not.toMatch(staleCommercialCopy)
+            const dashboardCopy = [
+                locale.ownerDashboard.mobileAddSpace,
+                locale.ownerDashboard.mobileMySpaces,
+                locale.ownerDashboard.actionCenter.draftCabinetsDescription,
+                locale.ownerDashboard.actionCenter.blockedCabinetsDescription,
+            ].join(' ')
+            expect(dashboardCopy).not.toMatch(/\bspaces?\b|простран/i)
         }
     })
 
