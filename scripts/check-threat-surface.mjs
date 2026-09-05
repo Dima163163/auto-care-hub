@@ -40,6 +40,15 @@ export function evaluateThreatSurface(sourceMap) {
             'discovery has an explicit public rate limit and bounded stale cache policy',
         ),
         check(
+            'Public availability controls',
+            sourceMap.autocare,
+            [
+                "const autoCareAvailabilityRateLimit = createRateLimitPreHandler({ maxRequests: 60, scope: 'autocare:availability', windowMs: 60 * 1000 })",
+                "app.get('/v1/providers/:providerId/availability', { preHandler: autoCareAvailabilityRateLimit }",
+            ],
+            'slot availability has a bounded public rate limit before the expensive calendar calculation',
+        ),
+        check(
             'AutoCare upload controls',
             sourceMap.autocare,
             [

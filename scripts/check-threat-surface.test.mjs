@@ -14,6 +14,8 @@ const sourceMap = {
     autocare: [
         "app.get('/v1/discovery/providers', { preHandler: autoCareDiscoveryRateLimit }",
         "'cache-control', 'public, max-age=5, stale-while-revalidate=15'",
+        "const autoCareAvailabilityRateLimit = createRateLimitPreHandler({ maxRequests: 60, scope: 'autocare:availability', windowMs: 60 * 1000 })",
+        "app.get('/v1/providers/:providerId/availability', { preHandler: autoCareAvailabilityRateLimit }",
         "app.post('/owner/autocare-providers/logo', { preHandler: autoCareUploadRateLimit",
         "app.post('/owner/autocare-providers/media', { preHandler: autoCareUploadRateLimit",
         "app.post('/v1/chats/:chatId/attachments', { preHandler: serviceRequestTransitionRateLimit",

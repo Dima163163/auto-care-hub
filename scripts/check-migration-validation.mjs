@@ -8,6 +8,51 @@ function check(name, status, detail) {
     return { name, status, detail }
 }
 
+function stripComments(source) {
+    return String(source)
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '')
+}
+
+function getUpMigrationSource(source) {
+    // Rollback SQL is never executed by the forward release gate. Excluding
+    // the down method prevents a rollback-only re-add from looking like a
+    // second live constraint in the forward migration history.
+    return stripComments(source).replace(/\b(?:public\s+)?async\s+down\s*\([\s\S]*$/i, '')
+}
+
+function collectConstraintLifecycleIssues(migrationSources) {
+    const activeNames = new Set()
+    const duplicateNames = []
+    const addPattern = /ADD\s+CONSTRAINT\s+"([^\"]+)"[^;`]*?\bNOT\s+VALID\b/gi
+    const dropPattern = /DROP\s+CONSTRAINT(?:\s+IF\s+EXISTS)?\s+"([^\"]+)"/gi
+
+    for (const source of Object.values(migrationSources)) {
+        const upSource = getUpMigrationSource(source)
+        const events = []
+
+        for (const match of upSource.matchAll(addPattern)) {
+            events.push({ index: match.index ?? 0, kind: 'add', name: match[1] })
+        }
+        for (const match of upSource.matchAll(dropPattern)) {
+            events.push({ index: match.index ?? 0, kind: 'drop', name: match[1] })
+        }
+
+        events.sort((left, right) => left.index - right.index)
+        for (const event of events) {
+            if (event.kind === 'drop') {
+                activeNames.delete(event.name)
+                continue
+            }
+
+            if (activeNames.has(event.name)) duplicateNames.push(event.name)
+            activeNames.add(event.name)
+        }
+    }
+
+    return duplicateNames
+}
+
 /**
  * Finds constraints intentionally added with PostgreSQL's NOT VALID option.
  * Comments are removed first so the inventory describes executable migration
@@ -18,9 +63,7 @@ export function collectNotValidConstraints(migrationSources) {
     const pattern = /ADD\s+CONSTRAINT\s+"([^\"]+)"[^;`]*?\bNOT\s+VALID\b/gi
 
     for (const [fileName, source] of Object.entries(migrationSources)) {
-        const withoutComments = String(source)
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/^\s*\/\/.*$/gm, '')
+        const withoutComments = stripComments(source)
         for (const match of withoutComments.matchAll(pattern)) {
             constraints.push({ fileName, constraintName: match[1] })
         }
@@ -32,9 +75,7 @@ export function collectNotValidConstraints(migrationSources) {
 export function evaluateMigrationValidation({ migrationSources, integritySource, packageSource, releaseChecklistSource }) {
     const constraints = collectNotValidConstraints(migrationSources)
     const names = new Set(constraints.map(({ constraintName }) => constraintName))
-    const duplicateNames = constraints
-        .map(({ constraintName }) => constraintName)
-        .filter((name, index, all) => all.indexOf(name) !== index)
+    const duplicateNames = collectConstraintLifecycleIssues(migrationSources)
 
     const results = [
         constraints.length > 0

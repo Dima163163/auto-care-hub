@@ -1,7 +1,18 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 
-import { LOCAL_MVP_CHECKS, formatLocalMvpGate, redactEvidence, runLocalMvpGate } from './check-local-mvp.mjs'
+import {
+    DEFAULT_COMMAND_TIMEOUT_MS,
+    LOCAL_MVP_CHECKS,
+    formatLocalMvpGate,
+    getCommandTimeoutMs,
+    redactEvidence,
+    runLocalMvpGate,
+    writeLocalMvpJsonArtifact,
+} from './check-local-mvp.mjs'
 
 test('local gate has an explicit, shell-free command inventory', () => {
     assert.ok(LOCAL_MVP_CHECKS.length >= 20)
@@ -27,4 +38,20 @@ test('evidence redaction removes credentials and direct contact values', () => {
     assert.match(redacted, /password=\[REDACTED\]/)
     assert.match(redacted, /Bearer \[REDACTED\]/)
     assert.match(redacted, /\[EMAIL\]/)
+})
+
+test('local gate timeout is bounded and JSON artifacts are reproducible', async () => {
+    assert.equal(getCommandTimeoutMs({}), DEFAULT_COMMAND_TIMEOUT_MS)
+    assert.equal(getCommandTimeoutMs({ LOCAL_MVP_COMMAND_TIMEOUT_MS: '1000' }), 1000)
+    assert.throws(() => getCommandTimeoutMs({ LOCAL_MVP_COMMAND_TIMEOUT_MS: '999' }), /between 1000/)
+    assert.throws(() => getCommandTimeoutMs({ LOCAL_MVP_COMMAND_TIMEOUT_MS: '900001' }), /between 1000/)
+
+    const root = await mkdtemp(path.join(os.tmpdir(), 'autocarehub-local-gate-'))
+    const artifactPath = path.join(root, 'report.json')
+    try {
+        await writeLocalMvpJsonArtifact({ commitSha: 'abc123', counts: { pass: 1 } }, artifactPath)
+        assert.deepEqual(JSON.parse(await readFile(artifactPath, 'utf8')), { commitSha: 'abc123', counts: { pass: 1 } })
+    } finally {
+        await rm(root, { recursive: true, force: true })
+    }
 })

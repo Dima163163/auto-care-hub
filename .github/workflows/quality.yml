@@ -281,7 +281,7 @@ jobs:
         run: npm run test:e2e:pwa
 
   real-full-stack:
-    name: Real full-stack preview smoke
+    name: Real full-stack production Next smoke
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -328,6 +328,10 @@ jobs:
       MAIL_MODE: logger
       VITE_API_MODE: real
       VITE_API_BASE_URL: http://127.0.0.1:4000
+      NEXT_PUBLIC_API_MODE: real
+      NEXT_PUBLIC_API_BASE_URL: /api
+      NEXT_PUBLIC_API_ORIGIN: http://127.0.0.1:4000
+      NEXT_DIST_DIR: .next-real-e2e
 
     steps:
       - name: Checkout
@@ -349,7 +353,7 @@ jobs:
         run: npm ci
         working-directory: server
 
-      - name: Build frontend preview artifact
+      - name: Build production Next artifact
         run: npm run build
 
       - name: Build backend
@@ -401,17 +405,17 @@ jobs:
       - name: Verify Chromium
         run: npm run check:e2e:browser
 
-      - name: Run real-mode preview smoke
+      - name: Run real-mode production Next smoke
         run: npx playwright test -c playwright.real.config.ts
         env:
-          REAL_E2E_PREVIEW: true
+          REAL_E2E_NEXT_PRODUCTION: true
 
       - name: Publish full-stack diagnostics
         if: always()
         run: |
           {
             echo "### Real full-stack diagnostics"
-            echo "- Frontend artifact: Vite preview"
+            echo "- Frontend artifact: production Next build/start"
             echo "- API mode: real, MSW disabled"
             echo "- Database: PostgreSQL 16 with migrations applied twice"
             echo "- Cache: Redis 7"

@@ -70,3 +70,13 @@ test('persistent media path rejects relative and root directories', () => {
     assert.equal(isSafePersistentMediaPath('/'), false)
     assert.equal(isSafePersistentMediaPath('uploads/cabinets'), false)
 })
+
+test('staging URL preflight rejects insecure remote endpoints', () => {
+    const checks = getProductionOperationsChecks({
+        ...completeProductionEnvironment,
+        STAGING_API_BASE_URL: 'http://staging.autocare.test',
+    }, {
+        dockerCheck: { name: 'Docker daemon', status: 'pass', detail: 'test daemon' },
+    })
+    assert.ok(checks.some((item) => item.name === 'Staging API URL' && item.status === 'blocked'))
+})

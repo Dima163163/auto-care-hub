@@ -38,3 +38,36 @@ test('fails closed when release validation is removed', () => {
     const gate = evaluation.results.find((result) => result.name === 'Release migration gate')
     assert.equal(gate?.status, 'blocked')
 })
+
+test('allows a forward drop-and-replace while ignoring rollback-only re-adds', () => {
+    const evaluation = evaluateMigrationValidation({
+        ...sourceMap,
+        migrationSources: {
+            '001-safe.ts': migrationSources['001-safe.ts'],
+            '002-replace.ts': [
+                'async up(queryRunner) {',
+                'await queryRunner.query(`ALTER TABLE "one" DROP CONSTRAINT IF EXISTS "CHK_one"`)',
+                'await queryRunner.query(`ALTER TABLE "one" ADD CONSTRAINT "CHK_one" CHECK (id > 0) NOT VALID`)',
+                '}',
+                'async down(queryRunner) {',
+                'await queryRunner.query(`ALTER TABLE "one" ADD CONSTRAINT "CHK_one" CHECK (id > 0) NOT VALID`)',
+                '}',
+            ].join('\n'),
+        },
+    })
+    const uniqueness = evaluation.results.find((result) => result.name === 'Constraint name uniqueness')
+    assert.equal(uniqueness?.status, 'pass')
+})
+
+test('fails closed when a live constraint name is added twice without a drop', () => {
+    const evaluation = evaluateMigrationValidation({
+        ...sourceMap,
+        migrationSources: {
+            '001-safe.ts': migrationSources['001-safe.ts'],
+            '002-duplicate.ts': migrationSources['001-safe.ts'].replace('"one"', '"two"'),
+        },
+    })
+    const uniqueness = evaluation.results.find((result) => result.name === 'Constraint name uniqueness')
+    assert.equal(uniqueness?.status, 'blocked')
+    assert.match(uniqueness?.detail ?? '', /CHK_one/)
+})

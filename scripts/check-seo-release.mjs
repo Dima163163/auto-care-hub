@@ -6,7 +6,14 @@ import { fileURLToPath } from 'node:url'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const nextStaticRoot = resolve(projectRoot, '.next/static')
+const nextServerAppRoot = resolve(projectRoot, '.next/server/app')
 const publicRoot = resolve(projectRoot, 'public')
+
+export const MAX_SEO_HTML_RESPONSE_BYTES = 2 * 1024 * 1024
+const SEO_METADATA_IMAGE_PATHS = [
+    '/images/autocare/hero-map-generated.webp',
+]
+const LAUNCH_LOCALES = ['ru', 'en', 'es', 'ro']
 
 const PUBLIC_ROUTES = [
     '/',
@@ -41,6 +48,28 @@ const BUDGETS = {
     mapImageBytes: 350_000,
     largestPublicImageBytes: 2_000_000,
     totalPublicImageBytes: 7_000_000,
+}
+
+export function normalizeSeoBaseUrl(value) {
+    const raw = String(value ?? '').trim()
+    if (!raw) throw new Error('SEO_BASE_URL must be a non-empty URL.')
+
+    let parsed
+    try {
+        parsed = new URL(raw)
+    } catch {
+        throw new Error('SEO_BASE_URL must be a valid absolute URL.')
+    }
+
+    const localHost = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(parsed.hostname)
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('SEO_BASE_URL must use http or https.')
+    if (!localHost && parsed.protocol !== 'https:') throw new Error('SEO_BASE_URL must use HTTPS outside localhost.')
+    if (parsed.username || parsed.password) throw new Error('SEO_BASE_URL must not contain embedded credentials.')
+
+    parsed.hash = ''
+    parsed.search = ''
+    parsed.pathname = parsed.pathname.replace(/\/+$/, '')
+    return parsed.toString().replace(/\/$/, '')
 }
 
 function walk(directory) {
@@ -122,6 +151,169 @@ function checkPrerenderContract() {
         : [check('Dynamic provider prerender', 'blocked', `missing contract fragments: ${missing.join(', ')}`)]
 }
 
+function resolvePublicAssetPath(assetPath) {
+    const raw = String(assetPath ?? '').trim()
+    if (!raw || !raw.startsWith('/')) return null
+
+    const pathname = raw.split(/[?#]/, 1)[0]
+    if (!pathname || pathname.includes('..')) return null
+    return resolve(publicRoot, `.${pathname}`)
+}
+
+export function checkOgImageExistence() {
+    const metadataPath = resolve(projectRoot, 'src/app/metadata.ts')
+    const metadataSource = readFileSync(metadataPath, 'utf8')
+    const referencedPaths = [...new Set([
+        ...SEO_METADATA_IMAGE_PATHS,
+        ...[...metadataSource.matchAll(/['"](\/images\/[^'"]+)['"]/g)].map((match) => match[1]),
+    ])]
+    const missing = referencedPaths.filter((assetPath) => {
+        const resolvedPath = resolvePublicAssetPath(assetPath)
+        return !resolvedPath || !existsSync(resolvedPath) || !statSync(resolvedPath).isFile()
+    })
+
+    return missing.length === 0
+        ? check('Open Graph image assets', 'pass', `${referencedPaths.length} metadata image path(s) resolve inside public/`)
+        : check('Open Graph image assets', 'blocked', `missing or unsafe public assets: ${missing.join(', ')}`)
+}
+
+export function checkCanonicalRobotsConsistency() {
+    const metadataSource = readFileSync(resolve(projectRoot, 'src/app/metadata.ts'), 'utf8')
+    const clientSeoSource = readFileSync(resolve(projectRoot, 'src/shared/ui/seo-head/SeoHead.tsx'), 'utf8')
+    const requiredMetadataFragments = [
+        'alternates: { canonical }',
+        'robots: isNoIndex ? { index: false, follow: true } : indexRobots',
+        'const isSearchResult = path === \'/services\' && options.hasSearchParams === true',
+        'const privatePrefixes =',
+    ]
+    const missing = requiredMetadataFragments.filter((fragment) => !metadataSource.includes(fragment))
+    if (!clientSeoSource.includes("setMeta('name', 'robots'") || !clientSeoSource.includes("setLink('canonical'")) {
+        missing.push('SeoHead canonical/robots client parity')
+    }
+
+    return missing.length === 0
+        ? check('Canonical/robots consistency', 'pass', 'server metadata and hydrated SeoHead apply the same canonical/noindex boundaries')
+        : check('Canonical/robots consistency', 'blocked', `missing source contract: ${missing.join(', ')}`)
+}
+
+export function checkProductionUrlSafety() {
+    const source = readFileSync(new URL(import.meta.url), 'utf8')
+    const requiredFragments = [
+        'normalizeSeoBaseUrl',
+        'HTTPS outside localhost',
+        'embedded credentials',
+        'AbortSignal.timeout(10_000)',
+    ]
+    const missing = requiredFragments.filter((fragment) => !source.includes(fragment))
+    return missing.length === 0
+        ? check('SEO runner URL safety', 'pass', 'remote probes require HTTPS without embedded credentials and use bounded timeouts')
+        : check('SEO runner URL safety', 'blocked', `missing safety guard: ${missing.join(', ')}`)
+}
+
+export function checkLocaleCoverage() {
+    const i18nSource = readFileSync(resolve(projectRoot, 'src/shared/config/i18n.ts'), 'utf8')
+    const loaderSource = readFileSync(resolve(projectRoot, 'src/shared/config/translations/index.ts'), 'utf8')
+    const translationTestSource = readFileSync(resolve(projectRoot, 'src/shared/config/translations/translations.test.ts'), 'utf8')
+    const expectedFiles = {
+        ru: ['ru-part-1.ts', 'ru-part-2.ts', 'ru-part-3.ts', 'ru-part-4.ts', 'autocare-popular.ts'],
+        en: ['en.ts'],
+        es: ['popular-es.ts', 'autocare-popular.ts'],
+        ro: ['ro.ts', 'autocare-popular.ts'],
+    }
+    const missing = []
+    for (const locale of LAUNCH_LOCALES) {
+        if (!i18nSource.includes(`'${locale}'`)) missing.push(`i18n:${locale}`)
+        if (!new RegExp(`\\b${locale}:\\s*async`).test(loaderSource)) missing.push(`loader:${locale}`)
+        for (const fileName of expectedFiles[locale]) {
+            if (!existsSync(resolve(projectRoot, 'src/shared/config/translations', fileName))) missing.push(`${locale}:${fileName}`)
+        }
+    }
+    if (!translationTestSource.includes('loadAllTranslations') || !translationTestSource.includes('critical customer-facing copy')) {
+        missing.push('translation coverage tests')
+    }
+
+    return missing.length === 0
+        ? check('Launch locale coverage', 'pass', `${LAUNCH_LOCALES.length} launch locales have loaders, source files and schema coverage tests`)
+        : check('Launch locale coverage', 'blocked', `missing locale coverage: ${missing.join(', ')}`)
+}
+
+function generatedHtmlPath(routePath) {
+    const normalized = routePath === '/' ? 'index' : routePath.replace(/^\/+/, '')
+    if (!normalized || normalized.includes('..') || normalized.includes('?') || normalized.includes('#')) return null
+    return resolve(nextServerAppRoot, `${normalized}.html`)
+}
+
+function staticMetadataRoutes() {
+    return [
+        ...PUBLIC_ROUTES.filter((pathname) => !pathname.includes('?') && pathname !== '/services'),
+        ...PROVIDER_ROUTES,
+    ]
+}
+
+export async function readBoundedSeoResponse(response, maxBytes = MAX_SEO_HTML_RESPONSE_BYTES) {
+    if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) throw new Error('SEO HTML response limit must be a positive integer.')
+
+    const contentLength = Number(response.headers.get('content-length') ?? '')
+    if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+        throw new Error(`SEO_HTML_RESPONSE_TOO_LARGE:${maxBytes}`)
+    }
+
+    if (!response.body) {
+        const text = await response.text()
+        if (Buffer.byteLength(text, 'utf8') > maxBytes) throw new Error(`SEO_HTML_RESPONSE_TOO_LARGE:${maxBytes}`)
+        return text
+    }
+
+    const reader = response.body.getReader()
+    const chunks = []
+    let totalBytes = 0
+    try {
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            totalBytes += value.byteLength
+            if (totalBytes > maxBytes) {
+                await reader.cancel('SEO HTML response exceeded bounded limit')
+                throw new Error(`SEO_HTML_RESPONSE_TOO_LARGE:${maxBytes}`)
+            }
+            chunks.push(Buffer.from(value))
+        }
+    } finally {
+        reader.releaseLock()
+    }
+    return Buffer.concat(chunks).toString('utf8')
+}
+
+export function checkLocalHtmlMetadataReport() {
+    if (!existsSync(nextServerAppRoot)) {
+        return check('Local HTML metadata report', 'manual', 'run npm run build before inspecting rendered .next/server/app HTML')
+    }
+
+    const missingRoutes = []
+    const invalidRoutes = []
+    for (const routePath of staticMetadataRoutes()) {
+        const htmlPath = generatedHtmlPath(routePath)
+        if (!htmlPath || !existsSync(htmlPath)) {
+            missingRoutes.push(routePath)
+            continue
+        }
+        const html = readFileSync(htmlPath, 'utf8')
+        const metadata = extractHtmlMetadata(html)
+        const required = ['title', 'description', 'canonical', 'ogTitle', 'ogUrl', 'ogImage', 'twitterCard']
+        const missing = required.filter((key) => !metadata[key])
+        const noindex = /<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(html)
+        if (missing.length > 0 || noindex) invalidRoutes.push(`${routePath}: ${[...missing, ...(noindex ? ['robots unexpectedly noindex'] : [])].join(', ')}`)
+    }
+
+    const serviceSource = readFileSync(resolve(projectRoot, 'src/app/services/page.page.tsx'), 'utf8')
+    if (!serviceSource.includes('getRouteMetadata') || !serviceSource.includes('hasSearchParams')) invalidRoutes.push('/services: query-aware metadata source')
+
+    if (missingRoutes.length > 0 || invalidRoutes.length > 0) {
+        return check('Local HTML metadata report', 'blocked', `missing routes: ${missingRoutes.join(', ') || 'none'}; invalid routes: ${invalidRoutes.join('; ') || 'none'}`)
+    }
+    return check('Local HTML metadata report', 'pass', `${staticMetadataRoutes().length} generated public/provider HTML routes contain title, description, canonical, OG and Twitter metadata`)
+}
+
 function extractHtmlMetadata(html) {
     const get = (pattern) => html.match(pattern)?.[1]?.trim() ?? ''
     return {
@@ -153,7 +345,14 @@ async function checkHttpMetadata(baseUrl) {
             continue
         }
 
-        const html = await response.text()
+        let html
+        try {
+            html = await readBoundedSeoResponse(response)
+        } catch (error) {
+            const detail = error instanceof Error ? error.message : 'response body could not be read safely'
+            checks.push(check(`HTML ${pathname}`, 'blocked', `HTTP ${response.status}; ${detail}`))
+            continue
+        }
         const metadata = extractHtmlMetadata(html)
         const isPrivate = routePath.startsWith('/admin') || routePath.startsWith('/owner') || routePath.startsWith('/profile')
         const isSearchResult = routePath === '/services' && hasSearchParams
@@ -188,11 +387,16 @@ function checkLighthouseAvailability(baseUrl) {
 }
 
 export async function runSeoReleaseChecks(options = {}) {
-    const baseUrl = options.baseUrl
+    const baseUrl = options.baseUrl ? normalizeSeoBaseUrl(options.baseUrl) : undefined
     return [
         ...checkBuildBudgets(),
         ...checkMediaBudgets(),
         ...checkPrerenderContract(),
+        checkOgImageExistence(),
+        checkCanonicalRobotsConsistency(),
+        checkProductionUrlSafety(),
+        checkLocaleCoverage(),
+        checkLocalHtmlMetadataReport(),
         checkLighthouseAvailability(baseUrl),
         ...(await checkHttpMetadata(baseUrl)),
     ]

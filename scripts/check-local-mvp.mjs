@@ -1,11 +1,21 @@
 import { execFileSync, spawn } from 'node:child_process'
+import { writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const projectRoot = resolve(new URL('..', import.meta.url).pathname)
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-const commandTimeoutMs = 10 * 60 * 1000
+export const DEFAULT_COMMAND_TIMEOUT_MS = 10 * 60 * 1000
+export const MAX_COMMAND_TIMEOUT_MS = 15 * 60 * 1000
+
+export function getCommandTimeoutMs(environment = process.env) {
+    const configured = Number(environment.LOCAL_MVP_COMMAND_TIMEOUT_MS ?? DEFAULT_COMMAND_TIMEOUT_MS)
+    if (!Number.isSafeInteger(configured) || configured < 1_000 || configured > MAX_COMMAND_TIMEOUT_MS) {
+        throw new Error(`LOCAL_MVP_COMMAND_TIMEOUT_MS must be an integer between 1000 and ${MAX_COMMAND_TIMEOUT_MS}.`)
+    }
+    return configured
+}
 
 /**
  * The order is intentional: compile and static checks run before the optional
@@ -18,7 +28,22 @@ export const LOCAL_MVP_CHECKS = [
     { id: 'next-build', label: 'Next production build', executable: npmCommand, args: ['run', 'build'] },
     { id: 'backend-build', label: 'Backend TypeScript build', executable: npmCommand, args: ['--prefix', 'server', 'run', 'build'] },
     { id: 'api-parity', label: 'Mock/API parity', executable: npmCommand, args: ['run', 'check:api-parity'] },
+    { id: 'staging-api-contract', label: 'Staging API compatibility contract', executable: npmCommand, args: ['run', 'check:staging-api'] },
+    { id: 'staging-api-tests', label: 'Staging API compatibility regressions', executable: npmCommand, args: ['run', 'test:staging-api'] },
+    { id: 'media-pipeline-contract', label: 'Media pipeline contract', executable: npmCommand, args: ['run', 'check:media-pipeline'] },
+    { id: 'media-pipeline-tests', label: 'Media pipeline regressions', executable: npmCommand, args: ['run', 'test:media-pipeline'] },
+    { id: 'backup-restore-contract', label: 'Backup/restore contract', executable: npmCommand, args: ['run', 'check:backup-restore'] },
+    { id: 'backup-restore-tests', label: 'Backup/restore regressions', executable: npmCommand, args: ['run', 'test:backup-restore'] },
+    { id: 'mvp-interaction-contract', label: 'MVP keyboard/accessibility contract', executable: npmCommand, args: ['run', 'check:mvp-interaction'] },
+    { id: 'mvp-interaction-tests', label: 'MVP keyboard/accessibility regressions', executable: npmCommand, args: ['run', 'test:mvp-interaction'] },
+    { id: 'redis-rate-limit-contract', label: 'Redis fail-closed contract', executable: npmCommand, args: ['run', 'check:redis-rate-limit'] },
+    { id: 'redis-rate-limit-tests', label: 'Redis fail-closed regressions', executable: npmCommand, args: ['run', 'test:redis-rate-limit'] },
+    { id: 'concurrency-matrix-contract', label: 'Transition concurrency contract', executable: npmCommand, args: ['run', 'check:concurrency-matrix'] },
+    { id: 'concurrency-matrix-tests', label: 'Transition concurrency regressions', executable: npmCommand, args: ['run', 'test:concurrency-matrix'] },
+    { id: 'route-snapshot', label: 'Mock/backend route snapshot', executable: npmCommand, args: ['run', 'check:route-snapshot'] },
+    { id: 'route-snapshot-tests', label: 'Mock/backend route snapshot regressions', executable: npmCommand, args: ['run', 'test:route-snapshot'] },
     { id: 'route-inventory', label: 'Next route inventory', executable: npmCommand, args: ['run', 'check:next-route-inventory'] },
+    { id: 'route-inventory-tests', label: 'Next route inventory regressions', executable: npmCommand, args: ['run', 'test:next-route-inventory'] },
     { id: 'route-contract', label: 'Next route contract', executable: npmCommand, args: ['run', 'check:next-route-contract'] },
     { id: 'legacy-cleanup', label: 'Legacy cleanup manifest', executable: npmCommand, args: ['run', 'check:legacy-cleanup'] },
     { id: 'legacy-file-classification', label: 'Legacy file classification', executable: npmCommand, args: ['run', 'check:legacy-files'] },
@@ -32,6 +57,10 @@ export const LOCAL_MVP_CHECKS = [
     { id: 'client-path', label: 'Client path contract', executable: npmCommand, args: ['run', 'check:client-path'] },
     { id: 'design-tokens', label: 'Design token contract', executable: npmCommand, args: ['run', 'check:design-tokens'] },
     { id: 'interaction-contract', label: 'Interaction-state contract', executable: npmCommand, args: ['run', 'check:interaction-contract'] },
+    { id: 'discovery-form-contract', label: 'Discovery form contract', executable: npmCommand, args: ['run', 'check:discovery-form'] },
+    { id: 'discovery-form-tests', label: 'Discovery form regressions', executable: npmCommand, args: ['run', 'test:discovery-form'] },
+    { id: 'seo-contract', label: 'SEO, prerender and media budgets', executable: npmCommand, args: ['run', 'check:seo'] },
+    { id: 'seo-tests', label: 'SEO contract regressions', executable: npmCommand, args: ['run', 'test:seo'] },
     { id: 'responsive-contract', label: 'Responsive browser matrix', executable: npmCommand, args: ['run', 'check:responsive'], runtime: true },
     { id: 'chromium', label: 'Chromium executable', executable: npmCommand, args: ['run', 'check:e2e:browser'] },
     { id: 'git-diff-check', label: 'Whitespace / patch check', executable: 'git', args: ['diff', '--check'] },
@@ -61,7 +90,7 @@ function runCommand(spec, env = process.env) {
             cwd: projectRoot,
             env,
             encoding: 'utf8',
-            timeout: commandTimeoutMs,
+            timeout: getCommandTimeoutMs(env),
             maxBuffer: 32 * 1024 * 1024,
             stdio: ['ignore', 'pipe', 'pipe'],
         })
@@ -235,14 +264,27 @@ export function formatLocalMvpGate(report) {
     return lines.join('\n')
 }
 
+export async function writeLocalMvpJsonArtifact(report, outputPath) {
+    if (!outputPath) return
+    await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8')
+}
+
 async function main() {
-    const args = new Set(process.argv.slice(2))
+    const rawArgs = process.argv.slice(2)
+    const args = new Set(rawArgs)
     const report = await runLocalMvpGate({
         dryRun: args.has('--dry-run'),
         includeRuntime: !args.has('--static-only') && !args.has('--dry-run'),
     })
     if (args.has('--json')) console.log(JSON.stringify(report, null, 2))
     else console.log(formatLocalMvpGate(report))
+
+    const outputIndex = rawArgs.indexOf('--json-file')
+    if (outputIndex >= 0) {
+        const outputPath = rawArgs[outputIndex + 1]
+        if (!outputPath || outputPath.startsWith('--')) throw new Error('--json-file requires a file path.')
+        await writeLocalMvpJsonArtifact(report, outputPath)
+    }
 
     if (!args.has('--dry-run') && ((report.counts.blocked ?? 0) > 0 || (report.counts.manual ?? 0) > 0)) process.exitCode = 1
 }

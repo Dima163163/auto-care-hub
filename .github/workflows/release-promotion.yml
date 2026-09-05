@@ -1,0 +1,97 @@
+name: Release promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: GitHub Actions run containing the reviewed build/evidence artifacts
+        required: true
+        type: string
+      release_sha:
+        description: Full 40-character commit SHA to promote
+        required: true
+        type: string
+      evidence_artifact:
+        description: Artifact name containing the signed release evidence JSON
+        required: true
+        default: release-evidence
+        type: string
+      migration_manifest_artifact:
+        description: Artifact name containing the applied migration checksum manifest
+        required: true
+        default: published-migration-manifest
+        type: string
+      release_artifact:
+        description: Artifact name containing the built release bundle
+        required: true
+        default: release-artifact
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  promote:
+    name: Verify signed release evidence
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout immutable release SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Verify checkout identity
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install release checker
+        run: npm ci
+
+      - name: Download reviewed release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          EVIDENCE_ARTIFACT: ${{ inputs.evidence_artifact }}
+          MIGRATION_MANIFEST_ARTIFACT: ${{ inputs.migration_manifest_artifact }}
+          RELEASE_ARTIFACT: ${{ inputs.release_artifact }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-evidence" "$RUNNER_TEMP/migration-manifest" "$RUNNER_TEMP/release-artifact"
+          gh run download "$SOURCE_RUN_ID" --name "$EVIDENCE_ARTIFACT" --dir "$RUNNER_TEMP/release-evidence"
+          gh run download "$SOURCE_RUN_ID" --name "$MIGRATION_MANIFEST_ARTIFACT" --dir "$RUNNER_TEMP/migration-manifest"
+          gh run download "$SOURCE_RUN_ID" --name "$RELEASE_ARTIFACT" --dir "$RUNNER_TEMP/release-artifact"
+          evidence_file="$(find "$RUNNER_TEMP/release-evidence" -type f -name '*.json' | head -n 1)"
+          manifest_file="$(find "$RUNNER_TEMP/migration-manifest" -type f -name '*.json' | head -n 1)"
+          artifact_file="$(find "$RUNNER_TEMP/release-artifact" -type f | head -n 1)"
+          test -n "$evidence_file" && test -n "$manifest_file" && test -n "$artifact_file"
+          printf '%s\n' "$evidence_file" > "$RUNNER_TEMP/evidence.path"
+          printf '%s\n' "$manifest_file" > "$RUNNER_TEMP/manifest.path"
+          printf '%s\n' "$artifact_file" > "$RUNNER_TEMP/artifact.path"
+
+      - name: Run mandatory release promotion gate
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_EVIDENCE_FILE: ${{ runner.temp }}/evidence.path
+          PUBLISHED_MIGRATION_MANIFEST: ${{ runner.temp }}/manifest.path
+          RELEASE_ARTIFACT_PATH: ${{ runner.temp }}/artifact.path
+        run: |
+          evidence_file="$(cat "$RELEASE_EVIDENCE_FILE")"
+          manifest_file="$(cat "$PUBLISHED_MIGRATION_MANIFEST")"
+          artifact_file="$(cat "$RELEASE_ARTIFACT_PATH")"
+          RELEASE_EVIDENCE_FILE="$evidence_file" \
+          PUBLISHED_MIGRATION_MANIFEST="$manifest_file" \
+          RELEASE_ARTIFACT_PATH="$artifact_file" \
+          npm run check:release-promotion

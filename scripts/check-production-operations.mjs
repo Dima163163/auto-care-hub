@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 
 import { formatIntegrationPrerequisiteFailure, getMissingIntegrationPrerequisites } from './check-integration-prerequisites.mjs'
+import { normalizeStagingApiBaseUrl } from './check-staging-api-compatibility.mjs'
 
 const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url))
 export const PROJECT_ROOT = resolve(SCRIPT_DIRECTORY, '..')
@@ -222,6 +223,15 @@ export function checkDockerDaemon(run = spawnSync) {
 function getExternalEvidenceChecks(environment) {
     const checks = []
     const stagingUrl = String(environment.STAGING_API_BASE_URL ?? '').trim()
+    if (stagingUrl) {
+        try {
+            checks.push(check('Staging API URL', 'pass', `${normalizeStagingApiBaseUrl(stagingUrl)} is a valid HTTPS staging endpoint`))
+        } catch (error) {
+            checks.push(check('Staging API URL', 'blocked', error instanceof Error ? error.message : 'STAGING_API_BASE_URL is invalid'))
+        }
+    } else {
+        checks.push(check('Staging API URL', 'blocked', 'set STAGING_API_BASE_URL to an HTTPS staging endpoint'))
+    }
     checks.push(stagingUrl
         ? check('Staging API compatibility', 'manual', 'run REQUIRE_STAGING_API=true npm run check:staging-api against the configured staging URL')
         : check('Staging API compatibility', 'manual', 'set STAGING_API_BASE_URL and run REQUIRE_STAGING_API=true npm run check:staging-api'))
