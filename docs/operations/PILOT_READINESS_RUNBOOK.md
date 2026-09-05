@@ -29,7 +29,9 @@ providers, customers and production infrastructure.
    `PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json npm run
    check:pilot-evidence`. The gate rejects mock/demo provenance and requires
    every provider, client, vehicle, lifecycle, photo, complaint, support,
-   bonus and reliability signal listed in the pilot scope.
+   bonus and reliability signal listed in the pilot scope. Recompute and bind
+   the aggregate reliability values with
+   `PILOT_METRICS_CSV=/secure/path/pilot-metrics.csv PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json npm run check:pilot-metrics`.
 7. Hold a go/no-go review with product, support, security and the legal entity.
 
 ## Minimum evidence

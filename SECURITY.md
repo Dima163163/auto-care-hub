@@ -2,9 +2,14 @@
 
 This document describes the implemented security baseline inherited from the
 legacy booking product. AutoCare Hub will reuse these controls, but every new provider,
-location, vehicle, inquiry, message, attachment, quote, bonus and subscription
+location, vehicle, inquiry, message, attachment, quote and bonus
 resource still requires explicit object-level authorization and privacy tests.
 See `ARCHITECTURE.md` for the target domain model.
+
+Current release authority: `docs/operations/PILOT_SCOPE_FREEZE.md` v2.0.
+Open code findings and evidence limits are recorded in
+`docs/operations/FINAL_PROJECT_AUDIT_2026-09-05.md`. This baseline does not assert
+that deployment controls, backups or an independent security review are complete.
 
 ## Security Model
 
@@ -13,7 +18,7 @@ AutoCare Hub follows a modern, multi-layered security approach:
 - **Authentication:** Uses short-lived Access Tokens (JWT) and persistent Refresh Tokens stored in `httpOnly`, `Secure`, and `SameSite: Strict` cookies.
 - **In-Memory Storage:** To mitigate XSS risks, Access Tokens are stored only in the application's memory and are never persisted to `localStorage` or `sessionStorage`.
 - **CSRF Protection:** Implements a double-submit cookie pattern with custom headers (`X-CSRF-Token`) for all state-changing requests.
-- **Rate Limiting:** Protects sensitive endpoints (Login, Register, Password Reset) using a Redis-backed rate limiter with a fail-safe fallback to in-memory limiting.
+- **Rate Limiting:** Production requires distributed Redis and fail-closed behavior for protected requests. In-memory fallback is development/test-only. Two-replica outage/reconnect evidence remains required.
 - **Security Headers:** Comprehensive CSP, HSTS, and XSS protection headers configured via Helmet.
 
 ## Roles & Permissions
@@ -34,7 +39,7 @@ AutoCare Hub follows a modern, multi-layered security approach:
 
 ### Data Protection
 - **Password Hardening:** Secure password hashing (Argon2/Bcrypt). One-time password setup/reset flows with secure token exchange.
-- **Database Security:** Automated compressed daily backups with 7-day retention. Mandatory SSL/TLS for all production database connections.
+- **Database Security:** Backup encryption/checksum and isolated-restore tooling exist. Actual backup scheduling, off-site retention, WAL/PITR, TLS configuration and timed restore are external release gates; an operational backup is not yet evidenced.
 - **HTML Escaping:** Mandatory server-side escaping of all user-generated content in email templates to prevent Stored XSS.
 
 ### Infrastructure & Uploads
@@ -50,10 +55,15 @@ AutoCare Hub follows a modern, multi-layered security approach:
 
 ## Known Trade-offs & Future Hardening
 
-- **Storage:** Legacy cabinet photos use local filesystem storage. AutoCare
-  requires separate public provider media and private message/damage/document
-  storage, preferably S3-compatible object storage in production.
-- **Scanning:** Automated dependency and vulnerability scanning (e.g., Snyk) is recommended for the CI/CD pipeline.
+- **Storage:** Legacy cabinet photos use persistent filesystem storage. Private
+  AutoCare attachments require S3-compatible storage and ClamAV in production;
+  bucket policy, signed delivery, retention and restore still need real evidence.
+- **Scanning:** CI declares dependency review, npm production dependency audits
+  and secret scanning. A current successful run on the release artifact and an
+  independent review remain required.
+- **Open findings:** Connected WebSockets do not recheck revoked access; quote
+  decisions lack the viewed version; deletion cancel/completion can race.
+  The final audit specifies fixes and regression acceptance before real data.
 
 ## Verification & Maintenance
 

@@ -35,6 +35,7 @@ The file is accepted only when it is marked `source: "real"` and
     }
   ],
   "metrics": {
+    "recordCount": 0,
     "responseSamples": 0,
     "responseP50Minutes": null,
     "responseP95Minutes": null,
@@ -60,3 +61,16 @@ Validate it with:
 ```bash
 PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json npm run check:pilot-evidence
 ```
+
+Aggregate reliability values must be reproducible from anonymized actor/journey
+rows. Keep the redacted CSV outside Git and bind it to the evidence before
+promotion:
+
+```bash
+PILOT_METRICS_CSV=/secure/path/pilot-metrics.csv \
+PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json \
+npm run check:pilot-metrics
+```
+
+The consistency gate rejects duplicate participant/journey rows, mismatched
+aggregates and response/confirmation values outside the approved thresholds.

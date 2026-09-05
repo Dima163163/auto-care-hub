@@ -10,6 +10,13 @@ tokens or production credentials.
 | --- | --- |
 | Release candidate |  |
 | Git commit |  |
+| Artifact SHA-256 |  |
+| Clean source / dev dirty manifest hash |  |
+| Scope version | PILOT_SCOPE_FREEZE v2.0 |
+| Configuration fingerprint (no secret values) |  |
+| Evidence signature (algorithm/signer/reference) |  |
+| Published migration manifest SHA-256 |  |
+| Migration inventory SHA-256 |  |
 | Environment | staging / production |
 | Market and city |  |
 | Product owner |  |
@@ -51,7 +58,32 @@ tokens or production credentials.
 
 ## Go/no-go decision
 
-`GO` requires every row above to be checked or explicitly waived by the named
-owner. Any P0 authorization/data-loss issue, unresolved privacy/legal gap,
-failed restore rehearsal or inconsistent booking snapshot is an automatic
-`NO-GO`.
+For each required V2 gate attach command/exit code, measured value, pre-agreed
+threshold, environment, release/artifact identity, execution date, evidence URI,
+owner, reviewer and dependency references. The release promotion checker requires
+all 54 fixed V2 IDs to be explicitly `pass`; required gates cannot be waived.
+Local summaries and checkmarks alone are not sign-off.
+
+Technical admission to real data requires all A–D gates in
+`PILOT_SCOPE_FREEZE.md`, plus applicable participant consent. Pilot completion
+additionally requires all E gates and the signed decision on this candidate.
+Any required missing/failed/stale evidence, open P0/P1, unresolved privacy/legal
+gap, failed restore or inconsistent booking snapshot is an automatic `NO-GO`.
+Required security/data/release gates cannot be waived in this template.
+
+The immutable promotion check is intentionally separate from local diagnostics:
+
+```bash
+PUBLISHED_MIGRATION_MANIFEST=/secure/applied-migrations.json \
+RELEASE_EVIDENCE_FILE=/secure/release-evidence.json \
+RELEASE_ARTIFACT_PATH=/secure/autocare-hub-artifact.tgz \
+npm run check:release-promotion
+```
+
+The migration manifest must contain the checksummed sources already applied to
+the target database. A changed published migration is blocked and requires a
+forward correction migration; an absent manifest is also a release blocker.
+The checked-in `.github/workflows/release-promotion.yml` downloads the reviewed
+evidence, migration manifest and artifact from one immutable source run, verifies
+the checkout is clean at the requested full SHA, then runs this gate behind the
+production environment approval.

@@ -2,16 +2,77 @@
 
 > Status: historical implementation roadmap
 >
-> Updated: 2026-08-27 (superseded as a release gate)
+> Updated: 2026-09-05 (historical roadmap; final audit completed)
 >
 > **Canonical local-MVP and pilot go/no-go plan:**
-> [`docs/operations/PILOT_100_READINESS_PLAN.md`](docs/operations/PILOT_100_READINESS_PLAN.md).
+> [`docs/operations/PILOT_SCOPE_FREEZE.md`](docs/operations/PILOT_SCOPE_FREEZE.md), v2.0.
 > This file remains a historical implementation timeline only.
 >
 > Architecture source of truth: `ARCHITECTURE.md`
 >
 > Git flow: `main` is production; active implementation branch is `dev`; all
 > reviewed implementation commits are pushed only to `dev`
+
+## Final audit handoff — 2026-09-05
+
+- [x] Classified the same 54 gates by urgency and SELF/JOINT/USER ownership in
+  [PILOT_TASK_ALLOCATION.md](docs/operations/PILOT_TASK_ALLOCATION.md), without
+  adding product gates. Cumulative execution is separate from current GO/NO-GO;
+  necessary extras use separate fixed batches, optional features have no readiness percentage.
+- [x] Consolidated release, backend/security and frontend read-only audits in
+  [FINAL_PROJECT_AUDIT_2026-09-05.md](docs/operations/FINAL_PROJECT_AUDIT_2026-09-05.md).
+- [x] Replaced the readiness baseline with 54 fixed, versioned V2 gates;
+  documented acceptance evidence, execution order, external owners and NO-GO.
+- [x] Corrected primary handoff/security documents: platform commercial features
+  are excluded; configured backups and production protection are not proven.
+- [x] Closed the local code slice for CHANGE-C004/C010: availability slots now
+  carry the service-local instant as `startsAt`, the request form submits that
+  server value without browser timezone arithmetic, and malformed URL dates are
+  bounded, normalized and recoverable. Frontend/backend tests, lint, builds and
+  API/OpenAPI parity checks pass in the current working tree.
+- [x] Closed the local code slice for CHANGE-C001: both private chat WebSocket
+  routes revalidate the session and resource authorization before delivery and
+  on heartbeat; revoked, blocked, deleted or expired access fails closed and
+  removes the subscription. Gateway regression tests and backend build pass;
+  two-replica Redis replay remains release evidence.
+- [x] Closed the local code slice for CHANGE-C002/C003: quote accept/decline
+  carries and checks the client-visible quote revision inside the transaction,
+  while account-deletion cancellation locks the request row and preserves
+  terminal-state idempotency. Focused policy tests and backend build pass;
+  PostgreSQL stale-quote and deletion interleavings remain integration evidence.
+- [x] Closed the local code slice for CHANGE-C009: logout clears credentials,
+  CSRF, private RTK/PWA state and mock identity before awaiting the server; a
+  credential-generation guard prevents a late refresh from restoring the old
+  account. Focused auth-token regression and lint/build checks pass; browser
+  offline/500 and A→B replay remain release evidence.
+- [x] Closed the local code slice for CHANGE-C014: request drafts are scoped by
+  account/provider/location/offering/vehicle and persist only appointment
+  fields; duplicate submits are guarded, idempotency is context-bound, and
+  late create/upload completions are ignored after context changes. Parser,
+  request-form, lint and Next build checks pass; slow browser replay remains
+  release evidence.
+- [x] Added the local release-provenance slice for CHANGE-C005/C006/C007/C008:
+  local reports bind full commit and dirty-manifest hashes; promotion fails closed
+  without signed mandatory-gate evidence and an operator-supplied applied-migration
+  checksum manifest; migration sources are compared by per-file SHA-256; CI real
+  API browser smoke uses production Next build/start. External release replay and
+  approvals remain open evidence.
+- [x] Closed the local policy slice for CHANGE-C013: suspended providers no
+  longer receive normal workspace/WS authorization, while the owner-only appeal
+  path remains available for recovery and is separately audited. Negative policy
+  tests and backend build pass; staging role/branch replay remains evidence.
+- [x] Closed the local evidence slice for CHANGE-C011/C012: anonymized pilot
+  CSV rows reject duplicate actor/journey IDs, aggregate metrics are recomputed
+  from those rows, and the combined gate enforces the approved response/confirmation
+  thresholds. It still requires real staging/production evidence and owner review.
+- [ ] Implement the remaining recorded CHANGE-C findings, starting with
+  staging/runtime evidence, applied-migration reconciliation and manual/legal
+  acceptance; the local code slices still require release-candidate replay evidence.
+- [ ] Complete staging, data protection, manual/legal acceptance and real pilot
+  evidence. No real-data pilot approval follows from local checks alone.
+
+Historical commercial phases below are superseded and confer no implementation
+authority. Historical task checkmarks are evidence of their own date/scope only.
 
 ## 1. Purpose of this plan
 

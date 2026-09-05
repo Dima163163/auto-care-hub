@@ -59,8 +59,10 @@ with the customer's jurisdiction and privacy notices before production launch.
   object deletion leaves the database row in place for a safe retry.
 - Completing an account-deletion request first removes every attachment
   uploaded by that user, then deletes its metadata. If storage deletion fails,
-  the account transaction is rolled back so the operation can be retried
-  without leaving a metadata row that points to an undiscoverable object.
+  the database transaction is rolled back. This does not restore objects already
+  deleted from storage: cross-store atomicity must not be assumed. Partial-failure
+  recovery, idempotent retries and metadata/object reconciliation remain required
+  release evidence under V2-SEC-14 in `operations/PILOT_SCOPE_FREEZE.md`.
 
 ## Open work
 

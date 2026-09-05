@@ -88,6 +88,10 @@ in a deployment.
   change is accepted for production.
 - Record the migration inventory checksum with the release artifact and
   review any unexpected change before running migrations.
+- Run `npm run check:release-promotion` in the promotion job with an immutable
+  clean SHA, artifact hash, signed evidence envelope and the operator-supplied
+  applied-migration checksum manifest. Missing/stale/failed mandatory evidence
+  must fail the job; local release summaries are diagnostic only.
 - If a deployed process reports a missing entity column, stop traffic changes,
   inspect the migration table and information_schema, then rerun the release
   migration job before restarting replicas. The booking idempotency repair
@@ -110,6 +114,9 @@ Phase Z checks:
 
 - Run `npm run check:migration-inventory` and record the checksum with the
   release artifact; investigate any unexpected migration source change.
+- Run `PUBLISHED_MIGRATION_MANIFEST=/secure/applied-migrations.json npm run
+  check:migration-checksum` before applying a release. Never edit a migration
+  already listed in the applied manifest; ship a new forward migration instead.
 - Run `npm run check:autocare-integrity`. Repair any reported cross-aggregate
   rows before promotion, then run `npm --prefix server run
   check:autocare-integrity -- --validate` to promote the AutoCare constraints

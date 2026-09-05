@@ -5,6 +5,11 @@
 **Владелец плана:** команда AutoCare Hub
 **Финальный go/no-go источник:** [`PILOT_SCOPE_FREEZE.md`](./PILOT_SCOPE_FREEZE.md). Этот документ сохраняет исторические порции и команды как доказательства, но не меняет фиксированный scope и проценты без явной новой версии freeze.
 
+> 05.09.2026: финальная ревизия v2 завершена. Текущие findings и пределы
+> доказательств: [FINAL_PROJECT_AUDIT_2026-09-05.md](./FINAL_PROJECT_AUDIT_2026-09-05.md).
+> Старые ID и проценты ниже исторические; новые V2-ID не переопределяют их.
+> Галочки source-only/autonomous задач не закрывают найденные runtime defects.
+
 Состояние фиксируется только после доказательства: команды, результата, даты, окружения и commit SHA. Формулировка «контракт есть» не равна «подтверждено на staging» и не может закрыть инфраструктурный или пилотный пункт.
 
 ## 0. Граница продукта зафиксирована
@@ -1707,3 +1712,874 @@ npm run check:e2e:browser
 - `[x]` `createAutoCareAppeal` теперь воспринимает PostgreSQL `23505` только как возможную гонку дублей, возвращает строку, победившую в гонке, и повторно выбрасывает конфликт, если причина не относится к pending appeal.
 - `[x]` Entity, schema-contract inventory и migration `1786310000000-AddAutoCareAppealPendingUniqueIndex` синхронизированы; policy/migration regressions прошли **10/10**, полный backend unit — **189 файлов / 629 тестов**, backend build, frontend lint и `git diff --check` PASS.
 - `[~]` Перед применением миграции на staging нужно проверить и вручную разрешить уже существующие pending-дубли; применение на production PostgreSQL и multi-process concurrency rehearsal остаются внешними gates `SEC-06/SEC-08`.
+
+### Результат сто семьдесят восьмой исполняемой порции (31.08.2026)
+
+- `[x]` Миграция appeals получила отдельный duplicate-preflight: до DDL группируются pending-записи по ключу уникальности и проверяется безопасный числовой результат.
+- `[x]` При исторических pending-дублях миграция останавливается с понятным сообщением о числе групп, требующих reconciliation; некорректный ответ preflight также блокирует DDL.
+- `[x]` Добавлены regressions на чистый preflight, duplicate-группу и invalid count; migration suite прошёл **4/4**, полный backend unit — **189 файлов / 631 тест**, backend build и frontend lint PASS.
+- `[~]` Фактическая сверка и разрешение дублей в staging/production PostgreSQL всё ещё выполняются оператором до запуска миграции; локальный mock не является данными окружения.
+
+### Результат сто семьдесят девятой исполняемой порции (31.08.2026)
+
+- `[x]` Экспорт пользовательских данных теперь включает отправленные пользователем appeals, их причины, статусы, даты решений и evidence references в bounded-коллекции.
+- `[x]` Из экспорта appeals исключён `decidedById`, поэтому внутренний идентификатор модератора не раскрывается пользователю; приватные attachment `objectKey` по-прежнему не экспортируются.
+- `[x]` Реальный data-export service, OpenAPI-схема и mock-ответ синхронизированы; serializer/openapi regressions прошли **4/4**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Сервисный PostgreSQL replay с реальными appeal rows и ручная проверка содержимого экспортного архива остаются staging/privacy gate; обязательные проценты freeze не меняются без полного пункта `SEC-03`.
+
+### Результат сто восьмидесятой исполняемой порции (31.08.2026)
+
+- `[x]` Evidence для guarantee claims теперь принимает только opaque private-media references из namespace `private://autocare/claims/...`; произвольные HTTPS URLs, traversal и другие namespaces отклоняются на schema boundary.
+- `[x]` Mock API и OpenAPI contract синхронизированы с private claims media policy, включая лимит 20 evidence references и bounded path pattern.
+- `[x]` Добавлен regression для public/traversal/valid claim evidence; schema/OpenAPI regressions прошли **13/13**, полный backend unit — **189 файлов / 633 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная загрузка claim evidence через private S3/AV pipeline и signed access остаётся внешним gate `PILOT-03/SEC-02`; schema policy не подменяет staging storage evidence.
+
+### Результат сто восемьдесят первой исполняемой порции (31.08.2026)
+
+- `[x]` Прямой вызов `createAutoCareGuaranteeClaim` теперь повторно нормализует и проверяет evidence references перед записью; schema bypass не позволяет сохранить public URL, traversal или значение не-строкового типа.
+- `[x]` Нормализатор ограничивает коллекцию 20 элементами и trim-ит безопасные private references; invalid input возвращает стабильный `422 VALIDATION_ERROR`.
+- `[x]` Добавлен private-reference policy suite **2/2**, полный backend unit — **190 файлов / 635 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` HTTP/storage replay claim evidence через private S3/AV/signed access остаётся внешним `PILOT-03/SEC-02` gate.
+
+### Результат сто восемьдесят второй исполняемой порции (31.08.2026)
+
+- `[x]` Прямой вызов `createAutoCareBroadcastRequest` теперь повторно нормализует и проверяет `photoUrls` перед сохранением; schema bypass не позволяет записать public URL, traversal или значение не-строкового типа.
+- `[x]` Нормализатор поддерживает только namespaces `requests` и `broadcasts`, trim-ит ссылки и ограничивает коллекцию 12 элементами; invalid input возвращает стабильный `422 VALIDATION_ERROR`.
+- `[x]` Private-reference policy suite расширен до **3/3**, полный backend unit — **190 файлов / 636 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` HTTP/storage replay broadcast photos через private S3/AV/signed access остаётся внешним `PILOT-03/SEC-02` gate.
+
+### Результат сто восемьдесят третьей исполняемой порции (31.08.2026)
+
+- `[x]` Очередь moderation-evidence для документов владельца теперь повторно нормализует записи перед сохранением; прямой вызов не может записать не-объект, пустой/слишком длинный label, public reference или невалидную дату.
+- `[x]` Для документов действует bounded-коллекция максимум 20 элементов, trim для label/reference и обязательный timezone offset для строковых дат; переполнение и malformed input дают стабильный `422 VALIDATION_ERROR`, а не молчаливое усечение или `500`.
+- `[x]` Создание provider передаёт документы в единый нормализатор; private-reference policy suite расширен до **4/4**, полный backend unit — **190 файлов / 637 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная проверка документов через private storage, AV/quarantine и signed moderator access остаётся внешним `PILOT-03/SEC-02` gate.
+
+### Результат сто восемьдесят четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Создание профиля автосервиса теперь строго нормализует `logoUrl`, `coverImageUrl` и `galleryImageUrls` перед записью; прямой вызов не может сохранить внешний, protocol-relative, static или traversal URL.
+- `[x]` Для owner media действует лимит 12 gallery references, trim и deduplication; malformed/non-string input даёт стабильный `422 VALIDATION_ERROR`, а response-фильтрация legacy rows остаётся неизменной.
+- `[x]` Добавлен strict write-boundary regression для generated logo/cover/gallery и unsafe input; public-media suite расширен до **5/5**, полный backend unit — **190 файлов / 638 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная загрузка, AV/quarantine, private storage ACL и moderation replay остаются внешними `PILOT-03/SEC-02` gates.
+
+### Результат сто восемьдесят пятой исполняемой порции (31.08.2026)
+
+- `[x]` `createAutoCareReview` и `updateClientAutoCareReview` теперь повторно нормализуют рейтинг и текст непосредственно перед записью; прямой вызов не может сохранить NaN/дробный/вне диапазона рейтинг или короткий/не-строковый текст.
+- `[x]` Текст приводится к NFKC и trim-ится, сохраняется исходный регистр; ограничения совпадают с review schema (рейтинг 1–5, текст 10–1000 символов), invalid input даёт стабильный `422 VALIDATION_ERROR`.
+- `[x]` Добавлен review-content regression; review-integrity suite расширен до **5/5**, полный backend unit — **190 файлов / 639 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный staging review submission, moderation decision, attached review media и multi-client replay остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат сто восемьдесят шестой исполняемой порции (31.08.2026)
+
+- `[x]` Сообщения service-request и generic chat теперь нормализуют тело непосредственно перед сохранением: NFKC, trim и bounded длина 1–4000 символов; пустые, non-string и oversized значения дают `422 VALIDATION_ERROR`.
+- `[x]` Service-request idempotency key теперь проходит тот же safe runtime-контракт при прямом вызове, что и HTTP header: только 8–128 символов `[A-Za-z0-9_-]`; retry fingerprint строится по нормализованному телу.
+- `[x]` Добавлены message-content и direct-idempotency regressions; полный backend unit — **191 файл / 642 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Multi-process Redis/WebSocket delivery, reconnect/retry и staging chat moderation остаются внешними `PILOT-06/SEC-06/SEC-09` gates.
+
+### Результат сто восемьдесят седьмой исполняемой порции (31.08.2026)
+
+- `[x]` `createAutoCareServiceOffer` теперь повторно нормализует payload непосредственно перед транзакцией: type, title, description, discount, coupon, amount, currency и expiry не могут обойти HTTP schema при прямом вызове.
+- `[x]` Купоны и валюты сохраняются в каноническом верхнем регистре, amount/currency проверяются как согласованная пара, alternative-offer не принимает discount/coupon поля, а discount требует целый процент 1–100.
+- `[x]` Сервис использует нормализованный title в message body, repair event и notification; добавлен отдельный offer-policy regression suite **3/3**, полный backend unit — **192 файла / 645 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Quote/offer replay с реальными PostgreSQL locks и staging multi-process concurrency остаётся внешним `PILOT-04/SEC-06` gate; платежные системы намеренно не входят в проверку.
+
+### Результат сто восемьдесят восьмой исполняемой порции (31.08.2026)
+
+- `[x]` `createAutoCareServiceQuote` теперь повторно нормализует payload непосредственно перед транзакцией: сумма, валюта, note, line items, налоги, комиссии, expiry и `priceLocked` не могут обойти HTTP schema при прямом вызове.
+- `[x]` Line items ограничены 100 элементами, имеют bounded title/kind/quantity/unit price, а `totalMinor` вычисляется только после безопасной проверки чисел; необязательные поля получают канонические defaults.
+- `[x]` Валюта и note нормализуются, malformed даты/числа и неконсистентные line items дают стабильный `422 VALIDATION_ERROR`; добавлен quote-input regression suite **4/4**, полный backend unit — **193 файла / 649 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL quote replay, блокировки и multi-process concurrency остаются внешним `PILOT-04/SEC-06` gate; платежные системы намеренно не входят в проверку.
+
+### Результат сто восемьдесят девятой исполняемой порции (31.08.2026)
+
+- `[x]` Запрос переноса визита теперь повторно нормализует `proposedAt` и причину на сервисной границе; обязательна offset-aware дата, а reason ограничен 1 000 символами и приводится к NFKC/trim.
+- `[x]` Решение по переносу также проверяет reason до транзакции, поэтому non-string и oversized значения не доходят до `resolutionReason` или audit event; прошлое время по-прежнему возвращает бизнес-конфликт 409.
+- `[x]` Добавлен reschedule-input regression suite **3/3**, полный backend unit — **194 файла / 652 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный multi-process reschedule race и staging PostgreSQL capacity replay остаются внешним `PILOT-04/SEC-06` gate.
+
+### Результат сто девяностой исполняемой порции (31.08.2026)
+
+- `[x]` Причины отмены, no-show и завершения визита теперь проходят единый bounded normalizer до открытия транзакции; non-string и тексты длиннее 1 000 символов дают стабильный `422 VALIDATION_ERROR`.
+- `[x]` Причины приводятся к NFKC/trim, пустые значения канонизируются в `null`, а сохранённые значения в request, repair event и audit flow больше не зависят от небезопасного прямого вызова.
+- `[x]` Reschedule policy regression расширен до **3/3**, полный backend unit — **194 файла / 652 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальное PostgreSQL transition matrix для cancel/no-show/complete и multi-process race остаётся внешним `PILOT-04/SEC-06` gate.
+
+### Результат сто девяносто первой исполняемой порции (31.08.2026)
+
+- `[x]` `createAutoCareServiceRequest` теперь повторно нормализует вход непосредственно перед lookup и транзакцией; прямой вызов не может обойти route schema и записать повреждённые идентификаторы, даты, snapshots, заметку или idempotency key.
+- `[x]` UUID приводятся к каноническому lowercase, `preferredAt` требует offset-aware datetime и сохраняется в UTC ISO, contact/vehicle JSONB проходят bounded allow-list и NFKC/trim, note ограничена 4 000 символами, а idempotency key использует общий safe-контракт 8–128 символов до обращения к БД.
+- `[x]` Добавлен request-input regression suite **4/4**, полный backend unit — **195 файлов / 656 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL create-request idempotency/concurrency replay и внешняя доставка email/телефона остаются staging gates `PILOT-02/PILOT-04/SEC-06`; partial contact snapshots сохранены только для совместимости внутренних fixtures, HTTP route по-прежнему требует полный контактный schema-контракт.
+
+### Результат сто девяносто второй исполняемой порции (31.08.2026)
+
+- `[x]` Appeal create boundary теперь проверяет subject, subjectId/providerId и evidence UUID до обращений к БД; reason нормализуется NFKC/trim, evidence ограничены 20 валидными UUID без молчаливого усечения и дубликатов.
+- `[x]` Admin appeal decision boundary теперь безопасно обрабатывает malformed payload: статус ограничен `accepted/rejected`, reason нормализуется и ограничен 2 000 символами; прямой вызов больше не падает на `.trim()` или не пишет невалидный статус.
+- `[x]` Appeal policy regression расширен до **4/4**, полный backend unit — **195 файлов / 657 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный HTTP/PostgreSQL appeal lifecycle, evidence ownership replay и multi-process moderation race остаются внешними gates `PILOT-03/SEC-06`; route schema и private storage policy продолжают действовать независимо от сервисного normalizer.
+
+### Результат сто девяносто третьей исполняемой порции (31.08.2026)
+
+- `[x]` Create chat report boundary теперь повторно проверяет категорию и описание до lookup/save; описание приводится к NFKC/trim, пустое значение становится `null`, максимум — 2 000 символов.
+- `[x]` Chat block boundary нормализует UUID участника и причину до поиска/записи; malformed target/reason даёт стабильный `422 VALIDATION_ERROR`, а не TypeORM/`trim()` exception.
+- `[x]` Admin chat-report decision boundary ограничивает статус `resolved/dismissed`, причину 2 000 символами и `blockUser` boolean; добавлен policy suite **5/5**, полный backend unit — **196 файлов / 662 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный multi-process chat moderation/reconnect, private media quarantine и staging queue replay остаются внешними gates `PILOT-03/PILOT-06/SEC-06`.
+
+### Результат сто девяносто четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` `createAutoCareChat` теперь повторно нормализует type, subject и optional provider/request UUID до provider lookup и thread persistence; NFKC/trim и bounded subject не позволяют сохранить управляющие символы или oversized тему.
+- `[x]` Прямой malformed вызов возвращает стабильный `422 VALIDATION_ERROR`, а существующая role/provider/chat-enabled логика не изменена; canonical UUID используются в permission и duplicate checks.
+- `[x]` Добавлен chat-input policy suite **4/4**, полный backend unit — **197 файлов / 666 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Привязка optional `requestId` к новым inquiry/support thread и реальный multi-process chat replay остаются отдельными staging/contract задачами; эта порция закрывает только безопасную нормализацию текущего create flow.
+
+### Результат сто девяносто пятой исполняемой порции (31.08.2026)
+
+- `[x]` Upload envelope для service-request и chat attachments теперь повторно проверяет fileName, MIME, declared size и base64 до decode/storage; direct-call bypass больше не может передать `null`, non-string или oversized envelope в attachment pipeline.
+- `[x]` File names нормализуются NFKC/trim и ограничены 255 символами без управляющих code points; `decodeAutoCareAttachment` сам возвращает стабильный `422 VALIDATION_ERROR` для malformed runtime input.
+- `[x]` Attachment content regression расширен, полный backend unit — **197 файлов / 667 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Private S3 ACL, ClamAV/quarantine, signed delivery и production storage rehearsal остаются внешними gates `PILOT-03/SEC-02`; текущая порция усиливает только локальную write boundary.
+
+### Результат сто девяносто шестой исполняемой порции (31.08.2026)
+
+- `[x]` Client vehicle create/update теперь повторно нормализуют payload на сервисной границе; прямой вызов не может записать неизвестные поля, невалидные года/числа, неподдерживаемый fuel type или повреждённый VIN.
+- `[x]` Марка/модель/цвет/идентификаторы приводятся к NFKC/trim, `brandId` канонизируется в lowercase, VIN проверяется по 17-символьному allow-list и uppercase; nullable plate/internal number безопасно превращаются в `null`.
+- `[x]` Добавлен client-vehicle policy suite **4/4**, полный backend unit — **198 файлов / 671 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная PostgreSQL persistence vehicleId/snapshot в заявке, удаление автомобиля и staging client-path replay остаются внешними gates `MVP-02/PILOT-02`; fleet vehicle scope намеренно не расширяется.
+
+### Результат сто девяносто седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Favorites create/remove/sync теперь повторно проверяют UUID кабинета на сервисной границе и канонизируют идентификаторы в lowercase до lookup/upsert/delete.
+- `[x]` Sync payload больше не принимает `null`, non-array, malformed IDs или превышение лимита 100; сервис возвращает стабильный `422 VALIDATION_ERROR`, а duplicate IDs дедуплицируются без изменения порядка.
+- `[x]` Favorites policy suite добавлен в unit gate (**3/3**), полный backend unit — **199 файлов / 674 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL favorite replay и multi-device concurrency остаются внешними client-path/staging checks; платежи и подписочные связи не затрагиваются.
+
+### Результат сто девяносто восьмой исполняемой порции (31.08.2026)
+
+- `[x]` Обновление пользовательских preferences теперь повторно проверяет partial payload на сервисной границе до notification mutation и `UserEntity.save`.
+- `[x]` Email switches требуют boolean, locale проходит supported-locale policy, city/categories нормализуются whitespace/NFKC, ограничиваются длинами/количеством, а неизвестные ключи и malformed runtime values дают стабильный `422 VALIDATION_ERROR`.
+- `[x]` Preference policy suite добавлен в unit gate (**4/4**), полный backend unit — **200 файлов / 678 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL preference/notification replay и проверка consent/retention в staging остаются внешним `PILOT-02/SEC-03` gate.
+
+### Результат сто девяносто девятой исполняемой порции (31.08.2026)
+
+- `[x]` Admin moderation evidence decision теперь повторно нормализует `status` и `reason` непосредственно перед транзакцией; прямой вызов не может сохранить неизвестные поля, нестроковую причину или неподдерживаемый статус.
+- `[x]` Причина проходит NFKC/trim и bounded-ограничение 1–2 000 символов, а malformed payload возвращает стабильный `422 VALIDATION_ERROR` до блокировки строки и изменения provider/review.
+- `[x]` Moderation-evidence policy suite расширен до **6/6**, полный backend unit — **201 файл / 684 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полноценный evidence viewer, private media access, AV/quarantine и staging moderation replay остаются внешними gates `PILOT-03/SEC-02/SEC-06`; локальная сервисная нормализация их не подменяет.
+
+### Результат двухсотой исполняемой порции (31.08.2026)
+
+- `[x]` Список appeals в admin service теперь повторно нормализует query на сервисной границе; статусы и subjects ограничены enum, `limit` — целым диапазоном 1–100, а неизвестные поля и malformed runtime values отклоняются до запроса к PostgreSQL.
+- `[x]` Withdraw и admin decision канонизируют `appealId` как UUID до блокировки строки; malformed identifier получает стабильный `422 VALIDATION_ERROR`, а не TypeORM/DB exception.
+- `[x]` Значение по умолчанию зафиксировано на 50 записей; route-compatible `cursor` принимается bounded-проверкой до завершения миграции списка на полноценную cursor pagination, но текущий array response contract не изменён.
+- `[x]` Appeal policy suite расширен до **5/5**, полный backend unit — **201 файл / 685 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полноценная cursor pagination admin appeals и staging HTTP replay остаются отдельными задачами; эта порция закрывает только bounded query boundary без изменения API-формата.
+
+### Результат двести первой исполняемой порции (31.08.2026)
+
+- `[x]` Admin moderation evidence queue теперь повторно нормализует status filter на сервисной границе; принимаются только `pending`, `approved` и `rejected`, с NFKC/trim/lowercase canonicalization.
+- `[x]` Unknown, legacy `verified`, non-string и malformed status values получают стабильный `422 VALIDATION_ERROR` до обращения к TypeORM; прежний лимит выборки 100 и response contract не изменены.
+- `[x]` Moderation-evidence policy suite расширен до **7/7**, полный backend unit — **201 файл / 686 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полноценная moderation queue UI, evidence viewer, private media access и staging queue replay остаются внешними `PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двести второй исполняемой порции (31.08.2026)
+
+- `[x]` `evidenceId` в admin moderation decision и `providerId` в owner evidence list теперь канонизируются как UUID до обращения к PostgreSQL; пробелы и регистр нормализуются, malformed identifiers отклоняются.
+- `[x]` Прямой вызов с повреждённым идентификатором получает стабильный `422 VALIDATION_ERROR`, а branch ownership lookup и moderation lock работают только с canonical UUID.
+- `[x]` Moderation-evidence policy suite расширен до **8/8**, полный backend unit — **201 файл / 687 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная owner/admin HTTP-проверка ownership, private media ACL и staging moderation replay остаются внешними `PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двести третьей исполняемой порции (31.08.2026)
+
+- `[x]` Admin provider change request queue теперь повторно нормализует status/kind filter на сервисной границе; enum values приводятся к NFKC/trim/lowercase, unknown значения отклоняются до PostgreSQL.
+- `[x]` Admin decision канонизирует request UUID и статус `approved/rejected`, нормализует nullable reason с лимитом 2 000 символов и возвращает стабильный `422 VALIDATION_ERROR` для malformed direct calls.
+- `[x]` Provider change request policy suite расширен до **11/11**, полный backend unit — **201 файл / 689 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный admin/provider HTTP replay, PostgreSQL lock race и private document moderation остаются внешними `PILOT-03/SEC-06/SEC-02` gates.
+
+### Результат двести четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Catalog-gap admin queue теперь повторно нормализует status filter; принимаются только `pending`, `approved` и `rejected`, с NFKC/trim/lowercase canonicalization.
+- `[x]` Admin decision канонизирует request UUID и статус `approved/rejected`, нормализует reason до 2 000 символов и требует непустую причину для rejection; malformed direct calls получают `422 VALIDATION_ERROR` до lock и catalog mutation.
+- `[x]` Добавлен catalog-gap policy suite **4/4**, полный backend unit — **202 файла / 693 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный catalog-gap HTTP/PostgreSQL replay, уникальность service slug под гонкой и admin audit/evidence остаются внешними `PILOT-03/SEC-06` gates.
+
+### Результат двести пятой исполняемой порции (31.08.2026)
+
+- `[x]` Admin service-definition update теперь повторно нормализует category, localized labels, price type, comparison attributes и active flag до записи; неизвестные поля, malformed types и normalized label collisions отклоняются.
+- `[x]` Definition UUID канонизируется до lookup, labels/attributes проходят NFKC/trim и bounded-лимиты, дубликаты attributes дедуплицируются без молчаливого усечения.
+- `[x]` Catalog-gap policy suite расширен до **6/6**, полный backend unit — **202 файла / 695 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный admin catalog HTTP replay, PostgreSQL slug uniqueness/concurrency и audit evidence остаются внешними `PILOT-03/SEC-06` gates.
+
+### Результат двести шестой исполняемой порции (31.08.2026)
+
+- `[x]` Создание catalog-gap request теперь повторно нормализует полный payload до permission lookup и записи; provider UUID, proposed slug, category, labels, price type, comparison attributes и rationale получают канонические типы и bounded-лимиты.
+- `[x]` Unknown fields, malformed/public identifiers, invalid slug/locale/price values и oversized collections/reason отклоняются через `422 VALIDATION_ERROR`; attributes дедуплицируются без молчаливого усечения, provider permission проверяется по canonical UUID.
+- `[x]` Catalog-gap policy suite расширен до **8/8**, полный backend unit — **202 файла / 697 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный catalog-gap HTTP/PostgreSQL replay, duplicate pending race и slug uniqueness под конкуренцией остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двести седьмой исполняемой порции (31.08.2026)
+
+- `[x]` Admin chat reports queue теперь повторно нормализует status filter на сервисной границе; принимаются только `pending`, `resolved`, `dismissed`, с NFKC/trim/lowercase canonicalization.
+- `[x]` Admin report decision канонизирует `reportId` как UUID до lookup; malformed identifiers получают стабильный `422 VALIDATION_ERROR`, не доходя до moderation mutation.
+- `[x]` Chat-moderation policy suite расширен до **6/6**, полный backend unit — **202 файла / 698 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный moderation queue/reconnect replay, private attachments и staging multi-process race остаются внешними `PILOT-03/PILOT-06/SEC-06` gates.
+
+### Результат двести восьмой исполняемой порции (31.08.2026)
+
+- `[x]` Chat thread lookup теперь канонизирует `chatId` до access check; revoke block дополнительно проверяет `chatId` и `blockId` до запроса и изменения статуса.
+- `[x]` Chat attachment lookup и request-thread lookup получили тот же UUID-boundary, поэтому malformed direct calls получают `422 VALIDATION_ERROR` до чтения private object или сообщения.
+- `[x]` Chat-input policy suite расширен до **5/5**, полный backend unit — **202 файла / 699 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный chat authorization replay, private attachment ACL, signed delivery и multi-process reconnect остаются внешними `PILOT-03/PILOT-06/SEC-02` gates.
+
+### Результат двести девятой исполняемой порции (31.08.2026)
+
+- `[x]` Owner provider change request теперь повторно нормализует provider UUID, request kind и profile payload до permission lookup/duplicate check; verification request не принимает профильные поля.
+- `[x]` Owner list/cancel paths канонизируют provider/request UUID, а malformed envelope, неизвестные поля и unsafe profile values получают стабильный `422 VALIDATION_ERROR` до PostgreSQL.
+- `[x]` Provider change request policy suite расширен до **13/13**, полный backend unit — **202 файла / 701 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный owner/admin workflow, multi-owner race и private document moderation остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двести десятой исполняемой порции (31.08.2026)
+
+- `[x]` Owner membership/invitation list, create и revoke paths теперь канонизируют provider, invitation и membership UUID до permission lookup и запросов; malformed identifiers получают стабильный `422 VALIDATION_ERROR`.
+- `[x]` Invitation envelope принимает только поддерживаемые роли `manager/staff`, валидный email и UUID service location; неизвестные поля и небезопасные значения отклоняются до записи.
+- `[x]` Invitation token trim/формат/длина проверяются до SHA-256 lookup, поэтому malformed direct calls не доходят до хеширования и транзакции принятия.
+- `[x]` Добавлен provider membership policy suite **4/4**, полный backend unit — **203 файла / 705 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальная доставка приглашений через SMTP, HTTP replay, multi-process accept race и staging branch-scoped workflow остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двести одиннадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Owner bonus programme и liability paths теперь канонизируют provider UUID до permission lookup и чтения/записи provider-scoped данных.
+- `[x]` Redeem и manual grant повторно проверяют payload на сервисной границе: UUID клиента/заявки, целые bounded points, reason/name, проценты, срок действия, active flag и unknown fields; malformed direct calls получают `422 VALIDATION_ERROR` до транзакции.
+- `[x]` Idempotency-Key для bonus mutation нормализуется общим safe-character контрактом; grant требует ключ, а redeem сохраняет прежний deterministic fallback при его отсутствии.
+- `[x]` Добавлен bonus input policy suite **5/5**, полный backend unit — **204 файла / 710 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный owner/client HTTP replay, PostgreSQL bonus race и staging audit/retention остаются внешними `PILOT-02/SEC-03/SEC-06` gates.
+
+### Результат двести двенадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Owner analytics теперь принимает только canonical provider UUID и передаёт его в capability lookup, provider query, branch-scoped requests, reviews, bonus liability и daily metrics.
+- `[x]` Malformed direct calls получают стабильный `422 VALIDATION_ERROR` до проверки разрешений и любого обращения к PostgreSQL; uppercase/whitespace UUID приводятся к одному ключу scope.
+- `[x]` Добавлены analytics service boundary tests **2/2**, полный backend unit — **205 файлов / 712 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный analytics HTTP replay, consent/retention evidence и staging multi-location aggregation остаются внешними `PILOT-02/SEC-03/SEC-06` gates.
+
+### Результат двести тринадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Owner reviews и review-promo paths теперь канонизируют provider/review/request UUID до provider lookup, branch permission и review mutation; optional provider filter не может расширить список чужих сервисов.
+- `[x]` Promo input/code получают NFKC/trim/uppercase normalization и bounded-проверки discount, service slug и expiry; malformed direct calls получают `422 VALIDATION_ERROR` до PostgreSQL и transaction lock.
+- `[x]` Client review create/update теперь отклоняет malformed request/review identifiers до чтения заявки/отзыва; redeem promo проверяет код до транзакции.
+- `[x]` Добавлены review policy и service-boundary suites **6/6**, полный backend unit — **207 файлов / 718 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный review HTTP replay, moderation evidence/private media, promo redemption race и staging branch-scoped audit остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двести четырнадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Public provider profile, offers и reviews теперь канонизируют provider UUID до чтения профиля, филиалов, офферов и approved reviews.
+- `[x]` Public service filter нормализуется через NFKC/trim и bounded-лимит, а review limits получают безопасный диапазон `1..50`; malformed direct calls возвращают `422 VALIDATION_ERROR` до PostgreSQL.
+- `[x]` Добавлены public-provider policy и service-boundary suites **5/5**, полный backend unit — **209 файлов / 723 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный публичный HTTP replay, provider discovery rate limit и staging media/SEO evidence остаются внешними `PILOT-02/PILOT-05/SEC-06` gates.
+
+### Результат двести пятнадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Owner calendar/capacity resources и reservations теперь канонизируют provider/location/resource UUID до branch permission, default-resource reads и reservation queries.
+- `[x]` Resource create/update payloads проходят allow-list, enum, NFKC/trim, capacity `1..100`, boolean и bounded JSON metadata; reservation ranges требуют offset datetime и безопасный порядок `from < to`.
+- `[x]` Malformed direct calls получают `422 VALIDATION_ERROR` до authorization/transaction, а canonical branch scope используется во всех capacity reads/writes.
+- `[x]` Добавлены capacity policy и service-boundary suites **7/7**, полный backend unit — **211 файлов / 730 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полный resource-level concurrency, multi-process calendar replay и staging branch schedule остаются внешними `PILOT-02/SEC-06` gates; lifts/equipment не расширялись.
+
+### Результат двести шестнадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Owner communication settings теперь канонизируют provider UUID до owner-scoped lookup; пробелы и регистр не меняют branch scope, malformed identifiers получают `422 VALIDATION_ERROR` до PostgreSQL.
+- `[x]` Communication payload принимает только allow-list полей; team/business enums, booleans, response window `15..10 080`, contact note и cross-field правила проходят bounded/NFKC-проверку до `Object.assign` и `save`.
+- `[x]` Добавлены communication policy и service-boundary suites **8/8**, полный backend unit — **213 файлов / 738 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный owner HTTP replay, SMTP delivery и staging consent/retention evidence остаются внешними `PILOT-02/SEC-06` gates.
+
+### Результат двести семнадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Создание профиля сервиса владельцем теперь канонизирует market/zone UUID до repository lookup; пробелы и регистр не меняют рынок или зону.
+- `[x]` Невалидные или смешанные market/zone references получают `422 VALIDATION_ERROR` до чтения PostgreSQL и открытия транзакции; проверка принадлежности активной зоны выбранному рынку сохранена.
+- `[x]` Добавлены provider-location policy и service-boundary suites **4/4**, полный backend unit — **215 файлов / 742 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный owner onboarding HTTP replay и staging multi-location verification остаются внешними `PILOT-02/SEC-06` gates.
+
+### Результат двести восемнадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Owner offer update теперь канонизирует provider/offer/resource UUID до lookup и permission check; описание, цена, режим записи и resource arrays проходят allow-list, NFKC и bounded-проверки.
+- `[x]` Offer mutation подтверждает принадлежность оффера выбранному provider через `service_location`; owner provider-wide scope больше не может изменить оффер чужого сервиса по одному `offerId`.
+- `[x]` Добавлены owner-offer policy и service-boundary suites **7/7**, полный backend unit — **217 файлов / 749 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный owner catalog HTTP replay, PostgreSQL resource race и staging branch audit остаются внешними `PILOT-02/SEC-06` gates.
+
+### Результат двести девятнадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Offer update теперь проверяет совместимость выбранных active resources с заявленными resource types; lift/equipment не могут незаметно попасть в offer, объявленный только для bay/specialist.
+- `[x]` Проверка выполняется после provider/location scope и до `save`, без изменения существующего поведения для офферов без явных resource IDs.
+- `[x]` Policy и service-boundary suites расширены до **9/9**, полный backend unit — **217 файлов / 751 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полная reservation concurrency и staging resource replay остаются внешними `PILOT-02/SEC-06` gates.
+
+### Результат двести двадцатой исполняемой порции (31.08.2026)
+
+- `[x]` Все chat/quote/offer/attachment/confirm/reschedule/no-show/complete/cancel service-request paths теперь канонизируют request UUID до repository lookup или transaction; malformed direct calls получают `422 VALIDATION_ERROR`.
+- `[x]` Offer decisions дополнительно проверяют message UUID, а attachment reads — attachment UUID до participant lookup и signed-object access.
+- `[x]` Добавлены request UUID policy и service-boundary suites **7/7**, полный backend unit — **218 файлов / 754 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный HTTP replay переходов, PostgreSQL concurrency и staging delivery остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двести двадцать первой исполняемой порции (31.08.2026)
+
+- `[x]` Availability теперь канонизирует provider/location/offering UUID до активного-provider lookup и расчёта слотов; все запросы заново используют canonical scope.
+- `[x]` Дата availability проходит строгую календарную проверку (включая leap day), а невозможные даты и malformed direct calls получают `422 VALIDATION_ERROR` до PostgreSQL.
+- `[x]` Добавлены availability policy и service-boundary suites **5/5**, полный backend unit — **220 файлов / 759 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный availability HTTP replay, timezone matrix и staging capacity evidence остаются внешними `PILOT-02/SEC-06` gates.
+
+### Результат двести двадцать второй исполняемой порции (31.08.2026)
+
+- `[x]` AutoCare favorites add/remove/sync теперь канонизируют provider/location UUID и повторно проверяют bounded sync list до PostgreSQL.
+- `[x]` Duplicate provider IDs дедуплицируются, malformed references и списки свыше 100 элементов получают `422 VALIDATION_ERROR`; owner/client scope поведения не менялся.
+- `[x]` Добавлены favorites policy и service-boundary suites **5/5**, полный backend unit — **222 файла / 764 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный client favorites HTTP replay и staging deletion/retention evidence остаются внешними `PILOT-02/SEC-03` gates.
+
+### Результат двести двадцать третьей исполняемой порции (31.08.2026)
+
+- `[x]` Публичный trust endpoint теперь канонизирует provider UUID до active-provider lookup, evidence/snapshot reads и response projection.
+- `[x]` Malformed direct calls получают `422 VALIDATION_ERROR` до PostgreSQL; uppercase/whitespace UUID приводятся к одному публичному provider scope.
+- `[x]` Добавлены trust service-boundary tests **2/2**, полный backend unit — **223 файла / 766 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный trust HTTP replay, snapshot expiry/rollout staging и production moderation evidence остаются внешними `PILOT-02/SEC-06` gates.
+
+### Результат двести двадцать четвёртой исполняемой порции (31.08.2026)
+
+- `[x]` Marketplace service теперь канонизирует UUID для repair timeline, broadcast request/offer, guarantee claim и fleet vehicle до repository lookup, workspace authorization и transaction.
+- `[x]` Malformed direct calls получают `422 VALIDATION_ERROR` до PostgreSQL, включая location UUID в offer mutation; существующие owner/client authorization paths не изменены.
+- `[x]` Добавлены marketplace identifier boundary tests **3/3 (8 assertions)**, полный backend unit — **224 файла / 769 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный marketplace HTTP replay, transaction race и staging branch-scoped workflow остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двести двадцать пятой исполняемой порции (03.09.2026)
+
+- `[x]` Fair-price query теперь нормализует service, market, make, model и fuel references до bounded NFKC/trim-значений перед каталогом.
+- `[x]` Некорректные или oversized references и `engineLiters` получают `422 VALIDATION_ERROR` до repository access; нормализованный service reference используется в первом definition lookup.
+- `[x]` Добавлены marketplace fair-price boundary tests **2/2 (5 assertions)**, полный backend unit — **224 файла / 771 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный fair-price HTTP replay, catalog seed parity и production benchmark остаются внешними `PILOT-02/PILOT-05/SEC-06` gates.
+
+### Результат двести двадцать шестой исполняемой порции (03.09.2026)
+
+- `[x]` Public location-zones query теперь нормализует market reference и parent zone UUID, проверяет лимит `1..100` и координаты до обращения к каталогу.
+- `[x]` Trimmed market code используется в fallback/DB lookup, а canonical parent UUID — в zone query; malformed direct calls получают `422 VALIDATION_ERROR` до PostgreSQL.
+- `[x]` Добавлены location-zones boundary tests **4/4**, полный backend unit — **225 файлов / 775 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный location-zones HTTP replay, market hierarchy seed и production geospatial benchmark остаются внешними `PILOT-02/PILOT-05/SEC-06` gates.
+
+### Результат двести двадцать седьмой исполняемой порции (03.09.2026)
+
+- `[x]` Public discovery query теперь повторно нормализуется на service boundary до cache key и SQL: bounded текстовые фильтры, UUID зоны, enum sort/price type, boolean-флаги, радиус и лимиты.
+- `[x]` Проверяются finite числовые диапазоны, `minPrice <= maxPrice`, cursor length и unknown fields; malformed direct calls получают `422 VALIDATION_ERROR` до cache/репозитория.
+- `[x]` Добавлен discovery input policy suite **4/4**, полный backend unit — **226 файлов / 779 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный discovery HTTP replay, cursor/market load benchmark и staging rate-limit evidence остаются внешними `PILOT-02/PILOT-05/SEC-06` gates.
+
+### Результат двести двадцать восьмой исполняемой порции (03.09.2026)
+
+- `[x]` Public analytics events теперь канонизируют provider UUID перед SQL-записью; malformed profile-open IDs не вызывают запрос к БД.
+- `[x]` Discovery impression batches дедуплицируются, суммируются и ограничены 100 provider IDs; пустые/oversized/non-array входы отбрасываются без SQL.
+- `[x]` Добавлены analytics event boundary tests **4/4**, полный backend unit — **227 файлов / 783 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный analytics HTTP replay, consent/retention evidence и production metrics storage остаются внешними `PILOT-02/SEC-03/SEC-06` gates.
+
+### Результат двести двадцать девятой исполняемой порции (03.09.2026)
+
+- `[x]` Expert-question service теперь повторно нормализует symptoms, categorySlug и vehicleSnapshot перед JSONB persistence; прямые вызовы не могут обойти границы HTTP-схемы.
+- `[x]` Симптомы и категория проходят NFKC/trim и bounded-проверки, vehicle snapshot использует общий строгий allow-list с request boundary, а неизвестные поля отклоняются до repository access.
+- `[x]` Добавлены expert-question policy и service-boundary suites **7/7**, полный backend unit — **229 файлов / 790 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный expert-question HTTP replay, moderation/PII retention evidence и staging workflow остаются внешними `PILOT-02/SEC-03/SEC-06` gates.
+
+### Результат двухсот тридцатой исполняемой порции (03.09.2026)
+
+- `[x]` Fleet account и fleet vehicle service теперь повторно нормализуют name, notes, label и approvalPolicy до repository access; прямые вызовы не могут обойти route schema.
+- `[x]` Fleet vehicle JSONB ограничен scalar-record контрактом: только безопасные ключи, строки/целые числа/null, максимум 24 поля и bounded длины; текущие UI-поля `brandId`, `registrationNumber`, `internalReference` сохранены.
+- `[x]` Добавлен fleet input policy и service-boundary regression **5/5**, полный backend unit — **230 файлов / 795 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Fleet/B2B остаётся вне обязательного пилотного scope; реальный multi-owner workflow и staging authorization не закрываются этой локальной порцией.
+
+### Результат двухсот тридцать первой исполняемой порции (03.09.2026)
+
+- `[x]` Owner provider onboarding теперь повторно прогоняет полный payload через runtime-схему до market lookup и транзакции; прямые вызовы не могут записать невалидные core/profile, schedule или communication поля.
+- `[x]` Канонизация market/zone UUID сохранена до Zod-проверки, поэтому uppercase/whitespace UUID продолжают поддерживаться, а malformed profile values получают `422 VALIDATION_ERROR` без repository и transaction access.
+- `[x]` Provider location boundary suite прошёл **3/3**, полный backend unit — **230 файлов / 796 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный owner onboarding HTTP replay, moderation/SMTP delivery и staging multi-location workflow остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двухсот тридцать второй исполняемой порции (03.09.2026)
+
+- `[x]` Repair-event helper и внутренний transaction-helper переходов заявки теперь повторно нормализуют request/actor UUID, eventType, title и notes до JSONB/row persistence.
+- `[x]` Metadata ограничены 32 безопасными ключами, scalar-значениями или bounded scalar-массивами, с finite safe integers и максимальным размером 8 KB; nested objects, traversal-подобные ключи и oversized payload отклоняются.
+- `[x]` Добавлены repair-event policy и service-boundary suites **7/7**, полный backend unit — **232 файла / 803 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL audit replay, PII-retention verification и multi-process transition evidence остаются внешними `PILOT-02/SEC-03/SEC-06` gates.
+
+### Результат двухсот тридцать третьей исполняемой порции (03.09.2026)
+
+- `[x]` Broadcast-request service теперь повторно нормализует service/market references, issueDescription, vehicleSnapshot, private photo references, preferredAt и maxProviders до каталога и записи.
+- `[x]` Неизвестные поля, короткие/oversized описания, public/traversal media, malformed dates/snapshots и лимиты вне `1..10` получают `422 VALIDATION_ERROR` без repository access; даты сохраняются канонически в UTC.
+- `[x]` Добавлен broadcast-request policy и service-boundary regression **6/6**, полный backend unit — **233 файла / 809 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный broadcast HTTP replay, private media storage/AV и multi-provider staging concurrency остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двухсот тридцать четвёртой исполняемой порции (03.09.2026)
+
+- `[x]` Guarantee-claim service теперь повторно нормализует requestId, claimType, summary и evidenceUrls до client/request lookup и persistence.
+- `[x]` Claim types ограничены `price/quality/warranty/no_show/safety`, summary проходит NFKC/trim и 10–4 000 символов, evidence остаются private claim references максимум 20; invalid direct calls получают `422 VALIDATION_ERROR` до PostgreSQL.
+- `[x]` Добавлены guarantee-claim policy и service-boundary regressions **6/6**, полный backend unit — **234 файла / 815 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный guarantee HTTP replay, moderation/PII retention, private S3/AV и multi-process claim race остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-03/SEC-06` gates.
+
+### Результат двухсот тридцать пятой исполняемой порции (03.09.2026)
+
+- `[x]` Appeal create/decision policies теперь отклоняют неизвестные поля; сервисные функции принимают `unknown` и используют runtime-валидацию до subject/evidence lookup и транзакции.
+- `[x]` Для appeal payload сохранены allow-list полей `subject/subjectId/providerId/reason/evidenceIds`, bounded reason/evidence и UUID-нормализация; decision payload принимает только `status/reason`.
+- `[x]` Добавлены regressions для unsupported fields, полный backend unit — **234 файла / 815 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный appeal HTTP replay, moderation evidence viewer, retention/PII review и staging authorization остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот тридцать шестой исполняемой порции (03.09.2026)
+
+- `[x]` Chat и service-request message mutations теперь принимают `unknown`, проверяют object shape и allow-list полей до participant/thread lookup; прямые `null`, массивы и лишние поля получают `422 VALIDATION_ERROR` вместо `TypeError/500`.
+- `[x]` Общая message policy канонизирует NFKC/trim body и service idempotency key; idempotency продолжает использовать прежнее строгое правило безопасных 8–128 символов.
+- `[x]` Добавлены message-policy и service-request boundary regressions **7/7**, полный backend unit — **234 файла / 818 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Multi-process chat delivery/reconnect, private S3/AV, moderation queue и staging WebSocket smoke остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двухсот тридцать седьмой исполняемой порции (03.09.2026)
+
+- `[x]` Chat moderation report policy теперь канонизирует категорию и статус через NFKC/trim/lowercase и отклоняет неизвестные поля до сохранения отчёта.
+- `[x]` Chat creation policy дополнительно отклоняет unsupported fields; существующие UUID, subject и role checks не изменены.
+- `[x]` Добавлены regressions для canonical moderation values и лишних полей, полный backend unit — **234 файла / 818 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Полноценная moderation queue UI, multi-process delivery, private S3/AV и staging chat replay остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двухсот тридцать восьмой исполняемой порции (03.09.2026)
+
+- `[x]` Chat и service-request conversation queries теперь нормализуют pagination input до thread/request lookup: поддерживаются только cursor, beforeCursor и integer limit, конфликтующие курсоры и лишние поля отклоняются.
+- `[x]` `null`, массивы, non-string cursors и нецелочисленные limits получают контролируемый `422 VALIDATION_ERROR`; valid cursor decoding и прежний `400` для повреждённых/oversized cursors сохранены.
+- `[x]` Добавлены shared cursor-policy и service boundary regressions **13/13**, полный backend unit — **234 файла / 822 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный HTTP pagination replay, multi-process chat reconnect и staging load остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двухсот тридцать девятой исполняемой порции (03.09.2026)
+
+- `[x]` `markNotificationAsRead` теперь канонизирует notification UUID до repository lookup и возвращает `422 VALIDATION_ERROR` для malformed direct calls вместо потенциальной ошибки PostgreSQL.
+- `[x]` Добавлены notification UUID policy и service-boundary tests **3/3**; в общий unit gate также включён ранее не подключённый `notification-action-policy.test.ts`.
+- `[x]` Полный backend unit — **236 файлов / 825 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный notification HTTP replay, SMTP delivery, retention и staging observability остаются внешними `PILOT-02/PILOT-03/SEC-03` gates.
+
+### Результат двухсот сороковой исполняемой порции (03.09.2026)
+
+- `[x]` Notifications list query теперь повторно нормализует cursor, limit, read и category до repository lookup; категории канонизируются через NFKC/trim/lowercase.
+- `[x]` `null`, массивы, неверные типы, oversized cursor и unsupported fields получают `422 VALIDATION_ERROR`, а user-scoped SQL и прежний cursor response contract сохранены.
+- `[x]` Добавлены notification query policy и service-boundary regressions **6/6**, полный backend unit — **237 файлов / 830 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный notification HTTP replay, SMTP delivery, retention и staging observability остаются внешними `PILOT-02/PILOT-03/SEC-03` gates.
+
+### Результат двухсот сорок первой исполняемой порции (03.09.2026)
+
+- `[x]` CRUD иерархии супер-админа (страна, город, зона) теперь повторно проверяет payload после HTTP-слоя: только разрешённые поля, NFKC/trim строк, schema constraints, enum и парные координаты.
+- `[x]` Сервисные функции принимают `unknown`, нормализуют UUID страны/города/зоны и parent zone до repository lookup; malformed direct calls получают контролируемый `422 VALIDATION_ERROR`, а super-admin authorization и hierarchy ownership не изменены.
+- `[x]` Добавлены regressions для нормализации, неизвестных полей, координат, enum и UUID **5/5**, полный backend unit — **238 файлов / 835 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный super-admin HTTP replay, staging authorization matrix, audit viewer и production rollout остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот сорок второй исполняемой порции (03.09.2026)
+
+- `[x]` Platform review create теперь повторно проверяет rating `1..5`, текст `10..1000`, idempotency key и неизвестные поля непосредственно на сервисной границе; текст и ключ канонизируются через NFKC/trim.
+- `[x]` Moderator response, public limit и review UUID также получили bounded runtime-нормализацию до repository lookup; malformed direct calls получают `422 VALIDATION_ERROR`, существующая idempotency race recovery сохранена.
+- `[x]` В общий unit gate подключены ранее не запускавшиеся platform-review tests и добавлены regressions **12/12**; полный backend unit — **241 файл / 847 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный platform-review HTTP replay, moderation queue, abuse-rate-limit replay, PII/retention и staging authorization остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот сорок третьей исполняемой порции (03.09.2026)
+
+- `[x]` Обновление trust policy супер-админом теперь повторно проверяет полный payload на сервисной границе: policy version, bounded numeric thresholds, rollout shape и неизвестные поля.
+- `[x]` Rollout market IDs нормализуются в lowercase UUID, дубликаты и malformed IDs отклоняются до чтения рынков; проверка существования market scope и super-admin authorization сохранены.
+- `[x]` Добавлены trust-policy input и service-boundary regressions **5/5**, полный backend unit — **243 файла / 852 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный trust-policy HTTP replay, badge reassessment, rollout staging и независимый security review остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот сорок четвёртой исполняемой порции (03.09.2026)
+
+- `[x]` Admin provider-status mutation теперь повторно проверяет provider UUID и enum-статус после HTTP-слоя и до provider lookup; malformed direct calls получают `422 VALIDATION_ERROR`.
+- `[x]` Canonical lowercase UUID и NFKC/trim status сохраняют прежний branch/provider response и не меняют admin authorization или audit flow.
+- `[x]` Добавлены provider-status policy и service-boundary regressions **3/3**, полный backend unit — **245 файлов / 855 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный admin status HTTP replay, staging authorization matrix, suspended-provider UX и независимый security review остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двухсот сорок пятой исполняемой порции (03.09.2026)
+
+- `[x]` Outbox retry и dead-letter mutations теперь повторно проверяют event UUID после HTTP-слоя и до repository lookup; malformed direct calls получают `422 VALIDATION_ERROR`.
+- `[x]` Canonical lowercase UUID не меняет существующие outbox state guards, retry/dead-letter transitions и admin authorization.
+- `[x]` Добавлены outbox event policy и service-boundary regressions **3/3**, полный backend unit — **247 файлов / 858 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный outbox worker/retry replay, dead-letter operations, Redis/SMTP delivery и staging rollback rehearsal остаются внешними `PILOT-02/PILOT-03/SEC-06` gates.
+
+### Результат двухсот сорок шестой исполняемой порции (03.09.2026)
+
+- `[x]` Security Center event detail, status mutation и session-revoke paths теперь повторно проверяют UUID после авторизации и до repository lookup; malformed direct calls получают `422 VALIDATION_ERROR`.
+- `[x]` Status и assignee канонизируются через enum/lowercase UUID, operator note получает строгий NFKC/trim и лимит 1 000 символов; self-session conflict и super-admin-only authorization сохранены.
+- `[x]` Добавлены security-center input и service-boundary regressions **8/8**, полный backend unit — **248 файлов / 862 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный Security Center HTTP replay, active super-admin assignment, session revocation, Redis outage и staging threat review остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот сорок седьмой исполняемой порции (03.09.2026)
+
+- `[x]` System incident recording повторно проверяет тип, severity, title, requestId, metadata shape и неизвестные поля до транзакции; malformed internal calls безопасно игнорируются без открытия БД-транзакции.
+- `[x]` System incident status mutation теперь канонизирует incident UUID и статус после super-admin authorization и до repository lookup; переходы `open/acknowledged/resolved` и запрет reopen сохранены.
+- `[x]` Добавлены system-incident input и service-boundary regressions **6/6**, полный backend unit — **250 файлов / 868 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный incident ingestion, alert delivery, status HTTP replay, retention и staging rollback rehearsal остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот сорок восьмой исполняемой порции (03.09.2026)
+
+- `[x]` Security Mitigations query/create/revoke/extend paths теперь повторно проверяют runtime input после авторизации и до repository/transaction access; неизвестные поля, `null`, массивы и неверные типы получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` UUID приводятся к каноническому lowercase, IP — к bounded display/canonical lookup value, reason — к NFKC/trim без control characters; status/kind/cursor/limit и TTL/extension minutes ограничены allow-list и безопасными диапазонами.
+- `[x]` Добавлены security-mitigation input и service-boundary regressions **7/7**, полный backend unit — **251 файл / 873 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный IP-block HTTP replay, Redis cache fail-closed, production incident response и rollback rehearsal остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот сорок девятой исполняемой порции (03.09.2026)
+
+- `[x]` Security Events reader теперь повторно валидирует query после super-admin authorization и до repository access; неизвестные поля, `null`, массивы и неверные типы получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Event type ограничен значениями `SecurityEventType`, user UUID приводится к lowercase canonical form, cursor и limit нормализуются и ограничены безопасными диапазонами; прежние redaction, сортировка и cursor response сохранены.
+- `[x]` Добавлены security-events input и service-boundary regressions **6/6**, полный backend unit — **252 файла / 877 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный security-events HTTP replay, PII/retention review, audit viewer и staging observability остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятидесятой исполняемой порции (03.09.2026)
+
+- `[x]` Admin Audit Logs list/export теперь повторно валидируют query после admin authorization и до repository access; неизвестные поля, `null`, массивы и неверные типы получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Поиск, action, targetType, actor UUID, cursor и limits проходят bounded NFKC/trim-нормализацию; export limit ограничен `1..10 000`, formula-safe CSV и существующая redaction сохранены.
+- `[x]` Исправлены null-boundary регрессии в Security Events и Security Mitigations query policies; добавлены audit input и service-boundary regressions **8/8**, полный backend unit — **253 файла / 882 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный audit HTTP/export replay, полный audit viewer, PII/retention review и staging authorization остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят первой исполняемой порции (03.09.2026)
+
+- `[x]` Admin Users list и status/role mutations теперь повторно валидируют input после admin/super-admin authorization и до repository access; неизвестные поля, `null`, массивы, неверные enum, UUID и pagination получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Поиск нормализуется через NFKC/whitespace bounds, role/status канонизируются в lowercase, UUID — в canonical form; сохранены self-block guard, last-super-admin protection, session invalidation и cursor response.
+- `[x]` Добавлены admin-users policy и service-boundary regressions **5/5**, полный backend unit — **255 файлов / 887 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный admin users HTTP authorization matrix, PII redaction review и staging audit/rollback evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят второй исполняемой порции (03.09.2026)
+
+- `[x]` Admin Account Deletion Requests list/status теперь повторно валидируют input после super-admin authorization и до repository/transaction access; неизвестные поля, `null`, массивы, неверные status, UUID и pagination получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Queue status канонизируется через NFKC/trim, mutation допускает только `cancelled/completed`, request UUID приводится к lowercase canonical form; сохранены pessimistic lock, retention gate, idempotent terminal updates, anonymization и deletion invariants.
+- `[x]` Добавлены account-deletion input и service-boundary regressions **6/6**, полный backend unit — **256 файлов / 892 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный deletion HTTP replay, storage-failure retry, backup/restore и staging retention evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят третьей исполняемой порции (04.09.2026)
+
+- `[x]` Admin Cabinets status mutation теперь повторно валидирует cabinet UUID и статус после admin authorization и до SQL; malformed direct calls получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` UUID канонизируются в lowercase, статус ограничен `draft/active/blocked`; сохранены bounded legacy list, owner notification, audit metadata и текущий response contract.
+- `[x]` Добавлены admin-cabinet policy и service-boundary regressions **3/3**, полный backend unit — **258 файлов / 895 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный admin cabinet HTTP authorization matrix, moderation UX и staging audit/notification delivery остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят четвёртой исполняемой порции (04.09.2026)
+
+- `[x]` Создание администратора теперь повторно валидирует payload после super-admin authorization и до user lookup/save, token generation и email outbox; неизвестные поля, `null`, массивы и неверные типы получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Name/email нормализуются через NFKC и auth bounds, frontend origin проходит URL/origin policy, locale ограничен поддерживаемым набором; сохранены duplicate-email conflict, pre-verified admin и безопасный password-setup outbox.
+- `[x]` Добавлены admin-create input и service-boundary regressions **6/6**, полный backend unit — **260 файлов / 901 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный super-admin HTTP replay, SMTP delivery и staging bootstrap evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят пятой исполняемой порции (04.09.2026)
+
+- `[x]` Обновление legacy-профиля рынка супер-администратором теперь повторно проверяет market UUID и полный профиль payload после authorization и до repository lookup/save; malformed direct calls получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Переиспользованы ограничения legacy market schema: NFKC/trim для строк, default-locale inclusion, поддерживаемые locale/currency/timezone, allow-list capability/legal-link полей и отклонение неизвестных ключей; canonical UUID сохранён.
+- `[x]` Добавлены legacy market update policy и service-boundary regressions **3/3**, полный backend unit — **261 файл / 904 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный market-admin HTTP replay, staging authorization, audit/rollout evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят шестой исполняемой порции (04.09.2026)
+
+- `[x]` Добавлен отдельный service-boundary gate для market hierarchy CRUD: country, city и zone операции отклоняют malformed UUID/payload до repository access.
+- `[x]` Проверено, что `getSuperAdminMarketHierarchy` и все мутации сохраняют super-admin-only authorization: обычный admin получает `403` до валидации payload и чтения БД.
+- `[x]` Добавлены hierarchy service-boundary regressions **5/5** (13 boundary assertions), полный backend unit — **262 файла / 909 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный hierarchy HTTP authorization matrix, duplicate/ownership conflicts и staging audit/rollout evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят седьмой исполняемой порции (04.09.2026)
+
+- `[x]` Appeals service получил отдельный runtime boundary gate: malformed create/subject/evidence references и withdrawal UUID отклоняются до repository/transaction access.
+- `[x]` Admin appeal list, decision и pending-count paths повторно подтверждают bounded query/decision input и admin authorization; обычный client получает `403` до чтения БД.
+- `[x]` Добавлены appeal service-boundary regressions **5/5**, полный backend unit — **263 файла / 914 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный appeal HTTP replay, evidence viewer, moderation queue, notification delivery и staging retention остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот пятьдесят восьмой исполняемой порции (04.09.2026)
+
+- `[x]` Chat service получил отдельный runtime boundary gate: malformed chat/request/attachment/block identifiers и message/report/block/attachment payloads отклоняются до repository lookup или transaction.
+- `[x]` Admin chat-report list и decision paths сохраняют authorization-first порядок: обычный client получает `403`, admin с malformed status/id — контролируемый `422`; provider/support/admin-escalation creation guards также проверены.
+- `[x]` Добавлены chat service-boundary regressions **5/5**, полный backend unit — **264 файла / 919 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный chat HTTP replay, multi-process reconnect, private media/AV, moderation queue и staging WebSocket evidence остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двухсот пятьдесят девятой исполняемой порции (04.09.2026)
+
+- `[x]` Bonus service получил отдельный runtime boundary gate: программы владельца, liability, redemption и manual grant повторно проверяют provider/client/request UUID и payload до repository/transaction access.
+- `[x]` Ролевые ограничения подтверждены до чтения и записи: только client видит/списывает бонусы, только owner управляет программой и выдачей; обязательный idempotency key для manual grant сохранён.
+- `[x]` Добавлены bonus service-boundary regressions **5/5**, полный backend unit — **265 файлов / 924 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный bonus lifecycle replay, concurrent redemption/grant, deletion retention и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестидесятой исполняемой порции (04.09.2026)
+
+- `[x]` Provider membership/invitation service получил runtime boundary gate: provider, invitation и membership UUID, invitation payload и token повторно проверяются до repository/transaction access.
+- `[x]` Owner-only authorization подтверждена для списка, создания и отзыва staff-доступа; client получает `403` до проверки идентификаторов и БД.
+- `[x]` Добавлены provider-membership service-boundary regressions **5/5**, полный backend unit — **266 файлов / 929 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный invitation email/acceptance replay, multi-location permission matrix, token expiry и staging audit evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят первой исполняемой порции (04.09.2026)
+
+- `[x]` Provider change-request list теперь явно требует owner role до provider lookup; ранее роль проверялась только в create/cancel paths.
+- `[x]` Owner create/cancel и admin list/decision paths получили отдельные boundary regressions: malformed provider/request IDs, payloads и filters отсекаются до repository/transaction access, client получает `403` до валидации.
+- `[x]` Добавлены provider-change-request service-boundary regressions **5/5**, полный backend unit — **267 файлов / 934 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный change-request moderation replay, document evidence viewer, notification delivery и staging multi-location authorization остаются внешними `PILOT-02/PILOT-03/SEC-02/SEC-06` gates.
+
+### Результат двухсот шестьдесят второй исполняемой порции (04.09.2026)
+
+- `[x]` Catalog-gap creation и admin service-definition update получили отдельный runtime boundary gate: malformed provider/definition/request UUID и payload отклоняются до provider lookup, repository или transaction access.
+- `[x]` Admin list/decision paths сохраняют authorization-first порядок и bounded status/decision values; client получает `403` до валидации и чтения БД.
+- `[x]` Добавлены catalog-gap service-boundary regressions **5/5**, полный backend unit — **268 файлов / 939 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный catalog moderation replay, duplicate slug race, service-catalog rollout и staging audit evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят третьей исполняемой порции (04.09.2026)
+
+- `[x]` Booking service теперь канонизирует booking/cabinet UUID для истории, reschedule, cancel, owner status/note и occupied slots до repository lookup; malformed direct calls получают `422 VALIDATION_ERROR` вместо потенциального PostgreSQL `500`.
+- `[x]` Client/owner role guards сохраняют authorization-first порядок для booking reads и mutations; status/reschedule/cancel workflow и существующие concurrency/idempotency guards не изменены.
+- `[x]` Добавлены booking service-boundary regressions **4/4**, полный backend unit — **269 файлов / 943 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный booking/reschedule/cancellation/no-show concurrency replay, PostgreSQL restore и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят четвёртой исполняемой порции (04.09.2026)
+
+- `[x]` Query списка бронирований у клиента и владельца теперь повторно нормализуется внутри сервиса до построения SQL: cursor, limit, status и календарные даты проходят bounded-проверки, неизвестные поля, `null`, массивы, невалидные/обратные диапазоны получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Валидация не меняет cursor-response contract и существующие role/idempotency/concurrency guards; безопасные фильтры передаются в query-builder только в канонической форме.
+- `[x]` Добавлены booking list-policy и service-boundary regressions **2/2**, включён отдельный policy-файл в unit-конфигурацию; полный backend unit — **270 файлов / 951 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный booking list HTTP replay, PostgreSQL load/concurrency, restore и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят пятой исполняемой порции (04.09.2026)
+
+- `[x]` `/bookings/occupied` теперь требует активную authenticated session и валидирует query через отдельную `occupiedSlotsQuerySchema`; сырые `cabinetId/date` больше не попадают в сервис из unauthenticated route.
+- `[x]` Service boundary повторно проверяет canonical cabinet UUID и календарную дату `YYYY-MM-DD` с реальной датой до repository access; invalid, `null` и non-string dates получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Добавлены occupied-slot policy и service-boundary regressions **2/2**, полный backend unit — **270 файлов / 953 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный occupied-slots HTTP authorization replay, PostgreSQL booking availability и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят шестой исполняемой порции (04.09.2026)
+
+- `[x]` Создание бронирования клиентом и владельцем теперь повторно нормализует полный payload до idempotency lookup, client/cabinet/service lookup и slot validation: UUID, дата, `HH:mm`, comment, experiment/source и idempotency key получают bounded canonical form, неизвестные поля отклоняются.
+- `[x]` Client и owner role guards остаются первыми; malformed direct calls получают контролируемый `422 VALIDATION_ERROR`, а существующие book-again, availability, idempotency, notification и PostgreSQL contention flows не изменены.
+- `[x]` Добавлены booking creation policy и service-boundary regressions **2/2**, полный backend unit — **270 файлов / 955 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный create-booking HTTP replay, duplicate/retry race, PostgreSQL concurrency и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят седьмой исполняемой порции (04.09.2026)
+
+- `[x]` Client reschedule request и owner reschedule decision теперь повторно нормализуют payload до booking lookup/slot checks/transaction: дата, `HH:mm`, decision, reason и неизвестные поля получают bounded canonical form.
+- `[x]` Owner booking status и note повторно проверяются после role/booking UUID guard; неизвестный enum и нестроковая/слишком длинная заметка получают контролируемый `422 VALIDATION_ERROR`, а уведомления и status-history используют канонический status.
+- `[x]` Добавлены booking mutation policy и service-boundary regressions **2/2**, полный backend unit — **270 файлов / 957 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный reschedule/status/note HTTP replay, duplicate decision race, PostgreSQL concurrency и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят восьмой исполняемой порции (04.09.2026)
+
+- `[x]` Owner action-center и client experiment telemetry теперь канонизируют event name через allow-list/NFKC/trim до записи метрики; произвольные labels, `null`, объекты и неизвестные события получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Существующие owner/client role guards, HTTP schemas и rate limits сохранены; фиксированные privacy-safe metric labels не принимают пользовательские значения.
+- `[x]` Добавлены telemetry normalizer и service-boundary regressions **3/3**, полный backend unit — **270 файлов / 960 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный telemetry HTTP replay, metrics backend cardinality review и staging observability evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот шестьдесят девятой исполняемой порции (04.09.2026)
+
+- `[x]` Client telemetry теперь сохраняет authorization-first порядок: роль клиента проверяется до event normalization, поэтому не-client с любым payload получает `403`, а client с неизвестным событием — `422`.
+- `[x]` Вынесен переиспользуемый client role guard для route-wrapper и metric writer; произвольные labels по-прежнему не достигают metrics registry.
+- `[x]` Добавлена telemetry authorization-order regression **1/1**, полный backend unit — **270 файлов / 961 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный telemetry HTTP replay и staging observability evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семидесятой исполняемой порции (04.09.2026)
+
+- `[x]` Client-only transitions `confirm`, `reschedule decision` и `cancel` теперь выполняют `clientOnly` до request UUID validation, repository lookup и transaction; чужая роль получает `403` независимо от malformed identifier.
+- `[x]` Существующие client ownership, state-transition, idempotency и resource-release guards не изменены; добавлена проверка отсутствия DB/transaction side effects на отказе роли.
+- `[x]` Добавлена authorization-order regression **1/1**, полный backend unit — **270 файлов / 962 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный service-request HTTP authorization matrix, transition concurrency и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семьдесят первой исполняемой порции (04.09.2026)
+
+- `[x]` Client-only решение по service offer теперь выполняет `clientOnly` до проверки request/message UUID и decision; чужая роль получает `403` без обращения к БД или transaction.
+- `[x]` Решение offer принимает только канонические значения `accept`/`decline`; malformed direct calls получают контролируемый `422 VALIDATION_ERROR`, а canonical message UUID используется в запросе и сохранённом переходе.
+- `[x]` Добавлены offer decision policy и service-boundary regressions **2/2**, полный backend unit — **270 файлов / 964 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный offer HTTP replay, повторное принятие/отклонение при конкуренции и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семьдесят второй исполняемой порции (04.09.2026)
+
+- `[x]` Client quote accept/decline теперь канонизирует request UUID после проверки client role и до открытия transaction; malformed direct calls получают контролируемый `422 VALIDATION_ERROR` без чтения или блокировки PostgreSQL.
+- `[x]` Существующие expiry, повторное принятие, quote-version, booking snapshot, capacity/resource reservation и concurrent decision guards не изменены.
+- `[x]` Добавлена quote-decision service-boundary regression **1/1**, полный backend unit — **270 файлов / 965 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный quote HTTP replay, PostgreSQL lock/concurrency и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семьдесят третьей исполняемой порции (04.09.2026)
+
+- `[x]` Broadcast-offer service теперь повторно нормализует location UUID, сумму, валюту, note, длительность и `validUntil` до workspace lookup и transaction; unknown fields и malformed direct calls получают контролируемый `422 VALIDATION_ERROR`.
+- `[x]` Offer snapshot сохраняет только канонические значения, а fallback duration от опубликованной услуги и существующие provider-scope, duplicate и max-provider guards не изменены.
+- `[x]` Добавлены broadcast-offer policy и service-boundary regressions **4/4**, полный backend unit — **270 файлов / 966 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный broadcast HTTP replay, provider-limit race и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семьдесят четвёртой исполняемой порции (04.09.2026)
+
+- `[x]` Public location-zones service теперь безопасно отклоняет `null`, массивы и другие не-объектные coordinates до чтения `latitude/longitude`, возвращая контролируемый `422 VALIDATION_ERROR` вместо runtime `TypeError`.
+- `[x]` Существующие bounds для широты/долготы, market/parent UUID, limit и fallback/database response contract не изменены.
+- `[x]` Добавлены coordinate-shape regressions **2/2**, полный backend unit — **270 файлов / 966 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный location-zones HTTP replay, market hierarchy seed и production geospatial benchmark остаются внешними `PILOT-02/PILOT-05/SEC-06` gates.
+
+### Результат двухсот семьдесят пятой исполняемой порции (04.09.2026)
+
+- `[x]` Изменения состояния избранного (`sync`, `add`, `remove`) теперь требуют подтверждённую почту через `requireVerifiedEmail`; чтение списка избранного остаётся доступным authenticated users.
+- `[x]` MSW mock/API parity синхронизирован: те же три mutation-ветки отклоняют неподтверждённую почту с кодом `EMAIL_VERIFICATION_REQUIRED`, поэтому локальная mock-проверка не маскирует real-server guard.
+- `[x]` Rate limit, client-only service boundary, canonical provider/location UUID и существующие upsert/delete semantics сохранены; отказ неподтверждённого пользователя возвращает контролируемый `403 EMAIL_VERIFICATION_REQUIRED` до вызова favorites service.
+- `[x]` Добавлены regressions для `requireVerifiedEmail` **2/2** (неподтверждённая и подтверждённая почта), полный backend unit — **270 файлов / 968 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный favorites HTTP replay с двумя профилями email verification, session/revocation matrix и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семьдесят шестой исполняемой порции (04.09.2026)
+
+- `[x]` Public trust endpoint ограничивает чтение evidence последними 100 записями (`createdAt DESC`) до формирования ответа; потенциально неограниченный объём provider evidence больше не загружается целиком на один публичный запрос.
+- `[x]` Расчёт trust score, фильтрация approved/non-expired evidence, snapshots и публичный response contract сохранены; ограничение не меняет существующую оценку или правила rollout.
+- `[x]` Добавлена regression на `take: 100`, полный backend unit — **270 файлов / 968 тестов**, backend build и `git diff --check` PASS.
+- `[~]` Реальный trust HTTP replay, production data-volume benchmark и staging observability evidence остаются внешними `PILOT-02/PILOT-05/SEC-06` gates.
+
+### Результат двухсот семьдесят седьмой исполняемой порции (04.09.2026)
+
+- `[x]` Все AutoCare owner routes теперь проходят `requireVerifiedEmail` до `validateParams`, `validateQuery` и `validateBody`: capacity/resources, evidence, communication, membership/invitations, change requests, bonus program, offers, reviews и media uploads.
+- `[x]` Ошибки авторизации больше не зависят от формы входных данных: неподтверждённый или неаутентифицированный запрос не получает schema/identifier feedback до guard; существующие provider-scope permissions и service-level checks сохранены.
+- `[x]` Контракт `check:owner-route-auth` усилен проверкой порядка auth-before-validation; добавлена regression **4/4**, полный backend unit — **270 файлов / 968 тестов**, backend build и `git diff --check` PASS.
+- `[~]` Реальный HTTP replay с malformed owner inputs, session/revocation matrix и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-03/SEC-06` gates.
+
+### Результат двухсот семьдесят восьмой исполняемой порции (04.09.2026)
+
+- `[x]` Защищённые AutoCare client routes для избранного, chat reports/blocks/attachments, редактирования отзывов и service-request detail/offer decision/attachments/reschedule теперь аутентифицируют запрос до `validateParams`, `validateQuery` и `validateBody`.
+- `[x]` Admin moderation routes для appeals, evidence, provider change requests, catalog gaps и chat reports получили тот же auth-before-validation порядок; malformed unauthenticated input больше не раскрывает schema/UUID feedback.
+- `[x]` Существующие verified-email, role, provider-scope, ownership, audit и rate-limit guards сохранены. Контракт `check:owner-route-auth` расширен на owner и admin поверхности и поддерживает generic Fastify route type parameters; regression **6/6**.
+- `[x]` Полный backend unit — **270 файлов / 968 тестов**, backend build, route-auth contract и `git diff --check` PASS.
+- `[~]` Реальный HTTP replay с malformed client/admin inputs, session/revocation matrix, PostgreSQL concurrency и staging pilot evidence остаются внешними `PILOT-02/PILOT-03/SEC-01/SEC-06` gates.
+
+### Результат двухсот семьдесят девятой исполняемой порции (04.09.2026)
+
+- `[x]` Для `client_vehicles` добавлен PostgreSQL partial unique index `UQ_client_vehicles_primary`: у одного клиента физически не может быть более одного `isPrimary = TRUE`.
+- `[x]` Migration preflight блокирует rollout при существующих duplicate-primary группах и не выполняет DDL до их явной reconciliation; rollback удаляет только созданный индекс.
+- `[x]` Создание, изменение и удаление автомобиля сериализуются под pessimistic lock строки пользователя внутри одной транзакции; проверка лимита 20 машин и promotion следующего primary больше не расходятся при параллельных запросах.
+- `[x]` Schema-contract добавил обязательный индекс, migration order/inventory, migration regression **4/4**, полный backend unit — **271 файл / 972 теста**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL multi-client race, account-deletion replay и staging evidence остаются внешними `PILOT-10/SEC-03/SEC-05` gates.
+
+### Результат двухсот восьмидесятой исполняемой порции (04.09.2026)
+
+- `[x]` Входная политика расписания филиала теперь требует ровно по одной записи для каждого weekday; дубли дней отклоняются до записи в PostgreSQL.
+- `[x]` Исключения календаря отклоняют невозможные даты и дублирующиеся даты; blocked periods используют строгую ISO calendar-date проверку вместо одного regex.
+- `[x]` Полная замена weekly schedule выполняется внутри одной TypeORM-транзакции, поэтому ошибка сохранения не оставляет филиал без расписания или с частично обновлёнными днями.
+- `[x]` Добавлена отдельная cabinet schedule policy и regression suite **3/3**; полный backend unit — **272 файла / 975 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный календарный HTTP replay, конкурентное редактирование расписания и staging booking-availability evidence остаются внешними `PILOT-07/SEC-05` gates.
+
+### Результат двухсот восемьдесят первой исполняемой порции (04.09.2026)
+
+- `[x]` Записи расписания, исключений и заблокированных периодов теперь сериализуются блокировкой строки филиала `pessimistic_write` внутри транзакции замены; параллельные owner-изменения одного календаря не смешивают результаты.
+- `[x]` Owner scope повторно проверяется через `getOwnerCabinetById` до блокировки; если филиал удалён между проверками, возвращается контролируемый `404`, а частичная запись календаря не выполняется.
+- `[x]` Существующие уникальные ограничения weekday/date, входная валидация, delete/save/find-семантика и response contract сохранены.
+- `[x]` Полный backend unit — **272 файла / 975 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный конкурентный calendar HTTP replay и staging booking-availability evidence остаются внешними `PILOT-07/SEC-05` gates.
+
+### Результат двухсот восемьдесят второй исполняемой порции (04.09.2026)
+
+- `[x]` Legacy booking create, owner create/status и client/owner reschedule теперь выполняют проверку слота тем же `EntityManager`, который пишет результат, после блокировки активного филиала `pessimistic_write`.
+- `[x]` Client reschedule блокирует booking до проверки pending-запроса, owner decision блокирует request и booking; параллельные переходы не используют устаревший внешний snapshot расписания и вместимости.
+- `[x]` Существующие exclusion/idempotency constraints, status guards, notification/audit semantics и controlled conflict responses сохранены.
+- `[x]` Полный backend unit — **272 файла / 975 тестов**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный PostgreSQL multi-client HTTP replay для legacy booking и staging contention evidence остаются внешними `PILOT-03/SEC-05` gates.
+
+### Результат двухсот восемьдесят третьей исполняемой порции (04.09.2026)
+
+- `[x]` `GET /bookings/occupied` теперь разрешён только client или owner; owner видит занятость только собственного активного кабинета, а admin и прочие роли получают контролируемый `403`.
+- `[x]` Draft/blocked и чужие кабинеты не раскрывают occupied slots: сервер и MSW mock возвращают `404`, а mock/API parity сохраняет одинаковую границу доступа.
+- `[x]` Добавлена service-boundary проверка role-before-lookup; полный backend unit — **272 файла / 975 тестов**, frontend unit — **145 файлов / 461 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный HTTP replay с профилями client/owner/admin и staging privacy evidence остаются внешними `PILOT-02/SEC-03` gates.
+
+### Результат двухсот восемьдесят четвёртой исполняемой порции (04.09.2026)
+
+- `[x]` Публичный `GET /v1/providers/:providerId/availability` получил отдельный IP-based rate limit `autocare:availability` — не более 60 запросов в минуту; дорогой расчёт слотов теперь имеет bounded request budget.
+- `[x]` Публичность availability для booking discovery сохранена: provider/location/offering/date schema validation, существующие discovery/trust/mutation limits и response contract не изменены.
+- `[x]` Threat-surface source contract проверяет наличие availability rate limit и его pre-handler; полный backend unit — **272 файла / 975 тестов**, frontend unit — **145 файлов / 461 тест**, backend build, frontend lint и `git diff --check` PASS.
+- `[~]` Реальный распределённый abuse replay, Redis fail-closed в нескольких процессах и staging throughput evidence остаются внешними `PILOT-02/SEC-03/SEC-06` gates.
+
+### Результат двухсот восемьдесят пятой исполняемой порции (04.09.2026)
+
+- `[x]` Исправлен локальный migration-validation gate: forward-анализ учитывает легитимный `DROP CONSTRAINT → ADD CONSTRAINT` при замене схемного правила и не считает rollback-only `down` повторным live constraint.
+- `[x]` Настоящее повторное имя без предварительного `DROP` по-прежнему блокируется; добавлены regressions для drop-and-replace, rollback-only re-add и duplicate без drop — **5/5** тестов контракта.
+- `[x]` Полный `check:local-mvp` теперь проходит все автоматические проверки: lint, frontend tests/build, backend build, API/mock parity, route/legacy/threat/auth/migration/loading/state/client/design/interaction contracts; остаётся только ручной responsive browser gate из-за запрета loopback-порта в текущей среде.
+- `[x]` Дополнительно прошли ops harness, security headers, capacity UI, API runtime/contract, OpenAPI shape/structure и performance/SEO repository budgets; production Lighthouse/HTML metadata остаются ручными deployment gates.
+- `[~]` Проценты freeze не меняются: `MVP-05/MVP-06`, staging infrastructure, real providers/clients и `SEC-01…SEC-10` evidence требуют внешнего доступа или ручной приёмки.
+
+### Результат двухсот восемьдесят шестой исполняемой порции (04.09.2026)
+
+- `[x]` Выполнена автономная ревизия 100 подпунктов из уже утверждённого MVP/pilot/security scope; создан отдельный чеклист [`PILOT_AUTONOMOUS_100_EXECUTION.md`](./PILOT_AUTONOMOUS_100_EXECUTION.md).
+- `[x]` Все доступные локальные подпункты подтверждены командами: API/mock parity, route/auth boundaries, state/loading/design/interaction, capacity, legacy/payment guards, migration validation, threat-surface, OpenAPI, operations harness, security headers, SEO/performance budgets и synthetic discovery benchmark.
+- `[x]` Synthetic discovery benchmark выполнен без PostGIS на 10 000 и 100 000 записей: 3 итерации, p95 **4.2 ms** и **21.5 ms** соответственно; PostGIS production benchmark остаётся staging gate.
+- `[x]` Исправление migration-validation добавлено в regression suite и включено в локальный release gate; фиктивные pilot/staging evidence не создавались.
+- `[~]` Ручные MVP device-gates и все внешние staging/pilot/security evidence сохранены как `[~]/[E]` в чеклисте; новые обязательные пункты и изменения frozen процентов не добавлялись.
+
+### Результат двухсот восемьдесят седьмой исполняемой порции (04.09.2026)
+
+- `[x]` Добавлен `check:error-codes`: registry содержит 20 канонических кодов, значения уникальны, формат uppercase/underscore соблюдён, а все `ERROR_CODES.*` ссылки в `server/src` разрешаются.
+- `[x]` Staging compatibility probe разделён на тестируемые функции OpenAPI/path/cache policy; добавлены regressions **3/3**, внешний HTTP probe по-прежнему запускается только при заданном `STAGING_API_BASE_URL`.
+- `[x]` Добавлен `check:pilot-autonomous-plan`: он проверяет ровно 100 уникально пронумерованных пунктов, статусы `[x]/[~]/[E]` и strict mode; regressions **3/3**, текущий чеклист — **92 complete / 8 partial**.
+- `[x]` Автономные контракты error-codes и plan aggregator подключены к package scripts и проходят `git diff --check`; текущий backend/frontend quality baseline не изменён.
+- `[~]` Реальный staging API, Redis multi-process, S3/signed media, deletion/restore, real pilot evidence, production SEO и ручные device gates остаются внешними условиями.
+
+### Результат двухсот восемьдесят восьмой исполняемой порции (04.09.2026)
+
+- `[x]` После запуска собранного Next production server на `127.0.0.1:4175` responsive Chromium matrix прошла **30/30** для home, services и provider на ширинах 360, 390, 414, 540, 682, 768, 790, 1024, 1280 и 1440 px; horizontal overflow и обязательный chrome не обнаружены.
+- `[x]` Локальный пункт полного автоматического `check:local-mvp` больше не блокируется sandbox browser launch/loopback: все автоматические проверки и responsive matrix зелёные; ручная visual/keyboard/device приёмка остаётся отдельным владельческим gate.
+- `[x]` Чеклист автономной части обновлён до **93 complete / 7 partial**; внешний staging, real pilot, production media/backup и independent review не помечены выполненными.
+
+### Результат двухсот восемьдесят девятой исполняемой порции (04.09.2026)
+
+- `[x]` Error-code registry, staging compatibility regressions и autonomous plan aggregator подключены в `quality:backend`; новые проверки теперь запускаются вместе с backend quality gate.
+- `[x]` Повторно пройдены `check:pilot-autonomous-plan`, `check:error-codes`, `test:error-codes`, `test:staging-api`, `test:pilot-autonomous-plan` и `git diff --check` — все проверки PASS.
+- `[x]` Полный `npm run quality:backend` завершился успешно: migration/legacy/demo-reset/ops/auth/API/OpenAPI/threat/loading/state/client/capacity checks, tooling, **272 backend-файла / 975 тестов** и backend build PASS.
+- `[x]` Aggregator подтверждает ровно 100 уникальных пунктов: **93 complete / 7 partial**; partial-статусы не маскируются под production evidence.
+- `[~]` Семь оставшихся partial-пунктов требуют staging/production инфраструктуры или реального пилота: staging URL, Redis multi-process outage, private S3/signed media, retention replay, PostgreSQL multi-process replay, anonymized pilot evidence и production Lighthouse/rendered HTML.
+
+### Результат двухсот девяностой исполняемой порции (04.09.2026)
+
+- `[x]` Staging compatibility probe получил bounded timeout, HTTPS-проверку для удалённых endpoint'ов, запрет embedded credentials и безопасную диагностику сетевых ошибок; regressions **5/5**.
+- `[x]` Production media preflight теперь проверяет, что подписанный URL имеет точный TTL, ведёт только к `private/` и не раскрывает `quarantine/`; дополнительно проверяется AES256 и `state=private` после promotion; regressions **4/4**.
+- `[x]` Retention rehearsal получил bounded `--limit` (1–10 000), JSON-вывод и импортируемые pure helpers; regressions **3/3**.
+- `[x]` SEO probe отклоняет insecure remote/credential-bearing base URL; SEO regressions **2/2**. Эти проверки добавлены в полный локальный MVP gate.
+- `[x]` Full `npm run check:local-mvp` с разрешённым loopback завершился PASS: frontend lint/tests/build, backend build, 23 статические проверки и responsive Chromium matrix.
+- `[x]` Backend unit после добавления preflight regressions: **274 файла / 982 теста**; backend build, `quality:backend`, `test:ops-harness`, `test:staging-api`, `test:seo` и `git diff --check` PASS.
+- `[~]` Внешние доказательства семи partial-пунктов и frozen-проценты не изменены; реальные secrets, buckets, базы, участники и production URL не подменялись локальными фикстурами.
+
+### Результат двухсот девяносто первой исполняемой порции (04.09.2026)
+
+- `[x]` Добавлен детерминированный JSON snapshot mock/backend маршрутов без пользовательских данных: **227 mock / 257 backend / 2 WebSocket**; drift и дубликаты ловятся regression-тестами.
+- `[x]` Добавлен source-contract формы поиска: пустой/ошибочный/частичный ответ, disabled-поля во время loading, dark/light skeleton tokens, длинные RU/EN подписи и narrow-card overflow.
+- `[x]` Реальный results route теперь передаёт `isLoading` в общую форму; поля и кнопка остаются на месте и становятся disabled, карта сохраняется смонтированной.
+- `[x]` `ProviderResultCard` получил `overflow-hidden` и `break-words`; это предотвращает горизонтальное переполнение длинных названий и метаданных.
+- `[x]` Новые проверки подключены к `check:local-mvp` и `quality:backend`; `check/test:discovery-form`, `check/test:route-snapshot`, frontend **145/461**, backend build и `git diff --check` — PASS.
+- `[~]` Внешние staging/production gates, реальные участники пилота и независимый security review по-прежнему не закрыты и не имитировались.
+
+### Результат двухсот девяносто второй исполняемой порции (04.09.2026)
+
+- `[x]` Staging compatibility probe получил JSON-режим с безопасным `skipped/blocked/pass` результатом, SHA-256 OpenAPI и bounded response body (**2 MiB**).
+- `[x]` Добавлены retry/backoff для 502/503/504, нормализация discovery query, Content-Type и cache-policy проверки для двух вариантов discovery, security headers и optional CORS origin allow-list.
+- `[x]` Запросы выполняются с `credentials: omit`, без cookies/Authorization; timeout и network failures получают безопасные коды `STAGING_TIMEOUT`/`STAGING_NETWORK_ERROR`.
+- `[x]` `REQUIRE_STAGING_API=true` остаётся fail-closed; добавлен шаблон [`STAGING_API_EVIDENCE_TEMPLATE.md`](./STAGING_API_EVIDENCE_TEMPLATE.md) с hash фактического OpenAPI.
+- `[x]` Regression suite staging compatibility: **9/9**; локальный `check:staging-api -- --json` возвращает безопасный `skipped` без URL.
+- `[~]` Реальный HTTPS staging endpoint, его security/CORS headers и OpenAPI hash требуют внешнего запуска и не считаются закрытыми локальной фикстурой.
+
+### Результат двухсот девяносто третьей исполняемой порции (04.09.2026)
+
+- `[x]` Production media preflight получил JSON summary без содержимого файлов и bounded streaming body read (лимит **10 MiB**).
+- `[x]` После S3 promotion проверяются checksum metadata (`sha256`), `state=private`, AES256 и `Content-Disposition=inline`; signed URL дополнительно требует `private, no-store` cache policy.
+- `[x]` Добавлены regressions для expired TTL, quarantine-path, path-style/virtual-hosted S3 URL; MIME mismatch и EXIF removal уже подтверждены backend unit tests.
+- `[x]` Контракт media pipeline подключён к local MVP и `quality:backend`; media contract PASS, preflight/attachment/storage targeted suite **38/38 PASS**.
+- `[~]` Реальные S3/ClamAV bucket, cleanup-on-failure replay и orphan report требуют staging credentials; локальный контракт не выдаётся за production evidence.
+
+### Результат двухсот девяносто четвёртой исполняемой порции (04.09.2026)
+
+- `[x]` Retention rehearsal получил `--dry-run`: он не открывает БД и возвращает versioned JSON summary (`schemaVersion`, `status`, `limit`, `checked`, `failures`).
+- `[x]` Лимит rehearsal ограничен диапазоном 1–10 000; blocked JSON содержит только имена инвариантов и не раскрывает userId/email.
+- `[x]` Outbox payload redaction invariant и retry/dead-letter policies покрыты unit regressions; повторный запуск pure report deterministic.
+- `[x]` Retention targeted suite и backend build после изменений проходят; локальные команды не создают production deletion/restore evidence.
+- `[~]` Реальный account deletion replay, восстановление из backup и проверка pending/failed/dead-letter строк требуют staging PostgreSQL и backup vault.
+
+### Результат двухсот девяносто пятой исполняемой порции (04.09.2026)
+
+- `[x]` Добавлен отдельный backup/restore contract: checksum archive проверяется до restore, manifest привязан к basename, restore в исходную БД запрещён по умолчанию, имена архивов уникальны, диагностика редактирует secrets, а runbook требует RPO/RTO и изолированный target.
+- `[x]` Добавлен неразрушающий orphan-media report с явным `destructiveAction: false`; stale quarantine/private кандидаты перечисляются до cleanup, а TTL/grace-period policy остаётся bounded и idempotent.
+- `[x]` Synthetic restore fixture создаётся во временной директории с gzip payload и SHA-256 checksum, без production данных; `check:backup-restore` и regressions **4/4 PASS**, attachment storage regression **20/20 PASS**.
+- `[~]` Реальные encrypted backup vault, WAL/PITR, off-site immutable retention и staging restore с RPO/RTO всё ещё требуют инфраструктуры и оператора; локальный harness не выдаётся за production evidence.
+
+### Результат двухсот девяносто шестой исполняемой порции (04.09.2026)
+
+- `[x]` Локальный MVP interaction contract закрепляет keyboard dropdown/Escape smoke, focus-visible стили, aria-label icon-only действий и отсутствие text-only full-screen loader.
+- `[x]` Discovery retry не сбрасывает URL/draft filters; deterministic mock fixtures покрывают offline/reconnect, а platform payment-provider guard блокирует Stripe и payment flags в runtime.
+- `[x]` Единый JSON local-gate summary содержит commit, timestamp, per-check statuses и counts; `check:mvp-interaction` и regressions **2/2 PASS** подключены к local MVP и backend quality gates.
+- `[~]` Реальные device/VoiceOver/TalkBack проверки остаются ручными; внешние staging/production evidence и pilot participants не подменяются локальными контрактами.
+
+### Результаты автономных порций 301–302 (04.09.2026)
+
+- `[x]` SEO/release checks закрыли локальные пункты 90–99: bounded HTML reader
+  (2 MiB), HTML metadata report по 12 public/provider routes, OG asset existence,
+  canonical/robots parity, HTTPS/credential URL policy, RU/EN/ES/RO coverage,
+  migration inventory SHA-256, historical migration immutability, retained
+  replacement coverage и versioned local release summary.
+- `[x]` `npm run check:seo` и `node --test scripts/check-seo-release.test.mjs`
+  проходят; `node --test scripts/check-release-summary.test.mjs` — **2/2 PASS**;
+  `npm run check:release-summary -- --json` возвращает `blocked=0` и
+  `productionClaims=false`.
+- `[~]` Production Lighthouse, deployed HTML, encrypted backup vault, staging
+  replay и реальный pilot по-прежнему требуют внешнего окружения; локальный
+  summary намеренно не засчитывает их как production evidence.

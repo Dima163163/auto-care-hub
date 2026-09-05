@@ -1,8 +1,10 @@
 # AutoCare Hub Security Context
 
 Read this file before AutoCare work involving authentication, authorization,
-providers, messages, private media, bonuses, subscriptions, promo codes,
-payments, deletion/export, deployment or operational security.
+providers, messages, private media, bonuses, deletion/export, deployment or
+operational security. Current mandatory gates are in
+`docs/operations/PILOT_SCOPE_FREEZE.md` v2.0; open findings are in the final
+audit dated 2026-09-05. Platform commercial features are excluded.
 
 `SECURITY.md` describes the current legacy-derived implementation baseline.
 This file records target AutoCare boundaries that do not exist fully in code
@@ -54,10 +56,10 @@ Localization is not authorization: translating a provider/location response into
 the client's preferred language must never broaden resource access or expose
 private provider/customer fields.
 
-Super-admin-only actions include admin management, subscription plan governance,
-manual entitlement grants/revocations and promo-code management. Critical
-actions require audit reason/correlation and should support re-authentication or
-step-up confirmation before production launch.
+Super-admin-only actions include admin management, security investigations,
+market/trust governance and privileged access changes. Critical actions require
+audit reason/correlation and the privileged authentication/step-up policy in
+V2-SEC-02 before real-data admission.
 
 ## Private conversations and attachments
 
@@ -100,24 +102,13 @@ step-up confirmation before production launch.
   locking.
 - Cancellation/refund reversal rules require an approved product decision.
 
-## Provider subscriptions and promo codes
+## Excluded commercial scope
 
-- Provider subscription billing is separate from customer repair payments and
-  customer bonuses.
-- Entitlements are evaluated server-side from explicit active sources.
-- Super-admin manual grants do not overwrite billing history.
-- Grants/revocations require reason, actor, validity and audit correlation.
-- Promo code redemption is normalized, rate-limited, atomic and idempotent.
-- Eligibility, plan/period scope, validity and redemption limits are checked
-  server-side.
-- Discount value/currency/rules are snapshotted into the billing record.
-- Billing webhooks require signature verification, unique provider-event
-  persistence, idempotent processing, retry/reconciliation and incident paths.
-- Downgrade/expiry must not delete provider data.
-- Subscription plan must not silently change organic search ranking.
-
-Historical customer booking-payment and commission schemas are not approved
-AutoCare subscription implementations and have no active runtime integration.
+There is no platform billing, subscription, commission, payout, paid placement
+or commercial entitlement workflow. Historical schemas are migration history
+only. Provider-owned non-cash bonus/review-resolution discounts remain subject
+to scoped authorization, limits, idempotency and audit; they do not authorize
+a platform payment product.
 
 ## Mobile security gate
 
@@ -135,13 +126,13 @@ Before native development:
 
 Allowed identifiers should be pseudonymous/stable enough for incident response
 without storing sensitive content. Do not use provider/customer-supplied strings
-as unbounded metric labels. Redact authorization, cookie, token, promo-code and
-billing secrets from errors.
+as unbounded metric labels. Redact authorization, cookie, token and private
+content from errors.
 
 Security-relevant metrics include authorization denials, upload rejection,
 message delivery lag, quote-accept conflicts, bonus reconciliation failures,
-promo redemption rejection, billing webhook/reconciliation outcomes and outbox
-backlog. Alerts must not include private message or photo data.
+discount-redemption rejection and outbox backlog. Alerts must not include
+private message or photo data.
 
 ## Required verification
 

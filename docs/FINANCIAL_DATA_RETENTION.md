@@ -1,5 +1,12 @@
 # Financial Data Retention Contract
 
+> Historical compatibility document, superseded for current AutoCare operations
+> on 2026-09-05. The current policy is [DATA_RETENTION.md](./DATA_RETENTION.md),
+> and release acceptance is [PILOT_SCOPE_FREEZE.md](./operations/PILOT_SCOPE_FREEZE.md).
+> Statements below about future completion or commercial tables describe the
+> legacy baseline. They neither authorize platform billing nor prove live
+> deletion/retention. Preserve applied migration constraints pending audit.
+
 This is the implementation contract for deletion behavior. It is not legal
 advice and must be reconciled with the customer's jurisdiction, privacy notice,
 tax rules, and configured retention schedule before production use.

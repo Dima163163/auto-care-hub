@@ -3,7 +3,7 @@
 > **Исторический evidence register. Не использовать как единственный release/go-no-go источник.**
 >
 > Для текущих статусов и незакрытых gates используется
-> [`PILOT_100_READINESS_PLAN.md`](PILOT_100_READINESS_PLAN.md). Этот файл хранит
+> [`PILOT_SCOPE_FREEZE.md`](PILOT_SCOPE_FREEZE.md), v2.0. Этот файл хранит
 > только доказательства конкретных прошлых запусков.
 
 This is the evidence register for Phase 9 of `PROJECT_PLAN.md`. A repository

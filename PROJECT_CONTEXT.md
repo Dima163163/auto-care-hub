@@ -1,8 +1,34 @@
 # AutoCare Hub Project Context
 
 This is the compact handoff for future Codex sessions. Read `AGENTS.md`, this
-file, `ARCHITECTURE.md`, and the active section of `PROJECT_PLAN.md` before
-changing the project.
+file, `ARCHITECTURE.md`, and
+`docs/operations/PILOT_SCOPE_FREEZE.md` before changing the project.
+The freeze v2.0 (05.09.2026) is the sole current release plan. `PROJECT_PLAN.md`
+and numbered batch logs are historical; their old commercial phases and
+percentages do not define current requirements.
+
+## Final audit handoff — 2026-09-05
+
+Read `docs/operations/FINAL_PROJECT_AUDIT_2026-09-05.md` for findings, exact paths,
+acceptance criteria and verification limits. There are 54 fixed V2 gates;
+CHANGE-C findings are subtasks, not new denominator entries. Current decision:
+NO-GO for real user data; synthetic staging/demo preparation may proceed.
+
+Execution view: `docs/operations/PILOT_TASK_ALLOCATION.md` classifies all 54 IDs
+once by urgency and SELF/JOINT/USER. Do not add gates or count CHANGE subtasks
+twice. Report cumulative evidenced completion separately from current GO/NO-GO;
+regressions block release without erasing history. Necessary work outside scope
+uses separate fixed EXT batches; optional features never enter readiness percentages.
+This classification closed no product gate. Purchases, account ownership,
+participant consent and independent review require the owner or a third party.
+
+Next code work: external staging evidence, applied-migration reconciliation and
+manual/legal acceptance; local release provenance, checksums, suspended-provider
+policy, truthful pilot metrics and production Next full-stack CI are prepared.
+The provider-timezone booking and malformed-date URL slices from the audit are
+implemented in the current working tree with regression coverage, but still
+need release-candidate replay evidence. The working tree contains accumulated
+uncommitted changes; do not attribute local PASS to HEAD alone.
 
 ## Current objective
 
@@ -16,7 +42,7 @@ branch created from `dev`.
 Git state:
 
 ```text
-active branch: dev
+active branch: inspect git branch --show-current; the audit uses codex/final-pilot-plan-2026-09-05
 production branch: main
 remote: origin (GitHub AutoCare Hub repository)
 ```
@@ -40,10 +66,9 @@ phase dependencies, and legacy migration/reuse/deletion gates.
 - Complex services use a service-specific inquiry/messenger with private photo
   attachments and versioned provider quotes.
 - Providers can offer provider-scoped customer bonuses.
-- Provider participation is free in the initial acquisition phase.
-- Later monetization is provider subscriptions for configurable periods.
-- Super admin can issue manual subscription/entitlement grants and manage
-  subscription promo codes/discounts.
+- The platform is free; platform payments, tariffs, subscriptions, commissions,
+  payouts and paid promotion are excluded, including from post-pilot backlog.
+- Super admin manages markets, trust, moderation, privileged access and security.
 - Launch coverage includes Russia (first million-plus city), Spain and
   Moldova/Transnistria; country/city data must be extensible.
 - Interface locale is independent of provider location. Priority packs are
@@ -65,7 +90,8 @@ phase dependencies, and legacy migration/reuse/deletion gates.
 Do not rewrite the project to the proposed Next.js/FastAPI/Alembic greenfield
 stack by default. The real repository already has a mature compatible stack:
 
-- React 19, TypeScript, Vite, React Router, Redux Toolkit/RTK Query, MSW;
+- Next.js production shell, React 19, TypeScript, React Router, Redux Toolkit/RTK
+  Query, MSW; retained Vite tooling is compatibility, not production acceptance;
 - Fastify, TypeScript, PostgreSQL, TypeORM migrations, Zod;
 - JWT/refresh sessions, OAuth, CSRF, Redis rate limiting;
 - outbox/notifications/email, uploads, audit/security, health/metrics;
@@ -73,8 +99,7 @@ stack by default. The real repository already has a mature compatible stack:
 
 Reuse those platform capabilities. Replace the cabinet-rental domain with new
 modules for catalog, providers, locations, memberships, vehicles, offerings,
-search, automotive bookings, inquiries/messages/quotes, bonuses and provider
-subscriptions.
+search, automotive bookings, inquiries/messages/quotes and provider-scoped bonuses.
 
 ## Legacy conflicts
 
@@ -97,9 +122,9 @@ Recommended migration:
 3. verify real API, mock contract, migrations and tests;
 4. remove exact legacy paths only after their replacement is accepted.
 
-If no legacy customer data must be retained, prefer a fresh AutoCare database
-and a reviewed baseline/reset strategy. If data must be retained, stop and write
-a mapping/backfill ADR first.
+D-002 chose a fresh AutoCare database. This is not permission to reset any live
+or shared database. Preserve migration history and audit applied versions before
+changes; use isolated disposable databases for reset/seed/rehearsals.
 
 ## Product/domain rules
 
@@ -114,9 +139,8 @@ a mapping/backfill ADR first.
   timezone and policy snapshots.
 - Messages/photos are private and conversation access is participant-scoped.
 - Bonus accounts and ledgers are provider-scoped, non-transferable and not cash.
-- Customer repair payments, customer bonuses and provider subscriptions are
-  separate bounded contexts.
-- Paid subscription status cannot silently change organic search ranking.
+- Repair settlement is directly between customer and provider, outside the
+  platform. Provider-scoped bonuses remain non-cash; paid ranking is excluded.
 
 ## Design references
 
@@ -132,8 +156,9 @@ The implementation brief and state contract now live in
 `docs/design/autocare-design-brief.md` and
 `docs/design/autocare-interaction-state-contract.md`. Missing designs include
 the provider profile, vehicle garage, inquiry/chat/photo/quote, bonuses,
-provider portal, catalog/moderation, super-admin subscription grants/promo
-codes, and the remaining loading/empty/error/offline/permission states.
+provider portal, catalog/moderation and the remaining
+loading/empty/error/offline/permission states. Consult the final audit before
+treating these older implementation notes as current missing features.
 
 The first AutoCare frontend mock slice now covers `/`, `/services`, and
 `/services/:id`. The homepage hero now also includes a self-contained map
@@ -158,8 +183,6 @@ membership scopes and moderation evidence.
 
 - Exact first Russian pilot city and pilot locations in Spain and
   Moldova/Transnistria.
-- Whether legacy customer data must be preserved.
-- Exact subscription periods, permanent Free plan and grace/downgrade behavior.
 - Conversation/photo retention and whether all authenticated customers may
   start a pre-booking inquiry.
 - Provider verification documents/badge meaning.
@@ -170,15 +193,13 @@ privacy, ranking or destructive migration.
 
 ## Next approved work sequence
 
-1. Configure staging credentials and run the strict API compatibility probe.
-2. Configure S3-compatible private storage, ClamAV and signed-media access in
-   a staging environment; record quarantine and deletion evidence.
-3. Configure alert routing and encrypted off-site backup storage, then perform
-   a timed isolated restore rehearsal.
-4. Run the selected-market pilot with real providers and customers, evaluating
-   price quality, supply density, response time and booking reliability.
-5. Obtain the jurisdiction-specific legal/retention sign-off and production
-   security review before the stable-web gate.
+1. Resolve CHANGE-C findings and complete local/manual MVP acceptance.
+2. Configure synthetic-data staging, private media, SMTP, distributed Redis,
+   workers, alerts and encrypted off-site backup/PITR.
+3. Run role, concurrency, deletion, restore and rollback rehearsals; obtain
+   applicable legal/privacy approval and independent security review.
+4. Authorize the exact release for real data only after these gates pass.
+5. Run consented pilot journeys and metrics, then obtain written pilot go/no-go.
 
 The mock catalog asset contract is now explicit: `server/src/scripts/seed-autocare-mock-data.ts`
 inserts generated provider images when the corresponding public asset exists and
