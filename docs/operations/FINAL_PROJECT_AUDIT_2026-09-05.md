@@ -293,3 +293,16 @@ values по-прежнему отклоняются. Полный `PILOT_EVIDENC
 `check:pilot-evidence-toolkit` и `git diff --check` — PASS. Реальный pilot
 evidence и внешний go/no-go gate не создавались; CHANGE-C011 закрыт на уровне
 локального validator contract и остаётся внешним evidence condition.
+
+## Follow-up после аудита — порция 310
+
+`buildQualityMetrics` теперь связывает response message с request через
+`provider.ownerId` или active `autocare_provider_memberships.userId`; branch
+membership допускается только для соответствующего `request.locationId`.
+Client/system, revoked и чужие provider/branch senders больше не создают ложные
+response samples. Обновлены quality-monitoring и pilot quality/reliability
+preflight queries; regression покрывает owner/member, client/system, revoked и
+cross-branch cases. Focused reliability — **5/5**, backend unit — **276/1000**,
+backend build и local MVP static checks — PASS. CHANGE-C012 закрыт на уровне
+локальной attribution-семантики; реальные пять samples, thresholds и staging
+multi-user evidence по-прежнему внешние условия.

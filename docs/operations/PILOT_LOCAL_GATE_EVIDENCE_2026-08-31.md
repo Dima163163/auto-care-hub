@@ -1709,3 +1709,19 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   `npm run check:pilot-evidence-toolkit` и `git diff --check` — PASS.
 - `[~]` Реальный staging/production pilot evidence по-прежнему не создаётся
   локально и требует внешних участников, consent и подписанного release gate.
+
+## Порция 310 (05.09.2026) — request-scoped reliability attribution
+
+- `[x]` Reliability metrics больше не сопоставляют `ServiceMessage.senderId` с
+  `provider.id`: owner и active provider-membership проверяются как `users.id`,
+  branch membership сопоставляется с `request.locationId`.
+- `[x]` Client/system messages, revoked memberships, чужие branch и legacy
+  provider-id значения исключены из response samples; обновлены reliability,
+  quality-monitoring и оба DB preflight scripts.
+- `[x]` Regression на owner/member/branch boundaries — **3/3**, общий focused
+  reliability policy — **5/5**, backend unit — **276 файлов / 1000 тестов PASS**;
+  backend build и `git diff --check` — PASS. `check:local-mvp -- --static-only`
+  дал **39 автоматических PASS**, responsive gate остаётся отдельным manual.
+- `[~]` Текущий DB preflight корректно заблокирован: в локальном наборе нет пяти
+  реальных provider response samples и confirmation reliability; это не заменяет
+  staging multi-user pilot evidence и утверждённые SLO thresholds.

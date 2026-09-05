@@ -2583,3 +2583,16 @@ npm run check:e2e:browser
 - `[~]` Production Lighthouse, deployed HTML, encrypted backup vault, staging
   replay и реальный pilot по-прежнему требуют внешнего окружения; локальный
   summary намеренно не засчитывает их как production evidence.
+
+### Результат следующей исполняемой порции (05.09.2026)
+
+- `[x]` Reliability attribution переведена с ошибочного сравнения
+  `message.senderId` с `provider.id` на owner/active membership `users.id` с
+  проверкой branch `request.locationId`; client/system/revoked/чужие branch
+  messages не попадают в response samples.
+- `[x]` Обновлены pilot quality/reliability scripts и admin quality monitoring;
+  regression owner/member/branch boundaries, backend build и 276/1000 unit
+  tests PASS; local MVP static gate сохранил 39 автоматических PASS.
+- `[~]` CHANGE-C012 закрыт только на уровне локальной attribution-семантики:
+  пять реальных response samples, confirmation SLO и staging multi-user replay
+  остаются обязательным внешним pilot evidence.
