@@ -1,4 +1,8 @@
 const PII_COLUMN_PATTERN = /(?:email|phone|mobile|vin|plate|license|address|street|name|message|chat|photo|token|secret|password)/i
+const PII_VALUE_KEY_PATTERN = /(?:email|phone|mobile|vin|plate|license|address|street|name|message|chat|photo|token|secret|password|note|body|text|content|comment|description|review)/i
+const EMAIL_VALUE_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+const VIN_VALUE_PATTERN = /\b[A-HJ-NPR-Z0-9]{17}\b/i
+const PHONE_VALUE_PATTERN = /(?:^|\D)\+?\d[\d\s().-]{7,}\d(?:$|\D)/
 const REQUIRED_COLUMNS = ['participantId', 'journeyId', 'responseMinutes', 'confirmed', 'cancelled', 'noShow', 'duplicateRequests']
 
 function parseCsvLine(line) {
@@ -76,6 +80,21 @@ export function summarizePilotMetrics(records) {
     }
 }
 
+function containsPiiLikeValue(value, key = '') {
+    if (typeof value === 'string') {
+        const normalized = value.trim()
+        if (!normalized) return false
+        if (PII_VALUE_KEY_PATTERN.test(key)) return true
+        if (EMAIL_VALUE_PATTERN.test(normalized) || VIN_VALUE_PATTERN.test(normalized)) return true
+        if (!/(?:at|date|time|id|version|count|minutes|percent|rate|mode|status|path|source|environment|market)/i.test(key)
+            && PHONE_VALUE_PATTERN.test(normalized)) return true
+        return false
+    }
+    if (Array.isArray(value)) return value.some((item) => containsPiiLikeValue(item, key))
+    if (!value || typeof value !== 'object') return false
+    return Object.entries(value).some(([entryKey, entryValue]) => containsPiiLikeValue(entryValue, entryKey))
+}
+
 export function validatePilotMetricsConsistency(records, evidenceMetrics, {
     maxP95ResponseMinutes = 30,
     minConfirmationReliabilityPercent = 95,
@@ -123,7 +142,6 @@ export function validatePilotEvidenceEnvelope(input, now = new Date(), maxAgeDay
     if (new Set(providers.map((provider) => provider?.id)).size !== providers.length) return { valid: false, reason: 'duplicate-provider-id' }
     if (new Set(clients.map((client) => client?.id)).size !== clients.length) return { valid: false, reason: 'duplicate-participant-id' }
     if (new Set(journeys.map((journey) => journey?.id)).size !== journeys.length) return { valid: false, reason: 'duplicate-journey-id' }
-    const serialized = JSON.stringify(input)
-    if (PII_COLUMN_PATTERN.test(serialized) || /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(serialized) || /\b[A-HJ-NPR-Z0-9]{17}\b/i.test(serialized)) return { valid: false, reason: 'pii-like-value' }
+    if (containsPiiLikeValue(input)) return { valid: false, reason: 'pii-like-value' }
     return { valid: true, reason: null }
 }

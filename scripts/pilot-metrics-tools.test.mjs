@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import { parseAnonymizedPilotMetricsCsv, summarizePilotMetrics, validatePilotEvidenceEnvelope, validatePilotMetricsConsistency } from './pilot-metrics-tools.mjs'
@@ -47,4 +48,29 @@ test('rejects synthetic, stale, duplicate and PII-bearing evidence envelopes', (
     assert.equal(validatePilotEvidenceEnvelope({ ...base, clients: [{ id: 'c-1' }, { id: 'c-1' }] }, now).reason, 'duplicate-participant-id')
     assert.equal(validatePilotEvidenceEnvelope({ ...base, journeys: [{ id: 'j-1' }, { id: 'j-1' }] }, now).reason, 'duplicate-journey-id')
     assert.equal(validatePilotEvidenceEnvelope({ ...base, note: 'client@example.com' }, now).reason, 'pii-like-value')
+})
+
+test('accepts the published anonymized evidence template without treating safe metadata keys as PII', () => {
+    const template = readFileSync(new URL('../docs/operations/PILOT_EVIDENCE_TEMPLATE.md', import.meta.url), 'utf8')
+        .match(/```json\n([\s\S]*?)\n```/)?.[1]
+    assert.ok(template)
+    const evidence = JSON.parse(template)
+    evidence.collectedAt = '2026-09-04T11:00:00Z'
+
+    assert.deepEqual(validatePilotEvidenceEnvelope(evidence, new Date('2026-09-04T12:00:00Z')), { valid: true, reason: null })
+})
+
+test('rejects PII-bearing values while allowing captured/aggregate metadata', () => {
+    const now = new Date('2026-09-04T12:00:00Z')
+    const base = { schemaVersion: 1, source: 'real', environment: 'staging', collectedAt: '2026-09-04T11:00:00Z', providers: [{ id: 'p-1', verified: true }], clients: [{ id: 'c-1', consentRecorded: true }], journeys: [{ id: 'j-1', reviewPhotoCount: 0 }] }
+    for (const value of [
+        { clients: [{ id: 'c-1', email: 'client@example.com' }] },
+        { clients: [{ id: 'c-1', phone: '+1 555 123 4567' }] },
+        { vehicles: [{ id: 'v-1', vin: '1HGCM82633A004352' }] },
+        { vehicles: [{ id: 'v-1', plate: 'A123BC77' }] },
+        { journeys: [{ id: 'j-1', message: 'private chat text' }] },
+        { metadata: { token: 'secret-value' } },
+    ]) {
+        assert.equal(validatePilotEvidenceEnvelope({ ...base, ...value }, now).reason, 'pii-like-value')
+    }
 })
