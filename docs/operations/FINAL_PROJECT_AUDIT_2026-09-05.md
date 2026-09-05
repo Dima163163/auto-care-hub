@@ -306,3 +306,13 @@ cross-branch cases. Focused reliability — **5/5**, backend unit — **276/1000
 backend build и local MVP static checks — PASS. CHANGE-C012 закрыт на уровне
 локальной attribution-семантики; реальные пять samples, thresholds и staging
 multi-user evidence по-прежнему внешние условия.
+
+## Follow-up после аудита — порция 311
+
+В `AutoCareRequestPage` добавлена повторная проверка context generation после
+`readFileAsBase64` и перед attachment mutation. Это закрывает локальный late
+completion path при navigation/logout/provider change, сохраняя idempotency и
+`Promise.allSettled`-изоляцию файлов. Client-path contract и regressions PASS,
+targeted RequestForm/RequestPage — **3/3**, local MVP static — **39 PASS** плюс
+ожидаемый manual responsive gate. Реальные slow-network identity-switch,
+storage rollback и deployed browser evidence остаются внешним условием C014.

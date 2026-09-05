@@ -1725,3 +1725,18 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Текущий DB preflight корректно заблокирован: в локальном наборе нет пяти
   реальных provider response samples и confirmation reliability; это не заменяет
   staging multi-user pilot evidence и утверждённые SLO thresholds.
+
+## Порция 311 (05.09.2026) — late attachment context guard
+
+- `[x]` После медленного `FileReader` request page повторно сверяет identity /
+  provider / location / offering context перед `createAttachment`; navigation,
+  logout или смена контекста не могут продолжить upload старого draft без
+  актуального generation guard.
+- `[x]` Client-path source contract фиксирует request idempotency, in-flight
+  duplicate guard, `Promise.allSettled` upload isolation и post-`FileReader`
+  context check; `check-client-path` и regression — **8/8 и 2/2 PASS**.
+- `[x]` Targeted RequestForm/RequestPage tests — **3/3 PASS**; `check:local-mvp
+  -- --static-only` сохранил все **39 автоматических PASS**. Responsive browser
+  matrix остаётся отдельным manual gate.
+- `[~]` Slow-network real API, identity switch на deployed browser и partial
+  private-storage cleanup остаются staging/production evidence conditions.

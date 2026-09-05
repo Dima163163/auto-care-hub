@@ -2596,3 +2596,14 @@ npm run check:e2e:browser
 - `[~]` CHANGE-C012 закрыт только на уровне локальной attribution-семантики:
   пять реальных response samples, confirmation SLO и staging multi-user replay
   остаются обязательным внешним pilot evidence.
+
+### Результат следующей исполняемой порции (05.09.2026)
+
+- `[x]` После asynchronous `FileReader` в request attachment flow добавлен
+  повторный context/generation guard перед mutation; старый draft не продолжает
+  upload после смены identity/provider/location/offering.
+- `[x]` Client-path contract проверяет idempotency, in-flight guard,
+  `Promise.allSettled` и post-read context check; targeted UI tests и local MVP
+  static checks PASS.
+- `[~]` Slow-network real API, deployed browser identity-switch и private
+  storage cleanup/replay остаются внешними условиями `CHANGE-C014`.
