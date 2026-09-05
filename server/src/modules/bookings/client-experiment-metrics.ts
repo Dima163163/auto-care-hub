@@ -17,7 +17,15 @@ export const clientExperimentEventNames = [
 export type ClientExperimentEventName = typeof clientExperimentEventNames[number]
 export type ClientExperimentName = 'book_again'
 
-function assertClient(user: UserEntity) {
+export function normalizeClientExperimentEvent(value: unknown): ClientExperimentEventName | null {
+    if (typeof value !== 'string') return null
+    const normalized = value.normalize('NFKC').trim()
+    return clientExperimentEventNames.includes(normalized as ClientExperimentEventName)
+        ? normalized as ClientExperimentEventName
+        : null
+}
+
+export function assertClientExperimentActor(user: UserEntity) {
     if (user.role !== UserRole.Client) {
         throw new AppError({
             statusCode: 403,
@@ -32,7 +40,7 @@ export function recordClientExperimentEvent(
     event: ClientExperimentEventName,
     registry: Pick<MetricsRegistry, 'increment'> = metrics,
 ) {
-    assertClient(client)
+    assertClientExperimentActor(client)
     registry.increment('client_experiment_events_total', 1, { event })
 
     return { accepted: true as const }

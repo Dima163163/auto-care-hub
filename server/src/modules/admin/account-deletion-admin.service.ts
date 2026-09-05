@@ -41,6 +41,11 @@ import { getAutoCareProviderLogoFileName, removeAutoCareProviderLogo } from '../
 import { getAutoCareProviderMediaFileName, removeAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
 import { deleteUploadedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { assertAutoCareDeletionInvariants } from '../users/account-deletion-invariants.js'
+import {
+    normalizeAccountDeletionRequestsQuery,
+    normalizeAccountDeletionRequestUuid,
+    normalizeAccountDeletionTerminalStatus,
+} from './account-deletion-input-policy.js'
 
 async function redactAccountDeletionOutboxEvents(
     manager: EntityManager,
@@ -334,22 +339,31 @@ function mapAdminDeletionRequest(request: AccountDeletionRequestEntity): AdminDe
 
 export async function getAdminDeletionRequests(
     admin: UserEntity,
-    input: AdminDeletionRequestsQuery = {},
+    input: unknown = {},
 ): Promise<AdminDeletionRequest[] | CursorPage<AdminDeletionRequest>> {
     assertSuperAdminAccess(admin)
 
-    const isPaginated = isCursorPaginationRequested(input)
-    const limit = getCursorLimit(input.limit)
+    const normalizedInput = normalizeAccountDeletionRequestsQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Account deletion requests query is invalid.',
+        })
+    }
+
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
     const query = AppDataSource.getRepository(AccountDeletionRequestEntity)
         .createQueryBuilder('request')
         .leftJoinAndSelect('request.user', 'user')
 
-    if (input.status) {
-        query.andWhere('request.status = :status', { status: input.status })
+    if (normalizedInput.status) {
+        query.andWhere('request.status = :status', { status: normalizedInput.status })
     }
 
-    if (input.cursor) {
-        const cursor = decodeCursor(input.cursor, ['requestedAt', 'id'])
+    if (normalizedInput.cursor) {
+        const cursor = decodeCursor(normalizedInput.cursor, ['requestedAt', 'id'])
         const requestedAt = assertCursorDate(cursor, 'requestedAt')
         query.andWhere(
             '(request.requestedAt < :requestedAt OR (request.requestedAt = :requestedAt AND request.id < :cursorId))',
@@ -374,17 +388,26 @@ export async function getAdminDeletionRequests(
 
 export async function updateAdminDeletionRequestStatus(
     admin: UserEntity,
-    requestId: string,
-    status: AdminDeletionRequestTerminalStatus,
+    requestId: unknown,
+    status: unknown,
 ): Promise<AdminDeletionRequest> {
     assertSuperAdminAccess(admin)
+    const normalizedRequestId = normalizeAccountDeletionRequestUuid(requestId)
+    const normalizedStatus = normalizeAccountDeletionTerminalStatus(status) as AdminDeletionRequestTerminalStatus | null
+    if (!normalizedRequestId || !normalizedStatus) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Account deletion status mutation input is invalid.',
+        })
+    }
     let outcome: 'updated' | 'reused' = 'updated'
 
     const updatedRequest = await AppDataSource.transaction(async (manager) => {
         const repository = manager.getRepository(AccountDeletionRequestEntity)
         const deletionRequest = await repository
             .createQueryBuilder('request')
-            .where('request.id = :requestId', { requestId })
+            .where('request.id = :requestId', { requestId: normalizedRequestId })
             .setLock('pessimistic_write')
             .getOne()
 
@@ -406,12 +429,12 @@ export async function updateAdminDeletionRequestStatus(
         }
         deletionRequest.user = requestUser
 
-        if (deletionRequest.status === status) {
+        if (deletionRequest.status === normalizedStatus) {
             outcome = 'reused'
             return deletionRequest
         }
 
-        if (!isAccountDeletionStatusTransitionAllowed(deletionRequest.status, status)) {
+        if (!isAccountDeletionStatusTransitionAllowed(deletionRequest.status, normalizedStatus)) {
             throw new AppError({
                 statusCode: 409,
                 code: ERROR_CODES.Conflict,
@@ -419,7 +442,7 @@ export async function updateAdminDeletionRequestStatus(
             })
         }
 
-        if (status === AccountDeletionRequestStatus.Completed && !isAccountDeletionReady(deletionRequest.requestedAt)) {
+        if (normalizedStatus === AccountDeletionRequestStatus.Completed && !isAccountDeletionReady(deletionRequest.requestedAt)) {
             throw new AppError({
                 statusCode: 409,
                 code: ERROR_CODES.Conflict,
@@ -428,7 +451,7 @@ export async function updateAdminDeletionRequestStatus(
         }
 
         const now = new Date()
-        if (status === AccountDeletionRequestStatus.Completed) {
+        if (normalizedStatus === AccountDeletionRequestStatus.Completed) {
             // The reason is user-provided free text and may contain PII. Keep
             // it only while the request is pending; a completed deletion must
             // not retain it in the admin queue after the account is anonymized.
@@ -436,14 +459,14 @@ export async function updateAdminDeletionRequestStatus(
             const anonymizedUser = await anonymizeAccount(manager, deletionRequest.userId)
             if (anonymizedUser) deletionRequest.user = anonymizedUser
         }
-        deletionRequest.status = status
-        deletionRequest.cancelledAt = status === AccountDeletionRequestStatus.Cancelled ? now : null
-        deletionRequest.completedAt = status === AccountDeletionRequestStatus.Completed ? now : null
+        deletionRequest.status = normalizedStatus
+        deletionRequest.cancelledAt = normalizedStatus === AccountDeletionRequestStatus.Cancelled ? now : null
+        deletionRequest.completedAt = normalizedStatus === AccountDeletionRequestStatus.Completed ? now : null
 
         return repository.save(deletionRequest)
     })
 
-    metrics.increment('admin_account_deletion_status_updates_total', 1, { status, outcome })
+    metrics.increment('admin_account_deletion_status_updates_total', 1, { status: normalizedStatus, outcome })
 
     return mapAdminDeletionRequest(updatedRequest)
 }

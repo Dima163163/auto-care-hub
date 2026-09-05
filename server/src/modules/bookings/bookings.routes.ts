@@ -8,6 +8,7 @@ import {
 import {
     bookingParamsSchema,
     bookingListQuerySchema,
+    occupiedSlotsQuerySchema,
     cancelBookingSchema,
     createBookingSchema,
     ownerCreateBookingSchema,
@@ -233,11 +234,9 @@ export async function bookingsRoutes(
         }
     )
 
-    app.get<{
-        Querystring: { cabinetId: string; date: string }
-        Reply: OccupiedSlotsResponse
-    }>('/bookings/occupied', async (request) => {
-        const { cabinetId, date } = request.query
-        return getOccupiedSlots(cabinetId, date)
+    app.get<{ Querystring: unknown; Reply: OccupiedSlotsResponse }>('/bookings/occupied', async (request) => {
+        const user = await requireAuth(request)
+        const query = validateQuery(occupiedSlotsQuerySchema, request.query)
+        return getOccupiedSlots(user, query.cabinetId, query.date)
     })
 }

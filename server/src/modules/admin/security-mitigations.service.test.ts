@@ -31,4 +31,23 @@ describe('Security Center mitigations service', () => {
         await expect(revokeSecurityMitigation(admin, 'mitigation-1')).rejects.toMatchObject({ statusCode: 403 })
         await expect(extendSecurityMitigation(admin, 'mitigation-1', 15)).rejects.toMatchObject({ statusCode: 403 })
     })
+
+    it('rejects malformed super-admin inputs before touching the repository', async () => {
+        const superAdmin = { role: UserRole.SuperAdmin } as never
+
+        await expect(createSecurityMitigation(superAdmin, {
+            kind: 'ip_block',
+            ipAddress: '192.0.2.10',
+            reason: 'Automated abuse',
+            ttlMinutes: 60,
+            unexpected: true,
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(getSecurityMitigations(superAdmin, {
+            status: 'active',
+            kind: 'ip_block',
+            unexpected: true,
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(revokeSecurityMitigation(superAdmin, 'mitigation-1')).rejects.toMatchObject({ statusCode: 422 })
+        await expect(extendSecurityMitigation(superAdmin, 'mitigation-1', 15)).rejects.toMatchObject({ statusCode: 422 })
+    })
 })

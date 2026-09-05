@@ -13,6 +13,11 @@ export type ReviewIntegrityAssessment = {
     needsModeration: boolean
 }
 
+export type AutoCareReviewContent = {
+    rating: number
+    text: string
+}
+
 const COORDINATED_WINDOW_MS = 10 * 60 * 1_000
 const TEXT_DUPLICATE_WINDOW_MS = 90 * 24 * 60 * 60 * 1_000
 const RECENCY_HALF_LIFE_MS = 180 * 24 * 60 * 60 * 1_000
@@ -23,6 +28,19 @@ export function normalizeReviewText(value: string) {
         .toLocaleLowerCase()
         .replace(/[^\p{L}\p{N}]+/gu, ' ')
         .trim()
+}
+
+/**
+ * Review routes validate this payload with Zod, but the service is also
+ * callable from jobs and tests. Keep the persisted content valid at that
+ * boundary so a direct invocation cannot create an invalid review row.
+ */
+export function normalizeAutoCareReviewContent(input: { rating: unknown; text: unknown }): AutoCareReviewContent | null {
+    if (typeof input.rating !== 'number' || !Number.isSafeInteger(input.rating) || input.rating < 1 || input.rating > 5) return null
+    if (typeof input.text !== 'string') return null
+    const text = input.text.normalize('NFKC').trim()
+    if (text.length < 10 || text.length > 1_000) return null
+    return { rating: input.rating, text }
 }
 
 /**

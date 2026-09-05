@@ -16,7 +16,12 @@ vi.mock('../../database/data-source.js', () => ({
     },
 }))
 
-const { createPlatformReview } = await import('./platform-reviews.service.js')
+const {
+    createPlatformReview,
+    deletePlatformReview,
+    getPublicPlatformReviews,
+    respondToPlatformReview,
+} = await import('./platform-reviews.service.js')
 
 const client = {
     id: 'client-1',
@@ -97,5 +102,17 @@ describe('platform review idempotency', () => {
             text: 'Недопустимый отзыв владельца.',
         })).rejects.toMatchObject({ statusCode: 403, code: ERROR_CODES.Forbidden })
         expect(repository.save).not.toHaveBeenCalled()
+    })
+
+    it('rejects malformed direct inputs before repository access', async () => {
+        await expect(createPlatformReview(client, {
+            rating: 5,
+            text: 'Достаточно длинный текст отзыва.',
+            status: 'approved',
+        })).rejects.toMatchObject({ statusCode: 422, code: ERROR_CODES.ValidationError })
+        await expect(getPublicPlatformReviews(0)).rejects.toMatchObject({ statusCode: 422, code: ERROR_CODES.ValidationError })
+        await expect(respondToPlatformReview({ role: UserRole.Admin } as UserEntity, 'review-1', { response: 'Спасибо!' })).rejects.toMatchObject({ statusCode: 422, code: ERROR_CODES.ValidationError })
+        await expect(deletePlatformReview({ role: UserRole.SuperAdmin } as UserEntity, 'review-1')).rejects.toMatchObject({ statusCode: 422, code: ERROR_CODES.ValidationError })
+        expect(repository.findOneBy).not.toHaveBeenCalled()
     })
 })

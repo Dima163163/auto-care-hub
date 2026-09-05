@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ServiceAttachmentEntity, ServiceAttachmentStatus } from '../../entities/automotive/service-request.entity.js'
+import { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { UserProvider, UserRole, UserStatus, UserEntity } from '../../entities/user/user.entity.js'
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
 import {
@@ -68,6 +69,7 @@ describe('serializeUserDataExport', () => {
             attachments: false,
             fleets: false,
             quotes: false,
+            appeals: false,
         })
         expect(result.user).not.toHaveProperty('passwordHash')
     })
@@ -105,5 +107,53 @@ describe('serializeUserDataExport', () => {
         expect(result.attachments).toHaveLength(1)
         expect(result.attachments[0]).not.toHaveProperty('objectKey')
         expect(result.attachments[0]).toMatchObject({ id: attachment.id, contentType: 'image/png', bytes: 128 })
+    })
+
+    it('exports submitted appeals without moderator identity or private object keys', () => {
+        const appeal = {
+            id: '00000000-0000-0000-0000-000000000006',
+            subject: AutoCareAppealSubject.Review,
+            subjectId: '00000000-0000-0000-0000-000000000007',
+            submittedById: user.id,
+            providerId: '00000000-0000-0000-0000-000000000008',
+            reason: 'This is a sufficiently detailed appeal reason.',
+            evidenceIds: ['00000000-0000-0000-0000-000000000009'],
+            status: AutoCareAppealStatus.Pending,
+            decidedById: null,
+            decisionReason: null,
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+            decidedAt: null,
+        } as AutoCareAppealEntity
+
+        const result = serializeUserDataExport(user, {
+            favorites: [],
+            bookings: [],
+            notifications: [],
+            cabinets: [],
+            vehicles: [],
+            serviceRequests: [],
+            broadcasts: [],
+            claims: [],
+            questions: [],
+            chats: [],
+            messages: [],
+            attachments: [],
+            fleets: [],
+            appeals: [appeal],
+        })
+
+        expect(result.appeals).toEqual([{
+            id: appeal.id,
+            subject: appeal.subject,
+            subjectId: appeal.subjectId,
+            providerId: appeal.providerId,
+            reason: appeal.reason,
+            evidenceIds: appeal.evidenceIds,
+            status: appeal.status,
+            decisionReason: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            decidedAt: null,
+        }])
+        expect(result.appeals[0]).not.toHaveProperty('decidedById')
     })
 })

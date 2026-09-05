@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
     isAllowedAutoCareProviderPublicMediaReference,
     normalizeAutoCareProviderPublicMedia,
+    normalizeAutoCareProviderPublicMediaForWrite,
     normalizeAutoCareReviewPhotoUrls,
     selectAutoCareProviderModerationMedia,
 } from './autocare-public-media-policy.js'
@@ -49,6 +50,21 @@ describe('AutoCare public media policy', () => {
             '/images/autocare/providers/generated/review-detailing.webp',
             '/images/autocare/providers/generated/review-detailing.webp',
         ])).toEqual(['/images/autocare/providers/generated/review-detailing.webp'])
+    })
+
+    it('rejects invalid provider media at the write boundary instead of filtering it', () => {
+        const logo = `/uploads/autocare/logos/${randomUUID()}.webp`
+        const cover = `/uploads/autocare/media/cover/${randomUUID()}.webp`
+        const gallery = `/uploads/autocare/media/gallery/${randomUUID()}.webp`
+        expect(normalizeAutoCareProviderPublicMediaForWrite({ logoUrl: ` ${logo} `, coverImageUrl: cover, galleryImageUrls: [gallery, gallery] })).toEqual({
+            logoUrl: logo,
+            coverImageUrl: cover,
+            galleryImageUrls: [gallery],
+        })
+        expect(normalizeAutoCareProviderPublicMediaForWrite({ logoUrl: 'https://evil.example/logo.webp' })).toBeNull()
+        expect(normalizeAutoCareProviderPublicMediaForWrite({ coverImageUrl: cover, galleryImageUrls: ['//evil.example/gallery.webp'] })).toBeNull()
+        expect(normalizeAutoCareProviderPublicMediaForWrite({ galleryImageUrls: Array.from({ length: 13 }, () => gallery) })).toBeNull()
+        expect(normalizeAutoCareProviderPublicMediaForWrite({ galleryImageUrls: [null] })).toBeNull()
     })
     it('keeps private evidence references opaque and traversal-safe', () => {
         expect(isSafePrivateReference('private://providers/docs/license.pdf')).toBe(true)

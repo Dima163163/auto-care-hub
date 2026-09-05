@@ -15,8 +15,8 @@ import { isAdminRole } from '../../shared/auth/roles.js'
 import { UserRole, type UserEntity as User } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { hasProviderWorkspacePermission } from './provider-access.service.js'
-import { canTransitionAppeal, isPostgresUniqueViolation, validateAppealInput } from './appeal-policy.js'
+import { canSubmitProviderAppeal, hasProviderWorkspacePermission } from './provider-access.service.js'
+import { canTransitionAppeal, isPostgresUniqueViolation, normalizeAdminAutoCareAppealsQuery, normalizeAppealUuid, validateAppealDecisionInput, validateAppealInput } from './appeal-policy.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareAppealResponse } from './autocare.types.js'
@@ -61,7 +61,7 @@ async function assertSubjectAccess(user: User, subject: AutoCareAppealSubject, s
     const resolvedProviderId = providerId ?? subjectId
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: resolvedProviderId })
     if (!provider) error(404, 'Automotive service not found.')
-    if (user.role !== UserRole.Owner || !(await hasProviderWorkspacePermission(user.id, resolvedProviderId, 'profile', null))) error(403, 'Only the service owner can submit this appeal.')
+    if (user.role !== UserRole.Owner || !(await canSubmitProviderAppeal(user.id, resolvedProviderId))) error(403, 'Only the service owner can submit this appeal.')
     return resolvedProviderId
 }
 
@@ -83,18 +83,24 @@ async function assertEvidenceAccess(providerId: string, evidenceIds: readonly st
     }
 }
 
-export async function createAutoCareAppeal(user: User, input: { subject: AutoCareAppealSubject; subjectId: string; providerId?: string | null; reason: string; evidenceIds?: string[] }) {
+export async function createAutoCareAppeal(user: User, input: unknown) {
     const parsed = validateAppealInput(input)
     if (!parsed.ok) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: parsed.reason })
-    const providerId = await assertSubjectAccess(user, input.subject, input.subjectId, input.providerId ?? null)
+    const rawInput = input as unknown as Record<string, unknown>
+    const subjectId = normalizeAppealUuid(rawInput.subjectId)
+    const providerIdInput = rawInput.providerId === undefined || rawInput.providerId === null ? null : normalizeAppealUuid(rawInput.providerId)
+    if (!subjectId || (rawInput.providerId !== undefined && rawInput.providerId !== null && !providerIdInput)) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Appeal subject references are invalid.' })
+    }
+    const providerId = await assertSubjectAccess(user, parsed.value.subject, subjectId, providerIdInput)
     await assertEvidenceAccess(providerId, parsed.value.evidenceIds)
     const repository = AppDataSource.getRepository(AutoCareAppealEntity)
-    const duplicate = await repository.findOne({ where: { submittedById: user.id, subject: input.subject, subjectId: input.subjectId, status: AutoCareAppealStatus.Pending } })
+    const duplicate = await repository.findOne({ where: { submittedById: user.id, subject: parsed.value.subject, subjectId, status: AutoCareAppealStatus.Pending } })
     if (duplicate) return toResponse(duplicate)
     try {
         const saved = await repository.save(repository.create({
-            subject: input.subject,
-            subjectId: input.subjectId,
+            subject: parsed.value.subject,
+            subjectId,
             submittedById: user.id,
             providerId,
             reason: parsed.value.reason,
@@ -107,7 +113,7 @@ export async function createAutoCareAppeal(user: User, input: { subject: AutoCar
         // The partial unique index is the authority; reconcile its conflict
         // with the row that won the race instead of surfacing a 500.
         if (!isPostgresUniqueViolation(saveError)) throw saveError
-        const concurrent = await repository.findOne({ where: { submittedById: user.id, subject: input.subject, subjectId: input.subjectId, status: AutoCareAppealStatus.Pending } })
+        const concurrent = await repository.findOne({ where: { submittedById: user.id, subject: parsed.value.subject, subjectId, status: AutoCareAppealStatus.Pending } })
         if (concurrent) return toResponse(concurrent)
         throw saveError
     }
@@ -120,9 +126,11 @@ export async function getMyAutoCareAppeals(user: User) {
 
 /** A submitter can withdraw only an unresolved appeal; moderator decisions remain immutable. */
 export async function withdrawAutoCareAppeal(user: User, appealId: string) {
+    const normalizedAppealId = normalizeAppealUuid(appealId)
+    if (!normalizedAppealId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Appeal id must be a valid UUID.' })
     return AppDataSource.transaction(async (manager) => {
         const repository = manager.getRepository(AutoCareAppealEntity)
-        const appeal = await repository.findOne({ where: { id: appealId }, lock: { mode: 'pessimistic_write' } })
+        const appeal = await repository.findOne({ where: { id: normalizedAppealId }, lock: { mode: 'pessimistic_write' } })
         if (!appeal || appeal.submittedById !== user.id) error(404, 'Appeal not found.')
         if (!canTransitionAppeal(appeal.status, AutoCareAppealStatus.Withdrawn)) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Only a pending appeal can be withdrawn.' })
@@ -132,21 +140,27 @@ export async function withdrawAutoCareAppeal(user: User, appealId: string) {
     })
 }
 
-export async function listAdminAutoCareAppeals(user: User, input: { status?: AutoCareAppealStatus; subject?: AutoCareAppealSubject; limit?: number }) {
+export async function listAdminAutoCareAppeals(user: User, input: unknown = {}) {
     if (!isAdminRole(user.role)) error(403, 'Only admins can view appeals.')
-    const appeals = await AppDataSource.getRepository(AutoCareAppealEntity).find({ where: { ...(input.status ? { status: input.status } : {}), ...(input.subject ? { subject: input.subject } : {}) }, order: { createdAt: 'DESC' }, take: input.limit ?? 50 })
+    const query = normalizeAdminAutoCareAppealsQuery(input)
+    if (!query) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Appeal list query is invalid.' })
+    const appeals = await AppDataSource.getRepository(AutoCareAppealEntity).find({ where: { ...(query.status ? { status: query.status } : {}), ...(query.subject ? { subject: query.subject } : {}) }, order: { createdAt: 'DESC' }, take: query.limit })
     return appeals.map(toResponse)
 }
 
-export async function decideAdminAutoCareAppeal(user: User, appealId: string, input: { status: AutoCareAppealStatus.Accepted | AutoCareAppealStatus.Rejected; reason: string }) {
+export async function decideAdminAutoCareAppeal(user: User, appealId: string, input: unknown) {
     if (!isAdminRole(user.role)) error(403, 'Only admins can decide appeals.')
+    const normalizedAppealId = normalizeAppealUuid(appealId)
+    if (!normalizedAppealId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Appeal id must be a valid UUID.' })
+    const parsed = validateAppealDecisionInput(input)
+    if (!parsed.ok) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: parsed.reason })
     const result = await AppDataSource.transaction(async (manager) => {
         const repository = manager.getRepository(AutoCareAppealEntity)
-        const appeal = await repository.findOne({ where: { id: appealId }, lock: { mode: 'pessimistic_write' } })
+        const appeal = await repository.findOne({ where: { id: normalizedAppealId }, lock: { mode: 'pessimistic_write' } })
         if (!appeal) error(404, 'Appeal not found.')
-        if (!canTransitionAppeal(appeal.status, input.status)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Appeal has already been decided.' })
-        appeal.status = input.status
-        appeal.decisionReason = input.reason.trim()
+        if (!canTransitionAppeal(appeal.status, parsed.value.status)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Appeal has already been decided.' })
+        appeal.status = parsed.value.status
+        appeal.decisionReason = parsed.value.reason
         appeal.decidedById = user.id
         appeal.decidedAt = new Date()
         const saved = await repository.save(appeal)
@@ -155,7 +169,7 @@ export async function decideAdminAutoCareAppeal(user: User, appealId: string, in
         // decision that restores publication. The trust score itself is still
         // recalculated from evidence and completed visits, never from the
         // appeal alone.
-        if (input.status === AutoCareAppealStatus.Accepted
+        if (parsed.value.status === AutoCareAppealStatus.Accepted
             && saved.providerId
             && [AutoCareAppealSubject.Provider, AutoCareAppealSubject.Suspension].includes(saved.subject)) {
             const providerRepository = manager.getRepository(AutomotiveProviderEntity)

@@ -15,6 +15,7 @@ import {
     removeAutoCareAttachmentObject,
     saveAutoCareAttachmentObject,
     selectAutoCareAttachmentCleanupCandidates,
+    buildAutoCareAttachmentOrphanReport,
     shouldDeleteAutoCareAttachmentObject,
     assertAutoCareAttachmentObjectKeyOwnedBy,
     assertAutoCareAttachmentChecksum,
@@ -300,5 +301,19 @@ describe('AutoCare attachment quarantine cleanup policy', () => {
         expect(shouldDeleteAutoCareAttachmentObject(2)).toBe(false)
         expect(shouldDeleteAutoCareAttachmentObject(0)).toBe(false)
         expect(shouldDeleteAutoCareAttachmentObject(Number.NaN)).toBe(false)
+    })
+
+    it('reports stale orphan candidates without destructive action', () => {
+        const report = buildAutoCareAttachmentOrphanReport({
+            entries,
+            referencedKeys: [referencedKey],
+            cutoff: 2_000,
+        })
+        expect(report.scanned).toBe(entries.length)
+        expect(report.destructiveAction).toBe(false)
+        expect(report.candidates).toEqual([
+            { key: referencedKey, storageTier: 'quarantine', lastModifiedAt: 1_000 },
+            { key: orphanKey, storageTier: 'private', lastModifiedAt: 1_000 },
+        ])
     })
 })

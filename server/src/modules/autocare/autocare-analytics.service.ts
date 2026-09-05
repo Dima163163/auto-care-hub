@@ -18,6 +18,7 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { logError } from '../../shared/observability/logger.js'
 import { getManagedProviderPermissionScopes } from './provider-access.service.js'
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
+import { normalizeProviderMembershipUuid } from './provider-membership-policy.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
 import { env } from '../../config/env.js'
 
@@ -27,6 +28,10 @@ function forbidden(message: string): never {
 
 function notFound(message: string): never {
     throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message })
+}
+
+function invalid(message: string): never {
+    throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message })
 }
 
 function percent(value: number, total: number) {
@@ -39,16 +44,18 @@ function percent(value: number, total: number) {
  * client identity or private message content.
  */
 export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, providerId: string): Promise<AutoCareProviderAnalyticsResponse> {
-    const scope = (await getManagedProviderPermissionScopes(owner.id, 'analytics')).find((item) => item.providerId === providerId)
+    const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+    if (!normalizedProviderId) invalid('Provider id must be a valid UUID.')
+    const scope = (await getManagedProviderPermissionScopes(owner.id, 'analytics')).find((item) => item.providerId === normalizedProviderId)
     if (!scope) forbidden('You do not manage this automotive service.')
 
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     if (!provider) notFound('Automotive service not found.')
 
     const scopedLocationIds = scope.locationIds
     const isProviderWide = scopedLocationIds === null
     const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({
-        where: isProviderWide ? { providerId } : { providerId, locationId: In(scopedLocationIds ?? []) },
+        where: isProviderWide ? { providerId: normalizedProviderId } : { providerId: normalizedProviderId, locationId: In(scopedLocationIds ?? []) },
         order: { createdAt: 'ASC' },
     })
 
@@ -58,15 +65,15 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
         requestIds.length === 0
             ? Promise.resolve([])
             : AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({ where: { requestId: In(requestIds) } }),
-        AppDataSource.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved } }),
+        AppDataSource.getRepository(AutomotiveReviewEntity).find({ where: { providerId: normalizedProviderId, status: AutomotiveReviewStatus.Approved } }),
         isProviderWide
-            ? AppDataSource.getRepository(AutoCareBonusAccountEntity).find({ where: { providerId }, select: { balancePoints: true } })
+            ? AppDataSource.getRepository(AutoCareBonusAccountEntity).find({ where: { providerId: normalizedProviderId }, select: { balancePoints: true } })
             : Promise.resolve([]),
         isProviderWide
             ? AppDataSource.getRepository(AutoCareProviderDailyMetricEntity).createQueryBuilder('metric')
                 .select('COALESCE(SUM(metric.impressions), 0)', 'impressions')
                 .addSelect('COALESCE(SUM(metric.profileOpens), 0)', 'profileOpens')
-                .where('metric.providerId = :providerId', { providerId })
+                .where('metric.providerId = :providerId', { providerId: normalizedProviderId })
                 .getRawOne<{ impressions: string; profileOpens: string }>()
             : Promise.resolve(null),
     ])
@@ -103,7 +110,7 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
     const noShows = requests.filter((request) => request.status === ServiceRequestStatus.NoShow).length
 
     return {
-        providerId,
+        providerId: normalizedProviderId,
         generatedAt: new Date().toISOString(),
         inquiries: requests.filter((request) => request.status !== ServiceRequestStatus.Draft).length,
         openRequests: requests.filter((request) => [ServiceRequestStatus.Open, ServiceRequestStatus.AwaitingReply, ServiceRequestStatus.EstimateShared].includes(request.status)).length,
@@ -148,8 +155,13 @@ async function incrementDailyMetric(providerId: string, field: DailyMetricField,
 
 /** Best-effort public activity counters. They never affect discovery/profile availability. */
 export async function recordAutoCareProviderDiscoveryImpressions(providerIds: readonly string[]) {
+    if (!Array.isArray(providerIds) || providerIds.length > 100) return
     const counts = new Map<string, number>()
-    for (const providerId of providerIds) counts.set(providerId, (counts.get(providerId) ?? 0) + 1)
+    for (const providerId of providerIds) {
+        const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+        if (normalizedProviderId) counts.set(normalizedProviderId, (counts.get(normalizedProviderId) ?? 0) + 1)
+    }
+    if (counts.size === 0) return
     try {
         await Promise.all([...counts].map(([providerId, amount]) => incrementDailyMetric(providerId, 'impressions', amount)))
     } catch (error) {
@@ -158,9 +170,11 @@ export async function recordAutoCareProviderDiscoveryImpressions(providerIds: re
 }
 
 export async function recordAutoCareProviderProfileOpen(providerId: string) {
+    const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+    if (!normalizedProviderId) return
     try {
-        await incrementDailyMetric(providerId, 'profileOpens', 1)
+        await incrementDailyMetric(normalizedProviderId, 'profileOpens', 1)
     } catch (error) {
-        logError('Could not record AutoCare profile open', error, { providerId })
+        logError('Could not record AutoCare profile open', error, { providerId: normalizedProviderId })
     }
 }

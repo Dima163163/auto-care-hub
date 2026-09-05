@@ -32,6 +32,7 @@ import { assertIncidentMetadataKeyCount } from './incident-metadata-policy.js'
 import { assertSystemIncidentStatusTransition } from './system-incident-status-policy.js'
 import { normalizeTextWhitespace } from '../../shared/security/string-normalization.js'
 import { sanitizeLogMetadata } from '../../shared/observability/sensitive-data.js'
+import { normalizeSystemIncidentRecordInput, normalizeSystemIncidentStatus, normalizeSystemIncidentUuid } from './system-incident-input-policy.js'
 
 const INCIDENT_DEDUPLICATION_WINDOW_MS = 15 * 60 * 1000
 
@@ -74,28 +75,46 @@ function assertSuperAdmin(user: UserEntity) {
     }
 }
 
+function requireSystemIncidentUuid(value: unknown) {
+    const normalized = normalizeSystemIncidentUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'System incident id must be a valid UUID.' })
+    }
+    return normalized
+}
+
+function requireSystemIncidentStatus(value: unknown) {
+    const normalized = normalizeSystemIncidentStatus(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'System incident status is invalid.' })
+    }
+    return normalized
+}
+
 export async function recordSystemIncidentSafely(input: RecordSystemIncidentInput) {
+    const normalizedInput = normalizeSystemIncidentRecordInput(input)
+    if (!normalizedInput) return null
     try {
         return await AppDataSource.transaction(async (manager) => {
             const repository = manager.getRepository(SystemIncidentEntity)
             const now = new Date()
-            const title = normalizeIncidentTitle(input.title)
+            const title = normalizeIncidentTitle(normalizedInput.title)
             const metadata = sanitizeLogMetadata(
-                assertIncidentMetadataWithinBounds(input.metadata ?? {}),
+                assertIncidentMetadataWithinBounds(normalizedInput.metadata ?? {}),
             )
-            const requestId = normalizeRequestHeader(input.requestId, MAX_REQUEST_CORRELATION_ID_LENGTH)
+            const requestId = normalizeRequestHeader(normalizedInput.requestId, MAX_REQUEST_CORRELATION_ID_LENGTH)
             const deduplicationThreshold = new Date(
                 now.getTime() - INCIDENT_DEDUPLICATION_WINDOW_MS,
             )
 
             await manager.query(
                 'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
-                [getIncidentDeduplicationKey(input)],
+                [getIncidentDeduplicationKey(normalizedInput)],
             )
 
             const existingIncident = await repository
                 .createQueryBuilder('incident')
-                .where('incident.type = :type', { type: input.type })
+                .where('incident.type = :type', { type: normalizedInput.type })
                 .andWhere('incident.title = :title', { title })
                 .andWhere('incident.status != :resolvedStatus', {
                     resolvedStatus: SystemIncidentStatus.Resolved,
@@ -119,7 +138,7 @@ export async function recordSystemIncidentSafely(input: RecordSystemIncidentInpu
             }
 
             return repository.save(repository.create({
-                ...input,
+                ...normalizedInput,
                 title,
                 requestId,
                 metadata,
@@ -199,14 +218,16 @@ export async function getSystemIncidents(
 
 export async function updateSystemIncidentStatus(
     user: UserEntity,
-    incidentId: string,
-    status: SystemIncidentStatus,
+    incidentId: unknown,
+    status: unknown,
 ) {
     assertSuperAdmin(user)
+    const normalizedIncidentId = requireSystemIncidentUuid(incidentId)
+    const normalizedStatus = requireSystemIncidentStatus(status)
 
     const repository = AppDataSource.getRepository(SystemIncidentEntity)
     const incident = await repository.findOne({
-        where: { id: incidentId },
+        where: { id: normalizedIncidentId },
     })
 
     if (!incident) {
@@ -217,11 +238,11 @@ export async function updateSystemIncidentStatus(
         })
     }
 
-    incident.status = assertSystemIncidentStatusTransition(incident.status, status)
-    incident.acknowledgedAt = status === SystemIncidentStatus.Acknowledged
+    incident.status = assertSystemIncidentStatusTransition(incident.status, normalizedStatus)
+    incident.acknowledgedAt = normalizedStatus === SystemIncidentStatus.Acknowledged
         ? new Date()
         : incident.acknowledgedAt
-    incident.resolvedAt = status === SystemIncidentStatus.Resolved
+    incident.resolvedAt = normalizedStatus === SystemIncidentStatus.Resolved
         ? new Date()
         : null
 

@@ -414,6 +414,7 @@ export type OwnerAutoCareReviewsResponse = {
 export type AutoCareAvailabilitySlotResponse = {
     startTime: string
     endTime: string
+    startsAt: string
 }
 
 export type AutoCareAvailabilityResponse = {
@@ -886,6 +887,11 @@ export type CreateAutoCareServiceQuoteInput = {
     feesMinor?: number
     validUntil?: string | null
     priceLocked?: boolean
+}
+
+export type AutoCareQuoteDecisionInput = {
+    quoteId: string
+    quoteVersion: number
 }
 
 export type AutoCareQuoteLineItemInput = {

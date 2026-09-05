@@ -11,6 +11,14 @@ export const ownerActionCenterEventNames = [
 
 export type OwnerActionCenterEventName = typeof ownerActionCenterEventNames[number]
 
+export function normalizeOwnerActionCenterEvent(value: unknown): OwnerActionCenterEventName | null {
+    if (typeof value !== 'string') return null
+    const normalized = value.normalize('NFKC').trim()
+    return ownerActionCenterEventNames.includes(normalized as OwnerActionCenterEventName)
+        ? normalized as OwnerActionCenterEventName
+        : null
+}
+
 type MetricWriter = Pick<MetricsRegistry, 'increment' | 'observe' | 'setGauge'>
 
 type RecordBookingDecisionInput = {

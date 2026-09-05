@@ -251,8 +251,8 @@ export async function adminRoutes(
     })
 
     app.get('/admin/autocare-appeals', async (request) => {
-        const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
         const user = await requireAuth(request)
+        const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
         const result = await listAdminAutoCareAppeals(user, query)
         await recordAuditLog({
             actorId: user.id,
@@ -265,17 +265,17 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-appeals/:id/decision', async (request) => {
+        const user = await requireAuth(request)
         const params = validateParams(adminAutoCareAppealParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareAppealSchema, request.body)
-        const user = await requireAuth(request)
         const result = await decideAdminAutoCareAppeal(user, params.id, body)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareAppealDecided, targetId: result.id, targetType: 'autocare_appeal', metadata: { status: result.status, subject: result.subject }, request })
         return result
     })
 
     app.get('/admin/autocare-moderation-evidence', async (request) => {
-        const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
         const user = await requireAuth(request)
+        const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
         const result = await listAdminAutoCareModerationEvidence(user, query.status)
         await recordAuditLog({
             actorId: user.id,
@@ -288,9 +288,9 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {
+        const user = await requireAuth(request)
         const params = validateParams(adminAutoCareModerationEvidenceParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareModerationEvidenceSchema, request.body)
-        const user = await requireAuth(request)
         const result = await decideAdminAutoCareModerationEvidence(user, params.id, body)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareModerationEvidenceDecided, targetId: result.id, targetType: 'autocare_moderation_evidence', metadata: { status: result.status, kind: result.kind }, request })
         return result
@@ -316,8 +316,8 @@ export async function adminRoutes(
     )
 
     app.get('/admin/autocare-provider-change-requests', async (request) => {
-        const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
         const user = await requireAuth(request)
+        const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
         const result = await listAdminProviderChangeRequests(user, query.status, query.kind)
         await recordAuditLog({
             actorId: user.id,
@@ -330,9 +330,9 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-provider-change-requests/:id/decision', async (request) => {
+        const user = await requireAuth(request)
         const params = validateParams(adminProviderChangeRequestParamsSchema, request.params)
         const body = validateBody(decideAdminProviderChangeRequestSchema, request.body)
-        const user = await requireAuth(request)
         const result = await decideAdminProviderChangeRequest(user, params.id, body.status as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, body.reason)
         await recordAuditLog({
             actorId: user.id,
@@ -346,8 +346,8 @@ export async function adminRoutes(
     })
 
     app.get('/admin/catalog-gap-requests', async (request) => {
-        const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
         const user = await requireAuth(request)
+        const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
         const result = await listAdminCatalogGapRequests(user, query.status)
         await recordAuditLog({
             actorId: user.id,
@@ -360,9 +360,9 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/catalog-gap-requests/:id/decision', async (request) => {
+        const user = await requireAuth(request)
         const params = validateParams(adminCatalogGapRequestParamsSchema, request.params)
         const body = validateBody(decideAdminCatalogGapRequestSchema, request.body)
-        const user = await requireAuth(request)
         const result = await decideAdminCatalogGapRequest(user, params.id, body.status as AutomotiveCatalogGapRequestStatus.Approved | AutomotiveCatalogGapRequestStatus.Rejected, body.reason)
         await recordAuditLog({
             actorId: user.id,
@@ -376,8 +376,8 @@ export async function adminRoutes(
     })
 
     app.get('/admin/chat-reports', async (request) => {
-        const query = validateQuery(adminChatReportsQuerySchema, request.query)
         const user = await requireAuth(request)
+        const query = validateQuery(adminChatReportsQuerySchema, request.query)
         const result = await listAdminAutoCareChatReports(user, query.status)
         await recordAuditLog({
             actorId: user.id,
@@ -390,9 +390,9 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/chat-reports/:id/decision', async (request) => {
+        const user = await requireAuth(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(decideAdminChatReportSchema, request.body)
-        const user = await requireAuth(request)
         const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser)
         await recordAuditLog({
             actorId: user.id,

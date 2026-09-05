@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
-import { assertAutoCareAttachmentContentType, assertAutoCareAttachmentQuota, decodeAutoCareAttachment, isAutoCareAttachmentContentType, normalizeAutoCareAttachment, resolveAutoCareAttachmentContentType } from './attachment-content.js'
+import { assertAutoCareAttachmentContentType, assertAutoCareAttachmentQuota, decodeAutoCareAttachment, isAutoCareAttachmentContentType, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const onePixelPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
 
 describe('AutoCare attachment content validation', () => {
+    it('normalizes the complete upload envelope before decoding', () => {
+        expect(normalizeAutoCareAttachmentInput({ fileName: '  brake\u00a0photo.png  ', contentBase64: '  iVBORw==  ', contentType: 'image/png', size: 4 })).toEqual({ fileName: 'brake photo.png', contentBase64: 'iVBORw==', contentType: 'image/png', size: 4 })
+        expect(normalizeAutoCareAttachmentInput({ fileName: 'bad\nname.png', contentBase64: 'AAAA', contentType: 'image/png', size: 3 })).toBeNull()
+        expect(normalizeAutoCareAttachmentInput({ fileName: 'photo.png', contentBase64: 'AAAA', contentType: 'text/html', size: 3 })).toBeNull()
+        expect(normalizeAutoCareAttachmentInput(null)).toBeNull()
+    })
+
     it('rejects unsupported content types before decoding or normalization', async () => {
         expect(() => assertAutoCareAttachmentContentType('text/html')).toThrowError(expect.objectContaining({ statusCode: 422 }))
         expect(() => decodeAutoCareAttachment({
@@ -13,6 +20,7 @@ describe('AutoCare attachment content validation', () => {
             contentType: 'text/html',
             size: 3,
         } as never)).toThrowError(expect.objectContaining({ statusCode: 422 }))
+        expect(() => decodeAutoCareAttachment(null)).toThrowError(expect.objectContaining({ statusCode: 422 }))
         await expect(normalizeAutoCareAttachment(Buffer.from('not-an-image'), 'text/html' as never))
             .rejects.toMatchObject({ statusCode: 422 })
     })

@@ -2,7 +2,6 @@ import { AppDataSource } from '../../database/data-source.js'
 import { In } from 'typeorm'
 import {
     CabinetEntity,
-    CabinetStatus,
 } from '../../entities/cabinet/cabinet.entity.js'
 import {
     AutomotiveMarketEntity,
@@ -26,7 +25,6 @@ import {
 import { createPasswordSetupTokenForUser } from '../auth/auth.service.js'
 import { logError } from '../../shared/observability/logger.js'
 import { toAdminCabinet, toAdminUser } from './admin.mappers.js'
-import type { SupportedLocale } from '../../config/i18n.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import { enqueuePasswordSetupEmailSafely } from '../outbox/password-setup-outbox.service.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
@@ -39,13 +37,22 @@ import {
     toCursorPage,
 } from '../../shared/http/cursor-pagination.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
-import type { AdminUsersQuery } from './admin.schemas.js'
-import { normalizeAdminSearch } from './admin-query-policy.js'
 import { getAdminLegacyListLimit } from './admin-list-policy.js'
-import { normalizeAuthEmail } from '../auth/email-policy.js'
-import { normalizeAuthUserName } from '../auth/user-input-policy.js'
+import {
+    normalizeAdminUserRole,
+    normalizeAdminUserStatus,
+    normalizeAdminUserUuid,
+    normalizeAdminUsersQuery,
+} from './admin-users-input-policy.js'
 import { toMarketResponse, toProviderResponse } from '../autocare/autocare.mappers.js'
 import type { AutoCareMarketResponse, AutoCareProviderResponse } from '../autocare/autocare.types.js'
+import { normalizeAdminProviderStatus, normalizeAdminProviderUuid } from './admin-provider-status-policy.js'
+import { normalizeAdminCabinetStatus, normalizeAdminCabinetUuid } from './admin-cabinet-input-policy.js'
+import { normalizeCreateAdminInput } from './admin-create-input-policy.js'
+import {
+    normalizeSuperAdminLegacyMarketUpdateInput,
+    normalizeSuperAdminMarketHierarchyUuid,
+} from './super-admin-market-hierarchy-policy.js'
 import type { z } from 'zod'
 import type { updateSuperAdminAutoCareMarketSchema } from './admin.schemas.js'
 
@@ -67,6 +74,22 @@ function assertSuperAdmin(user: UserEntity) {
             message: 'Only super admin can use this endpoint.',
         })
     }
+}
+
+function requireAdminProviderUuid(value: unknown) {
+    const normalized = normalizeAdminProviderUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Automotive provider id must be a valid UUID.' })
+    }
+    return normalized
+}
+
+function requireAdminProviderStatus(value: unknown) {
+    const normalized = normalizeAdminProviderStatus(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Automotive provider status is invalid.' })
+    }
+    return normalized
 }
 
 export type AdminAutoCareProvider = AutoCareProviderResponse & {
@@ -119,15 +142,17 @@ export async function getAdminAutoCareProviders(admin: UserEntity): Promise<Admi
     })
 }
 
-export async function updateAdminAutoCareProviderStatus(admin: UserEntity, providerId: string, status: AutomotiveProviderStatus) {
+export async function updateAdminAutoCareProviderStatus(admin: UserEntity, providerId: unknown, status: unknown) {
     assertAdmin(admin)
+    const normalizedProviderId = requireAdminProviderUuid(providerId)
+    const normalizedStatus = requireAdminProviderStatus(status)
     const repository = AppDataSource.getRepository(AutomotiveProviderEntity)
-    const provider = await repository.findOneBy({ id: providerId })
+    const provider = await repository.findOneBy({ id: normalizedProviderId })
     if (!provider) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
     }
     const oldStatus = provider.status
-    provider.status = status
+    provider.status = normalizedStatus
     const saved = await repository.save(provider)
     const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ providerId: saved.id })
     if (!location) {
@@ -167,37 +192,55 @@ export type UpdateSuperAdminAutoCareMarketInput = z.infer<typeof updateSuperAdmi
 
 export async function updateSuperAdminAutoCareMarket(
     actor: UserEntity,
-    marketId: string,
-    input: UpdateSuperAdminAutoCareMarketInput,
+    marketId: unknown,
+    input: unknown,
 ): Promise<AutoCareMarketResponse> {
     assertSuperAdmin(actor)
+    const normalizedMarketId = normalizeSuperAdminMarketHierarchyUuid(marketId)
+    const normalizedInput = normalizeSuperAdminLegacyMarketUpdateInput(input)
+    if (!normalizedMarketId || !normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Automotive market update input is invalid.',
+        })
+    }
     const repository = AppDataSource.getRepository(AutomotiveMarketEntity)
-    const market = await repository.findOneBy({ id: marketId })
+    const market = await repository.findOneBy({ id: normalizedMarketId })
     if (!market) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
     }
 
-    market.defaultLocale = input.defaultLocale
-    market.supportedLocales = [...new Set(input.supportedLocales.map((locale) => locale.trim()))]
-    market.timezone = input.timezone
-    market.currencyCode = input.currencyCode
-    if (input.capabilities !== undefined) market.capabilities = input.capabilities
-    if (input.legalLinks !== undefined) market.legalLinks = input.legalLinks
-    market.launchReady = input.launchReady
+    market.defaultLocale = normalizedInput.defaultLocale
+    market.supportedLocales = [...new Set(normalizedInput.supportedLocales.map((locale) => locale.trim()))]
+    market.timezone = normalizedInput.timezone
+    market.currencyCode = normalizedInput.currencyCode
+    if (normalizedInput.capabilities !== undefined) market.capabilities = normalizedInput.capabilities
+    if (normalizedInput.legalLinks !== undefined) market.legalLinks = normalizedInput.legalLinks
+    market.launchReady = normalizedInput.launchReady
 
     return toMarketResponse(await repository.save(market))
 }
 
 export async function getAdminUsers(
     admin: UserEntity,
-    input: AdminUsersQuery = {},
+    input: unknown = {},
 ): Promise<AdminUser[] | CursorPage<AdminUser>> {
     assertAdmin(admin)
 
+    const normalizedInput = normalizeAdminUsersQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Admin users query is invalid.',
+        })
+    }
+
     const userRepository = AppDataSource.getRepository(UserEntity)
-    const isPaginated = isCursorPaginationRequested(input)
-    const limit = getCursorLimit(input.limit)
-    const search = normalizeAdminSearch(input.search)
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
+    const search = normalizedInput.search
     const query = userRepository.createQueryBuilder('user')
 
     if (search) {
@@ -206,16 +249,16 @@ export async function getAdminUsers(
         })
     }
 
-    if (input.role) {
-        query.andWhere('user.role = :role', { role: input.role })
+    if (normalizedInput.role) {
+        query.andWhere('user.role = :role', { role: normalizedInput.role })
     }
 
-    if (input.status) {
-        query.andWhere('user.status = :status', { status: input.status })
+    if (normalizedInput.status) {
+        query.andWhere('user.status = :status', { status: normalizedInput.status })
     }
 
-    if (input.cursor) {
-        const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
+    if (normalizedInput.cursor) {
+        const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
         const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
         query.andWhere(
             '(user.createdAt < :cursorCreatedAt OR (user.createdAt = :cursorCreatedAt AND user.id < :cursorId))',
@@ -243,12 +286,22 @@ export async function getAdminUsers(
 
 export async function updateAdminUserStatus(
     admin: UserEntity,
-    userId: string,
-    status: UserStatus
+    userId: unknown,
+    status: unknown,
 ) {
     assertAdmin(admin)
 
-    if (admin.id === userId && status === UserStatus.Blocked) {
+    const normalizedUserId = normalizeAdminUserUuid(userId)
+    const normalizedStatus = normalizeAdminUserStatus(status)
+    if (!normalizedUserId || !normalizedStatus) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'User status mutation input is invalid.',
+        })
+    }
+
+    if (admin.id === normalizedUserId && normalizedStatus === UserStatus.Blocked) {
         throw new AppError({
             statusCode: 409,
             code: ERROR_CODES.Conflict,
@@ -260,7 +313,7 @@ export async function updateAdminUserStatus(
 
     const user = await userRepository.findOne({
         where: {
-            id: userId,
+            id: normalizedUserId,
         },
     })
 
@@ -281,7 +334,7 @@ export async function updateAdminUserStatus(
     }
 
     // Protection: Cannot block the last active super-admin
-    if (user.role === UserRole.SuperAdmin && status === UserStatus.Blocked) {
+    if (user.role === UserRole.SuperAdmin && normalizedStatus === UserStatus.Blocked) {
         const activeSuperAdminsCount = await userRepository.count({
             where: {
                 role: UserRole.SuperAdmin,
@@ -299,7 +352,7 @@ export async function updateAdminUserStatus(
     }
 
     const oldStatus = user.status
-    user.status = status
+    user.status = normalizedStatus
 
     const savedUser = await userRepository.save(user)
 
@@ -312,8 +365,8 @@ export async function updateAdminUserStatus(
 
 export async function updateAdminUserRole(
     admin: UserEntity,
-    userId: string,
-    role: UserRole
+    userId: unknown,
+    role: unknown,
 ) {
     assertAdmin(admin)
 
@@ -325,10 +378,20 @@ export async function updateAdminUserRole(
         })
     }
 
+    const normalizedUserId = normalizeAdminUserUuid(userId)
+    const normalizedRole = normalizeAdminUserRole(role)
+    if (!normalizedUserId || !normalizedRole) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'User role mutation input is invalid.',
+        })
+    }
+
     const userRepository = AppDataSource.getRepository(UserEntity)
 
     const user = await userRepository.findOne({
-        where: { id: userId },
+        where: { id: normalizedUserId },
     })
 
     if (!user) {
@@ -340,7 +403,7 @@ export async function updateAdminUserRole(
     }
 
     // Protection: Cannot demote the last active super-admin
-    if (user.role === UserRole.SuperAdmin && role !== UserRole.SuperAdmin) {
+    if (user.role === UserRole.SuperAdmin && normalizedRole !== UserRole.SuperAdmin) {
         const activeSuperAdminsCount = await userRepository.count({
             where: {
                 role: UserRole.SuperAdmin,
@@ -358,7 +421,7 @@ export async function updateAdminUserRole(
     }
 
     const oldRole = user.role
-    user.role = role
+    user.role = normalizedRole
     user.tokenVersion += 1 // Invalidate sessions on role change
 
     const savedUser = await userRepository.save(user)
@@ -387,17 +450,27 @@ export async function getAdminCabinets(admin: UserEntity) {
 
 export async function updateAdminCabinetStatus(
     admin: UserEntity,
-    cabinetId: string,
-    status: CabinetStatus
+    cabinetId: unknown,
+    status: unknown,
 ) {
     assertAdmin(admin)
+
+    const normalizedCabinetId = normalizeAdminCabinetUuid(cabinetId)
+    const normalizedStatus = normalizeAdminCabinetStatus(status)
+    if (!normalizedCabinetId || !normalizedStatus) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Cabinet status mutation input is invalid.',
+        })
+    }
 
     const cabinetRepository = AppDataSource.getRepository(CabinetEntity)
 
     const cabinet = await cabinetRepository
         .createQueryBuilder('cabinet')
         .leftJoinAndSelect('cabinet.owner', 'owner')
-        .where('cabinet.id = :cabinetId', { cabinetId })
+        .where('cabinet.id = :cabinetId', { cabinetId: normalizedCabinetId })
         .getOne()
 
     if (!cabinet) {
@@ -409,7 +482,7 @@ export async function updateAdminCabinetStatus(
     }
 
     const oldStatus = cabinet.status
-    cabinet.status = status
+    cabinet.status = normalizedStatus
 
     const savedCabinet = await cabinetRepository.save(cabinet)
 
@@ -452,16 +525,11 @@ export async function updateAdminCabinetStatus(
     }
 }
 
-type CreateAdminInput = {
-    name: string
-    email: string
-}
-
 export async function createAdmin(
     actor: UserEntity,
-    input: CreateAdminInput,
-    frontendOrigin: string,
-    locale?: SupportedLocale
+    input: unknown,
+    frontendOrigin: unknown,
+    locale?: unknown,
 ) {
     if (!isSuperAdmin(actor)) {
         throw new AppError({
@@ -471,9 +539,18 @@ export async function createAdmin(
         })
     }
 
+    const normalizedInput = normalizeCreateAdminInput(input, frontendOrigin, locale)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Admin creation input is invalid.',
+        })
+    }
+
     const userRepository = AppDataSource.getRepository(UserEntity)
-    const email = normalizeAuthEmail(input.email)
-    const name = normalizeAuthUserName(input.name)
+    const email = normalizedInput.email
+    const name = normalizedInput.name
 
     const existingUser = await userRepository.findOne({
         where: { email },
@@ -505,9 +582,9 @@ export async function createAdmin(
     await enqueuePasswordSetupEmailSafely({
         email: savedUser.email,
         expiresAt: setupToken.expiresAt,
-        frontendOrigin,
+        frontendOrigin: normalizedInput.frontendOrigin,
         token: setupToken.token,
-        locale,
+        locale: normalizedInput.locale,
     }).catch((error) => {
         logError('Failed to enqueue admin password setup email', error, {
             operation: 'admin-password-setup-email',

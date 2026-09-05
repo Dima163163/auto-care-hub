@@ -35,11 +35,18 @@ import type {
     AutoCareFleetResponse,
     AutoCareFleetVehicleResponse,
     CreateAutoCareBroadcastOfferInput,
-    CreateAutoCareBroadcastRequestInput,
 } from './autocare.types.js'
 import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager, isManagedProviderLocationAllowed } from './provider-access.service.js'
 import { calculateAutoCareTrustScore } from './trust-score.js'
 import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
+import { normalizeAutoCarePublicProviderUuid } from './public-provider-input-policy.js'
+import { normalizeAutoCareRequestUuid } from './request-input-policy.js'
+import { normalizeAutoCareExpertQuestionInput } from './expert-question-input-policy.js'
+import { normalizeAutoCareFleetInput, normalizeAutoCareFleetVehicleInput } from './fleet-input-policy.js'
+import { normalizeAutoCareRepairEventInput } from './repair-event-input-policy.js'
+import { normalizeAutoCareBroadcastRequestInput } from './broadcast-request-input-policy.js'
+import { normalizeAutoCareBroadcastOfferInput } from './broadcast-offer-input-policy.js'
+import { normalizeAutoCareGuaranteeClaimInput } from './guarantee-claim-input-policy.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -51,6 +58,26 @@ function notFound(message: string): never {
 
 function conflict(message: string): never {
     throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message })
+}
+
+function requireMarketplaceUuid(value: unknown, label: string) {
+    const normalized = normalizeAutoCareRequestUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${label} must be a valid UUID.` })
+    }
+    return normalized
+}
+
+function normalizeFairPriceText(value: unknown, label: string, maxLength: number, optional = true) {
+    if (value === undefined && optional) return undefined
+    if (typeof value !== 'string') {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${label} must be a non-empty string.` })
+    }
+    const normalized = value.normalize('NFKC').trim()
+    if (normalized.length < 1 || normalized.length > maxLength) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${label} must contain 1–${maxLength} characters.` })
+    }
+    return normalized
 }
 
 function requireClient(user: UserEntity) {
@@ -108,17 +135,27 @@ function toBenchmarkResponse(entity: AutoCarePriceBenchmarkEntity, definition: A
 }
 
 export async function getAutoCareFairPrice(input: { serviceId: string; marketId?: string; makeId?: string; modelId?: string; fuelType?: string; engineLiters?: number }) {
-    const definition = await findDefinition(input.serviceId)
+    const rawInput = input as unknown as Record<string, unknown> | null
+    const serviceId = normalizeFairPriceText(rawInput?.serviceId, 'Service id', 120, false)!
+    const marketId = normalizeFairPriceText(rawInput?.marketId, 'Market id', 120)
+    const makeId = normalizeFairPriceText(rawInput?.makeId, 'Make id', 80)
+    const modelId = normalizeFairPriceText(rawInput?.modelId, 'Model id', 80)
+    const fuelType = normalizeFairPriceText(rawInput?.fuelType, 'Fuel type', 40)
+    const engineLiters = rawInput?.engineLiters
+    if (engineLiters !== undefined && (typeof engineLiters !== 'number' || !Number.isFinite(engineLiters) || engineLiters <= 0 || engineLiters > 20)) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Engine displacement must be a finite number between 0 and 20.' })
+    }
+    const definition = await findDefinition(serviceId)
     if (!definition) return null
-    const market = await findMarket(input.marketId)
+    const market = await findMarket(marketId)
     const benchmarkRepository = AppDataSource.getRepository(AutoCarePriceBenchmarkEntity)
     const benchmarks = await benchmarkRepository.find({ where: { serviceDefinitionId: definition.id, active: true } })
     const exact = benchmarks.find((item) =>
         (item.marketId === (market?.id ?? null)) &&
-        (item.makeId === (input.makeId ?? null)) &&
-        (item.modelId === (input.modelId ?? null)) &&
-        (item.fuelType === (input.fuelType ?? null)) &&
-        (item.engineLiters === (input.engineLiters ?? null)),
+        (item.makeId === (makeId ?? null)) &&
+        (item.modelId === (modelId ?? null)) &&
+        (item.fuelType === (fuelType ?? null)) &&
+        (item.engineLiters === (engineLiters ?? null)),
     )
     if (exact) return toBenchmarkResponse(exact, definition)
 
@@ -136,8 +173,8 @@ export async function getAutoCareFairPrice(input: { serviceId: string; marketId?
         serviceDefinitionId: definition.id,
         serviceSlug: definition.slug,
         marketId: market?.id ?? null,
-        makeId: input.makeId ?? null,
-        modelId: input.modelId ?? null,
+        makeId: makeId ?? null,
+        modelId: modelId ?? null,
         minPriceMinor,
         medianPriceMinor,
         maxPriceMinor,
@@ -156,11 +193,14 @@ export async function getAutoCareProviderTrust(providerId: string) {
     // Public reads stay read-only. A worker refreshes snapshots through
     // reassessAutoCareTrustScores; serving the latest persisted snapshot keeps
     // this endpoint bounded even when a provider has a large request history.
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const normalizedProviderId = normalizeAutoCarePublicProviderUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) notFound('Automotive provider not found.')
     const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
-        where: { providerId },
+        where: { providerId: normalizedProviderId },
         order: { createdAt: 'DESC' },
+        take: 100,
     })
     const nowMs = Date.now()
     // Pending/rejected/expired evidence is an internal moderation concern and
@@ -171,7 +211,7 @@ export async function getAutoCareProviderTrust(providerId: string) {
         && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
     )
     const snapshots = await AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({
-        where: { providerId },
+        where: { providerId: normalizedProviderId },
         order: { computedAt: 'DESC' },
         take: 100,
     })
@@ -201,7 +241,7 @@ export async function getAutoCareProviderTrust(providerId: string) {
         moderationViolationCount: counters.moderationViolationCount ?? 0,
     }) : null
     return {
-        providerId,
+        providerId: normalizedProviderId,
         // PostgreSQL numeric columns are returned as strings by node-postgres;
         // normalize the public scalar just like the snapshot list below so the
         // API contract remains numeric for all persisted trust snapshots.
@@ -247,39 +287,44 @@ function toRepairEventResponse(entity: AutoCareRepairEventEntity): AutoCareRepai
     return { id: entity.id, requestId: entity.requestId, eventType: entity.eventType, actorId: entity.actorId, title: entity.title, notes: entity.notes, metadata: entity.metadata, createdAt: entity.createdAt.toISOString() }
 }
 
-export async function appendAutoCareRepairEvent(input: { requestId: string; actorId?: string | null; eventType: string; title: string; notes?: string | null; metadata?: Record<string, unknown> }) {
-    const event = await AppDataSource.getRepository(AutoCareRepairEventEntity).save(AppDataSource.getRepository(AutoCareRepairEventEntity).create({ ...input, actorId: input.actorId ?? null, notes: input.notes ?? null, metadata: input.metadata ?? {} }))
+export async function appendAutoCareRepairEvent(input: unknown) {
+    const normalizedInput = normalizeAutoCareRepairEventInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Repair event payload is invalid.' })
+    const event = await AppDataSource.getRepository(AutoCareRepairEventEntity).save(AppDataSource.getRepository(AutoCareRepairEventEntity).create(normalizedInput))
     return toRepairEventResponse(event)
 }
 
 export async function getAutoCareRepairTimeline(user: UserEntity, requestId: string) {
-    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: requestId })
+    const normalizedRequestId = requireMarketplaceUuid(requestId, 'Request id')
+    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: normalizedRequestId })
     if (!request) notFound('Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
         if (!provider || !(await hasProviderWorkspacePermission(user.id, provider.id, 'requests', request.locationId))) forbidden('You do not have access to this repair timeline.')
     }
-    return (await AppDataSource.getRepository(AutoCareRepairEventEntity).find({ where: { requestId }, order: { createdAt: 'ASC' } })).map(toRepairEventResponse)
+    return (await AppDataSource.getRepository(AutoCareRepairEventEntity).find({ where: { requestId: normalizedRequestId }, order: { createdAt: 'ASC' } })).map(toRepairEventResponse)
 }
 
 function toBroadcastOfferResponse(entity: AutoCareBroadcastOfferEntity, provider: AutomotiveProviderEntity, location: AutomotiveServiceLocationEntity): AutoCareBroadcastOfferResponse {
     return { id: entity.id, broadcastRequestId: entity.broadcastRequestId, providerId: entity.providerId, providerName: provider.name, locationId: entity.locationId, address: location.address, offerSnapshot: entity.offerSnapshot, status: entity.status, createdAt: entity.createdAt.toISOString() }
 }
 
-export async function createAutoCareBroadcastRequest(user: UserEntity, input: CreateAutoCareBroadcastRequestInput): Promise<AutoCareBroadcastRequestResponse> {
+export async function createAutoCareBroadcastRequest(user: UserEntity, input: unknown): Promise<AutoCareBroadcastRequestResponse> {
     requireClient(user)
-    const definition = await findDefinition(input.serviceDefinitionId)
+    const normalizedInput = normalizeAutoCareBroadcastRequestInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Broadcast request payload is invalid.' })
+    const definition = await findDefinition(normalizedInput.serviceDefinitionId)
     if (!definition) notFound('Service definition not found.')
-    const market = await findMarket(input.marketId)
+    const market = await findMarket(normalizedInput.marketId)
     const request = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).save(AppDataSource.getRepository(AutoCareBroadcastRequestEntity).create({
         clientId: user.id,
         serviceDefinitionId: definition.id,
         marketId: market?.id ?? null,
-        issueDescription: input.issueDescription,
-        vehicleSnapshot: input.vehicleSnapshot ?? null,
-        photoUrls: input.photoUrls ?? [],
-        preferredAt: input.preferredAt ? new Date(input.preferredAt) : null,
-        maxProviders: input.maxProviders ?? 5,
+        issueDescription: normalizedInput.issueDescription,
+        vehicleSnapshot: normalizedInput.vehicleSnapshot,
+        photoUrls: normalizedInput.photoUrls,
+        preferredAt: normalizedInput.preferredAt ? new Date(normalizedInput.preferredAt) : null,
+        maxProviders: normalizedInput.maxProviders,
         expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
         status: 'open',
     }))
@@ -287,7 +332,8 @@ export async function createAutoCareBroadcastRequest(user: UserEntity, input: Cr
 }
 
 async function getBroadcastOrThrow(id: string) {
-    const request = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).findOneBy({ id })
+    const normalizedBroadcastId = requireMarketplaceUuid(id, 'Broadcast id')
+    const request = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).findOneBy({ id: normalizedBroadcastId })
     if (!request) notFound('Broadcast request not found.')
     return request
 }
@@ -393,17 +439,20 @@ export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
 }
 
 export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId: string, input: CreateAutoCareBroadcastOfferInput) {
+    const normalizedBroadcastId = requireMarketplaceUuid(broadcastId, 'Broadcast id')
+    const normalizedInput = normalizeAutoCareBroadcastOfferInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Broadcast offer payload is invalid.' })
     await requireProviderWorkspace(user)
     try {
         const result = await AppDataSource.transaction(async (manager) => {
             const request = await manager.getRepository(AutoCareBroadcastRequestEntity).findOne({
-                where: { id: broadcastId },
+                where: { id: normalizedBroadcastId },
                 lock: { mode: 'pessimistic_write' },
             })
             if (!request) notFound('Broadcast request not found.')
             if (request.status !== 'open' || request.expiresAt <= new Date()) conflict('This broadcast request is no longer accepting offers.')
 
-            const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId })
+            const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: normalizedInput.locationId })
             if (!location) notFound('Provider location not found.')
             const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: location.providerId, status: AutomotiveProviderStatus.Active })
             if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', location.id))) forbidden('This location is not managed by the current owner.')
@@ -419,7 +468,7 @@ export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId
                 broadcastRequestId: request.id,
                 providerId: provider.id,
                 locationId: location.id,
-                offerSnapshot: { amountMinor: input.amountMinor, currencyCode: input.currencyCode, note: input.note ?? null, durationMinutes: input.durationMinutes ?? definitionOffer.durationMinutes, validUntil: input.validUntil ?? null },
+                offerSnapshot: { amountMinor: normalizedInput.amountMinor, currencyCode: normalizedInput.currencyCode, note: normalizedInput.note, durationMinutes: normalizedInput.durationMinutes ?? definitionOffer.durationMinutes, validUntil: normalizedInput.validUntil },
                 status: 'pending',
             }))
             return { offer, provider, location }
@@ -431,11 +480,13 @@ export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId
     }
 }
 
-export async function createAutoCareGuaranteeClaim(user: UserEntity, input: { requestId: string; claimType: string; summary: string; evidenceUrls?: string[] }): Promise<AutoCareGuaranteeClaimResponse> {
+export async function createAutoCareGuaranteeClaim(user: UserEntity, input: unknown): Promise<AutoCareGuaranteeClaimResponse> {
     requireClient(user)
-    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: input.requestId, clientId: user.id })
+    const normalizedInput = normalizeAutoCareGuaranteeClaimInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Guarantee claim payload is invalid.' })
+    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: normalizedInput.requestId, clientId: user.id })
     if (!request) notFound('Service request not found.')
-    const claim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).save(AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).create({ requestId: request.id, clientId: user.id, providerId: request.providerId, claimType: input.claimType, summary: input.summary, evidenceUrls: input.evidenceUrls ?? [], status: 'submitted', resolution: null, resolvedById: null, resolvedAt: null }))
+    const claim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).save(AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).create({ requestId: request.id, clientId: user.id, providerId: request.providerId, claimType: normalizedInput.claimType, summary: normalizedInput.summary, evidenceUrls: normalizedInput.evidenceUrls, status: 'submitted', resolution: null, resolvedById: null, resolvedAt: null }))
     return { id: claim.id, requestId: claim.requestId, claimType: claim.claimType, status: claim.status, summary: claim.summary, evidenceUrls: claim.evidenceUrls, resolution: claim.resolution, createdAt: claim.createdAt.toISOString(), updatedAt: claim.updatedAt.toISOString() }
 }
 
@@ -444,9 +495,13 @@ export async function getMyAutoCareGuaranteeClaims(user: UserEntity) {
     return (await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { clientId: user.id }, order: { createdAt: 'DESC' } })).map((claim) => ({ id: claim.id, requestId: claim.requestId, claimType: claim.claimType, status: claim.status, summary: claim.summary, evidenceUrls: claim.evidenceUrls, resolution: claim.resolution, createdAt: claim.createdAt.toISOString(), updatedAt: claim.updatedAt.toISOString() }))
 }
 
-export async function createAutoCareExpertQuestion(user: UserEntity, input: { symptoms: string; categorySlug?: string | null; vehicleSnapshot?: Record<string, unknown> | null }) {
+export async function createAutoCareExpertQuestion(user: UserEntity, input: unknown) {
     requireClient(user)
-    const question = await AppDataSource.getRepository(AutoCareExpertQuestionEntity).save(AppDataSource.getRepository(AutoCareExpertQuestionEntity).create({ clientId: user.id, symptoms: input.symptoms, categorySlug: input.categorySlug ?? null, vehicleSnapshot: input.vehicleSnapshot ?? null, status: 'open', answer: null, answeredById: null, answeredAt: null }))
+    const normalizedInput = normalizeAutoCareExpertQuestionInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Expert question payload is invalid.' })
+    }
+    const question = await AppDataSource.getRepository(AutoCareExpertQuestionEntity).save(AppDataSource.getRepository(AutoCareExpertQuestionEntity).create({ clientId: user.id, symptoms: normalizedInput.symptoms, categorySlug: normalizedInput.categorySlug, vehicleSnapshot: normalizedInput.vehicleSnapshot, status: 'open', answer: null, answeredById: null, answeredAt: null }))
     return toExpertQuestionResponse(question)
 }
 
@@ -472,16 +527,25 @@ export async function getMyAutoCareFleets(user: UserEntity): Promise<AutoCareFle
     return fleets.map((fleet) => ({ id: fleet.id, name: fleet.name, notes: fleet.notes, vehicles: vehiclesByFleet.get(fleet.id) ?? [], createdAt: fleet.createdAt.toISOString(), updatedAt: fleet.updatedAt.toISOString() }))
 }
 
-export async function createAutoCareFleet(user: UserEntity, input: { name: string; notes?: string | null }): Promise<AutoCareFleetResponse> {
+export async function createAutoCareFleet(user: UserEntity, input: unknown): Promise<AutoCareFleetResponse> {
     requireFleetOwner(user)
-    const fleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).save(AppDataSource.getRepository(AutoCareFleetAccountEntity).create({ ownerId: user.id, name: input.name, notes: input.notes ?? null }))
+    const normalizedInput = normalizeAutoCareFleetInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Fleet payload is invalid.' })
+    }
+    const fleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).save(AppDataSource.getRepository(AutoCareFleetAccountEntity).create({ ownerId: user.id, name: normalizedInput.name, notes: normalizedInput.notes }))
     return { id: fleet.id, name: fleet.name, notes: fleet.notes, vehicles: [], createdAt: fleet.createdAt.toISOString(), updatedAt: fleet.updatedAt.toISOString() }
 }
 
-export async function createAutoCareFleetVehicle(user: UserEntity, fleetId: string, input: { label: string; vehicleSnapshot: Record<string, unknown>; approvalPolicy?: string | null }): Promise<AutoCareFleetVehicleResponse> {
+export async function createAutoCareFleetVehicle(user: UserEntity, fleetId: string, input: unknown): Promise<AutoCareFleetVehicleResponse> {
     requireFleetOwner(user)
-    const fleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).findOneBy({ id: fleetId, ownerId: user.id })
+    const normalizedFleetId = requireMarketplaceUuid(fleetId, 'Fleet id')
+    const normalizedInput = normalizeAutoCareFleetVehicleInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Fleet vehicle payload is invalid.' })
+    }
+    const fleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).findOneBy({ id: normalizedFleetId, ownerId: user.id })
     if (!fleet) notFound('Fleet account not found.')
-    const vehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).save(AppDataSource.getRepository(AutoCareFleetVehicleEntity).create({ fleetId, label: input.label, vehicleSnapshot: input.vehicleSnapshot, approvalPolicy: input.approvalPolicy ?? null }))
+    const vehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).save(AppDataSource.getRepository(AutoCareFleetVehicleEntity).create({ fleetId: normalizedFleetId, label: normalizedInput.label, vehicleSnapshot: normalizedInput.vehicleSnapshot, approvalPolicy: normalizedInput.approvalPolicy }))
     return toFleetVehicleResponse(vehicle)
 }

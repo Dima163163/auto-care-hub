@@ -16,6 +16,9 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import {
     canDecideAutoCareModerationEvidence,
     isAutoCareModerationEvidenceKind,
+    normalizeAutoCareModerationEvidenceDecision,
+    normalizeAutoCareModerationEvidenceStatus,
+    normalizeAutoCareModerationEvidenceUuid,
     type AutoCareModerationDecision,
 } from './moderation-evidence-policy.js'
 import { reassessAutoCareProviderTrust } from './trust-score.service.js'
@@ -26,7 +29,7 @@ import {
     type AutoCareProviderMediaKind,
 } from './autocare-provider-media-storage.js'
 import { normalizeAutoCareProviderPublicMediaReference, normalizeAutoCareReviewPhotoUrls, selectAutoCareProviderModerationMedia } from './autocare-public-media-policy.js'
-import { isSafePrivateReference, normalizePrivateReference } from './private-reference-policy.js'
+import { normalizeAutoCarePrivateDocuments, normalizePrivateReference } from './private-reference-policy.js'
 
 type ModerationEvidenceResponse = {
     id: string
@@ -142,14 +145,10 @@ export async function queueReviewModerationEvidence(manager: EntityManager, revi
 export async function queueProviderDocumentModerationEvidence(
     manager: EntityManager,
     providerId: string,
-    documents: readonly { label: string; reference: string; expiresAt?: Date | null }[],
+    documents: readonly unknown[] | null | undefined,
 ) {
-    const entries = documents
-        .filter((document) => document.reference.trim().length > 0)
-        .slice(0, 20)
-    if (entries.some((document) => !isSafePrivateReference(document.reference))) {
-        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Document reference must be a private storage reference.' })
-    }
+    const entries = normalizeAutoCarePrivateDocuments(documents)
+    if (!entries) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider documents are invalid.' })
     if (entries.length === 0) return []
 
     const repository = manager.getRepository(AutoCareTrustEvidenceEntity)
@@ -157,18 +156,18 @@ export async function queueProviderDocumentModerationEvidence(
         where: {
             providerId,
             kind: 'provider_document',
-            reference: In(entries.map((document) => document.reference.trim())),
+            reference: In(entries.map((document) => document.reference)),
         },
         select: { reference: true },
     })
     const existingReferences = new Set(existing.map((item) => item.reference))
-    const newEntries = entries.filter((document) => !existingReferences.has(document.reference.trim()))
+    const newEntries = entries.filter((document) => !existingReferences.has(document.reference))
     if (newEntries.length === 0) return []
     return repository.save(newEntries.map((document) => repository.create({
         providerId,
         kind: 'provider_document',
-        label: document.label.trim() || 'Документ сервиса',
-        reference: document.reference.trim(),
+        label: document.label,
+        reference: document.reference,
         expiresAt: document.expiresAt ?? null,
         status: 'pending',
         notes: 'Ожидает проверки регистрационных данных сервиса.',
@@ -177,8 +176,12 @@ export async function queueProviderDocumentModerationEvidence(
 
 export async function listAdminAutoCareModerationEvidence(user: UserEntity, status?: string) {
     assertAdmin(user)
+    const normalizedStatus = status === undefined ? undefined : normalizeAutoCareModerationEvidenceStatus(status)
+    if (status !== undefined && !normalizedStatus) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Moderation evidence status is invalid.' })
+    }
     const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
-        where: { ...(status ? { status } : {}) },
+        where: { ...(normalizedStatus ? { status: normalizedStatus } : {}) },
         order: { createdAt: 'ASC' },
         take: 100,
     })
@@ -228,10 +231,14 @@ export async function listAdminAutoCareModerationEvidence(user: UserEntity, stat
  * they are never turned into public URLs by this endpoint.
  */
 export async function listOwnerAutoCareEvidence(user: UserEntity, providerId: string): Promise<OwnerAutoCareEvidenceResponse[]> {
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId, ownerId: user.id })
+    const normalizedProviderId = normalizeAutoCareModerationEvidenceUuid(providerId)
+    if (!normalizedProviderId) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    }
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId, ownerId: user.id })
     if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
-        where: { providerId },
+        where: { providerId: normalizedProviderId },
         order: { createdAt: 'DESC' },
         take: 100,
     })
@@ -257,18 +264,26 @@ export async function decideAdminAutoCareModerationEvidence(
     input: { status: AutoCareModerationDecision; reason: string },
 ) {
     assertAdmin(user)
+    const normalizedEvidenceId = normalizeAutoCareModerationEvidenceUuid(evidenceId)
+    if (!normalizedEvidenceId) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Evidence id must be a valid UUID.' })
+    }
+    const normalizedInput = normalizeAutoCareModerationEvidenceDecision(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Moderation evidence decision is invalid.' })
+    }
     const result = await AppDataSource.transaction(async (manager) => {
         const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
-        const evidence = await evidenceRepository.findOne({ where: { id: evidenceId }, lock: { mode: 'pessimistic_write' } })
+        const evidence = await evidenceRepository.findOne({ where: { id: normalizedEvidenceId }, lock: { mode: 'pessimistic_write' } })
         if (!evidence || !isAutoCareModerationEvidenceKind(evidence.kind)) {
             throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Moderation evidence not found.' })
         }
-        if (!canDecideAutoCareModerationEvidence(evidence.status, input.status)) {
+        if (!canDecideAutoCareModerationEvidence(evidence.status, normalizedInput.status)) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Moderation evidence has already been decided.' })
         }
 
-        evidence.status = input.status
-        evidence.notes = input.reason.trim()
+        evidence.status = normalizedInput.status
+        evidence.notes = normalizedInput.reason
         evidence.verifiedById = user.id
         evidence.verifiedAt = new Date()
         await evidenceRepository.save(evidence)
@@ -277,14 +292,14 @@ export async function decideAdminAutoCareModerationEvidence(
             const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
             const review = await reviewRepository.findOneBy({ id: evidence.reference, providerId: evidence.providerId })
             if (review) {
-                review.status = input.status === 'approved'
+                review.status = normalizedInput.status === 'approved'
                     ? AutomotiveReviewStatus.Approved
                     : AutomotiveReviewStatus.Rejected
                 await reviewRepository.save(review)
             }
         }
 
-        if (input.status === 'rejected' && evidence.reference) {
+        if (normalizedInput.status === 'rejected' && evidence.reference) {
             const providerRepository = manager.getRepository(AutomotiveProviderEntity)
             const provider = await providerRepository.findOneBy({ id: evidence.providerId })
             if (provider) {
@@ -313,7 +328,7 @@ export async function decideAdminAutoCareModerationEvidence(
 
         return toResponse(evidence, provider ?? undefined, location?.address ?? null, review ?? undefined)
     })
-    if (input.status === 'rejected' && (result.kind === 'provider_cover' || result.kind === 'provider_gallery') && result.reference) {
+    if (normalizedInput.status === 'rejected' && (result.kind === 'provider_cover' || result.kind === 'provider_gallery') && result.reference) {
         const kind: AutoCareProviderMediaKind = result.kind === 'provider_cover' ? 'cover' : 'gallery'
         const target = getAutoCareProviderMediaStorageTarget(result.reference, kind)
         if (target) {

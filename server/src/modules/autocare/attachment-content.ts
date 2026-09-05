@@ -14,6 +14,10 @@ type AttachmentContentInput = {
     size: number
 }
 
+export type AutoCareAttachmentUploadInput = AttachmentContentInput & {
+    fileName: string
+}
+
 function invalidAttachment(message: string): never {
     throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message })
 }
@@ -52,26 +56,51 @@ export function assertAutoCareAttachmentQuota(input: {
     }
 }
 
+/**
+ * Re-check the complete upload envelope before decoding or writing an object.
+ * The HTTP route already applies the same bounds, but service callers and jobs
+ * must not be able to bypass them with malformed runtime values.
+ */
+export function normalizeAutoCareAttachmentInput(input: unknown): AutoCareAttachmentUploadInput | null {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return null
+    const value = input as Record<string, unknown>
+    if (typeof value.fileName !== 'string' || typeof value.contentBase64 !== 'string' || typeof value.contentType !== 'string') return null
+    const fileName = value.fileName.normalize('NFKC').trim()
+    if (!fileName || fileName.length > 255 || [...fileName].some((character) => {
+        const codePoint = character.codePointAt(0) ?? 0
+        return codePoint < 0x20 || codePoint === 0x7f
+    })) return null
+    if (!isAutoCareAttachmentContentType(value.contentType)) return null
+    if (typeof value.size !== 'number' || !Number.isSafeInteger(value.size) || value.size < 1 || value.size > MAX_ATTACHMENT_BYTES) return null
+    const contentBase64 = value.contentBase64.replace(/\s/g, '')
+    if (!contentBase64 || contentBase64.length > 14 * 1024 * 1024) return null
+    return { fileName, contentType: value.contentType, size: value.size, contentBase64 }
+}
+
 function matchesMagicBytes(content: Buffer, contentType: AttachmentContentInput['contentType']) {
     if (contentType === 'image/jpeg') return content.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
     if (contentType === 'image/png') return content.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
     return content.length >= 12 && content.subarray(0, 4).toString('ascii') === 'RIFF' && content.subarray(8, 12).toString('ascii') === 'WEBP'
 }
 
-export function decodeAutoCareAttachment(input: AttachmentContentInput) {
-    assertAutoCareAttachmentContentType(input.contentType)
-    if (!Number.isSafeInteger(input.size) || input.size < 1 || input.size > MAX_ATTACHMENT_BYTES) {
+export function decodeAutoCareAttachment(input: unknown) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) invalidAttachment('Attachment payload is invalid.')
+    const value = input as Record<string, unknown>
+    if (typeof value.contentType !== 'string') invalidAttachment('Attachment content type is invalid.')
+    assertAutoCareAttachmentContentType(value.contentType)
+    if (typeof value.size !== 'number' || !Number.isSafeInteger(value.size) || value.size < 1 || value.size > MAX_ATTACHMENT_BYTES) {
         invalidAttachment('Attachment size is invalid.')
     }
-    const normalized = input.contentBase64.replace(/\s/g, '')
+    if (typeof value.contentBase64 !== 'string') invalidAttachment('Attachment content is not valid base64.')
+    const normalized = value.contentBase64.replace(/\s/g, '')
     if (!normalized || normalized.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(normalized)) {
         invalidAttachment('Attachment content is not valid base64.')
     }
     const content = Buffer.from(normalized, 'base64')
-    if (content.length !== input.size || content.length > MAX_ATTACHMENT_BYTES) {
+    if (content.length !== value.size || content.length > MAX_ATTACHMENT_BYTES) {
         invalidAttachment('Attachment content does not match its declared size.')
     }
-    if (!matchesMagicBytes(content, input.contentType)) {
+    if (!matchesMagicBytes(content, value.contentType)) {
         invalidAttachment('Attachment content does not match its declared image type.')
     }
     return content

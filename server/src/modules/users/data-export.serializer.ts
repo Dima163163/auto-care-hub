@@ -13,6 +13,7 @@ import {
     ServiceAttachmentEntity,
     ServiceMessageEntity,
     ServiceRequestEntity,
+    AutoCareAppealEntity,
 } from '../../entities/index.js'
 import { AutoCareServiceQuoteEntity } from '../../entities/index.js'
 import { toPublicUser } from '../auth/public-user.js'
@@ -36,6 +37,7 @@ export type UserDataExportCollections = {
     attachments: ServiceAttachmentEntity[]
     fleets: AutoCareFleetAccountEntity[]
     quotes?: AutoCareServiceQuoteEntity[]
+    appeals?: AutoCareAppealEntity[]
 }
 
 function serializeDate(value: Date | null | undefined) {
@@ -62,6 +64,7 @@ export function serializeUserDataExport(
         attachments,
         fleets,
         quotes = [],
+        appeals = [],
     } = collections
 
     const exportPayload = {
@@ -85,6 +88,7 @@ export function serializeUserDataExport(
             attachments: attachments.length > MAX_EXPORT_RECORDS,
             fleets: fleets.length > MAX_EXPORT_RECORDS,
             quotes: quotes.length > MAX_EXPORT_RECORDS,
+            appeals: appeals.length > MAX_EXPORT_RECORDS,
         },
         user: {
             ...toPublicUser(user),
@@ -175,6 +179,18 @@ export function serializeUserDataExport(
             validUntil: serializeDate(quote.validUntil),
             status: quote.status,
             createdAt: serializeDate(quote.createdAt),
+        })),
+        appeals: appeals.slice(0, MAX_EXPORT_RECORDS).map((appeal) => ({
+            id: appeal.id,
+            subject: appeal.subject,
+            subjectId: appeal.subjectId,
+            providerId: appeal.providerId,
+            reason: appeal.reason,
+            evidenceIds: [...appeal.evidenceIds],
+            status: appeal.status,
+            decisionReason: appeal.decisionReason,
+            createdAt: serializeDate(appeal.createdAt),
+            decidedAt: serializeDate(appeal.decidedAt),
         })),
         broadcasts: broadcasts.slice(0, MAX_EXPORT_RECORDS).map((broadcast) => ({
             id: broadcast.id,

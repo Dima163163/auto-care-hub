@@ -8,6 +8,7 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
 import { OUTBOX_MAX_ATTEMPTS } from '../outbox/outbox.service.js'
 import { canDeadLetterOutboxEvent, canRetryOutboxEvent } from './outbox-state.js'
+import { normalizeOutboxEventUuid } from './outbox-event-policy.js'
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) {
@@ -17,6 +18,14 @@ function assertAdmin(user: UserEntity) {
             message: 'Only admins can view outbox health.',
         })
     }
+}
+
+function requireOutboxEventUuid(value: unknown) {
+    const normalized = normalizeOutboxEventUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Outbox event id must be a valid UUID.' })
+    }
+    return normalized
 }
 
 export async function getOutboxHealth(user: UserEntity) {
@@ -59,11 +68,12 @@ export async function getOutboxHealth(user: UserEntity) {
     }
 }
 
-export async function retryOutboxEvent(user: UserEntity, eventId: string) {
+export async function retryOutboxEvent(user: UserEntity, eventId: unknown) {
     assertAdmin(user)
+    const normalizedEventId = requireOutboxEventUuid(eventId)
 
     const repository = AppDataSource.getRepository(OutboxEventEntity)
-    const event = await repository.findOneBy({ id: eventId })
+    const event = await repository.findOneBy({ id: normalizedEventId })
 
     if (!event) {
         throw new AppError({
@@ -91,11 +101,12 @@ export async function retryOutboxEvent(user: UserEntity, eventId: string) {
     return repository.save(event)
 }
 
-export async function deadLetterOutboxEvent(user: UserEntity, eventId: string) {
+export async function deadLetterOutboxEvent(user: UserEntity, eventId: unknown) {
     assertAdmin(user)
+    const normalizedEventId = requireOutboxEventUuid(eventId)
 
     const repository = AppDataSource.getRepository(OutboxEventEntity)
-    const event = await repository.findOneBy({ id: eventId })
+    const event = await repository.findOneBy({ id: normalizedEventId })
 
     if (!event) {
         throw new AppError({

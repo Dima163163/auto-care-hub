@@ -12,7 +12,7 @@ import {
 } from '../../shared/http/cursor-pagination.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
-import type { AdminSecurityEventsQuery } from './admin.schemas.js'
+import { normalizeSecurityEventsQuery } from './security-events-input-policy.js'
 
 export type SecurityEventResponse = {
     id: string
@@ -71,25 +71,34 @@ export function toSecurityEventResponse(event: SecurityEventEntity): SecurityEve
 
 export async function getSecurityEvents(
     user: UserEntity,
-    input: AdminSecurityEventsQuery = {},
+    input: unknown = {},
 ): Promise<SecurityEventResponse[] | CursorPage<SecurityEventResponse>> {
     assertSecurityEventReader(user)
 
+    const normalizedInput = normalizeSecurityEventsQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Security events query is invalid.',
+        })
+    }
+
     const repository = AppDataSource.getRepository(SecurityEventEntity)
-    const isPaginated = isCursorPaginationRequested(input)
-    const limit = getCursorLimit(input.limit)
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
     const query = repository.createQueryBuilder('securityEvent')
 
-    if (input.type) {
-        query.andWhere('securityEvent.type = :type', { type: input.type })
+    if (normalizedInput.type) {
+        query.andWhere('securityEvent.type = :type', { type: normalizedInput.type })
     }
 
-    if (input.userId) {
-        query.andWhere('securityEvent.userId = :userId', { userId: input.userId })
+    if (normalizedInput.userId) {
+        query.andWhere('securityEvent.userId = :userId', { userId: normalizedInput.userId })
     }
 
-    if (input.cursor) {
-        const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
+    if (normalizedInput.cursor) {
+        const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
         const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
         query.andWhere(
             '(securityEvent.createdAt < :cursorCreatedAt OR (securityEvent.createdAt = :cursorCreatedAt AND securityEvent.id < :cursorId))',

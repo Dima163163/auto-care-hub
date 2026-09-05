@@ -432,7 +432,7 @@ export function getOpenApiDocument() {
                 },
             },
             '/v1/providers/{providerId}/availability': {
-                get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.' } } },
+                get: { operationId: 'getAutoCareAvailability', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'locationId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'offeringId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'date', in: 'query', required: true, schema: { type: 'string', format: 'date' } }], responses: { '200': { description: 'Available service slots for a location and date.', content: { 'application/json': { schema: { type: 'object', required: ['date', 'timezone', 'durationMinutes', 'slots'], properties: { date: { type: 'string', format: 'date' }, timezone: { type: 'string' }, durationMinutes: { type: 'integer', minimum: 0 }, slots: { type: 'array', items: { type: 'object', required: ['startTime', 'endTime', 'startsAt'], properties: { startTime: { type: 'string', pattern: '^\\d{2}:\\d{2}$' }, endTime: { type: 'string', pattern: '^\\d{2}:\\d{2}$' }, startsAt: { type: 'string', format: 'date-time' } }, additionalProperties: false } } }, additionalProperties: false } } } } } },
             },
             '/v1/providers/{providerId}/offers': {
                 get: { operationId: 'listAutoCareProviderOffers', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'query', required: false, schema: { type: 'string' } }], responses: { '200': { description: 'Active provider offers for comparison and request entry.' } } },
@@ -467,7 +467,7 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareBroadcastOffer', parameters: [{ name: 'broadcastId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['locationId', 'amountMinor', 'currencyCode'], properties: { locationId: { type: 'string', format: 'uuid' }, amountMinor: { type: 'integer', minimum: 1 }, currencyCode: { type: 'string', pattern: '^[A-Z]{3}$' }, note: { type: ['string', 'null'] }, durationMinutes: { type: 'integer', minimum: 1 }, validUntil: { type: ['string', 'null'], format: 'date-time' } }, additionalProperties: false } } } }, responses: { '201': { description: 'Provider offer added to a broadcast request.' } } },
             },
             '/v1/guarantee-claims': {
-                post: { operationId: 'createAutoCareGuaranteeClaim', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['requestId', 'claimType', 'summary'], properties: { requestId: { type: 'string', format: 'uuid' }, claimType: { type: 'string', maxLength: 80 }, summary: { type: 'string', minLength: 10, maxLength: 4000 }, evidenceUrls: { type: 'array', maxItems: 12, items: { type: 'string', format: 'uri' } } }, additionalProperties: false } } } }, responses: { '201': { description: 'Guarantee claim submitted for review.' } } },
+                post: { operationId: 'createAutoCareGuaranteeClaim', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['requestId', 'claimType', 'summary'], properties: { requestId: { type: 'string', format: 'uuid' }, claimType: { type: 'string', maxLength: 80 }, summary: { type: 'string', minLength: 10, maxLength: 4000 }, evidenceUrls: { type: 'array', maxItems: 20, items: { type: 'string', pattern: '^private://autocare/claims/[A-Za-z0-9][A-Za-z0-9_-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$' } } }, additionalProperties: false } } } }, responses: { '201': { description: 'Guarantee claim submitted for review.' } } },
             },
             '/v1/guarantee-claims/my': {
                 get: { operationId: 'listMyAutoCareGuaranteeClaims', responses: { '200': { description: 'Authenticated client guarantee claims.' } } },
@@ -507,10 +507,10 @@ export function getOpenApiDocument() {
                 get: { operationId: 'getAutoCareServiceRequestChatThread', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Unified chat thread metadata for a service request.' } } },
             },
             '/v1/service-requests/{requestId}/quote/accept': {
-                post: { operationId: 'acceptAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client accepts provider estimate.' } } },
+                post: { operationId: 'acceptAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['quoteId', 'quoteVersion'], properties: { quoteId: { type: 'string', format: 'uuid' }, quoteVersion: { type: 'integer', minimum: 1 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Client accepts provider estimate only when the submitted quote revision is current.' } } },
             },
             '/v1/service-requests/{requestId}/quote/decline': {
-                post: { operationId: 'declineAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client declines provider estimate.' } } },
+                post: { operationId: 'declineAutoCareServiceQuote', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['quoteId', 'quoteVersion'], properties: { quoteId: { type: 'string', format: 'uuid' }, quoteVersion: { type: 'integer', minimum: 1 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Client declines provider estimate only when the submitted quote revision is current.' } } },
             },
             '/v1/service-requests/{requestId}/reschedule/decision': {
                 post: { operationId: 'decideAutoCareServiceReschedule', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['decision'], properties: { decision: { type: 'string', enum: ['accept', 'reject'] }, reason: { type: ['string', 'null'], maxLength: 1_000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Client resolves a pending service reschedule.' } } },
@@ -1252,6 +1252,7 @@ export function getOpenApiDocument() {
                                 notifications: { type: 'boolean' },
                                 cabinets: { type: 'boolean' },
                                 vehicles: { type: 'boolean' },
+                                appeals: { type: 'boolean' },
                             },
                         },
                         user: { $ref: '#/components/schemas/PublicUser' },
@@ -1260,6 +1261,7 @@ export function getOpenApiDocument() {
                         notifications: { type: 'array', items: { type: 'object' } },
                         cabinets: { type: 'array', items: { type: 'object' } },
                         vehicles: { type: 'array', items: { $ref: '#/components/schemas/ClientVehicle' } },
+                        appeals: { type: 'array', items: { type: 'object' } },
                     },
                 },
                 PublicUser: {

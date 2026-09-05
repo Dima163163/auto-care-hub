@@ -6,6 +6,8 @@ import { AppError } from '../../shared/errors/app-error.js'
 import {
     recordClientExperimentCompletion,
     recordClientExperimentEvent,
+    assertClientExperimentActor,
+    normalizeClientExperimentEvent,
 } from './client-experiment-metrics.js'
 
 function createUser(role: UserRole): UserEntity {
@@ -19,6 +21,17 @@ function createUser(role: UserRole): UserEntity {
 }
 
 describe('client experiment metrics', () => {
+    it('keeps the client role guard reusable before event normalization', () => {
+        expect(() => assertClientExperimentActor(createUser(UserRole.Owner))).toThrowError(AppError)
+        expect(() => assertClientExperimentActor(createUser(UserRole.Client))).not.toThrow()
+    })
+
+    it('normalizes only known experiment events', () => {
+        expect(normalizeClientExperimentEvent(' catalog_filter_used ')).toBe('catalog_filter_used')
+        expect(normalizeClientExperimentEvent('unknown')).toBeNull()
+        expect(normalizeClientExperimentEvent(null)).toBeNull()
+    })
+
     it('accepts only bounded client events and records no identity labels', () => {
         const registry = new MetricsRegistry()
 

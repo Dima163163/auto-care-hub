@@ -7,12 +7,19 @@ import {
     recordOwnerActionQueueSnapshot,
     recordOwnerBookingDecision,
     recordOwnerRescheduleDecision,
+    normalizeOwnerActionCenterEvent,
 } from './owner-action-metrics.js'
 
 const createdAt = new Date('2026-08-01T10:00:00.000Z')
 const resolvedAt = new Date('2026-08-02T10:30:00.000Z')
 
 describe('owner action metrics', () => {
+    it('normalizes only known action-center events', () => {
+        expect(normalizeOwnerActionCenterEvent(' pending_bookings ')).toBe('pending_bookings')
+        expect(normalizeOwnerActionCenterEvent('unknown')).toBeNull()
+        expect(normalizeOwnerActionCenterEvent({ unsafe: true })).toBeNull()
+    })
+
     it('records bounded action clicks and queue snapshots without identity labels', () => {
         const registry = new MetricsRegistry()
 

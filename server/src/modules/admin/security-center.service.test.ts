@@ -64,6 +64,10 @@ describe('Security Center service', () => {
             id: 'super-admin-1',
             role: UserRole.SuperAdmin,
         } as never, 'super-admin-1')).rejects.toMatchObject({ statusCode: 409 })
+        await expect(revokeSecurityCenterUserSessions({
+            id: '00000000-0000-4000-8000-000000000001',
+            role: UserRole.SuperAdmin,
+        } as never, '00000000-0000-4000-8000-000000000001'.toUpperCase())).rejects.toMatchObject({ statusCode: 409 })
     })
 
     it('normalizes bounded operator notes before they enter the append-only timeline', () => {
@@ -71,5 +75,12 @@ describe('Security Center service', () => {
         expect(normalizeSecurityCenterOperatorNote(' \t ')).toBeNull()
         expect(normalizeSecurityCenterOperatorNote('x'.repeat(1_001))).toHaveLength(1_000)
         expect(normalizeSecurityCenterOperatorNote()).toBeNull()
+    })
+
+    it('rejects malformed direct event and assignee identifiers before database access', async () => {
+        const superAdmin = { id: '00000000-0000-4000-8000-000000000002', role: UserRole.SuperAdmin } as never
+        await expect(getSecurityCenterEvent(superAdmin, 'event-1')).rejects.toMatchObject({ statusCode: 422 })
+        await expect(updateSecurityCenterEventStatus(superAdmin, 'event-1', SecurityEventActionStatus.Resolved)).rejects.toMatchObject({ statusCode: 422 })
+        await expect(revokeSecurityCenterUserSessions(superAdmin, 'target-1')).rejects.toMatchObject({ statusCode: 422 })
     })
 })

@@ -12,6 +12,36 @@ export type CursorPage<T> = {
 export const MAX_CURSOR_PAGE_LIMIT = 100
 export const MAX_CURSOR_PAYLOAD_BYTES = 1_536
 
+export type CursorPaginationInput = {
+    cursor?: string
+    beforeCursor?: string
+    limit?: number
+}
+
+/**
+ * Service methods are also called by jobs and replay handlers, so do not read
+ * pagination properties from an arbitrary value. Keep the query shape narrow
+ * before any repository lookup while leaving cursor semantics to decodeCursor.
+ */
+export function normalizeCursorPaginationInput(input: unknown): CursorPaginationInput | null {
+    if (input === undefined) return {}
+    if (input === null) return null
+    if (typeof input !== 'object' || Array.isArray(input)) return null
+    const value = input as Record<string, unknown>
+    if (Object.keys(value).some((key) => !['cursor', 'beforeCursor', 'limit'].includes(key))) return null
+    if (value.limit !== undefined && (typeof value.limit !== 'number' || !Number.isSafeInteger(value.limit))) return null
+    if (value.cursor !== undefined && typeof value.cursor !== 'string') return null
+    if (value.beforeCursor !== undefined && typeof value.beforeCursor !== 'string') return null
+    const cursor = typeof value.cursor === 'string' ? value.cursor.normalize('NFKC').trim() || undefined : undefined
+    const beforeCursor = typeof value.beforeCursor === 'string' ? value.beforeCursor.normalize('NFKC').trim() || undefined : undefined
+    if (cursor && beforeCursor) return null
+    return {
+        ...(cursor ? { cursor } : {}),
+        ...(beforeCursor ? { beforeCursor } : {}),
+        ...(value.limit === undefined ? {} : { limit: value.limit }),
+    }
+}
+
 export function isCursorPaginationRequested(input: {
     cursor?: string
     limit?: number

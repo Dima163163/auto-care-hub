@@ -4,6 +4,7 @@ import {
     decodeCursor,
     encodeCursor,
     getCursorLimit,
+    normalizeCursorPaginationInput,
     toCursorPage,
 } from './cursor-pagination.js'
 
@@ -49,5 +50,25 @@ describe('cursor pagination', () => {
     it('rejects unsafe limits when building a cursor page directly', () => {
         expect(() => toCursorPage([{ id: 'one' }], 0, (item) => ({ id: item.id })))
             .toThrow('Pagination limit is invalid.')
+    })
+
+    it('normalizes bounded pagination input and treats blank cursors as omitted', () => {
+        expect(normalizeCursorPaginationInput({ cursor: '  opaque  ', limit: 25 })).toEqual({ cursor: 'opaque', limit: 25 })
+        expect(normalizeCursorPaginationInput({ beforeCursor: '  older  ' })).toEqual({ beforeCursor: 'older' })
+        expect(normalizeCursorPaginationInput(undefined)).toEqual({})
+        expect(normalizeCursorPaginationInput({ cursor: '   ' })).toEqual({})
+    })
+
+    it('rejects malformed pagination shapes before repository lookup', () => {
+        expect(normalizeCursorPaginationInput(null)).toBeNull()
+        expect(normalizeCursorPaginationInput([])).toBeNull()
+        expect(normalizeCursorPaginationInput({ limit: '25' })).toBeNull()
+        expect(normalizeCursorPaginationInput({ cursor: 42 })).toBeNull()
+    })
+
+    it('rejects unsupported fields and conflicting cursors', () => {
+        expect(normalizeCursorPaginationInput({ cursor: 'a', beforeCursor: 'b' })).toBeNull()
+        expect(normalizeCursorPaginationInput({ cursor: 'a', extra: true })).toBeNull()
+        expect(normalizeCursorPaginationInput({ limit: Number.NaN })).toBeNull()
     })
 })

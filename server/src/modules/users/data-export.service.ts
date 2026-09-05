@@ -15,6 +15,7 @@ import {
     ServiceRequestEntity,
     AutoCareServiceQuoteEntity,
     AutomotiveProviderEntity,
+    AutoCareAppealEntity,
 } from '../../entities/index.js'
 import { In } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
@@ -24,7 +25,7 @@ import {
 } from './data-export.serializer.js'
 
 export async function getUserDataExport(user: UserEntity) {
-    const [favorites, bookings, notifications, cabinets, vehicles, serviceRequests, broadcasts, claims, questions, chats, fleets] = await Promise.all([
+    const [favorites, bookings, notifications, cabinets, vehicles, serviceRequests, broadcasts, claims, questions, chats, fleets, appeals] = await Promise.all([
         AppDataSource.getRepository(FavoriteCabinetEntity).find({
             where: { userId: user.id },
             order: { createdAt: 'ASC' },
@@ -86,6 +87,11 @@ export async function getUserDataExport(user: UserEntity) {
                 take: MAX_EXPORT_RECORDS + 1,
             })
             : Promise.resolve([] as AutoCareFleetAccountEntity[]),
+        AppDataSource.getRepository(AutoCareAppealEntity).find({
+            where: { submittedById: user.id },
+            order: { createdAt: 'ASC' },
+            take: MAX_EXPORT_RECORDS + 1,
+        }),
     ])
 
     const requestIds = serviceRequests.slice(0, MAX_EXPORT_RECORDS).map(({ id }) => id)
@@ -136,5 +142,6 @@ export async function getUserDataExport(user: UserEntity) {
         attachments,
         fleets,
         quotes,
+        appeals,
     })
 }

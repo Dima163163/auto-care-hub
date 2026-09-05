@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isSafePrivateReference } from './private-reference-policy.js'
@@ -27,6 +28,75 @@ const providerProfileChangePayloadSchema = z.object({
 }).strict()
 
 const supportedProfileFields = new Set(Object.keys(providerProfileChangePayloadSchema.shape))
+const changeRequestKinds = new Set<AutomotiveProviderChangeRequestKind>(Object.values(AutomotiveProviderChangeRequestKind))
+const changeRequestStatuses = new Set<AutomotiveProviderChangeRequestStatus>(Object.values(AutomotiveProviderChangeRequestStatus))
+const changeRequestDecisionStatuses = new Set<AutomotiveProviderChangeRequestStatus>([
+    AutomotiveProviderChangeRequestStatus.Approved,
+    AutomotiveProviderChangeRequestStatus.Rejected,
+])
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export type NormalizedProviderChangeRequestQuery = {
+    status?: AutomotiveProviderChangeRequestStatus
+    kind?: AutomotiveProviderChangeRequestKind
+}
+
+export type NormalizedProviderChangeRequestInput = {
+    kind: AutomotiveProviderChangeRequestKind
+    payload: Record<string, unknown>
+}
+
+export function normalizeProviderChangeRequestUuid(value: unknown): string | null {
+    if (typeof value !== 'string') return null
+    const normalized = value.trim().toLowerCase()
+    return uuidPattern.test(normalized) ? normalized : null
+}
+
+export function normalizeProviderChangeRequestInput(input: unknown): NormalizedProviderChangeRequestInput | null {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return null
+    const value = input as Record<string, unknown>
+    if (Object.keys(value).some((key) => key !== 'kind' && key !== 'payload')) return null
+    if (typeof value.kind !== 'string') return null
+    const normalizedKind = value.kind.normalize('NFKC').trim().toLowerCase()
+    if (!changeRequestKinds.has(normalizedKind as AutomotiveProviderChangeRequestKind)) return null
+    const rawPayload = value.payload === undefined ? {} : value.payload
+    if (!rawPayload || typeof rawPayload !== 'object' || Array.isArray(rawPayload)) return null
+    if (normalizedKind === AutomotiveProviderChangeRequestKind.Verification && Object.keys(rawPayload).length > 0) return null
+    if (normalizedKind === AutomotiveProviderChangeRequestKind.Verification) {
+        return { kind: AutomotiveProviderChangeRequestKind.Verification, payload: {} }
+    }
+    try {
+        return {
+            kind: AutomotiveProviderChangeRequestKind.ProfileUpdate,
+            payload: normalizeProviderProfileChangePayload(rawPayload as Record<string, unknown>),
+        }
+    } catch {
+        return null
+    }
+}
+
+export function normalizeProviderChangeRequestQuery(status: unknown, kind: unknown): NormalizedProviderChangeRequestQuery | null {
+    const normalizedStatus = status === undefined ? undefined : typeof status === 'string' ? status.normalize('NFKC').trim().toLowerCase() : null
+    const normalizedKind = kind === undefined ? undefined : typeof kind === 'string' ? kind.normalize('NFKC').trim().toLowerCase() : null
+    if (normalizedStatus !== undefined && (!normalizedStatus || !changeRequestStatuses.has(normalizedStatus as AutomotiveProviderChangeRequestStatus))) return null
+    if (normalizedKind !== undefined && (!normalizedKind || !changeRequestKinds.has(normalizedKind as AutomotiveProviderChangeRequestKind))) return null
+    return {
+        ...(normalizedStatus !== undefined ? { status: normalizedStatus as AutomotiveProviderChangeRequestStatus } : {}),
+        ...(normalizedKind !== undefined ? { kind: normalizedKind as AutomotiveProviderChangeRequestKind } : {}),
+    }
+}
+
+export function normalizeProviderChangeRequestDecision(status: unknown, reason: unknown): { status: AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected; reason: string | null } | null {
+    const normalizedStatus = typeof status === 'string' ? status.normalize('NFKC').trim().toLowerCase() : null
+    if (!normalizedStatus || !changeRequestDecisionStatuses.has(normalizedStatus as AutomotiveProviderChangeRequestStatus)) return null
+    if (reason !== undefined && reason !== null && typeof reason !== 'string') return null
+    if (typeof reason === 'string') {
+        const normalizedReason = reason.normalize('NFKC').trim()
+        if (normalizedReason.length > 2_000) return null
+        return { status: normalizedStatus as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, reason: normalizedReason || null }
+    }
+    return { status: normalizedStatus as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, reason: null }
+}
 
 export function normalizeProviderProfileChangePayload(payload: Record<string, unknown>) {
     const unknownKeys = Object.keys(payload).filter((key) => !supportedProfileFields.has(key))

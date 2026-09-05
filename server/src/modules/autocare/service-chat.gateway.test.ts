@@ -11,10 +11,10 @@ vi.mock('../../shared/observability/logger.js', () => ({
 
 import { broadcastServiceChat, closeServiceChatGateway, subscribeServiceChat } from './service-chat.gateway.js'
 
-type TestSocket = { readyState: number; send: ReturnType<typeof vi.fn> }
+type TestSocket = { readyState: number; send: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> }
 
 function createSocket(): TestSocket {
-    return { readyState: 1, send: vi.fn() }
+    return { readyState: 1, send: vi.fn(), close: vi.fn() }
 }
 
 describe('AutoCare service chat gateway', () => {
@@ -53,6 +53,30 @@ describe('AutoCare service chat gateway', () => {
 
         broadcastServiceChat(threadId, { type: 'message.created', threadId, payload: { body: 'x'.repeat(256 * 1024) } })
 
+        expect(socket.send).not.toHaveBeenCalled()
+    })
+
+    it('fails closed when a live access check is revoked before delivery', async () => {
+        const socket = createSocket()
+        const threadId = '55555555-5555-4555-8555-555555555555'
+        let allowed = true
+        subscribeServiceChat(threadId, socket as never, { authorize: () => allowed })
+
+        allowed = false
+        broadcastServiceChat(threadId, { type: 'message.created', threadId, payload: { body: 'private' } })
+
+        await vi.waitFor(() => expect(socket.close).toHaveBeenCalledWith(4403, 'Chat access revoked'))
+        expect(socket.send).not.toHaveBeenCalled()
+    })
+
+    it('fails closed when live access revalidation throws', async () => {
+        const socket = createSocket()
+        const threadId = '66666666-6666-4666-8666-666666666666'
+        subscribeServiceChat(threadId, socket as never, { authorize: () => { throw new Error('database unavailable') } })
+
+        broadcastServiceChat(threadId, { type: 'message.created', threadId, payload: { body: 'private' } })
+
+        await vi.waitFor(() => expect(socket.close).toHaveBeenCalledWith(4403, 'Chat access revoked'))
         expect(socket.send).not.toHaveBeenCalled()
     })
 })

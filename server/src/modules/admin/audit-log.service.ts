@@ -11,8 +11,6 @@ import {
     toCursorPage,
 } from '../../shared/http/cursor-pagination.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
-import type { AdminAuditLogsQuery } from './admin.schemas.js'
-import type { AuditLogsExportQuery } from './admin.schemas.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
@@ -26,7 +24,10 @@ import {
     normalizeAuditTarget,
 } from './audit-target-policy.js'
 import { boundAuditCsvCell, getAuditExportRowLimit } from './audit-export-policy.js'
-import { normalizeAdminSearch } from './admin-query-policy.js'
+import {
+    normalizeAdminAuditLogsQuery,
+    normalizeAuditLogsExportQuery,
+} from './audit-log-input-policy.js'
 import {
     MAX_REQUEST_CORRELATION_ID_LENGTH,
     MAX_REQUEST_IP_LENGTH,
@@ -63,18 +64,24 @@ export async function recordAuditLog(input: RecordAuditLogInput) {
 
 export async function getAuditLogs(
     admin: UserEntity,
-    input: AdminAuditLogsQuery = {},
+    input: unknown = {},
 ): Promise<AuditLogEntity[] | CursorPage<AuditLogEntity>> {
     assertAuditAdmin(admin)
+    const normalizedInput = normalizeAdminAuditLogsQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Audit logs query is invalid.',
+        })
+    }
     // Only admins can access this, but the route should already be protected
     const auditLogRepository = AppDataSource.getRepository(AuditLogEntity)
-    const isPaginated = isCursorPaginationRequested(input)
-    const limit = getCursorLimit(input.limit)
-    const search = normalizeAdminSearch(input.search)
-    const action = input.action ? normalizeAuditAction(input.action) : undefined
-    const targetType = input.targetType
-        ? normalizeAuditTarget(input.targetType, MAX_AUDIT_TARGET_TYPE_LENGTH, 'target type')
-        : undefined
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
+    const search = normalizedInput.search
+    const action = normalizedInput.action
+    const targetType = normalizedInput.targetType
     const query = auditLogRepository
         .createQueryBuilder('audit')
         .leftJoinAndSelect('audit.actor', 'actor')
@@ -99,12 +106,12 @@ export async function getAuditLogs(
         })
     }
 
-    if (input.actorId) {
-        query.andWhere('audit.actorId = :actorId', { actorId: input.actorId })
+    if (normalizedInput.actorId) {
+        query.andWhere('audit.actorId = :actorId', { actorId: normalizedInput.actorId })
     }
 
-    if (input.cursor) {
-        const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
+    if (normalizedInput.cursor) {
+        const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
         const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
         query.andWhere(
             '(audit.createdAt < :cursorCreatedAt OR (audit.createdAt = :cursorCreatedAt AND audit.id < :cursorId))',
@@ -141,15 +148,24 @@ function assertAuditAdmin(admin: UserEntity) {
 
 export async function getAuditLogsForExport(
     admin: UserEntity,
-    input: AuditLogsExportQuery,
+    input: unknown,
 ) {
     assertAuditAdmin(admin)
+
+    const normalizedInput = normalizeAuditLogsExportQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Audit export query is invalid.',
+        })
+    }
 
     const query = AppDataSource.getRepository(AuditLogEntity)
         .createQueryBuilder('audit')
         .leftJoinAndSelect('audit.actor', 'actor')
 
-    const search = normalizeAdminSearch(input.search)
+    const search = normalizedInput.search
     if (search) {
         query.andWhere(`(
             audit.action ILIKE :auditSearch OR
@@ -160,10 +176,8 @@ export async function getAuditLogsForExport(
         )`, { auditSearch: `%${search}%` })
     }
 
-    const action = input.action ? normalizeAuditAction(input.action) : undefined
-    const targetType = input.targetType
-        ? normalizeAuditTarget(input.targetType, MAX_AUDIT_TARGET_TYPE_LENGTH, 'target type')
-        : undefined
+    const action = normalizedInput.action
+    const targetType = normalizedInput.targetType
 
     if (action) {
         query.andWhere('audit.action = :action', { action })
@@ -175,14 +189,14 @@ export async function getAuditLogsForExport(
         })
     }
 
-    if (input.actorId) {
-        query.andWhere('audit.actorId = :actorId', { actorId: input.actorId })
+    if (normalizedInput.actorId) {
+        query.andWhere('audit.actorId = :actorId', { actorId: normalizedInput.actorId })
     }
 
     return query
         .orderBy('audit.createdAt', 'DESC')
         .addOrderBy('audit.id', 'DESC')
-        .take(getAuditExportRowLimit(input.limit))
+        .take(getAuditExportRowLimit(normalizedInput.limit))
         .getMany()
 }
 

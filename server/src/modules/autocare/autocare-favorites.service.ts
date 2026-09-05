@@ -14,6 +14,7 @@ import { UserRole } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { toOfferResponse, toProviderResponse } from './autocare.mappers.js'
+import { normalizeAutoCareFavoriteLocationUuid, normalizeAutoCareFavoriteProviderIds, normalizeAutoCareFavoriteProviderUuid } from './autocare-favorites-input-policy.js'
 
 export type AutoCareFavoriteResponse = {
     id: string
@@ -70,12 +71,15 @@ export async function getMyAutoCareFavorites(user: UserEntity) {
 
 export async function addAutoCareFavorite(user: UserEntity, providerId: string, locationId?: string) {
     assertClient(user)
+    const normalizedProviderId = normalizeAutoCareFavoriteProviderUuid(providerId)
+    const normalizedLocationId = locationId === undefined ? undefined : normalizeAutoCareFavoriteLocationUuid(locationId)
+    if (!normalizedProviderId || (locationId !== undefined && !normalizedLocationId)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Favorite provider and location ids must be valid UUIDs.' })
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
-    const provider = await providerRepository.findOneBy({ id: providerId, status: AutomotiveProviderStatus.Active })
+    const provider = await providerRepository.findOneBy({ id: normalizedProviderId, status: AutomotiveProviderStatus.Active })
     if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
-    const location = locationId
-        ? await locationRepository.findOneBy({ id: locationId, providerId: provider.id })
+    const location = normalizedLocationId
+        ? await locationRepository.findOneBy({ id: normalizedLocationId, providerId: provider.id })
         : (await locationRepository.find({ where: { providerId: provider.id }, order: { id: 'ASC' }, take: 1 }))[0]
     if (!location) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider location not found.' })
 
@@ -92,13 +96,16 @@ export async function addAutoCareFavorite(user: UserEntity, providerId: string, 
 
 export async function removeAutoCareFavorite(user: UserEntity, providerId: string) {
     assertClient(user)
-    await AppDataSource.getRepository(AutomotiveProviderFavoriteEntity).delete({ userId: user.id, providerId })
+    const normalizedProviderId = normalizeAutoCareFavoriteProviderUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Favorite provider id must be a valid UUID.' })
+    await AppDataSource.getRepository(AutomotiveProviderFavoriteEntity).delete({ userId: user.id, providerId: normalizedProviderId })
     return { success: true as const }
 }
 
 export async function syncAutoCareFavorites(user: UserEntity, providerIds: string[]) {
     assertClient(user)
-    const uniqueProviderIds = [...new Set(providerIds)]
+    const uniqueProviderIds = normalizeAutoCareFavoriteProviderIds(providerIds)
+    if (!uniqueProviderIds) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Favorite provider ids are invalid.' })
     for (const providerId of uniqueProviderIds) {
         await addAutoCareFavorite(user, providerId)
     }

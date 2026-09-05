@@ -6,7 +6,13 @@ import { isAdminRole, isSuperAdmin } from '../../shared/auth/roles.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
-import type { CreatePlatformReviewInput, PlatformReviewResponse, RespondPlatformReviewInput } from './platform-reviews.types.js'
+import type { PlatformReviewResponse } from './platform-reviews.types.js'
+import {
+    normalizePlatformReviewCreateInput,
+    normalizePlatformReviewResponseInput,
+    normalizePlatformReviewUuid,
+    normalizePlatformReviewsLimit,
+} from './platform-reviews-input-policy.js'
 
 function assertClient(user: UserEntity) {
     if (user.role !== UserRole.Client) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only clients can publish platform reviews.' })
@@ -14,6 +20,22 @@ function assertClient(user: UserEntity) {
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only administrators can moderate platform reviews.' })
+}
+
+function requirePlatformReviewUuid(value: unknown) {
+    const normalized = normalizePlatformReviewUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Platform review id must be a valid UUID.' })
+    }
+    return normalized
+}
+
+function requirePlatformReviewInput<T>(input: unknown, normalize: (value: unknown) => T | null, message: string): T {
+    const normalized = normalize(input)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message })
+    }
+    return normalized
 }
 
 function isIdempotencyUniqueError(error: unknown) {
@@ -47,30 +69,35 @@ function toPlatformReviewResponse(review: PlatformReviewEntity): PlatformReviewR
     }
 }
 
-export async function getPublicPlatformReviews(limit: number) {
-    const reviews = await AppDataSource.getRepository(PlatformReviewEntity).find({ where: { status: PlatformReviewStatus.Approved }, order: { createdAt: 'DESC' }, take: limit })
+export async function getPublicPlatformReviews(limit: unknown = 30) {
+    const normalizedLimit = normalizePlatformReviewsLimit(limit)
+    if (normalizedLimit === null) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Platform review limit must be an integer between 1 and 50.' })
+    }
+    const reviews = await AppDataSource.getRepository(PlatformReviewEntity).find({ where: { status: PlatformReviewStatus.Approved }, order: { createdAt: 'DESC' }, take: normalizedLimit })
     return reviews.map(toPlatformReviewResponse)
 }
 
-export async function createPlatformReview(client: UserEntity, input: CreatePlatformReviewInput) {
+export async function createPlatformReview(client: UserEntity, input: unknown) {
     assertClient(client)
+    const normalizedInput = requirePlatformReviewInput(input, normalizePlatformReviewCreateInput, 'Platform review payload is invalid.')
     const repository = AppDataSource.getRepository(PlatformReviewEntity)
-    if (input.idempotencyKey) {
-        const existing = await repository.findOneBy({ clientId: client.id, idempotencyKey: input.idempotencyKey })
+    if (normalizedInput.idempotencyKey) {
+        const existing = await repository.findOneBy({ clientId: client.id, idempotencyKey: normalizedInput.idempotencyKey })
         if (existing) {
-            if (existing.rating !== input.rating || existing.text !== input.text) idempotencyConflictError()
+            if (existing.rating !== normalizedInput.rating || existing.text !== normalizedInput.text) idempotencyConflictError()
             return toPlatformReviewResponse(existing)
         }
     }
 
     const review = repository.create({
         clientId: client.id,
-        idempotencyKey: input.idempotencyKey ?? null,
+        idempotencyKey: normalizedInput.idempotencyKey ?? null,
         authorName: client.name,
         avatarUrl: client.avatarUrl,
         authorRole: 'AutoCare Hub клиент',
-        rating: input.rating,
-        text: input.text,
+        rating: normalizedInput.rating,
+        text: normalizedInput.text,
         status: PlatformReviewStatus.Pending,
         organizationResponse: null,
         respondedById: null,
@@ -79,9 +106,9 @@ export async function createPlatformReview(client: UserEntity, input: CreatePlat
     try {
         return toPlatformReviewResponse(await repository.save(review))
     } catch (error) {
-        if (!input.idempotencyKey || !isIdempotencyUniqueError(error)) throw error
-        const existing = await repository.findOneBy({ clientId: client.id, idempotencyKey: input.idempotencyKey })
-        if (existing && existing.rating === input.rating && existing.text === input.text) return toPlatformReviewResponse(existing)
+        if (!normalizedInput.idempotencyKey || !isIdempotencyUniqueError(error)) throw error
+        const existing = await repository.findOneBy({ clientId: client.id, idempotencyKey: normalizedInput.idempotencyKey })
+        if (existing && existing.rating === normalizedInput.rating && existing.text === normalizedInput.text) return toPlatformReviewResponse(existing)
         if (existing) idempotencyConflictError()
         throw error
     }
@@ -99,22 +126,25 @@ export async function getAdminPlatformReviews(admin: UserEntity) {
     return reviews.map(toPlatformReviewResponse)
 }
 
-export async function respondToPlatformReview(admin: UserEntity, reviewId: string, input: RespondPlatformReviewInput) {
+export async function respondToPlatformReview(admin: UserEntity, reviewId: unknown, input: unknown) {
     assertAdmin(admin)
+    const normalizedReviewId = requirePlatformReviewUuid(reviewId)
+    const normalizedInput = requirePlatformReviewInput(input, normalizePlatformReviewResponseInput, 'Platform review response is invalid.')
     const repository = AppDataSource.getRepository(PlatformReviewEntity)
-    const review = await repository.findOneBy({ id: reviewId })
+    const review = await repository.findOneBy({ id: normalizedReviewId })
     if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Platform review not found.' })
-    review.organizationResponse = input.response
+    review.organizationResponse = normalizedInput.response
     review.respondedById = admin.id
     review.organizationRespondedAt = new Date()
     if (review.status === PlatformReviewStatus.Pending) review.status = PlatformReviewStatus.Approved
     return toPlatformReviewResponse(await repository.save(review))
 }
 
-export async function deletePlatformReview(superAdmin: UserEntity, reviewId: string) {
+export async function deletePlatformReview(superAdmin: UserEntity, reviewId: unknown) {
     if (!isSuperAdmin(superAdmin)) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only a super administrator can remove platform reviews.' })
+    const normalizedReviewId = requirePlatformReviewUuid(reviewId)
     const repository = AppDataSource.getRepository(PlatformReviewEntity)
-    const review = await repository.findOneBy({ id: reviewId })
+    const review = await repository.findOneBy({ id: normalizedReviewId })
     if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Platform review not found.' })
     review.status = PlatformReviewStatus.Removed
     await repository.save(review)

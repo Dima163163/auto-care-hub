@@ -232,6 +232,7 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
     { tableName: 'autocare_service_requests', indexName: 'IDX_autocare_service_requests_vehicle', columns: ['clientId', 'vehicleId', 'createdAt'] },
     { tableName: 'autocare_service_attachments', indexName: 'IDX_autocare_attachments_object_key', columns: ['objectKey'] },
     { tableName: 'autocare_capacity_resources', indexName: 'IDX_autocare_capacity_resources_location_active_type', columns: ['locationId', 'active', 'type'] },
+    { tableName: 'client_vehicles', indexName: 'UQ_client_vehicles_primary', unique: true, columns: ['userId'] },
     { tableName: 'autocare_capacity_resources', indexName: 'UQ_autocare_capacity_resources_provider_location_name', unique: true, columns: ['providerId', 'locationId', 'name'] },
     { tableName: 'autocare_capacity_reservations', indexName: 'IDX_autocare_capacity_reservations_resource_status_range', columns: ['resourceId', 'status', 'startsAt', 'endsAt'] },
     { tableName: 'autocare_capacity_reservations', indexName: 'UQ_autocare_capacity_reservations_request_resource_active', unique: true, columns: ['requestId', 'resourceId'] },

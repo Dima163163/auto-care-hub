@@ -1,5 +1,3 @@
-import type { z } from 'zod'
-
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveLocationZoneEntity,
@@ -22,26 +20,36 @@ import type {
     AutoCareMarketResponse,
     SuperAdminMarketHierarchyResponse,
 } from '../autocare/autocare.types.js'
-import type {
-    createSuperAdminAutoCareMarketSchema,
-    createSuperAdminAutoCareMarketZoneSchema,
-    createSuperAdminMarketCountrySchema,
-    updateSuperAdminAutoCareMarketHierarchySchema,
-    updateSuperAdminAutoCareMarketZoneSchema,
-    updateSuperAdminMarketCountrySchema,
-} from './admin.schemas.js'
-
-type CreateCountryInput = z.infer<typeof createSuperAdminMarketCountrySchema>
-type UpdateCountryInput = z.infer<typeof updateSuperAdminMarketCountrySchema>
-type CreateMarketInput = z.infer<typeof createSuperAdminAutoCareMarketSchema>
-type UpdateMarketInput = z.infer<typeof updateSuperAdminAutoCareMarketHierarchySchema>
-type CreateZoneInput = z.infer<typeof createSuperAdminAutoCareMarketZoneSchema>
-type UpdateZoneInput = z.infer<typeof updateSuperAdminAutoCareMarketZoneSchema>
+import {
+    normalizeSuperAdminMarketCountryCreateInput,
+    normalizeSuperAdminMarketCountryUpdateInput,
+    normalizeSuperAdminMarketCreateInput,
+    normalizeSuperAdminMarketHierarchyUuid,
+    normalizeSuperAdminMarketUpdateInput,
+    normalizeSuperAdminMarketZoneCreateInput,
+    normalizeSuperAdminMarketZoneUpdateInput,
+} from './super-admin-market-hierarchy-policy.js'
 
 function assertSuperAdmin(actor: UserEntity) {
     if (!isSuperAdmin(actor)) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only super admin can manage market hierarchy.' })
     }
+}
+
+function requireHierarchyUuid(value: unknown, field: string) {
+    const normalized = normalizeSuperAdminMarketHierarchyUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: `${field} must be a valid UUID.` })
+    }
+    return normalized
+}
+
+function requireHierarchyInput<T>(input: unknown, normalize: (value: unknown) => T | null, message: string): T {
+    const normalized = normalize(input)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message })
+    }
+    return normalized
 }
 
 function countryDisplayName(country: AutomotiveMarketCountryEntity) {
@@ -81,39 +89,42 @@ export async function getSuperAdminMarketHierarchy(actor: UserEntity): Promise<S
     return countries.map((country) => toHierarchyCountry(country, markets, zonesByMarketId))
 }
 
-export async function createSuperAdminMarketCountry(actor: UserEntity, input: CreateCountryInput): Promise<AutoCareMarketCountryResponse> {
+export async function createSuperAdminMarketCountry(actor: UserEntity, input: unknown): Promise<AutoCareMarketCountryResponse> {
     assertSuperAdmin(actor)
+    const normalizedInput = requireHierarchyInput(input, normalizeSuperAdminMarketCountryCreateInput, 'Market country payload is invalid.')
     const repository = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
-    const exists = await repository.existsBy({ code: input.code })
+    const exists = await repository.existsBy({ code: normalizedInput.code })
     if (exists) {
         throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Market country code already exists.' })
     }
     const saved = await repository.save(repository.create({
-        code: input.code,
-        names: input.names,
-        defaultLocale: input.defaultLocale,
-        supportedLocales: input.supportedLocales,
-        timezone: input.timezone,
-        currencyCode: input.currencyCode,
-        capabilities: input.capabilities,
-        legalLinks: input.legalLinks,
-        active: input.active,
+        code: normalizedInput.code,
+        names: normalizedInput.names,
+        defaultLocale: normalizedInput.defaultLocale,
+        supportedLocales: normalizedInput.supportedLocales,
+        timezone: normalizedInput.timezone,
+        currencyCode: normalizedInput.currencyCode,
+        capabilities: normalizedInput.capabilities,
+        legalLinks: normalizedInput.legalLinks,
+        active: normalizedInput.active,
     }))
     return toMarketCountryResponse(saved)
 }
 
-export async function updateSuperAdminMarketCountry(actor: UserEntity, countryId: string, input: UpdateCountryInput): Promise<AutoCareMarketCountryResponse> {
+export async function updateSuperAdminMarketCountry(actor: UserEntity, countryId: unknown, input: unknown): Promise<AutoCareMarketCountryResponse> {
     assertSuperAdmin(actor)
+    const normalizedCountryId = requireHierarchyUuid(countryId, 'Market country id')
+    const normalizedInput = requireHierarchyInput(input, normalizeSuperAdminMarketCountryUpdateInput, 'Market country payload is invalid.')
     const repository = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
-    const country = await repository.findOneBy({ id: countryId })
+    const country = await repository.findOneBy({ id: normalizedCountryId })
     if (!country) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Market country not found.' })
     }
-    Object.assign(country, input)
+    Object.assign(country, normalizedInput)
     return toMarketCountryResponse(await repository.save(country))
 }
 
-export async function deleteSuperAdminMarketCountry(actor: UserEntity, countryId: string): Promise<{ id: string }> {
+export async function deleteSuperAdminMarketCountry(actor: UserEntity, countryId: unknown): Promise<{ id: string }> {
     assertSuperAdmin(actor)
     const country = await getCountryOrFail(countryId)
     const marketCount = await AppDataSource.getRepository(AutomotiveMarketEntity).countBy({ countryId: country.id })
@@ -124,19 +135,21 @@ export async function deleteSuperAdminMarketCountry(actor: UserEntity, countryId
     return { id: country.id }
 }
 
-async function getCountryOrFail(countryId: string) {
-    const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: countryId })
+async function getCountryOrFail(countryId: unknown) {
+    const normalizedCountryId = requireHierarchyUuid(countryId, 'Market country id')
+    const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: normalizedCountryId })
     if (!country) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Market country not found.' })
     }
     return country
 }
 
-export async function createSuperAdminAutoCareMarket(actor: UserEntity, countryId: string, input: CreateMarketInput): Promise<AutoCareMarketResponse> {
+export async function createSuperAdminAutoCareMarket(actor: UserEntity, countryId: unknown, input: unknown): Promise<AutoCareMarketResponse> {
     assertSuperAdmin(actor)
+    const normalizedInput = requireHierarchyInput(input, normalizeSuperAdminMarketCreateInput, 'Market city payload is invalid.')
     const country = await getCountryOrFail(countryId)
     const marketRepository = AppDataSource.getRepository(AutomotiveMarketEntity)
-    const exists = await marketRepository.existsBy({ countryCode: country.code, cityCode: input.cityCode })
+    const exists = await marketRepository.existsBy({ countryCode: country.code, cityCode: normalizedInput.cityCode })
     if (exists) {
         throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Market city code already exists for this country.' })
     }
@@ -144,49 +157,51 @@ export async function createSuperAdminAutoCareMarket(actor: UserEntity, countryI
         countryId: country.id,
         countryCode: country.code,
         countryName: countryDisplayName(country),
-        cityCode: input.cityCode,
-        cityName: input.cityName,
-        regionCode: input.regionCode ?? null,
-        regionName: input.regionName ?? null,
-        centerLatitude: input.centerLatitude ?? null,
-        centerLongitude: input.centerLongitude ?? null,
-        currencyCode: input.currencyCode,
-        defaultLocale: input.defaultLocale,
-        supportedLocales: input.supportedLocales,
-        timezone: input.timezone,
-        capabilities: input.capabilities,
-        legalLinks: input.legalLinks,
-        launchReady: input.launchReady,
+        cityCode: normalizedInput.cityCode,
+        cityName: normalizedInput.cityName,
+        regionCode: normalizedInput.regionCode ?? null,
+        regionName: normalizedInput.regionName ?? null,
+        centerLatitude: normalizedInput.centerLatitude ?? null,
+        centerLongitude: normalizedInput.centerLongitude ?? null,
+        currencyCode: normalizedInput.currencyCode,
+        defaultLocale: normalizedInput.defaultLocale,
+        supportedLocales: normalizedInput.supportedLocales,
+        timezone: normalizedInput.timezone,
+        capabilities: normalizedInput.capabilities,
+        legalLinks: normalizedInput.legalLinks,
+        launchReady: normalizedInput.launchReady,
     }))
     return toMarketResponse(saved)
 }
 
-export async function updateSuperAdminAutoCareMarketHierarchy(actor: UserEntity, marketId: string, input: UpdateMarketInput): Promise<AutoCareMarketResponse> {
+export async function updateSuperAdminAutoCareMarketHierarchy(actor: UserEntity, marketId: unknown, input: unknown): Promise<AutoCareMarketResponse> {
     assertSuperAdmin(actor)
+    const normalizedMarketId = requireHierarchyUuid(marketId, 'Market id')
+    const normalizedInput = requireHierarchyInput(input, normalizeSuperAdminMarketUpdateInput, 'Market city payload is invalid.')
     const repository = AppDataSource.getRepository(AutomotiveMarketEntity)
-    const market = await repository.findOneBy({ id: marketId })
+    const market = await repository.findOneBy({ id: normalizedMarketId })
     if (!market) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
     }
     Object.assign(market, {
-        cityCode: input.cityCode,
-        cityName: input.cityName,
-        regionCode: input.regionCode ?? null,
-        regionName: input.regionName ?? null,
-        centerLatitude: input.centerLatitude ?? null,
-        centerLongitude: input.centerLongitude ?? null,
-        currencyCode: input.currencyCode,
-        defaultLocale: input.defaultLocale,
-        supportedLocales: input.supportedLocales,
-        timezone: input.timezone,
-        capabilities: input.capabilities,
-        legalLinks: input.legalLinks,
-        launchReady: input.launchReady,
+        cityCode: normalizedInput.cityCode,
+        cityName: normalizedInput.cityName,
+        regionCode: normalizedInput.regionCode ?? null,
+        regionName: normalizedInput.regionName ?? null,
+        centerLatitude: normalizedInput.centerLatitude ?? null,
+        centerLongitude: normalizedInput.centerLongitude ?? null,
+        currencyCode: normalizedInput.currencyCode,
+        defaultLocale: normalizedInput.defaultLocale,
+        supportedLocales: normalizedInput.supportedLocales,
+        timezone: normalizedInput.timezone,
+        capabilities: normalizedInput.capabilities,
+        legalLinks: normalizedInput.legalLinks,
+        launchReady: normalizedInput.launchReady,
     })
     return toMarketResponse(await repository.save(market))
 }
 
-export async function deleteSuperAdminAutoCareMarket(actor: UserEntity, marketId: string): Promise<{ id: string }> {
+export async function deleteSuperAdminAutoCareMarket(actor: UserEntity, marketId: unknown): Promise<{ id: string }> {
     assertSuperAdmin(actor)
     const market = await getMarketOrFail(marketId)
     const [zoneCount, locationCount] = await Promise.all([
@@ -200,8 +215,9 @@ export async function deleteSuperAdminAutoCareMarket(actor: UserEntity, marketId
     return { id: market.id }
 }
 
-async function getMarketOrFail(marketId: string) {
-    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: marketId })
+async function getMarketOrFail(marketId: unknown) {
+    const normalizedMarketId = requireHierarchyUuid(marketId, 'Market id')
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: normalizedMarketId })
     if (!market) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
     }
@@ -219,66 +235,73 @@ async function assertValidZoneParent(marketId: string, parentId: string | null |
     }
 }
 
-export async function createSuperAdminAutoCareMarketZone(actor: UserEntity, marketId: string, input: CreateZoneInput): Promise<AutoCareLocationZoneResponse> {
+export async function createSuperAdminAutoCareMarketZone(actor: UserEntity, marketId: unknown, input: unknown): Promise<AutoCareLocationZoneResponse> {
     assertSuperAdmin(actor)
-    await getMarketOrFail(marketId)
-    await assertValidZoneParent(marketId, input.parentId)
+    const normalizedInput = requireHierarchyInput(input, normalizeSuperAdminMarketZoneCreateInput, 'Market zone payload is invalid.')
+    const market = await getMarketOrFail(marketId)
+    const normalizedMarketId = market.id
+    const parentId = normalizedInput.parentId ? requireHierarchyUuid(normalizedInput.parentId, 'Zone parent id') : null
+    await assertValidZoneParent(normalizedMarketId, parentId)
     const repository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
-    const exists = await repository.existsBy({ marketId, slug: input.slug })
+    const exists = await repository.existsBy({ marketId: normalizedMarketId, slug: normalizedInput.slug })
     if (exists) {
         throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Market zone slug already exists.' })
     }
     const saved = await repository.save(repository.create({
-        marketId,
-        parentId: input.parentId ?? null,
-        slug: input.slug,
-        zoneType: input.zoneType,
-        names: input.names,
-        centerLatitude: input.centerLatitude ?? null,
-        centerLongitude: input.centerLongitude ?? null,
-        radiusKm: input.radiusKm ?? null,
-        imageUrl: input.imageUrl ?? null,
-        displayOrder: input.displayOrder,
-        active: input.active,
+        marketId: normalizedMarketId,
+        parentId,
+        slug: normalizedInput.slug,
+        zoneType: normalizedInput.zoneType,
+        names: normalizedInput.names,
+        centerLatitude: normalizedInput.centerLatitude ?? null,
+        centerLongitude: normalizedInput.centerLongitude ?? null,
+        radiusKm: normalizedInput.radiusKm ?? null,
+        imageUrl: normalizedInput.imageUrl ?? null,
+        displayOrder: normalizedInput.displayOrder,
+        active: normalizedInput.active,
     }))
     return toLocationZoneResponse(saved, 0)
 }
 
-export async function updateSuperAdminAutoCareMarketZone(actor: UserEntity, zoneId: string, input: UpdateZoneInput): Promise<AutoCareLocationZoneResponse> {
+export async function updateSuperAdminAutoCareMarketZone(actor: UserEntity, zoneId: unknown, input: unknown): Promise<AutoCareLocationZoneResponse> {
     assertSuperAdmin(actor)
+    const normalizedZoneId = requireHierarchyUuid(zoneId, 'Market zone id')
+    const normalizedInput = requireHierarchyInput(input, normalizeSuperAdminMarketZoneUpdateInput, 'Market zone payload is invalid.')
     const repository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
-    const zone = await repository.findOneBy({ id: zoneId })
+    const zone = await repository.findOneBy({ id: normalizedZoneId })
     if (!zone) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Market zone not found.' })
     }
-    await assertValidZoneParent(zone.marketId, input.parentId, zone.id)
+    const parentId = normalizedInput.parentId ? requireHierarchyUuid(normalizedInput.parentId, 'Zone parent id') : null
+    await assertValidZoneParent(zone.marketId, parentId, zone.id)
     const duplicate = await repository.createQueryBuilder('zone')
         .where('zone.marketId = :marketId', { marketId: zone.marketId })
-        .andWhere('zone.slug = :slug', { slug: input.slug })
+        .andWhere('zone.slug = :slug', { slug: normalizedInput.slug })
         .andWhere('zone.id <> :zoneId', { zoneId: zone.id })
         .getExists()
     if (duplicate) {
         throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Market zone slug already exists.' })
     }
     Object.assign(zone, {
-        parentId: input.parentId ?? null,
-        slug: input.slug,
-        zoneType: input.zoneType,
-        names: input.names,
-        centerLatitude: input.centerLatitude ?? null,
-        centerLongitude: input.centerLongitude ?? null,
-        radiusKm: input.radiusKm ?? null,
-        imageUrl: input.imageUrl ?? null,
-        displayOrder: input.displayOrder,
-        active: input.active,
+        parentId,
+        slug: normalizedInput.slug,
+        zoneType: normalizedInput.zoneType,
+        names: normalizedInput.names,
+        centerLatitude: normalizedInput.centerLatitude ?? null,
+        centerLongitude: normalizedInput.centerLongitude ?? null,
+        radiusKm: normalizedInput.radiusKm ?? null,
+        imageUrl: normalizedInput.imageUrl ?? null,
+        displayOrder: normalizedInput.displayOrder,
+        active: normalizedInput.active,
     })
     return toLocationZoneResponse(await repository.save(zone), 0)
 }
 
-export async function deleteSuperAdminAutoCareMarketZone(actor: UserEntity, zoneId: string): Promise<{ id: string }> {
+export async function deleteSuperAdminAutoCareMarketZone(actor: UserEntity, zoneId: unknown): Promise<{ id: string }> {
     assertSuperAdmin(actor)
+    const normalizedZoneId = requireHierarchyUuid(zoneId, 'Market zone id')
     const repository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
-    const zone = await repository.findOneBy({ id: zoneId })
+    const zone = await repository.findOneBy({ id: normalizedZoneId })
     if (!zone) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Market zone not found.' })
     }

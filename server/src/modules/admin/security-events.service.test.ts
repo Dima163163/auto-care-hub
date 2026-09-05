@@ -33,4 +33,19 @@ describe('security event reader', () => {
             createdAt: '2026-08-01T12:00:00.000Z',
         })
     })
+
+    it('rejects malformed query input before opening the repository', async () => {
+        const superAdmin = { role: UserRole.SuperAdmin } as never
+
+        await expect(getSecurityEvents(superAdmin, {
+            type: 'login_failed',
+            unexpected: true,
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(getSecurityEvents(superAdmin, {
+            userId: 'user-1',
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(getSecurityEvents(superAdmin, {
+            limit: 0,
+        })).rejects.toMatchObject({ statusCode: 422 })
+    })
 })

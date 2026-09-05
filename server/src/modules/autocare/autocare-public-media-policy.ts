@@ -74,6 +74,35 @@ export function normalizeAutoCareProviderPublicMedia(input: AutoCarePublicMediaI
     }
 }
 
+/**
+ * Strict write-boundary policy for owner-created provider profiles. Unlike the
+ * response normalizer above, invalid values are rejected instead of silently
+ * filtered so a direct service call cannot persist an arbitrary media URL.
+ */
+export function normalizeAutoCareProviderPublicMediaForWrite(input: {
+    logoUrl?: unknown
+    coverImageUrl?: unknown
+    galleryImageUrls?: unknown
+}): AutoCarePublicMedia | null {
+    const hasLogo = input.logoUrl !== undefined && input.logoUrl !== null
+    const hasCover = input.coverImageUrl !== undefined && input.coverImageUrl !== null
+    const logoUrl = hasLogo && typeof input.logoUrl === 'string' ? input.logoUrl.trim() : null
+    const coverImageUrl = hasCover && typeof input.coverImageUrl === 'string' ? input.coverImageUrl.trim() : null
+    if (hasLogo && (!logoUrl || !getAutoCareProviderLogoFileName(logoUrl))) return null
+    if (hasCover && (!coverImageUrl || !getAutoCareProviderMediaFileName(coverImageUrl, 'cover'))) return null
+
+    const galleryInput = input.galleryImageUrls === undefined || input.galleryImageUrls === null ? [] : input.galleryImageUrls
+    if (!Array.isArray(galleryInput) || galleryInput.length > 12) return null
+    const galleryImageUrls: string[] = []
+    for (const value of galleryInput) {
+        if (typeof value !== 'string') return null
+        const reference = value.trim()
+        if (!getAutoCareProviderMediaFileName(reference, 'gallery')) return null
+        if (!galleryImageUrls.includes(reference)) galleryImageUrls.push(reference)
+    }
+    return { logoUrl, coverImageUrl, galleryImageUrls }
+}
+
 /** Review photos currently arrive from seeded/bundled assets or the same
  * generated provider-media namespace. Keep the response boundary strict until
  * the private review-media uploader is enabled in staging. */

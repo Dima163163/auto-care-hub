@@ -17,7 +17,7 @@ import { enqueueNotificationSafely } from '../outbox/notification-outbox.service
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
 import type { AutoCareProviderChangeRequestResponse, CreateAutoCareProviderChangeRequestInput } from './autocare.types.js'
 import { normalizePrivateReference } from './private-reference-policy.js'
-import { normalizeProviderProfileChangePayload } from './provider-change-request-policy.js'
+import { normalizeProviderChangeRequestDecision, normalizeProviderChangeRequestInput, normalizeProviderChangeRequestQuery, normalizeProviderChangeRequestUuid, normalizeProviderProfileChangePayload } from './provider-change-request-policy.js'
 
 function assertOwner(user: UserEntity) {
     if (user.role !== 'owner') throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only a service owner can submit provider changes.' })
@@ -62,25 +62,33 @@ async function getOwnedProvider(user: UserEntity, providerId: string) {
 }
 
 export async function listOwnerProviderChangeRequests(user: UserEntity, providerId: string) {
-    await getOwnedProvider(user, providerId)
-    const requests = await AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity).find({ where: { providerId }, order: { createdAt: 'DESC' } })
+    assertOwner(user)
+    const normalizedProviderId = normalizeProviderChangeRequestUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    await getOwnedProvider(user, normalizedProviderId)
+    const requests = await AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity).find({ where: { providerId: normalizedProviderId }, order: { createdAt: 'DESC' } })
     return requests.map(toResponse)
 }
 
 export async function createOwnerProviderChangeRequest(user: UserEntity, providerId: string, input: CreateAutoCareProviderChangeRequestInput) {
     assertOwner(user)
-    await getOwnedProvider(user, providerId)
+    const normalizedProviderId = normalizeProviderChangeRequestUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const normalizedInput = normalizeProviderChangeRequestInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider change request payload is invalid.' })
+    await getOwnedProvider(user, normalizedProviderId)
     const repository = AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity)
-    const existing = await repository.findOneBy({ providerId, kind: input.kind, status: AutomotiveProviderChangeRequestStatus.Pending })
+    const existing = await repository.findOneBy({ providerId: normalizedProviderId, kind: normalizedInput.kind, status: AutomotiveProviderChangeRequestStatus.Pending })
     if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A provider change request of this type is already pending.' })
-    const payload = input.kind === AutomotiveProviderChangeRequestKind.ProfileUpdate ? normalizeProviderProfileChangePayload(input.payload ?? {}) : {}
-    return toResponse(await repository.save(repository.create({ providerId, requestedById: user.id, kind: input.kind, status: AutomotiveProviderChangeRequestStatus.Pending, payload })))
+    return toResponse(await repository.save(repository.create({ providerId: normalizedProviderId, requestedById: user.id, kind: normalizedInput.kind, status: AutomotiveProviderChangeRequestStatus.Pending, payload: normalizedInput.payload })))
 }
 
 export async function listAdminProviderChangeRequests(admin: UserEntity, status?: AutomotiveProviderChangeRequestStatus, kind?: AutomotiveProviderChangeRequestKind) {
     assertAdmin(admin)
+    const query = normalizeProviderChangeRequestQuery(status, kind)
+    if (!query) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider change request query is invalid.' })
     const requests = await AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity).find({
-        where: { ...(status ? { status } : {}), ...(kind ? { kind } : {}) },
+        where: { ...(query.status ? { status: query.status } : {}), ...(query.kind ? { kind: query.kind } : {}) },
         order: { createdAt: 'ASC' },
     })
     return requests.map(toResponse)
@@ -88,10 +96,14 @@ export async function listAdminProviderChangeRequests(admin: UserEntity, status?
 
 export async function decideAdminProviderChangeRequest(admin: UserEntity, requestId: string, status: AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, reason?: string | null) {
     assertAdmin(admin)
+    const normalizedRequestId = normalizeProviderChangeRequestUuid(requestId)
+    if (!normalizedRequestId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider change request id must be a valid UUID.' })
+    const decision = normalizeProviderChangeRequestDecision(status, reason)
+    if (!decision) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider change request decision is invalid.' })
     return AppDataSource.transaction(async (manager) => {
         const requestRepository = manager.getRepository(AutomotiveProviderChangeRequestEntity)
         const request = await requestRepository.createQueryBuilder('changeRequest')
-            .where('changeRequest.id = :requestId', { requestId })
+            .where('changeRequest.id = :requestId', { requestId: normalizedRequestId })
             .setLock('pessimistic_write')
             .getOne()
         if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider change request not found.' })
@@ -99,7 +111,7 @@ export async function decideAdminProviderChangeRequest(admin: UserEntity, reques
         const providerRepository = manager.getRepository(AutomotiveProviderEntity)
         const provider = await providerRepository.findOneBy({ id: request.providerId })
         if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
-        if (status === AutomotiveProviderChangeRequestStatus.Approved) {
+        if (decision.status === AutomotiveProviderChangeRequestStatus.Approved) {
             if (request.kind === AutomotiveProviderChangeRequestKind.Verification) {
                 provider.verified = true
                 if (provider.status === AutomotiveProviderStatus.Draft) provider.status = AutomotiveProviderStatus.Active
@@ -124,30 +136,33 @@ export async function decideAdminProviderChangeRequest(admin: UserEntity, reques
             }
             await providerRepository.save(provider)
         }
-        request.status = status
+        request.status = decision.status
         request.reviewedById = admin.id
-        request.reviewReason = reason?.trim() || null
+        request.reviewReason = decision.reason
         request.reviewedAt = new Date()
         const savedRequest = await requestRepository.save(request)
         await enqueueNotificationSafely({
             userId: savedRequest.requestedById,
             category: NotificationCategory.Account,
-            title: status === AutomotiveProviderChangeRequestStatus.Approved ? 'Изменение профиля одобрено' : 'По изменению профиля нужны уточнения',
-            message: savedRequest.reviewReason || (status === AutomotiveProviderChangeRequestStatus.Approved
+            title: decision.status === AutomotiveProviderChangeRequestStatus.Approved ? 'Изменение профиля одобрено' : 'По изменению профиля нужны уточнения',
+            message: savedRequest.reviewReason || (decision.status === AutomotiveProviderChangeRequestStatus.Approved
                 ? 'Модератор одобрил заявку на изменение данных сервиса.'
                 : 'Модератор оставил комментарий к заявке на изменение данных сервиса.'),
             link: `/owner/autocare-providers/${savedRequest.providerId}`,
-            metadata: { providerId: savedRequest.providerId, changeRequestId: savedRequest.id, status },
-        }, `autocare-provider-change-request:${savedRequest.id}:${status}`, manager)
+            metadata: { providerId: savedRequest.providerId, changeRequestId: savedRequest.id, status: decision.status },
+        }, `autocare-provider-change-request:${savedRequest.id}:${decision.status}`, manager)
         return toResponse(savedRequest)
     })
 }
 
 export async function cancelOwnerProviderChangeRequest(user: UserEntity, providerId: string, requestId: string) {
     assertOwner(user)
-    await getOwnedProvider(user, providerId)
+    const normalizedProviderId = normalizeProviderChangeRequestUuid(providerId)
+    const normalizedRequestId = normalizeProviderChangeRequestUuid(requestId)
+    if (!normalizedProviderId || !normalizedRequestId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and request ids must be valid UUIDs.' })
+    await getOwnedProvider(user, normalizedProviderId)
     const repository = AppDataSource.getRepository(AutomotiveProviderChangeRequestEntity)
-    const request = await repository.findOneBy({ id: requestId, providerId })
+    const request = await repository.findOneBy({ id: normalizedRequestId, providerId: normalizedProviderId })
     if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider change request not found.' })
     if (request.status !== AutomotiveProviderChangeRequestStatus.Pending) return toResponse(request)
     request.status = AutomotiveProviderChangeRequestStatus.Cancelled

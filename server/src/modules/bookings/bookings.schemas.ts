@@ -90,6 +90,11 @@ export const bookingParamsSchema = z.object({
     id: z.string().uuid('Booking id must be a valid UUID.'),
 })
 
+export const occupiedSlotsQuerySchema = z.object({
+    cabinetId: z.string().uuid('Cabinet id must be a valid UUID.'),
+    date: dateSchema,
+})
+
 export const cancelBookingSchema = z.object({
     reason: z.string().trim().min(1).max(500),
 })

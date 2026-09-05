@@ -12,7 +12,7 @@ import { AutomotivePriceType } from '../../entities/index.js'
 import { createAutoCareCatalogGapRequest } from './catalog-gap.service.js'
 
 const input = {
-    providerId: 'provider-1',
+    providerId: '11111111-1111-4111-8111-111111111111',
     proposedSlug: 'wheel-alignment',
     categorySlug: 'chassis',
     labels: { ru: 'Сход-развал', en: 'Wheel alignment' },
@@ -49,7 +49,7 @@ describe('catalog gap provider authorization', () => {
 
         await expect(createAutoCareCatalogGapRequest({ id: 'staff-1' } as never, input))
             .rejects.toMatchObject({ statusCode: 403 })
-        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('staff-1', 'provider-1', 'catalog')
+        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('staff-1', '11111111-1111-4111-8111-111111111111', 'catalog')
         expect(repository.findOneBy).not.toHaveBeenCalled()
     })
 
@@ -65,7 +65,7 @@ describe('catalog gap provider authorization', () => {
 
         await expect(createAutoCareCatalogGapRequest({ id: 'manager-1' } as never, input))
             .resolves.toMatchObject({ id: 'gap-1', providerId: 'provider-1', proposedSlug: 'wheel-alignment' })
-        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('manager-1', 'provider-1', 'catalog')
+        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('manager-1', '11111111-1111-4111-8111-111111111111', 'catalog')
         expect(repository.save).toHaveBeenCalledOnce()
     })
 })

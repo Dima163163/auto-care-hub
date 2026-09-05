@@ -48,47 +48,16 @@ import {
 } from '../../shared/security/rate-limit.js'
 import { assertCabinetOwner } from './cabinet-owner-access.js'
 import { AppDataSource } from '../../database/data-source.js'
+import { AppError } from '../../shared/errors/app-error.js'
+import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
 import { CabinetScheduleEntity } from '../../entities/cabinet/cabinet-schedule.entity.js'
 import { CabinetScheduleExceptionEntity } from '../../entities/cabinet/cabinet-schedule-exception.entity.js'
 import {
     CabinetBlockedPeriodEntity,
-    CabinetBlockedPeriodKind,
 } from '../../entities/cabinet/cabinet-blocked-period.entity.js'
-import { z } from 'zod'
-
-const scheduleItemSchema = z.object({
-    weekday: z.number().int().min(0).max(6),
-    openTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-    closeTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-    isOpen: z.boolean(),
-}).refine((item) => !item.isOpen || item.openTime < item.closeTime, {
-    message: 'Open time must be before close time.',
-})
-const scheduleSchema = z.object({ items: z.array(scheduleItemSchema).length(7) })
-const exceptionSchema = z.object({
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    openTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
-    closeTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
-    isClosed: z.boolean(),
-}).refine((item) => item.isClosed || (item.openTime && item.closeTime && item.openTime < item.closeTime), {
-    message: 'Provide valid hours or mark the date as closed.',
-})
-const exceptionsSchema = z.object({ items: z.array(exceptionSchema).max(200) })
-const blockedPeriodSchema = z.object({
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
-    endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
-    kind: z.enum(CabinetBlockedPeriodKind),
-    reason: z.string().trim().max(160).nullable(),
-}).refine((item) => {
-    const isAllDay = item.startTime === null && item.endTime === null
-    const isValidRange = item.startTime !== null && item.endTime !== null && item.startTime < item.endTime
-    return (isAllDay || isValidRange) &&
-        (item.kind !== CabinetBlockedPeriodKind.Holiday || isAllDay)
-}, {
-    message: 'Provide a valid blocked interval; holidays must cover the full day.',
-})
-const blockedPeriodsSchema = z.object({ items: z.array(blockedPeriodSchema).max(200) })
+import { blockedPeriodsSchema, exceptionsSchema, scheduleSchema } from './cabinet-schedule-policy.js'
+import type { EntityManager } from 'typeorm'
 
 type CabinetsListResponse = {
     items: PublicCabinet[]
@@ -115,6 +84,28 @@ const cabinetImageUploadRateLimit = createRateLimitPreHandler({
     windowMs: ONE_MINUTE_MS,
     keyResolvers: [getAuthenticatedUserRateLimitIdentifier],
 })
+
+async function withCabinetCalendarLock<T>(
+    cabinetId: string,
+    operation: (manager: EntityManager) => Promise<T>,
+) {
+    return AppDataSource.transaction(async (manager) => {
+        const lockedCabinet = await manager.getRepository(CabinetEntity).findOne({
+            where: { id: cabinetId },
+            lock: { mode: 'pessimistic_write' },
+        })
+
+        if (!lockedCabinet) {
+            throw new AppError({
+                statusCode: 404,
+                code: ERROR_CODES.NotFound,
+                message: 'Cabinet not found.',
+            })
+        }
+
+        return operation(manager)
+    })
+}
 
 export async function cabinetsRoutes(app: FastifyInstance) {
     app.get<{ Querystring: unknown; Reply: CabinetsListResponse }>('/cabinets', async (request) => {
@@ -185,11 +176,14 @@ export async function cabinetsRoutes(app: FastifyInstance) {
         const user = await requireAuth(request)
         const params = validateParams(cabinetParamsSchema, request.params)
         const cabinet = await getOwnerCabinetById(user, params.id)
-        const body = scheduleSchema.parse(request.body)
-        const repository = AppDataSource.getRepository(CabinetScheduleEntity)
-        await repository.delete({ cabinetId: cabinet.id })
-        await repository.save(body.items.map((item) => repository.create({ ...item, cabinetId: cabinet.id })))
-        return { items: await repository.find({ where: { cabinetId: cabinet.id }, order: { weekday: 'ASC' } }) }
+        const body = validateBody(scheduleSchema, request.body)
+        const items = await withCabinetCalendarLock(cabinet.id, async (manager) => {
+            const repository = manager.getRepository(CabinetScheduleEntity)
+            await repository.delete({ cabinetId: cabinet.id })
+            await repository.save(body.items.map((item) => repository.create({ ...item, cabinetId: cabinet.id })))
+            return repository.find({ where: { cabinetId: cabinet.id }, order: { weekday: 'ASC' } })
+        })
+        return { items }
     })
 
     app.get<{ Params: unknown }>('/owner/cabinets/:id/schedule-exceptions', async (request) => {
@@ -206,11 +200,14 @@ export async function cabinetsRoutes(app: FastifyInstance) {
         const user = await requireAuth(request)
         const params = validateParams(cabinetParamsSchema, request.params)
         const cabinet = await getOwnerCabinetById(user, params.id)
-        const body = exceptionsSchema.parse(request.body)
-        const repository = AppDataSource.getRepository(CabinetScheduleExceptionEntity)
-        await repository.delete({ cabinetId: cabinet.id })
-        await repository.save(body.items.map((item) => repository.create({ ...item, cabinetId: cabinet.id })))
-        return { items: await repository.find({ where: { cabinetId: cabinet.id }, order: { date: 'ASC' } }) }
+        const body = validateBody(exceptionsSchema, request.body)
+        const items = await withCabinetCalendarLock(cabinet.id, async (manager) => {
+            const repository = manager.getRepository(CabinetScheduleExceptionEntity)
+            await repository.delete({ cabinetId: cabinet.id })
+            await repository.save(body.items.map((item) => repository.create({ ...item, cabinetId: cabinet.id })))
+            return repository.find({ where: { cabinetId: cabinet.id }, order: { date: 'ASC' } })
+        })
+        return { items }
     })
 
     app.get<{ Params: unknown }>('/owner/cabinets/:id/blocked-periods', async (request) => {
@@ -230,7 +227,7 @@ export async function cabinetsRoutes(app: FastifyInstance) {
         const cabinet = await getOwnerCabinetById(user, params.id)
         const body = validateBody(blockedPeriodsSchema, request.body)
 
-        const items = await AppDataSource.transaction(async (manager) => {
+        const items = await withCabinetCalendarLock(cabinet.id, async (manager) => {
             const repository = manager.getRepository(CabinetBlockedPeriodEntity)
             await repository.delete({ cabinetId: cabinet.id })
             await repository.save(body.items.map((item) => repository.create({

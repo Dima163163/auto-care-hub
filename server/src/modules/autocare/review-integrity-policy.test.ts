@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { assessReviewIntegrity, normalizeReviewText } from './review-integrity-policy.js'
+import { assessReviewIntegrity, normalizeAutoCareReviewContent, normalizeReviewText } from './review-integrity-policy.js'
 
 const at = (minutes: number) => new Date(Date.UTC(2026, 7, 22, 12, minutes))
 
@@ -30,5 +30,13 @@ describe('AutoCare review integrity policy', () => {
         const result = assessReviewIntegrity({ clientId: null, providerId: 'provider-1', serviceRequestId: null, text: 'Старый отзыв', rating: 4, createdAt: old }, [], now)
         expect(result.recencyWeight).toBeCloseTo(0.3679, 3)
         expect(result.needsModeration).toBe(false)
+    })
+
+    it('normalizes review content at the service boundary and fails closed', () => {
+        expect(normalizeAutoCareReviewContent({ rating: 5, text: '  Ａвтосервис быстро помог.  ' })).toEqual({ rating: 5, text: 'Aвтосервис быстро помог.' })
+        expect(normalizeAutoCareReviewContent({ rating: 5.5, text: 'Достаточно длинный текст' })).toBeNull()
+        expect(normalizeAutoCareReviewContent({ rating: 0, text: 'Достаточно длинный текст' })).toBeNull()
+        expect(normalizeAutoCareReviewContent({ rating: 4, text: 'коротко' })).toBeNull()
+        expect(normalizeAutoCareReviewContent({ rating: 4, text: null })).toBeNull()
     })
 })

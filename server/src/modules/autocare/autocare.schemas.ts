@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PRIVATE_REFERENCE_PATTERN } from './private-reference-policy.js'
+import { isSafeAutoCareMediaReference, PRIVATE_REFERENCE_PATTERN } from './private-reference-policy.js'
 import { AutomotiveProviderChangeRequestKind } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
 import { AutoCareCapacityResourceType } from '../../entities/automotive/capacity-resource.entity.js'
@@ -417,6 +417,11 @@ export const createAutoCareServiceQuoteSchema = z.object({
     priceLocked: z.boolean().default(false),
 })
 
+export const autoCareQuoteDecisionSchema = z.object({
+    quoteId: z.string().uuid(),
+    quoteVersion: z.number().int().positive(),
+})
+
 export const createAutoCareBroadcastRequestSchema = z.object({
     serviceDefinitionId: z.string().trim().min(1).max(120),
     marketId: z.string().trim().min(1).max(120).nullable().optional(),
@@ -424,7 +429,7 @@ export const createAutoCareBroadcastRequestSchema = z.object({
     vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
     // Broadcast photos must be opaque private-media references. Public URLs
     // are rejected until the signed private-media uploader is enabled.
-    photoUrls: z.array(z.string().trim().regex(/^private:\/\/autocare\/(?:requests|broadcasts)\/[A-Za-z0-9][A-Za-z0-9_-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/).max(500)).max(12).optional(),
+    photoUrls: z.array(z.string().trim().max(500).refine((value) => isSafeAutoCareMediaReference(value, ['requests', 'broadcasts']))).max(12).optional(),
     preferredAt: z.string().datetime({ offset: true }).nullable().optional(),
     maxProviders: z.number().int().min(1).max(10).default(5),
 })
@@ -444,7 +449,7 @@ export const createAutoCareGuaranteeClaimSchema = z.object({
     requestId: z.string().uuid(),
     claimType: z.enum(['price', 'quality', 'warranty', 'no_show', 'safety']),
     summary: z.string().trim().min(10).max(4_000),
-    evidenceUrls: z.array(z.string().url().max(500)).max(20).optional(),
+    evidenceUrls: z.array(z.string().trim().max(500).refine((value) => isSafeAutoCareMediaReference(value, ['claims']))).max(20).optional(),
 })
 
 export const createAutoCareExpertQuestionSchema = z.object({

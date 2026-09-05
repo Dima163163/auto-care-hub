@@ -46,6 +46,24 @@ describe('audit log export security', () => {
         })
     })
 
+    it('rejects malformed list and export input before opening the repository', async () => {
+        const admin = { role: UserRole.Admin } as never
+
+        await expect(getAuditLogs(admin, {
+            action: 'invalid action',
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(getAuditLogs(admin, {
+            actorId: 'actor-1',
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(getAuditLogsForExport(admin, {
+            limit: 10,
+            unexpected: true,
+        })).rejects.toMatchObject({ statusCode: 422 })
+        await expect(getAuditLogsForExport(admin, {
+            limit: 10_001,
+        })).rejects.toMatchObject({ statusCode: 422 })
+    })
+
     it('bounds export size and prevents spreadsheet formula injection', () => {
         expect(() => auditLogsExportQuerySchema.parse({ limit: 10_001 })).toThrow()
 

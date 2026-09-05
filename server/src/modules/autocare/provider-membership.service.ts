@@ -18,6 +18,11 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { canManageProvider } from './provider-access.service.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
 import type { CreateAutoCareProviderInvitationInput } from './autocare.types.js'
+import {
+    normalizeProviderInvitationInput,
+    normalizeProviderInvitationToken,
+    normalizeProviderMembershipUuid,
+} from './provider-membership-policy.js'
 
 const INVITATION_TTL_DAYS = 7
 
@@ -95,13 +100,15 @@ function toMembershipResponse(
 
 export async function listOwnerProviderMemberships(user: UserEntity, providerId: string) {
     assertOwnerRole(user)
-    const provider = await getProvider(providerId)
-    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, providerId))) {
+    const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const provider = await getProvider(normalizedProviderId)
+    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, normalizedProviderId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not own this automotive service provider.' })
     }
     const [memberships, invitations] = await Promise.all([
-        AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { providerId }, order: { createdAt: 'ASC' } }),
-        AppDataSource.getRepository(AutomotiveProviderInvitationEntity).find({ where: { providerId }, order: { createdAt: 'DESC' } }),
+        AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { providerId: normalizedProviderId }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(AutomotiveProviderInvitationEntity).find({ where: { providerId: normalizedProviderId }, order: { createdAt: 'DESC' } }),
     ])
     const users = memberships.length
         ? await AppDataSource.getRepository(UserEntity).find({
@@ -118,31 +125,35 @@ export async function listOwnerProviderMemberships(user: UserEntity, providerId:
 
 export async function createOwnerProviderInvitation(user: UserEntity, providerId: string, input: CreateAutoCareProviderInvitationInput) {
     assertOwnerRole(user)
-    const provider = await getProvider(providerId)
-    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, providerId))) {
+    const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const normalizedInput = normalizeProviderInvitationInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider invitation payload is invalid.' })
+    const provider = await getProvider(normalizedProviderId)
+    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, normalizedProviderId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not own this automotive service provider.' })
     }
-    if (input.locationId) {
-        const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId, providerId })
+    if (normalizedInput.locationId) {
+        const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: normalizedInput.locationId, providerId: normalizedProviderId })
         if (!location) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'The selected service location does not belong to this provider.' })
     }
-    const email = normalizeEmail(input.email)
-    const role = input.role === 'manager' ? AutomotiveProviderInvitationRole.Manager : AutomotiveProviderInvitationRole.Staff
+    const email = normalizedInput.email
+    const role = normalizedInput.role === AutomotiveProviderInvitationRole.Manager ? AutomotiveProviderInvitationRole.Manager : AutomotiveProviderInvitationRole.Staff
     const invitationRepository = AppDataSource.getRepository(AutomotiveProviderInvitationEntity)
     const existing = await invitationRepository.createQueryBuilder('invitation')
-        .where('invitation.providerId = :providerId', { providerId })
+        .where('invitation.providerId = :providerId', { providerId: normalizedProviderId })
         .andWhere('invitation.email = :email', { email })
         .andWhere('invitation.role = :role', { role })
         .andWhere('invitation.status = :status', { status: AutomotiveProviderInvitationStatus.Pending })
-        .andWhere(input.locationId ? 'invitation.locationId = :locationId' : 'invitation.locationId IS NULL', { locationId: input.locationId })
+        .andWhere(normalizedInput.locationId ? 'invitation.locationId = :locationId' : 'invitation.locationId IS NULL', { locationId: normalizedInput.locationId })
         .getOne()
     if (existing && existing.expiresAt > new Date()) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A pending invitation already exists for this scope.' })
 
     const token = createSecurityTokenValue()
     const invitation = await invitationRepository.save(invitationRepository.create({
-        providerId,
+        providerId: normalizedProviderId,
         email,
-        locationId: input.locationId ?? null,
+        locationId: normalizedInput.locationId,
         role,
         status: AutomotiveProviderInvitationStatus.Pending,
         tokenHash: hashSecurityTokenValue(token),
@@ -157,12 +168,15 @@ export async function createOwnerProviderInvitation(user: UserEntity, providerId
 
 export async function revokeOwnerProviderInvitation(user: UserEntity, providerId: string, invitationId: string) {
     assertOwnerRole(user)
-    const provider = await getProvider(providerId)
-    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, providerId))) {
+    const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+    const normalizedInvitationId = normalizeProviderMembershipUuid(invitationId)
+    if (!normalizedProviderId || !normalizedInvitationId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and invitation ids must be valid UUIDs.' })
+    const provider = await getProvider(normalizedProviderId)
+    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, normalizedProviderId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not own this automotive service provider.' })
     }
     const repository = AppDataSource.getRepository(AutomotiveProviderInvitationEntity)
-    const invitation = await repository.findOneBy({ id: invitationId, providerId })
+    const invitation = await repository.findOneBy({ id: normalizedInvitationId, providerId: normalizedProviderId })
     if (!invitation) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider invitation not found.' })
     if (invitation.status !== AutomotiveProviderInvitationStatus.Pending) return toInvitationResponse(invitation)
     invitation.status = AutomotiveProviderInvitationStatus.Revoked
@@ -176,7 +190,7 @@ export async function revokeOwnerProviderInvitation(user: UserEntity, providerId
             title: 'Приглашение отозвано',
             message: 'Приглашение в команду автосервиса больше не активно.',
             link: '/profile/notifications',
-            metadata: { providerId, invitationId: savedInvitation.id },
+            metadata: { providerId: normalizedProviderId, invitationId: savedInvitation.id },
         }, `autocare-provider-invitation-revoked:${savedInvitation.id}`)
     }
     return toInvitationResponse(savedInvitation)
@@ -184,13 +198,16 @@ export async function revokeOwnerProviderInvitation(user: UserEntity, providerId
 
 export async function revokeOwnerProviderMembership(user: UserEntity, providerId: string, membershipId: string) {
     assertOwnerRole(user)
-    const provider = await getProvider(providerId)
-    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, providerId))) {
+    const normalizedProviderId = normalizeProviderMembershipUuid(providerId)
+    const normalizedMembershipId = normalizeProviderMembershipUuid(membershipId)
+    if (!normalizedProviderId || !normalizedMembershipId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and membership ids must be valid UUIDs.' })
+    const provider = await getProvider(normalizedProviderId)
+    if (provider.ownerId !== user.id || !(await canManageProvider(user.id, normalizedProviderId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not own this automotive service provider.' })
     }
 
     const repository = AppDataSource.getRepository(AutomotiveProviderMembershipEntity)
-    const membership = await repository.findOneBy({ id: membershipId, providerId })
+    const membership = await repository.findOneBy({ id: normalizedMembershipId, providerId: normalizedProviderId })
     if (!membership) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider membership not found.' })
     const member = await AppDataSource.getRepository(UserEntity).findOne({
         where: { id: membership.userId },
@@ -205,13 +222,15 @@ export async function revokeOwnerProviderMembership(user: UserEntity, providerId
         title: 'Доступ к сервису отозван',
         message: 'Ваш доступ к рабочему пространству автосервиса был отозван владельцем.',
         link: '/profile/notifications',
-        metadata: { providerId, membershipId: savedMembership.id, locationId: savedMembership.locationId },
+        metadata: { providerId: normalizedProviderId, membershipId: savedMembership.id, locationId: savedMembership.locationId },
     }, `autocare-provider-membership-revoked:${savedMembership.id}`)
     return toMembershipResponse(savedMembership, member ?? undefined)
 }
 
 export async function acceptProviderInvitation(user: UserEntity, token: string) {
-    const tokenHash = hashSecurityTokenValue(token)
+    const normalizedToken = normalizeProviderInvitationToken(token)
+    if (!normalizedToken) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Invitation token is invalid.' })
+    const tokenHash = hashSecurityTokenValue(normalizedToken)
     return AppDataSource.transaction(async (manager) => {
         const invitationRepository = manager.getRepository(AutomotiveProviderInvitationEntity)
         const invitation = await invitationRepository.createQueryBuilder('invitation')

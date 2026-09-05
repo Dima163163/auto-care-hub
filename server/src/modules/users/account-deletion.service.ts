@@ -124,14 +124,20 @@ export async function cancelAccountDeletion(
     let outcome: 'cancelled' | 'noop' = 'noop'
     const cancelled = await AppDataSource.transaction(async (manager) => {
         const repository = manager.getRepository(AccountDeletionRequestEntity)
-        const deletionRequest = await repository.findOne({
-            where: {
-                userId: user.id,
-                status: AccountDeletionRequestStatus.Pending,
-            },
-        })
+        // Lock the request row before checking its status. A status predicate
+        // on the SELECT would make a concurrent retry return no row after the
+        // first cancellation commits, so retain the cancelled row for an
+        // idempotent response while still making completion irreversible.
+        const deletionRequest = await repository
+            .createQueryBuilder('request')
+            .where('request.userId = :userId', { userId: user.id })
+            .orderBy('request.requestedAt', 'DESC')
+            .setLock('pessimistic_write')
+            .getOne()
 
         if (!deletionRequest) return null
+        if (deletionRequest.status === AccountDeletionRequestStatus.Cancelled) return deletionRequest
+        if (deletionRequest.status !== AccountDeletionRequestStatus.Pending) return null
 
         deletionRequest.status = AccountDeletionRequestStatus.Cancelled
         deletionRequest.cancelledAt = new Date()

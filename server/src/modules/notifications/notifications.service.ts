@@ -11,7 +11,6 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { logError } from '../../shared/observability/logger.js'
 import { toNotification } from './notifications.mappers.js'
 import type { Notification } from './notifications.types.js'
-import type { NotificationsQuery } from './notifications.schemas.js'
 import type { SupportedLocale } from '../../config/i18n.js'
 import {
     assertCursorDate,
@@ -22,6 +21,7 @@ import {
 } from '../../shared/http/cursor-pagination.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
 import { normalizeNotificationLink } from './notification-link-policy.js'
+import { normalizeNotificationsQueryInput } from './notification-query-policy.js'
 import { assertNotificationMetadataWithinBounds } from './notification-metadata-policy.js'
 import {
     assertNotificationCategory,
@@ -29,7 +29,7 @@ import {
     MAX_NOTIFICATION_TITLE_LENGTH,
     normalizeNotificationContent,
 } from './notification-content-policy.js'
-import { getNotificationMarkAllBatchSize } from './notification-action-policy.js'
+import { getNotificationMarkAllBatchSize, normalizeNotificationUuid } from './notification-action-policy.js'
 
 type CreateNotificationInput = {
     category: NotificationCategory
@@ -68,20 +68,28 @@ export async function createNotification(input: CreateNotificationInput) {
 
 export async function listNotifications(
     user: UserEntity,
-    input?: NotificationsQuery,
+    input?: unknown,
     locale: SupportedLocale = 'en',
 ): Promise<Notification[] | CursorPage<Notification>> {
+    const normalizedInput = normalizeNotificationsQueryInput(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Notifications query is invalid.',
+        })
+    }
     const notificationRepository = AppDataSource.getRepository(NotificationEntity)
-    const isPaginated = isCursorPaginationRequested(input ?? {})
-    const limit = getCursorLimit(input?.limit)
-    const category = input?.category ? assertNotificationCategory(input.category) : undefined
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
+    const category = normalizedInput.category
     const query = notificationRepository
         .createQueryBuilder('notification')
         .where('notification.userId = :userId', { userId: user.id })
 
-    if (input?.read !== undefined) {
+    if (normalizedInput.read !== undefined) {
         query.andWhere(
-            input.read
+            normalizedInput.read
                 ? 'notification.readAt IS NOT NULL'
                 : 'notification.readAt IS NULL',
         )
@@ -91,8 +99,8 @@ export async function listNotifications(
         query.andWhere('notification.category = :category', { category })
     }
 
-    if (input?.cursor) {
-        const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
+    if (normalizedInput.cursor) {
+        const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
         const createdAt = assertCursorDate(cursor, 'createdAt')
 
         query.andWhere(`(
@@ -143,10 +151,18 @@ export async function markNotificationAsRead(
     notificationId: string,
     locale: SupportedLocale = 'en',
 ) {
+    const normalizedNotificationId = normalizeNotificationUuid(notificationId)
+    if (!normalizedNotificationId) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Notification id must be a valid UUID.',
+        })
+    }
     const notificationRepository = AppDataSource.getRepository(NotificationEntity)
     const notification = await notificationRepository.findOne({
         where: {
-            id: notificationId,
+            id: normalizedNotificationId,
             userId: user.id,
         },
     })

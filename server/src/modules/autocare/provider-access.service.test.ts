@@ -12,7 +12,7 @@ import {
     AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
 } from '../../entities/index.js'
-import { canManageProvider, getManagedProviderIds, getManagedProviderPermissionScopes, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { canManageProvider, canSubmitProviderAppeal, getManagedProviderIds, getManagedProviderPermissionScopes, getManagedProviderScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
 
 function membershipQuery(getOne: () => Promise<unknown>) {
     const query = {
@@ -42,6 +42,26 @@ describe('provider access boundary', () => {
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : { createQueryBuilder: vi.fn() })
 
         await expect(canManageProvider('owner-1', 'provider-1')).resolves.toBe(false)
+    })
+
+    it('denies suspended provider workspace access but preserves the owner appeal path', async () => {
+        const providerRepository = { findOne: vi.fn().mockResolvedValue({ id: 'provider-1', ownerId: 'owner-1', status: AutomotiveProviderStatus.Suspended }), find: vi.fn() }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : { find: vi.fn(), createQueryBuilder: vi.fn() })
+
+        await expect(hasProviderWorkspacePermission('owner-1', 'provider-1', 'requests', 'location-a')).resolves.toBe(false)
+        await expect(canSubmitProviderAppeal('owner-1', 'provider-1')).resolves.toBe(true)
+        await expect(canSubmitProviderAppeal('attacker-1', 'provider-1')).resolves.toBe(false)
+    })
+
+    it('excludes suspended providers from aggregate workspace scopes', async () => {
+        const providerRepository = {
+            find: vi.fn().mockResolvedValue([{ id: 'provider-1' }]),
+            findOne: vi.fn().mockResolvedValue({ id: 'provider-1', status: AutomotiveProviderStatus.Suspended }),
+        }
+        const membershipRepository = { find: vi.fn().mockResolvedValue([]) }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveProviderEntity ? providerRepository : membershipRepository)
+
+        await expect(getManagedProviderScopes('owner-1')).resolves.toEqual([])
     })
 
     it('allows an active provider-wide membership and keeps the location predicate broad', async () => {

@@ -41,8 +41,9 @@ describe('AutoCare broadcast ownership', () => {
     })
 
     it('serves trust from persisted snapshots without recalculating on a public read', async () => {
+        const trustProviderId = '11111111-1111-4111-8111-111111111111'
         const provider = {
-            id: 'provider-1',
+            id: trustProviderId,
             status: AutomotiveProviderStatus.Active,
             verified: true,
             rating: 4.5,
@@ -54,7 +55,7 @@ describe('AutoCare broadcast ownership', () => {
         }
         const snapshot = {
             id: 'snapshot-1',
-            providerId: 'provider-1',
+            providerId: trustProviderId,
             locationId: 'location-1',
             policyVersion: 'autocare-trust-v1',
             score: '82.5',
@@ -77,16 +78,18 @@ describe('AutoCare broadcast ownership', () => {
             },
             reasonCodes: [],
         }
+        const evidenceRepository = { find: vi.fn().mockResolvedValue([]) }
         mocks.getRepository
             .mockReturnValueOnce({ findOneBy: vi.fn().mockResolvedValue(provider) })
-            .mockReturnValueOnce({ find: vi.fn().mockResolvedValue([]) })
+            .mockReturnValueOnce(evidenceRepository)
             .mockReturnValueOnce({ find: vi.fn().mockResolvedValue([snapshot]) })
 
-        const result = await getAutoCareProviderTrust('provider-1')
+        const result = await getAutoCareProviderTrust(trustProviderId)
 
         expect(result.score).toBe(82.5)
         expect(result.snapshots).toHaveLength(1)
         expect(result.factors.confidence).toBeGreaterThan(0)
+        expect(evidenceRepository.find).toHaveBeenCalledWith(expect.objectContaining({ take: 100 }))
         expect(mocks.getRepository).toHaveBeenCalledTimes(3)
     })
 })

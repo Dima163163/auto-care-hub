@@ -16,6 +16,8 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager } from './provider-access.service.js'
 import type { AutoCareBonusAccountResponse, AutoCareBonusLedgerEntryResponse, AutoCareBonusProgramResponse, GrantAutoCareBonusInput, OwnerAutoCareBonusLiabilityResponse, OwnerAutoCareBonusProgramInput, RedeemAutoCareBonusInput } from './autocare.types.js'
+import { normalizeIdempotencyKey } from '../../shared/http/idempotency-key.js'
+import { normalizeGrantAutoCareBonusInput, normalizeOwnerAutoCareBonusProgramInput, normalizeRedeemAutoCareBonusInput, normalizeAutoCareBonusProviderUuid } from './bonus-input-policy.js'
 
 /** Launch markets use two-decimal currencies. One bonus point therefore
  * represents one major currency unit, stored in integer minor units. */
@@ -27,6 +29,10 @@ function forbidden(message: string): never {
 
 function notFound(message: string): never {
     throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message })
+}
+
+function invalid(message: string): never {
+    throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message })
 }
 
 function assertOwner(user: UserEntity) {
@@ -125,8 +131,10 @@ export async function getMyAutoCareBonusAccounts(user: UserEntity) {
 
 export async function getOwnerAutoCareBonusProgram(user: UserEntity, providerId: string) {
     assertOwner(user)
-    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
-    const program = await AppDataSource.getRepository(AutoCareBonusProgramEntity).findOneBy({ providerId })
+    const normalizedProviderId = normalizeAutoCareBonusProviderUuid(providerId)
+    if (!normalizedProviderId) invalid('Provider id must be a valid UUID.')
+    if (!(await hasProviderWorkspacePermission(user.id, normalizedProviderId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
+    const program = await AppDataSource.getRepository(AutoCareBonusProgramEntity).findOneBy({ providerId: normalizedProviderId })
     return program ? toProgramResponse(program) : null
 }
 
@@ -134,11 +142,13 @@ export async function getOwnerAutoCareBonusProgram(user: UserEntity, providerId:
  * support, but never balance data of another provider. */
 export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerId: string): Promise<OwnerAutoCareBonusLiabilityResponse> {
     assertOwner(user)
-    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
+    const normalizedProviderId = normalizeAutoCareBonusProviderUuid(providerId)
+    if (!normalizedProviderId) invalid('Provider id must be a valid UUID.')
+    if (!(await hasProviderWorkspacePermission(user.id, normalizedProviderId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
     const accountRepository = AppDataSource.getRepository(AutoCareBonusAccountEntity)
-    const accounts = await accountRepository.find({ where: { providerId } })
+    const accounts = await accountRepository.find({ where: { providerId: normalizedProviderId } })
     const entries = await AppDataSource.getRepository(AutoCareBonusLedgerEntity).find({
-        where: { providerId }, order: { createdAt: 'DESC' }, take: 100,
+        where: { providerId: normalizedProviderId }, order: { createdAt: 'DESC' }, take: 100,
     })
     const clientIds = [...new Set(entries.map((entry) => entry.clientId))]
     const clients = clientIds.length === 0 ? [] : await AppDataSource.getRepository(UserEntity).find({
@@ -146,7 +156,7 @@ export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerI
     })
     const names = new Map(clients.map((client) => [client.id, client.name]))
     return {
-        providerId,
+        providerId: normalizedProviderId,
         activeAccounts: accounts.filter((account) => account.balancePoints > 0).length,
         liabilityPoints: accounts.reduce((total, account) => total + account.balancePoints, 0),
         entries: entries.map((entry) => ({
@@ -165,18 +175,22 @@ export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerI
 
 export async function upsertOwnerAutoCareBonusProgram(user: UserEntity, providerId: string, input: OwnerAutoCareBonusProgramInput) {
     assertOwner(user)
+    const normalizedProviderId = normalizeAutoCareBonusProviderUuid(providerId)
+    if (!normalizedProviderId) invalid('Provider id must be a valid UUID.')
+    const normalizedInput = normalizeOwnerAutoCareBonusProgramInput(input)
+    if (!normalizedInput) invalid('Bonus programme payload is invalid.')
     const program = await AppDataSource.transaction(async (manager) => {
-        if (!(await hasProviderWorkspacePermissionWithManager(manager, user.id, providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
-        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+        if (!(await hasProviderWorkspacePermissionWithManager(manager, user.id, normalizedProviderId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
+        const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
         if (!provider) notFound('Automotive service not found.')
         const bonusRepository = manager.getRepository(AutoCareBonusProgramEntity)
-        const existing = await bonusRepository.findOne({ where: { providerId }, lock: { mode: 'pessimistic_write' } })
-        const entity = existing ?? bonusRepository.create({ providerId })
-        entity.name = input.name.trim()
-        entity.earnPercent = input.earnPercent
-        entity.maxEarnPointsPerVisit = input.maxEarnPointsPerVisit ?? null
-        entity.expiresAfterDays = input.expiresAfterDays ?? null
-        entity.active = input.active ?? true
+        const existing = await bonusRepository.findOne({ where: { providerId: normalizedProviderId }, lock: { mode: 'pessimistic_write' } })
+        const entity = existing ?? bonusRepository.create({ providerId: normalizedProviderId })
+        entity.name = normalizedInput.name
+        entity.earnPercent = normalizedInput.earnPercent
+        entity.maxEarnPointsPerVisit = normalizedInput.maxEarnPointsPerVisit
+        entity.expiresAfterDays = normalizedInput.expiresAfterDays
+        entity.active = normalizedInput.active ?? true
         return bonusRepository.save(entity)
     })
     return toProgramResponse(program)
@@ -246,50 +260,53 @@ export async function awardAutoCareBonusForCompletedVisit(manager: EntityManager
 
 export async function redeemAutoCareBonus(user: UserEntity, input: RedeemAutoCareBonusInput, idempotencyKey: string | null) {
     if (user.role !== UserRole.Client) forbidden('Only clients can redeem bonus points.')
+    const normalizedInput = normalizeRedeemAutoCareBonusInput(input)
+    if (!normalizedInput) invalid('Bonus redemption payload is invalid.')
+    const normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey)
     return AppDataSource.transaction(async (manager) => {
-        const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: input.requestId }, lock: { mode: 'pessimistic_write' } })
-        if (!request || request.providerId !== input.providerId || request.clientId !== user.id) notFound('Service request not found.')
+        const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: normalizedInput.requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!request || request.providerId !== normalizedInput.providerId || request.clientId !== user.id) notFound('Service request not found.')
         if (request.status !== ServiceRequestStatus.Accepted) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Bonuses can be redeemed only for a confirmed service request.' })
         }
         const accountRepository = manager.getRepository(AutoCareBonusAccountEntity)
         const ledgerRepository = manager.getRepository(AutoCareBonusLedgerEntity)
-        const account = await accountRepository.findOne({ where: { clientId: user.id, providerId: input.providerId }, lock: { mode: 'pessimistic_write' } })
+        const account = await accountRepository.findOne({ where: { clientId: user.id, providerId: normalizedInput.providerId }, lock: { mode: 'pessimistic_write' } })
         if (!account) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'No bonus balance is available for this service.' })
 
-        const key = idempotencyKey?.trim() || `request:${request.id}:redeem`
+        const key = normalizedIdempotencyKey ?? `request:${request.id}:redeem`
         const existing = await ledgerRepository.findOne({ where: { accountId: account.id, idempotencyKey: key } })
         if (existing) return accountResponse(account, manager)
         const previousRequestRedemption = await ledgerRepository.findOne({ where: { accountId: account.id, requestId: request.id, type: AutoCareBonusLedgerType.Redeem } })
         if (previousRequestRedemption) return accountResponse(account, manager)
         await reconcileExpiredBonusEntries(manager, account)
-        if (account.balancePoints < input.points) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'The bonus balance is too low for this redemption.' })
+        if (account.balancePoints < normalizedInput.points) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'The bonus balance is too low for this redemption.' })
         const maximumPoints = getMaximumAutoCareBonusRedemptionPoints(request)
-        if (maximumPoints === 0 || input.points > maximumPoints) {
+        if (maximumPoints === 0 || normalizedInput.points > maximumPoints) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'The bonus redemption exceeds the confirmed service amount.' })
         }
 
         await ledgerRepository.save(ledgerRepository.create({
             accountId: account.id,
             clientId: user.id,
-            providerId: input.providerId,
+            providerId: normalizedInput.providerId,
             requestId: request.id,
             type: AutoCareBonusLedgerType.Redeem,
-            points: -input.points,
+            points: -normalizedInput.points,
             reason: 'Списание бонусов при подтверждённой записи',
             idempotencyKey: key,
             expiresAt: null,
             actorId: user.id,
         }))
-        account.balancePoints -= input.points
-        account.redeemedPoints += input.points
+        account.balancePoints -= normalizedInput.points
+        account.redeemedPoints += normalizedInput.points
         await accountRepository.save(account)
         const bookingAmount = request.bookingSnapshot?.amountMinor
         if (typeof bookingAmount === 'number' && Number.isInteger(bookingAmount)) {
             request.bookingSnapshot = {
                 ...request.bookingSnapshot,
-                bonusDiscountMinor: input.points * AUTOCARE_BONUS_POINT_VALUE_MINOR,
-                payableAmountMinor: bookingAmount - input.points * AUTOCARE_BONUS_POINT_VALUE_MINOR,
+                bonusDiscountMinor: normalizedInput.points * AUTOCARE_BONUS_POINT_VALUE_MINOR,
+                payableAmountMinor: bookingAmount - normalizedInput.points * AUTOCARE_BONUS_POINT_VALUE_MINOR,
             }
             await manager.getRepository(ServiceRequestEntity).save(request)
         }
@@ -299,38 +316,41 @@ export async function redeemAutoCareBonus(user: UserEntity, input: RedeemAutoCar
 
 export async function grantAutoCareBonus(user: UserEntity, input: GrantAutoCareBonusInput, idempotencyKey: string | null) {
     assertOwner(user)
+    const normalizedInput = normalizeGrantAutoCareBonusInput(input)
+    if (!normalizedInput) invalid('Manual bonus grant payload is invalid.')
+    const normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey)
+    if (!normalizedIdempotencyKey) {
+        throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Idempotency-Key is required when granting bonus points.' })
+    }
     return AppDataSource.transaction(async (manager) => {
-        if (!(await hasProviderWorkspacePermissionWithManager(manager, user.id, input.providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
-        const client = await manager.getRepository(UserEntity).findOne({ where: { id: input.clientId, role: UserRole.Client }, select: { id: true } })
+        if (!(await hasProviderWorkspacePermissionWithManager(manager, user.id, normalizedInput.providerId, 'bonuses'))) forbidden('You do not have permission to manage bonuses for this automotive service.')
+        const client = await manager.getRepository(UserEntity).findOne({ where: { id: normalizedInput.clientId, role: UserRole.Client }, select: { id: true } })
         if (!client) notFound('Client not found.')
         const accountRepository = manager.getRepository(AutoCareBonusAccountEntity)
         const ledgerRepository = manager.getRepository(AutoCareBonusLedgerEntity)
-        let account = await accountRepository.findOne({ where: { clientId: input.clientId, providerId: input.providerId }, lock: { mode: 'pessimistic_write' } })
+        let account = await accountRepository.findOne({ where: { clientId: normalizedInput.clientId, providerId: normalizedInput.providerId }, lock: { mode: 'pessimistic_write' } })
         if (!account) {
-            await accountRepository.upsert({ clientId: input.clientId, providerId: input.providerId }, ['clientId', 'providerId'])
-            account = await accountRepository.findOne({ where: { clientId: input.clientId, providerId: input.providerId }, lock: { mode: 'pessimistic_write' } })
+            await accountRepository.upsert({ clientId: normalizedInput.clientId, providerId: normalizedInput.providerId }, ['clientId', 'providerId'])
+            account = await accountRepository.findOne({ where: { clientId: normalizedInput.clientId, providerId: normalizedInput.providerId }, lock: { mode: 'pessimistic_write' } })
         }
         if (!account) throw new AppError({ statusCode: 500, code: ERROR_CODES.InternalServerError, message: 'Bonus account could not be created.' })
-        if (!idempotencyKey?.trim()) {
-            throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Idempotency-Key is required when granting bonus points.' })
-        }
-        const key = idempotencyKey.trim()
+        const key = normalizedIdempotencyKey
         const existing = await ledgerRepository.findOne({ where: { accountId: account.id, idempotencyKey: key } })
         if (existing) return accountResponse(account, manager)
         await ledgerRepository.save(ledgerRepository.create({
             accountId: account.id,
-            clientId: input.clientId,
-            providerId: input.providerId,
+            clientId: normalizedInput.clientId,
+            providerId: normalizedInput.providerId,
             requestId: null,
             type: AutoCareBonusLedgerType.Adjustment,
-            points: input.points,
-            reason: input.reason.trim(),
+            points: normalizedInput.points,
+            reason: normalizedInput.reason,
             idempotencyKey: key,
             expiresAt: null,
             actorId: user.id,
         }))
-        account.balancePoints += input.points
-        account.earnedPoints += input.points
+        account.balancePoints += normalizedInput.points
+        account.earnedPoints += normalizedInput.points
         await accountRepository.save(account)
         return accountResponse(account, manager)
     })

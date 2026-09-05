@@ -124,6 +124,19 @@ function aggregateProviderScopes(assignments: ManagedProviderAssignment[]): Mana
     }))
 }
 
+async function filterSuspendedProviderScopes(scopes: ManagedProviderScope[], getRepository: ProviderRepositoryGetter) {
+    const providerRepository = getRepository(AutomotiveProviderEntity)
+    if (typeof providerRepository.findOne !== 'function') return scopes
+    const visible = await Promise.all(scopes.map(async (scope) => {
+        const provider = await providerRepository.findOne({
+            where: { id: scope.providerId },
+            select: { id: true, status: true },
+        })
+        return provider && provider.status !== AutomotiveProviderStatus.Suspended ? scope : null
+    }))
+    return visible.filter((scope): scope is ManagedProviderScope => scope !== null)
+}
+
 async function hasProviderWorkspacePermissionWithRepository(
     getRepository: ProviderRepositoryGetter,
     userId: string,
@@ -131,6 +144,17 @@ async function hasProviderWorkspacePermissionWithRepository(
     permission: ProviderWorkspacePermission,
     locationId?: string | null,
 ) {
+    const providerRepository = getRepository(AutomotiveProviderEntity)
+    // A suspended provider has no normal workspace permissions. The explicit
+    // appeal/recovery helper below is the only path that intentionally bypasses
+    // this guard, so existing visits cannot be used to mutate a suspended shop.
+    if (typeof providerRepository.findOne === 'function') {
+        const provider = await providerRepository.findOne({
+            where: { id: providerId },
+            select: { id: true, status: true },
+        })
+        if (!provider || provider.status === AutomotiveProviderStatus.Suspended) return false
+    }
     const assignments = (await getManagedProviderAssignmentsWithRepository(getRepository, userId)).filter((item) => item.providerId === providerId)
     return assignments.some((assignment) => {
         if (!permissionsByRole[assignment.role].includes(permission)) return false
@@ -148,7 +172,7 @@ async function hasProviderWorkspacePermissionWithRepository(
  */
 export async function getManagedProviderScopes(userId: string): Promise<ManagedProviderScope[]> {
     const assignments = await getManagedProviderAssignments(userId)
-    return aggregateProviderScopes(assignments)
+    return filterSuspendedProviderScopes(aggregateProviderScopes(assignments), AppDataSource.getRepository.bind(AppDataSource))
 }
 
 /**
@@ -159,7 +183,7 @@ export async function getManagedProviderScopes(userId: string): Promise<ManagedP
  */
 export async function getManagedProviderPermissionScopes(userId: string, permission: ProviderWorkspacePermission): Promise<ManagedProviderScope[]> {
     const assignments = (await getManagedProviderAssignments(userId)).filter((assignment) => permissionsByRole[assignment.role].includes(permission))
-    return aggregateProviderScopes(assignments)
+    return filterSuspendedProviderScopes(aggregateProviderScopes(assignments), AppDataSource.getRepository.bind(AppDataSource))
 }
 
 export function isManagedProviderLocationAllowed(scopes: ManagedProviderScope[], providerId: string, locationId: string | null | undefined) {
@@ -191,6 +215,19 @@ export async function hasProviderWorkspacePermissionWithManager(
     locationId?: string | null,
 ) {
     return hasProviderWorkspacePermissionWithRepository(manager.getRepository.bind(manager), userId, providerId, permission, locationId)
+}
+
+/**
+ * Suspension intentionally leaves one recovery path: the provider owner may
+ * submit an appeal. This check does not grant access to requests, quotes,
+ * messages, media or scheduling mutations.
+ */
+export async function canSubmitProviderAppeal(userId: string, providerId: string) {
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOne({
+        where: { id: providerId },
+        select: { id: true, ownerId: true },
+    })
+    return Boolean(provider && provider.ownerId === userId)
 }
 
 /** Minimal capability endpoint for the web shell. Detailed authorization is

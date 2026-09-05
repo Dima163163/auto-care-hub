@@ -42,8 +42,18 @@ import { getDiscoveryCache, getDiscoveryCacheKey, setDiscoveryCache } from './di
 import { getAutoCareTrustRollout } from '../admin/super-admin-trust-policy.service.js'
 import { ensureDefaultAutoCareResources, listAutoCareCapacityReservations, listAutoCareCapacityResources } from './capacity-resource.service.js'
 import { toDiscoveryResponse, toLocationZoneResponse, toMarketResponse, toOfferResponse, toProviderResponse, toServiceDefinitionResponse } from './autocare.mappers.js'
-import { normalizeAutoCareReviewPhotoUrls } from './autocare-public-media-policy.js'
-import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareCommunicationSettingsInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+import { normalizeAutoCareProviderPublicMediaForWrite, normalizeAutoCareReviewPhotoUrls } from './autocare-public-media-policy.js'
+import { normalizeAutoCareReviewContent } from './review-integrity-policy.js'
+import { normalizeAutoCareReviewPromoCode, normalizeAutoCareReviewPromoInput, normalizeAutoCareReviewUuid } from './review-input-policy.js'
+import { normalizeAutoCarePublicProviderUuid, normalizeAutoCarePublicReviewLimit, normalizeAutoCarePublicServiceId } from './public-provider-input-policy.js'
+import { normalizeAutoCareRequestUuid } from './request-input-policy.js'
+import { normalizeAutoCareDiscoveryQuery } from './discovery-input-policy.js'
+import { normalizeAutoCareCapacityProviderUuid, normalizeAutoCareCapacityReservationQuery, normalizeAutoCareCapacityResourceInput, normalizeAutoCareCapacityResourcePatch } from './capacity-input-policy.js'
+import { normalizeAutoCareCommunicationProviderUuid, normalizeAutoCareCommunicationSettingsInput } from './communication-input-policy.js'
+import { normalizeAutoCareProviderLocationIds } from './provider-location-input-policy.js'
+import { areAutoCareOfferResourcesCompatible, normalizeAutoCareOfferProviderUuid, normalizeAutoCareOfferUuid, normalizeOwnerAutoCareOfferInput } from './owner-offer-input-policy.js'
+import type { AutoCareDiscoveryQuery, AutoCareDiscoveryResponse, AutoCareProviderProfileResponse, AutoCareProviderReviewsResponse, AutoCareReviewPromoResponse, CreateAutoCareReviewInput, CreateAutoCareReviewPromoInput, OwnerAutoCareProviderReviewsResponse, OwnerAutoCareReviewsResponse, RedeemAutoCareReviewPromoInput, UpdateAutoCareCommunicationSettingsInput, UpdateAutoCareReviewInput } from './autocare.types.js'
+import { ownerAutoCareProviderSchema } from './autocare.schemas.js'
 
 export type AutoCareCapacityResourceInput = {
     locationId: string
@@ -240,25 +250,33 @@ export async function getAutoCareMarkets() {
 }
 
 export async function getAutoCareLocationZones(marketValue: string, parentId?: string, coordinates?: { latitude: number; longitude: number }, limit = 24) {
-    const market = await findMarket(marketValue)
+    const normalizedMarketValue = normalizeAutoCarePublicServiceId(marketValue)
+    if (!normalizedMarketValue) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Market id must be a non-empty value up to 120 characters.' })
+    const normalizedParentId = parentId === undefined ? undefined : normalizeAutoCareRequestUuid(parentId)
+    if (parentId !== undefined && !normalizedParentId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Parent zone id must be a valid UUID.' })
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Zone limit must be an integer between 1 and 100.' })
+    if (coordinates !== undefined && (!coordinates || typeof coordinates !== 'object' || Array.isArray(coordinates) || !Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude) || coordinates.latitude < -90 || coordinates.latitude > 90 || coordinates.longitude < -180 || coordinates.longitude > 180)) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Zone coordinates are invalid.' })
+    }
+    const market = await findMarket(normalizedMarketValue)
     if (!market) {
-        const fallbackMarket = findFallbackMarket(marketValue)
+        const fallbackMarket = findFallbackMarket(normalizedMarketValue)
         if (!fallbackMarket) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
-        return getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !parentId || zone.parentId === parentId)
+        return getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !normalizedParentId || zone.parentId === normalizedParentId)
     }
 
     const zoneRepository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
     const zones = await zoneRepository.find({
-        where: { marketId: market.id, parentId: parentId ?? IsNull(), active: true },
+        where: { marketId: market.id, parentId: normalizedParentId ?? IsNull(), active: true },
         order: { displayOrder: 'ASC', slug: 'ASC' },
         take: coordinates ? undefined : limit,
     })
     if (zones.length === 0) {
         const fallbackMarket = findFallbackMarket(market.cityCode)
         return fallbackMarket
-            ? getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !parentId || zone.parentId === parentId)
+            ? getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !normalizedParentId || zone.parentId === normalizedParentId)
             : []
     }
 
@@ -296,16 +314,21 @@ export async function saveAutoCareProviderMedia(owner: UserEntity, kind: AutoCar
 }
 
 export async function getFeaturedAutoCareReviews(limit: number) {
+    const normalizedLimit = normalizeAutoCarePublicReviewLimit(limit, 6)
+    if (!normalizedLimit) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review limit must be an integer between 1 and 50.' })
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
         where: { status: AutomotiveReviewStatus.Approved },
         order: { createdAt: 'DESC' },
-        take: limit,
+        take: normalizedLimit,
     })
 
     return reviews.map((review) => toAutoCareReviewResponse(review))
 }
 
 export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {
+    const normalizedInput = normalizeAutoCareDiscoveryQuery(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Discovery query is invalid.' })
+    input = normalizedInput
     const limit = getCursorLimit(input.limit)
     const sort = input.sort ?? 'recommended'
     const cursor = input.cursor ? decodeCursor(input.cursor, ['sort', 'primary', 'secondary', 'providerId', 'locationId']) : null
@@ -474,7 +497,9 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
 }
 
 export async function getAutoCareProviderProfile(providerId: string): Promise<AutoCareProviderProfileResponse> {
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const normalizedProviderId = normalizeAutoCarePublicProviderUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     assertProviderActive(provider)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
@@ -501,38 +526,49 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
 }
 
 export async function getAutoCareProviderOffers(providerId: string, serviceId?: string) {
-    const profile = await getAutoCareProviderProfile(providerId)
+    const normalizedProviderId = normalizeAutoCarePublicProviderUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const normalizedServiceId = serviceId === undefined ? undefined : normalizeAutoCarePublicServiceId(serviceId)
+    if (serviceId !== undefined && !normalizedServiceId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service id must be a non-empty value up to 120 characters.' })
+    const profile = await getAutoCareProviderProfile(normalizedProviderId)
     const offers = profile.locations.flatMap((location) => location.offers)
-    if (!serviceId) return offers
-    const definition = await findServiceDefinition(serviceId)
+    if (!normalizedServiceId) return offers
+    const definition = await findServiceDefinition(normalizedServiceId)
     return definition ? offers.filter((offer) => offer.serviceDefinitionId === definition.id) : []
 }
 
 export async function updateOwnerAutoCareOffer(owner: UserEntity, providerId: string, offerId: string, input: { description: string | null; priceFromMinor: number; bookingMode?: 'request' | 'instant'; requiredResourceTypes?: AutoCareCapacityResourceType[]; requiredResourceIds?: string[] }) {
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const normalizedProviderId = normalizeAutoCareOfferProviderUuid(providerId)
+    const normalizedOfferId = normalizeAutoCareOfferUuid(offerId)
+    const normalizedInput = normalizeOwnerAutoCareOfferInput(input)
+    if (!normalizedProviderId || !normalizedOfferId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and offer ids must be valid UUIDs.' })
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Offer update payload is invalid.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     if (!provider || provider.status === AutomotiveProviderStatus.Suspended) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
 
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
-    const offering = await offeringRepository.findOne({ where: { id: offerId, active: true } })
+    const offering = await offeringRepository.findOne({ where: { id: normalizedOfferId, active: true } })
     if (!offering) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
-    if (!(await hasProviderWorkspacePermission(owner.id, provider.id, 'catalog', offering.locationId))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
+    const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: offering.locationId, providerId: normalizedProviderId })
+    if (!location || !(await hasProviderWorkspacePermission(owner.id, normalizedProviderId, 'catalog', location.id))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service offer not found.' })
 
     const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: offering.definitionId })
     if (!definition) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service definition not found.' })
 
-    offering.description = input.description
-    offering.priceFromMinor = input.priceFromMinor
-    if (input.bookingMode) offering.bookingMode = input.bookingMode === 'instant' ? AutomotiveBookingMode.Instant : AutomotiveBookingMode.Request
-    if (input.requiredResourceTypes !== undefined) offering.requiredResourceTypes = [...new Set(input.requiredResourceTypes)]
-    if (input.requiredResourceIds !== undefined) {
-        const resourceIds = [...new Set(input.requiredResourceIds)]
+    offering.description = normalizedInput.description
+    offering.priceFromMinor = normalizedInput.priceFromMinor
+    if (normalizedInput.bookingMode) offering.bookingMode = normalizedInput.bookingMode === 'instant' ? AutomotiveBookingMode.Instant : AutomotiveBookingMode.Request
+    if (normalizedInput.requiredResourceTypes !== undefined) offering.requiredResourceTypes = normalizedInput.requiredResourceTypes
+    if (normalizedInput.requiredResourceIds !== undefined) {
+        const resourceIds = normalizedInput.requiredResourceIds
         const resources = resourceIds.length > 0
-            ? await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findBy({ id: In(resourceIds), providerId, locationId: offering.locationId, active: true })
+            ? await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findBy({ id: In(resourceIds), providerId: normalizedProviderId, locationId: location.id, active: true })
             : []
         if (resources.length !== resourceIds.length) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Every selected resource must be active at the offer location.' })
+        if (!areAutoCareOfferResourcesCompatible(resources, normalizedInput.requiredResourceTypes)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Selected resources must match the offer resource types.' })
         offering.requiredResourceIds = resourceIds
     }
-    if (offering.priceToMinor !== null && offering.priceToMinor < input.priceFromMinor) offering.priceToMinor = input.priceFromMinor
+    if (offering.priceToMinor !== null && offering.priceToMinor < normalizedInput.priceFromMinor) offering.priceToMinor = normalizedInput.priceFromMinor
     const savedOffering = await offeringRepository.save(offering)
     return toOfferResponse(savedOffering, definition)
 }
@@ -602,9 +638,11 @@ async function filterReviewsByRequestLocations(reviews: AutomotiveReviewEntity[]
 }
 
 export async function getOwnerAutoCareProviderReviews(owner: UserEntity, providerId: string): Promise<OwnerAutoCareProviderReviewsResponse> {
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const normalizedProviderId = normalizeAutoCareReviewUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     const scopes = await getManagedProviderPermissionScopes(owner.id, 'reviews')
-    const scope = scopes.find((item) => item.providerId === providerId)
+    const scope = scopes.find((item) => item.providerId === normalizedProviderId)
     if (!provider || provider.status === AutomotiveProviderStatus.Suspended || !scope) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
 
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
@@ -629,7 +667,11 @@ export async function getOwnerAutoCareProviderReviews(owner: UserEntity, provide
 }
 
 export async function getAutoCareProviderReviews(providerId: string, limit = 20): Promise<AutoCareProviderReviewsResponse> {
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const normalizedProviderId = normalizeAutoCarePublicProviderUuid(providerId)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    const normalizedLimit = normalizeAutoCarePublicReviewLimit(limit, 20)
+    if (!normalizedLimit) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review limit must be an integer between 1 and 50.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     assertProviderActive(provider)
 
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
@@ -646,23 +688,25 @@ export async function getAutoCareProviderReviews(providerId: string, limit = 20)
         totalReviews,
         averageRating,
         distribution,
-        reviews: reviews.slice(0, limit).map((review) => toAutoCareReviewResponse(review)),
+        reviews: reviews.slice(0, normalizedLimit).map((review) => toAutoCareReviewResponse(review)),
     }
 }
 
 export async function getOwnerAutoCareReviews(owner: UserEntity, providerId?: string): Promise<OwnerAutoCareReviewsResponse> {
+    const normalizedProviderId = providerId === undefined ? undefined : normalizeAutoCareReviewUuid(providerId)
+    if (providerId !== undefined && !normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
     const providers = await getOwnerAutoCareProviders(owner)
-    const selectedProviders = providerId
-        ? providers.filter((provider) => provider.id === providerId)
+    const selectedProviders = normalizedProviderId
+        ? providers.filter((provider) => provider.id === normalizedProviderId)
         : providers
-    if (providerId && selectedProviders.length === 0) {
+    if (normalizedProviderId && selectedProviders.length === 0) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     }
 
     const scopes = await getManagedProviderPermissionScopes(owner.id, 'reviews')
     const allowedProviderIds = new Set(scopes.map((scope) => scope.providerId))
     const reviewProviders = selectedProviders.filter((provider) => allowedProviderIds.has(provider.id))
-    if (providerId && reviewProviders.length === 0) {
+    if (normalizedProviderId && reviewProviders.length === 0) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     }
     const providerIds = reviewProviders.map((provider) => provider.id)
@@ -682,7 +726,7 @@ export async function getOwnerAutoCareReviews(owner: UserEntity, providerId?: st
     const totalReviews = visibleReviews.length
 
     return {
-        selectedProviderId: providerId ?? null,
+        selectedProviderId: normalizedProviderId ?? null,
         providers: reviewProviders.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, rating: provider.rating, reviewCount: provider.reviewCount })),
         totalReviews,
         averageRating: totalReviews === 0 ? 0 : Number((visibleReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1)),
@@ -707,28 +751,33 @@ function makeReviewPromoCode() {
 
 export async function createOwnerAutoCareReviewPromo(owner: UserEntity, providerId: string, reviewId: string, input: CreateAutoCareReviewPromoInput): Promise<AutoCareReviewPromoResponse> {
     assertOwner(owner)
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
-    const review = await AppDataSource.getRepository(AutomotiveReviewEntity).findOneBy({ id: reviewId, providerId, status: AutomotiveReviewStatus.Approved })
+    const normalizedProviderId = normalizeAutoCareReviewUuid(providerId)
+    const normalizedReviewId = normalizeAutoCareReviewUuid(reviewId)
+    const normalizedInput = normalizeAutoCareReviewPromoInput(input)
+    if (!normalizedProviderId || !normalizedReviewId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and review ids must be valid UUIDs.' })
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review promo payload is invalid.' })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
+    const review = await AppDataSource.getRepository(AutomotiveReviewEntity).findOneBy({ id: normalizedReviewId, providerId: normalizedProviderId, status: AutomotiveReviewStatus.Approved })
     if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
     const request = review.serviceRequestId
-        ? await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: review.serviceRequestId, providerId })
+        ? await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: review.serviceRequestId, providerId: normalizedProviderId })
         : null
-    if (!provider || !(await hasProviderWorkspacePermission(owner.id, providerId, 'reviews', request?.locationId ?? null))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
+    if (!provider || !(await hasProviderWorkspacePermission(owner.id, normalizedProviderId, 'reviews', request?.locationId ?? null))) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
     if (!review.clientId) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review is not linked to a client account yet.' })
 
     const promoRepository = AppDataSource.getRepository(AutomotiveReviewPromoEntity)
     let code = makeReviewPromoCode()
     while (await promoRepository.existsBy({ code })) code = makeReviewPromoCode()
     const promo = promoRepository.create({
-        providerId,
-        reviewId,
+        providerId: normalizedProviderId,
+        reviewId: normalizedReviewId,
         clientId: review.clientId,
         serviceRequestId: review.serviceRequestId,
-        serviceSlug: input.serviceSlug ?? review.serviceSlug,
+        serviceSlug: normalizedInput.serviceSlug ?? review.serviceSlug,
         code,
-        discountPercent: input.discountPercent,
+        discountPercent: normalizedInput.discountPercent,
         status: AutomotiveReviewPromoStatus.Active,
-        expiresAt: new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1_000),
+        expiresAt: new Date(Date.now() + normalizedInput.expiresInDays * 24 * 60 * 60 * 1_000),
         redeemedAt: null,
         redeemedById: null,
     })
@@ -739,16 +788,18 @@ export async function createOwnerAutoCareReviewPromo(owner: UserEntity, provider
         title: 'Сервис предложил решение по отзыву',
         message: `Промокод ${savedPromo.code} даёт скидку ${savedPromo.discountPercent}% на следующий визит.`,
         link: `/profile/reviews?autocarePromo=${savedPromo.code}`,
-        metadata: { domain: 'autocare', reviewId, promoId: savedPromo.id },
+        metadata: { domain: 'autocare', reviewId: normalizedReviewId, promoId: savedPromo.id },
     }, `notification:autocare-review-promo:${savedPromo.id}`)
     return toAutoCareReviewPromoResponse(savedPromo)
 }
 
 export async function redeemAutoCareReviewPromo(client: UserEntity, input: RedeemAutoCareReviewPromoInput): Promise<AutoCareReviewPromoResponse> {
     assertClient(client)
+    const normalizedInput = normalizeAutoCareReviewPromoCode(input?.code)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Promo code is invalid.' })
     return AppDataSource.transaction(async (manager) => {
         const promoRepository = manager.getRepository(AutomotiveReviewPromoEntity)
-        const promo = await promoRepository.findOne({ where: { code: input.code }, lock: { mode: 'pessimistic_write' } })
+        const promo = await promoRepository.findOne({ where: { code: normalizedInput.code }, lock: { mode: 'pessimistic_write' } })
         if (!promo || promo.clientId !== client.id) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Promo code not found.' })
         if (promo.status !== AutomotiveReviewPromoStatus.Active) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This promo code has already been used or revoked.' })
         if (promo.expiresAt <= new Date()) {
@@ -783,12 +834,16 @@ export async function getMyAutoCareReviews(client: UserEntity) {
  */
 export async function createAutoCareReview(client: UserEntity, input: CreateAutoCareReviewInput) {
     assertClient(client)
+    const requestId = normalizeAutoCareReviewUuid(input?.requestId)
+    if (!requestId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service request id must be a valid UUID.' })
+    const reviewContent = input && typeof input === 'object' ? normalizeAutoCareReviewContent(input) : null
+    if (!reviewContent) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review rating or text is invalid.' })
     let review: AutomotiveReviewEntity
     try {
         review = await AppDataSource.transaction(async (manager) => {
             const requestRepository = manager.getRepository(ServiceRequestEntity)
             const request = await requestRepository.findOne({
-                where: { id: input.requestId, clientId: client.id },
+                where: { id: requestId, clientId: client.id },
                 lock: { mode: 'pessimistic_write' },
             })
             if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service request not found.' })
@@ -809,8 +864,8 @@ export async function createAutoCareReview(client: UserEntity, input: CreateAuto
                 providerId: request.providerId,
                 authorName: client.name,
                 vehicleLabel,
-                rating: input.rating,
-                text: input.text,
+                rating: reviewContent.rating,
+                text: reviewContent.text,
                 avatarUrl: client.avatarUrl,
                 photoUrls: [],
                 clientId: client.id,
@@ -833,83 +888,97 @@ export async function createAutoCareReview(client: UserEntity, input: CreateAuto
 
 export async function updateClientAutoCareReview(client: UserEntity, reviewId: string, input: UpdateAutoCareReviewInput) {
     assertClient(client)
+    const normalizedReviewId = normalizeAutoCareReviewUuid(reviewId)
+    if (!normalizedReviewId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review id must be a valid UUID.' })
+    const reviewContent = input && typeof input === 'object' ? normalizeAutoCareReviewContent(input) : null
+    if (!reviewContent) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review rating or text is invalid.' })
     const repository = AppDataSource.getRepository(AutomotiveReviewEntity)
-    const review = await repository.findOneBy({ id: reviewId, clientId: client.id })
+    const review = await repository.findOneBy({ id: normalizedReviewId, clientId: client.id })
     if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
     if (!isReviewEditable(review)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review can only be edited after redeeming a valid service promo code.' })
-    review.rating = input.rating
-    review.text = input.text
+    review.rating = reviewContent.rating
+    review.text = reviewContent.text
     review.status = AutomotiveReviewStatus.Pending
     review.revisionUsedAt = new Date()
     const savedReview = await repository.save(review)
     return toAutoCareReviewResponse(savedReview, { exposeActions: true })
 }
 
-export async function createOwnerAutoCareProvider(owner: UserEntity, input: OwnerAutoCareProviderInput) {
+export async function createOwnerAutoCareProvider(owner: UserEntity, input: unknown) {
+    const normalizedLocationIds = normalizeAutoCareProviderLocationIds(input)
+    if (!normalizedLocationIds) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Market and zone ids must be valid UUIDs.' })
+    const schemaInput = input && typeof input === 'object' && !Array.isArray(input)
+        ? { ...(input as Record<string, unknown>), marketId: normalizedLocationIds.marketId, zoneId: normalizedLocationIds.zoneId }
+        : input
+    const parsedInput = ownerAutoCareProviderSchema.safeParse(schemaInput)
+    if (!parsedInput.success) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider profile payload is invalid.' })
+    const normalizedInput = parsedInput.data
     assertOwner(owner)
-    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: input.marketId })
+    const publicMedia = normalizeAutoCareProviderPublicMediaForWrite(normalizedInput)
+    if (!publicMedia) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider media references are invalid.' })
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: normalizedLocationIds.marketId })
     if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
-    const zone = input.zoneId
-        ? await AppDataSource.getRepository(AutomotiveLocationZoneEntity).findOneBy({ id: input.zoneId, marketId: market.id, active: true })
+    const zone = normalizedLocationIds.zoneId
+        ? await AppDataSource.getRepository(AutomotiveLocationZoneEntity).findOneBy({ id: normalizedLocationIds.zoneId, marketId: market.id, active: true })
         : null
-    if (input.zoneId && !zone) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'The selected service zone does not belong to this market.' })
+    if (normalizedLocationIds.zoneId && !zone) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'The selected service zone does not belong to this market.' })
 
-    const phones = [...new Set((input.phones ?? []).map((phone) => phone.trim()).filter(Boolean))]
-    if (phones.length === 0 && input.phone?.trim()) phones.push(input.phone.trim())
+    const phones = [...new Set((normalizedInput.phones ?? []).map((phone) => phone.trim()).filter(Boolean))]
+    if (phones.length === 0 && normalizedInput.phone?.trim()) phones.push(normalizedInput.phone.trim())
 
     return AppDataSource.transaction(async (manager) => {
         const provider = await manager.getRepository(AutomotiveProviderEntity).save(manager.getRepository(AutomotiveProviderEntity).create({
             ownerId: owner.id,
-            name: input.name,
-            description: input.description ?? null,
+            name: normalizedInput.name,
+            description: normalizedInput.description ?? null,
             status: AutomotiveProviderStatus.Draft,
             verified: false,
-            yearsActive: input.yearsActive,
-            staffCount: input.staffCount,
-            workstationCount: input.workstationCount ?? 0,
-            teamSize: input.teamSize ?? 'small_team',
-            businessType: input.businessType ?? 'company',
-            chatEnabled: input.chatEnabled ?? true,
-            communicationMode: input.communicationMode ?? 'online',
-            responseWindowMinutes: input.responseWindowMinutes ?? 240,
-            responseHours: input.responseHours ?? 'working_hours',
-            phoneBookingEnabled: input.phoneBookingEnabled ?? true,
-            callbackEnabled: input.callbackEnabled ?? true,
-            requestPhotosEnabled: input.requestPhotosEnabled ?? true,
-            publicContactNote: input.publicContactNote ?? null,
-            phone: phones[0] ?? input.phone ?? null,
+            yearsActive: normalizedInput.yearsActive,
+            staffCount: normalizedInput.staffCount,
+            workstationCount: normalizedInput.workstationCount ?? 0,
+            teamSize: normalizedInput.teamSize ?? 'small_team',
+            businessType: normalizedInput.businessType ?? 'company',
+            chatEnabled: normalizedInput.chatEnabled ?? true,
+            communicationMode: normalizedInput.communicationMode ?? 'online',
+            responseWindowMinutes: normalizedInput.responseWindowMinutes ?? 240,
+            responseHours: normalizedInput.responseHours ?? 'working_hours',
+            phoneBookingEnabled: normalizedInput.phoneBookingEnabled ?? true,
+            callbackEnabled: normalizedInput.callbackEnabled ?? true,
+            requestPhotosEnabled: normalizedInput.requestPhotosEnabled ?? true,
+            publicContactNote: normalizedInput.publicContactNote ?? null,
+            phone: phones[0] ?? normalizedInput.phone ?? null,
             phones,
-            email: input.email ?? null,
-            websiteUrl: input.websiteUrl ?? null,
-            metroStation: input.metroStation ?? null,
-            warrantyText: input.warrantyText ?? null,
-            bonusSummary: input.bonusSummary ?? null,
-            logoUrl: input.logoUrl ?? null,
-            coverImageUrl: input.coverImageUrl ?? null,
-            galleryImageUrls: [...new Set(input.galleryImageUrls ?? [])],
-            amenityIds: [...new Set(input.amenityIds)],
-            brandSpecializations: [...new Set(input.brandSpecializations)],
-            isMultibrand: input.isMultibrand,
+            email: normalizedInput.email ?? null,
+            websiteUrl: normalizedInput.websiteUrl ?? null,
+            metroStation: normalizedInput.metroStation ?? null,
+            warrantyText: normalizedInput.warrantyText ?? null,
+            bonusSummary: normalizedInput.bonusSummary ?? null,
+            logoUrl: publicMedia.logoUrl,
+            coverImageUrl: publicMedia.coverImageUrl,
+            galleryImageUrls: publicMedia.galleryImageUrls,
+            amenityIds: [...new Set(normalizedInput.amenityIds)],
+            brandSpecializations: [...new Set(normalizedInput.brandSpecializations)],
+            isMultibrand: normalizedInput.isMultibrand,
         }))
         const location = await manager.getRepository(AutomotiveServiceLocationEntity).save(manager.getRepository(AutomotiveServiceLocationEntity).create({
             providerId: provider.id,
             marketId: market.id,
             zoneId: zone?.id ?? null,
-            address: input.address,
-            hours: input.hours,
-            appointmentCapacity: input.appointmentCapacity ?? Math.max(1, input.workstationCount ?? 1),
-            timezone: input.timezone ?? market.timezone,
-            weeklySchedule: input.weeklySchedule ?? undefined,
-            blackoutDates: input.blackoutDates ?? [],
+            address: normalizedInput.address,
+            hours: normalizedInput.hours,
+            appointmentCapacity: normalizedInput.appointmentCapacity ?? Math.max(1, normalizedInput.workstationCount ?? 1),
+            timezone: normalizedInput.timezone ?? market.timezone,
+            weeklySchedule: normalizedInput.weeklySchedule ?? undefined,
+            blackoutDates: normalizedInput.blackoutDates ?? [],
             latitude: null,
             longitude: null,
         }))
         await ensureDefaultAutoCareResources(manager, {
             providerId: provider.id,
             locationId: location.id,
-            specialists: Math.max(1, input.staffCount),
-            bays: Math.max(1, input.workstationCount ?? input.appointmentCapacity ?? 1),
-            lifts: Math.max(0, input.workstationCount ?? 0),
+            specialists: Math.max(1, normalizedInput.staffCount),
+            bays: Math.max(1, normalizedInput.workstationCount ?? normalizedInput.appointmentCapacity ?? 1),
+            lifts: Math.max(0, normalizedInput.workstationCount ?? 0),
         })
         await manager.getRepository(AutomotiveProviderMembershipEntity).save(manager.getRepository(AutomotiveProviderMembershipEntity).create({
             providerId: provider.id,
@@ -918,39 +987,39 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: Owne
             role: AutomotiveProviderMembershipRole.Owner,
         }))
         await queueProviderMediaModerationEvidence(manager, provider)
-        await queueProviderDocumentModerationEvidence(manager, provider.id, (input.documents ?? []).map((document) => ({
-            label: document.label,
-            reference: document.reference,
-            expiresAt: document.expiresAt ? new Date(document.expiresAt) : null,
-        })))
+        await queueProviderDocumentModerationEvidence(manager, provider.id, normalizedInput.documents ?? [])
 
         return toProviderResponse(provider, location)
     })
 }
 
 export async function getOwnerAutoCareCapacityResources(user: UserEntity, providerId: string, locationId?: string) {
-    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', locationId))) {
+    const normalizedProviderId = normalizeAutoCareCapacityProviderUuid(providerId)
+    const normalizedLocationId = locationId === undefined ? undefined : normalizeAutoCareCapacityProviderUuid(locationId)
+    if (!normalizedProviderId || (locationId !== undefined && !normalizedLocationId)) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and location ids must be valid UUIDs.' })
+    const scopedLocationId = normalizedLocationId ?? undefined
+    if (!(await hasProviderWorkspacePermission(user.id, normalizedProviderId, 'calendar', scopedLocationId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
     }
     // Resolve the effective branch scope before creating default resources. A
     // branch-scoped member must never trigger writes (or even a read) for
     // another branch simply by omitting `locationId` from the list request.
-    const scope = (await getManagedProviderScopes(user.id)).find((item) => item.providerId === providerId)
+    const scope = (await getManagedProviderScopes(user.id)).find((item) => item.providerId === normalizedProviderId)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const visibleLocationIds = scope?.locationIds === null || !scope ? undefined : scope.locationIds
     if (visibleLocationIds && visibleLocationIds.length === 0) return []
     const locations = await locationRepository.find({
-        where: locationId
-            ? { id: locationId, providerId }
+        where: scopedLocationId
+            ? { id: scopedLocationId, providerId: normalizedProviderId }
             : visibleLocationIds
-                ? { providerId, id: In(visibleLocationIds) }
-                : { providerId },
+                ? { providerId: normalizedProviderId, id: In(visibleLocationIds) }
+                : { providerId: normalizedProviderId },
     })
-    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: providerId })
+    const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     if (provider) {
         for (const location of locations) {
             await ensureDefaultAutoCareResources(AppDataSource.manager, {
-                providerId,
+                providerId: normalizedProviderId,
                 locationId: location.id,
                 specialists: Math.max(1, provider.staffCount),
                 bays: Math.max(1, provider.workstationCount || location.appointmentCapacity || 1),
@@ -958,24 +1027,27 @@ export async function getOwnerAutoCareCapacityResources(user: UserEntity, provid
             })
         }
     }
-    const resources = await listAutoCareCapacityResources(AppDataSource.manager, providerId, locationId)
+    const resources = await listAutoCareCapacityResources(AppDataSource.manager, normalizedProviderId, scopedLocationId)
     return resources
         .filter((resource) => !visibleLocationIds || visibleLocationIds.includes(resource.locationId))
         .map(toCapacityResourceResponse)
 }
 
 export async function getOwnerAutoCareCapacityReservations(user: UserEntity, providerId: string, input: { locationId?: string; from?: string; to?: string }) {
-    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', input.locationId))) {
+    const normalizedProviderId = normalizeAutoCareCapacityProviderUuid(providerId)
+    const normalizedInput = normalizeAutoCareCapacityReservationQuery(input)
+    if (!normalizedProviderId || !normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Capacity reservation query is invalid.' })
+    if (!(await hasProviderWorkspacePermission(user.id, normalizedProviderId, 'calendar', normalizedInput.locationId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
     }
-    const from = input.from ? new Date(input.from) : undefined
-    const to = input.to ? new Date(input.to) : undefined
+    const from = normalizedInput.from ? new Date(normalizedInput.from) : undefined
+    const to = normalizedInput.to ? new Date(normalizedInput.to) : undefined
     if (from && Number.isNaN(from.getTime())) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Invalid reservation start range.' })
     if (to && Number.isNaN(to.getTime())) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Invalid reservation end range.' })
     if (from && to && from >= to) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Reservation start must be before its end.' })
-    const reservations = await listAutoCareCapacityReservations(AppDataSource.manager, { providerId, locationId: input.locationId, from, to })
+    const reservations = await listAutoCareCapacityReservations(AppDataSource.manager, { providerId: normalizedProviderId, locationId: normalizedInput.locationId, from, to })
     const scopes = await getManagedProviderScopes(user.id)
-    const scope = scopes.find((item) => item.providerId === providerId)
+    const scope = scopes.find((item) => item.providerId === normalizedProviderId)
     const visible = scope?.locationIds === null || !scope
         ? reservations
         : reservations.filter((reservation) => scope.locationIds?.includes(reservation.locationId))
@@ -983,53 +1055,65 @@ export async function getOwnerAutoCareCapacityReservations(user: UserEntity, pro
 }
 
 export async function createOwnerAutoCareCapacityResource(user: UserEntity, providerId: string, input: AutoCareCapacityResourceInput) {
-    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', input.locationId))) {
+    const normalizedProviderId = normalizeAutoCareCapacityProviderUuid(providerId)
+    const normalizedInput = normalizeAutoCareCapacityResourceInput(input)
+    if (!normalizedProviderId || !normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Capacity resource payload is invalid.' })
+    if (!(await hasProviderWorkspacePermission(user.id, normalizedProviderId, 'calendar', normalizedInput.locationId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
     }
     return AppDataSource.transaction(async (manager) => {
-        const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: input.locationId, providerId })
+        const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: normalizedInput.locationId, providerId: normalizedProviderId })
         if (!location) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Service branch not found.' })
         const repository = manager.getRepository(AutoCareCapacityResourceEntity)
-        const existing = await repository.findOneBy({ providerId, locationId: input.locationId, name: input.name.trim() })
+        const existing = await repository.findOneBy({ providerId: normalizedProviderId, locationId: normalizedInput.locationId, name: normalizedInput.name })
         if (existing) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A resource with this name already exists at the branch.' })
         const resource = await repository.save(repository.create({
-            providerId,
-            locationId: input.locationId,
-            type: input.type,
-            name: input.name.trim(),
-            capacity: input.capacity,
-            active: input.active,
-            metadata: input.metadata ?? {},
+            providerId: normalizedProviderId,
+            locationId: normalizedInput.locationId,
+            type: normalizedInput.type,
+            name: normalizedInput.name,
+            capacity: normalizedInput.capacity,
+            active: normalizedInput.active,
+            metadata: normalizedInput.metadata,
         }))
         return toCapacityResourceResponse(resource)
     })
 }
 
 export async function updateOwnerAutoCareCapacityResource(user: UserEntity, providerId: string, resourceId: string, patch: AutoCareCapacityResourcePatch) {
-    const resource = await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findOneBy({ id: resourceId, providerId })
+    const normalizedProviderId = normalizeAutoCareCapacityProviderUuid(providerId)
+    const normalizedResourceId = normalizeAutoCareCapacityProviderUuid(resourceId)
+    const normalizedPatch = normalizeAutoCareCapacityResourcePatch(patch)
+    if (!normalizedProviderId || !normalizedResourceId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider and resource ids must be valid UUIDs.' })
+    if (!normalizedPatch) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Capacity resource patch is invalid.' })
+    const resource = await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findOneBy({ id: normalizedResourceId, providerId: normalizedProviderId })
     if (!resource) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Capacity resource not found.' })
-    if (!(await hasProviderWorkspacePermission(user.id, providerId, 'calendar', resource.locationId))) {
+    if (!(await hasProviderWorkspacePermission(user.id, normalizedProviderId, 'calendar', resource.locationId))) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service capacity.' })
     }
-    if (patch.name !== undefined) {
-        const duplicate = await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findOneBy({ providerId, locationId: resource.locationId, name: patch.name.trim() })
+    if (normalizedPatch.name !== undefined) {
+        const duplicate = await AppDataSource.getRepository(AutoCareCapacityResourceEntity).findOneBy({ providerId: normalizedProviderId, locationId: resource.locationId, name: normalizedPatch.name })
         if (duplicate && duplicate.id !== resource.id) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A resource with this name already exists at the branch.' })
-        resource.name = patch.name.trim()
+        resource.name = normalizedPatch.name
     }
-    if (patch.type !== undefined) resource.type = patch.type
-    if (patch.capacity !== undefined) resource.capacity = patch.capacity
-    if (patch.active !== undefined) resource.active = patch.active
-    if (patch.metadata !== undefined) resource.metadata = patch.metadata
+    if (normalizedPatch.type !== undefined) resource.type = normalizedPatch.type
+    if (normalizedPatch.capacity !== undefined) resource.capacity = normalizedPatch.capacity
+    if (normalizedPatch.active !== undefined) resource.active = normalizedPatch.active
+    if (normalizedPatch.metadata !== undefined) resource.metadata = normalizedPatch.metadata
     return toCapacityResourceResponse(await AppDataSource.getRepository(AutoCareCapacityResourceEntity).save(resource))
 }
 
 export async function updateOwnerAutoCareCommunicationSettings(owner: UserEntity, providerId: string, input: UpdateAutoCareCommunicationSettingsInput) {
+    const normalizedProviderId = normalizeAutoCareCommunicationProviderUuid(providerId)
+    const normalizedInput = normalizeAutoCareCommunicationSettingsInput(input)
+    if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Communication settings payload is invalid.' })
     assertOwner(owner)
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
-    const provider = await providerRepository.findOneBy({ id: providerId, ownerId: owner.id })
+    const provider = await providerRepository.findOneBy({ id: normalizedProviderId, ownerId: owner.id })
     if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider not found.' })
 
-    Object.assign(provider, input)
+    Object.assign(provider, normalizedInput)
     const savedProvider = await providerRepository.save(provider)
     const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOne({ where: { providerId: savedProvider.id }, order: { id: 'ASC' } })
     if (!location) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Automotive provider has no service location.' })

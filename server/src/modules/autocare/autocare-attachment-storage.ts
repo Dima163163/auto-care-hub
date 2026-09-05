@@ -553,6 +553,28 @@ export function selectAutoCareAttachmentCleanupCandidates(input: {
 }
 
 /**
+ * Produces a redacted, non-destructive orphan report for operator review.
+ * The report intentionally contains object keys and storage tiers only; it
+ * never reads bytes and never calls a delete operation.
+ */
+export function buildAutoCareAttachmentOrphanReport(input: {
+    entries: readonly AutoCareAttachmentObjectEntry[]
+    referencedKeys: readonly string[]
+    cutoff: number
+}) {
+    const candidates = selectAutoCareAttachmentCleanupCandidates(input)
+    return {
+        scanned: input.entries.length,
+        candidates: candidates.map((entry) => ({
+            key: entry.key,
+            storageTier: entry.storageTier,
+            lastModifiedAt: entry.lastModifiedAt,
+        })),
+        destructiveAction: false as const,
+    }
+}
+
+/**
  * A malformed import or a concurrent repair must not let retention delete an
  * object still referenced by another attachment row. An orphan (zero rows) is
  * deliberately left for the orphan sweep, which has its own grace period.

@@ -7,8 +7,6 @@ import type { UserEntity } from '../../entities/user/user.entity.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { normalizeTextWhitespace, stripControlCharacters } from '../../shared/security/string-normalization.js'
-import { normalizeIpAddress } from '../../shared/security/trusted-proxy.js'
 import {
     assertSecurityMitigationTtl,
     getExtendedSecurityMitigationExpiry,
@@ -18,7 +16,13 @@ import {
     cacheSecurityMitigation,
     removeCachedSecurityMitigation,
 } from './security-mitigation-guard.js'
-import type { SecurityMitigationsQuery } from './admin.schemas.js'
+import {
+    normalizeSecurityMitigationCreateInput,
+    normalizeSecurityMitigationExtensionMinutes,
+    normalizeSecurityMitigationIpInput,
+    normalizeSecurityMitigationsQuery,
+    normalizeSecurityMitigationUuid,
+} from './security-mitigation-input-policy.js'
 import {
     assertCursorDate,
     decodeCursor,
@@ -70,9 +74,8 @@ function toSecurityMitigationResponse(
 }
 
 export function normalizeSecurityMitigationIp(value: string) {
-    const displayValue = stripControlCharacters(value).trim()
-    const normalizedValue = normalizeIpAddress(displayValue)
-    if (!normalizedValue || displayValue.length > 64) {
+    const normalized = normalizeSecurityMitigationIpInput(value)
+    if (!normalized) {
         throw new AppError({
             statusCode: 400,
             code: ERROR_CODES.BadRequest,
@@ -80,49 +83,45 @@ export function normalizeSecurityMitigationIp(value: string) {
         })
     }
 
-    return { displayValue, normalizedValue }
-}
-
-function normalizeMitigationReason(value: string) {
-    const reason = normalizeTextWhitespace(stripControlCharacters(value)).trim()
-    if (!reason || reason.length > 500) {
-        throw new AppError({
-            statusCode: 400,
-            code: ERROR_CODES.BadRequest,
-            message: 'Provide a bounded reason for the temporary block.',
-        })
-    }
-    return reason
+    return normalized
 }
 
 export async function getSecurityMitigations(
     user: UserEntity,
-    input: SecurityMitigationsQuery = { status: 'active', kind: SecurityMitigationKind.IpBlock },
+    input: unknown = { status: 'active', kind: SecurityMitigationKind.IpBlock },
 ): Promise<SecurityMitigationResponse[] | CursorPage<SecurityMitigationResponse>> {
     assertSecurityMitigationAccess(user)
-    const isPaginated = isCursorPaginationRequested(input)
-    const limit = getCursorLimit(input.limit)
+    const normalizedInput = normalizeSecurityMitigationsQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Security mitigation query is invalid.',
+        })
+    }
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
     const now = new Date()
     const repository = AppDataSource.getRepository(SecurityMitigationEntity)
     const query = repository.createQueryBuilder('mitigation')
-        .where('mitigation.kind = :kind', { kind: input.kind })
+        .where('mitigation.kind = :kind', { kind: normalizedInput.kind })
 
-    if (input.ipAddress) {
+    if (normalizedInput.ipAddress) {
         query.andWhere('mitigation.value = :value', {
-            value: normalizeSecurityMitigationIp(input.ipAddress).normalizedValue,
+            value: normalizeSecurityMitigationIp(normalizedInput.ipAddress).normalizedValue,
         })
     }
-    if (input.status === 'active') {
+    if (normalizedInput.status === 'active') {
         query.andWhere('mitigation.revokedAt IS NULL')
             .andWhere('mitigation.expiresAt > :now', { now })
-    } else if (input.status === 'expired') {
+    } else if (normalizedInput.status === 'expired') {
         query.andWhere('mitigation.revokedAt IS NULL')
             .andWhere('mitigation.expiresAt <= :now', { now })
     } else {
         query.andWhere('mitigation.revokedAt IS NOT NULL')
     }
-    if (input.cursor) {
-        const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
+    if (normalizedInput.cursor) {
+        const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
         const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
         query.andWhere(
             '(mitigation.createdAt < :cursorCreatedAt OR (mitigation.createdAt = :cursorCreatedAt AND mitigation.id < :cursorId))',
@@ -146,15 +145,20 @@ export async function getSecurityMitigations(
 
 export async function createSecurityMitigation(
     user: UserEntity,
-    input: { kind: SecurityMitigationKind; ipAddress: string; reason: string; ttlMinutes: number },
+    input: unknown,
 ) {
     assertSecurityMitigationAccess(user)
-    if (input.kind !== SecurityMitigationKind.IpBlock) {
-        throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Unsupported security mitigation kind.' })
+    const normalizedInput = normalizeSecurityMitigationCreateInput(input)
+    if (!normalizedInput) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Security mitigation payload is invalid.',
+        })
     }
-    const { displayValue, normalizedValue } = normalizeSecurityMitigationIp(input.ipAddress)
-    const reason = normalizeMitigationReason(input.reason)
-    const ttlMs = assertSecurityMitigationTtl(input.ttlMinutes * 60_000)
+    const { displayValue, normalizedValue } = normalizedInput.ipAddress
+    const reason = normalizedInput.reason
+    const ttlMs = assertSecurityMitigationTtl(normalizedInput.ttlMinutes * 60_000)
     const repository = AppDataSource.getRepository(SecurityMitigationEntity)
     const now = new Date()
     const existing = await repository.createQueryBuilder('mitigation')
@@ -167,7 +171,7 @@ export async function createSecurityMitigation(
     }
 
     const mitigation = await repository.save(repository.create({
-        kind: input.kind,
+        kind: normalizedInput.kind,
         value: normalizedValue,
         displayValue,
         reason,
@@ -180,10 +184,18 @@ export async function createSecurityMitigation(
     return toSecurityMitigationResponse(mitigation, now.getTime())
 }
 
-export async function revokeSecurityMitigation(user: UserEntity, id: string) {
+export async function revokeSecurityMitigation(user: UserEntity, id: unknown) {
     assertSecurityMitigationAccess(user)
+    const normalizedId = normalizeSecurityMitigationUuid(id)
+    if (!normalizedId) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Security mitigation id must be a valid UUID.',
+        })
+    }
     const repository = AppDataSource.getRepository(SecurityMitigationEntity)
-    const mitigation = await repository.findOne({ where: { id } })
+    const mitigation = await repository.findOne({ where: { id: normalizedId } })
     if (!mitigation) {
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Security mitigation not found.' })
     }
@@ -198,16 +210,25 @@ export async function revokeSecurityMitigation(user: UserEntity, id: string) {
 
 export async function extendSecurityMitigation(
     user: UserEntity,
-    id: string,
-    extensionMinutes: number,
+    id: unknown,
+    extensionMinutes: unknown,
 ) {
     assertSecurityMitigationAccess(user)
-    const extensionMs = assertSecurityMitigationTtl(extensionMinutes * 60_000)
+    const normalizedId = normalizeSecurityMitigationUuid(id)
+    const normalizedExtensionMinutes = normalizeSecurityMitigationExtensionMinutes(extensionMinutes)
+    if (!normalizedId || normalizedExtensionMinutes === null) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: 'Security mitigation extension input is invalid.',
+        })
+    }
+    const extensionMs = assertSecurityMitigationTtl(normalizedExtensionMinutes * 60_000)
     const now = new Date()
     const mitigation = await AppDataSource.transaction(async (manager) => {
         const repository = manager.getRepository(SecurityMitigationEntity)
         const current = await repository.findOne({
-            where: { id },
+            where: { id: normalizedId },
             lock: { mode: 'pessimistic_write' },
         })
         if (!current) {

@@ -15,11 +15,7 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { toOwnerClient } from './users.mappers.js'
 import { toPublicUser } from '../auth/public-user.js'
 import { assertNotificationPreferenceMutation } from '../notifications/notification-preference-mutation.js'
-import {
-    normalizePreferredCategories,
-    normalizePreferredCity,
-    normalizeUserLocale,
-} from './user-preferences-policy.js'
+import { normalizeUserPreferencesInput } from './user-preferences-policy.js'
 import type { SupportedLocale } from '../../config/i18n.js'
 import { getOwnerClientListLimit } from './user-list-policy.js'
 
@@ -35,40 +31,44 @@ export async function updateUserPreferences(
     user: UserEntity,
     input: UpdateUserPreferencesInput
 ) {
+    const normalizedInput = normalizeUserPreferencesInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'User preferences are invalid.' })
+    }
     const userRepository = AppDataSource.getRepository(UserEntity)
-    const preferredCity = normalizePreferredCity(input.preferredCity)
-    const preferredCategories = input.preferredCategories === undefined
+    const preferredCity = normalizedInput.preferredCity
+    const preferredCategories = normalizedInput.preferredCategories === undefined
         ? undefined
-        : normalizePreferredCategories(input.preferredCategories)
-    const locale = normalizeUserLocale(input.locale)
+        : normalizedInput.preferredCategories
+    const locale = normalizedInput.locale
 
     const notificationMutation = Object.fromEntries(
         Object.entries({
-            emailNotifications: input.emailNotifications,
-            bookingEmailNotifications: input.bookingEmailNotifications,
+            emailNotifications: normalizedInput.emailNotifications,
+            bookingEmailNotifications: normalizedInput.bookingEmailNotifications,
         }).filter(([, value]) => value !== undefined),
     )
     if (Object.keys(notificationMutation).length > 0) {
         assertNotificationPreferenceMutation(notificationMutation)
     }
 
-    if (input.emailNotifications !== undefined) {
-        user.emailNotifications = input.emailNotifications
+    if (normalizedInput.emailNotifications !== undefined) {
+        user.emailNotifications = normalizedInput.emailNotifications
     }
 
-    if (input.bookingEmailNotifications !== undefined) {
-        user.bookingEmailNotifications = input.bookingEmailNotifications
+    if (normalizedInput.bookingEmailNotifications !== undefined) {
+        user.bookingEmailNotifications = normalizedInput.bookingEmailNotifications
     }
 
-    if (input.preferredCity !== undefined) {
+    if (normalizedInput.preferredCity !== undefined) {
         user.preferredCity = preferredCity ?? null
     }
 
-    if (input.preferredCategories !== undefined) {
+    if (normalizedInput.preferredCategories !== undefined) {
         user.preferredCategories = preferredCategories ?? []
     }
 
-    if (input.locale !== undefined) {
+    if (normalizedInput.locale !== undefined) {
         user.locale = locale ?? null
     }
 

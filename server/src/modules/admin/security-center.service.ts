@@ -40,6 +40,10 @@ import { normalizeTextWhitespace } from '../../shared/security/string-normalizat
 import { sanitizeLogMetadata } from '../../shared/observability/sensitive-data.js'
 import { buildSecurityCenterAnalytics } from './security-center-analytics.js'
 import { boundAuditCsvCell } from './audit-export-policy.js'
+import {
+    normalizeSecurityCenterStatusMutation,
+    normalizeSecurityCenterUuid,
+} from './security-center-input-policy.js'
 
 const SUMMARY_SAMPLE_LIMIT = 2_000
 const RECENT_EVENT_LIMIT = 12
@@ -165,6 +169,22 @@ function assertSecurityCenterReader(user: UserEntity) {
         code: ERROR_CODES.Forbidden,
         message: 'Only super admin can access the security center.',
     })
+}
+
+function requireSecurityCenterUuid(value: unknown) {
+    const normalized = normalizeSecurityCenterUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Security center identifier must be a valid UUID.' })
+    }
+    return normalized
+}
+
+function requireSecurityCenterStatusMutation(status: unknown, operatorNote: unknown, assigneeId: unknown) {
+    const normalized = normalizeSecurityCenterStatusMutation({ status, operatorNote, assigneeId })
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Security event status mutation is invalid.' })
+    }
+    return normalized
 }
 
 function getLatestActions(actions: SecurityEventActionEntity[]) {
@@ -400,9 +420,10 @@ export function getSecurityCenterExportHeaders(date: string) {
     } as const
 }
 
-export async function getSecurityCenterEvent(user: UserEntity, id: string) {
+export async function getSecurityCenterEvent(user: UserEntity, id: unknown) {
     assertSecurityCenterReader(user)
-    const event = await AppDataSource.getRepository(SecurityEventEntity).findOne({ where: { id } })
+    const normalizedEventId = requireSecurityCenterUuid(id)
+    const event = await AppDataSource.getRepository(SecurityEventEntity).findOne({ where: { id: normalizedEventId } })
     if (!event) {
         throw new AppError({
             statusCode: 404,
@@ -421,13 +442,15 @@ export async function getSecurityCenterEvent(user: UserEntity, id: string) {
 
 export async function updateSecurityCenterEventStatus(
     user: UserEntity,
-    id: string,
-    status: SecurityEventActionStatus,
-    operatorNote?: string,
-    assigneeId?: string | null,
+    id: unknown,
+    status: unknown,
+    operatorNote?: unknown,
+    assigneeId?: unknown,
 ) {
     assertSecurityCenterReader(user)
-    const event = await AppDataSource.getRepository(SecurityEventEntity).findOne({ where: { id } })
+    const normalizedEventId = requireSecurityCenterUuid(id)
+    const normalizedMutation = requireSecurityCenterStatusMutation(status, operatorNote, assigneeId)
+    const event = await AppDataSource.getRepository(SecurityEventEntity).findOne({ where: { id: normalizedEventId } })
     if (!event) {
         throw new AppError({
             statusCode: 404,
@@ -438,12 +461,12 @@ export async function updateSecurityCenterEventStatus(
 
     const actionRepository = AppDataSource.getRepository(SecurityEventActionEntity)
     const previousAction = await actionRepository.findOne({
-        where: { securityEventId: id },
+        where: { securityEventId: normalizedEventId },
         order: { createdAt: 'DESC', id: 'DESC' },
     })
-    const resolvedAssigneeId = assigneeId === undefined
+    const resolvedAssigneeId = normalizedMutation.assigneeId === undefined
         ? previousAction?.assigneeId ?? null
-        : assigneeId
+        : normalizedMutation.assigneeId
     if (resolvedAssigneeId) {
         const assignee = await AppDataSource.getRepository(UserEntity).findOne({
             where: { id: resolvedAssigneeId },
@@ -459,11 +482,11 @@ export async function updateSecurityCenterEventStatus(
     }
 
     const action = await actionRepository.save(actionRepository.create({
-        securityEventId: id,
+        securityEventId: normalizedEventId,
         actorId: user.id,
-        status,
+        status: normalizedMutation.status,
         assigneeId: resolvedAssigneeId,
-        operatorNote: normalizeSecurityCenterOperatorNote(operatorNote),
+        operatorNote: normalizedMutation.operatorNote,
     }))
 
     return toSecurityCenterEventResponse(event, action)
@@ -471,10 +494,11 @@ export async function updateSecurityCenterEventStatus(
 
 export async function revokeSecurityCenterUserSessions(
     user: UserEntity,
-    targetUserId: string,
+    targetUserId: unknown,
 ): Promise<SecurityCenterSessionRevocationResponse> {
     assertSecurityCenterReader(user)
-    if (user.id === targetUserId) {
+    const normalizedTargetUserId = normalizeSecurityCenterUuid(targetUserId)
+    if (user.id === targetUserId || (normalizedTargetUserId !== null && user.id.toLowerCase() === normalizedTargetUserId)) {
         throw new AppError({
             statusCode: 409,
             code: ERROR_CODES.Conflict,
@@ -482,8 +506,9 @@ export async function revokeSecurityCenterUserSessions(
         })
     }
 
+    const targetId = normalizedTargetUserId ?? requireSecurityCenterUuid(targetUserId)
     const target = await AppDataSource.getRepository(UserEntity).findOne({
-        where: { id: targetUserId },
+        where: { id: targetId },
         select: { id: true },
     })
     if (!target) {

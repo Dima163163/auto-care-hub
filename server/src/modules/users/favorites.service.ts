@@ -11,6 +11,7 @@ import type { PublicCabinet } from '../cabinets/cabinets.types.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
 import {
     MAX_FAVORITES_PER_USER,
+    normalizeFavoriteCabinetId,
     normalizeFavoriteCabinetIds,
 } from './favorites-policy.js'
 
@@ -62,10 +63,12 @@ export async function getFavoriteCabinets(user: UserEntity): Promise<FavoriteCab
 }
 
 export async function addFavoriteCabinet(user: UserEntity, cabinetId: string) {
-    const cabinet = await getActiveCabinet(cabinetId)
+    const normalizedCabinetId = normalizeFavoriteCabinetId(cabinetId)
+    if (!normalizedCabinetId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Favorite cabinet id is invalid.' })
+    const cabinet = await getActiveCabinet(normalizedCabinetId)
     const repository = AppDataSource.getRepository(FavoriteCabinetEntity)
     await repository.upsert(
-        { userId: user.id, cabinetId },
+        { userId: user.id, cabinetId: normalizedCabinetId },
         ['userId', 'cabinetId'],
     )
 
@@ -75,16 +78,23 @@ export async function addFavoriteCabinet(user: UserEntity, cabinetId: string) {
 }
 
 export async function removeFavoriteCabinet(user: UserEntity, cabinetId: string) {
+    const normalizedCabinetId = normalizeFavoriteCabinetId(cabinetId)
+    if (!normalizedCabinetId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Favorite cabinet id is invalid.' })
     await AppDataSource.getRepository(FavoriteCabinetEntity).delete({
         userId: user.id,
-        cabinetId,
+        cabinetId: normalizedCabinetId,
     })
 
     return { success: true as const }
 }
 
 export async function syncFavoriteCabinets(user: UserEntity, cabinetIds: string[]) {
-    const uniqueIds = normalizeFavoriteCabinetIds(cabinetIds)
+    let uniqueIds: string[]
+    try {
+        uniqueIds = normalizeFavoriteCabinetIds(cabinetIds)
+    } catch {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Favorite cabinet ids are invalid.' })
+    }
 
     if (uniqueIds.length === 0) {
         return { items: [] }

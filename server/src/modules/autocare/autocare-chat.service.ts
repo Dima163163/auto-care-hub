@@ -29,13 +29,15 @@ import type {
     AutoCareServiceAttachmentResponse,
     AutoCareServiceMessageResponse,
     CreateAutoCareChatInput,
-    CreateAutoCareChatMessageInput,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, resolveAutoCareAttachmentContentType } from './attachment-content.js'
+import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
 import { assertAutoCareAttachmentObjectKeyOwnedBy, createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
-import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
+import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit, normalizeCursorPaginationInput } from '../../shared/http/cursor-pagination.js'
+import { normalizeAutoCareChatMessageInput } from './message-content-policy.js'
+import { normalizeAutoCareChatBlockInput, normalizeAutoCareChatReportDecision, normalizeAutoCareChatReportInput, normalizeAutoCareChatReportStatus, normalizeAutoCareChatReportUuid } from './chat-moderation-policy.js'
+import { normalizeAutoCareChatInput, normalizeAutoCareChatUuid } from './chat-input-policy.js'
 
 function fail(statusCode: number, message: string): never {
     const code = statusCode === 404 ? ERROR_CODES.NotFound : statusCode === 409 ? ERROR_CODES.Conflict : statusCode === 400 ? ERROR_CODES.BadRequest : ERROR_CODES.Forbidden
@@ -127,10 +129,23 @@ async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEn
 }
 
 async function getThread(user: UserEntity, chatId: string) {
-    const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: chatId })
+    const normalizedChatId = normalizeAutoCareChatUuid(chatId)
+    if (!normalizedChatId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat id must be a valid UUID.' })
+    const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: normalizedChatId })
     if (!thread) fail(404, 'Chat not found.')
     await assertThreadAccess(user, thread)
     return thread
+}
+
+/**
+ * Lightweight access check for long-lived realtime connections. Keep this
+ * separate from getAutoCareChat: the latter hydrates messages and marks them
+ * as read, which is not safe to repeat for every WebSocket event.
+ */
+export async function assertAutoCareChatRealtimeAccess(user: UserEntity, chatId: string) {
+    const thread = await getThread(user, chatId)
+    await assertChatMessagingAllowed(user, thread)
+    return true
 }
 
 async function chatParticipantIds(thread: AutoCareChatThreadEntity) {
@@ -208,32 +223,34 @@ export async function getMyAutoCareChats(user: UserEntity) {
 }
 
 export async function createAutoCareChat(user: UserEntity, input: CreateAutoCareChatInput) {
+    const normalizedInput = normalizeAutoCareChatInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat input is invalid.' })
     const repository = AppDataSource.getRepository(AutoCareChatThreadEntity)
-    if (input.type === 'provider_inquiry') {
+    if (normalizedInput.type === 'provider_inquiry') {
         assertRole(user, [UserRole.Client], 'Only clients can ask a service a question.')
-        if (!input.providerId) fail(400, 'A provider is required for a service question.')
-        const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId, status: AutomotiveProviderStatus.Active })
+        if (!normalizedInput.providerId) fail(400, 'A provider is required for a service question.')
+        const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedInput.providerId, status: AutomotiveProviderStatus.Active })
         if (!provider) fail(404, 'Automotive provider not found.')
         if (!provider.chatEnabled) fail(409, 'This service currently accepts questions by phone or request form, not in chat.')
         const existing = await repository.findOneBy({ type: AutoCareChatThreadType.ProviderInquiry, providerId: provider.id, clientId: user.id, status: AutoCareChatThreadStatus.Open })
         if (existing) return toThreadResponse(user, existing)
-        const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.ProviderInquiry, providerId: provider.id, clientId: user.id, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
+        const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.ProviderInquiry, providerId: provider.id, clientId: user.id, createdById: user.id, subject: normalizedInput.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
         return toThreadResponse(user, thread)
     }
-    if (input.type === 'support') {
-        const managesProvider = input.providerId
-            ? (await getManagedProviderPermissionScopes(user.id, 'chats')).some((scope) => scope.providerId === input.providerId)
+    if (normalizedInput.type === 'support') {
+        const managesProvider = normalizedInput.providerId
+            ? (await getManagedProviderPermissionScopes(user.id, 'chats')).some((scope) => scope.providerId === normalizedInput.providerId)
             : false
         if (user.role !== UserRole.Client && !managesProvider) fail(403, 'Only clients and service workspace members can open a support chat.')
-        if (input.providerId) {
-            const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: input.providerId })
+        if (normalizedInput.providerId) {
+            const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedInput.providerId })
             if (!provider || !managesProvider) fail(403, 'You do not manage this service.')
         }
         const clientId = user.role === UserRole.Client ? user.id : null
         const existing = await repository.findOne({
             where: {
                 type: AutoCareChatThreadType.Support,
-                providerId: input.providerId ?? IsNull(),
+                providerId: normalizedInput.providerId ?? IsNull(),
                 clientId: clientId ?? IsNull(),
                 createdById: user.id,
                 status: AutoCareChatThreadStatus.Open,
@@ -241,19 +258,21 @@ export async function createAutoCareChat(user: UserEntity, input: CreateAutoCare
             order: { updatedAt: 'DESC' },
         })
         if (existing) return toThreadResponse(user, existing)
-        const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.Support, providerId: input.providerId ?? null, clientId, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
+        const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.Support, providerId: normalizedInput.providerId ?? null, clientId, createdById: user.id, subject: normalizedInput.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
         return toThreadResponse(user, thread)
     }
     assertRole(user, [UserRole.Admin, UserRole.SuperAdmin], 'Only administrators can escalate a platform question.')
-    const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.AdminEscalation, providerId: null, clientId: null, createdById: user.id, subject: input.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
+    const thread = await repository.save(repository.create({ type: AutoCareChatThreadType.AdminEscalation, providerId: null, clientId: null, createdById: user.id, subject: normalizedInput.subject, status: AutoCareChatThreadStatus.Open, lastMessageAt: null }))
     return toThreadResponse(user, thread)
 }
 
 export async function getAutoCareChat(user: UserEntity, chatId: string, input: { cursor?: string; beforeCursor?: string; limit?: number } = {}): Promise<AutoCareChatConversationResponse> {
+    const normalizedInput = normalizeCursorPaginationInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat pagination query is invalid.' })
     const thread = await getThread(user, chatId)
-    const limit = getCursorLimit(input.limit)
-    const cursor = input.cursor ? decodeCursor(input.cursor, ['createdAt', 'id']) : null
-    const beforeCursor = input.beforeCursor ? decodeCursor(input.beforeCursor, ['createdAt', 'id']) : null
+    const limit = getCursorLimit(normalizedInput.limit)
+    const cursor = normalizedInput.cursor ? decodeCursor(normalizedInput.cursor, ['createdAt', 'id']) : null
+    const beforeCursor = normalizedInput.beforeCursor ? decodeCursor(normalizedInput.beforeCursor, ['createdAt', 'id']) : null
     const cursorCreatedAt = cursor ? assertCursorDate(cursor, 'createdAt') : null
     const beforeCursorCreatedAt = beforeCursor ? assertCursorDate(beforeCursor, 'createdAt') : null
     const messageWhere = thread.requestId ? '(message.threadId = :threadId OR message.requestId = :requestId)' : 'message.threadId = :threadId'
@@ -303,14 +322,17 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
     }
 }
 
-export async function createAutoCareChatMessage(user: UserEntity, chatId: string, input: CreateAutoCareChatMessageInput) {
+export async function createAutoCareChatMessage(user: UserEntity, chatId: string, input: unknown) {
+    const normalizedInput = normalizeAutoCareChatMessageInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Message body is invalid.' })
+    const body = normalizedInput.body
     const thread = await getThread(user, chatId)
     if (thread.status === AutoCareChatThreadStatus.Closed) fail(409, 'This chat is closed.')
     await assertChatMessagingAllowed(user, thread)
     const provider = await providerForThread(thread)
     const recipientId = thread.clientId === user.id ? provider?.ownerId : thread.clientId
     const now = new Date()
-    const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({ threadId: thread.id, requestId: thread.requestId, senderId: user.id, kind: ServiceMessageKind.Text, body: input.body, offer: null, deliveredAt: recipientId ? now : null, readAt: null }))
+    const message = await AppDataSource.getRepository(ServiceMessageEntity).save(AppDataSource.getRepository(ServiceMessageEntity).create({ threadId: thread.id, requestId: thread.requestId, senderId: user.id, kind: ServiceMessageKind.Text, body, offer: null, deliveredAt: recipientId ? now : null, readAt: null }))
     thread.lastMessageAt = now
     await AppDataSource.getRepository(AutoCareChatThreadEntity).save(thread)
     const result = messageResponse(message)
@@ -378,6 +400,8 @@ function blockResponse(block: AutoCareChatBlockEntity): AutoCareChatBlockRespons
 }
 
 export async function createAutoCareChatReport(user: UserEntity, chatId: string, input: CreateAutoCareChatReportInput) {
+    const normalizedInput = normalizeAutoCareChatReportInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat report is invalid.' })
     const thread = await getThread(user, chatId)
     const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
     const existing = await reports.findOneBy({ threadId: thread.id, reporterId: user.id })
@@ -388,8 +412,8 @@ export async function createAutoCareChatReport(user: UserEntity, chatId: string,
         threadId: thread.id,
         reporterId: user.id,
         reportedUserId,
-        category: input.category,
-        description: input.description?.trim() || null,
+        category: normalizedInput.category,
+        description: normalizedInput.description,
         status: AutoCareChatReportStatus.Pending,
         reviewedById: null,
         resolutionReason: null,
@@ -399,23 +423,28 @@ export async function createAutoCareChatReport(user: UserEntity, chatId: string,
 }
 
 export async function createAutoCareChatBlock(user: UserEntity, chatId: string, blockedUserId?: string, reason?: string | null) {
+    const normalizedInput = normalizeAutoCareChatBlockInput(blockedUserId, reason)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat block is invalid.' })
     const thread = await getThread(user, chatId)
     const participants = await chatParticipantIds(thread)
-    const target = blockedUserId ?? [...participants].find((id) => id !== user.id)
+    const target = normalizedInput.blockedUserId ?? [...participants].find((id) => id !== user.id)
     if (!target || target === user.id || !participants.has(target)) fail(400, 'The blocked user must be another chat participant.')
     const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
     const existing = await blocks.findOneBy({ threadId: thread.id, blockerId: user.id, blockedUserId: target })
     const block = existing
-        ? await blocks.save({ ...existing, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || existing.reason, revokedAt: null })
-        : await blocks.save(blocks.create({ threadId: thread.id, blockerId: user.id, blockedUserId: target, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || null, revokedAt: null }))
+        ? await blocks.save({ ...existing, status: AutoCareChatBlockStatus.Active, reason: normalizedInput.reason || existing.reason, revokedAt: null })
+        : await blocks.save(blocks.create({ threadId: thread.id, blockerId: user.id, blockedUserId: target, status: AutoCareChatBlockStatus.Active, reason: normalizedInput.reason, revokedAt: null }))
     return blockResponse(block)
 }
 
 export async function revokeAutoCareChatBlock(user: UserEntity, chatId: string, blockId: string) {
-    const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: chatId })
+    const normalizedChatId = normalizeAutoCareChatUuid(chatId)
+    const normalizedBlockId = normalizeAutoCareChatUuid(blockId)
+    if (!normalizedChatId || !normalizedBlockId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat and block ids must be valid UUIDs.' })
+    const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: normalizedChatId })
     if (!thread) fail(404, 'Chat not found.')
     const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
-    const block = await blocks.findOneBy({ id: blockId, threadId: chatId })
+    const block = await blocks.findOneBy({ id: normalizedBlockId, threadId: normalizedChatId })
     if (!block) fail(404, 'Chat block not found.')
     if (![UserRole.Admin, UserRole.SuperAdmin].includes(user.role) && block.blockerId !== user.id) fail(403, 'You can only revoke your own chat block.')
     block.status = AutoCareChatBlockStatus.Revoked
@@ -425,8 +454,10 @@ export async function revokeAutoCareChatBlock(user: UserEntity, chatId: string, 
 
 export async function listAdminAutoCareChatReports(user: UserEntity, status?: AutoCareChatReportStatus) {
     assertRole(user, [UserRole.Admin, UserRole.SuperAdmin], 'Only administrators can review chat reports.')
+    const normalizedStatus = status === undefined ? undefined : normalizeAutoCareChatReportStatus(status)
+    if (status !== undefined && !normalizedStatus) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat report status is invalid.' })
     const reports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({
-        where: status ? { status } : undefined,
+        where: normalizedStatus ? { status: normalizedStatus } : undefined,
         order: { createdAt: 'DESC' },
         take: 100,
     })
@@ -435,22 +466,26 @@ export async function listAdminAutoCareChatReports(user: UserEntity, status?: Au
 
 export async function decideAdminAutoCareChatReport(user: UserEntity, reportId: string, status: AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, reason?: string | null, blockUser = false) {
     assertRole(user, [UserRole.Admin, UserRole.SuperAdmin], 'Only administrators can review chat reports.')
+    const normalizedReportId = normalizeAutoCareChatReportUuid(reportId)
+    if (!normalizedReportId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat report id must be a valid UUID.' })
+    const normalizedInput = normalizeAutoCareChatReportDecision(status, reason, blockUser)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat report decision is invalid.' })
     const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
-    const report = await reports.findOneBy({ id: reportId })
+    const report = await reports.findOneBy({ id: normalizedReportId })
     if (!report) fail(404, 'Chat report not found.')
     if (report.status !== AutoCareChatReportStatus.Pending) return reportResponse(report)
-    report.status = status
+    report.status = normalizedInput.status
     report.reviewedById = user.id
-    report.resolutionReason = reason?.trim() || null
+    report.resolutionReason = normalizedInput.reason
     report.reviewedAt = new Date()
     const result = await reports.save(report)
-    if (blockUser && report.reportedUserId) {
+    if (normalizedInput.blockUser && report.reportedUserId) {
         const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
         const existing = await blocks.findOneBy({ threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId })
         if (existing) {
-            await blocks.save({ ...existing, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || 'Moderation decision', revokedAt: null })
+            await blocks.save({ ...existing, status: AutoCareChatBlockStatus.Active, reason: normalizedInput.reason || 'Moderation decision', revokedAt: null })
         } else {
-            await blocks.save(blocks.create({ threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId, status: AutoCareChatBlockStatus.Active, reason: reason?.trim() || 'Moderation decision', revokedAt: null }))
+            await blocks.save(blocks.create({ threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId, status: AutoCareChatBlockStatus.Active, reason: normalizedInput.reason || 'Moderation decision', revokedAt: null }))
         }
     }
     return reportResponse(result)
@@ -470,11 +505,13 @@ export async function markAutoCareChatRead(user: UserEntity, chatId: string) {
 }
 
 export async function createAutoCareChatAttachment(user: UserEntity, chatId: string, input: { fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }) {
+    const normalizedInput = normalizeAutoCareAttachmentInput(input)
+    if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Attachment payload is invalid.' })
     const thread = await getThread(user, chatId)
-    const rawContent = decodeAutoCareAttachment(input)
-    const content = await normalizeAutoCareAttachment(rawContent, input.contentType)
+    const rawContent = decodeAutoCareAttachment(normalizedInput)
+    const content = await normalizeAutoCareAttachment(rawContent, normalizedInput.contentType)
     const objectKey = createAutoCareAttachmentObjectKey('chats', thread.id, randomUUID())
-    await saveAutoCareAttachmentObject(objectKey, content, input.contentType)
+    await saveAutoCareAttachmentObject(objectKey, content, normalizedInput.contentType)
     try {
         const attachment = await AppDataSource.transaction(async (manager) => {
             const lockedThread = await manager.getRepository(AutoCareChatThreadEntity).findOne({ where: { id: thread.id }, lock: { mode: 'pessimistic_write' } })
@@ -490,7 +527,7 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
                 existingBytes: Number(quota?.bytes ?? 0),
                 incomingBytes: content.length,
             })
-            return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey, contentType: input.contentType, bytes: content.length, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
+            return manager.getRepository(ServiceAttachmentEntity).save(manager.getRepository(ServiceAttachmentEntity).create({ threadId: lockedThread.id, requestId: lockedThread.requestId, uploadedById: user.id, objectKey, contentType: normalizedInput.contentType, bytes: content.length, checksum: createHash('sha256').update(content).digest('hex'), status: ServiceAttachmentStatus.Ready }))
         })
         const result = attachmentResponse(attachment, thread.id)
         broadcastServiceChat(thread.id, { type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: result })
@@ -503,7 +540,9 @@ export async function createAutoCareChatAttachment(user: UserEntity, chatId: str
 
 export async function getAutoCareChatAttachment(user: UserEntity, chatId: string, attachmentId: string) {
     const thread = await getThread(user, chatId)
-    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { id: attachmentId, requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { id: attachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, bytes: true, checksum: true } })
+    const normalizedAttachmentId = normalizeAutoCareChatUuid(attachmentId)
+    if (!normalizedAttachmentId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Chat attachment id must be a valid UUID.' })
+    const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: thread.requestId ? [{ id: normalizedAttachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { id: normalizedAttachmentId, requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { id: normalizedAttachmentId, threadId: thread.id, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, bytes: true, checksum: true } })
     if (!attachment) fail(404, 'Chat attachment not found.')
     assertAutoCareAttachmentObjectKeyOwnedBy(attachment.objectKey, [
         { scope: 'chats', parentId: thread.id },
@@ -520,7 +559,9 @@ export async function getAutoCareChatAttachment(user: UserEntity, chatId: string
 }
 
 export async function getAutoCareChatThreadForRequest(user: UserEntity, requestId: string) {
-    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: requestId })
+    const normalizedRequestId = normalizeAutoCareChatUuid(requestId)
+    if (!normalizedRequestId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service request id must be a valid UUID.' })
+    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: normalizedRequestId })
     if (!request) fail(404, 'Service request not found.')
     if (request.clientId !== user.id) {
         const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })

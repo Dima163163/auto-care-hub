@@ -54,8 +54,15 @@ import {
     assertBookingDateRange,
     normalizeBookingComment,
     normalizeBookingCancellationReason,
-    normalizeBookingIdempotencyKey,
+    normalizeBookingDate,
+    normalizeBookingListQuery,
     normalizeBookingOwnerNote,
+    normalizeBookingRescheduleInput,
+    normalizeBookingRescheduleResolutionInput,
+    normalizeBookingStatus,
+    normalizeClientBookingCreationInput,
+    normalizeOwnerBookingCreationInput,
+    normalizeBookingUuid,
 } from './booking-input-policy.js'
 import { assertBookingTimeRange } from './booking-time-policy.js'
 import { assertBookingRescheduleDecision } from './booking-reschedule-policy.js'
@@ -65,10 +72,13 @@ import {
     recordOwnerActionQueueSnapshot,
     recordOwnerBookingDecision,
     recordOwnerRescheduleDecision,
+    normalizeOwnerActionCenterEvent,
 } from './owner-action-metrics.js'
 import {
     recordClientExperimentCompletion,
     recordClientExperimentEvent,
+    assertClientExperimentActor,
+    normalizeClientExperimentEvent,
     type ClientExperimentEventName,
 } from './client-experiment-metrics.js'
 import { assertBookAgainSource } from './book-again-policy.js'
@@ -79,7 +89,7 @@ type CreateBookingInput = {
     date: string
     startTime: string
     endTime: string
-    comment?: string
+    comment?: string | null
     idempotencyKey?: string
     experiment?: 'book_again'
     sourceBookingId?: string
@@ -97,6 +107,30 @@ type RequestBookingRescheduleInput = Pick<
 type ResolveBookingRescheduleInput = {
     decision: 'accepted' | 'rejected'
     reason?: string
+}
+
+function requireBookingUuid(value: unknown, label: string) {
+    const normalized = normalizeBookingUuid(value)
+    if (!normalized) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: `${label} must be a valid UUID.`,
+        })
+    }
+    return normalized
+}
+
+function requireBookingDate(value: unknown, label: string) {
+    const normalized = normalizeBookingDate(value)
+    if (!normalized) {
+        throw new AppError({
+            statusCode: 422,
+            code: ERROR_CODES.ValidationError,
+            message: `${label} must be a valid date in YYYY-MM-DD format.`,
+        })
+    }
+    return normalized
 }
 
 const activeBookingStatuses = [
@@ -199,8 +233,9 @@ async function recordBookingStatus(
 }
 
 export async function getBookingStatusHistory(user: UserEntity, bookingId: string) {
+    const normalizedBookingId = requireBookingUuid(bookingId, 'Booking id')
     const booking = await AppDataSource.getRepository(BookingEntity).findOne({
-        where: { id: bookingId },
+        where: { id: normalizedBookingId },
         relations: { cabinet: true },
     })
 
@@ -209,7 +244,7 @@ export async function getBookingStatusHistory(user: UserEntity, bookingId: strin
     }
 
     return AppDataSource.getRepository(BookingStatusHistoryEntity).find({
-        where: { bookingId },
+        where: { bookingId: normalizedBookingId },
         order: { createdAt: 'ASC' },
     })
 }
@@ -301,9 +336,10 @@ function isActiveBookingStatus(status: BookingStatus) {
 
 async function assertBookingSlotIsAvailable(
     input: CreateBookingInput,
-    excludeBookingId?: string
+    excludeBookingId?: string,
+    manager: EntityManager = AppDataSource.manager,
 ) {
-    const bookingRepository = AppDataSource.getRepository(BookingEntity)
+    const bookingRepository = manager.getRepository(BookingEntity)
     const { startMinutes, endMinutes } = assertBookingTimeRange(input.startTime, input.endTime)
 
     const query = bookingRepository
@@ -340,25 +376,25 @@ async function assertBookingSlotIsAvailable(
         })
     }
 
-    const service = await AppDataSource.getRepository(ServiceEntity).findOne({
+    const service = await manager.getRepository(ServiceEntity).findOne({
         where: {
             id: input.serviceId,
             cabinetId: input.cabinetId,
             isActive: true,
         },
     })
-    const cabinet = await AppDataSource.getRepository(CabinetEntity).findOneByOrFail({ id: input.cabinetId })
+    const cabinet = await manager.getRepository(CabinetEntity).findOneByOrFail({ id: input.cabinetId })
     const zonedNow = getZonedDateTime(cabinet.timezone)
     const weekday = getWeekday(input.date)
-    const schedule = await AppDataSource.getRepository(CabinetScheduleEntity).findOneBy({
+    const schedule = await manager.getRepository(CabinetScheduleEntity).findOneBy({
         cabinetId: input.cabinetId,
         weekday,
     })
-    const exception = await AppDataSource.getRepository(CabinetScheduleExceptionEntity).findOneBy({
+    const exception = await manager.getRepository(CabinetScheduleExceptionEntity).findOneBy({
         cabinetId: input.cabinetId,
         date: input.date,
     })
-    const blockedPeriods = await AppDataSource.getRepository(CabinetBlockedPeriodEntity).findBy({
+    const blockedPeriods = await manager.getRepository(CabinetBlockedPeriodEntity).findBy({
         cabinetId: input.cabinetId,
         date: input.date,
     })
@@ -388,6 +424,21 @@ async function assertBookingSlotIsAvailable(
             message: 'Selected time slot does not match the service availability rules.',
         })
     }
+}
+
+async function lockBookingCabinet(manager: EntityManager, cabinetId: string) {
+    const cabinet = await manager.getRepository(CabinetEntity).findOne({
+        where: { id: cabinetId, status: CabinetStatus.Active },
+        lock: { mode: 'pessimistic_write' },
+    })
+    if (!cabinet) {
+        throw new AppError({
+            statusCode: 404,
+            code: ERROR_CODES.NotFound,
+            message: 'Cabinet not found.',
+        })
+    }
+    return cabinet
 }
 
 async function getOwnerBookingEntityById(
@@ -592,8 +643,12 @@ export async function createClientBooking(
     frontendOrigin: string
 ) {
     assertClient(client)
-    const comment = normalizeBookingComment(input.comment)
-    const idempotencyKey = normalizeBookingIdempotencyKey(input.idempotencyKey)
+    const normalizedInput = normalizeClientBookingCreationInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Booking creation input is invalid.' })
+    }
+    const comment = normalizeBookingComment(normalizedInput.comment)
+    const idempotencyKey = normalizedInput.idempotencyKey
 
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
     if (idempotencyKey) {
@@ -603,7 +658,7 @@ export async function createClientBooking(
         })
 
         if (existingBooking) {
-            if (!isSameBookingRequest(existingBooking, input, comment)) {
+            if (!isSameBookingRequest(existingBooking, normalizedInput, comment)) {
                 throw idempotencyConflictError()
             }
 
@@ -611,33 +666,31 @@ export async function createClientBooking(
         }
     }
 
-    await assertCabinetAndServiceAreBookable(input.cabinetId, input.serviceId)
+    await assertCabinetAndServiceAreBookable(normalizedInput.cabinetId, normalizedInput.serviceId)
 
-    if (input.experiment === 'book_again') {
-        const sourceBooking = input.sourceBookingId
+    if (normalizedInput.experiment === 'book_again') {
+        const sourceBooking = normalizedInput.sourceBookingId
             ? await bookingRepository.findOne({
-                where: { id: input.sourceBookingId, clientId: client.id },
+                where: { id: normalizedInput.sourceBookingId, clientId: client.id },
                 select: ['status', 'cabinetId', 'serviceId'],
             })
             : null
 
         assertBookAgainSource({
-            ...input,
+            ...normalizedInput,
             sourceStatus: sourceBooking?.status,
             sourceCabinetId: sourceBooking?.cabinetId,
             sourceServiceId: sourceBooking?.serviceId,
         })
     }
 
-    await assertBookingSlotIsAvailable(input)
-
     const booking = bookingRepository.create({
         clientId: client.id,
-        cabinetId: input.cabinetId,
-        serviceId: input.serviceId,
-        date: input.date,
-        startTime: input.startTime,
-        endTime: input.endTime,
+        cabinetId: normalizedInput.cabinetId,
+        serviceId: normalizedInput.serviceId,
+        date: normalizedInput.date,
+        startTime: normalizedInput.startTime,
+        endTime: normalizedInput.endTime,
         status: BookingStatus.Pending,
         comment,
         idempotencyKey: idempotencyKey ?? null,
@@ -646,11 +699,13 @@ export async function createClientBooking(
     let savedBooking: BookingEntity
     try {
         savedBooking = await AppDataSource.transaction(async (manager) => {
+        await lockBookingCabinet(manager, normalizedInput.cabinetId)
+        await assertBookingSlotIsAvailable(normalizedInput, undefined, manager)
         const saved = await saveNewBooking(manager.getRepository(BookingEntity), booking)
         await recordBookingStatus(saved.id, saved.status, client.id, null, manager)
 
         const fullBooking = await getOwnerBookingEntityById(
-            (await manager.getRepository(CabinetEntity).findOne({ where: { id: input.cabinetId } }))!.ownerId,
+            (await manager.getRepository(CabinetEntity).findOne({ where: { id: normalizedInput.cabinetId } }))!.ownerId,
             saved.id,
             manager,
         )
@@ -665,9 +720,9 @@ export async function createClientBooking(
                 toEmail: owner.email,
                 recipientName: owner.name,
                 bookingDetails: {
-                    date: input.date,
-                    startTime: input.startTime,
-                    endTime: input.endTime,
+                    date: normalizedInput.date,
+                    startTime: normalizedInput.startTime,
+                    endTime: normalizedInput.endTime,
                     cabinetTitle: fullBooking.cabinet.title,
                     serviceTitle: fullBooking.service.title,
                 },
@@ -683,9 +738,9 @@ export async function createClientBooking(
                 toEmail: client.email,
                 recipientName: client.name,
                 bookingDetails: {
-                    date: input.date,
-                    startTime: input.startTime,
-                    endTime: input.endTime,
+                    date: normalizedInput.date,
+                    startTime: normalizedInput.startTime,
+                    endTime: normalizedInput.endTime,
                     cabinetTitle: fullBooking.cabinet.title,
                     serviceTitle: fullBooking.service.title,
                 },
@@ -709,7 +764,7 @@ export async function createClientBooking(
             idempotencyKey,
         })
 
-        if (existingBooking && isSameBookingRequest(existingBooking, input, comment)) {
+        if (existingBooking && isSameBookingRequest(existingBooking, normalizedInput, comment)) {
             return toPublicBooking(existingBooking)
         }
 
@@ -722,7 +777,7 @@ export async function createClientBooking(
         })
     }
 
-    recordClientExperimentCompletion(input.experiment)
+    recordClientExperimentCompletion(normalizedInput.experiment)
 
     return toPublicBooking(savedBooking)
 }
@@ -733,39 +788,45 @@ export async function requestClientBookingReschedule(
     input: RequestBookingRescheduleInput
 ) {
     assertClient(client)
-
-    const bookingRepository = AppDataSource.getRepository(BookingEntity)
-    const booking = await bookingRepository
-        .createQueryBuilder('booking')
-        .leftJoinAndSelect('booking.cabinet', 'cabinet')
-        .leftJoinAndSelect('booking.service', 'service')
-        .where('booking.id = :bookingId', { bookingId })
-        .andWhere('booking.clientId = :clientId', { clientId: client.id })
-        .getOne()
-
-    if (!booking) {
-        throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Booking not found.' })
+    const normalizedBookingId = requireBookingUuid(bookingId, 'Booking id')
+    const normalizedInput = normalizeBookingRescheduleInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Booking reschedule input is invalid.' })
     }
-
-    if (![BookingStatus.Pending, BookingStatus.Confirmed].includes(booking.status)) {
-        throw new AppError({
-            statusCode: 409,
-            code: ERROR_CODES.Conflict,
-            message: 'Only active bookings can be rescheduled.',
-        })
-    }
-
-    await assertBookingSlotIsAvailable({
-        cabinetId: booking.cabinetId,
-        serviceId: booking.serviceId,
-        ...input,
-    }, booking.id)
 
     const rescheduleRequest = await AppDataSource.transaction(async (manager) => {
+        const booking = await manager.getRepository(BookingEntity)
+            .createQueryBuilder('booking')
+            .leftJoinAndSelect('booking.cabinet', 'cabinet')
+            .leftJoinAndSelect('booking.service', 'service')
+            .where('booking.id = :bookingId', { bookingId: normalizedBookingId })
+            .andWhere('booking.clientId = :clientId', { clientId: client.id })
+            .setLock('pessimistic_write', undefined, ['booking'])
+            .getOne()
+
+        if (!booking) {
+            throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Booking not found.' })
+        }
+
+        if (![BookingStatus.Pending, BookingStatus.Confirmed].includes(booking.status)) {
+            throw new AppError({
+                statusCode: 409,
+                code: ERROR_CODES.Conflict,
+                message: 'Only active bookings can be rescheduled.',
+            })
+        }
+
+        await lockBookingCabinet(manager, booking.cabinetId)
+        await assertBookingSlotIsAvailable({
+            cabinetId: booking.cabinetId,
+            serviceId: booking.serviceId,
+            ...normalizedInput,
+        }, booking.id, manager)
+
         const requestRepository = manager.getRepository(BookingRescheduleRequestEntity)
         const existingRequest = await requestRepository.findOne({
             where: {
-                bookingId,
+                bookingId: normalizedBookingId,
                 status: BookingRescheduleStatus.Pending,
             },
             lock: { mode: 'pessimistic_write' },
@@ -780,11 +841,11 @@ export async function requestClientBookingReschedule(
         }
 
         const request = await requestRepository.save(requestRepository.create({
-            bookingId,
+            bookingId: normalizedBookingId,
             requestedById: client.id,
-            proposedDate: input.date,
-            proposedStartTime: input.startTime,
-            proposedEndTime: input.endTime,
+            proposedDate: normalizedInput.date,
+            proposedStartTime: normalizedInput.startTime,
+            proposedEndTime: normalizedInput.endTime,
             status: BookingRescheduleStatus.Pending,
             resolvedById: null,
             resolutionReason: null,
@@ -798,13 +859,13 @@ export async function requestClientBookingReschedule(
                 key: 'booking.reschedule.requested.owner',
                 params: {
                     clientName: client.name,
-                    date: input.date,
-                    startTime: input.startTime,
+                    date: normalizedInput.date,
+                    startTime: normalizedInput.startTime,
                     cabinetTitle: booking.cabinet.title,
                 },
             },
-            metadata: { bookingId, rescheduleRequestId: request.id },
-        }, bookingNotificationKey(bookingId, 'reschedule-requested', booking.cabinet.ownerId, request.id), manager)
+            metadata: { bookingId: normalizedBookingId, rescheduleRequestId: request.id },
+        }, bookingNotificationKey(normalizedBookingId, 'reschedule-requested', booking.cabinet.ownerId, request.id), manager)
 
         await createBookingNotification({
             userId: client.id,
@@ -812,12 +873,12 @@ export async function requestClientBookingReschedule(
             template: {
                 key: 'booking.reschedule.requested.client',
                 params: {
-                    date: input.date,
-                    startTime: input.startTime,
+                    date: normalizedInput.date,
+                    startTime: normalizedInput.startTime,
                 },
             },
-            metadata: { bookingId, rescheduleRequestId: request.id },
-        }, bookingNotificationKey(bookingId, 'reschedule-requested', client.id, request.id), manager)
+            metadata: { bookingId: normalizedBookingId, rescheduleRequestId: request.id },
+        }, bookingNotificationKey(normalizedBookingId, 'reschedule-requested', client.id, request.id), manager)
 
         return request
     })
@@ -831,49 +892,59 @@ export async function resolveOwnerBookingReschedule(
     input: ResolveBookingRescheduleInput
 ) {
     assertOwner(owner)
-    const decision = assertBookingRescheduleDecision(input.decision) === 'accepted'
+    const normalizedBookingId = requireBookingUuid(bookingId, 'Booking id')
+    const normalizedInput = normalizeBookingRescheduleResolutionInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Booking reschedule decision is invalid.' })
+    }
+    const decision = assertBookingRescheduleDecision(normalizedInput.decision) === 'accepted'
         ? BookingRescheduleStatus.Accepted
         : BookingRescheduleStatus.Rejected
 
-    const requestRepository = AppDataSource.getRepository(BookingRescheduleRequestEntity)
-    const rescheduleRequest = await requestRepository
-        .createQueryBuilder('request')
-        .leftJoinAndSelect('request.booking', 'booking')
-        .leftJoinAndSelect('booking.cabinet', 'cabinet')
-        .leftJoinAndSelect('booking.service', 'service')
-        .leftJoinAndSelect('booking.client', 'client')
-        .where('request.bookingId = :bookingId', { bookingId })
-        .andWhere('request.status = :status', { status: BookingRescheduleStatus.Pending })
-        .andWhere('cabinet.ownerId = :ownerId', { ownerId: owner.id })
-        .getOne()
-
-    if (!rescheduleRequest) {
-        throw new AppError({
-            statusCode: 404,
-            code: ERROR_CODES.NotFound,
-            message: 'Pending reschedule request not found.',
-        })
+    let resolved: {
+        request: BookingRescheduleRequestEntity
+        booking: BookingEntity
     }
-
-    const booking = rescheduleRequest.booking
-    const previousSlot = `${booking.date} ${booking.startTime.slice(0, 5)}-${booking.endTime.slice(0, 5)}`
-    const proposedSlot = `${rescheduleRequest.proposedDate} ${rescheduleRequest.proposedStartTime.slice(0, 5)}-${rescheduleRequest.proposedEndTime.slice(0, 5)}`
-
-    if (decision === BookingRescheduleStatus.Accepted) {
-        await assertBookingSlotIsAvailable({
-            cabinetId: booking.cabinetId,
-            serviceId: booking.serviceId,
-            date: rescheduleRequest.proposedDate,
-            startTime: rescheduleRequest.proposedStartTime.slice(0, 5),
-            endTime: rescheduleRequest.proposedEndTime.slice(0, 5),
-        }, booking.id)
-    }
-
     try {
-        await AppDataSource.transaction(async (manager) => {
+        resolved = await AppDataSource.transaction(async (manager) => {
+            const rescheduleRequest = await manager.getRepository(BookingRescheduleRequestEntity)
+                .createQueryBuilder('request')
+                .leftJoinAndSelect('request.booking', 'booking')
+                .leftJoinAndSelect('booking.cabinet', 'cabinet')
+                .leftJoinAndSelect('booking.service', 'service')
+                .leftJoinAndSelect('booking.client', 'client')
+                .where('request.bookingId = :bookingId', { bookingId: normalizedBookingId })
+                .andWhere('request.status = :status', { status: BookingRescheduleStatus.Pending })
+                .andWhere('cabinet.ownerId = :ownerId', { ownerId: owner.id })
+                .setLock('pessimistic_write', undefined, ['request', 'booking'])
+                .getOne()
+
+            if (!rescheduleRequest) {
+                throw new AppError({
+                    statusCode: 404,
+                    code: ERROR_CODES.NotFound,
+                    message: 'Pending reschedule request not found.',
+                })
+            }
+
+            const booking = rescheduleRequest.booking
+            await lockBookingCabinet(manager, booking.cabinetId)
+            const previousSlot = `${booking.date} ${booking.startTime.slice(0, 5)}-${booking.endTime.slice(0, 5)}`
+            const proposedSlot = `${rescheduleRequest.proposedDate} ${rescheduleRequest.proposedStartTime.slice(0, 5)}-${rescheduleRequest.proposedEndTime.slice(0, 5)}`
+
+            if (decision === BookingRescheduleStatus.Accepted) {
+                await assertBookingSlotIsAvailable({
+                    cabinetId: booking.cabinetId,
+                    serviceId: booking.serviceId,
+                    date: rescheduleRequest.proposedDate,
+                    startTime: rescheduleRequest.proposedStartTime.slice(0, 5),
+                    endTime: rescheduleRequest.proposedEndTime.slice(0, 5),
+                }, booking.id, manager)
+            }
+
             rescheduleRequest.status = decision
             rescheduleRequest.resolvedById = owner.id
-            rescheduleRequest.resolutionReason = input.reason ?? null
+            rescheduleRequest.resolutionReason = normalizedInput.reason ?? null
             rescheduleRequest.resolvedAt = new Date()
 
             if (decision === BookingRescheduleStatus.Accepted) {
@@ -891,7 +962,7 @@ export async function resolveOwnerBookingReschedule(
                     changedById: owner.id,
                     reason: decision === BookingRescheduleStatus.Accepted
                         ? `Rescheduled from ${previousSlot} to ${proposedSlot}.`
-                        : `Reschedule to ${proposedSlot} rejected${input.reason ? `: ${input.reason}` : '.'}`,
+                        : `Reschedule to ${proposedSlot} rejected${normalizedInput.reason ? `: ${normalizedInput.reason}` : '.'}`,
                 })
             )
 
@@ -909,8 +980,8 @@ export async function resolveOwnerBookingReschedule(
                             accepted ? proposedSlot : previousSlot,
                     },
                 },
-                metadata: { bookingId, rescheduleRequestId: rescheduleRequest.id },
-            }, bookingNotificationKey(bookingId, `reschedule-${decision}`, booking.clientId, rescheduleRequest.id), manager)
+                metadata: { bookingId: normalizedBookingId, rescheduleRequestId: rescheduleRequest.id },
+            }, bookingNotificationKey(normalizedBookingId, `reschedule-${decision}`, booking.clientId, rescheduleRequest.id), manager)
 
             await createBookingNotification({
                 userId: owner.id,
@@ -924,8 +995,10 @@ export async function resolveOwnerBookingReschedule(
                             accepted ? proposedSlot : previousSlot,
                     },
                 },
-                metadata: { bookingId, rescheduleRequestId: rescheduleRequest.id },
-            }, bookingNotificationKey(bookingId, `reschedule-${decision}`, owner.id, rescheduleRequest.id), manager)
+                metadata: { bookingId: normalizedBookingId, rescheduleRequestId: rescheduleRequest.id },
+            }, bookingNotificationKey(normalizedBookingId, `reschedule-${decision}`, owner.id, rescheduleRequest.id), manager)
+
+            return { request: rescheduleRequest, booking }
         })
     } catch (error) {
         if (isBookingSlotContentionError(error)) {
@@ -939,14 +1012,14 @@ export async function resolveOwnerBookingReschedule(
     }
 
     recordOwnerRescheduleDecision({
-        decision: input.decision,
-        createdAt: rescheduleRequest.createdAt,
-        resolvedAt: rescheduleRequest.resolvedAt ?? undefined,
+        decision: normalizedInput.decision,
+        createdAt: resolved.request.createdAt,
+        resolvedAt: resolved.request.resolvedAt ?? undefined,
     })
 
     return {
-        request: toBookingRescheduleRequest(rescheduleRequest),
-        booking: toOwnerBooking(booking),
+        request: toBookingRescheduleRequest(resolved.request),
+        booking: toOwnerBooking(resolved.booking),
     }
 }
 
@@ -1048,10 +1121,14 @@ export async function getClientBookings(
     input?: BookingListQuery,
 ): Promise<ClientBooking[] | CursorPage<ClientBooking>> {
     assertClient(client)
+    const normalizedInput = normalizeBookingListQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Booking list query is invalid.' })
+    }
 
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
-    const isPaginated = isCursorPaginationRequested(input ?? {})
-    const limit = getCursorLimit(input?.limit)
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
 
     const query = bookingRepository
         .createQueryBuilder('booking')
@@ -1060,8 +1137,8 @@ export async function getClientBookings(
         .where('booking.clientId = :clientId', {
             clientId: client.id,
         })
-    applyBookingListFilters(query, input)
-    applyBookingCursor(query, input?.cursor)
+    applyBookingListFilters(query, normalizedInput)
+    applyBookingCursor(query, normalizedInput.cursor)
     query
         .orderBy('booking.date', 'ASC')
         .addOrderBy('booking.startTime', 'ASC')
@@ -1085,6 +1162,7 @@ export async function cancelClientBooking(
     frontendOrigin: string
 ) {
     assertClient(client)
+    const normalizedBookingId = requireBookingUuid(bookingId, 'Booking id')
     const normalizedCancellationReason = normalizeBookingCancellationReason(cancellationReason)
 
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
@@ -1093,7 +1171,7 @@ export async function cancelClientBooking(
         .createQueryBuilder('booking')
         .leftJoinAndSelect('booking.cabinet', 'cabinet')
         .leftJoinAndSelect('booking.service', 'service')
-        .where('booking.id = :bookingId', { bookingId })
+        .where('booking.id = :bookingId', { bookingId: normalizedBookingId })
         .andWhere('booking.clientId = :clientId', { clientId: client.id })
         .getOne()
 
@@ -1122,7 +1200,7 @@ export async function cancelClientBooking(
             .createQueryBuilder('booking')
             .leftJoinAndSelect('booking.cabinet', 'cabinet')
             .leftJoinAndSelect('booking.service', 'service')
-            .where('booking.id = :bookingId', { bookingId })
+            .where('booking.id = :bookingId', { bookingId: normalizedBookingId })
             .andWhere('booking.clientId = :clientId', { clientId: client.id })
             .setLock('pessimistic_write')
             .getOne()
@@ -1206,10 +1284,14 @@ export async function getOwnerBookings(
     input?: BookingListQuery,
 ): Promise<OwnerBooking[] | CursorPage<OwnerBooking>> {
     assertOwner(owner)
+    const normalizedInput = normalizeBookingListQuery(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Booking list query is invalid.' })
+    }
 
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
-    const isPaginated = isCursorPaginationRequested(input ?? {})
-    const limit = getCursorLimit(input?.limit)
+    const isPaginated = isCursorPaginationRequested(normalizedInput)
+    const limit = getCursorLimit(normalizedInput.limit)
 
     const query = bookingRepository
         .createQueryBuilder('booking')
@@ -1217,8 +1299,8 @@ export async function getOwnerBookings(
         .leftJoinAndSelect('booking.cabinet', 'cabinet')
         .leftJoinAndSelect('booking.service', 'service')
         .where('cabinet.ownerId = :ownerId', { ownerId: owner.id })
-    applyBookingListFilters(query, input)
-    applyBookingCursor(query, input?.cursor)
+    applyBookingListFilters(query, normalizedInput)
+    applyBookingCursor(query, normalizedInput.cursor)
     query
         .orderBy('booking.date', 'ASC')
         .addOrderBy('booking.startTime', 'ASC')
@@ -1252,30 +1334,34 @@ export async function createOwnerBooking(
     frontendOrigin: string
 ) {
     assertOwner(owner)
-    const comment = normalizeBookingComment(input.comment)
+    const normalizedInput = normalizeOwnerBookingCreationInput(input)
+    if (!normalizedInput) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Owner booking creation input is invalid.' })
+    }
+    const comment = normalizeBookingComment(normalizedInput.comment)
 
-    await assertClientExists(input.clientId)
+    await assertClientExists(normalizedInput.clientId)
     await assertCabinetAndServiceAreBookable(
-        input.cabinetId,
-        input.serviceId,
+        normalizedInput.cabinetId,
+        normalizedInput.serviceId,
         owner.id
     )
-    await assertBookingSlotIsAvailable(input)
-
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
 
     const booking = bookingRepository.create({
-        clientId: input.clientId,
-        cabinetId: input.cabinetId,
-        serviceId: input.serviceId,
-        date: input.date,
-        startTime: input.startTime,
-        endTime: input.endTime,
+        clientId: normalizedInput.clientId,
+        cabinetId: normalizedInput.cabinetId,
+        serviceId: normalizedInput.serviceId,
+        date: normalizedInput.date,
+        startTime: normalizedInput.startTime,
+        endTime: normalizedInput.endTime,
         status: BookingStatus.Confirmed,
         comment,
     })
 
     const ownerBooking = await AppDataSource.transaction(async (manager) => {
+        await lockBookingCabinet(manager, normalizedInput.cabinetId)
+        await assertBookingSlotIsAvailable(normalizedInput, undefined, manager)
         const savedBooking = await saveNewBooking(manager.getRepository(BookingEntity), booking)
         await recordBookingStatus(savedBooking.id, savedBooking.status, owner.id, null, manager)
         const fullBooking = await getOwnerBookingEntityById(owner.id, savedBooking.id, manager)
@@ -1287,9 +1373,9 @@ export async function createOwnerBooking(
                 toEmail: fullBooking.client.email,
                 recipientName: fullBooking.client.name,
                 bookingDetails: {
-                    date: input.date,
-                    startTime: input.startTime,
-                    endTime: input.endTime,
+                    date: normalizedInput.date,
+                    startTime: normalizedInput.startTime,
+                    endTime: normalizedInput.endTime,
                     cabinetTitle: fullBooking.cabinet.title,
                     serviceTitle: fullBooking.service.title,
                 },
@@ -1313,21 +1399,10 @@ export async function updateOwnerBookingStatus(
     frontendOrigin: string
 ) {
     assertOwner(owner)
-
-    const booking = await getOwnerBookingEntityById(owner.id, bookingId)
-
-    if (isActiveBookingStatus(status)) {
-        await assertBookingSlotIsAvailable(
-            {
-                cabinetId: booking.cabinetId,
-                serviceId: booking.serviceId,
-                date: booking.date,
-                startTime: booking.startTime,
-                endTime: booking.endTime,
-                comment: booking.comment ?? undefined,
-            },
-            booking.id
-        )
+    const normalizedBookingId = requireBookingUuid(bookingId, 'Booking id')
+    const normalizedStatus = normalizeBookingStatus(status)
+    if (!normalizedStatus) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Booking status is invalid.' })
     }
 
     const updatedBooking = await AppDataSource.transaction(async (manager) => {
@@ -1336,7 +1411,7 @@ export async function updateOwnerBookingStatus(
             .leftJoinAndSelect('booking.client', 'client')
             .leftJoinAndSelect('booking.cabinet', 'cabinet')
             .leftJoinAndSelect('booking.service', 'service')
-            .where('booking.id = :bookingId', { bookingId: booking.id })
+            .where('booking.id = :bookingId', { bookingId: normalizedBookingId })
             .andWhere('cabinet.ownerId = :ownerId', { ownerId: owner.id })
             .setLock('pessimistic_write', undefined, ['booking'])
             .getOne()
@@ -1349,11 +1424,27 @@ export async function updateOwnerBookingStatus(
             })
         }
 
+        await lockBookingCabinet(manager, transactionBooking.cabinetId)
+        if (isActiveBookingStatus(normalizedStatus)) {
+            await assertBookingSlotIsAvailable(
+                {
+                    cabinetId: transactionBooking.cabinetId,
+                    serviceId: transactionBooking.serviceId,
+                    date: transactionBooking.date,
+                    startTime: transactionBooking.startTime,
+                    endTime: transactionBooking.endTime,
+                    comment: transactionBooking.comment ?? undefined,
+                },
+                transactionBooking.id,
+                manager,
+            )
+        }
+
         const previousStatus = transactionBooking.status
-        transactionBooking.status = status
+        transactionBooking.status = normalizedStatus
 
         await manager.getRepository(BookingEntity).save(transactionBooking)
-        await recordBookingStatus(transactionBooking.id, status, owner.id, null, manager)
+        await recordBookingStatus(transactionBooking.id, normalizedStatus, owner.id, null, manager)
         await notifyBookingStatusChanged(transactionBooking, previousStatus, manager)
 
         if (
@@ -1361,7 +1452,7 @@ export async function updateOwnerBookingStatus(
             shouldDeliverNotification(NotificationCategory.Booking, transactionBooking.client, 'email') &&
             previousStatus !== status
         ) {
-            if (status === BookingStatus.Confirmed) {
+            if (normalizedStatus === BookingStatus.Confirmed) {
                 await enqueueBookingEmail(transactionBooking.id, {
                     toEmail: transactionBooking.client.email,
                     recipientName: transactionBooking.client.name,
@@ -1377,7 +1468,7 @@ export async function updateOwnerBookingStatus(
                     frontendOrigin,
                     locale: transactionBooking.client.locale ?? undefined,
                 }, manager)
-            } else if (status === BookingStatus.Cancelled) {
+            } else if (normalizedStatus === BookingStatus.Cancelled) {
                 await enqueueBookingEmail(transactionBooking.id, {
                     toEmail: transactionBooking.client.email,
                     recipientName: transactionBooking.client.name,
@@ -1416,7 +1507,11 @@ export function recordOwnerActionCenterEvent(
     action: Parameters<typeof recordOwnerActionCenterClick>[0],
 ) {
     assertOwner(owner)
-    recordOwnerActionCenterClick(action)
+    const normalizedAction = normalizeOwnerActionCenterEvent(action)
+    if (!normalizedAction) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Owner action event is invalid.' })
+    }
+    recordOwnerActionCenterClick(normalizedAction)
 
     return { accepted: true as const }
 }
@@ -1425,19 +1520,33 @@ export function recordClientExperimentEventFromRoute(
     client: UserEntity,
     event: ClientExperimentEventName,
 ) {
-    return recordClientExperimentEvent(client, event)
+    assertClientExperimentActor(client)
+    const normalizedEvent = normalizeClientExperimentEvent(event)
+    if (!normalizedEvent) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Client experiment event is invalid.' })
+    }
+    return recordClientExperimentEvent(client, normalizedEvent)
 }
 
 export async function updateOwnerBookingNote(
     owner: UserEntity,
     bookingId: string,
-    ownerNote: string | null
+    ownerNote: unknown
 ) {
     assertOwner(owner)
-    const normalizedOwnerNote = normalizeBookingOwnerNote(ownerNote)
+    const normalizedBookingId = requireBookingUuid(bookingId, 'Booking id')
+    if (ownerNote !== null && ownerNote !== undefined && typeof ownerNote !== 'string') {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Owner note is invalid.' })
+    }
+    let normalizedOwnerNote: string | null
+    try {
+        normalizedOwnerNote = normalizeBookingOwnerNote(ownerNote)
+    } catch {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Owner note is invalid.' })
+    }
 
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
-    const booking = await getOwnerBookingEntityById(owner.id, bookingId)
+    const booking = await getOwnerBookingEntityById(owner.id, normalizedBookingId)
 
     booking.ownerNote = normalizedOwnerNote
     await bookingRepository.save(booking)
@@ -1445,13 +1554,36 @@ export async function updateOwnerBookingNote(
     return toOwnerBooking(booking)
 }
 
-export async function getOccupiedSlots(cabinetId: string, date: string) {
+export async function getOccupiedSlots(user: UserEntity, cabinetId: unknown, date: unknown) {
+    if (![UserRole.Client, UserRole.Owner].includes(user.role)) {
+        throw new AppError({
+            statusCode: 403,
+            code: ERROR_CODES.Forbidden,
+            message: 'Only clients and cabinet owners can view occupied slots.',
+        })
+    }
+    const normalizedCabinetId = requireBookingUuid(cabinetId, 'Cabinet id')
+    const normalizedDate = requireBookingDate(date, 'Date')
+    const cabinet = await AppDataSource.getRepository(CabinetEntity).findOne({
+        where: {
+            id: normalizedCabinetId,
+            status: CabinetStatus.Active,
+        },
+        select: ['id', 'ownerId'],
+    })
+    if (!cabinet || (user.role === UserRole.Owner && cabinet.ownerId !== user.id)) {
+        throw new AppError({
+            statusCode: 404,
+            code: ERROR_CODES.NotFound,
+            message: 'Cabinet not found.',
+        })
+    }
     const bookingRepository = AppDataSource.getRepository(BookingEntity)
 
     const bookings = await bookingRepository.find({
         where: {
-            cabinetId,
-            date,
+            cabinetId: normalizedCabinetId,
+            date: normalizedDate,
             status: In(activeBookingStatuses),
         },
         select: ['startTime', 'endTime'],

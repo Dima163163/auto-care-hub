@@ -7,6 +7,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { env } from '../../config/env.js'
 import { DEFAULT_AUTOCARE_TRUST_POLICY, type AutoCareTrustPolicy } from '../autocare/trust-score.js'
+import { normalizeSuperAdminTrustPolicyInput, normalizeSuperAdminTrustPolicyUuid, type NormalizedSuperAdminTrustPolicyInput } from './super-admin-trust-policy-input-policy.js'
 
 export type SuperAdminTrustPolicyResponse = AutoCareTrustPolicy & {
     rollout: { enabled: boolean; marketIds: string[]; percentage: number }
@@ -18,12 +19,26 @@ export type UpdateSuperAdminTrustPolicyInput = AutoCareTrustPolicy & {
 }
 
 const POLICY_ID = 'default'
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
 function assertSuperAdmin(actor: UserEntity) {
     if (!isSuperAdmin(actor)) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only super admin can manage trust policy.' })
     }
+}
+
+function requireTrustPolicyInput(input: unknown): NormalizedSuperAdminTrustPolicyInput {
+    const normalized = normalizeSuperAdminTrustPolicyInput(input)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Trust policy payload is invalid.' })
+    }
+    return normalized
+}
+
+function requireTrustPolicyUuid(value: unknown) {
+    const normalized = normalizeSuperAdminTrustPolicyUuid(value)
+    if (!normalized) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Rollout market id must be a valid UUID.' })
+    }
+    return normalized
 }
 
 function fromEntity(entity: AutoCareTrustPolicyEntity): SuperAdminTrustPolicyResponse {
@@ -88,18 +103,11 @@ export async function getSuperAdminTrustPolicy(actor: UserEntity): Promise<Super
     return fromEntity(entity)
 }
 
-export async function updateSuperAdminTrustPolicy(actor: UserEntity, input: UpdateSuperAdminTrustPolicyInput): Promise<SuperAdminTrustPolicyResponse> {
+export async function updateSuperAdminTrustPolicy(actor: UserEntity, input: unknown): Promise<SuperAdminTrustPolicyResponse> {
     assertSuperAdmin(actor)
-    const rolloutMarketIds = [...new Set(input.rollout.marketIds)]
+    const normalizedInput = requireTrustPolicyInput(input)
+    const rolloutMarketIds = normalizedInput.rollout.marketIds.map((marketId) => requireTrustPolicyUuid(marketId))
     if (rolloutMarketIds.length > 0) {
-        const malformedIds = rolloutMarketIds.filter((marketId) => !UUID_PATTERN.test(marketId))
-        if (malformedIds.length > 0) {
-            throw new AppError({
-                statusCode: 422,
-                code: ERROR_CODES.ValidationError,
-                message: `Rollout markets must use UUIDs: ${malformedIds.join(', ')}`,
-            })
-        }
         const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
             where: { id: In(rolloutMarketIds) },
             select: { id: true },
@@ -117,17 +125,17 @@ export async function updateSuperAdminTrustPolicy(actor: UserEntity, input: Upda
     const repository = AppDataSource.getRepository(AutoCareTrustPolicyEntity)
     const entity = await repository.findOneBy({ id: POLICY_ID }) ?? repository.create({ id: POLICY_ID })
     Object.assign(entity, {
-        policyVersion: input.policyVersion,
-        trustedMinimumRating: input.trustedMinimumRating,
-        trustedMinimumReviews: input.trustedMinimumReviews,
-        trustedMinimumCompletedVisits: input.trustedMinimumCompletedVisits,
-        trustedMaxNoShowRate: input.trustedMaxNoShowRate,
-        trustedMaxComplaintRate: input.trustedMaxComplaintRate,
-        trustedMaxResponseTimeMinutes: input.trustedMaxResponseTimeMinutes,
-        reassessmentIntervalHours: input.reassessmentIntervalHours,
-        rolloutEnabled: input.rollout.enabled,
+        policyVersion: normalizedInput.policyVersion,
+        trustedMinimumRating: normalizedInput.trustedMinimumRating,
+        trustedMinimumReviews: normalizedInput.trustedMinimumReviews,
+        trustedMinimumCompletedVisits: normalizedInput.trustedMinimumCompletedVisits,
+        trustedMaxNoShowRate: normalizedInput.trustedMaxNoShowRate,
+        trustedMaxComplaintRate: normalizedInput.trustedMaxComplaintRate,
+        trustedMaxResponseTimeMinutes: normalizedInput.trustedMaxResponseTimeMinutes,
+        reassessmentIntervalHours: normalizedInput.reassessmentIntervalHours,
+        rolloutEnabled: normalizedInput.rollout.enabled,
         rolloutMarketIds,
-        rolloutPercentage: input.rollout.percentage,
+        rolloutPercentage: normalizedInput.rollout.percentage,
         updatedById: actor.id,
     })
     return fromEntity(await repository.save(entity))
