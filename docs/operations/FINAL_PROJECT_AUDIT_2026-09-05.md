@@ -275,3 +275,10 @@ scope: убраны beauty/wellness, legacy cabinet и free/no-card обещан
 изменения — **149 файлов / 471 тест**, TypeScript, ESLint и `git diff --check` —
 PASS. V2-MVP-10 остаётся `[~]` до проверки реальных контактов, demo-only данных,
 прав на контент и legal acceptance.
+
+## Follow-up после аудита — порция 308
+
+Owner-dashboard labels `mobileAddSpace`, `mobileMySpaces` и moderation
+descriptions переведены с legacy «spaces» на service locations/точки сервиса.
+Полный frontend unit — **149 файлов / 471 тест**, TypeScript, ESLint и
+`git diff --check` — PASS; внешние staging и legal gates без изменений.

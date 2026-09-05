@@ -1686,3 +1686,13 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   — **9/9**, TypeScript, ESLint и `git diff --check` — PASS.
 - `[~]` V2-MVP-10 остаётся внешним gate для контактов, demo-only данных, прав на
   контент и legal acceptance.
+
+## Порция 308 (05.09.2026) — owner service locations labels
+
+- `[x]` В owner-dashboard mobile actions и moderation descriptions термин
+  «space/пространство» заменён на service location/точка сервиса; backend/API и
+  legacy compatibility keys не менялись.
+- `[x]` Полный frontend unit — **149 файлов / 471 тест**, translation regression
+  — **9/9**, TypeScript, ESLint и `git diff --check` — PASS.
+- `[~]` V2-MVP-10 по-прежнему требует внешней проверки контактов, demo-only
+  данных, прав на контент и legal acceptance.
