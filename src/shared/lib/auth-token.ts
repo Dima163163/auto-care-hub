@@ -12,9 +12,19 @@
  */
 
 let _accessToken: string | null = null
+let _authGeneration = 0
 
 export function getAccessToken() {
     return _accessToken
+}
+
+/**
+ * Changes only when local credentials are invalidated. A refresh may finish
+ * after logout or account switching; callers use this generation to prevent
+ * that late response from restoring the old identity.
+ */
+export function getAuthGeneration() {
+    return _authGeneration
 }
 
 export function setAccessToken(accessToken: string) {
@@ -23,4 +33,5 @@ export function setAccessToken(accessToken: string) {
 
 export function clearAccessToken() {
     _accessToken = null
+    _authGeneration += 1
 }

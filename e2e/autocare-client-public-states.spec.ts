@@ -251,11 +251,14 @@ test.describe('public and client AutoCare states', () => {
         const redeem = bonus.getByRole('button', { name: /списать|redeem/i })
         await expect(redeem).toBeEnabled()
         await redeem.click()
-        await expect(bonus).toContainText(/Списание|Redeemed/)
+        // The fixture already contains an unrelated historical redemption.
+        // Anchor the assertion to the confirmed booking id so the first
+        // request is observed before exercising the idempotent retry.
+        await expect(bonus.locator('li').filter({ hasText: 'client-request-accepted' })).toHaveCount(1)
 
-        const beforeRetry = await bonus.locator('li').filter({ hasText: /Списание|Redeemed/ }).count()
+        const beforeRetry = await bonus.locator('li').filter({ hasText: 'client-request-accepted' }).count()
         await redeem.click()
-        await expect.poll(() => bonus.locator('li').filter({ hasText: /Списание|Redeemed/ }).count()).toBe(beforeRetry)
+        await expect.poll(() => bonus.locator('li').filter({ hasText: 'client-request-accepted' }).count()).toBe(beforeRetry)
     })
 
     test('shows refund and expiry balances with filterable bonus history', async ({ page }) => {

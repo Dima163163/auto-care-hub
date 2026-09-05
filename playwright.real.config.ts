@@ -12,7 +12,7 @@ const chromiumCandidates = [
 ].filter((candidate): candidate is string => Boolean(candidate?.trim()))
 
 const localChromiumPath = chromiumCandidates.find((candidate) => existsSync(candidate))
-const usePreviewServer = process.env.REAL_E2E_PREVIEW === 'true'
+const useProductionServer = process.env.REAL_E2E_NEXT_PRODUCTION === 'true'
 
 export default defineConfig({
     testDir: './e2e',
@@ -30,11 +30,11 @@ export default defineConfig({
             : undefined,
     },
     webServer: {
-        command: usePreviewServer
-            ? 'npm run preview -- --host 127.0.0.1 --port 5174'
+        command: useProductionServer
+            ? 'NEXT_DIST_DIR=.next-real-e2e NEXT_PUBLIC_API_MODE=real NEXT_PUBLIC_API_BASE_URL=/api npm run start -- --hostname 127.0.0.1 --port 5174'
             : 'NEXT_DIST_DIR=.next-real-e2e NEXT_PUBLIC_API_MODE=real NEXT_PUBLIC_API_BASE_URL=/api npm run dev -- --hostname 127.0.0.1 --port 5174',
         url: 'http://127.0.0.1:5174',
-        reuseExistingServer: usePreviewServer ? false : !process.env.CI,
+        reuseExistingServer: useProductionServer ? false : !process.env.CI,
     },
     projects: [
         {

@@ -114,12 +114,14 @@ function Conversation({ request, onClose }: { request: AutoCareServiceRequest; o
     const [decideReschedule, { isLoading: isDecidingReschedule, error: rescheduleError }] = useDecideAutoCareServiceRescheduleMutation()
     const [quoteActionError, setQuoteActionError] = useState<string | null>(null)
     const [rescheduleActionError, setRescheduleActionError] = useState<string | null>(null)
+    const quoteRevision = request.quoteHistory.at(-1)
     const canCancel = ['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted'].includes(request.status)
     const handleQuoteDecision = async (decision: 'accept' | 'decline') => {
         setQuoteActionError(null)
         setRescheduleActionError(null)
         try {
-            await (decision === 'accept' ? acceptQuote(request.id) : declineQuote(request.id)).unwrap()
+            const input = { requestId: request.id, quoteId: quoteRevision?.id ?? '', quoteVersion: quoteRevision?.version ?? 0 }
+            await (decision === 'accept' ? acceptQuote(input) : declineQuote(input)).unwrap()
         } catch (error) {
             setQuoteActionError(getApiErrorMessage(error, t('autocare.clientServiceRequestsQuoteError')))
         }

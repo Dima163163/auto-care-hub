@@ -897,7 +897,7 @@ const autoCareMarketCountrySchema = z.object({
 const superAdminMarketHierarchySchema = autoCareMarketCountrySchema.extend({
     cities: z.array(autoCareMarketsSchema.element.extend({ zones: autoCareLocationZonesSchema })),
 }).passthrough() satisfies z.ZodType<SuperAdminMarketHierarchy>
-const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.string().optional(), durationMinutes: z.number().int().nonnegative(), slots: z.array(z.object({ startTime: z.string(), endTime: z.string() }).passthrough()) }).passthrough() satisfies z.ZodType<AutoCareAvailability>
+const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.string().optional(), durationMinutes: z.number().int().nonnegative(), slots: z.array(z.object({ startTime: z.string(), endTime: z.string(), startsAt: z.string().datetime({ offset: true }) }).passthrough()) }).passthrough() satisfies z.ZodType<AutoCareAvailability>
 
 const autoCareQuoteLineItemSchema = z.object({ kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']), title: z.string(), quantity: z.number().finite(), unitPriceMinor: z.number().finite(), totalMinor: z.number().finite() }).passthrough()
 const autoCareQuoteSchema = z.object({ amountMinor: z.number().finite(), currencyCode: z.string(), note: z.string().nullable(), createdAt: z.string(), lineItems: z.array(autoCareQuoteLineItemSchema).optional(), subtotalMinor: z.number().finite().optional(), taxMinor: z.number().finite().optional(), feesMinor: z.number().finite().optional(), validUntil: z.string().nullable().optional(), priceLocked: z.boolean().optional(), status: z.enum(['pending', 'accepted', 'declined', 'expired', 'superseded']).optional() }).passthrough()
@@ -982,7 +982,7 @@ const autoCareFleetSchema = z.object({ id: z.string(), name: z.string(), notes: 
 const autoCareFleetsSchema = z.array(autoCareFleetSchema)
 const updatedCountSchema = z.object({ updated: z.number().int().nonnegative() }).passthrough()
 
-export type AutoCareAvailability = { date: string; timezone?: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string }> }
+export type AutoCareAvailability = { date: string; timezone?: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string; startsAt: string }> }
 
 export type AutoCareServiceRequest = {
     id: string
@@ -1048,6 +1048,7 @@ export type AutoCareReschedule = { id: string; proposedAt: string; requestedById
 
 export type AutoCareQuoteLineItem = { kind: 'part' | 'labour' | 'consumable' | 'tax' | 'fee' | 'discount'; title: string; quantity: number; unitPriceMinor: number; totalMinor: number }
 export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; lineItems?: AutoCareQuoteLineItem[]; subtotalMinor?: number; taxMinor?: number; feesMinor?: number; validUntil?: string | null; priceLocked?: boolean; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded' }
+export type AutoCareQuoteDecisionInput = { requestId: string; quoteId: string; quoteVersion: number }
 export type AutoCareServiceMessageOffer = { type: 'discount' | 'alternative'; title: string; description: string | null; discountPercent: number | null; couponCode: string | null; amountMinor: number | null; currencyCode: string | null; expiresAt: string | null; status: 'pending' | 'accepted' | 'declined' }
 export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; createdAt: string }
 export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
@@ -1823,7 +1824,7 @@ export const autoCareApi = baseApi.injectEndpoints({
         confirmAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
             query: (requestId) => ({ url: `/v1/service-requests/${requestId}/confirm`, method: 'POST' }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
-            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
         cancelAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, { requestId: string; reason?: string | null }>({
             query: ({ requestId, reason }) => ({ url: `/v1/service-requests/${requestId}/cancel`, method: 'POST', body: { reason: reason ?? null } }),
@@ -1835,13 +1836,13 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
-        acceptAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, string>({
-            query: (requestId) => ({ url: `/v1/service-requests/${requestId}/quote/accept`, method: 'POST' }),
+        acceptAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, AutoCareQuoteDecisionInput>({
+            query: ({ requestId, quoteId, quoteVersion }) => ({ url: `/v1/service-requests/${requestId}/quote/accept`, method: 'POST', body: { quoteId, quoteVersion } }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
-            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
-        declineAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, string>({
-            query: (requestId) => ({ url: `/v1/service-requests/${requestId}/quote/decline`, method: 'POST' }),
+        declineAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, AutoCareQuoteDecisionInput>({
+            query: ({ requestId, quoteId, quoteVersion }) => ({ url: `/v1/service-requests/${requestId}/quote/decline`, method: 'POST', body: { quoteId, quoteVersion } }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
             invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),

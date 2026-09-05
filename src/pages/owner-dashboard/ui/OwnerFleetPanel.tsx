@@ -59,7 +59,12 @@ function FleetVehicleTable({ locale, vehicles }: { locale: string; vehicles: rea
         ? { vehicle: 'Автомобиль', registrationNumber: 'Госномер', internalReference: 'Внутренний №', vin: 'VIN', year: 'Год' }
         : { vehicle: 'Vehicle', registrationNumber: 'Registration', internalReference: 'Internal #', vin: 'VIN', year: 'Year' }
 
-    return <div className="mt-3 overflow-x-auto rounded-[var(--radius-control)] border border-border">
+    return <div
+        className="mt-3 overflow-x-auto rounded-[var(--radius-control)] border border-border"
+        role="region"
+        tabIndex={0}
+        aria-label={locale === 'ru' ? 'Таблица автомобилей автопарка' : 'Fleet vehicle table'}
+    >
         <table className="hidden min-w-[680px] w-full border-collapse text-left text-xs md:table">
             <thead className="bg-muted/55 text-[10px] font-black uppercase tracking-wide text-muted-foreground"><tr><th scope="col" className="px-2.5 py-2">{copy.vehicle}</th><th scope="col" className="px-2.5 py-2">{copy.registrationNumber}</th><th scope="col" className="px-2.5 py-2">{copy.internalReference}</th><th scope="col" className="px-2.5 py-2">{copy.vin}</th><th scope="col" className="px-2.5 py-2">{copy.year}</th></tr></thead>
             <tbody className="divide-y divide-border">{vehicles.map((vehicle) => <tr key={vehicle.id} className="bg-background"><th scope="row" className="whitespace-nowrap px-2.5 py-2 text-xs font-bold text-foreground"><span className="inline-flex items-center gap-1.5"><CarFront className="size-3.5 text-primary" />{vehicle.label}</span></th><td className="px-2.5 py-2 text-muted-foreground">{readSnapshotValue(vehicle.vehicleSnapshot, 'registrationNumber')}</td><td className="px-2.5 py-2 text-muted-foreground">{readSnapshotValue(vehicle.vehicleSnapshot, 'internalReference')}</td><td className="px-2.5 py-2 font-mono text-[11px] text-muted-foreground">{readSnapshotValue(vehicle.vehicleSnapshot, 'vin')}</td><td className="px-2.5 py-2 text-muted-foreground">{readSnapshotValue(vehicle.vehicleSnapshot, 'year')}</td></tr>)}</tbody>

@@ -196,10 +196,13 @@ export const authApi = baseApi.injectEndpoints({
                 method: 'POST',
             }),
             transformResponse: normalizeLogoutResponse,
-            async onQueryStarted(_arg, { queryFulfilled }) {
+            async onQueryStarted(_arg, { queryFulfilled, dispatch }) {
                 clearSessionExpired()
                 clearAccessToken()
                 clearCsrfToken()
+                // Local private RTK state must be discarded even when the
+                // server revoke fails or the browser is offline.
+                dispatch(baseApi.util.resetApiState())
                 if (IS_MOCK_API) {
                     clearMockSession()
                 }

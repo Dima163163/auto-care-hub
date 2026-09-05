@@ -9,6 +9,7 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 type ResultsToolbarProps = {
     selectedCount: number
     providerCount: number
+    isLoading?: boolean
     serviceId: string
     serviceLabel: string
     providerName: string
@@ -41,7 +42,7 @@ type ResultsToolbarProps = {
 
 export type ActiveFilter = ActiveDiscoveryFilter
 
-export function ResultsToolbar({ selectedCount, providerCount, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
+export function ResultsToolbar({ selectedCount, providerCount, isLoading = false, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
     const { t } = useTranslation()
 
     return <div className="-mx-[var(--layout-public-gutter)] -mt-6 sm:-mt-10">
@@ -51,6 +52,7 @@ export function ResultsToolbar({ selectedCount, providerCount, serviceId, servic
                     activeFilters={activeFilters}
                     brandId={brandId}
                     filterPanel={filterPanel}
+                    isLoading={isLoading}
                     radiusKm={radiusKm}
                     serviceId={serviceId}
                     vehicleModel={vehicleModel}

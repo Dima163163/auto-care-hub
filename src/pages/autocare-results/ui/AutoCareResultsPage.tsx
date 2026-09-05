@@ -155,6 +155,7 @@ export function AutoCareResultsPage() {
                     <ResultsToolbar
                         selectedCount={selectedIds.length}
                         providerCount={providers.length}
+                        isLoading={isLoading}
                         serviceId={draftFilters.serviceId}
                         serviceLabel={serviceLabel}
                         providerName={draftFilters.providerName}

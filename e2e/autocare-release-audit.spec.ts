@@ -24,8 +24,13 @@ async function expectNoHorizontalOverflow(page: Page) {
 
 async function expectStableShell(page: Page) {
     await expect(page.locator('header:visible').first()).toBeVisible()
-    await expect(page.getByRole('main')).toHaveCount(1)
-    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible()
+    // The release audit intentionally exercises cold lazy-loaded routes. On
+    // the tablet project, the first locale chunk can keep the Suspense shell
+    // visible for a few seconds before the page mounts its <main>. Wait for
+    // that bounded transition instead of treating the loading fallback as a
+    // broken page.
+    await expect(page.getByRole('main')).toHaveCount(1, { timeout: 15_000 })
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 })
     await expectNoHorizontalOverflow(page)
     await expect.poll(() => page.evaluate(() => {
         const text = document.body.innerText
@@ -222,7 +227,7 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(page.locator('html')).toHaveClass(/dark/)
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 
-        const themeSwitcher = page.locator('[data-theme-switcher]').first()
+        const themeSwitcher = page.locator('[data-theme-switcher]:visible').first()
         await expect(themeSwitcher).toHaveAttribute('aria-checked', 'true')
         await themeSwitcher.click()
         await expect(page.locator('html')).not.toHaveClass(/dark/)

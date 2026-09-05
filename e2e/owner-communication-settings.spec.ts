@@ -61,9 +61,12 @@ test.describe('owner communication settings', () => {
         await team.getByRole('button', { name: /пригласить|invite/i }).click()
         await expect(team.getByRole('alert')).toContainText(/pending invitation|ожидает/i)
 
-        await team.getByTestId('owner-invitation-revoke').click()
+        // Keep the seeded pending invitation intact and revoke only the
+        // invitation created by this test; multiple pending rows are valid.
+        const invitationRevoke = team.getByRole('button', { name: new RegExp(email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) })
+        await invitationRevoke.click()
         await expect(team.getByRole('status')).toContainText(/доступ отозван|access revoked/i)
-        await expect(team.getByTestId('owner-invitation-revoke')).toHaveCount(0)
+        await expect(invitationRevoke).toHaveCount(0)
 
         const revokeMember = team.getByTestId('owner-member-revoke').first()
         await expect(revokeMember).toBeVisible()

@@ -10,6 +10,7 @@ import { API_BASE_URL, IS_REAL_API } from '@/shared/config/api'
 
 import {
     clearAccessToken,
+    getAuthGeneration,
     getAccessToken,
     setAccessToken,
 } from '@/shared/lib/auth-token'
@@ -316,6 +317,7 @@ const baseQueryWithReauth: BaseQueryFn<
         return result
     }
 
+    const refreshGeneration = getAuthGeneration()
     const refreshedAccessToken = await refreshAccessTokenSingleFlight(async () => {
         const refreshResult = await baseQueryWithCsrf(
             {
@@ -332,6 +334,12 @@ const baseQueryWithReauth: BaseQueryFn<
     if (!refreshedAccessToken) {
         clearAuthenticatedClientState(api)
 
+        return result
+    }
+
+    if (refreshGeneration !== getAuthGeneration()) {
+        // Logout, account deletion or another terminal auth action won the
+        // race while refresh was in flight. Never restore that old identity.
         return result
     }
 

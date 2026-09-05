@@ -227,6 +227,7 @@ export type {
     AutoCareServiceRequest,
     AutoCareReschedule,
     AutoCareServiceQuote,
+    AutoCareQuoteDecisionInput,
     AutoCareQuoteLineItem,
     AutoCarePriceBenchmark,
     AutoCareRepairEvent,

@@ -1,24 +1,31 @@
 import { CalendarDays, Camera, Check, Clock3, Send } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 
-import { useGetAutoCareAvailabilityQuery, type AutoCareAvailability } from '@/entities/automotive-service'
+import { useGetAutoCareAvailabilityQuery } from '@/entities/automotive-service'
+import type { AutoCareAvailability } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { DateInputTrigger } from '@/shared/ui/date-input-trigger'
+import { readFormDraft } from '@/shared/lib/form-draft'
+import { useFormDraft } from '@/shared/lib/useFormDraft'
 
 import {
     MAX_REQUEST_ATTACHMENTS,
     selectRequestImageFiles,
 } from '../lib/request-attachments'
+import { formatRequestDate, formatRequestLongDate, getRequestDateInputValue, parseRequestDate } from './request-date'
+import { parseRequestDraft, type RequestDraft } from './request-draft'
 
 type RequestFormProps = {
     providerId: string
     locationId: string
     offeringId: string
+    serviceTimezone?: string
+    draftKey?: string | null
     initialVehicleId?: string | null
     initialVehicle?: RequestFormPayload['vehicleSnapshot']
     initialContact?: RequestFormPayload['contactSnapshot']
-    onSubmit: (payload: RequestFormPayload) => void
+    onSubmit: (payload: RequestFormPayload) => void | boolean | Promise<void | boolean>
     isSubmitting?: boolean
     errorMessage?: string
 }
@@ -47,12 +54,15 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, initialVehicle, initialVehicleId = null, initialContact, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
-    const initialDate = searchParams.get('date') ?? ''
-    const [selectedDate, setSelectedDate] = useState(initialDate ? '' : 'today')
-    const [customDate, setCustomDate] = useState(initialDate)
+    const navigate = useNavigate()
+    const rawInitialDate = searchParams.get('date')
+    const initialDate = parseRequestDate(rawInitialDate)
+    const initialDraft = draftKey ? readFormDraft(draftKey, parseRequestDraft) : null
+    const [selectedDate, setSelectedDate] = useState(initialDate ? '' : initialDraft?.selectedDate ?? 'today')
+    const [customDate, setCustomDate] = useState(initialDate ?? initialDraft?.customDate ?? '')
     const [selectedTime, setSelectedTime] = useState(searchParams.get('time') ?? '')
     const [contactSnapshot, setContactSnapshot] = useState(initialContact ?? { name: '', phone: '', email: '' })
     const [vehicleSnapshot, setVehicleSnapshot] = useState<EditableVehicle>(initialVehicle ?? { make: '', model: '', year: new Date().getFullYear() })
@@ -60,31 +70,43 @@ export function RequestForm({ providerId, locationId, offeringId, initialVehicle
     const [files, setFiles] = useState<File[]>([])
     const [attachmentIssue, setAttachmentIssue] = useState<{ invalidCount: number; tooManyCount: number } | null>(null)
     const [note, setNote] = useState('')
-    const availabilityDate = customDate || toDateInputValue(getFutureDate(Math.max(appointmentDates.indexOf(selectedDate), 0)))
+    const draftValues = useMemo<RequestDraft>(() => ({ selectedDate, customDate, selectedTime }), [customDate, selectedDate, selectedTime])
+    const { clearDraft } = useFormDraft({ storageKey: draftKey, values: draftValues, enabled: Boolean(draftKey), parse: parseRequestDraft })
+    const availabilityDate = customDate || getRequestDateInputValue(Math.max(appointmentDates.indexOf(selectedDate), 0), serviceTimezone)
     const { data: availability, isError: isAvailabilityError, isFetching: isAvailabilityLoading } = useGetAutoCareAvailabilityQuery({ providerId, locationId, offeringId, date: availabilityDate })
-    const availableTimes = availability?.slots.map((slot) => slot.startTime) ?? []
+    const currentAvailability = availability?.date === availabilityDate ? availability : undefined
+    const availableTimes = currentAvailability?.slots.map((slot) => slot.startTime) ?? []
     const effectiveSelectedTime = availableTimes.includes(selectedTime) ? selectedTime : availableTimes[0] ?? ''
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    useEffect(() => {
+        if (rawInitialDate === null || rawInitialDate === initialDate) return
+        const normalizedParams = new URLSearchParams(searchParams)
+        if (initialDate) normalizedParams.set('date', initialDate)
+        else {
+            normalizedParams.delete('date')
+            normalizedParams.delete('time')
+        }
+        navigate({ search: normalizedParams.toString() }, { replace: true })
+    }, [initialDate, navigate, rawInitialDate, searchParams])
+
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!effectiveSelectedTime) return
-        const dayIndex = appointmentDates.indexOf(selectedDate)
-        const date = customDate ? new Date(`${customDate}T12:00:00`) : getFutureDate(Math.max(dayIndex, 0))
-        const [hours, minutes] = effectiveSelectedTime.split(':').map(Number)
-        date.setHours(hours, minutes, 0, 0)
-        onSubmit({
-            preferredAt: date.toISOString(),
+        const selectedSlot = currentAvailability?.slots.find((slot) => slot.startTime === effectiveSelectedTime)
+        if (!selectedSlot?.startsAt) return
+        const result = await onSubmit({
+            preferredAt: selectedSlot.startsAt,
             vehicleId,
             vehicleSnapshot: vehicleSnapshot.make.trim() && vehicleSnapshot.model.trim() && vehicleSnapshot.year > 0 ? { ...vehicleSnapshot, make: vehicleSnapshot.make.trim(), model: vehicleSnapshot.model.trim() } : null,
             contactSnapshot,
             note: note.trim() || null,
             files,
         })
+        if (result !== false) clearDraft()
     }
 
     return (
-        <form onSubmit={handleSubmit} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
-            <AppointmentPicker locale={locale} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={availability} isLoading={isAvailabilityLoading} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { setCustomDate(value); setSelectedDate('') }} onTimeChange={setSelectedTime} />
+        <form onSubmit={(event) => void handleSubmit(event)} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
+            <AppointmentPicker locale={locale} serviceTimezone={currentAvailability?.timezone ?? serviceTimezone} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={currentAvailability} isLoading={isAvailabilityLoading} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { const normalized = parseRequestDate(value); if (normalized) { setCustomDate(normalized); setSelectedDate('') } }} onTimeChange={setSelectedTime} />
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} vehicle={vehicleSnapshot} onVehicleChange={setVehicleSnapshot} />
             <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} attachmentIssue={attachmentIssue} onAttachmentIssueChange={setAttachmentIssue} />
             <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
@@ -97,6 +119,7 @@ export function RequestForm({ providerId, locationId, offeringId, initialVehicle
 
 type AppointmentPickerProps = {
     locale: string
+    serviceTimezone?: string
     selectedDate: string
     customDate: string
     selectedTime: string
@@ -107,15 +130,15 @@ type AppointmentPickerProps = {
     onTimeChange: (time: string) => void
 }
 
-function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, availability, isLoading = false, onDateChange, onCustomDateChange, onTimeChange }: AppointmentPickerProps) {
+function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, selectedTime, availability, isLoading = false, onDateChange, onCustomDateChange, onTimeChange }: AppointmentPickerProps) {
     const { t } = useTranslation()
     const days = appointmentDates.map((id, index) => ({
         id,
-        label: index === 0 ? t('autocare.providerToday') : index === 1 ? t('autocare.providerTomorrow') : new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(getFutureDate(index)),
-        date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(getFutureDate(index)),
+        label: index === 0 ? t('autocare.providerToday') : index === 1 ? t('autocare.providerTomorrow') : new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'short' }).format(new Date(`${getRequestDateInputValue(index, serviceTimezone)}T12:00:00.000Z`)),
+        date: formatRequestDate(getRequestDateInputValue(index, serviceTimezone), locale),
     }))
     const selectedDateLabel = customDate
-        ? new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long' }).format(new Date(`${customDate}T12:00:00`))
+        ? formatRequestLongDate(customDate, locale)
         : days.find((day) => day.id === selectedDate)?.label ?? t('autocare.providerToday')
     const times = availability?.slots.map((slot) => slot.startTime) ?? []
 
@@ -128,7 +151,7 @@ function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, ava
                     <div className="mt-3 grid grid-cols-4 gap-1.5">
                         {days.map(({ id, label, date }) => <button key={id} type="button" onClick={() => onDateChange(id)} className={!customDate && selectedDate === id ? 'min-h-14 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-1 text-[10px] font-black text-primary' : 'min-h-14 rounded-[var(--radius-control)] border border-border px-1 text-[10px] font-bold text-muted-foreground transition hover:border-primary hover:text-primary'}><span className="block">{label}</span><span className="mt-1 block text-[9px] font-medium">{date}</span></button>)}
                     </div>
-                    <DateInputTrigger className="mt-4" label={t('autocare.providerOtherDateTime')} min={toDateInputValue(new Date())} value={customDate} onChange={onCustomDateChange} />
+                    <DateInputTrigger className="mt-4" label={t('autocare.providerOtherDateTime')} min={getRequestDateInputValue(0, serviceTimezone)} value={customDate} onChange={onCustomDateChange} />
                 </div>
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestTimeLabel')}</p>
@@ -136,7 +159,7 @@ function AppointmentPicker({ locale, selectedDate, customDate, selectedTime, ava
                         {times.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
                     </div>
                     {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('autocare.noAvailableTimes')}</p> : null}
-                    <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" />{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}</p>
+                    <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" /><span>{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}<span className="ml-1 font-black text-foreground">({serviceTimezone ?? 'UTC'})</span></span></p>
                 </div>
             </div>
         </section>
@@ -156,18 +179,6 @@ function VehicleAndContacts({ values, onChange, vehicle, onVehicleChange }: { va
                 <div><div className="flex items-center justify-between gap-3"><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.requestContactTitle')}</h2><span className="inline-flex items-center gap-1.5 text-xs font-bold text-status-success-foreground"><Check className="size-3.5" />{t('autocare.requestDataSecure')}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-3"><input required value={values.name} onChange={(event) => onChange({ ...values, name: event.target.value })} aria-label={t('autocare.requestNamePlaceholder')} placeholder={t('autocare.requestNamePlaceholder')} className="h-11 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" /><input required value={values.phone} onChange={(event) => onChange({ ...values, phone: event.target.value })} aria-label={t('autocare.requestPhonePlaceholder')} placeholder={t('autocare.requestPhonePlaceholder')} className="h-11 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" /><input type="email" required value={values.email} onChange={(event) => onChange({ ...values, email: event.target.value })} aria-label={t('autocare.requestEmailPlaceholder')} placeholder={t('autocare.requestEmailPlaceholder')} className="h-11 rounded-[var(--radius-control)] border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" /></div></div>
         </section>
     )
-}
-
-function getFutureDate(offset: number) {
-    const date = new Date()
-
-    date.setDate(date.getDate() + offset)
-
-    return date
-}
-
-function toDateInputValue(date: Date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function RequestDetails({ note, onNoteChange, files, onFilesChange, attachmentIssue, onAttachmentIssueChange }: { note: string; onNoteChange: (note: string) => void; files: File[]; onFilesChange: (files: File[]) => void; attachmentIssue: { invalidCount: number; tooManyCount: number } | null; onAttachmentIssueChange: (issue: { invalidCount: number; tooManyCount: number } | null) => void }) {

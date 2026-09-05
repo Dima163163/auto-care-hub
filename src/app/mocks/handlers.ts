@@ -83,6 +83,21 @@ function invalidMockBodyResponse() {
     )
 }
 
+function mockZonedWallTimeToIso(date: string, time: string, timezone: string) {
+    const wallTime = Date.parse(`${date}T${time}:00.000Z`)
+    if (!Number.isFinite(wallTime)) return null
+
+    let estimate = new Date(wallTime)
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+        const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(estimate)
+        const values = Object.fromEntries(parts.filter(({ type }) => type !== 'literal').map(({ type, value }) => [type, Number(value)])) as Record<'year' | 'month' | 'day' | 'hour' | 'minute' | 'second', number>
+        const asUtc = Date.UTC(values.year, values.month - 1, values.day, values.hour, values.minute, values.second)
+        estimate = new Date(wallTime - (asUtc - estimate.getTime()))
+    }
+
+    return estimate.toISOString()
+}
+
 const mockFavoritesByUser = new Map<string, string[]>()
 const mockAutoCareProviderActivity = new Map<string, { impressions: number; profileOpens: number }>()
 const mockOAuthIdentitiesByUser = new Map<string, Set<'google' | 'yandex'>>()
@@ -2950,6 +2965,7 @@ export const handlers = [
     http.post('/api/v1/favorites/providers/sync', async ({ request }) => {
         const user = currentMockUser()
         if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can sync automotive favorites.' }, { status: 403 })
+        if (!user.emailVerifiedAt) return HttpResponse.json({ code: 'EMAIL_VERIFICATION_REQUIRED', message: 'Email verification is required to perform this action.' }, { status: 403 })
         const body = await request.json() as { providerIds?: unknown }
         const providerIds = Array.isArray(body.providerIds) ? body.providerIds.filter((value): value is string => typeof value === 'string').slice(0, 100) : []
         const favorites = mockAutoCareFavorites.get(user.id) ?? new Set<string>()
@@ -2963,6 +2979,7 @@ export const handlers = [
     http.post('/api/v1/favorites/providers/:providerId', async ({ params }) => {
         const user = currentMockUser()
         if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can save automotive favorites.' }, { status: 403 })
+        if (!user.emailVerifiedAt) return HttpResponse.json({ code: 'EMAIL_VERIFICATION_REQUIRED', message: 'Email verification is required to perform this action.' }, { status: 403 })
         const providerId = String(params.providerId)
         if (!autoCareProviders.some((provider) => provider.id === providerId)) return HttpResponse.json({ message: 'Provider not found.' }, { status: 404 })
         const favorites = mockAutoCareFavorites.get(user.id) ?? new Set<string>()
@@ -2974,6 +2991,7 @@ export const handlers = [
     http.delete('/api/v1/favorites/providers/:providerId', ({ params }) => {
         const user = currentMockUser()
         if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can remove automotive favorites.' }, { status: 403 })
+        if (!user.emailVerifiedAt) return HttpResponse.json({ code: 'EMAIL_VERIFICATION_REQUIRED', message: 'Email verification is required to perform this action.' }, { status: 403 })
         const favorites = mockAutoCareFavorites.get(user.id) ?? new Set<string>()
         favorites.delete(String(params.providerId))
         mockAutoCareFavorites.set(user.id, favorites)
@@ -3043,9 +3061,10 @@ export const handlers = [
         const user = currentMockUser()
         if (!user || user.role !== 'client') return HttpResponse.json({ message: 'Only clients can create claims.' }, { status: 403 })
         const body = await request.json() as { requestId?: string; claimType?: string; summary?: string; evidenceUrls?: string[] }
-        if (!body.requestId || !body.claimType || !body.summary?.trim()) return invalidMockBodyResponse()
+        const evidenceUrls = body.evidenceUrls ?? []
+        if (!body.requestId || !body.claimType || !body.summary?.trim() || !Array.isArray(evidenceUrls) || evidenceUrls.length > 20 || evidenceUrls.some((value) => !/^private:\/\/autocare\/claims\/[A-Za-z0-9][A-Za-z0-9_-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/.test(value.trim()))) return invalidMockBodyResponse()
         const now = new Date().toISOString()
-        const claim = { id: `guarantee-${Date.now()}`, requestId: body.requestId, claimType: body.claimType, status: 'submitted', summary: body.summary.trim(), evidenceUrls: body.evidenceUrls ?? [], resolution: null, createdAt: now, updatedAt: now, clientId: user.id }
+        const claim = { id: `guarantee-${Date.now()}`, requestId: body.requestId, claimType: body.claimType, status: 'submitted', summary: body.summary.trim(), evidenceUrls: evidenceUrls.map((value) => value.trim()), resolution: null, createdAt: now, updatedAt: now, clientId: user.id }
         mockAutoCareGuaranteeClaims.unshift(claim)
         const { clientId: _clientId, ...response } = claim
         return HttpResponse.json(response, { status: 201 })
@@ -3155,9 +3174,14 @@ export const handlers = [
         const source = provider ? providerPreviews.find((item) => item.id === provider.id.replace('api-', '')) : undefined
         if (!provider || !date || !locationId || !offeringId) return HttpResponse.json({ message: 'Invalid availability request.' }, { status: 400 })
         const durationMinutes = 60
+        const timezone = provider.location.timezone ?? 'UTC'
         const reserved = mockAutoCareServiceRequests.filter((item) => item.providerId === provider.id && item.locationId === locationId && item.preferredAt?.slice(0, 10) === date && item.status !== 'declined' && item.status !== 'closed').map((item) => item.preferredAt?.slice(11, 16))
-        const slots = Array.from({ length: 20 }, (_, index) => 8 * 60 + index * 30).map((start) => ({ startTime: `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`, endTime: `${String(Math.floor((start + durationMinutes) / 60)).padStart(2, '0')}:${String((start + durationMinutes) % 60).padStart(2, '0')}` })).filter((slot) => !reserved.includes(slot.startTime))
-        return HttpResponse.json({ date, durationMinutes, slots, source: source?.name ?? null })
+        const slots = Array.from({ length: 20 }, (_, index) => 8 * 60 + index * 30).map((start) => {
+            const startTime = `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`
+            const endTime = `${String(Math.floor((start + durationMinutes) / 60)).padStart(2, '0')}:${String((start + durationMinutes) % 60).padStart(2, '0')}`
+            return { startTime, endTime, startsAt: mockZonedWallTimeToIso(date, startTime, timezone) }
+        }).filter((slot) => slot.startsAt && !reserved.includes(slot.startTime))
+        return HttpResponse.json({ date, timezone, durationMinutes, slots, source: source?.name ?? null })
     }),
 
     http.post('/api/v1/service-requests', async ({ request }) => {
@@ -3687,17 +3711,20 @@ export const handlers = [
         return HttpResponse.json(response)
     }),
 
-    http.post('/api/v1/service-requests/:requestId/quote/accept', ({ params }) => {
+    http.post('/api/v1/service-requests/:requestId/quote/accept', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        const body = await request.json().catch(() => ({})) as { quoteId?: unknown; quoteVersion?: unknown }
+        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
+        if (typeof body.quoteId !== 'string' || !Number.isInteger(body.quoteVersion) || body.quoteVersion < 1) return HttpResponse.json({ message: 'Quote id and version are required.' }, { status: 422 })
+        if (!latestQuote || !('id' in latestQuote) || latestQuote.id !== body.quoteId || latestQuote.version !== body.quoteVersion) return HttpResponse.json({ message: 'The estimate changed. Review the latest estimate before deciding.' }, { status: 409 })
         if (item.status === 'accepted' && item.acceptedQuoteVersion !== null && item.acceptedQuoteVersion !== undefined) {
             const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
             return HttpResponse.json(response)
         }
         if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
-        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
         if (latestQuote.status && latestQuote.status !== 'pending') return HttpResponse.json({ message: 'This estimate is no longer available.' }, { status: 409 })
         if (latestQuote.validUntil && new Date(latestQuote.validUntil).getTime() <= Date.now()) {
             latestQuote.status = 'expired'
@@ -3739,17 +3766,20 @@ export const handlers = [
         return HttpResponse.json(response)
     }),
 
-    http.post('/api/v1/service-requests/:requestId/quote/decline', ({ params }) => {
+    http.post('/api/v1/service-requests/:requestId/quote/decline', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        const body = await request.json().catch(() => ({})) as { quoteId?: unknown; quoteVersion?: unknown }
+        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
+        if (typeof body.quoteId !== 'string' || !Number.isInteger(body.quoteVersion) || body.quoteVersion < 1) return HttpResponse.json({ message: 'Quote id and version are required.' }, { status: 422 })
+        if (!latestQuote || !('id' in latestQuote) || latestQuote.id !== body.quoteId || latestQuote.version !== body.quoteVersion) return HttpResponse.json({ message: 'The estimate changed. Review the latest estimate before deciding.' }, { status: 409 })
         if (item.status === 'declined' && item.clientConfirmedAt) {
             const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
             return HttpResponse.json(response)
         }
         if (item.status !== 'estimate_shared' || !item.quote) return HttpResponse.json({ message: 'There is no pending estimate.' }, { status: 409 })
-        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
         if (latestQuote.status && latestQuote.status !== 'pending') return HttpResponse.json({ message: 'This estimate is no longer available.' }, { status: 409 })
         if (latestQuote.validUntil && new Date(latestQuote.validUntil).getTime() <= Date.now()) {
             latestQuote.status = 'expired'
@@ -4970,12 +5000,26 @@ export const handlers = [
         const url = new URL(request.url)
         const cabinetId = url.searchParams.get('cabinetId')
         const date = url.searchParams.get('date')
+        const user = currentMockUser()
 
-        if (!cabinetId || !date) {
+        if (!user) {
+            return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        }
+
+        if (user.role !== 'client' && user.role !== 'owner') {
+            return HttpResponse.json({ message: 'Only clients and cabinet owners can view occupied slots.' }, { status: 403 })
+        }
+
+        if (!date) {
             return HttpResponse.json(
                 { message: 'Cabinet and date are required' },
                 { status: 400 },
             )
+        }
+
+        const cabinet = mockCabinets.find((item) => item.id === cabinetId && item.status === 'active')
+        if (!cabinet || (user.role === 'owner' && cabinet.ownerId !== user.id)) {
+            return HttpResponse.json({ message: 'Cabinet not found' }, { status: 404 })
         }
 
         const occupiedSlots = mockBookings
@@ -5999,6 +6043,7 @@ export const handlers = [
             notifications: [],
             cabinets: [],
             vehicles: getMockVehicles(user.id),
+            appeals: [],
             integrity: {
                 algorithm: 'sha256',
                 checksum: 'mock-export-checksum',
