@@ -3,6 +3,8 @@ import { In } from 'typeorm'
 import { AppDataSource } from '../database/data-source.js'
 import {
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
@@ -31,25 +33,26 @@ async function run() {
     const thresholds = getThresholds()
     await AppDataSource.initialize()
     try {
-        const [providers, definitions, locations, offers, requests] = await Promise.all([
-            AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, status: true } }),
+        const [providers, memberships, definitions, locations, offers, requests] = await Promise.all([
+            AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, ownerId: true, status: true } }),
+            AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { status: AutomotiveProviderMembershipStatus.Active }, select: { providerId: true, userId: true, locationId: true, status: true } }),
             AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ select: { id: true, active: true } }),
             AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ select: { id: true, providerId: true, marketId: true } }),
             AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({ select: { locationId: true, definitionId: true, active: true, description: true, priceFromMinor: true, priceToMinor: true, currencyCode: true } }),
-            AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, providerId: true, status: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
+            AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, clientId: true, providerId: true, locationId: true, status: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
         ])
         const requestIds = requests.map((request) => request.id)
         const messages = requestIds.length === 0
             ? []
-            : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, select: { requestId: true, senderId: true, createdAt: true }, order: { createdAt: 'ASC' } })
-        const providerIds = new Set(providers.map((provider) => provider.id))
+            : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, select: { requestId: true, senderId: true, kind: true, createdAt: true }, order: { createdAt: 'ASC' } })
         const quality = buildQualityMetrics({
             providers,
+            providerMemberships: memberships,
             definitions,
             locations,
             offers,
             requests,
-            messages: messages.filter((message) => providerIds.has(message.senderId)),
+            messages,
         })
         const checks = evaluatePilotReliability(quality.reliability, thresholds)
         const report = { generatedAt: new Date().toISOString(), reliability: quality.reliability, checks }

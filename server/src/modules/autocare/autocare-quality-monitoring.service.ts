@@ -6,6 +6,8 @@ import {
     AutoCareAppealEntity,
     AutoCareAppealStatus,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
@@ -55,10 +57,11 @@ function percent(value: number, total: number) {
 /** Aggregate-only telemetry; private review/chat content is never returned. */
 export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<AutoCareQualityMonitoringResponse> {
     assertAdmin(user)
-    const [providers, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
-        AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
+    const [providers, memberships, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
+        AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, ownerId: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
+        AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { status: AutomotiveProviderMembershipStatus.Active }, select: { providerId: true, userId: true, locationId: true, status: true } }),
         AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
-        AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, providerId: true, status: true, completedAt: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
+        AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, clientId: true, providerId: true, locationId: true, status: true, completedAt: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
         AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({ select: { providerId: true, score: true, computedAt: true } }),
         AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ select: { id: true, active: true } }),
         AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ select: { id: true, providerId: true, marketId: true } }),
@@ -69,15 +72,15 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
     const requestIds = requests.map((request) => request.id)
     const messages = requestIds.length === 0
         ? []
-        : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, select: { requestId: true, senderId: true, createdAt: true }, order: { createdAt: 'ASC' } })
-    const providerIds = new Set(providers.map((provider) => provider.id))
+        : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, select: { requestId: true, senderId: true, kind: true, createdAt: true }, order: { createdAt: 'ASC' } })
     const quality = buildQualityMetrics({
         providers,
+        providerMemberships: memberships,
         definitions,
         locations,
         offers,
         requests,
-        messages: messages.filter((message) => providerIds.has(message.senderId)),
+        messages,
     })
     const recent = reviews.map((review): ReviewIntegritySample => ({
         clientId: review.clientId,
