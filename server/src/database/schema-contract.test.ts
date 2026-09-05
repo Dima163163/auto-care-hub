@@ -56,6 +56,7 @@ describe('database schema contract gate', () => {
             })
             expect(query).toHaveBeenCalledTimes(5)
             expect(query.mock.calls[2]?.[0]).toContain('pg_index')
+            expect(query.mock.calls[2]?.[0]).toContain("'client_vehicles'")
             expect(query.mock.calls[3]?.[0]).toContain('information_schema.table_constraints')
             expect(query.mock.calls[3]?.[0]).toContain('pg_constraint')
         } finally {
