@@ -1662,3 +1662,15 @@ bonus idempotency, responsive widths, keyboard/Escape, Axe, локали, owner/
 Таким образом локальная browser-регрессия после порций 303–304 не наблюдается.
 V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging запуска,
 проверки console/runtime errors на опубликованном SHA и внешнего evidence.
+
+## Порция 306 (05.09.2026) — очистка owner marketing copy
+
+- `[x]` Активные EN/RU тексты `marketing.owners` больше не описывают legacy
+  аренду кабинетов и monetization; сценарии владельца говорят об автосервисе,
+  услугах, расписании, команде и заявках клиентов.
+- `[x]` RU partner copy больше не обещает подписки; добавлена translation
+  regression на отсутствие legacy commercial формулировок в launch locales.
+- `[x]` `translations.test.ts` — **9/9 PASS**, `npx tsc --noEmit`,
+  `npm run lint` и `git diff --check` — PASS.
+- `[~]` V2-MVP-10 не закрыт полностью: проверка контактов, demo-only данных,
+  прав на контент и legal acceptance остаётся внешним gate.

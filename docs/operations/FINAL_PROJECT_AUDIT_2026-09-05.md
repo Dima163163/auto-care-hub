@@ -191,12 +191,14 @@ retry idempotency и partial upload failure без переноса чужого
 
 ### CHANGE-N001 — содержание и документация
 
-В `src/shared/config/translations/ru-part-4.ts:546` осталось обещание подписок.
-Там же публичные contacts требуют подтверждения; внешняя принадлежность контактов
-не проверялась. Product/architecture/design maps и отдельные ADR по-прежнему
-описаны по старому commercial scope. Runtime SDK removal не доказывает очистку
-всех пользовательских текстов. Проверить route+locale coverage и demo-only
-маркетинговые числа. Исторические migrations и Redis subscriptions — не billing.
+На момент аудита в `src/shared/config/translations/ru-part-4.ts:546` оставалось
+обещание подписок, а часть `marketing.owners` сохраняла legacy cabinet/monetization
+copy. В follow-up порции 306 активные EN/RU owner-тексты и partner point очищены;
+тест переводов это фиксирует. Публичные contacts всё ещё требуют подтверждения;
+внешняя принадлежность контактов не проверялась. Product/architecture/design maps
+и отдельные ADR по-прежнему описаны по старому commercial scope. Runtime SDK
+removal не доказывает очистку всех пользовательских текстов. Исторические
+migrations и Redis subscriptions — не billing.
 
 ## Матрица охвата и оставшиеся доказательства
 
@@ -256,3 +258,11 @@ tablet; long-label ES/RO сценарий — **3/3**. Последующий п
 staging, реальные устройства, MFA/SSO, restore, legal и pilot acceptance всё ещё
 требуют отдельного доказательства. Канонический статус остаётся NO-GO;
 подробная запись находится в `PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md`.
+
+## Follow-up после аудита — порция 306
+
+Активные EN/RU owner-маркетинговые тексты приведены к automotive pilot scope:
+убраны legacy cabinet-rental и monetization обещания, а partner copy больше не
+упоминает подписки. `translations.test.ts` — **9/9 PASS**, TypeScript, ESLint и
+`git diff --check` — PASS. V2-MVP-10 остаётся `[~]`: контакты, demo-only данные,
+права на контент и legal acceptance требуют отдельного подтверждения.

@@ -199,6 +199,17 @@ describe('translation coverage', () => {
         }
     })
 
+    it('keeps owner marketing copy aligned with the automotive pilot scope', () => {
+        const launchLocales = [translations.en, translations.ru]
+        const staleCommercialCopy = /renting cabinets|cabinet cards|monetiz|plans and paid|подписк|монетиза|сда[её]т кабинеты|карточки кабинетов|тарифы и платн/i
+
+        for (const locale of launchLocales) {
+            const ownerCopy = Object.values(locale.marketing.owners).filter((value): value is string => typeof value === 'string').join(' ')
+            expect(ownerCopy).not.toMatch(staleCommercialCopy)
+            expect(locale.info.partners.point3).not.toMatch(staleCommercialCopy)
+        }
+    })
+
     it('keeps secondary runtime surfaces translated for every popular locale', () => {
         const longTailKeys = [
             'routeError.title',
