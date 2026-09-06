@@ -35,9 +35,9 @@
 2. `[x]` Зафиксировать live session/membership check перед private delivery (`C001`).
 3. `[x]` Добавить/проверить close при session revoke (`C001`).
 4. `[x]` Добавить/проверить close при membership revoke (`C001`).
-5. `[~]` Добавить/проверить close при provider suspension (`C001`).
-6. `[~]` Добавить/проверить close при account deletion (`C001`).
-7. `[~]` Добавить/проверить close при JWT/session expiry (`C001`).
+5. `[x]` Добавить/проверить close при provider suspension (`C001`).
+6. `[x]` Добавить/проверить close при account deletion (`C001`).
+7. `[x]` Добавить/проверить close при JWT/session expiry (`C001`).
 8. `[x]` Прогнать single-socket revoke regression по первому WS route (`C001`).
 9. `[x]` Прогнать single-socket revoke regression по второму WS route (`C001`).
 10. `[x]` Зафиксировать fail-closed результат delivery после revoke (`C001`).
@@ -72,15 +72,15 @@
 39. `[x]` Зафиксировать timezone regression evidence (`C004`).
 40. `[x]` Проверить API contract для server-side slot snapshot (`C004`).
 41. `[x]` Проверить немедленную очистку private RTK cache при logout (`C009`).
-42. `[~]` Прогнать logout при offline/network failure (`C009`).
-43. `[~]` Прогнать logout при HTTP 500 (`C009`).
+42. `[x]` Прогнать logout при offline/network failure (`C009`).
+43. `[x]` Прогнать logout при HTTP 500 (`C009`).
 44. `[x]` Проверить блокировку refresh после logout (`C009`).
 45. `[x]` Проверить generation guard позднего refresh (`C009`).
 46. `[~]` Прогнать switch identity A → B (`C009`).
 47. `[~]` Проверить, что Back не восстанавливает identity A (`C009`).
 48. `[x]` Проверить очистку PWA/private cache после logout (`C009`).
 49. `[x]` Проверить session-expired redirect и recoverable alert (`C009`).
-50. `[~]` Зафиксировать auth race evidence (`C009`).
+50. `[x]` Зафиксировать auth race evidence (`C009`).
 51. `[x]` Проверить canonical date parser до render (`C010`).
 52. `[x]` Прогнать malformed URL date (`C010`).
 53. `[x]` Прогнать impossible calendar date (`C010`).
@@ -95,7 +95,7 @@
 62. `[x]` Проверить разрешённые support/recovery actions (`C013`).
 63. `[x]` Проверить suspended HTTP boundary для owner (`C013`).
 64. `[x]` Проверить suspended HTTP boundary для branch member (`C013`).
-65. `[~]` Проверить suspended WebSocket boundary (`C013`).
+65. `[x]` Проверить suspended WebSocket boundary (`C013`).
 66. `[x]` Проверить audit event для suspended denial (`C013`).
 67. `[x]` Зафиксировать единый provider-access policy report (`C013`).
 68. `[x]` Проверить draft key account/provider/location/offering (`C014`).

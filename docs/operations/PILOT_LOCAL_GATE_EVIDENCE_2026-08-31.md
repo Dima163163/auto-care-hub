@@ -2276,3 +2276,65 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   `check:pilot-evidence` продолжают fail-closed на отсутствующих deployment
   secrets, SMTP/media/bootstrap-admin, external pilot envelope и written
   evidence; synthetic artifacts не создавались.
+
+## Порция 355 (06.09.2026) — protected WebSocket heartbeat boundaries
+
+- `[x]` Gateway regression добавил heartbeat recheck для трёх terminal access
+  причин: provider suspension, account deletion и JWT/session expiry. При
+  потере доступа socket закрывается `4403 Chat access revoked`, доставка
+  private event не выполняется.
+- `[x]` `service-chat.gateway.test.ts`: **8/8 PASS**; fake timers проверяют
+  реальный 30-секундный recheck path без ожидания wall-clock.
+
+## Порция 356 (06.09.2026) — service-date DST and midnight policy
+
+- `[x]` Добавлены deterministic cases для America/New_York spring-forward:
+  дата до/после перехода остаётся `2026-03-08`, следующий offset даёт
+  `2026-03-09`.
+- `[x]` Добавлен Moscow local-midnight case: `2026-01-01T21:00Z` корректно
+  отображается как `2026-01-02`, следующий день — `2026-01-03`; browser UTC
+  не подменяет service calendar.
+- `[~]` Manual OS-timezone/device replay и owner acceptance остаются внешним
+  условием, поэтому canonical V2-MVP-05 не переводится в `[x]` автоматически.
+
+## Порция 357 (06.09.2026) — logout failure recovery
+
+- `[x]` Real Chromium smoke добавил offline и HTTP 500 logout cases: клиент
+  немедленно возвращается в public shell и показывает локализуемый alert,
+  private session state не остаётся на рабочем экране; **2/2 PASS**.
+- `[x]` Component regression фиксирует тот же контракт для `FETCH_ERROR` и
+  status 500; `LogoutButton` не оставляет unhandled rejection.
+- `[x]` Вместе с stale-refresh hardening auth race evidence теперь покрывает
+  failed logout, terminal redirect и конкурентную смену access-token generation.
+
+## Порция 358 (06.09.2026) — autonomous local backlog replay
+
+- `[x]` После новых regressions `npm run check:local-mvp -- --static-only`
+  подтвердил все автоматические проверки; единственный оставшийся результат —
+  ожидаемый manual responsive browser gate.
+- `[x]` Frontend suite: **150 файлов / 477 тестов PASS**; lint, Next build и
+  backend TypeScript build PASS. MVP queue теперь: BLOCK-01 **88 `[x]` / 12
+  `[~]`**, BLOCK-02 **73 `[~]` / 27 `[E]`**, BLOCK-03 **21 `[x]` / 10 `[~]` /
+  69 `[E]`**.
+- `[~]` Остаток `[~]` — локальная подготовка, которой нужен deployed replay,
+  реальное устройство или owner sign-off; `[E]` — staging/production,
+  participant, legal и approval dependencies.
+
+## Порция 359 (06.09.2026) — deterministic logout route commit
+
+- `[x]` Выявлено, что обычный BrowserRouter по умолчанию публикует
+  navigation через `startTransition`, а `flushSync`-опция `useNavigate` для
+  BrowserRouter не применяется. Два production entrypoint теперь используют
+  `unstable_useTransitions={false}`, чтобы logout public-route commit был
+  синхронным.
+- `[x]` `LogoutButton` помечает короткий logout lifecycle, сбрасывает private
+  RTK state после `unwrap()` (включая быстрый `FETCH_ERROR`) и повторно
+  подтверждает `/`; `RequireAuth` не запускает login redirect в этой границе.
+  Focused real Chromium replay: **2/2 PASS** (offline, HTTP 500).
+- `[x]` Полный `npm run test:e2e:real` после router-hardening завершился
+  **25/25 PASS** в Chromium, один serial worker, real API без MSW; покрыты
+  health/catalog/discovery, auth/session, logout failure, request recovery и
+  role-scoped workspaces.
+- `[~]` Это локальный seeded replay: staging HTML, реальные пользователи,
+  устройства/OS timezone, private media/AV, multi-process WebSocket и
+  production go/no-go остаются внешними gates.
