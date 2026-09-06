@@ -40,6 +40,18 @@ async function expectStableShell(page: Page) {
     })).toBe(true)
 }
 
+async function expectPublicShell(page: Page) {
+    await expect(page.locator('header:visible').first()).toBeVisible({ timeout: routeReadyTimeoutMs })
+    await expect(page.getByRole('main')).toHaveCount(1, { timeout: routeReadyTimeoutMs })
+    await expect(page.getByRole('main').getByRole('heading').first()).toBeVisible({ timeout: routeReadyTimeoutMs })
+    await expectNoHorizontalOverflow(page)
+    await expect.poll(() => page.evaluate(() => {
+        const text = document.body.innerText
+        return !/(?:landing|navigation|common|errors)\.[A-Za-z0-9_.-]+/.test(text)
+            && !/\b(?:undefined|null|TODO|FIXME)\b/i.test(text)
+    })).toBe(true)
+}
+
 async function expectWorkspaceShell(page: Page) {
     await expect(page.getByRole('main')).toHaveCount(1, { timeout: routeReadyTimeoutMs })
     await expect(page.getByRole('main').getByRole('heading').first()).toBeVisible({ timeout: routeReadyTimeoutMs })
@@ -144,6 +156,51 @@ test.describe('AutoCare stable-web release gate', () => {
             await expect(page.locator('#comparison-map')).toBeVisible()
             await expect(page.getByRole('button', { name: /start search|начать поиск/i })).toBeVisible()
             await expect(page.getByRole('contentinfo')).toBeVisible()
+        }
+    })
+
+    test('manual acceptance widths keep route-specific shells usable', async ({ page }) => {
+        test.setTimeout(240_000)
+
+        for (const { width, route } of [
+            { width: 390, route: '/services?service=oil-change' },
+            { width: 414, route: '/services?service=oil-change' },
+            { width: 540, route: '/services?service=oil-change' },
+            { width: 682, route: '/services/api-proservice-moscow' },
+            { width: 1280, route: '/' },
+        ] as const) {
+            await test.step(`${route} @ ${width}px`, async () => {
+                await page.setViewportSize({ width, height: 900 })
+                await gotoStable(page, route)
+                await expectPublicShell(page)
+            })
+        }
+
+        await signInWithMockAccount(page, 'sophia.miller@example.com')
+        for (const { width, route } of [
+            { width: 768, route: '/owner/dashboard' },
+            { width: 1024, route: '/owner/autocare-requests' },
+        ] as const) {
+            await test.step(`${route} @ ${width}px`, async () => {
+                await page.setViewportSize({ width, height: 900 })
+                await gotoStable(page, route)
+                await expectWorkspaceShell(page)
+                await expectNoHorizontalOverflow(page)
+            })
+        }
+
+        await signOutMockAccount(page)
+        await signInWithMockAccount(page, 'admin@autocarehub.test')
+        for (const { width, route } of [
+            { width: 790, route: '/admin/dashboard' },
+            { width: 1440, route: '/super-admin/dashboard' },
+        ] as const) {
+            await test.step(`${route} @ ${width}px`, async () => {
+                await page.setViewportSize({ width, height: 900 })
+                await gotoStable(page, route)
+                await expectWorkspaceShell(page)
+                await expectNoHorizontalOverflow(page)
+            })
         }
     })
 
