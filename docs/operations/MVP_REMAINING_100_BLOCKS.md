@@ -260,7 +260,7 @@
 14. `[x]` Проверить placeholder услуги.
 15. `[x]` Проверить floating labels.
 16. `[x]` Проверить loading shell.
-17. `[~]` Проверить light/dark skeletons.
+17. `[x]` Проверить light/dark skeletons.
 18. `[x]` Проверить карту и карточки.
 19. `[x]` Проверить gallery dialog.
 20. `[x]` Проверить mobile menu.
