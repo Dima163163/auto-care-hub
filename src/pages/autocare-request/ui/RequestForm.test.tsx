@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -56,6 +56,24 @@ describe('RequestForm appointment slot contract', () => {
         fireEvent.submit(container.querySelector('form')!)
 
         expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ preferredAt: '2026-09-05T07:00:00.000Z' }))
+    })
+
+    it('keeps the Moscow service date when the browser is in New York', () => {
+        const previousTimezone = process.env.TZ
+        vi.useFakeTimers()
+        vi.setSystemTime(new Date('2026-03-29T22:30:00.000Z'))
+        process.env.TZ = 'America/New_York'
+
+        try {
+            renderForm('/services/provider-1/request')
+
+            expect(mocks.getAvailability.mock.calls[0]?.[0].date).toBe('2026-03-30')
+            expect(screen.getByText('(Europe/Moscow)')).toBeInTheDocument()
+        } finally {
+            if (previousTimezone === undefined) delete process.env.TZ
+            else process.env.TZ = previousTimezone
+            vi.useRealTimers()
+        }
     })
 
     it('recovers from a malformed URL date without passing it to availability or throwing during render', () => {
