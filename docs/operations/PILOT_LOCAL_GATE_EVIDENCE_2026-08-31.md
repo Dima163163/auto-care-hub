@@ -1944,3 +1944,13 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[x]` Шаг 16 BLOCK-03 отмечен `[x]` по этому replay.
 - `[~]` Light skeleton был загружен, но завершился до визуального capture;
   поэтому шаг 17 (light/dark skeletons) не закрывается этим наблюдением.
+
+## Порция 325 (06.09.2026) — loading/capacity static contracts
+
+- `[x]` `node --test scripts/check-loading-shell.test.mjs` завершён **2/2
+  PASS**: static chrome и themed loading placeholders присутствуют, negative
+  contract также корректно выявляет отсутствующий control.
+- `[x]` `node scripts/check-capacity-ui.mjs` завершён с `Capacity UI contract
+  passed`: compact branch calendar и loading wiring сохраняются.
+- `[~]` Static contracts не заменяют отдельный визуальный light skeleton
+  capture; BLOCK-03 шаг 17 остаётся `[~]`.
