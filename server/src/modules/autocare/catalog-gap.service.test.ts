@@ -64,7 +64,7 @@ describe('catalog gap provider authorization', () => {
         mocks.getRepository.mockReturnValue(repository)
 
         await expect(createAutoCareCatalogGapRequest({ id: 'manager-1' } as never, input))
-            .resolves.toMatchObject({ id: 'gap-1', providerId: 'provider-1', proposedSlug: 'wheel-alignment' })
+            .resolves.toMatchObject({ id: 'gap-1', providerId: input.providerId, proposedSlug: 'wheel-alignment' })
         expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('manager-1', '11111111-1111-4111-8111-111111111111', 'catalog')
         expect(repository.save).toHaveBeenCalledOnce()
     })

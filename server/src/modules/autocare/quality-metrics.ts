@@ -67,6 +67,12 @@ function percentile(values: number[], percentileValue: number) {
     return value === undefined ? null : Number(value.toFixed(1))
 }
 
+function hasValidOfferPrice(offer: QualityOffer) {
+    if (!Number.isFinite(offer.priceFromMinor) || offer.priceFromMinor < 0) return false
+    if (offer.priceToMinor === null || offer.priceToMinor === undefined) return true
+    return Number.isFinite(offer.priceToMinor) && offer.priceToMinor >= offer.priceFromMinor
+}
+
 export function buildQualityMetrics(input: {
     providers: QualityProvider[]
     providerMemberships: QualityProviderMembership[]
@@ -81,8 +87,17 @@ export function buildQualityMetrics(input: {
     reliability: AutoCareReliabilityQualityMetrics
 } {
     const activeProviders = input.providers.filter((provider) => provider.status === 'active')
-    const activeOffers = input.offers.filter((offer) => offer.active)
+    const activeProviderIds = new Set(activeProviders.map((provider) => provider.id))
+    const activeDefinitionIds = new Set(input.definitions.filter((definition) => definition.active).map((definition) => definition.id))
     const locationById = new Map(input.locations.map((location) => [location.id, location]))
+    const activeLocations = input.locations.filter((location) => activeProviderIds.has(location.providerId))
+    const activeOffers = input.offers.filter((offer) => {
+        const location = locationById.get(offer.locationId)
+        return offer.active
+            && location !== undefined
+            && activeProviderIds.has(location.providerId)
+            && activeDefinitionIds.has(offer.definitionId)
+    })
     const providerIdsWithOffers = new Set(activeOffers.map((offer) => locationById.get(offer.locationId)?.providerId).filter((id): id is string => Boolean(id)))
     const responseMinutes: number[] = []
     const firstProviderMessage = new Map<string, Date>()
@@ -114,7 +129,7 @@ export function buildQualityMetrics(input: {
     const confirmedBookings = input.requests.filter((request) => request.providerConfirmedAt && request.clientConfirmedAt).length
     const bookingConflicts = input.requests.filter((request) => request.status === ServiceRequestStatus.Declined || request.status === ServiceRequestStatus.Cancelled).length
     const markets = new Map<string, { providers: Set<string>; locations: Set<string>; activeOffers: number }>()
-    for (const location of input.locations) {
+    for (const location of activeLocations) {
         const row = markets.get(location.marketId) ?? { providers: new Set<string>(), locations: new Set<string>(), activeOffers: 0 }
         row.providers.add(location.providerId)
         row.locations.add(location.id)
@@ -132,13 +147,13 @@ export function buildQualityMetrics(input: {
             providersWithOffers: providerIdsWithOffers.size,
             offerCoveragePercent: percent(providerIdsWithOffers.size, providerCount),
             offersWithDescription: activeOffers.filter((offer) => Boolean(offer.description?.trim())).length,
-            offersWithPrice: activeOffers.filter((offer) => Number.isFinite(offer.priceFromMinor)).length,
-            priceCoveragePercent: percent(activeOffers.filter((offer) => Number.isFinite(offer.priceFromMinor)).length, activeOffers.length),
+            offersWithPrice: activeOffers.filter(hasValidOfferPrice).length,
+            priceCoveragePercent: percent(activeOffers.filter(hasValidOfferPrice).length, activeOffers.length),
         },
         supply: {
             markets: [...markets.entries()].map(([marketId, row]) => ({ marketId, providers: row.providers.size, locations: row.locations.size, activeOffers: row.activeOffers })).sort((a, b) => a.marketId.localeCompare(b.marketId)),
             activeMarkets: markets.size,
-            averageLocationsPerProvider: providerCount === 0 ? 0 : Number((input.locations.length / providerCount).toFixed(1)),
+            averageLocationsPerProvider: providerCount === 0 ? 0 : Number((activeLocations.length / providerCount).toFixed(1)),
         },
         reliability: {
             responseSamples: responseMinutes.length,

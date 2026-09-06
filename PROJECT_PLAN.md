@@ -71,6 +71,19 @@
 - [ ] Complete staging, data protection, manual/legal acceptance and real pilot
   evidence. No real-data pilot approval follows from local checks alone.
 
+## Autonomous pilot follow-up — 2026-09-06
+
+- [x] Hardened pilot quality metrics so catalog and supply coverage only use
+  active providers, their locations, active service definitions and attached
+  offers; orphan/inactive records no longer inflate public coverage.
+- [x] Added valid-price-range validation for quality metrics, with regressions
+  for negative, inverted and non-finite price values.
+- [x] Expanded the pilot-focused backend unit profile by 12 pure contract
+  suites. The profile now passes **288 files / 1042 tests**; the complete
+  backend suite passes **371 files / 1245 tests**.
+- [x] Refreshed local evidence and the 100-step execution batch without
+  changing the canonical V2 gate denominator or its NO-GO external gates.
+
 Historical commercial phases below are superseded and confer no implementation
 authority. Historical task checkmarks are evidence of their own date/scope only.
 

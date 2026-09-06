@@ -28,7 +28,15 @@ policy, truthful pilot metrics and production Next full-stack CI are prepared.
 The provider-timezone booking and malformed-date URL slices from the audit are
 implemented in the current working tree with regression coverage, but still
 need release-candidate replay evidence. The working tree contains accumulated
-uncommitted changes; do not attribute local PASS to HEAD alone.
+follow-up work documented below; local PASS must not be attributed to production
+or staging evidence.
+
+Autonomous pilot follow-up (2026-09-06): quality metrics now scope catalog and
+supply coverage to active providers, locations, definitions and attached offers,
+and reject invalid price ranges. Twelve pilot-focused pure suites are included
+in the backend unit profile (**288 files / 1042 tests PASS**); the complete
+backend suite is **371 files / 1245 tests PASS**. Canonical V2 gate counts and
+external NO-GO conditions are unchanged.
 
 ## Current objective
 

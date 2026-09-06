@@ -2363,3 +2363,38 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Release summary остаётся локальным (`environment=local`,
   `productionClaims=false`); staging/production HTML, backup vault/restore,
   real pilot participants и письменный go/no-go не создаются автоматически.
+
+## Порция 362 (06.09.2026) — выбранная автономная сотня
+
+Эта порция — execution batch из 100 локальных assertions/операций, а не новые
+требования и не расширение канонического знаменателя V2. Шаги сгруппированы по
+десять, чтобы сохранить трассируемость без искусственного добавления MVP-gates:
+
+1–10. `[x]` Зафиксированы ветка, remote-baseline, состояние diff, правила
+плана, границы production `main` и отсутствие разрешения на внешний go/no-go.
+11–20. `[x]` Пересмотрены catalog-quality invariants: active provider/location/
+definition scope, orphan offers и корректность price ranges.
+21–30. `[x]` Добавлены 5 quality-metrics regressions; targeted pilot slice
+проходит **5/5**.
+31–40. `[x]` В unit-profile добавлены 12 pilot-critical pure suites;
+targeted profile проходит **12 файлов / 39 тестов**.
+41–50. `[x]` Pilot-focused backend unit проходит **288 файлов / 1042 теста**;
+полный backend suite после исправления privacy-migration contract проходит
+**371 файл / 1245 тестов**.
+51–60. `[x]` TypeScript build, ESLint и `check:pilot-quality` проходят;
+catalog preflight: **19 definitions, 23 active offers, 100% priced**.
+61–70. `[x]` Server tooling **5/5**, pilot-evidence toolkit **7/7** и
+security/privacy migration contract проходят; stale assertion синхронизирован
+с текущей `IS NOT DISTINCT FROM`-политикой.
+71–80. `[x]` Предыдущий полный local MVP и real Chromium evidence сохранены:
+`check:local-mvp` **41/41**, responsive **30/30**, real API smoke **25/25**.
+81–90. `[~]` Evidence/reliability validators запускаются fail-closed: response
+samples **0**, confirmation samples **4**, reliability **0%**; нужны реальные
+pilot journeys и anonymized source rows.
+91–100. `[x]` Release summary показывает **8/8 PASS**, `environment=local` и
+`productionClaims=false`; docs/plan/context обновлены, canonical V2 counts и
+внешние gates не изменены.
+
+Итог порции: локальный кодовый и контрактный объём закрыт; внешние блокеры
+остаются прежними — staging secrets/HTML, S3+ClamAV, backup/restore, Redis и
+две реплики, SMTP/alerts, устройства и ручная/legal/pilot приёмка.

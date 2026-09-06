@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
     hasProviderWorkspacePermission: vi.fn(),
 }))
 
+const providerId = '11111111-1111-4111-8111-111111111111'
+const locationId = '22222222-2222-4222-8222-222222222222'
+
 vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 vi.mock('./provider-access.service.js', () => ({
     getManagedProviderPermissionScopes: mocks.getManagedProviderPermissionScopes,
@@ -65,7 +68,7 @@ describe('owner provider catalog access', () => {
     it('does not expose provider analytics without the analytics capability', async () => {
         mocks.getManagedProviderPermissionScopes.mockResolvedValue([])
 
-        await expect(getOwnerAutoCareProviderAnalytics({ id: 'staff-1' } as never, 'provider-1')).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getOwnerAutoCareProviderAnalytics({ id: 'staff-1' } as never, providerId)).rejects.toMatchObject({ statusCode: 403 })
         expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith('staff-1', 'analytics')
         expect(mocks.getRepository).not.toHaveBeenCalled()
     })
@@ -73,16 +76,16 @@ describe('owner provider catalog access', () => {
     it('does not expose capacity resources without the calendar capability', async () => {
         mocks.hasProviderWorkspacePermission.mockResolvedValue(false)
 
-        await expect(getOwnerAutoCareCapacityResources({ id: 'membership-without-calendar' } as never, 'provider-1', 'location-b')).rejects.toMatchObject({ statusCode: 403 })
-        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('membership-without-calendar', 'provider-1', 'calendar', 'location-b')
+        await expect(getOwnerAutoCareCapacityResources({ id: 'membership-without-calendar' } as never, providerId, locationId)).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.hasProviderWorkspacePermission).toHaveBeenCalledWith('membership-without-calendar', providerId, 'calendar', locationId)
         expect(mocks.getRepository).not.toHaveBeenCalled()
     })
 
     it('does not expose provider reviews without the reviews capability', async () => {
-        mocks.getRepository.mockReturnValue({ findOneBy: vi.fn().mockResolvedValue({ id: 'provider-1', status: 'active' }) })
+        mocks.getRepository.mockReturnValue({ findOneBy: vi.fn().mockResolvedValue({ id: providerId, status: 'active' }) })
         mocks.getManagedProviderPermissionScopes.mockResolvedValue([])
 
-        await expect(getOwnerAutoCareProviderReviews({ id: 'staff-1' } as never, 'provider-1')).rejects.toMatchObject({ statusCode: 404 })
+        await expect(getOwnerAutoCareProviderReviews({ id: 'staff-1' } as never, providerId)).rejects.toMatchObject({ statusCode: 404 })
         expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith('staff-1', 'reviews')
     })
 })

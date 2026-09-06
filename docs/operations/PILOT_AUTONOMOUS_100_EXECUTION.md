@@ -15,7 +15,8 @@
 
 1. `[x]` Запустить полный `check:local-mvp`: все автоматические проверки проходят; responsive Chromium matrix — 30/30 после запуска Next production preview.
 2. `[x]` Прогнать frontend unit-тесты: 150 файлов / 477 тестов.
-3. `[x]` Прогнать backend unit-тесты: 276 файлов / 1003 теста.
+3. `[x]` Прогнать backend unit-тесты: 288 файлов / 1042 теста в pilot-focused
+   unit-профиле; полный backend suite — 371 файл / 1245 тестов.
 4. `[x]` Проверить frontend production build.
 5. `[x]` Проверить backend TypeScript build.
 6. `[x]` Проверить inventory всех Next.js routes: 57 route constants.
@@ -147,7 +148,8 @@
 ## Последнее evidence
 
 - `npm run check:local-mvp`: все автоматические проверки PASS; responsive Chromium matrix 30/30 также PASS после запуска Next production server с разрешённым loopback-портом. Ручная visual/keyboard/device приёмка остаётся владельческим gate.
-- Backend unit: **276 файлов / 1003 теста**.
+- Backend pilot-focused unit: **288 файлов / 1042 теста**; полный backend
+  suite: **371 файл / 1245 тестов**.
 - Frontend unit: **150 файлов / 477 тестов**.
 - `npm run check:threat-surface`: PASS, включая availability rate limit.
 - `npm run check:ops-harness`, `check:security-headers`, `check:capacity-ui`, API/OpenAPI checks: PASS.
