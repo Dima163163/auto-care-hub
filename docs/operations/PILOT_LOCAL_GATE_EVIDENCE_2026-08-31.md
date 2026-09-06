@@ -1904,3 +1904,23 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Space-key activation, mobile menu, остальные protected routes и
   физические screen-reader replays требуют отдельного replay; текущая запись
   не заменяет owner visual sign-off.
+
+## Порция 322 (06.09.2026) — owner dashboard и заявки
+
+- `[x]` Owner dashboard вручную открыт в clean Chrome на
+  `/owner/dashboard` в dark и light theme. Проверены заголовок рабочего
+  пространства, KPI, operational analytics, список новых заявок, точки
+  автосервиса, операции и таблица автопарка; очевидного overflow или белого
+  экрана не обнаружено.
+- `[x]` Owner requests вручную открыты на `/owner/autocare-requests` в light
+  theme. Проверены календарь филиала, выбор даты (6 → 7 сентября), рабочая
+  очередь и фильтр `Нужно ответить`; список заявок и выбранные детали
+  обновились без изменения данных.
+- `[x]` В отфильтрованной очереди открыт read-only сценарий истёкшей сметы:
+  detail panel показал статус, клиента, автомобиль, срок и безопасные поля
+  новой сметы; mutation-кнопки не нажимались.
+- `[x]` Evidence freshness подтверждена этим replay 06.09.2026; поэтому шаг
+  87 BLOCK-03 отмечен `[x]`.
+- `[~]` Точная ширина 768 px, mobile menu, Space-key replay, остальные
+  protected routes, screen-reader/device replay и product-owner sign-off
+  остаются незакрытыми и не подменяются desktop-проверкой.
