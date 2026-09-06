@@ -270,6 +270,27 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(themeSwitcher).toHaveAttribute('aria-checked', initialChecked)
     })
 
+    test('loading shell keeps themed skeletons in light and dark themes', async ({ browser }) => {
+        for (const theme of ['light', 'dark'] as const) {
+            const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+            const page = await context.newPage()
+            await page.addInitScript((nextTheme) => {
+                window.localStorage.setItem('autocare-hub-theme', nextTheme)
+            }, theme)
+            await page.goto('/services', { waitUntil: 'commit' })
+
+            await expect(page.locator('main[aria-busy="true"]').first()).toBeVisible()
+            await expect(page.locator('[data-testid="autocare-results-map-skeleton"]').first()).toBeVisible()
+            if (theme === 'dark') {
+                await expect(page.locator('html')).toHaveClass(/dark/)
+            } else {
+                await expect(page.locator('html')).not.toHaveClass(/dark/)
+            }
+
+            await context.close()
+        }
+    })
+
     test('public pages expose a usable keyboard order', async ({ page }) => {
         for (const route of ['/', '/services?service=oil-change', '/services/api-proservice-moscow']) {
             await page.setViewportSize({ width: 1280, height: 900 })
