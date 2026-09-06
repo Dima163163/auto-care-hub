@@ -1924,3 +1924,13 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Точная ширина 768 px, mobile menu, Space-key replay, остальные
   protected routes, screen-reader/device replay и product-owner sign-off
   остаются незакрытыми и не подменяются desktop-проверкой.
+
+## Порция 323 (06.09.2026) — focus-visible light/dark replay
+
+- `[x]` В light theme на owner requests после `Tab` видимый focus ring
+  появился на ссылке «Связаться с клиентом»; AX focus подтвердил этот link.
+- `[x]` В dark theme после переключения темы и `Tab` видимый focus ring
+  появился на ссылке уведомлений; AX focus подтвердил тот же control.
+- `[x]` Шаги 23–24 BLOCK-03 отмечены `[x]` по этому desktop Chromium replay.
+- `[~]` Mobile/device, VoiceOver/TalkBack и product-owner visual sign-off не
+  подменяются этим replay.
