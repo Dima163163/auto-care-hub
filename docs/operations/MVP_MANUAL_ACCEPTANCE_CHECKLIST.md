@@ -15,7 +15,7 @@
 
 ## Обязательные автоматические предпосылки
 
-- [x] `npm run check:local-mvp` — актуальный static gate **40/40 PASS** на commit `2ac9f14`; отдельный production Next responsive matrix **30/30 PASS** на ширинах 360–1440 px.
+- [x] `npm run check:local-mvp -- --static-only --json` — актуальный static gate **40/40 PASS** на commit `374496054154`; отдельный production Next responsive matrix **30/30 PASS** на ширинах 360–1440 px.
 - [x] `npm run check:state-matrix` — mock loading/error/offline/timeout/permission/suspended contract.
 - [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "theme switcher and discovery focus"` — rounded focus и переключение темы.
 - [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "protected workspaces satisfy"` — Axe для защищённых кабинетов.

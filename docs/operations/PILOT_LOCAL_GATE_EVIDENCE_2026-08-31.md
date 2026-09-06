@@ -1849,3 +1849,22 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   MFA/SSO, private S3/ClamAV, encrypted offsite restore, monitoring destinations,
   branch protection, independent security review, tabletop/rollback, Lighthouse
   и owner go/no-go. Эти шаги сохранены как `[E]` в BLOCK-02.
+
+## Порция 318 (06.09.2026) — BLOCK-03 manual/pilot preparation
+
+- `[x]` Свежий `npm run check:local-mvp -- --static-only --json` на head
+  `374496054154` выдал **40 pass / 1 manual**: frontend lint, **149 файлов /
+  471 тест**, Next production build, backend build, route/API parity, state,
+  client-path, design-token, interaction и accessibility contracts прошли.
+- `[x]` Предыдущие browser evidence остаются актуальными: production Next
+  responsive matrix **30/30** на ширинах 360–1440, focused Chromium acceptance
+  **5/5**, mock browser **156/156**, real API grouped **23/23**. Эти результаты
+  покрывают автоматическую подготовку public/protected shell, keyboard, Axe,
+  loading/skeleton, locales и overflow сценариев.
+- `[~]` Clean-browser и desktop visual steps подготовлены, но не превращены в
+  owner sign-off. CUA/manual visual replay ранее остановлен системными
+  Accessibility/Screen Recording permissions; автоматический Chromium не
+  заменяет visual judgement.
+- `[E]` VoiceOver/TalkBack, физические iOS/Android устройства, pilot city,
+  services, реальные участники, consent/retention, support/legal approval,
+  pilot metrics и go/no-go отсутствуют и не создавались локально.
