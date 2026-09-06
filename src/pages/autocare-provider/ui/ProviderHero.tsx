@@ -31,7 +31,7 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
         <section className="relative isolate overflow-hidden bg-hero-overlay text-primary-foreground">
             <AutoCareImage src={provider.image} alt="" loading="eager" className="absolute inset-0 h-full w-full object-cover opacity-45" />
             <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/86 to-hero-overlay/30" aria-hidden="true" />
-            <div className="relative mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-4 sm:py-5">
+            <div className="relative mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-4 sm:py-5">
                 <Link to={ROUTES.serviceDiscovery} className="inline-flex items-center gap-2 text-xs font-bold text-primary-foreground/65 transition hover:text-primary-foreground"><ArrowLeft className="size-3.5" />{t('autocare.providerBackToResults')}</Link>
                 <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(380px,0.64fr)] lg:items-center">
                     <div className="min-w-0">

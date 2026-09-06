@@ -8,7 +8,7 @@ export function ProviderSectionNavigation() {
 
     return (
         <nav aria-label={t('autocare.providerProfile')} className="border-b border-border bg-card shadow-sm">
-            <div className="mx-auto flex max-w-[var(--layout-operational-max)] gap-1 overflow-x-auto px-[var(--layout-gutter)] py-2">
+            <div className="mx-auto flex max-w-[var(--layout-public-wide-max)] gap-1 overflow-x-auto px-[var(--layout-public-gutter)] py-2">
                 <ProviderSectionLink href="#services" icon={<ListChecks className="size-4" />}>{t('autocare.providerServices')}</ProviderSectionLink>
                 <ProviderSectionLink href="#about" icon={<CircleHelp className="size-4" />}>{t('autocare.providerAbout')}</ProviderSectionLink>
                 <ProviderSectionLink href="#location" icon={<MapPinned className="size-4" />}>{t('autocare.providerLocation')}</ProviderSectionLink>
