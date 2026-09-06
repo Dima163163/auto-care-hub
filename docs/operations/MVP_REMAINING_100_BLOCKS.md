@@ -330,7 +330,7 @@
 84. `[E]` Собрать duplicate/retry metrics.
 85. `[E]` Собрать upload/mail/complaint metrics.
 86. `[E]` Проверить anonymization/PII redaction.
-87. `[~]` Проверить evidence freshness.
+87. `[x]` Проверить evidence freshness.
 88. `[E]` Проверить evidence participant/journey uniqueness.
 89. `[E]` Проверить consent/retention record.
 90. `[E]` Подписать pilot evidence envelope.
