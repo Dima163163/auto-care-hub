@@ -269,7 +269,7 @@
 23. `[x]` Проверить focus-visible в light theme.
 24. `[x]` Проверить focus-visible в dark theme.
 25. `[x]` Проверить Enter на primary actions.
-26. `[~]` Проверить Space на buttons/toggles.
+26. `[x]` Проверить Space на buttons/toggles.
 27. `[x]` Проверить Escape dropdown.
 28. `[x]` Проверить Escape dialog/gallery.
 29. `[x]` Проверить focus return.
