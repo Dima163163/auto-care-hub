@@ -2123,3 +2123,56 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   обязательные внешние входы.
 - `[E]` BLOCK-03 шаги 88–90 и 100 остаются внешними до реального pilot
   evidence, consent/retention record, подписанного envelope и go/no-go.
+
+## Порция 339 (06.09.2026) — manual checklist freshness
+
+- `[x]` `docs/operations/MVP_MANUAL_ACCEPTANCE_CHECKLIST.md` обновлён: вместо
+  устаревшего static-only SHA/счётчика зафиксированы последний clean baseline
+  `8ad66fb955a9`, full local gate **41/41 PASS**, frontend **149 файлов / 471
+  тест** и responsive matrix **30/30 PASS**.
+- `[x]` В checklist добавлен актуальный Chromium release audit **21/21 PASS**
+  с exact-width, keyboard, Axe, theme, locale и overflow coverage.
+- `[~]` Companion checklist по-прежнему явно отделяет автоматическую подготовку
+  от owner visual sign-off и VoiceOver/TalkBack device gates.
+
+## Порция 340 (06.09.2026) — static-only consistency replay
+
+- `[x]` `npm run check:local-mvp -- --static-only --json` на SHA
+  `86c8780bd7b4` повторно дал **40 PASS / 1 manual**; frontend lint, 149/471,
+  Next/backend build и все source/API/security/state contracts прошли.
+- `[x]` Единственный `manual` — намеренно пропущенный responsive runtime pass
+  в static-only режиме, а не ошибка продукта.
+
+## Порция 341 (06.09.2026) — autonomous plan consistency
+
+- `[x]` `npm run check:pilot-autonomous-plan` подтвердил 100 уникальных шагов:
+  **93 complete / 7 partial**, без неучтённых пунктов.
+- `[~]` Семь partial остаются локально подготовленными до внешнего runtime,
+  credentials или owner decision и не переводятся в complete автоматически.
+
+## Порция 342 (06.09.2026) — remaining queue integrity
+
+- `[x]` `npm run check:pilot-autonomous-next` подтвердил следующий локальный
+  backlog **100/100** по структуре.
+- `[x]` `npm run check:mvp-remaining-blocks` и
+  `npm run test:mvp-remaining-blocks` завершены **2/2 PASS**; все BLOCK-01/02/03
+  сохраняют ровно 100 нумерованных задач.
+
+## Порция 343 (06.09.2026) — clean release summary after checklist refresh
+
+- `[x]` После отдельного checklist-коммита `d0409cc6967d` повторный
+  `npm run check:release-summary -- --json` вернул `clean=true`, пустые
+  staged/unstaged/untracked, `productionClaims=false` и **8/8 local checks
+  PASS**.
+- `[x]` Migration inventory остался неизменным: 130 файлов, checksum
+  `da0a73b2b6eb0159315b78e482f3d607bc069480577d70676b2b32a64ad0a8fa`.
+
+## Порция 344 (06.09.2026) — active-doc stale-reference sweep
+
+- `[x]` В active companion checklist больше нет ссылок на устаревший
+  `374496054154` или `40/40 PASS`; исторические evidence-register entries
+  сохранены как исторические и не переписаны задним числом.
+- `[x]` `git diff --check` после обновления checklist прошёл; изменения
+  ограничены документацией, runtime/API поведение не менялось.
+- `[~]` Staging/production HTML, backup restore, real participants, device
+  accessibility и product/legal approvals остаются отдельными внешними gates.
