@@ -2228,3 +2228,51 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[x]` BLOCK-01 задачи C003 **24–27** переведены в `[x]`; C004 шаг 32
   сохраняет `[~]` до real browser/service replay. Canonical progress в
   `PILOT_SCOPE_FREEZE.md` не изменён.
+
+## Порция 350 (06.09.2026) — local database migration and integrity gate
+
+- `[x]` На локальном Docker PostgreSQL (`127.0.0.1:5433`) `npm run server:migrate`
+  завершился без pending migrations; TypeORM увидел 130 source migrations и
+  130 уже применённых.
+- `[x]` `check:autocare-integrity -- --validate` подтвердил **42/42 critical
+  tables** с нулевыми count-ошибками и отсутствием pending constraints.
+- `[~]` Это локальная seeded database проверка; staging/production backup-
+  restore и release owner sign-off остаются внешними gates.
+
+## Порция 351 (06.09.2026) — deterministic local seed replay
+
+- `[x]` Последовательный `demo:reset` → `demo:seed` → `autocare:seed` прошёл
+  успешно; demo password и generated provider media созданы штатными скриптами.
+- `[x]` API на `127.0.0.1:4000` подтвердил live/readiness contract и real
+  market catalog после reseed; seeded data не смешивается с pilot evidence.
+
+## Порция 352 (06.09.2026) — real API browser smoke aggregate
+
+- `[x]` `npm run test:e2e:real` после reseed завершился **23/23 PASS** в
+  Chromium, один serial worker, `NEXT_PUBLIC_API_MODE=real`, без MSW.
+- `[x]` Покрыты health/market/discovery, communication modes, public/owner/
+  admin legacy routes, protected-session boundary, logout, idempotent request,
+  request-form offline/timeout recovery и role-scoped workspaces.
+- `[~]` Локальный API smoke не является staging HTML, real-participant,
+  device-accessibility или production go/no-go evidence.
+
+## Порция 353 (06.09.2026) — stale auth refresh race hardening
+
+- `[x]` Исправлен клиентский race: неуспешный refresh, начатый публичным
+  `/auth/me` до login, больше не очищает новый in-memory access token и RTK
+  state, выданные конкурентным успешным login; logout/auth-generation также
+  остаётся защищённым.
+- `[x]` `signIn` helper real smoke ждёт post-login `/auth/me` до 30 секунд,
+  сохраняя production rate-limit без отключения или ослабления лимитера.
+- `[x]` Полный real smoke после hardening подтвердил **23/23 PASS**, включая
+  оба admin legacy route variants.
+
+## Порция 354 (06.09.2026) — local operations batch boundary
+
+- `[x]` ESLint для изменённых TS/Playwright файлов и focused
+  `refresh-access-token` suite (**2/2**) прошли; `git diff --check` остаётся
+  обязательным перед коммитом.
+- `[~]` `check:mvp-readiness`, `check:production-operations` и
+  `check:pilot-evidence` продолжают fail-closed на отсутствующих deployment
+  secrets, SMTP/media/bootstrap-admin, external pilot envelope и written
+  evidence; synthetic artifacts не создавались.
