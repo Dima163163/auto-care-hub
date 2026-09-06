@@ -266,8 +266,8 @@
 20. `[~]` Проверить mobile menu.
 21. `[x]` Пройти public Tab order.
 22. `[x]` Пройти protected Tab order.
-23. `[~]` Проверить focus-visible в light theme.
-24. `[~]` Проверить focus-visible в dark theme.
+23. `[x]` Проверить focus-visible в light theme.
+24. `[x]` Проверить focus-visible в dark theme.
 25. `[x]` Проверить Enter на primary actions.
 26. `[~]` Проверить Space на buttons/toggles.
 27. `[x]` Проверить Escape dropdown.
