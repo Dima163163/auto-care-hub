@@ -1982,3 +1982,19 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Автоматический release-audit не заменяет pixel-level visual judgement,
   физические VoiceOver/TalkBack устройства, pilot participants или
   product-owner sign-off.
+
+## Порция 328 (06.09.2026) — полный local MVP gate после breakpoint fix
+
+- `[x]` `npm run check:local-mvp -- --json` на commit `b1559082b87b`
+  завершён **41/41 PASS**: frontend lint, **149 файлов / 471 тест**, Next
+  production build, backend build, route/API parity, security/media/backup,
+  state/loading/interaction contracts и Chromium executable.
+- `[x]` Ephemeral Next release server responsive pass завершён **30/30 PASS**
+  на ширинах 360, 390, 414, 540, 682, 768, 790, 1024, 1280 и 1440 px;
+  failures **0**.
+- `[x]` После исправления public mobile-menu breakpoint полный local gate
+  повторно подтверждает отсутствие responsive overflow и корректную
+  navigation boundary.
+- `[~]` Staging probe был корректно пропущен без `STAGING_API_BASE_URL`;
+  pixel-level visual judgement, light skeleton capture, Space-key replay,
+  реальные устройства и внешние approvals остаются отдельными условиями.
