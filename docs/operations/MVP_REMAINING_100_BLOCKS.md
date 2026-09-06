@@ -21,9 +21,9 @@
 готова, но нужен внешний replay, `[E]` — шаг нельзя выполнить без внешней
 инфраструктуры, устройства или решения владельца.
 
-Текущий указатель: **BLOCK-03, шаг 001**. BLOCK-01 и локальная подготовка BLOCK-02
-обработаны; оставшиеся `[~]` требуют внешнего replay, а `[E]` — внешней
-инфраструктуры или approval. После закрытия блока активируется
+Текущий указатель: **BLOCK-03, внешний acceptance**. BLOCK-01, BLOCK-02 и локальная
+подготовка BLOCK-03 обработаны; оставшиеся `[~]` требуют внешнего replay, а `[E]` —
+внешней инфраструктуры, устройства, участников или approval. После закрытия блока активируется
 следующий. Статусы в этом файле — детализация выполнения; canonical progress
 остаётся в `PILOT_SCOPE_FREEZE.md`.
 
@@ -245,35 +245,35 @@
 или внешнего legal/operations evidence и стартуют как `[E]`.
 
 1. `[E]` Назначить владельца visual/keyboard приёмки.
-2. `[E]` Открыть чистое окно браузера.
-3. `[E]` Проверить home на 360 px, light theme.
-4. `[E]` Проверить home на 360 px, dark theme.
-5. `[E]` Проверить services на 390 px.
-6. `[E]` Проверить services на 414 px.
-7. `[E]` Проверить services на 540 px.
-8. `[E]` Проверить provider на 682 px.
-9. `[E]` Проверить owner pages на 768 px.
-10. `[E]` Проверить admin pages на 790 px.
-11. `[E]` Проверить protected pages на 1024 px.
-12. `[E]` Проверить public pages на 1280 px.
-13. `[E]` Проверить super-admin на 1440 px.
-14. `[E]` Проверить placeholder услуги.
-15. `[E]` Проверить floating labels.
-16. `[E]` Проверить loading shell.
-17. `[E]` Проверить light/dark skeletons.
-18. `[E]` Проверить карту и карточки.
-19. `[E]` Проверить gallery dialog.
-20. `[E]` Проверить mobile menu.
-21. `[E]` Пройти public Tab order.
-22. `[E]` Пройти protected Tab order.
-23. `[E]` Проверить focus-visible в light theme.
-24. `[E]` Проверить focus-visible в dark theme.
-25. `[E]` Проверить Enter на primary actions.
-26. `[E]` Проверить Space на buttons/toggles.
-27. `[E]` Проверить Escape dropdown.
-28. `[E]` Проверить Escape dialog/gallery.
-29. `[E]` Проверить focus return.
-30. `[E]` Проверить disabled controls.
+2. `[~]` Открыть чистое окно браузера.
+3. `[~]` Проверить home на 360 px, light theme.
+4. `[~]` Проверить home на 360 px, dark theme.
+5. `[~]` Проверить services на 390 px.
+6. `[~]` Проверить services на 414 px.
+7. `[~]` Проверить services на 540 px.
+8. `[~]` Проверить provider на 682 px.
+9. `[~]` Проверить owner pages на 768 px.
+10. `[~]` Проверить admin pages на 790 px.
+11. `[~]` Проверить protected pages на 1024 px.
+12. `[~]` Проверить public pages на 1280 px.
+13. `[~]` Проверить super-admin на 1440 px.
+14. `[~]` Проверить placeholder услуги.
+15. `[~]` Проверить floating labels.
+16. `[~]` Проверить loading shell.
+17. `[~]` Проверить light/dark skeletons.
+18. `[~]` Проверить карту и карточки.
+19. `[~]` Проверить gallery dialog.
+20. `[~]` Проверить mobile menu.
+21. `[~]` Пройти public Tab order.
+22. `[~]` Пройти protected Tab order.
+23. `[~]` Проверить focus-visible в light theme.
+24. `[~]` Проверить focus-visible в dark theme.
+25. `[~]` Проверить Enter на primary actions.
+26. `[~]` Проверить Space на buttons/toggles.
+27. `[~]` Проверить Escape dropdown.
+28. `[~]` Проверить Escape dialog/gallery.
+29. `[~]` Проверить focus return.
+30. `[~]` Проверить disabled controls.
 31. `[E]` Запустить VoiceOver на macOS/iOS.
 32. `[E]` Проверить VoiceOver public search.
 33. `[E]` Проверить VoiceOver provider profile.
@@ -330,11 +330,11 @@
 84. `[E]` Собрать duplicate/retry metrics.
 85. `[E]` Собрать upload/mail/complaint metrics.
 86. `[E]` Проверить anonymization/PII redaction.
-87. `[E]` Проверить evidence freshness.
+87. `[~]` Проверить evidence freshness.
 88. `[E]` Проверить evidence participant/journey uniqueness.
 89. `[E]` Проверить consent/retention record.
 90. `[E]` Подписать pilot evidence envelope.
-91. `[E]` Проверить отсутствие P0/P1.
+91. `[~]` Проверить отсутствие P0/P1.
 92. `[E]` Назначить owner/date/workaround для P2.
 93. `[E]` Подтвердить понятность сценариев сервисами.
 94. `[E]` Подтвердить понятность сценариев клиентами.
