@@ -1970,3 +1970,15 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   --check`.
 - `[~]` Это функциональный mock-browser replay; pixel-level visual sign-off,
   реальные устройства и product-owner approval остаются внешними условиями.
+
+## Порция 327 (06.09.2026) — полный release-audit replay
+
+- `[x]` `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium`
+  в изолированном mock runtime завершён **18/18 PASS**.
+- `[x]` Свежий прогон подтвердил release breakpoints, discovery keyboard/Axe,
+  mobile-menu boundary и Escape, public/protected keyboard order, gallery
+  focus return, все локали, mobile long-label layout, owner services/onboarding,
+  owner requests calendar, admin moderation и super-admin market hierarchy.
+- `[~]` Автоматический release-audit не заменяет pixel-level visual judgement,
+  физические VoiceOver/TalkBack устройства, pilot participants или
+  product-owner sign-off.
