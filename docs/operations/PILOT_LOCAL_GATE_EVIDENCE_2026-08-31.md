@@ -1804,3 +1804,26 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Эти прогоны закрывают локальное автоматическое evidence; visual sign-off
   владельца продукта и VoiceOver/TalkBack на физических устройствах остаются
   ручными условиями checklist и не подменяются браузерной автоматизацией.
+
+## Порция 316 (06.09.2026) — BLOCK-01 focused local execution
+
+- `[x]` Выполнен focused backend unit replay для WebSocket service-chat contract:
+  **1 файл / 5 тестов PASS**. Проверены bounded event, caller event id,
+  oversized payload rejection и fail-closed revoke/revalidation (close 4403).
+- `[x]` Выполнен focused PostgreSQL/Redis integration replay для capacity,
+  account-deletion и provider-branch boundaries: **3 файла / 21 тест PASS**.
+  Включены quote stale/expiry/idempotency, booking/reschedule/cancel/no-show/
+  complete, capacity races, concurrent deletion request/cancel и branch scope.
+- `[x]` Выполнен focused frontend replay: RequestForm/date/draft, auth token
+  generation и request follow-up — **5 файлов / 10 тестов PASS**.
+- `[x]` Результаты сопоставлены с ранее накопленным local MVP gate: `quality:backend`
+  (276 файлов / 1000 тестов и TypeScript build), local static 40/40,
+  responsive 30/30, mock 156/156, real grouped 23/23 и integration 14/60.
+- `[x]` Свежий `npm run check:local-mvp -- --static-only --json` на head
+  `ebf3826a8203` выдал машинный summary **40 pass / 1 manual**; единственный
+  manual — responsive browser run, поэтому ожидаемый exit code команды равен 1.
+- `[~]` Не закрыты без внешнего окружения: multi-process WebSocket revoke и
+  suspension, account-deletion completion interleavings, реальные browser
+  timezone/DST и A→B logout races, slow-network/device replay, contacts/legal и
+  demo-only content approval. Эти шаги помечены `[~]` в `MVP_REMAINING_100_BLOCKS.md`;
+  они не объявляются выполненными локально.
