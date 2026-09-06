@@ -1934,3 +1934,13 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[x]` Шаги 23–24 BLOCK-03 отмечены `[x]` по этому desktop Chromium replay.
 - `[~]` Mobile/device, VoiceOver/TalkBack и product-owner visual sign-off не
   подменяются этим replay.
+
+## Порция 324 (06.09.2026) — loading shell replay
+
+- `[x]` При reload owner requests в dark theme вручную пойман промежуточный
+  loading shell: sidebar/header placeholders, заголовочный каркас,
+  календарный блок и skeleton-карточки очереди отображались до появления
+  данных; белого экрана не было.
+- `[x]` Шаг 16 BLOCK-03 отмечен `[x]` по этому replay.
+- `[~]` Light skeleton был загружен, но завершился до визуального capture;
+  поэтому шаг 17 (light/dark skeletons) не закрывается этим наблюдением.
