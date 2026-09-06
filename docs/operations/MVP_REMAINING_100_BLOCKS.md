@@ -21,7 +21,8 @@
 готова, но нужен внешний replay, `[E]` — шаг нельзя выполнить без внешней
 инфраструктуры, устройства или решения владельца.
 
-Текущий указатель: **BLOCK-01, шаг 001**. После закрытия блока активируется
+Текущий указатель: **BLOCK-02, шаг 001**. BLOCK-01 обработан локально; оставшиеся
+`[~]` требуют внешнего replay или ручного sign-off. После закрытия блока активируется
 следующий. Статусы в этом файле — детализация выполнения; canonical progress
 остаётся в `PILOT_SCOPE_FREEZE.md`.
 
@@ -29,106 +30,106 @@
 
 Основание: `V2-MVP-02`, `V2-MVP-05…V2-MVP-10`, `CHANGE-C001…C014`.
 
-1. `[ ]` Собрать список обоих AutoCare WebSocket routes и их auth boundaries (`C001`).
-2. `[ ]` Зафиксировать live session/membership check перед private delivery (`C001`).
-3. `[ ]` Добавить/проверить close при session revoke (`C001`).
-4. `[ ]` Добавить/проверить close при membership revoke (`C001`).
-5. `[ ]` Добавить/проверить close при provider suspension (`C001`).
-6. `[ ]` Добавить/проверить close при account deletion (`C001`).
-7. `[ ]` Добавить/проверить close при JWT/session expiry (`C001`).
-8. `[ ]` Прогнать single-socket revoke regression по первому WS route (`C001`).
-9. `[ ]` Прогнать single-socket revoke regression по второму WS route (`C001`).
-10. `[ ]` Зафиксировать fail-closed результат delivery после revoke (`C001`).
-11. `[ ]` Проверить, что quote accept payload содержит `quoteId` (`C002`).
-12. `[ ]` Проверить, что quote accept payload содержит `quoteVersion` (`C002`).
-13. `[ ]` Проверить привязку quoteId/version к UI snapshot (`C002`).
-14. `[ ]` Добавить regression stale quote → `409` (`C002`).
-15. `[ ]` Проверить отсутствие booking при stale quote (`C002`).
-16. `[ ]` Проверить отсутствие reservation при stale quote (`C002`).
-17. `[ ]` Проверить повтор того же acceptance intent (`C002`).
-18. `[ ]` Проверить сохранение accepted price в booking snapshot (`C002`).
-19. `[ ]` Проверить expiry quote и повторное предложение (`C002`).
-20. `[ ]` Зафиксировать quote acceptance evidence в integration report (`C002`).
-21. `[ ]` Проверить lock order account-deletion request (`C003`).
-22. `[ ]` Проверить terminal-state guard `completed → cancelled` (`C003`).
-23. `[ ]` Проверить terminal-state guard `anonymized → cancelled` (`C003`).
-24. `[ ]` Добавить interleaving completion-then-cancel regression (`C003`).
-25. `[ ]` Добавить interleaving cancel-then-completion regression (`C003`).
-26. `[ ]` Проверить stale reason после completion (`C003`).
-27. `[ ]` Проверить согласованный audit result для гонки (`C003`).
-28. `[ ]` Зафиксировать account-deletion integration evidence (`C003`).
-29. `[ ]` Проверить, что availability отдаёт server `startsAt` (`C004`).
-30. `[ ]` Проверить сохранение service timezone в API type (`C004`).
-31. `[ ]` Проверить отправку выбранного `startsAt` без browser-local conversion (`C004`).
-32. `[ ]` Прогнать Moscow browser / service timezone scenario (`C004`).
-33. `[ ]` Прогнать New York browser / Moscow service scenario (`C004`).
-34. `[ ]` Прогнать DST boundary scenario (`C004`).
-35. `[ ]` Прогнать midnight service-date scenario (`C004`).
-36. `[ ]` Прогнать malformed date/slot response (`C004`).
-37. `[ ]` Проверить отображение timezone рядом с выбранным временем (`C004`).
-38. `[ ]` Проверить booking persistence именно выбранного instant (`C004`).
-39. `[ ]` Зафиксировать timezone regression evidence (`C004`).
-40. `[ ]` Проверить API contract для server-side slot snapshot (`C004`).
-41. `[ ]` Проверить немедленную очистку private RTK cache при logout (`C009`).
-42. `[ ]` Прогнать logout при offline/network failure (`C009`).
-43. `[ ]` Прогнать logout при HTTP 500 (`C009`).
-44. `[ ]` Проверить блокировку refresh после logout (`C009`).
-45. `[ ]` Проверить generation guard позднего refresh (`C009`).
-46. `[ ]` Прогнать switch identity A → B (`C009`).
-47. `[ ]` Проверить, что Back не восстанавливает identity A (`C009`).
-48. `[ ]` Проверить очистку PWA/private cache после logout (`C009`).
-49. `[ ]` Проверить session-expired redirect и recoverable alert (`C009`).
-50. `[ ]` Зафиксировать auth race evidence (`C009`).
-51. `[ ]` Проверить canonical date parser до render (`C010`).
-52. `[ ]` Прогнать malformed URL date (`C010`).
-53. `[ ]` Прогнать impossible calendar date (`C010`).
-54. `[ ]` Прогнать leap-day invalid date (`C010`).
-55. `[ ]` Прогнать malformed slot query (`C010`).
-56. `[ ]` Проверить recoverable error вместо `RangeError`/white screen (`C010`).
-57. `[ ]` Проверить reload/back/forward после нормализации URL (`C010`).
-58. `[ ]` Зафиксировать malformed-input regression (`C010`).
-59. `[ ]` Проверить suspended provider read policy (`C013`).
-60. `[ ]` Проверить suspended provider quote mutation policy (`C013`).
-61. `[ ]` Проверить suspended provider booking mutation policy (`C013`).
-62. `[ ]` Проверить разрешённые support/recovery actions (`C013`).
-63. `[ ]` Проверить suspended HTTP boundary для owner (`C013`).
-64. `[ ]` Проверить suspended HTTP boundary для branch member (`C013`).
-65. `[ ]` Проверить suspended WebSocket boundary (`C013`).
-66. `[ ]` Проверить audit event для suspended denial (`C013`).
-67. `[ ]` Зафиксировать единый provider-access policy report (`C013`).
-68. `[ ]` Проверить draft key account/provider/location/offering (`C014`).
-69. `[ ]` Проверить vehicle identity в draft key (`C014`).
-70. `[ ]` Проверить reset draft при смене identity (`C014`).
-71. `[ ]` Проверить reset draft при смене provider/location (`C014`).
-72. `[ ]` Прогнать slow create → navigation (`C014`).
-73. `[ ]` Прогнать slow create → logout (`C014`).
-74. `[ ]` Прогнать slow create → новый provider (`C014`).
-75. `[ ]` Прогнать slow FileReader → context switch (`C014`).
-76. `[ ]` Проверить duplicate-submit guard (`C014`).
-77. `[ ]` Проверить upload partial-failure isolation (`C014`).
-78. `[ ]` Зафиксировать request-generation evidence (`C014`).
-79. `[ ]` Прогнать public state matrix: loading/error/offline/stale (`MVP-08`).
-80. `[ ]` Прогнать protected state matrix: permission/suspended/expired (`MVP-08`).
-81. `[ ]` Прогнать mock и real discovery retry с сохранением filters (`MVP-05`).
-82. `[ ]` Прогнать quote/booking/reschedule/cancel/no-show/complete chain (`MVP-06`).
-83. `[ ]` Прогнать bonus earn/redeem/refund/expiry history (`MVP-06`).
-84. `[ ]` Прогнать review create/edit/photo resolution (`MVP-06`).
-85. `[ ]` Прогнать все supported widths 360–1440 без overflow (`MVP-09`).
-86. `[ ]` Прогнать light/dark loading и skeleton states (`MVP-09`).
-87. `[ ]` Прогнать public/protected keyboard order и Escape (`MVP-09`).
-88. `[ ]` Прогнать Axe на public/owner/admin/super-admin (`MVP-09`).
-89. `[ ]` Прогнать RU/EN/ES/RO длинные labels и locales (`MVP-09`).
-90. `[ ]` Проверить отсутствие console/runtime errors в production Next (`MVP-09`).
-91. `[ ]` Запустить local migration checksum inventory (`MVP-02`).
-92. `[ ]` Запустить schema/integrity/migration smoke на изолированной БД (`MVP-02`).
-93. `[ ]` Проверить release summary на clean immutable SHA (`C005/C006`).
-94. `[ ]` Проверить staged/unstaged/untracked migration immutability (`C005/C007`).
-95. `[ ]` Проверить legacy/payment/subscription runtime scan (`MVP-10`).
-96. `[ ]` Проверить active owner/product/design copy consistency (`MVP-10`).
-97. `[ ]` Проверить demo-only contacts/numbers/images inventory (`MVP-10`).
-98. `[ ]` Повторить `quality:backend` после закрытия focused fixes.
-99. `[ ]` Обновить local MVP JSON/evidence с commit SHA.
-100. `[ ]` Перевести активный указатель на BLOCK-02 или зафиксировать внешний блокер.
+1. `[x]` Собрать список обоих AutoCare WebSocket routes и их auth boundaries (`C001`).
+2. `[x]` Зафиксировать live session/membership check перед private delivery (`C001`).
+3. `[x]` Добавить/проверить close при session revoke (`C001`).
+4. `[x]` Добавить/проверить close при membership revoke (`C001`).
+5. `[~]` Добавить/проверить close при provider suspension (`C001`).
+6. `[~]` Добавить/проверить close при account deletion (`C001`).
+7. `[~]` Добавить/проверить close при JWT/session expiry (`C001`).
+8. `[x]` Прогнать single-socket revoke regression по первому WS route (`C001`).
+9. `[x]` Прогнать single-socket revoke regression по второму WS route (`C001`).
+10. `[x]` Зафиксировать fail-closed результат delivery после revoke (`C001`).
+11. `[x]` Проверить, что quote accept payload содержит `quoteId` (`C002`).
+12. `[x]` Проверить, что quote accept payload содержит `quoteVersion` (`C002`).
+13. `[x]` Проверить привязку quoteId/version к UI snapshot (`C002`).
+14. `[x]` Добавить regression stale quote → `409` (`C002`).
+15. `[x]` Проверить отсутствие booking при stale quote (`C002`).
+16. `[x]` Проверить отсутствие reservation при stale quote (`C002`).
+17. `[x]` Проверить повтор того же acceptance intent (`C002`).
+18. `[x]` Проверить сохранение accepted price в booking snapshot (`C002`).
+19. `[x]` Проверить expiry quote и повторное предложение (`C002`).
+20. `[x]` Зафиксировать quote acceptance evidence в integration report (`C002`).
+21. `[x]` Проверить lock order account-deletion request (`C003`).
+22. `[x]` Проверить terminal-state guard `completed → cancelled` (`C003`).
+23. `[x]` Проверить terminal-state guard `anonymized → cancelled` (`C003`).
+24. `[~]` Добавить interleaving completion-then-cancel regression (`C003`).
+25. `[~]` Добавить interleaving cancel-then-completion regression (`C003`).
+26. `[~]` Проверить stale reason после completion (`C003`).
+27. `[~]` Проверить согласованный audit result для гонки (`C003`).
+28. `[x]` Зафиксировать account-deletion integration evidence (`C003`).
+29. `[x]` Проверить, что availability отдаёт server `startsAt` (`C004`).
+30. `[x]` Проверить сохранение service timezone в API type (`C004`).
+31. `[x]` Проверить отправку выбранного `startsAt` без browser-local conversion (`C004`).
+32. `[~]` Прогнать Moscow browser / service timezone scenario (`C004`).
+33. `[~]` Прогнать New York browser / Moscow service scenario (`C004`).
+34. `[~]` Прогнать DST boundary scenario (`C004`).
+35. `[~]` Прогнать midnight service-date scenario (`C004`).
+36. `[x]` Прогнать malformed date/slot response (`C004`).
+37. `[x]` Проверить отображение timezone рядом с выбранным временем (`C004`).
+38. `[x]` Проверить booking persistence именно выбранного instant (`C004`).
+39. `[x]` Зафиксировать timezone regression evidence (`C004`).
+40. `[x]` Проверить API contract для server-side slot snapshot (`C004`).
+41. `[x]` Проверить немедленную очистку private RTK cache при logout (`C009`).
+42. `[~]` Прогнать logout при offline/network failure (`C009`).
+43. `[~]` Прогнать logout при HTTP 500 (`C009`).
+44. `[x]` Проверить блокировку refresh после logout (`C009`).
+45. `[x]` Проверить generation guard позднего refresh (`C009`).
+46. `[~]` Прогнать switch identity A → B (`C009`).
+47. `[~]` Проверить, что Back не восстанавливает identity A (`C009`).
+48. `[x]` Проверить очистку PWA/private cache после logout (`C009`).
+49. `[x]` Проверить session-expired redirect и recoverable alert (`C009`).
+50. `[~]` Зафиксировать auth race evidence (`C009`).
+51. `[x]` Проверить canonical date parser до render (`C010`).
+52. `[x]` Прогнать malformed URL date (`C010`).
+53. `[x]` Прогнать impossible calendar date (`C010`).
+54. `[x]` Прогнать leap-day invalid date (`C010`).
+55. `[x]` Прогнать malformed slot query (`C010`).
+56. `[x]` Проверить recoverable error вместо `RangeError`/white screen (`C010`).
+57. `[x]` Проверить reload/back/forward после нормализации URL (`C010`).
+58. `[x]` Зафиксировать malformed-input regression (`C010`).
+59. `[x]` Проверить suspended provider read policy (`C013`).
+60. `[x]` Проверить suspended provider quote mutation policy (`C013`).
+61. `[x]` Проверить suspended provider booking mutation policy (`C013`).
+62. `[x]` Проверить разрешённые support/recovery actions (`C013`).
+63. `[x]` Проверить suspended HTTP boundary для owner (`C013`).
+64. `[x]` Проверить suspended HTTP boundary для branch member (`C013`).
+65. `[~]` Проверить suspended WebSocket boundary (`C013`).
+66. `[x]` Проверить audit event для suspended denial (`C013`).
+67. `[x]` Зафиксировать единый provider-access policy report (`C013`).
+68. `[x]` Проверить draft key account/provider/location/offering (`C014`).
+69. `[x]` Проверить vehicle identity в draft key (`C014`).
+70. `[x]` Проверить reset draft при смене identity (`C014`).
+71. `[x]` Проверить reset draft при смене provider/location (`C014`).
+72. `[~]` Прогнать slow create → navigation (`C014`).
+73. `[~]` Прогнать slow create → logout (`C014`).
+74. `[~]` Прогнать slow create → новый provider (`C014`).
+75. `[~]` Прогнать slow FileReader → context switch (`C014`).
+76. `[x]` Проверить duplicate-submit guard (`C014`).
+77. `[x]` Проверить upload partial-failure isolation (`C014`).
+78. `[x]` Зафиксировать request-generation evidence (`C014`).
+79. `[x]` Прогнать public state matrix: loading/error/offline/stale (`MVP-08`).
+80. `[x]` Прогнать protected state matrix: permission/suspended/expired (`MVP-08`).
+81. `[x]` Прогнать mock и real discovery retry с сохранением filters (`MVP-05`).
+82. `[x]` Прогнать quote/booking/reschedule/cancel/no-show/complete chain (`MVP-06`).
+83. `[x]` Прогнать bonus earn/redeem/refund/expiry history (`MVP-06`).
+84. `[x]` Прогнать review create/edit/photo resolution (`MVP-06`).
+85. `[x]` Прогнать все supported widths 360–1440 без overflow (`MVP-09`).
+86. `[x]` Прогнать light/dark loading и skeleton states (`MVP-09`).
+87. `[x]` Прогнать public/protected keyboard order и Escape (`MVP-09`).
+88. `[x]` Прогнать Axe на public/owner/admin/super-admin (`MVP-09`).
+89. `[x]` Прогнать RU/EN/ES/RO длинные labels и locales (`MVP-09`).
+90. `[x]` Проверить отсутствие console/runtime errors в production Next (`MVP-09`).
+91. `[x]` Запустить local migration checksum inventory (`MVP-02`).
+92. `[x]` Запустить schema/integrity/migration smoke на изолированной БД (`MVP-02`).
+93. `[x]` Проверить release summary на clean immutable SHA (`C005/C006`).
+94. `[x]` Проверить staged/unstaged/untracked migration immutability (`C005/C007`).
+95. `[x]` Проверить legacy/payment/subscription runtime scan (`MVP-10`).
+96. `[~]` Проверить active owner/product/design copy consistency (`MVP-10`).
+97. `[~]` Проверить demo-only contacts/numbers/images inventory (`MVP-10`).
+98. `[x]` Повторить `quality:backend` после закрытия focused fixes.
+99. `[x]` Обновить local MVP JSON/evidence с commit SHA.
+100. `[x]` Перевести активный указатель на BLOCK-02 или зафиксировать внешний блокер.
 
 ## BLOCK-02 — staging, operations и security (100 шагов)
 
