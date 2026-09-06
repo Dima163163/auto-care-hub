@@ -2009,3 +2009,16 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   **1/1 PASS** в изолированном mock runtime.
 - `[x]` BLOCK-03 шаг 26 отмечен `[x]`; изменение не выполняет mutation API и
   прошло локальный Playwright replay.
+
+## Порция 330 (06.09.2026) — mobile release-audit и static gate
+
+- `[x]` `npm run test:e2e -- e2e/autocare-release-audit.spec.ts
+  --project=mobile-chromium` завершён **19/19 PASS** в изолированном mock
+  runtime; включая responsive boundary, Space, mobile keyboard/Axe, локали,
+  long-label layout, owner/admin/super-admin и request/calendar flows.
+- `[x]` `npm run check:local-mvp -- --static-only --json` на commit
+  `8dffcf6b5ee1` дал **40 PASS / 1 manual**: frontend lint, **149 файлов /
+  471 тест**, Next/backend build и все локальные contracts прошли; единственный
+  manual — намеренно пропущенный responsive runtime pass в `--static-only`.
+- `[~]` Light skeleton visual capture, physical screen readers/devices и
+  external product/legal/pilot approvals остаются незакрытыми.
