@@ -2049,3 +2049,18 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Это повышает воспроизводимость local mock audit, но не заменяет
   pixel-level visual review, реальные устройства, screen-reader replay или
   внешние product/legal/pilot approvals.
+
+## Порция 333 (06.09.2026) — exact-width route acceptance matrix
+
+- `[x]` Добавлен durable Playwright matrix в
+  `e2e/autocare-release-audit.spec.ts`: services на 390/414/540 px, provider на
+  682 px, owner на 768 px, admin на 790 px, protected requests на 1024 px,
+  public home на 1280 px и super-admin на 1440 px.
+- `[x]` Каждый маршрут проверяет видимый shell/heading, `main`, отсутствие
+  горизонтального overflow и отсутствие missing translation keys/placeholder
+  errors; protected маршруты проходят mock sign-in с owner/admin boundary.
+- `[x]` Targeted replay matrix завершён **1/1 PASS**; полный Chromium release
+  audit после добавления matrix завершён **21/21 PASS**.
+- `[~]` Локальный mock replay закрывает техническую часть этих девяти ширин,
+  но их `[~]` статусы остаются до pixel-level visual review, реальных
+  устройств и product-owner sign-off.
