@@ -2034,3 +2034,18 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   **1/1 PASS**.
 - `[x]` BLOCK-03 шаг 17 отмечен `[x]`; visual/device replay и внешние approval
   gates не подменяются этим deterministic browser check.
+
+## Порция 332 (06.09.2026) — tablet cold-route readiness stability
+
+- `[x]` Первый полный tablet Chromium replay выявил только два cold-route
+  readiness timeout на `protected workspaces expose a usable keyboard order` и
+  `Spanish and Romanian stay usable on mobile with long labels`; остальные
+  сценарии прошли, product assertion не показал функционального дефекта.
+- `[x]` Изолированный повтор этих двух сценариев завершён **2/2 PASS**.
+- `[x]` В `e2e/autocare-release-audit.spec.ts` readiness ожидания для header,
+  main и route heading сведены к явному bounded timeout **30 s**, чтобы первый
+  lazy-loaded tablet route не зависел от дефолтного 15 s ожидания.
+- `[x]` После изменения полный tablet replay завершён **20/20 PASS**.
+- `[~]` Это повышает воспроизводимость local mock audit, но не заменяет
+  pixel-level visual review, реальные устройства, screen-reader replay или
+  внешние product/legal/pilot approvals.
