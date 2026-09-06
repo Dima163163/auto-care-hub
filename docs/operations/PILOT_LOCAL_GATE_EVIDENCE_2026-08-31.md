@@ -1775,3 +1775,19 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   `ratelimit:auth:*` Redis keys между группами и не изменял PostgreSQL data.
   Staging/applied migration manifest, deployed HTML/Lighthouse, backup restore,
   multi-process Redis/WS, pilot/legal/device evidence остаются внешними gates.
+
+## Порция 314 (06.09.2026) — повторная проверка на актуальном локальном head
+
+- `[x]` `quality:backend` завершил полный backend quality chain: все source
+  contracts, migration/legacy/operations/API checks, **276 backend unit-файлов /
+  1000 тестов PASS** и TypeScript build PASS.
+- `[x]` На commit `ed06b60d2c8e` `check:local-mvp -- --static-only` дал **40/40
+  PASS**; отдельный production Next responsive run дал **30/30** route/width
+  checks PASS на 360–1440 px, включая gallery Escape flow.
+- `[x]` Локальный Fastify API доступен через `/health/live` (200), production
+  Next через `127.0.0.1:5174` (200), `/api/v1/markets` через Next proxy (200),
+  `check:real-api` и integration prerequisites с локальным env — PASS.
+- `[~]` `/health/ready` остаётся `503 degraded` только из-за 72 старых локальных
+  dead-letter outbox rows, накопленных предыдущими browser-прогонами; записи
+  не удалялись, поэтому operational history сохранена. Это локальная очистка
+  среды, а не дефект MVP-кода.
