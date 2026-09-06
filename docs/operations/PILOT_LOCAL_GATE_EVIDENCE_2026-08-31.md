@@ -1893,3 +1893,14 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Это один desktop Chromium replay: остальные ширины, owner/admin и
   mobile menu остаются покрыты автоматикой/ожидают повторного visual replay;
   VoiceOver/TalkBack, owner sign-off и pilot gates по-прежнему внешние.
+
+## Порция 321 (06.09.2026) — protected workspace replay
+
+- `[x]` Owner chats workspace вручную проверен в light и dark theme: sidebar,
+  chat list, message panel, composer и protected navigation остаются читаемыми,
+  без очевидного overflow/white screen.
+- `[x]` Protected Tab order прошёл `theme → notifications → add service → account`
+  и вернулся к account trigger после Escape из account menu.
+- `[~]` Space-key activation, mobile menu, остальные protected routes и
+  физические screen-reader replays требуют отдельного replay; текущая запись
+  не заменяет owner visual sign-off.
