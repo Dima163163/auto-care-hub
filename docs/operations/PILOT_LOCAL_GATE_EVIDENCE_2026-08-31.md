@@ -1877,3 +1877,19 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[E]` Поэтому screenshot/video, visual judgement и owner sign-off не созданы;
   статусы BLOCK-03 остаются **31 `[~]` / 69 `[E]`**. После выдачи разрешений
   следующим действием будет clean-browser replay без изменения критериев.
+
+## Порция 320 (06.09.2026) — первый успешный manual browser replay
+
+- `[x]` После выдачи permissions открыт clean Chrome на `localhost:3000`.
+  Главная проверена в dark и light theme; визуально сохранены shell, hero,
+  map, карточки и footer без белого экрана или очевидного overflow.
+- `[x]` Public keyboard replay: Tab прошёл `service → location → radius → search`,
+  `Return` активировал primary search и открыл `/services?market=moscow&radius=10`.
+- `[x]` Dropdown услуги открылся с доступными options и закрылся через Escape;
+  provider profile открылся из результатов, gallery dialog открылся и закрылся
+  через Escape с возвратом focus на trigger.
+- `[x]` На странице результатов вручную видны placeholder/floating labels,
+  карта и карточки; на profile видны disabled `model/year` controls.
+- `[~]` Это один desktop Chromium replay: остальные ширины, owner/admin и
+  mobile menu остаются покрыты автоматикой/ожидают повторного visual replay;
+  VoiceOver/TalkBack, owner sign-off и pilot gates по-прежнему внешние.
