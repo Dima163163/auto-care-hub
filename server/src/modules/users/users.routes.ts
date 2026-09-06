@@ -5,6 +5,8 @@ import { requireAuth } from '../auth/require-auth.js'
 import { validateBody, validateParams } from '../../shared/validation/validate.js'
 import { getOwnerClients, updateUserPreferences } from './users.service.js'
 import { getUserDataExport } from './data-export.service.js'
+import { recordAuditLog } from '../admin/audit-log.service.js'
+import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import {
     cancelAccountDeletion,
     getAccountDeletionRequest,
@@ -110,6 +112,14 @@ export async function usersRoutes(app: FastifyInstance) {
     app.get('/users/me/export', { preHandler: dataExportRateLimit }, async (request, reply) => {
         const user = await requireAuth(request)
         const data = await getUserDataExport(user)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.UserDataExported,
+            targetId: user.id,
+            targetType: 'user_data_export',
+            metadata: {},
+            request,
+        })
 
         return reply
             .headers(getPrivateUserResponseHeaders())

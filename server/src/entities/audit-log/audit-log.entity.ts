@@ -57,6 +57,7 @@ export enum AuditAction {
     SystemIncidentStatusUpdated = 'system_incident_status_updated',
     OAuthIdentityLinked = 'oauth_identity_linked',
     OAuthIdentityUnlinked = 'oauth_identity_unlinked',
+    UserDataExported = 'user_data_exported',
     AccountDeletionRequested = 'account_deletion_requested',
     AccountDeletionCancelled = 'account_deletion_cancelled',
     AccountDeletionCompleted = 'account_deletion_completed',

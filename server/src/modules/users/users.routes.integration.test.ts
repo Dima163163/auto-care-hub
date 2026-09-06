@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { buildApp } from '../../app.js'
 import { AppDataSource } from '../../database/data-source.js'
+import { AuditAction, AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { createAuthTokens } from '../auth/auth.service.js'
 
@@ -32,6 +33,10 @@ describe('private user routes integration', () => {
 
     afterAll(async () => {
         if (AppDataSource.isInitialized && userId) {
+            await AppDataSource.transaction(async (manager) => {
+                await manager.query("SELECT set_config('app.audit_retention_cleanup', 'on', true)")
+                await manager.getRepository(AuditLogEntity).delete({ actorId: userId })
+            })
             await AppDataSource.getRepository(UserEntity).delete({ id: userId })
         }
         await app.close()
@@ -56,6 +61,16 @@ describe('private user routes integration', () => {
             cabinets: [],
         })
         expect(response.body.integrity.checksum).toMatch(/^[a-f0-9]{64}$/)
+
+        const auditLog = await AppDataSource.getRepository(AuditLogEntity).findOne({
+            where: {
+                actorId: userId,
+                action: AuditAction.UserDataExported,
+                targetId: userId,
+                targetType: 'user_data_export',
+            },
+        })
+        expect(auditLog).toEqual(expect.objectContaining({ metadata: {} }))
     })
 
     it('persists the account locale and returns it from the auth contract', async () => {

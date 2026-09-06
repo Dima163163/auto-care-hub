@@ -2424,3 +2424,30 @@ integrity contract без ослабления rate limit или auth boundary.
 и restore verification остаются staging/production evidence.
 91–100. `[x]` Обновлены plan/context/evidence, diff/release provenance и
 commit handoff; canonical V2 status не повышается автоматически.
+
+## Порция 364 (06.09.2026) — sensitive export audit batch из 100 шагов
+
+Эта порция усиливает локальный V2-SEC-15 contract и не заменяет staging replay,
+retention verification или независимый security review.
+
+1–10. `[x]` Инвентаризированы все existing audit actions и sensitive
+self-service export boundary.
+11–20. `[x]` Добавлен bounded action `user_data_exported` в append-only audit
+enum без migration: column action уже text и policy normalizes action names.
+21–30. `[x]` `/users/me/export` пишет audit row только после authenticated,
+bounded export construction и до отправки private response.
+31–40. `[x]` Audit row содержит actorId, self target, target type и request
+provenance; export payload, checksum, email, VIN, message/media content и
+collection counts не записываются.
+41–50. `[x]` Интеграционный HTTP replay подтверждает 200/no-store и точный
+`user_data_exported` record для текущего пользователя.
+51–60. `[x]` Test teardown использует transaction-local
+`app.audit_retention_cleanup=on`, как maintenance cleanup; обычный DELETE
+по-прежнему блокируется append-only trigger.
+61–70. `[x]` Targeted export route integration и backend build проходят.
+71–80. `[x]` Pilot-focused/full backend suites, lint и local MVP gate
+перепроверяются после audit-slice.
+81–90. `[~]` Реальные audit retention, role/ownership, deletion и restore
+replays требуют deployed PostgreSQL/staging evidence.
+91–100. `[x]` Обновлены plan/context/evidence и release provenance; V2
+canonical statuses и productionClaims не изменены.

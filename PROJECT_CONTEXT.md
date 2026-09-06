@@ -43,6 +43,11 @@ are omitted from the self-service export; only the distinct export-level
 integrity checksum remains. This improves the local V2-SEC-13 contract but does
 not replace a deployed ownership/retention rehearsal.
 
+Sensitive self-service data exports now also write the append-only
+`user_data_exported` audit action with actor/target/request provenance only;
+the audit row never contains export payload, attachment metadata or content.
+The local route integration verifies both the no-store response and audit row.
+
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for

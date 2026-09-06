@@ -73,6 +73,9 @@
 
 ## Autonomous pilot follow-up — 2026-09-06
 
+- [x] Added an append-only `user_data_exported` audit event for self-service
+  data exports. It records only actor/target/request provenance and no export
+  payload, private attachment metadata or content-derived values.
 - [x] Hardened the self-service data export: private attachment storage keys and
   content checksums are omitted, while the export-level integrity checksum is
   retained. Regression coverage preserves the no-store/bounded export contract.
