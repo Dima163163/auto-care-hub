@@ -1827,3 +1827,25 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   timezone/DST и A→B logout races, slow-network/device replay, contacts/legal и
   demo-only content approval. Эти шаги помечены `[~]` в `MVP_REMAINING_100_BLOCKS.md`;
   они не объявляются выполненными локально.
+
+## Порция 317 (06.09.2026) — BLOCK-02 operations/security local preparation
+
+- `[x]` Локальный operations harness и его негативные сценарии прошли: **15/15**
+  тестов; `check:ops-harness` и `check:production-operations` подтверждают
+  redaction, Docker/worker contracts, backup/restore и безопасную диагностику.
+- `[x]` Security/abuse contracts прошли: security headers, threat surface (**7/7**
+  controls), server security controls (**5/5**), Redis fail-closed (**1/1**).
+- `[x]` Backup/restore contract и regressions прошли: все локальные controls,
+  checksum/redaction/unique archive проверки и **4/4** теста.
+- `[x]` Release/staging contracts прошли локально: release promotion **3/3**,
+  provenance **2/2**, staging compatibility **9/9**; release summary на чистом
+  SHA `a6de6ff9de7089ba8c002f1775180e09540c23f2` выдал **8/8 local checks**,
+  `productionClaims=false` и external gates без подмены.
+- `[~]` Production operations preflight корректно остановлен: отсутствуют
+  production-like secrets, SMTP, persistent media volume и HTTPS staging URL;
+  reported **8 blocked gates + 6 manual rehearsal gates**. Это подтверждает
+  отсутствие внешней среды, а не дефект локального контракта.
+- `[E]` Не выполнялись без разрешённой внешней среды: staging deployment/DNS,
+  MFA/SSO, private S3/ClamAV, encrypted offsite restore, monitoring destinations,
+  branch protection, independent security review, tabletop/rollback, Lighthouse
+  и owner go/no-go. Эти шаги сохранены как `[E]` в BLOCK-02.
