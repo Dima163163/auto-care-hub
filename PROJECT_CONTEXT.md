@@ -48,6 +48,12 @@ Sensitive self-service data exports now also write the append-only
 the audit row never contains export payload, attachment metadata or content.
 The local route integration verifies both the no-store response and audit row.
 
+Provider-review UI follow-up (2026-09-07): review cards use an internal flex
+column so the service label and date are consistently anchored to the lower
+edge with or without photos. The review-score summary no longer has an
+artificial maximum width. This is a presentation-only correction; it does not
+change pilot gates, API contracts or production evidence.
+
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for

@@ -73,6 +73,10 @@
 
 ## Autonomous pilot follow-up — 2026-09-06
 
+- [x] Corrected the provider-review layout: cards preserve the existing visual
+  system while their service label and publication date stay anchored to the
+  lower edge whether review photos are present or absent. The rating summary
+  now occupies the available content width.
 - [x] Added an append-only `user_data_exported` audit event for self-service
   data exports. It records only actor/target/request provenance and no export
   payload, private attachment metadata or content-derived values.
