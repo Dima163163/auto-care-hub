@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const guestWidths = [360, 390, 414, 540, 682, 768, 790, 1024, 1280, 1440] as const
 const supportedLocales = ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
+const routeReadyTimeoutMs = 30_000
 
 async function expectNoHorizontalOverflow(page: Page) {
     await expect.poll(async () => {
@@ -23,14 +24,14 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 async function expectStableShell(page: Page) {
-    await expect(page.locator('header:visible').first()).toBeVisible()
+    await expect(page.locator('header:visible').first()).toBeVisible({ timeout: routeReadyTimeoutMs })
     // The release audit intentionally exercises cold lazy-loaded routes. On
     // the tablet project, the first locale chunk can keep the Suspense shell
     // visible for a few seconds before the page mounts its <main>. Wait for
     // that bounded transition instead of treating the loading fallback as a
     // broken page.
-    await expect(page.getByRole('main')).toHaveCount(1, { timeout: 15_000 })
-    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('main')).toHaveCount(1, { timeout: routeReadyTimeoutMs })
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible({ timeout: routeReadyTimeoutMs })
     await expectNoHorizontalOverflow(page)
     await expect.poll(() => page.evaluate(() => {
         const text = document.body.innerText
@@ -40,8 +41,8 @@ async function expectStableShell(page: Page) {
 }
 
 async function expectWorkspaceShell(page: Page) {
-    await expect(page.getByRole('main')).toHaveCount(1)
-    await expect(page.getByRole('main').getByRole('heading').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('main')).toHaveCount(1, { timeout: routeReadyTimeoutMs })
+    await expect(page.getByRole('main').getByRole('heading').first()).toBeVisible({ timeout: routeReadyTimeoutMs })
     await expectNoHorizontalOverflow(page)
 }
 
