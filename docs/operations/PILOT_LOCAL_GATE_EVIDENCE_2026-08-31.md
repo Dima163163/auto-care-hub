@@ -2338,3 +2338,28 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Это локальный seeded replay: staging HTML, реальные пользователи,
   устройства/OS timezone, private media/AV, multi-process WebSocket и
   production go/no-go остаются внешними gates.
+
+## Порция 360 (06.09.2026) — responsive Chromium matrix replay
+
+- `[x]` После запуска Next production preview на `127.0.0.1:4175`
+  `npm run check:responsive` завершился **30/30 PASS** для home, services и
+  provider на ширинах 360, 390, 414, 540, 682, 768, 790, 1024, 1280 и 1440 px.
+  Проверены отсутствие горизонтального overflow, видимость shell/content,
+  mobile navigation и открытие/закрытие provider gallery через Escape.
+- `[~]` Это headless Chromium replay локального preview; pixel-level visual
+  judgement, физические iOS/Android устройства, VoiceOver/TalkBack и owner
+  sign-off по-прежнему требуют совместного внешнего этапа.
+
+## Порция 361 (06.09.2026) — full local MVP gate
+
+- `[x]` Полный `npm run check:local-mvp -- --json` завершился с **41/41 PASS**:
+  lint, 150 frontend-файлов/477 тестов, Next build, backend build, parity,
+  media, backup/restore, interaction/accessibility, Redis fail-closed,
+  concurrency, routes, legacy/security, SEO и responsive matrix.
+- `[x]` Runtime часть gate сама подняла Next production preview на ephemeral
+  loopback-порту и зафиксировала responsive matrix **30/30**, после чего
+  корректно остановила процесс. Команда не использовала staging credentials,
+  real participant data или production claims.
+- `[~]` Release summary остаётся локальным (`environment=local`,
+  `productionClaims=false`); staging/production HTML, backup vault/restore,
+  real pilot participants и письменный go/no-go не создаются автоматически.

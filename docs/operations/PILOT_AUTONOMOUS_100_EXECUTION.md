@@ -1,6 +1,6 @@
 # AutoCare Hub — автономное выполнение 100 пунктов
 
-**Дата ревизии:** 04.09.2026
+**Дата ревизии:** 06.09.2026
 **Назначение:** чеклист задач из пилотного плана, которые можно выполнить в репозитории, mock/API и локальных проверках без staging-секретов, реальных сервисов и реальных устройств.
 
 Статусы:
@@ -13,9 +13,9 @@
 
 ## Локальный release и MVP
 
-1. `[x]` Запустить полный `check:local-mvp`: все автоматические проверки проходят; responsive matrix закрыта отдельным запуском вне sandbox.
-2. `[x]` Прогнать frontend unit-тесты: 145 файлов / 461 тест.
-3. `[x]` Прогнать backend unit-тесты: 274 файла / 982 теста.
+1. `[x]` Запустить полный `check:local-mvp`: все автоматические проверки проходят; responsive Chromium matrix — 30/30 после запуска Next production preview.
+2. `[x]` Прогнать frontend unit-тесты: 150 файлов / 477 тестов.
+3. `[x]` Прогнать backend unit-тесты: 276 файлов / 1003 теста.
 4. `[x]` Проверить frontend production build.
 5. `[x]` Проверить backend TypeScript build.
 6. `[x]` Проверить inventory всех Next.js routes: 57 route constants.
@@ -147,8 +147,8 @@
 ## Последнее evidence
 
 - `npm run check:local-mvp`: все автоматические проверки PASS; responsive Chromium matrix 30/30 также PASS после запуска Next production server с разрешённым loopback-портом. Ручная visual/keyboard/device приёмка остаётся владельческим gate.
-- Backend unit: **274 файла / 982 теста**.
-- Frontend unit: **145 файлов / 461 тест**.
+- Backend unit: **276 файлов / 1003 теста**.
+- Frontend unit: **150 файлов / 477 тестов**.
 - `npm run check:threat-surface`: PASS, включая availability rate limit.
 - `npm run check:ops-harness`, `check:security-headers`, `check:capacity-ui`, API/OpenAPI checks: PASS.
 - Synthetic discovery: 10 000 — p95 4.2 ms; 100 000 — p95 21.5 ms.
