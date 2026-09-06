@@ -54,10 +54,10 @@
 21. `[x]` Проверить lock order account-deletion request (`C003`).
 22. `[x]` Проверить terminal-state guard `completed → cancelled` (`C003`).
 23. `[x]` Проверить terminal-state guard `anonymized → cancelled` (`C003`).
-24. `[~]` Добавить interleaving completion-then-cancel regression (`C003`).
-25. `[~]` Добавить interleaving cancel-then-completion regression (`C003`).
-26. `[~]` Проверить stale reason после completion (`C003`).
-27. `[~]` Проверить согласованный audit result для гонки (`C003`).
+24. `[x]` Добавить interleaving completion-then-cancel regression (`C003`).
+25. `[x]` Добавить interleaving cancel-then-completion regression (`C003`).
+26. `[x]` Проверить stale reason после completion (`C003`).
+27. `[x]` Проверить согласованный audit result для гонки (`C003`).
 28. `[x]` Зафиксировать account-deletion integration evidence (`C003`).
 29. `[x]` Проверить, что availability отдаёт server `startsAt` (`C004`).
 30. `[x]` Проверить сохранение service timezone в API type (`C004`).

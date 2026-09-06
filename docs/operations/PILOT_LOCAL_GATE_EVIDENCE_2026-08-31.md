@@ -2176,3 +2176,55 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   ограничены документацией, runtime/API поведение не менялось.
 - `[~]` Staging/production HTML, backup restore, real participants, device
   accessibility и product/legal approvals остаются отдельными внешними gates.
+
+## Порция 345 (06.09.2026) — completion-then-cancel terminal regression
+
+- `[x]` Добавлен PostgreSQL integration сценарий: eligible pending deletion
+  переводится в `completed`, последующий cancel возвращает `null`, а request
+  остаётся terminal `completed` с `reason=null`, `completedAt` и без
+  `cancelledAt`.
+- `[x]` Проверка выполняется через production `updateAdminDeletionRequestStatus`
+  и `cancelAccountDeletion`, поэтому guard проверяет реальный lock/transition
+  порядок, а не только pure policy.
+
+## Порция 346 (06.09.2026) — cancel-then-completion terminal regression
+
+- `[x]` Добавлен обратный interleaving: cancel фиксирует `cancelled`, последующая
+  completion получает контролируемый `409`, request не переоткрывается, reason
+  сохраняется только для отменённого запроса, `completedAt` остаётся `null`.
+- `[x]` Тестовые fixtures изолированы отдельными UUID и удаляются только в
+  bounded teardown с `app.audit_retention_cleanup=on`; production data не
+  затрагиваются.
+
+## Порция 347 (06.09.2026) — concurrent terminal/audit consistency
+
+- `[x]` `Promise.allSettled` на completion и cancel подтвердил сериализацию
+  pessimistic row lock: итогом становится ровно один terminal status, второй
+  вызов — idempotent `null` либо controlled `409`.
+- `[x]` Audit assertion подтверждает один `account_deletion_cancelled` только
+  при победе cancellation и отсутствие ложного completion audit; при победе
+  completion anonymization не оставляет actor-linked audit row.
+- `[~]` Multi-process replay на deployed PostgreSQL/worker topology всё ещё
+  требует staging evidence и не подменяется этим локальным single-process
+  integration harness.
+
+## Порция 348 (06.09.2026) — Moscow service timezone browser boundary
+
+- `[x]` Frontend regression запускает RequestForm при frozen instant
+  `2026-03-29T22:30:00Z` и browser `America/New_York`; при service timezone
+  `Europe/Moscow` availability получает локальную дату `2026-03-30` и UI явно
+  показывает `(Europe/Moscow)`.
+- `[~]` Реальный browser/device replay с установленной OS timezone и реальным
+  API остаётся внешним acceptance условием; JSDOM/Node TZ проверяет только
+  локальный контракт без production claims.
+
+## Порция 349 (06.09.2026) — aggregate verification for the five-portion batch
+
+- `[x]` Focused frontend RequestForm suite: **3/3 PASS**; full frontend Vitest:
+  **149 файлов / 472 теста PASS**.
+- `[x]` Focused account-deletion integration: **5/5 PASS**; полный backend
+  integration: **14 файлов / 63 теста PASS**; backend TypeScript build и Next
+  production build завершены успешно.
+- `[x]` BLOCK-01 задачи C003 **24–27** переведены в `[x]`; C004 шаг 32
+  сохраняет `[~]` до real browser/service replay. Canonical progress в
+  `PILOT_SCOPE_FREEZE.md` не изменён.
