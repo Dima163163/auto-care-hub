@@ -1996,5 +1996,16 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   повторно подтверждает отсутствие responsive overflow и корректную
   navigation boundary.
 - `[~]` Staging probe был корректно пропущен без `STAGING_API_BASE_URL`;
-  pixel-level visual judgement, light skeleton capture, Space-key replay,
-  реальные устройства и внешние approvals остаются отдельными условиями.
+  pixel-level visual judgement, light skeleton capture, реальные устройства и
+  внешние approvals остаются отдельными условиями.
+
+## Порция 329 (06.09.2026) — Space-key regression
+
+- `[x]` Добавлен durable Playwright regression в
+  `e2e/autocare-release-audit.spec.ts`: theme switcher получает focus,
+  `Space` меняет `aria-checked`, второй `Space` возвращает исходное состояние.
+- `[x]` `npm run test:e2e -- e2e/autocare-release-audit.spec.ts -g
+  "buttons and switches activate with Space" --project=chromium` завершён
+  **1/1 PASS** в изолированном mock runtime.
+- `[x]` BLOCK-03 шаг 26 отмечен `[x]`; изменение не выполняет mutation API и
+  прошло локальный Playwright replay.
