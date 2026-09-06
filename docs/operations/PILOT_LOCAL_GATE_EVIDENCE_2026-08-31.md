@@ -1868,3 +1868,12 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[E]` VoiceOver/TalkBack, физические iOS/Android устройства, pilot city,
   services, реальные участники, consent/retention, support/legal approval,
   pilot metrics и go/no-go отсутствуют и не создавались локально.
+
+## Порция 319 (06.09.2026) — повторная попытка manual browser replay
+
+- `[~]` Три последовательные попытки открыть Google Chrome через Computer Use
+  завершились одинаковым системным сообщением: Accessibility и Screen Recording
+  permissions остаются pending в окне ChatGPT Computer Use.
+- `[E]` Поэтому screenshot/video, visual judgement и owner sign-off не созданы;
+  статусы BLOCK-03 остаются **31 `[~]` / 69 `[E]`**. После выдачи разрешений
+  следующим действием будет clean-browser replay без изменения критериев.
