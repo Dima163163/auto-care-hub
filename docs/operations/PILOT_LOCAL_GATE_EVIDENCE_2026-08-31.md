@@ -2064,3 +2064,62 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
 - `[~]` Локальный mock replay закрывает техническую часть этих девяти ширин,
   но их `[~]` статусы остаются до pixel-level visual review, реальных
   устройств и product-owner sign-off.
+
+## Порция 334 (06.09.2026) — local P0/P1 regression sweep
+
+- `[x]` Свежий `npm run check:local-mvp -- --json` на immutable clean SHA
+  `8ad66fb955a9` завершён **41/41 PASS**: lint, 149 frontend test files / 471
+  tests, Next/backend build, route/API parity, state/loading/accessibility,
+  security/media/backup contracts и responsive matrix **30/30**.
+- `[x]` Полный Chromium release audit на том же коде завершён **21/21 PASS**;
+  exact-width route matrix, protected/public keyboard order, Axe, theme,
+  Space/Escape/focus-return, locales и long-label checks не выявили нового
+  локального P0/P1 поведения.
+- `[~]` Шаг 91 BLOCK-03 остаётся `[~]`: local mock/static sweep не является
+  независимым security review, real-device acceptance или pilot go/no-go и не
+  отменяет external findings/rechecks из `FINAL_PROJECT_AUDIT_2026-09-05.md`.
+
+## Порция 335 (06.09.2026) — MVP readiness blocker inventory
+
+- `[x]` `npm run check:mvp-readiness` повторно выполнил все repository startup и
+  release contracts; локальная проверка точно перечислила **4 blocked config
+  gates**: integration DB/Redis/JWT, SMTP, persistent media path и bootstrap
+  super-admin, плюс **1 manual external evidence gate**.
+- `[x]` Blockers не маскируются synthetic/demo значениями и не переводятся в
+  PASS без production-like secrets, storage и ответственного владельца.
+- `[E]` Внешняя конфигурация и approval для этого набора отсутствуют, поэтому
+  связанные BLOCK-02/03 пункты остаются `[E]`.
+
+## Порция 336 (06.09.2026) — production-operations fail-closed preflight
+
+- `[x]` `npm run check:production-operations` подтвердил repository controls:
+  Docker, worker, reminder/outbox/dead-letter, encrypted backup/restore,
+  versioned alerts, rollback/migration contract и Redis fail-closed guidance.
+- `[x]` Preflight честно остановился на **8 blocked gates + 6 manual rehearsal
+  gates**: production env/secrets, JWT/SMTP, persistent media, bootstrap admin,
+  outbox encryption, HTTPS staging URL, staging compatibility, worker/Redis/
+  SMTP smoke, restore/RPO/RTO, alert delivery и rollback rehearsal.
+- `[E]` Без staging credentials, external destinations и операционного владельца
+  эти gates нельзя закрыть локальным runtime.
+
+## Порция 337 (06.09.2026) — clean release provenance
+
+- `[x]` `npm run check:release-summary -- --json` на SHA `8ad66fb955a9` вернул
+  `environment=local`, `productionClaims=false`, `clean=true`, пустые
+  `staged/unstaged/untracked` и **8/8 local checks PASS**.
+- `[x]` Migration inventory зафиксирован как **130 файлов** с checksum
+  `da0a73b2b6eb0159315b78e482f3d607bc069480577d70676b2b32a64ad0a8fa`; artifact
+  и external release evidence намеренно не придуманы.
+- `[E]` Production/staging HTML, backup restore и written go/no-go остаются
+  внешними gates; локальный summary не повышает `productionClaims`.
+
+## Порция 338 (06.09.2026) — pilot evidence fail-closed boundary
+
+- `[x]` `npm run check:pilot-evidence` корректно отказал с отсутствующим
+  `docs/operations/pilot-evidence.json`, требуя anonymized real-pilot evidence
+  вместо synthetic/demo файла.
+- `[x]` Отсутствующий evidence-файл не создавался автоматически: это сохраняет
+  participant IDs, consent, retention, journey uniqueness и signed envelope как
+  обязательные внешние входы.
+- `[E]` BLOCK-03 шаги 88–90 и 100 остаются внешними до реального pilot
+  evidence, consent/retention record, подписанного envelope и go/no-go.
