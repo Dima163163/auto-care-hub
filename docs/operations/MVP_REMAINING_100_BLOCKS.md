@@ -21,8 +21,9 @@
 готова, но нужен внешний replay, `[E]` — шаг нельзя выполнить без внешней
 инфраструктуры, устройства или решения владельца.
 
-Текущий указатель: **BLOCK-02, шаг 001**. BLOCK-01 обработан локально; оставшиеся
-`[~]` требуют внешнего replay или ручного sign-off. После закрытия блока активируется
+Текущий указатель: **BLOCK-03, шаг 001**. BLOCK-01 и локальная подготовка BLOCK-02
+обработаны; оставшиеся `[~]` требуют внешнего replay, а `[E]` — внешней
+инфраструктуры или approval. После закрытия блока активируется
 следующий. Статусы в этом файле — детализация выполнения; canonical progress
 остаётся в `PILOT_SCOPE_FREEZE.md`.
 
@@ -136,106 +137,106 @@
 Основание: `V2-OPS-01…V2-OPS-14`, `V2-SEC-01…V2-SEC-20`, `CHANGE-C005…C008`.
 Все шаги этого блока требуют staging/production-like доступа и стартуют как `[E]`.
 
-1. `[E]` Создать изолированный staging deployment.
-2. `[E]` Подключить HTTPS/DNS и закрыть internal endpoints.
-3. `[E]` Разделить staging data от local/demo data.
-4. `[E]` Зафиксировать deployment SHA и artifact hash.
+1. `[~]` Создать изолированный staging deployment.
+2. `[~]` Подключить HTTPS/DNS и закрыть internal endpoints.
+3. `[~]` Разделить staging data от local/demo data.
+4. `[~]` Зафиксировать deployment SHA и artifact hash.
 5. `[E]` Проверить direct Next routes на deployed URL.
 6. `[E]` Проверить Fastify proxy и `/api` base path.
 7. `[E]` Проверить 404/protected redirects на deployed URL.
 8. `[E]` Проверить deployed auth/CSRF/session cookies.
 9. `[E]` Проверить deployed health live/ready.
-10. `[E]` Сохранить redacted staging evidence envelope.
+10. `[~]` Сохранить redacted staging evidence envelope.
 11. `[E]` Настроить production-like PostgreSQL secret.
 12. `[E]` Настроить production-like Redis secret.
 13. `[E]` Настроить strong JWT access secret.
 14. `[E]` Настроить strong JWT refresh secret.
-15. `[E]` Проверить trusted proxy configuration.
+15. `[~]` Проверить trusted proxy configuration.
 16. `[E]` Настроить SMTP host/port/user/password/from.
 17. `[E]` Подтвердить SPF/DKIM/DMARC.
 18. `[E]` Создать bootstrap super-admin.
 19. `[E]` Ротировать bootstrap secret.
 20. `[E]` Проверить secret redaction в deployed logs.
-21. `[E]` Подключить private S3-compatible bucket.
-22. `[E]` Подключить ClamAV clean path.
-23. `[E]` Подключить ClamAV infected path.
-24. `[E]` Прогнать quarantine → promotion clean upload.
-25. `[E]` Прогнать infected upload rejection.
-26. `[E]` Прогнать EXIF stripping на deployed storage.
-27. `[E]` Проверить signed URL TTL.
-28. `[E]` Проверить no-store/private media headers.
-29. `[E]` Проверить cross-user media denial.
-30. `[E]` Проверить deletion cleanup в bucket.
-31. `[E]` Настроить encrypted offsite backup.
-32. `[E]` Настроить WAL/PITR policy.
-33. `[E]` Настроить object versioning/lifecycle.
-34. `[E]` Создать isolated restore target.
-35. `[E]` Выполнить DB checksum restore.
-36. `[E]` Выполнить media checksum restore.
-37. `[E]` Проверить restored migrations/schema.
-38. `[E]` Записать измеренный RPO.
-39. `[E]` Записать измеренный RTO.
-40. `[E]` Проверить purge/tombstones после restore.
-41. `[E]` Запустить отдельный worker process.
-42. `[E]` Проверить reminder processing.
-43. `[E]` Проверить outbox lease/retry.
-44. `[E]` Проверить dead-letter handling.
-45. `[E]` Проверить worker restart recovery.
-46. `[E]` Проверить duplicate delivery idempotency.
-47. `[E]` Подключить uptime/error monitoring.
-48. `[E]` Подключить alert delivery mailbox/channel.
-49. `[E]` Проверить redacted metrics labels.
-50. `[E]` Провести incident alert acknowledgement.
-51. `[E]` Запустить CI на immutable release SHA.
+21. `[~]` Подключить private S3-compatible bucket.
+22. `[~]` Подключить ClamAV clean path.
+23. `[~]` Подключить ClamAV infected path.
+24. `[~]` Прогнать quarantine → promotion clean upload.
+25. `[~]` Прогнать infected upload rejection.
+26. `[~]` Прогнать EXIF stripping на deployed storage.
+27. `[~]` Проверить signed URL TTL.
+28. `[~]` Проверить no-store/private media headers.
+29. `[~]` Проверить cross-user media denial.
+30. `[~]` Проверить deletion cleanup в bucket.
+31. `[~]` Настроить encrypted offsite backup.
+32. `[~]` Настроить WAL/PITR policy.
+33. `[~]` Настроить object versioning/lifecycle.
+34. `[~]` Создать isolated restore target.
+35. `[~]` Выполнить DB checksum restore.
+36. `[~]` Выполнить media checksum restore.
+37. `[~]` Проверить restored migrations/schema.
+38. `[~]` Записать измеренный RPO.
+39. `[~]` Записать измеренный RTO.
+40. `[~]` Проверить purge/tombstones после restore.
+41. `[~]` Запустить отдельный worker process.
+42. `[~]` Проверить reminder processing.
+43. `[~]` Проверить outbox lease/retry.
+44. `[~]` Проверить dead-letter handling.
+45. `[~]` Проверить worker restart recovery.
+46. `[~]` Проверить duplicate delivery idempotency.
+47. `[~]` Подключить uptime/error monitoring.
+48. `[~]` Подключить alert delivery mailbox/channel.
+49. `[~]` Проверить redacted metrics labels.
+50. `[~]` Провести incident alert acknowledgement.
+51. `[~]` Запустить CI на immutable release SHA.
 52. `[E]` Включить branch protection.
 53. `[E]` Включить required checks.
-54. `[E]` Включить dependency scan.
-55. `[E]` Включить secret scan.
+54. `[~]` Включить dependency scan.
+55. `[~]` Включить secret scan.
 56. `[E]` Ограничить deploy identity.
-57. `[E]` Запустить strict promotion gate.
-58. `[E]` Проверить stale evidence rejection.
-59. `[E]` Проверить dirty tree rejection.
-60. `[E]` Проверить missing manifest rejection.
+57. `[~]` Запустить strict promotion gate.
+58. `[~]` Проверить stale evidence rejection.
+59. `[~]` Проверить dirty tree rejection.
+60. `[~]` Проверить missing manifest rejection.
 61. `[E]` Включить MFA/SSO для admin.
 62. `[E]` Включить MFA/SSO для super-admin.
 63. `[E]` Проверить owner/manager/staff step-up policy.
-64. `[E]` Проверить recovery и reset policy.
-65. `[E]` Проверить session/key revocation.
-66. `[E]` Проверить TLS/HSTS/CSP deployed headers.
-67. `[E]` Проверить CORS/origin policy deployed.
-68. `[E]` Проверить login/upload/mutation rate limits.
-69. `[E]` Остановить Redis на реплике A и проверить fail-closed.
-70. `[E]` Восстановить Redis и проверить recovery.
-71. `[E]` Запустить IDOR branch replay.
-72. `[E]` Запустить owner/manager/staff matrix.
-73. `[E]` Проверить request/quote/chat isolation.
-74. `[E]` Проверить media/bonus/review isolation.
-75. `[E]` Проверить WebSocket revoke replay.
-76. `[E]` Проверить two-replica WebSocket delivery.
-77. `[E]` Проверить malformed input no-500 policy.
-78. `[E]` Проверить bounded body/count/size limits.
-79. `[E]` Проверить security-event redaction.
-80. `[E]` Проверить audit event completeness.
-81. `[E]` Проверить export ownership/no-store.
-82. `[E]` Проверить account deletion sessions/contacts.
-83. `[E]` Проверить account deletion vehicles/chats/media.
-84. `[E]` Проверить account deletion reviews/bonuses/links.
-85. `[E]` Прогнать cancel-vs-complete interleaving.
-86. `[E]` Проверить storage partial-failure retry.
-87. `[E]` Проверить restored backup deletion invariants.
+64. `[~]` Проверить recovery и reset policy.
+65. `[~]` Проверить session/key revocation.
+66. `[~]` Проверить TLS/HSTS/CSP deployed headers.
+67. `[~]` Проверить CORS/origin policy deployed.
+68. `[~]` Проверить login/upload/mutation rate limits.
+69. `[~]` Остановить Redis на реплике A и проверить fail-closed.
+70. `[~]` Восстановить Redis и проверить recovery.
+71. `[~]` Запустить IDOR branch replay.
+72. `[~]` Запустить owner/manager/staff matrix.
+73. `[~]` Проверить request/quote/chat isolation.
+74. `[~]` Проверить media/bonus/review isolation.
+75. `[~]` Проверить WebSocket revoke replay.
+76. `[~]` Проверить two-replica WebSocket delivery.
+77. `[~]` Проверить malformed input no-500 policy.
+78. `[~]` Проверить bounded body/count/size limits.
+79. `[~]` Проверить security-event redaction.
+80. `[~]` Проверить audit event completeness.
+81. `[~]` Проверить export ownership/no-store.
+82. `[~]` Проверить account deletion sessions/contacts.
+83. `[~]` Проверить account deletion vehicles/chats/media.
+84. `[~]` Проверить account deletion reviews/bonuses/links.
+85. `[~]` Прогнать cancel-vs-complete interleaving.
+86. `[~]` Проверить storage partial-failure retry.
+87. `[~]` Проверить restored backup deletion invariants.
 88. `[E]` Провести independent security review.
 89. `[E]` Провести incident tabletop.
 90. `[E]` Провести rollback rehearsal.
-91. `[E]` Провести booking/quote race matrix multi-process.
-92. `[E]` Провести reschedule/cancel/no-show race matrix.
-93. `[E]` Провести complete/retry race matrix.
-94. `[E]` Проверить capacity conflict 409 в staging.
-95. `[E]` Проверить measured discovery p95/p99.
+91. `[~]` Провести booking/quote race matrix multi-process.
+92. `[~]` Провести reschedule/cancel/no-show race matrix.
+93. `[~]` Провести complete/retry race matrix.
+94. `[~]` Проверить capacity conflict 409 в staging.
+95. `[~]` Проверить measured discovery p95/p99.
 96. `[E]` Проверить SMTP setup/reset/notification delivery.
 97. `[E]` Проверить production HTML/OG/robots/sitemap.
 98. `[E]` Провести deployed Lighthouse run.
-99. `[E]` Собрать signed operations evidence envelope.
-100. `[E]` Передать блок на external approval/go-no-go.
+99. `[~]` Собрать signed operations evidence envelope.
+100. `[E]` Передать блок на external approval/go/no-go.
 
 ## BLOCK-03 — manual, pilot и final acceptance (100 шагов)
 
