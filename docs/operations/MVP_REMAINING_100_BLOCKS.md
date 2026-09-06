@@ -263,7 +263,7 @@
 17. `[~]` Проверить light/dark skeletons.
 18. `[x]` Проверить карту и карточки.
 19. `[x]` Проверить gallery dialog.
-20. `[~]` Проверить mobile menu.
+20. `[x]` Проверить mobile menu.
 21. `[x]` Пройти public Tab order.
 22. `[x]` Пройти protected Tab order.
 23. `[x]` Проверить focus-visible в light theme.
