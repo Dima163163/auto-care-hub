@@ -2020,5 +2020,17 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   `8dffcf6b5ee1` дал **40 PASS / 1 manual**: frontend lint, **149 файлов /
   471 тест**, Next/backend build и все локальные contracts прошли; единственный
   manual — намеренно пропущенный responsive runtime pass в `--static-only`.
-- `[~]` Light skeleton visual capture, physical screen readers/devices и
-  external product/legal/pilot approvals остаются незакрытыми.
+- `[~]` Physical screen readers/devices и external product/legal/pilot
+  approvals остаются незакрытыми.
+
+## Порция 331 (06.09.2026) — themed skeleton regression
+
+- `[x]` Добавлен deterministic Playwright replay для `/services`: при
+  `waitUntil: commit` в viewport 390×844 boot shell и
+  `autocare-results-map-skeleton` видимы до завершения загрузки в light и dark
+  theme; `html.dark` проверяется отдельно для каждой темы.
+- `[x]` `npm run test:e2e -- e2e/autocare-release-audit.spec.ts -g
+  "loading shell keeps themed skeletons" --project=chromium` завершён
+  **1/1 PASS**.
+- `[x]` BLOCK-03 шаг 17 отмечен `[x]`; visual/device replay и внешние approval
+  gates не подменяются этим deterministic browser check.
