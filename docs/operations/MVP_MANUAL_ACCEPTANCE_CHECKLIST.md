@@ -15,14 +15,14 @@
 
 ## Обязательные автоматические предпосылки
 
-- [x] `npm run check:local-mvp` — release/static и responsive checks; полный прогон PASS 30.08.2026 на commit `ae62e3296d91`.
+- [x] `npm run check:local-mvp` — актуальный static gate **40/40 PASS** на commit `2ac9f14`; отдельный production Next responsive matrix **30/30 PASS** на ширинах 360–1440 px.
 - [x] `npm run check:state-matrix` — mock loading/error/offline/timeout/permission/suspended contract.
 - [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "theme switcher and discovery focus"` — rounded focus и переключение темы.
 - [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "protected workspaces satisfy"` — Axe для защищённых кабинетов.
 - [x] Public и protected keyboard smoke из `e2e/autocare-release-audit.spec.ts`.
 - [x] `MVP-01` clean PostgreSQL reset → migrations → seed → health/read smoke — закрыто 31.08.2026: локальные PostgreSQL/Redis подняты, `demo:reset` → `demo:seed` → `autocare:seed` и health/catalog/read smoke прошли без ручной коррекции.
 
-Автоматические предпосылки закрытых сценариев `MVP-02` и `MVP-04` зафиксированы в `PILOT_SCOPE_FREEZE.md`: real browser smoke **22/22** плюс owner/admin recoverable-state **1/1** и PostgreSQL/Redis integration **14 файлов / 60 тестов**. Ручной раздел ниже не заменяет эти evidence и не откладывает их повторно.
+Автоматические предпосылки закрытых сценариев `MVP-02` и `MVP-04` зафиксированы в `PILOT_SCOPE_FREEZE.md`: real browser smoke **23/23** группами плюс owner/admin recoverable-state **1/1** и PostgreSQL/Redis integration **14 файлов / 60 тестов PASS**. Ручной раздел ниже не заменяет эти evidence и не откладывает их повторно.
 
 ## MVP-05 — visual и keyboard acceptance
 

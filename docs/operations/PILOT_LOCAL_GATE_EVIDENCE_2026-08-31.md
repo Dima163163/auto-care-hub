@@ -1791,3 +1791,16 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   dead-letter outbox rows, накопленных предыдущими browser-прогонами; записи
   не удалялись, поэтому operational history сохранена. Это локальная очистка
   среды, а не дефект MVP-кода.
+
+## Порция 315 (06.09.2026) — real integration и focused acceptance replay
+
+- `[x]` `npm --prefix server run test:integration` с локальными PostgreSQL и
+  Redis завершён: **14 test files / 60 tests PASS**; покрыты vehicle lifecycle,
+  request/quote/booking transitions, quote expiry/idempotency, branch scope,
+  invitations, moderation, bonuses и concurrent capacity paths.
+- `[x]` Focused Chromium release acceptance — **5/5 PASS**: discovery
+  filters/sort keyboard flow, protected workspace Axe, theme/focus surface,
+  public keyboard order и protected workspace keyboard order.
+- `[~]` Эти прогоны закрывают локальное автоматическое evidence; visual sign-off
+  владельца продукта и VoiceOver/TalkBack на физических устройствах остаются
+  ручными условиями checklist и не подменяются браузерной автоматизацией.
