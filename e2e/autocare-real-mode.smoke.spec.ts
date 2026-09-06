@@ -318,6 +318,50 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page).toHaveURL(/\/login(?:\?[^#]*)?$/)
     })
 
+    for (const failure of ['offline', 'server-error'] as const) {
+        test(`real API logout keeps the public shell when the request is ${failure}`, async ({ page }) => {
+            await signIn(page, 'client.demo@autocarehub.test')
+            // Keep this hop inside the authenticated SPA. A full document
+            // reload would discard the intentionally in-memory access token
+            // and spend one refresh-limiter slot before the logout boundary
+            // is exercised.
+            await page.getByRole('button', { name: /open account menu|открыть меню аккаунта/i }).click()
+            await page.getByRole('menuitem', { name: /profile|профиль/i }).first().click()
+            await expect(page).toHaveURL(/\/profile$/)
+
+            await page.route(/\/api\/auth\/logout(?:\?|$)/, async (route) => {
+                if (failure === 'offline') {
+                    await route.abort('internetdisconnected')
+                    return
+                }
+
+                await route.fulfill({
+                    status: 500,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Injected logout failure' }),
+                })
+            })
+
+            const dialog = new Promise<void>((resolve, reject) => {
+                page.once('dialog', async (event) => {
+                    try {
+                        expect(event.type()).toBe('alert')
+                        expect(event.message()).toMatch(/failed to log ?out|не удалось выйти/i)
+                        await event.dismiss()
+                        resolve()
+                    } catch (error) {
+                        reject(error)
+                    }
+                })
+            })
+
+            await page.getByRole('button', { name: /logout|log out|выйти/i }).first().click()
+            await dialog
+            await expect(page).toHaveURL(/^http:\/\/127\.0\.0\.1:5174\/?$/)
+            await expect(page.getByRole('heading', { name: /find the best auto service|найдите автосервис/i })).toBeVisible()
+        })
+    }
+
     test('real API opens client cabinet and dynamic request routes', async ({ page }) => {
         await signIn(page, 'client.demo@autocarehub.test')
         await page.goto('/profile/vehicles')

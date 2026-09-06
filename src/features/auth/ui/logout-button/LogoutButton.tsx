@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { baseApi } from '@/shared/api/baseApi'
 import { ROUTES } from '@/shared/constants/routes'
+import { beginLogout, endLogout } from '@/shared/lib/auth-session-state'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { useLogoutMutation } from '../../api/authApi'
@@ -33,14 +34,27 @@ export function LogoutButton({
     const [logout, { isLoading }] = useLogoutMutation()
 
     const handleLogout = async () => {
+        beginLogout()
+        // Commit the public route before logout resets the shared RTK cache.
+        // Otherwise RequireAuth can observe its query becoming empty for one
+        // render and redirect the freshly-public shell back to /login.
         navigate(ROUTES.home, { replace: true })
-        const logoutRequest = logout().unwrap()
-
         try {
-            await logoutRequest
-            dispatch(baseApi.util.resetApiState())
+            await logout().unwrap()
         } catch {
             alert(t('auth.failedToLogout'))
+        } finally {
+            // The mutation lifecycle clears credentials immediately, while
+            // the private RTK cache is reset here only after unwrap settles.
+            // Keeping logoutInProgress active through this dispatch prevents
+            // RequireAuth from racing the public route on fast aborts.
+            dispatch(baseApi.util.resetApiState())
+            // Re-assert the public destination after the mutation lifecycle
+            // settles. This covers BrowserRouter transitions that were still
+            // rendering the protected tree when an immediate failure reset
+            // the /me query.
+            navigate(ROUTES.home, { replace: true })
+            endLogout()
         }
     }
 

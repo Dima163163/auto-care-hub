@@ -13,6 +13,42 @@
 
 let _accessToken: string | null = null
 let _authGeneration = 0
+const AUTH_SESSION_HINT_KEY = 'autocare-auth-session'
+
+function getBrowserStorage() {
+    if (typeof window === 'undefined') return null
+
+    try {
+        return window.localStorage
+    } catch {
+        return null
+    }
+}
+
+function setAuthSessionHint() {
+    try {
+        getBrowserStorage()?.setItem(AUTH_SESSION_HINT_KEY, '1')
+    } catch {
+        // Storage can be unavailable in privacy-restricted browser contexts.
+    }
+}
+
+function clearAuthSessionHint() {
+    try {
+        getBrowserStorage()?.removeItem(AUTH_SESSION_HINT_KEY)
+    } catch {
+        // Storage can be unavailable in privacy-restricted browser contexts.
+    }
+}
+
+/**
+ * Indicates that this browser has an httpOnly refresh session to restore.
+ * The hint contains no credential and lets public /auth/me requests avoid
+ * probing /auth/refresh for every anonymous page load.
+ */
+export function hasAuthSessionHint() {
+    return getBrowserStorage()?.getItem(AUTH_SESSION_HINT_KEY) === '1'
+}
 
 export function getAccessToken() {
     return _accessToken
@@ -29,9 +65,11 @@ export function getAuthGeneration() {
 
 export function setAccessToken(accessToken: string) {
     _accessToken = accessToken
+    setAuthSessionHint()
 }
 
 export function clearAccessToken() {
     _accessToken = null
     _authGeneration += 1
+    clearAuthSessionHint()
 }

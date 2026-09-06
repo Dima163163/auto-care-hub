@@ -56,7 +56,7 @@ Promise.all([
     createRoot(document.getElementById('root')!).render(
         <StrictMode>
             <StoreProvider>
-                <BrowserRouter>
+                <BrowserRouter unstable_useTransitions={false}>
                     <App />
                 </BrowserRouter>
             </StoreProvider>

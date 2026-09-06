@@ -11,6 +11,7 @@ import { API_BASE_URL, IS_REAL_API } from '@/shared/config/api'
 import {
     clearAccessToken,
     getAuthGeneration,
+    hasAuthSessionHint,
     getAccessToken,
     setAccessToken,
 } from '@/shared/lib/auth-token'
@@ -189,6 +190,19 @@ function clearAuthenticatedClientState(
     void clearIdentityScopedPwaCaches()
 }
 
+function isProtectedRouteNavigation() {
+    if (typeof window === 'undefined') return false
+
+    return [
+        '/admin',
+        '/chats',
+        '/notifications',
+        '/onboarding',
+        '/owner',
+        '/profile',
+    ].some((prefix) => window.location.pathname === prefix || window.location.pathname.startsWith(`${prefix}/`))
+}
+
 const rawBaseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,
     credentials: 'include',
@@ -314,6 +328,7 @@ const baseQueryWithReauth: BaseQueryFn<
         || shouldSkipRefresh(args)
         || authRefreshBlocked
         || !IS_REAL_API
+        || (!accessTokenAtStart && !hasAuthSessionHint() && !(getRequestPath(args) === '/auth/me' && isProtectedRouteNavigation()))
     ) {
         return result
     }

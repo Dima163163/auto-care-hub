@@ -7,7 +7,7 @@ import type { UserRole } from '@/entities/user'
 import { useGetOwnerAutoCareWorkspaceAccessQuery } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
-import { hasSessionExpired } from '@/shared/lib/auth-session-state'
+import { hasSessionExpired, useLogoutInProgress } from '@/shared/lib/auth-session-state'
 
 import { useGetMeQuery } from '../../api/authApi'
 import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
@@ -21,6 +21,7 @@ type RequireAuthProps = {
 export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = false }: RequireAuthProps) {
     const { t } = useTranslation()
     const location = useLocation()
+    const logoutInProgress = useLogoutInProgress()
 
     const {
         data: user,
@@ -31,6 +32,10 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
         skip: !allowOwnerWorkspace || !user || user.role === 'owner',
     })
 
+
+    if (logoutInProgress) {
+        return null
+    }
 
     if (isLoading) {
         return (

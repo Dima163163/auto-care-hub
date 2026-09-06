@@ -19,6 +19,7 @@ function createSocket(): TestSocket {
 
 describe('AutoCare service chat gateway', () => {
     afterEach(async () => {
+        vi.useRealTimers()
         await closeServiceChatGateway()
     })
 
@@ -77,6 +78,27 @@ describe('AutoCare service chat gateway', () => {
         broadcastServiceChat(threadId, { type: 'message.created', threadId, payload: { body: 'private' } })
 
         await vi.waitFor(() => expect(socket.close).toHaveBeenCalledWith(4403, 'Chat access revoked'))
+        expect(socket.send).not.toHaveBeenCalled()
+    })
+
+    it.each([
+        ['provider suspension', 'provider-suspended'],
+        ['account deletion', 'account-deleted'],
+        ['JWT/session expiry', 'session-expired'],
+    ])('closes a private socket after heartbeat access recheck detects %s', async (_label, state) => {
+        vi.useFakeTimers()
+        const socket = createSocket()
+        const threadId = '77777777-7777-4777-8777-777777777777'
+        let accessState = 'active'
+
+        subscribeServiceChat(threadId, socket as never, {
+            authorize: () => accessState === 'active',
+        })
+
+        accessState = state
+        await vi.advanceTimersByTimeAsync(30_000)
+
+        expect(socket.close).toHaveBeenCalledWith(4403, 'Chat access revoked')
         expect(socket.send).not.toHaveBeenCalled()
     })
 })
