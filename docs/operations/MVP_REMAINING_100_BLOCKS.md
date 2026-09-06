@@ -245,9 +245,9 @@
 или внешнего legal/operations evidence и стартуют как `[E]`.
 
 1. `[E]` Назначить владельца visual/keyboard приёмки.
-2. `[~]` Открыть чистое окно браузера.
-3. `[~]` Проверить home на 360 px, light theme.
-4. `[~]` Проверить home на 360 px, dark theme.
+2. `[x]` Открыть чистое окно браузера.
+3. `[x]` Проверить home на 360 px, light theme.
+4. `[x]` Проверить home на 360 px, dark theme.
 5. `[~]` Проверить services на 390 px.
 6. `[~]` Проверить services на 414 px.
 7. `[~]` Проверить services на 540 px.
@@ -257,23 +257,23 @@
 11. `[~]` Проверить protected pages на 1024 px.
 12. `[~]` Проверить public pages на 1280 px.
 13. `[~]` Проверить super-admin на 1440 px.
-14. `[~]` Проверить placeholder услуги.
-15. `[~]` Проверить floating labels.
+14. `[x]` Проверить placeholder услуги.
+15. `[x]` Проверить floating labels.
 16. `[~]` Проверить loading shell.
 17. `[~]` Проверить light/dark skeletons.
-18. `[~]` Проверить карту и карточки.
-19. `[~]` Проверить gallery dialog.
+18. `[x]` Проверить карту и карточки.
+19. `[x]` Проверить gallery dialog.
 20. `[~]` Проверить mobile menu.
-21. `[~]` Пройти public Tab order.
+21. `[x]` Пройти public Tab order.
 22. `[~]` Пройти protected Tab order.
 23. `[~]` Проверить focus-visible в light theme.
 24. `[~]` Проверить focus-visible в dark theme.
-25. `[~]` Проверить Enter на primary actions.
+25. `[x]` Проверить Enter на primary actions.
 26. `[~]` Проверить Space на buttons/toggles.
-27. `[~]` Проверить Escape dropdown.
-28. `[~]` Проверить Escape dialog/gallery.
-29. `[~]` Проверить focus return.
-30. `[~]` Проверить disabled controls.
+27. `[x]` Проверить Escape dropdown.
+28. `[x]` Проверить Escape dialog/gallery.
+29. `[x]` Проверить focus return.
+30. `[x]` Проверить disabled controls.
 31. `[E]` Запустить VoiceOver на macOS/iOS.
 32. `[E]` Проверить VoiceOver public search.
 33. `[E]` Проверить VoiceOver provider profile.
