@@ -259,7 +259,7 @@
 13. `[~]` Проверить super-admin на 1440 px.
 14. `[x]` Проверить placeholder услуги.
 15. `[x]` Проверить floating labels.
-16. `[~]` Проверить loading shell.
+16. `[x]` Проверить loading shell.
 17. `[~]` Проверить light/dark skeletons.
 18. `[x]` Проверить карту и карточки.
 19. `[x]` Проверить gallery dialog.
