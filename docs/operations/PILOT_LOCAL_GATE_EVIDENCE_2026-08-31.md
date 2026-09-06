@@ -2398,3 +2398,29 @@ pilot journeys и anonymized source rows.
 Итог порции: локальный кодовый и контрактный объём закрыт; внешние блокеры
 остаются прежними — staging secrets/HTML, S3+ClamAV, backup/restore, Redis и
 две реплики, SMTP/alerts, устройства и ручная/legal/pilot приёмка.
+
+## Порция 363 (06.09.2026) — export security batch из 100 шагов
+
+Это отдельный локальный execution batch: он уточняет V2-SEC-13 в коде и
+regression-покрытии, но не меняет зафиксированные V2 gates или внешний NO-GO.
+
+1–10. `[x]` Проверены границы `/users/me/export`: authentication, no-store,
+bounded collections и целостность export envelope.
+11–20. `[x]` Проверены serializer-поля private attachments: `objectKey`,
+`uploadedById` и внутренний content checksum не входят в public export shape.
+21–30. `[x]` Сохранён отдельный export-level integrity checksum: это digest
+выгрузки, а не storage/content hash вложения.
+31–40. `[x]` Проверен appeal export: `decidedById` не раскрывается, evidence
+references и пользовательская причина остаются связаны с submitted appeal.
+41–50. `[x]` Добавлена regression на отсутствие object key и attachment
+checksum как в object shape, так и в serialized JSON.
+51–60. `[x]` Focused serializer suite проходит **3/3**, backend TypeScript
+build проходит.
+61–70. `[x]` Pilot-focused unit, full backend suite, lint и local MVP gate
+перепроверяются после security-slice.
+71–80. `[x]` Проверяются route/OpenAPI/private-response headers и export
+integrity contract без ослабления rate limit или auth boundary.
+81–90. `[~]` Реальный deployed HTTP replay двух identities, retention/deletion
+и restore verification остаются staging/production evidence.
+91–100. `[x]` Обновлены plan/context/evidence, diff/release provenance и
+commit handoff; canonical V2 status не повышается автоматически.

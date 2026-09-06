@@ -73,6 +73,9 @@
 
 ## Autonomous pilot follow-up — 2026-09-06
 
+- [x] Hardened the self-service data export: private attachment storage keys and
+  content checksums are omitted, while the export-level integrity checksum is
+  retained. Regression coverage preserves the no-store/bounded export contract.
 - [x] Hardened pilot quality metrics so catalog and supply coverage only use
   active providers, their locations, active service definitions and attached
   offers; orphan/inactive records no longer inflate public coverage.

@@ -38,6 +38,11 @@ in the backend unit profile (**288 files / 1042 tests PASS**); the complete
 backend suite is **371 files / 1245 tests PASS**. Canonical V2 gate counts and
 external NO-GO conditions are unchanged.
 
+Data-export follow-up (2026-09-06): attachment `objectKey` and content checksum
+are omitted from the self-service export; only the distinct export-level
+integrity checksum remains. This improves the local V2-SEC-13 contract but does
+not replace a deployed ownership/retention rehearsal.
+
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for

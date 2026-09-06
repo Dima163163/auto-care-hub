@@ -257,7 +257,6 @@ export function serializeUserDataExport(
             threadId: attachment.threadId,
             contentType: attachment.contentType,
             bytes: attachment.bytes,
-            checksum: attachment.checksum,
             status: attachment.status,
             createdAt: serializeDate(attachment.createdAt),
         })),

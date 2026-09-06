@@ -74,7 +74,7 @@ describe('serializeUserDataExport', () => {
         expect(result.user).not.toHaveProperty('passwordHash')
     })
 
-    it('does not export internal private attachment object keys', () => {
+    it('does not export private attachment storage keys or content hashes', () => {
         const attachment = {
             id: '00000000-0000-0000-0000-000000000003',
             requestId: '00000000-0000-0000-0000-000000000004',
@@ -106,6 +106,10 @@ describe('serializeUserDataExport', () => {
 
         expect(result.attachments).toHaveLength(1)
         expect(result.attachments[0]).not.toHaveProperty('objectKey')
+        expect(result.attachments[0]).not.toHaveProperty('uploadedById')
+        expect(result.attachments[0]).not.toHaveProperty('checksum')
+        expect(JSON.stringify(result)).not.toContain(attachment.objectKey)
+        expect(JSON.stringify(result)).not.toContain(attachment.checksum)
         expect(result.attachments[0]).toMatchObject({ id: attachment.id, contentType: 'image/png', bytes: 128 })
     })
 
