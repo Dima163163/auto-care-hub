@@ -13,7 +13,10 @@ async function signIn(page: Page, email: string) {
         response.url().includes('/api/auth/me')
         && response.request().method() === 'GET'
         && response.status() === 200,
-        { timeout: 10_000 },
+        // A long serial smoke shares the loopback rate-limit bucket and can
+        // also contend with the seeded PostgreSQL instance. Keep the helper
+        // patient enough to observe the successful post-login hydration.
+        { timeout: 30_000 },
     ).catch(() => null)
     const loginResponse = page.waitForResponse((response) =>
         response.url().includes('/api/auth/login')

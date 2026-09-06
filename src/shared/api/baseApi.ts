@@ -298,6 +298,7 @@ const baseQueryWithReauth: BaseQueryFn<
         authRefreshBlocked = false
     }
 
+    const accessTokenAtStart = getAccessToken()
     let result = await baseQueryWithCsrf(args, api, extraOptions)
 
     logAuthSecurityError(args, result.error, 'base-query')
@@ -332,7 +333,18 @@ const baseQueryWithReauth: BaseQueryFn<
     })
 
     if (!refreshedAccessToken) {
-        clearAuthenticatedClientState(api)
+        // A public /auth/me request can start a refresh while the user is
+        // signing in. If that stale refresh finishes after login, its failed
+        // result must not clear the newly-issued in-memory access token or
+        // reset the authenticated RTK state. Likewise, a concurrent logout
+        // already invalidated the generation and needs no second cleanup.
+        const authStateChangedDuringRefresh =
+            refreshGeneration !== getAuthGeneration()
+            || getAccessToken() !== accessTokenAtStart
+
+        if (!authStateChangedDuringRefresh) {
+            clearAuthenticatedClientState(api)
+        }
 
         return result
     }
