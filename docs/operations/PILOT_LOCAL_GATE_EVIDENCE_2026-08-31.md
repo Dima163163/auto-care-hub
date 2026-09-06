@@ -1954,3 +1954,19 @@ V2-MVP-09/OPS-13 остаются `[~]` до production Next + real API/staging 
   passed`: compact branch calendar и loading wiring сохраняются.
 - `[~]` Static contracts не заменяют отдельный визуальный light skeleton
   capture; BLOCK-03 шаг 17 остаётся `[~]`.
+
+## Порция 326 (06.09.2026) — responsive mobile-menu regression fix
+
+- `[x]` Найден и исправлен breakpoint-дефект в
+  `DesktopPublicHeader`: на диапазоне 768–1120 px header уже был видим, но
+  burger и mobile navigation скрывались через `md:hidden/md:flex`. Trigger и
+  desktop navigation переведены на `xl` boundary; desktop public header при
+  этом остаётся на месте начиная с `md`.
+- `[x]` Изолированный mock replay
+  `npm run test:e2e -- e2e/autocare-release-audit.spec.ts -g "public header exposes the correct navigation mode" --project=chromium`
+  завершён **1/1 PASS**: проверены 768, 790, 1024, 1120 px, Enter/open,
+  Escape/close и 1280 px desktop navigation.
+- `[x]` BLOCK-03 шаг 20 отмечен `[x]`; изменения прошли ESLint и `git diff
+  --check`.
+- `[~]` Это функциональный mock-browser replay; pixel-level visual sign-off,
+  реальные устройства и product-owner approval остаются внешними условиями.
