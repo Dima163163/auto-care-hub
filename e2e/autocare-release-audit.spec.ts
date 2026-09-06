@@ -253,6 +253,23 @@ test.describe('AutoCare stable-web release gate', () => {
         expect(focusStyles[1].boxShadow).not.toBe('none')
     })
 
+    test('buttons and switches activate with Space', async ({ page }) => {
+        await gotoStable(page, '/')
+        await expectStableShell(page)
+
+        const themeSwitcher = page.locator('[data-theme-switcher]:visible').first()
+        await expect(themeSwitcher).toBeVisible()
+        const initialChecked = await themeSwitcher.getAttribute('aria-checked')
+        expect(initialChecked).toMatch(/^(true|false)$/)
+
+        await themeSwitcher.focus()
+        await page.keyboard.press('Space')
+        await expect(themeSwitcher).toHaveAttribute('aria-checked', initialChecked === 'true' ? 'false' : 'true')
+
+        await page.keyboard.press('Space')
+        await expect(themeSwitcher).toHaveAttribute('aria-checked', initialChecked)
+    })
+
     test('public pages expose a usable keyboard order', async ({ page }) => {
         for (const route of ['/', '/services?service=oil-change', '/services/api-proservice-moscow']) {
             await page.setViewportSize({ width: 1280, height: 900 })
