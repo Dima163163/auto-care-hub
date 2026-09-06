@@ -77,6 +77,9 @@
   system while their service label and publication date stay anchored to the
   lower edge whether review photos are present or absent. The rating summary
   now occupies the available content width.
+- [x] Aligned the provider-page main content with the public chrome container:
+  desktop content uses the same maximum width and horizontal gutters as the
+  public header, while its internal two-column booking layout is unchanged.
 - [x] Added an append-only `user_data_exported` audit event for self-service
   data exports. It records only actor/target/request provenance and no export
   payload, private attachment metadata or content-derived values.

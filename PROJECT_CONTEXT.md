@@ -54,6 +54,11 @@ edge with or without photos. The review-score summary no longer has an
 artificial maximum width. This is a presentation-only correction; it does not
 change pilot gates, API contracts or production evidence.
 
+Provider-page layout follow-up (2026-09-07): the public provider-page `main`
+now uses the public-wide container and gutter tokens already used by the
+desktop header. Its content no longer expands to the larger operational layout
+width; section and booking component behavior are unchanged.
+
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for
