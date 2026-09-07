@@ -55,6 +55,7 @@ function mapOffer(offer: AutoCareApiOffer): ProviderOffering {
         currency: offer.currencyCode,
         priceType: offer.priceType ?? (offer.priceToMinor === null ? 'from' : 'range'),
         duration: `${offer.durationMinutes} min`,
+        durationMinutes: offer.durationMinutes,
         availability: 'Available on request',
         includes: offer.inclusions,
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDistanceKm, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
+import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDistanceKm, formatDurationMinutes, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
 
 describe('locale formatting', () => {
     it('maps supported locales to stable Intl tags', () => {
@@ -26,6 +26,12 @@ describe('locale formatting', () => {
         expect(parseDistanceKm('4,2 км')).toBe(4.2)
         expect(formatDistanceKm(2.1, 'ru')).toContain('2,1')
         expect(formatDistanceKm(undefined, 'en')).toBe('—')
+    })
+
+    it('formats provider durations using locale-aware minute units', () => {
+        expect(formatDurationMinutes(45, 'en', 60)).toMatch(/45.*60.*min/)
+        expect(formatDurationMinutes(45, 'ru', 60)).toMatch(/45.*60.*мин/)
+        expect(formatDurationMinutes(undefined, 'en')).toBe('—')
     })
 
     it('uses locale-specific plural categories for customer-facing counts', () => {

@@ -27,6 +27,13 @@ export function formatDistanceKm(distanceKm: number | undefined, locale: string 
     return new Intl.NumberFormat(getIntlLocale(locale), { maximumFractionDigits: 1, style: 'unit', unit: 'kilometer', unitDisplay: 'short' }).format(distanceKm)
 }
 
+export function formatDurationMinutes(minutes: number | undefined, locale: string | SupportedLocale, minutesTo?: number | null): string {
+    if (minutes === undefined || !Number.isFinite(minutes)) return '—'
+    const formatter = new Intl.NumberFormat(getIntlLocale(locale), { maximumFractionDigits: 0, style: 'unit', unit: 'minute', unitDisplay: 'short' })
+    const start = formatter.format(minutes)
+    return minutesTo !== undefined && minutesTo !== null && Number.isFinite(minutesTo) ? `${start}–${formatter.format(minutesTo)}` : start
+}
+
 export function formatDateTime(value: string | number | Date, locale: string | SupportedLocale, options?: Intl.DateTimeFormatOptions): string {
     return new Intl.DateTimeFormat(getIntlLocale(locale), options).format(new Date(value))
 }

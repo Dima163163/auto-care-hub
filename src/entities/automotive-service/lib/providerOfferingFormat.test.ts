@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ProviderOffering } from '@/entities/automotive-service'
+import type { ProviderOffering } from '../model/autocareMockData'
 
-import { formatProviderOfferingPrice } from './providerOfferingFormat'
+import { formatProviderOfferingDuration, formatProviderOfferingPrice } from './providerOfferingFormat'
 
 const offering: ProviderOffering = {
     id: 'offer-1',
@@ -13,11 +13,13 @@ const offering: ProviderOffering = {
     currency: 'RUB',
     priceType: 'range',
     duration: '60 мин',
+    durationMinutes: 45,
+    durationMinutesTo: 60,
     availability: 'Сегодня',
     includes: [],
 }
 
-describe('provider offering price formatting', () => {
+describe('provider offering formatting', () => {
     it('formats structured ranges using the selected locale', () => {
         expect(formatProviderOfferingPrice(offering, 'en', { from: (price) => `from ${price}`, quoteRequired: 'quote required' })).toMatch(/RUB|₽/)
         expect(formatProviderOfferingPrice(offering, 'ru', { from: (price) => `от ${price}`, quoteRequired: 'цена по запросу' })).toMatch(/2.?900.*3.?500/)
@@ -28,7 +30,9 @@ describe('provider offering price formatting', () => {
         expect(formatProviderOfferingPrice({ ...offering, priceType: 'quote_required' }, 'ru', { from: (price) => `от ${price}`, quoteRequired: 'по запросу' })).toBe('по запросу')
     })
 
-    it('keeps the legacy label when structured pricing is unavailable', () => {
+    it('formats duration ranges and keeps legacy labels as a fallback', () => {
+        expect(formatProviderOfferingDuration(offering, 'ru')).toMatch(/45.*60.*мин/)
+        expect(formatProviderOfferingDuration({ ...offering, durationMinutes: undefined }, 'en')).toBe('60 мин')
         expect(formatProviderOfferingPrice({ ...offering, price: undefined, currency: undefined }, 'en', { from: (price) => `from ${price}`, quoteRequired: 'quote required' })).toBe('от 2 900 ₽')
     })
 })

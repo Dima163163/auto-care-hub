@@ -1,5 +1,5 @@
-import type { ProviderOffering } from '@/entities/automotive-service'
-import { formatCurrency } from '@/shared/lib/locale-format'
+import type { ProviderOffering } from '../model/autocareMockData'
+import { formatCurrency, formatDurationMinutes } from '@/shared/lib/locale-format'
 
 type ProviderOfferingPriceLabels = {
     from: (price: string) => string
@@ -21,4 +21,8 @@ export function formatProviderOfferingPrice(
     }
 
     return labels.from(price)
+}
+
+export function formatProviderOfferingDuration(offering: ProviderOffering, locale: string): string {
+    return offering.durationMinutes === undefined ? offering.duration : formatDurationMinutes(offering.durationMinutes, locale, offering.durationMinutesTo)
 }

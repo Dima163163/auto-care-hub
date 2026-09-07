@@ -17,7 +17,7 @@ import { getSupportedImageMimeType } from '@/shared/lib/media-upload'
 import { QueryStateCard } from '@/shared/ui/query-state-card'
 
 import { getProviderContactPresentation, getProviderDateInputValue, isProviderDateAvailable } from '../lib/providerAvailability'
-import { formatProviderOfferingPrice } from '../lib/providerOfferingFormat'
+import { formatProviderOfferingPrice } from '@/entities/automotive-service/lib/providerOfferingFormat'
 
 type ProviderRequestPanelProps = { provider: ProviderProfile; offering: ProviderOffering }
 

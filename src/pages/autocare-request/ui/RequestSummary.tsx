@@ -2,6 +2,7 @@ import { Check, Clock3, MapPin, ShieldCheck } from 'lucide-react'
 
 import type { ProviderOffering, ProviderProfile } from '@/entities/automotive-service'
 import { automotiveServices, getServiceLabel } from '@/entities/automotive-service'
+import { formatProviderOfferingDuration, formatProviderOfferingPrice } from '@/entities/automotive-service/lib/providerOfferingFormat'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
 import { ServiceWrenchIcon } from '@/shared/ui/icons/service-wrench-icon'
@@ -15,6 +16,7 @@ export function RequestSummary({ provider, offering }: RequestSelectionProps) {
     const { t, locale } = useTranslation()
     const service = automotiveServices.find((item) => item.id === offering.serviceId)
     const serviceLabel = service ? getServiceLabel(service, locale) : offering.serviceId
+    const price = formatProviderOfferingPrice(offering, locale, { from: (value) => t('autocare.fromPrice', { price: value }), quoteRequired: t('autocare.quoteRequiredPrice') })
 
     return (
         <section className="grid overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm md:grid-cols-2">
@@ -35,9 +37,9 @@ export function RequestSummary({ provider, offering }: RequestSelectionProps) {
                 <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedService')}</p>
                     <h2 className="mt-1 text-sm font-black text-foreground">{serviceLabel}</h2>
-                    <p className="mt-1 text-xs font-medium text-muted-foreground">{offering.duration}</p>
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">{formatProviderOfferingDuration(offering, locale)}</p>
                 </div>
-                <p className="shrink-0 text-right text-lg font-black text-foreground">{offering.priceLabel}</p>
+                <p className="shrink-0 text-right text-lg font-black text-foreground">{price}</p>
             </div>
         </section>
     )
@@ -47,6 +49,7 @@ export function RequestOrderSummary({ provider, offering }: RequestSelectionProp
     const { t, locale } = useTranslation()
     const service = automotiveServices.find((item) => item.id === offering.serviceId)
     const currentDate = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long' }).format(new Date())
+    const price = formatProviderOfferingPrice(offering, locale, { from: (value) => t('autocare.fromPrice', { price: value }), quoteRequired: t('autocare.quoteRequiredPrice') })
 
     return (
         <aside className="h-fit overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm lg:sticky lg:top-5">
@@ -55,11 +58,11 @@ export function RequestOrderSummary({ provider, offering }: RequestSelectionProp
                 <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.providerBookingStep')}</p>
             </div>
             <div className="divide-y divide-border px-5 text-sm">
-                <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedService')}</p><p className="mt-1 font-black text-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</p><p className="mt-1 text-xs font-bold text-foreground">{offering.priceLabel}</p></div>
+                <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedService')}</p><p className="mt-1 font-black text-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</p><p className="mt-1 text-xs font-bold text-foreground">{price}</p></div>
                 <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedProvider')}</p><p className="mt-1 font-black text-foreground">{provider.name}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{provider.address}</p></div>
                 <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestDateTimeTitle')}</p><p className="mt-1 font-black text-foreground">{t('autocare.providerToday')}, {currentDate} · 10:00</p></div>
             </div>
-            <div className="border-t border-border bg-secondary/45 p-5"><div className="flex items-end justify-between gap-4"><p className="text-lg font-black text-foreground">Итого</p><p className="text-2xl font-black text-foreground">{offering.priceLabel}</p></div><ul className="mt-4 grid gap-2 text-xs font-semibold text-status-success-foreground">{offering.includes.slice(0, 3).map((item) => <li key={item} className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0" />{item}</li>)}</ul></div>
+            <div className="border-t border-border bg-secondary/45 p-5"><div className="flex items-end justify-between gap-4"><p className="text-lg font-black text-foreground">{t('booking.total')}</p><p className="text-2xl font-black text-foreground">{price}</p></div><ul className="mt-4 grid gap-2 text-xs font-semibold text-status-success-foreground">{offering.includes.slice(0, 3).map((item) => <li key={item} className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0" />{item}</li>)}</ul></div>
             <div className="grid gap-3 p-5"><p className="flex gap-2 text-xs font-semibold leading-5 text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-primary" />{t('autocare.requestProviderConfirmation')}</p></div>
         </aside>
     )

@@ -49,6 +49,8 @@ export type ProviderOffering = {
     currency?: string
     priceType?: AutomotivePriceType
     duration: string
+    durationMinutes?: number
+    durationMinutesTo?: number | null
     availability: string
     includes: readonly string[]
 }
@@ -111,9 +113,9 @@ export type ProviderProfile = ProviderPreview & {
 }
 
 const defaultOfferings: readonly ProviderOffering[] = [
-    { id: 'mock-offer-oil-change', serviceId: 'oil-change', priceLabel: 'от 2 900 ₽', price: 2900, currency: 'RUB', priceType: 'from', duration: '45–60 мин', availability: 'Сегодня', includes: ['Масло и фильтр', 'Проверка уровней', 'Сброс сервисного интервала'] },
-    { id: 'mock-offer-diagnostics', serviceId: 'diagnostics', priceLabel: 'от 1 200 ₽', price: 1200, currency: 'RUB', priceType: 'from', duration: '60 мин', availability: 'Сегодня', includes: ['Компьютерная диагностика', 'Отчёт по ошибкам'] },
-    { id: 'mock-offer-brakes', serviceId: 'brakes', priceLabel: 'от 3 500 ₽', price: 3500, currency: 'RUB', priceType: 'from', duration: '90 мин', availability: 'Завтра', includes: ['Осмотр системы', 'Фотоотчёт', 'Гарантия 12 мес.'] },
+    { id: 'mock-offer-oil-change', serviceId: 'oil-change', priceLabel: 'от 2 900 ₽', price: 2900, currency: 'RUB', priceType: 'from', duration: '45–60 мин', durationMinutes: 45, durationMinutesTo: 60, availability: 'Сегодня', includes: ['Масло и фильтр', 'Проверка уровней', 'Сброс сервисного интервала'] },
+    { id: 'mock-offer-diagnostics', serviceId: 'diagnostics', priceLabel: 'от 1 200 ₽', price: 1200, currency: 'RUB', priceType: 'from', duration: '60 мин', durationMinutes: 60, availability: 'Сегодня', includes: ['Компьютерная диагностика', 'Отчёт по ошибкам'] },
+    { id: 'mock-offer-brakes', serviceId: 'brakes', priceLabel: 'от 3 500 ₽', price: 3500, currency: 'RUB', priceType: 'from', duration: '90 мин', durationMinutes: 90, availability: 'Завтра', includes: ['Осмотр системы', 'Фотоотчёт', 'Гарантия 12 мес.'] },
 ]
 
 export const providerProfiles: readonly ProviderProfile[] = providerPreviews.map((provider) => ({

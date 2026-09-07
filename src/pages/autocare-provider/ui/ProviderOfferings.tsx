@@ -4,7 +4,7 @@ import type { ProviderProfile } from '@/entities/automotive-service'
 import { automotiveServices, getServiceLabel } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
-import { formatProviderOfferingPrice } from '../lib/providerOfferingFormat'
+import { formatProviderOfferingPrice } from '@/entities/automotive-service/lib/providerOfferingFormat'
 
 type ProviderOfferingsProps = { provider: ProviderProfile; selectedServiceId: string; onSelect: (serviceId: string) => void }
 
