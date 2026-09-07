@@ -4255,7 +4255,7 @@ blue (2.53:1). CTA получил явный `text-primary-foreground`, посл
 существующий dark semantic override применился корректно. Итоговая light +
 dark matrix дала **0 нарушений в 20/20 комбинациях**; добавлен UI regression
 **1 файл / 1 тест PASS**. Production build, ESLint и полный
-`check:local-mvp -- --json` на `b0781675949f` PASS (43/43, responsive 30/30).
+`check:local-mvp -- --json` на `9c85a2ff770b` PASS (43/43, responsive 30/30).
 
 21–30. `[~]` Закрыт dark-mode contrast gap без изменения CTA destination,
 search flow или theme persistence. Real-device VoiceOver/TalkBack,
