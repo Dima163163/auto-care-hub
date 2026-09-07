@@ -4155,3 +4155,23 @@ dashboard без изменения provider/user query, statistics calculation 
 dashboard composition. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 467 (08.09.2026) — localized admin chat reports
+
+1–10. `[x]` Admin chat reports panel больше не использует локальный RU/EN
+copy-object или ручной `Intl.DateTimeFormat`. Report/status/category labels,
+empty/error/retry states и decision controls используют typed translation
+contract; created timestamps используют shared locale formatter, а отсутствующий
+participant — common not-provided fallback. Query filter и decision payload
+семантика сохранены.
+
+11–20. `[x]` Chat-reports regression — **1 файл / 2 теста PASS**: локализованные
+report details отображаются, required note объявляется через `role="alert"`, а
+resolve mutation сохраняет `{ id, status, reason, blockUser }`. ESLint,
+production build и полный `check:local-mvp` завершены с
+`all local MVP checks passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-date-format и validation-announcement gap в
+chat reports без изменения report query filter или moderation mutation semantics.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
