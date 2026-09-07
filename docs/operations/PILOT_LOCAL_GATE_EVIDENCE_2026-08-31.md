@@ -4035,3 +4035,24 @@ moderation evidence surface без изменения query filters, decision mu
 document/review rendering semantics. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 461 (08.09.2026) — localized admin provider change requests
+
+1–10. `[x]` Admin provider change requests panel больше не использует локальный
+RU/EN copy-object, locale-тернарии или ручной date formatter. Review labels,
+empty/error/retry states, decision note и validation copy используют typed
+translation contract; query status, profile payload projection и decision
+mutation semantics unchanged. Request timestamps используют shared locale
+formatter.
+
+11–20. `[x]` Provider-change regression — **1 файл / 1 тест PASS**: пустая
+причина блокирует submit и объявляется через `role="alert"`, после заполнения
+mutation получает исходные `id`, `status` и `reason`. ESLint, production build и
+полный `check:local-mvp` завершены с `all local MVP checks passed`, включая
+responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format и validation-announcement gap в
+provider change review surface без изменения API query, profile payload или
+moderation decision semantics. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.

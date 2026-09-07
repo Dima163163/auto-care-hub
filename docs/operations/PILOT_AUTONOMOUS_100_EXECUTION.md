@@ -383,6 +383,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-admin-moderation `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted moderation coverage is
   **1 file / 1 test PASS**, including the required-note `role="alert"` path.
+- Admin provider change requests now use typed translation keys and shared
+  locale date formatting for review labels, empty/error/retry states and
+  decision notes; query and mutation semantics remain unchanged.
+- Post-provider-change `npm run check:local-mvp` passes all 43 checks, including
+  the responsive Chromium matrix; targeted provider-change coverage is
+  **1 file / 1 test PASS**, including the required-note `role="alert"` path.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
