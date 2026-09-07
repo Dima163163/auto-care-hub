@@ -5,6 +5,7 @@ import { Link } from 'react-router'
 import { mapAutoCareDiscoveryItem, ProviderLogo, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
+import { formatCurrency } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
@@ -20,9 +21,9 @@ type HomeProvider = {
     distance: string
     distanceKm: number
     address: string
-    price: string
+    price: number
     priceValue: number
-    oldPrice?: string
+    oldPrice?: number
     discount?: string
     next: string
     tag?: 'best' | 'rating'
@@ -31,15 +32,11 @@ type HomeProvider = {
 }
 
 const featuredProviders: readonly HomeProvider[] = [
-    { id: 'proservice-moscow', name: 'ProService', logoUrl: '/images/autocare/providers/logos/proservice.svg', rating: 4.7, reviews: 256, distance: '2,1 км', distanceKm: 2.1, address: 'ул. Льва Толстого, 18', price: '2 900 ₽', priceValue: 2900, oldPrice: '3 500 ₽', discount: '-17%', next: 'Сегодня, 14:30', tag: 'best', verified: true },
-    { id: 'autolux-moscow', name: 'АвтоЛюкс', logoUrl: '/images/autocare/providers/logos/autolux.svg', rating: 4.9, reviews: 412, distance: '3,4 км', distanceKm: 3.4, address: 'Комсомольский пр-т, 45', price: '3 200 ₽', priceValue: 3200, next: 'Сегодня, 15:00', tag: 'rating', verified: true },
-    { id: 'formula-moscow', name: 'Формула Движения', logoUrl: null, rating: 4.6, reviews: 189, distance: '4,2 км', distanceKm: 4.2, address: 'ул. Плющиха, 10', price: '2 800 ₽', priceValue: 2800, oldPrice: '3 200 ₽', discount: '-13%', next: 'Сегодня, 16:00', verified: false },
-    { id: 'turbo-tech-moscow', name: 'Turbo Tech', logoUrl: null, rating: 4.5, reviews: 132, distance: '5,1 км', distanceKm: 5.1, address: 'Ленинский пр-т, 68', price: '3 500 ₽', priceValue: 3500, next: 'Завтра, 09:00', verified: false },
+    { id: 'proservice-moscow', name: 'ProService', logoUrl: '/images/autocare/providers/logos/proservice.svg', rating: 4.7, reviews: 256, distance: '2,1 км', distanceKm: 2.1, address: 'ул. Льва Толстого, 18', price: 2900, priceValue: 2900, oldPrice: 3500, discount: '-17%', next: 'Сегодня, 14:30', tag: 'best', verified: true },
+    { id: 'autolux-moscow', name: 'АвтоЛюкс', logoUrl: '/images/autocare/providers/logos/autolux.svg', rating: 4.9, reviews: 412, distance: '3,4 км', distanceKm: 3.4, address: 'Комсомольский пр-т, 45', price: 3200, priceValue: 3200, next: 'Сегодня, 15:00', tag: 'rating', verified: true },
+    { id: 'formula-moscow', name: 'Формула Движения', logoUrl: null, rating: 4.6, reviews: 189, distance: '4,2 км', distanceKm: 4.2, address: 'ул. Плющиха, 10', price: 2800, priceValue: 2800, oldPrice: 3200, discount: '-13%', next: 'Сегодня, 16:00', verified: false },
+    { id: 'turbo-tech-moscow', name: 'Turbo Tech', logoUrl: null, rating: 4.5, reviews: 132, distance: '5,1 км', distanceKm: 5.1, address: 'Ленинский пр-т, 68', price: 3500, priceValue: 3500, next: 'Завтра, 09:00', verified: false },
 ]
-
-function formatPrice(price: number) {
-    return `${price.toLocaleString('ru-RU')} ₽`
-}
 
 function formatDistance(distanceKm: number, locale: string) {
     if (distanceKm === Number.MAX_SAFE_INTEGER) return '—'
@@ -65,7 +62,7 @@ function toHomeProvider(provider: ProviderPreview): HomeProvider {
         distance: provider.distance.replace(' km', ' км').replace('.', ','),
         distanceKm: Number.isFinite(distanceKm) ? distanceKm : Number.MAX_SAFE_INTEGER,
         address: provider.address?.replace(/^Москва,\s*/, '') ?? 'ул. Автомобильная',
-        price: formatPrice(provider.price),
+        price: provider.price,
         priceValue: provider.price,
         next: provider.nextSlot,
         verified: provider.verified,
@@ -218,7 +215,7 @@ function ProviderCard({ provider, locale }: { provider: HomeProvider; locale: st
             <p className="mt-3 flex min-h-[20px] items-center gap-1 text-sm"><strong className="text-rating-foreground">{provider.rating}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="size-3.5 fill-rating-fill text-rating-fill" />)}<span className="ml-1 text-xs text-muted-foreground">({t('autocare.reviews', { count: provider.reviews })})</span></p>
             <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{formatDistance(provider.distanceKm, locale)}<span className="px-1">·</span>{provider.address}</span></p>
             <div className="mt-6 min-h-[44px]">
-                <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{t('autocare.fromPrice', { price: provider.price })}{provider.oldPrice ? <><span className="text-xs font-medium text-muted-foreground line-through">{provider.oldPrice}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs leading-4 text-status-danger-foreground">{provider.discount}</span></> : null}</p>
+                <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{t('autocare.fromPrice', { price: formatCurrency(provider.price, 'RUB', locale) })}{provider.oldPrice ? <><span className="text-xs font-medium text-muted-foreground line-through">{formatCurrency(provider.oldPrice, 'RUB', locale)}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs leading-4 text-status-danger-foreground">{provider.discount}</span></> : null}</p>
                 <p className="mt-1 text-xs leading-4 text-muted-foreground">{t('autocare.partsIncluded')}</p>
             </div>
             <div className="mt-5 min-h-[36px]">
