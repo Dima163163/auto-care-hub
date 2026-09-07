@@ -4,6 +4,8 @@ import type { ProviderProfile } from '@/entities/automotive-service'
 import { automotiveServices, getServiceLabel } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
+import { formatProviderOfferingPrice } from '../lib/providerOfferingFormat'
+
 type ProviderOfferingsProps = { provider: ProviderProfile; selectedServiceId: string; onSelect: (serviceId: string) => void }
 
 export function ProviderOfferings({ provider, selectedServiceId, onSelect }: ProviderOfferingsProps) {
@@ -17,13 +19,14 @@ export function ProviderOfferings({ provider, selectedServiceId, onSelect }: Pro
                 {provider.offerings.map((offering) => {
                     const service = automotiveServices.find((item) => item.id === offering.serviceId)
                     const isSelected = offering.serviceId === selectedServiceId
+                    const priceLabel = formatProviderOfferingPrice(offering, locale, { from: (price) => t('autocare.fromPrice', { price }), quoteRequired: t('autocare.quoteRequiredPrice') })
                     return (
                         <article key={offering.serviceId} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_7rem_9rem] sm:items-center">
                             <button type="button" onClick={() => onSelect(offering.serviceId)} className="flex min-w-0 items-start gap-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/40">
                                 <span className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'}`}><Wrench className="size-3.5" /></span>
                                 <span className="min-w-0"><strong className="block text-sm font-black text-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</strong><span className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">{offering.includes.slice(0, 2).map((item) => <span key={item} className="inline-flex items-center gap-1"><Check className="size-3 text-status-success-foreground" />{item}</span>)}</span></span>
                             </button>
-                            <div className="flex items-center justify-between gap-3 sm:block"><strong className="text-sm font-black text-foreground">{offering.priceLabel}</strong><span className="mt-1 block text-xs font-medium text-muted-foreground">{t('autocare.partsIncluded')}</span></div>
+                            <div className="flex items-center justify-between gap-3 sm:block"><strong className="text-sm font-black text-foreground">{priceLabel}</strong><span className="mt-1 block text-xs font-medium text-muted-foreground">{t('autocare.partsIncluded')}</span></div>
                             <div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1.5 text-xs font-bold text-status-success-foreground"><Clock3 className="size-3.5" />{t('autocare.providerAvailabilityRequest')}</span><button type="button" onClick={() => onSelect(offering.serviceId)} aria-label={t('autocare.requestSelectedService')} className={isSelected ? 'flex size-8 items-center justify-center rounded-[var(--radius-control)] bg-primary text-primary-foreground' : 'flex size-8 items-center justify-center rounded-[var(--radius-control)] border border-border text-primary hover:border-primary'}>{isSelected ? <Check className="size-4" /> : <Info className="size-4" />}</button></div>
                         </article>
                     )

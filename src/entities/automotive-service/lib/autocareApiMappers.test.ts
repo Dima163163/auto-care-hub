@@ -45,6 +45,7 @@ describe('AutoCare API mappers', () => {
         const result = mapAutoCareProviderProfile({ ...provider, offers: [offer] })
         expect(result.offerings[0]?.serviceId).toBe('oil-change')
         expect(result.offerings[0]?.priceLabel).toMatch(/2.?900/)
+        expect(result.offerings[0]).toMatchObject({ price: 2900, priceTo: null, currency: 'RUB', priceType: 'from' })
         expect(result.about).toBe('Description')
         expect(result.status).toBe('active')
         expect(result.timezone).toBe('Europe/Moscow')
