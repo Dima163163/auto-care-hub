@@ -11,6 +11,27 @@ const mocks = vi.hoisted(() => ({
     invite: vi.fn(),
     revokeInvitation: vi.fn(),
     revokeMembership: vi.fn(),
+    locale: 'ru' as 'ru' | 'en',
+}))
+
+vi.mock('@/shared/lib/useTranslation', () => ({
+    useTranslation: () => ({
+        t: (key: string) => {
+            const translations: Record<'ru' | 'en', Record<string, string>> = {
+            ru: {
+                'autocare.ownerProviderMembersRevoke': 'Отозвать',
+                'autocare.ownerProviderMembersRevoked': 'Доступ отозван',
+                'autocare.ownerProviderMembersRevoking': 'Отзываем…',
+            },
+            en: {
+                'autocare.ownerProviderMembersRevoke': 'Revoke',
+                'autocare.ownerProviderMembersRevoked': 'Access revoked',
+                'autocare.ownerProviderMembersRevoking': 'Revoking…',
+            },
+            }
+            return translations[mocks.locale][key] ?? key
+        },
+    }),
 }))
 
 vi.mock('@/entities/automotive-service', () => ({
@@ -39,6 +60,7 @@ const provider = { id: 'provider-1', location: { id: 'location-1' } } as AutoCar
 
 describe('OwnerProviderMembersPanel', () => {
     beforeEach(() => {
+        mocks.locale = 'ru'
         mocks.query.mockClear()
         mocks.invite.mockClear()
         mocks.revokeInvitation.mockReset().mockImplementation(() => ({ unwrap: vi.fn().mockResolvedValue({}) }))
@@ -47,7 +69,7 @@ describe('OwnerProviderMembersPanel', () => {
 
     it('shows revoked access separately and revokes an active member with feedback', async () => {
         const user = userEvent.setup()
-        render(<OwnerProviderMembersPanel provider={provider} locale="ru" />)
+        render(<OwnerProviderMembersPanel provider={provider} />)
 
         expect(screen.getByText(/Revoked Staff/)).toBeVisible()
         expect(screen.getByText(/доступ отозван/i)).toBeVisible()
@@ -61,7 +83,7 @@ describe('OwnerProviderMembersPanel', () => {
 
     it('revokes a pending invitation in the selected provider scope', async () => {
         const user = userEvent.setup()
-        render(<OwnerProviderMembersPanel provider={provider} locale="ru" />)
+        render(<OwnerProviderMembersPanel provider={provider} />)
 
         await user.click(screen.getByRole('button', { name: /Отозвать: new@example.com/ }))
 
@@ -72,7 +94,8 @@ describe('OwnerProviderMembersPanel', () => {
     it('surfaces revoke failures without hiding the team list', async () => {
         const user = userEvent.setup()
         mocks.revokeMembership.mockImplementation(() => ({ unwrap: vi.fn().mockRejectedValue({ data: { message: 'Access changed by another owner.' } }) }))
-        render(<OwnerProviderMembersPanel provider={provider} locale="en" />)
+        mocks.locale = 'en'
+        render(<OwnerProviderMembersPanel provider={provider} />)
 
         await user.click(screen.getByRole('button', { name: /Revoke: Alex Staff/ }))
 
