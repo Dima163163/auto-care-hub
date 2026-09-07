@@ -36,6 +36,7 @@
     "check:discovery-density": "tsx src/scripts/check-discovery-supply-density.ts",
     "smoke:autocare-realtime": "tsx src/scripts/smoke-autocare-realtime.ts",
     "smoke:redis-rate-limit": "tsx src/scripts/smoke-redis-rate-limit.ts",
+    "smoke:autocare-postgres-transition": "tsx src/scripts/smoke-autocare-postgres-transition.ts",
     "check:production-media": "tsx src/scripts/check-production-media.ts",
     "check:redis-rate-limit": "tsx src/scripts/check-redis-rate-limit-fail-closed.ts",
     "check:security": "tsx src/scripts/check-security-controls.ts",

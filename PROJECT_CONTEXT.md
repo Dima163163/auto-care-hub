@@ -24,7 +24,7 @@ participant consent and independent review require the owner or a third party.
 
 Latest verification (2026-09-07, current published feature branch): the branch is
 published and the worktree is clean; frontend unit tests pass at **151 files /
-480 tests**, backend pilot-focused unit tests pass at **290 files / 1049 tests**,
+480 tests**, backend pilot-focused unit tests pass at **291 files / 1051 tests**,
 and both autonomous-plan contracts pass (main plan **93 complete / 7 partial**,
 next plan **100/100**). These are local repository results only; the seven
 partial items still require staging, production, deployed-URL, participant or
@@ -35,6 +35,11 @@ The staging compatibility probe also passes against the running local real API
 discovery variants are verified with redacted SHA-256 evidence. This is a local
 runtime check, not staging evidence; `STAGING_API_BASE_URL` remains required for
 the external gate.
+
+The local PostgreSQL transition smoke also passes across two worker processes
+with one committed winner and one controlled conflict; temporary state tables
+are removed after the run. This strengthens local lock evidence for the
+transition matrix but does not close the external staging replay gate.
 
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider

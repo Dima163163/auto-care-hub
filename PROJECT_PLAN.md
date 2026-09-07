@@ -15,7 +15,7 @@
 >
 > Latest verification (2026-09-07, current published feature branch): the branch is
 > published and clean; frontend unit tests pass at **151 files / 480 tests** and
-> the backend pilot-focused unit profile passes **290 files / 1049 tests**. The
+> the backend pilot-focused unit profile passes **291 files / 1051 tests**. The
 > autonomous 100-item execution plan remains **93 complete / 7 partial**; the
 > separate next-plan contract is **100/100**. These figures are local evidence
 > and do not override the canonical external NO-GO gates.

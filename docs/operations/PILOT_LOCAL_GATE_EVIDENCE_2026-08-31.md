@@ -3200,3 +3200,19 @@ OpenAPI 3.1, response SHA-256, `nosniff`, и две discovery-вариации �
 staging evidence: для закрытия пункта 30 нужен настоящий HTTPS staging URL,
 а для остальных внешних пунктов — соответствующая инфраструктура и owner/
 participant acceptance.
+
+## Порция 411 (07.09.2026) — PostgreSQL multi-process transition smoke
+
+1–10. `[x]` Добавлен `npm run smoke:server:postgres-transition`: два независимых
+worker process используют одну временную PostgreSQL state row и `SELECT ... FOR
+UPDATE`. Barrier гарантирует одновременный старт, после чего только один worker
+коммитит transition, а второй получает controlled conflict.
+
+11–20. `[x]` Свежий запуск вернул
+`schemaVersion=1,status=pass,processCount=2,committedCount=1,conflictCount=1,
+finalState=committed`; cleanup проверен через Docker PostgreSQL — временных
+таблиц не осталось. Server build PASS, unit profile — **291/1051**.
+
+21–30. `[~]` Это усиливает локальное PostgreSQL lock evidence для пункта 75,
+но не заменяет staging matrix с реальными API-репликами, Redis/worker
+interleavings и release-candidate acceptance.

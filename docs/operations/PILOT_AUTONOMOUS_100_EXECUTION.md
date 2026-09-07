@@ -14,8 +14,8 @@
 ## Локальный release и MVP
 
 1. `[x]` Запустить полный `check:local-mvp`: все автоматические проверки проходят; responsive Chromium matrix — 30/30 после запуска Next production preview.
-2. `[x]` Прогнать frontend unit-тесты: 150 файлов / 477 тестов.
-3. `[x]` Прогнать backend unit-тесты: 290 файлов / 1049 тестов в pilot-focused
+2. `[x]` Прогнать frontend unit-тесты: 151 файлов / 480 тестов.
+3. `[x]` Прогнать backend unit-тесты: 291 файлов / 1051 тестов в pilot-focused
    unit-профиле; полный backend suite — 371 файл / 1246 тестов.
 4. `[x]` Проверить frontend production build.
 5. `[x]` Проверить backend TypeScript build.
@@ -170,7 +170,7 @@ anonymized samples/participant rows отсутствуют.
 
 - Feature-ветка опубликована; рабочее дерево чистое.
 - `npm test -- --run`: **151 test files / 480 tests PASS**.
-- `npm run test:server:unit`: **290 test files / 1049 tests PASS**.
+- `npm run test:server:unit`: **291 test files / 1051 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

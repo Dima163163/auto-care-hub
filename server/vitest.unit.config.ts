@@ -218,6 +218,7 @@ export default defineConfig({
       'src/scripts/media-preflight-fakes.test.ts',
       'src/scripts/redis-rate-limit-fakes.test.ts',
       'src/scripts/smoke-redis-rate-limit.test.ts',
+      'src/scripts/smoke-autocare-postgres-transition.test.ts',
       'src/database/auto-care-bonus-migration.test.ts',
       'src/database/auto-care-provider-invitation-migration.test.ts',
       'src/database/auto-care-provider-change-request-migration.test.ts',
