@@ -41,8 +41,17 @@ function formatPrice(price: number) {
     return `${price.toLocaleString('ru-RU')} ₽`
 }
 
-function formatSlot(slot: string) {
-    return slot.replace(/^Today, /, 'Сегодня, ').replace(/^Tomorrow, /, 'Завтра, ')
+function formatDistance(distanceKm: number, locale: string) {
+    if (distanceKm === Number.MAX_SAFE_INTEGER) return '—'
+    return new Intl.NumberFormat(locale, { maximumFractionDigits: 1, style: 'unit', unit: 'kilometer', unitDisplay: 'short' }).format(distanceKm)
+}
+
+function formatSlot(slot: string, locale: string) {
+    const match = /^(Today|Tomorrow|Сегодня|Завтра),\s*(.+)$/.exec(slot)
+    if (!match) return slot
+    const offset = match[1] === 'Tomorrow' || match[1] === 'Завтра' ? 1 : 0
+    const relativeDay = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(offset, 'day')
+    return `${relativeDay.charAt(0).toLocaleUpperCase(locale)}${relativeDay.slice(1)}, ${match[2]}`
 }
 
 function toHomeProvider(provider: ProviderPreview): HomeProvider {
@@ -58,7 +67,7 @@ function toHomeProvider(provider: ProviderPreview): HomeProvider {
         address: provider.address?.replace(/^Москва,\s*/, '') ?? 'ул. Автомобильная',
         price: formatPrice(provider.price),
         priceValue: provider.price,
-        next: formatSlot(provider.nextSlot),
+        next: provider.nextSlot,
         verified: provider.verified,
         trustBadge: provider.trustBadge,
     }
@@ -78,7 +87,7 @@ function sortProviders(items: readonly HomeProvider[], sort: HomeSort) {
 }
 
 export function ProviderPreviewSection({ marketId }: { marketId: string }) {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
     const resultsRoute = routePaths.serviceDiscovery({ service: 'brakes', market: marketId, radius: 10 })
     const [sort, setSort] = useState<HomeSort>('recommended')
     const [pageState, setPageState] = useState({ marketId, page: 0 })
@@ -147,7 +156,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                         ? <ProviderPreviewSkeleton label={t('common.loading')} />
                         : hasNoProviders
                             ? <ProviderPreviewEmptyState message={emptyStateMessage} isError={discovery.isError} onRetry={discovery.refetch} retryLabel={t('common.retry')} />
-                        : visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
+                        : visibleProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} locale={locale} />)}
                 </div>
                 {!isFirstPage ? <button type="button" onClick={showPreviousPage} className="absolute -left-1 top-[55%] hidden size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition hover:bg-primary hover:text-primary-foreground lg:flex" aria-label={t('common.back')}>
                     <ChevronLeft className="size-7" />
@@ -194,7 +203,7 @@ function ProviderPreviewSkeleton({ label }: { label: string }) {
     )
 }
 
-function ProviderCard({ provider }: { provider: HomeProvider }) {
+function ProviderCard({ provider, locale }: { provider: HomeProvider; locale: string }) {
     const { t } = useTranslation()
 
     return (
@@ -207,14 +216,14 @@ function ProviderCard({ provider }: { provider: HomeProvider }) {
                 {provider.trustBadge === 'trusted' ? <span className="shrink-0 rounded-full bg-status-success-surface px-1.5 py-0.5 text-[9px] font-black leading-4 text-status-success-foreground">{t('autocare.trustBadgeLabel')}</span> : null}
             </div>
             <p className="mt-3 flex min-h-[20px] items-center gap-1 text-sm"><strong className="text-rating-foreground">{provider.rating}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="size-3.5 fill-rating-fill text-rating-fill" />)}<span className="ml-1 text-xs text-muted-foreground">({t('autocare.reviews', { count: provider.reviews })})</span></p>
-            <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{provider.distance}<span className="px-1">·</span>{provider.address}</span></p>
+            <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{formatDistance(provider.distanceKm, locale)}<span className="px-1">·</span>{provider.address}</span></p>
             <div className="mt-6 min-h-[44px]">
                 <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{t('autocare.fromPrice', { price: provider.price })}{provider.oldPrice ? <><span className="text-xs font-medium text-muted-foreground line-through">{provider.oldPrice}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs leading-4 text-status-danger-foreground">{provider.discount}</span></> : null}</p>
                 <p className="mt-1 text-xs leading-4 text-muted-foreground">{t('autocare.partsIncluded')}</p>
             </div>
             <div className="mt-5 min-h-[36px]">
                 <p className="text-xs leading-4 text-muted-foreground">{t('autocare.nearestBooking')}</p>
-                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{provider.next}</p>
+                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{formatSlot(provider.next, locale)}</p>
             </div>
             <Link to={routePaths.serviceProviderDetails(provider.id)} className="mt-auto flex h-[42px] items-center justify-center rounded-[6px] bg-primary text-sm font-bold text-primary-foreground">{t('autocare.bookAction')}</Link>
             <Link to={routePaths.serviceProviderDetails(provider.id)} className="mt-3 text-center text-xs font-semibold text-primary">{t('autocare.detailsAction')}</Link>
