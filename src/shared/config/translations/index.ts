@@ -18,15 +18,24 @@ const pendingTranslations = new Map<SupportedLocale, Promise<TranslationSchema>>
 const localeLoaders: Record<SupportedLocale, TranslationLoader> = {
     en: async () => enTranslations,
     ru: async () => {
-        const [{ ruPart1 }, { ruPart2 }, { ruPart3 }, { ruPart4 }, { withAutoCareTranslations }] = await Promise.all([
+        const [{ ruPart1 }, { ruPart2, ruPart3Admin }, { ruPart3Autocare }, { ruPart4 }, { withAutoCareTranslations }] = await Promise.all([
             import('./ru-part-1'),
             import('./ru-part-2'),
-            import('./ru-part-3'),
+            import('./ru-part-3-autocare'),
             import('./ru-part-4'),
             import('./autocare-popular'),
         ])
 
-        return withAutoCareTranslations('ru', { ...enTranslations, ...ruPart1, ...ruPart2, ...ruPart3, ...ruPart4 })
+        return withAutoCareTranslations('ru', {
+            ...enTranslations,
+            ...ruPart1,
+            ...ruPart2,
+            ...ruPart3Admin,
+            autocare: {
+                ...ruPart3Autocare,
+            },
+            ...ruPart4,
+        })
     },
     ro: async () => {
         const [{ roTranslations }, { withAutoCareTranslations }] = await Promise.all([

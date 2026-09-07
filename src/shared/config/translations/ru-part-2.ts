@@ -1,3 +1,5 @@
+export { ruPart3Admin } from './ru-part-3-admin'
+
 export const ruPart2 = {
 ownerDashboard: {
         title: 'Панель',

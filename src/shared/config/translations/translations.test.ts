@@ -187,6 +187,12 @@ describe('translation coverage', () => {
         expect(translations.ru.autocare.resultCount).toBe('{{count}} сервисов найдено')
     })
 
+    it('keeps Russian supplemental bundles connected after lazy splitting', () => {
+        expect(getValue(translations.ru, 'adminAppeals.title')).toBe('Апелляции и пересмотр решений')
+        expect(getValue(translations.ru, 'autocare.ownerRequestsEyebrow')).toBe('Заявки клиентов')
+        expect(getValue(translations.ru, 'autocare.reviewsEyebrow')).toBe('Ваш опыт')
+    })
+
     it('keeps home location service counts localized for every supported language', () => {
         for (const locale of Object.keys(translations).filter((value) => value !== 'en')) {
             const autocare = translations[locale as keyof typeof translations].autocare
