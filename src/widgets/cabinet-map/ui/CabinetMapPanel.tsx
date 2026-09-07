@@ -9,7 +9,7 @@ import { getMediaUrl } from '@/shared/lib/getMediaUrl'
 import { getCabinetImageSources } from '@/shared/lib/getCabinetImageSources'
 import { routePaths } from '@/shared/constants/routes'
 import { formatCurrency } from '@/shared/lib/formatCurrency'
-import { FALLBACK_MAP_TILE_URL, MAP_CONFIG } from '@/shared/config/map'
+import { getMapTileFallback, MAP_CONFIG } from '@/shared/config/map'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ResilientImage } from '@/shared/ui/resilient-image'
 import { getCabinetMapPosition, type CabinetMapPosition } from '../lib/cabinetMapCoordinates'
@@ -78,10 +78,11 @@ export function CabinetMapPanel({ cabinets, selectedCabinetId, onSelect, onClear
 
             tileLayer.on('load', () => setTileStatus('ready'))
             tileLayer.on('tileerror', () => {
-                if (!usingFallback && MAP_CONFIG.tileUrl !== FALLBACK_MAP_TILE_URL) {
+                const fallbackUrl = getMapTileFallback(MAP_CONFIG.tileUrl)
+                if (!usingFallback && fallbackUrl) {
                     usingFallback = true
                     tileLayer.removeFrom(map)
-                    tileLayer = L.tileLayer(FALLBACK_MAP_TILE_URL, { attribution: MAP_CONFIG.attribution, subdomains: MAP_CONFIG.subdomains })
+                    tileLayer = L.tileLayer(fallbackUrl, { attribution: MAP_CONFIG.attribution, subdomains: MAP_CONFIG.subdomains })
                     tileLayer.on('load', () => setTileStatus('ready'))
                     tileLayer.on('tileerror', () => setTileStatus('error'))
                     tileLayer.addTo(map)

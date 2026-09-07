@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css'
 
 import type { ProviderPreview } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
-import { FALLBACK_MAP_TILE_URL, RESULTS_MAP_CONFIG } from '@/shared/config/map'
+import { getMapTileFallback, RESULTS_MAP_CONFIG } from '@/shared/config/map'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { formatCurrency } from '@/shared/lib/locale-format'
 
@@ -70,10 +70,11 @@ export function AutoCareMapPreview({ providers, serviceId, selectedProviders, fo
         let tileLayer = L.tileLayer(RESULTS_MAP_CONFIG.tileUrl, { ...RESULTS_MAP_CONFIG, detectRetina: true })
         tileLayer.on('load', () => setTileError(false))
         tileLayer.on('tileerror', () => {
-            if (!usingFallback && RESULTS_MAP_CONFIG.tileUrl !== FALLBACK_MAP_TILE_URL) {
+            const fallbackUrl = getMapTileFallback(RESULTS_MAP_CONFIG.tileUrl)
+            if (!usingFallback && fallbackUrl) {
                 usingFallback = true
                 tileLayer.removeFrom(map)
-                tileLayer = L.tileLayer(FALLBACK_MAP_TILE_URL, { attribution: RESULTS_MAP_CONFIG.attribution, subdomains: RESULTS_MAP_CONFIG.subdomains, detectRetina: true })
+                tileLayer = L.tileLayer(fallbackUrl, { attribution: RESULTS_MAP_CONFIG.attribution, subdomains: RESULTS_MAP_CONFIG.subdomains, detectRetina: true })
                 tileLayer.on('load', () => setTileError(false))
                 tileLayer.on('tileerror', () => setTileError(true))
                 tileLayer.addTo(map)

@@ -3,7 +3,7 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import type { AutoCareApiProvider } from '@/entities/automotive-service'
-import { RESULTS_MAP_CONFIG } from '@/shared/config/map'
+import { getMapTileFallback, RESULTS_MAP_CONFIG } from '@/shared/config/map'
 
 import './owner-autocare-provider-map.css'
 
@@ -61,7 +61,18 @@ export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMap
             zoomControl: false,
         }).setView(MOSCOW_CENTER, 10)
         const layer = L.layerGroup().addTo(map)
-        L.tileLayer(RESULTS_MAP_CONFIG.tileUrl, { ...RESULTS_MAP_CONFIG, detectRetina: true }).addTo(map)
+        let usingFallback = false
+        let tileLayer = L.tileLayer(RESULTS_MAP_CONFIG.tileUrl, { ...RESULTS_MAP_CONFIG, detectRetina: true })
+        tileLayer.on('tileerror', () => {
+            const fallbackUrl = getMapTileFallback(RESULTS_MAP_CONFIG.tileUrl)
+            if (usingFallback || !fallbackUrl) return
+
+            usingFallback = true
+            tileLayer.removeFrom(map)
+            tileLayer = L.tileLayer(fallbackUrl, { attribution: RESULTS_MAP_CONFIG.attribution, subdomains: RESULTS_MAP_CONFIG.subdomains, detectRetina: true })
+            tileLayer.addTo(map)
+        })
+        tileLayer.addTo(map)
 
         const resizeObserver = typeof ResizeObserver === 'undefined'
             ? null

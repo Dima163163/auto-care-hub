@@ -5,6 +5,10 @@ const DEFAULT_RESULTS_MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all
 export const FALLBACK_MAP_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const DEFAULT_MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
 
+export function getMapTileFallback(tileUrl: string) {
+    return tileUrl === FALLBACK_MAP_TILE_URL ? null : FALLBACK_MAP_TILE_URL
+}
+
 export const MAP_CONFIG = {
     tileUrl: readPublicEnv('VITE_MAP_TILE_URL') ?? DEFAULT_MAP_TILE_URL,
     attribution: readPublicEnv('VITE_MAP_ATTRIBUTION') ?? DEFAULT_MAP_ATTRIBUTION,
