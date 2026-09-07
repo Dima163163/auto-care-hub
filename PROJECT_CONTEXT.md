@@ -59,6 +59,12 @@ now uses the public-wide container and gutter tokens already used by the
 desktop header. Its content no longer expands to the larger operational layout
 width; section and booking component behavior are unchanged.
 
+Map-theme follow-up (2026-09-07): all Leaflet surfaces use the keyless
+OpenStreetMap default, keep a one-shot fallback for configured tile failures,
+and apply a normal light profile or a moderated night profile to tile pixels
+based on the active theme. Markers, controls and booking content remain
+outside the tile filter.
+
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for

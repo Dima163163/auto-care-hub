@@ -2451,3 +2451,30 @@ collection counts не записываются.
 replays требуют deployed PostgreSQL/staging evidence.
 91–100. `[x]` Обновлены plan/context/evidence и release provenance; V2
 canonical statuses и productionClaims не изменены.
+
+## Порция 365 (07.09.2026) — unified map-theme batch из 100 шагов
+
+Это локальный execution batch по согласованию визуального поведения карт. Он
+не меняет V2-знаменатель и не объявляет production tile SLA.
+
+1–10. `[x]` Инвентаризированы все четыре Leaflet-поверхности: results,
+owner-provider, provider-location и cabinet catalog.
+11–20. `[x]` Подтвержден keyless OSM default; CARTO с `API KEY REQUIRED` PNG не
+используется bundled-конфигурацией.
+21–30. `[x]` Проверен one-shot fallback для provider-location URL, чтобы custom
+tile failure не оставлял карту на ошибочном endpoint.
+31–40. `[x]` Убраны старые `screen`/opacity/brightness-фильтры, рассчитанные на
+тёмный CARTO и пересвечивавшие светлые OSM-тайлы.
+41–50. `[x]` Добавлен общий light profile без фильтра и moderated night profile
+для dark theme только на `.leaflet-tile-pane`.
+51–60. `[x]` Маркеры, zoom/location controls, attribution и карточки остаются
+вне цветового фильтра и сохраняют контраст.
+61–70. `[x]` Проверено переключение light/dark в Chrome на results route:
+обычный OSM и ночной профиль отрисовываются без API-key watermark.
+71–80. `[x]` ESLint, map tests **3/3**, Next production build и `git diff
+--check` проходят.
+81–90. `[x]` Отдельный responsive matrix проходит **30/30** на ширинах
+360–1440 px; результаты и provider route сохраняют required content.
+91–100. `[x]` Static local MVP gate даёт **40 PASS / 1 manual**; manual — только
+пропущенный runtime responsive sub-gate (`--static-only`), закрытый отдельным
+30/30 replay. Внешние tile SLA, staging и owner sign-off не подменяются.

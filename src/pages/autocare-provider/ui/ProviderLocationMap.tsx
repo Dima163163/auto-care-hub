@@ -3,7 +3,7 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import type { ProviderProfile } from '@/entities/automotive-service'
-import { MAP_CONFIG } from '@/shared/config/map'
+import { getMapTileFallback, MAP_CONFIG } from '@/shared/config/map'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import './provider-location-map.css'
@@ -19,7 +19,18 @@ export function ProviderLocationMap({ provider }: { provider: ProviderProfile })
         if (!container) return
         const position: [number, number] = [latitude, longitude]
         const map = L.map(container, { zoomControl: false, attributionControl: false, scrollWheelZoom: false }).setView(position, 14)
-        L.tileLayer(MAP_CONFIG.tileUrl, MAP_CONFIG).addTo(map)
+        let usingFallback = false
+        let tileLayer = L.tileLayer(MAP_CONFIG.tileUrl, MAP_CONFIG)
+        tileLayer.on('tileerror', () => {
+            const fallbackUrl = getMapTileFallback(MAP_CONFIG.tileUrl)
+            if (usingFallback || !fallbackUrl) return
+
+            usingFallback = true
+            tileLayer.removeFrom(map)
+            tileLayer = L.tileLayer(fallbackUrl, { attribution: MAP_CONFIG.attribution, subdomains: MAP_CONFIG.subdomains })
+            tileLayer.addTo(map)
+        })
+        tileLayer.addTo(map)
         L.marker(position, { icon: L.divIcon({ className: 'provider-map-marker-host', html: '<span class="provider-map-marker" aria-hidden="true"></span>', iconSize: [32, 42], iconAnchor: [16, 42] }) }).addTo(map)
         const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => map.invalidateSize())
         resizeObserver?.observe(container)

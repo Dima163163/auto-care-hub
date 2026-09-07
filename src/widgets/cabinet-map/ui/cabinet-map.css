@@ -5,6 +5,15 @@
     font-family: inherit;
 }
 
+.autocarehub-leaflet .leaflet-tile-pane {
+    filter: none;
+    opacity: 1;
+}
+
+.dark .autocarehub-leaflet .leaflet-tile-pane {
+    filter: brightness(46%) saturate(70%) contrast(108%);
+}
+
 @media (min-width: 768px) {
     .autocarehub-leaflet .leaflet-container {
         min-height: 560px;

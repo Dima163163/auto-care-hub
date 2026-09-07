@@ -3,6 +3,15 @@
     font-family: inherit;
 }
 
+.provider-location-map .leaflet-tile-pane {
+    filter: none;
+    opacity: 1;
+}
+
+.dark .provider-location-map .leaflet-tile-pane {
+    filter: brightness(46%) saturate(70%) contrast(108%);
+}
+
 .provider-map-marker-host { background: transparent; border: 0; }
 
 .provider-map-marker {

@@ -80,6 +80,10 @@
 - [x] Aligned the provider-page main content with the public chrome container:
   desktop content uses the same maximum width and horizontal gutters as the
   public header, while its internal two-column booking layout is unchanged.
+- [x] Unified Leaflet map theming across results, owner, provider-location and
+  cabinet maps: light theme uses normal keyless OSM tiles, dark theme uses a
+  moderated night profile, and provider-location tiles now share the one-shot
+  keyless fallback.
 - [x] Added an append-only `user_data_exported` audit event for self-service
   data exports. It records only actor/target/request provenance and no export
   payload, private attachment metadata or content-derived values.
