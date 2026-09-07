@@ -90,6 +90,9 @@ The owner providers map now exposes a localized named `region` as well, so the
 protected map surface has the same assistive-technology landmark contract as
 the public provider map.
 
+The post-owner-map canonical `npm run check:local-mvp` replay on `e03d0a34eec3`
+passes all 43 checks, including the responsive Chromium matrix.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

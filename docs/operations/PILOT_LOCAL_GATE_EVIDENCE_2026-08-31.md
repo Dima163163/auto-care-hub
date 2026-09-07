@@ -3351,6 +3351,20 @@ frontend tests и Next production build; TypeScript принял обе translat
 assistive technology, deployed URL или owner acceptance; readiness остаётся
 **96.5% (193/200)**.
 
+## Порция 424 (07.09.2026) — post-owner-map canonical local MVP replay
+
+1–10. `[x]` На опубликованном `e03d0a34eec3` повторён полный
+`npm run check:local-mvp`; `exit=0`, все **43 проверки** PASS, включая
+frontend/backend builds, API/media/backup/security contracts, route and
+interaction regressions.
+
+11–20. `[x]` Ephemeral Next production server и responsive Chromium matrix также
+завершились PASS; protected map a11y change не вызвал layout/runtime regression.
+
+21–30. `[~]` Local replay усиливает доказательство protected UI, но не закрывает
+real-device assistive technology, deployed runtime или внешние pilot gates;
+readiness остаётся **96.5% (193/200)**.
+
 ## Порция 423 (07.09.2026) — protected owner map accessibility
 
 1–10. `[x]` `OwnerAutoCareProviderMap` получил `role="region"` и локализованный
