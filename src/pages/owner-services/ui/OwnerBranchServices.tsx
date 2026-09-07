@@ -32,6 +32,8 @@ type OwnerBranchServicesProps = {
         priceInvalid: string
         editError: string
         priceSnapshotNotice: string
+        serviceFallback: string
+        notProvided: string
     }
     isOpen: boolean
     onToggle: () => void
@@ -88,7 +90,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
 function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { providerId: string; offer: AutoCareApiOffer; definitions: AutoCareApiServiceDefinition[]; locale: string; labels: OwnerBranchServicesProps['labels'] }) {
     const [isEditing, setIsEditing] = useState(false)
     const definition = definitions.find((item) => item.id === offer.serviceDefinitionId || item.slug === offer.serviceSlug)
-    const title = offer.serviceLabels?.[locale] ?? definition?.labels[locale] ?? offer.serviceLabels?.en ?? definition?.labels.en ?? offer.serviceSlug ?? 'AutoCare service'
+    const title = offer.serviceLabels?.[locale] ?? definition?.labels[locale] ?? offer.serviceLabels?.en ?? definition?.labels.en ?? offer.serviceSlug ?? labels.serviceFallback
     const price = formatCurrency(offer.priceFromMinor / 100, offer.currencyCode, locale)
 
     return (
@@ -101,7 +103,7 @@ function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { 
                 <div className="mt-4 flex items-start justify-between gap-3"><h2 className="text-sm font-black text-foreground">{title}</h2><EditOfferButton label={labels.edit} onClick={() => setIsEditing(true)} /></div>
                 {offer.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{offer.description}</p> : null}
                 <p className="mt-2 text-lg font-black text-foreground">{offer.priceType === 'quote_required' ? labels.estimate : price}</p>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? '—'}</p>
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? labels.notProvided}</p>
             </article>
             <OwnerOfferDialog title={title} isOpen={isEditing} onOpenChange={setIsEditing} providerId={providerId} offer={offer} labels={labels} onCancel={() => setIsEditing(false)} onSaved={() => setIsEditing(false)} />
         </>

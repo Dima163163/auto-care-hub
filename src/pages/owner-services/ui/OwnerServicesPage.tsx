@@ -11,18 +11,41 @@ import { CardsGridSkeleton } from '@/shared/ui/loading-skeleton'
 
 import { OwnerBranchServices } from './OwnerBranchServices'
 
-const copy = {
-    en: {
-        eyebrow: 'Automotive service catalogue', title: 'Services and pricing', description: 'Manage offers separately for each service location so customers always see the right price and availability.', locations: 'Service locations', definitions: 'Standard services', categories: 'Categories', locationAction: 'Manage locations', notice: 'Choose a service location to view and manage its published offers. Click the branch header to expand or collapse its services.', showAll: 'Show all services', hideAll: 'Hide all services', branchServices: 'services', address: 'Address', hours: 'Hours', reviews: 'reviews', from: 'From price', estimate: 'Estimate on request', noPublished: 'No published offers for this branch yet.', edit: 'Edit offer', save: 'Save changes', cancel: 'Cancel', offerDescription: 'Service description', descriptionPlaceholder: 'Explain what is included in the work.', price: 'Price from, ₽', bookingMode: 'Booking mode', bookingModeRequest: 'Request and confirm with the service', bookingModeInstant: 'Instant booking after slot validation', priceInvalid: 'Enter a valid non-negative price.', editError: 'Could not save the offer.', priceSnapshotNotice: 'New price applies to new requests. Existing requests keep their original price.',
-    },
-    ru: {
-        eyebrow: 'Каталог автоуслуг', title: 'Услуги и цены', description: 'Настраивайте предложения отдельно для каждого филиала, чтобы клиент всегда видел актуальные цены и доступность.', locations: 'Филиалы сервиса', definitions: 'Стандартные услуги', categories: 'Категории', locationAction: 'Управлять филиалами', notice: 'Выберите филиал, чтобы посмотреть его опубликованные предложения. Нажмите на шапку филиала, чтобы раскрыть или скрыть услуги.', showAll: 'Показать все услуги', hideAll: 'Скрыть все услуги', branchServices: 'услуг', address: 'Адрес', hours: 'График', reviews: 'отзывов', from: 'Цена от', estimate: 'Цена по запросу', noPublished: 'В этом филиале пока нет опубликованных предложений.', edit: 'Редактировать', save: 'Сохранить', cancel: 'Отмена', offerDescription: 'Описание услуги', descriptionPlaceholder: 'Опишите состав и особенности работ.', price: 'Цена от, ₽', bookingMode: 'Режим записи', bookingModeRequest: 'Заявка и подтверждение сервисом', bookingModeInstant: 'Мгновенная запись после проверки слота', priceInvalid: 'Укажите корректную неотрицательную цену.', editError: 'Не удалось сохранить услугу.', priceSnapshotNotice: 'Новая цена действует для новых заявок. В существующих заявках останется прежняя цена.',
-    },
-}
-
 export function OwnerServicesPage() {
     const { locale, t } = useTranslation()
-    const text = locale === 'ru' ? copy.ru : copy.en
+    const text = {
+        eyebrow: t('autocare.ownerServicesPageEyebrow'),
+        title: t('autocare.ownerServicesPageTitle'),
+        description: t('autocare.ownerServicesPageDescription'),
+        locations: t('autocare.ownerServicesPageLocations'),
+        definitions: t('autocare.ownerServicesPageDefinitions'),
+        categories: t('autocare.ownerServicesPageCategories'),
+        locationAction: t('autocare.ownerServicesPageLocationAction'),
+        notice: t('autocare.ownerServicesPageNotice'),
+        showAll: t('autocare.ownerServicesPageShowAll'),
+        hideAll: t('autocare.ownerServicesPageHideAll'),
+        branchServices: t('autocare.ownerServicesPageBranchServices'),
+        address: t('autocare.ownerServicesPageAddress'),
+        hours: t('autocare.ownerServicesPageHours'),
+        reviews: t('autocare.ownerServicesPageReviews'),
+        from: t('autocare.ownerServicesPageFrom'),
+        estimate: t('autocare.ownerServicesPageEstimate'),
+        noPublished: t('autocare.ownerServicesPageNoPublished'),
+        edit: t('autocare.ownerServicesPageEdit'),
+        save: t('autocare.ownerServicesPageSave'),
+        cancel: t('autocare.ownerServicesPageCancel'),
+        offerDescription: t('autocare.ownerServicesPageOfferDescription'),
+        descriptionPlaceholder: t('autocare.ownerServicesPageDescriptionPlaceholder'),
+        price: t('autocare.ownerServicesPagePrice'),
+        bookingMode: t('autocare.ownerServicesPageBookingMode'),
+        bookingModeRequest: t('autocare.ownerServicesPageBookingModeRequest'),
+        bookingModeInstant: t('autocare.ownerServicesPageBookingModeInstant'),
+        priceInvalid: t('autocare.ownerServicesPagePriceInvalid'),
+        editError: t('autocare.ownerServicesPageEditError'),
+        priceSnapshotNotice: t('autocare.ownerServicesPagePriceSnapshotNotice'),
+        serviceFallback: t('autocare.ownerServicesPageServiceFallback'),
+        notProvided: t('autocare.ownerServicesPageNotProvided'),
+    }
     const definitions = useGetAutoCareServiceDefinitionsQuery()
     const providers = useGetOwnerAutoCareProvidersQuery()
     const [collapsedBranchIds, setCollapsedBranchIds] = useState<Set<string>>(new Set())
