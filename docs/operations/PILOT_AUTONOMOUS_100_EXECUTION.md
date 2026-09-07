@@ -395,6 +395,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-admin-appeals `npm run check:local-mvp` passes all 43 checks, including
   the responsive Chromium matrix; targeted appeals coverage is **1 file / 1
   test PASS**, including the required-note `role="alert"` path.
+- Admin data quality panel now uses typed translation keys and shared locale
+  date/number formatting for queue labels, attention states and quality metrics;
+  thresholds, anchors and monitoring query semantics remain unchanged.
+- Post-admin-data-quality `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted data-quality coverage is
+  **1 file / 1 test PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

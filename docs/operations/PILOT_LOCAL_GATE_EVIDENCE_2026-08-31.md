@@ -4077,3 +4077,22 @@ appeals review surface без изменения appeal predicates, query filter
 decision mutation semantics. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 463 (08.09.2026) — localized admin data quality panel
+
+1–10. `[x]` Admin data quality panel больше не использует локальный RU/EN
+copy-object или ручной date formatter. Queue/metric labels, attention/healthy
+states, empty summary и loading/error/retry copy используют typed translation
+contract; generated timestamp, integer counts и coverage percentages используют
+shared locale formatters. Quality thresholds, queue anchors и query semantics
+unchanged.
+
+11–20. `[x]` Data-quality regression — **1 файл / 1 тест PASS**: panel
+показывает localized labels и locale-formatted metrics (`1,234`, `92%`). ESLint,
+production build и полный `check:local-mvp` завершены с
+`all local MVP checks passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format gap в data quality surface без
+изменения monitoring query, threshold predicates или admin queue destinations.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
