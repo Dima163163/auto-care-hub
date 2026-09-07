@@ -338,6 +338,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-clients `npm run check:local-mvp` passes all 43 checks, including
   the responsive Chromium matrix; targeted clients coverage is **1 file / 2
   tests PASS**, and the frontend suite remains **153/489 PASS**.
+- Owner request queue and request list now use typed queue labels, locale-aware
+  service-label fallback and shared date/currency formatters; sorting, filtering
+  and request selection semantics remain unchanged.
+- Post-owner-request-queue `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted owner-request coverage is
+  **1 file / 1 test PASS**, and the frontend suite remains **153/489 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
