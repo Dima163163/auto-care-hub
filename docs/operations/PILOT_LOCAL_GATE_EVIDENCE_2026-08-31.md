@@ -4115,3 +4115,23 @@ Chromium matrix.
 изменения provider sorting, visible cap или status transition semantics.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 465 (08.09.2026) — localized admin catalog gap queue
+
+1–10. `[x]` Admin catalog gap queue/editor больше не использует локальный
+RU/EN copy-object. Queue, decision, service-definition и price-type labels,
+loading/saving/retry states и empty state используют typed translation contract;
+proposal labels выбираются с учётом locale, а fallback для пустых comparison
+attributes использует common not-provided copy. Query, decision/update payloads
+и service-definition fields unchanged.
+
+11–20. `[x]` Catalog-gap regression — **1 файл / 1 тест PASS**: русские labels
+и translated price-type option отображаются, approve mutation сохраняет
+`{ id, status: 'approved', reason: null }`. ESLint, production build и полный
+`check:local-mvp` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format gap в catalog gap queue/editor без
+изменения query status, decision/update payloads или service definition fields.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.

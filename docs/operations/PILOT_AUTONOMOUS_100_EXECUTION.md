@@ -407,6 +407,13 @@ anonymized samples/participant rows отсутствуют.
 - Post-provider-moderation `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted provider-moderation
   coverage is **1 file / 1 test PASS**.
+- Admin catalog gap queue/editor now uses typed translation keys for queue,
+  decision, service-definition and price-type labels; locale-aware proposal
+  labels and translated loading/saving/retry states preserve catalog query,
+  decision and update semantics.
+- Post-admin-catalog-gap `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted catalog-gap coverage is
+  **1 file / 1 test PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
