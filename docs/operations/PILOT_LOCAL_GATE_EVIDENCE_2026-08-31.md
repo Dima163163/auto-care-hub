@@ -4175,3 +4175,23 @@ production build и полный `check:local-mvp` завершены с
 chat reports без изменения report query filter или moderation mutation semantics.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 468 (08.09.2026) — localized super-admin dashboard summary
+
+1–10. `[x]` Super-admin dashboard summary больше не использует локальный
+RU/EN copy-object или ручные locale-тернарии для summary UI. Hero, market/team/
+trust labels, role labels и launch states используют typed translation contract;
+platform counts и trust totals форматируются через shared locale number
+formatter, а provider overview query и dashboard composition unchanged.
+
+11–20. `[x]` Super-admin summary regression — **1 файл / 1 тест PASS**:
+локализованный hero, market/team summary, formatted counts и navigation links
+отображаются; query data contract не изменён. ESLint, production build и полный
+`check:local-mvp` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-number-format gap в super-admin dashboard
+summary без изменения platform overview query, child panel composition или
+navigation targets. Real-device language review, staging/production, deployed
+Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
+**96.5% (193/200)**.

@@ -426,6 +426,13 @@ anonymized samples/participant rows отсутствуют.
 - Post-admin-chat-reports `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted chat-reports coverage is
   **1 file / 2 tests PASS**, including the required-note `role="alert"` path.
+- Super-admin dashboard summary now uses typed translation keys and shared locale
+  number formatting for hero, market/team/trust metrics, role labels and launch
+  states; platform overview query, child-panel composition and navigation targets
+  remain unchanged.
+- Post-super-admin-summary `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted super-admin summary coverage
+  is **1 file / 1 test PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
