@@ -66,6 +66,9 @@ Fresh `npm run check:local-mvp` on `2201da15f186` completed with exit 0: all 43
 checks passed, including the ephemeral Next production server and responsive
 Chromium matrix.
 
+Both frontend and backend `npm audit --omit=dev --audit-level=high` checks also
+report zero vulnerabilities, matching the dependency gates in Quality CI.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

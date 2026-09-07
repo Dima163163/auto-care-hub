@@ -184,6 +184,8 @@ anonymized samples/participant rows отсутствуют.
   its PostgreSQL service container.
 - Fresh `npm run check:local-mvp` on `2201da15f186` passed all 43 checks,
   including the responsive Chromium matrix.
+- Frontend and backend production dependency audits pass with zero high-level
+  vulnerabilities.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

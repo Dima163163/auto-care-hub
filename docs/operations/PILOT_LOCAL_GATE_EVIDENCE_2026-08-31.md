@@ -3305,3 +3305,17 @@ API/media/backup/security contracts и regressions.
 21–30. `[~]` Свежий clean local replay подтверждает текущий опубликованный
 SHA, но не даёт staging API/Redis, private S3, deployed Lighthouse, real-device
 или owner/participant evidence; readiness остаётся **96.5% (193/200)**.
+
+## Порция 418 (07.09.2026) — production dependency audit replay
+
+1–10. `[x]` Повторены обе команды из Quality workflow:
+`npm audit --omit=dev --audit-level=high` в корне и в `server/`. Frontend и
+backend dependency trees вернули **0 vulnerabilities**.
+
+11–20. `[x]` Это подтверждает текущий published dependency surface на уровне
+порогов CI; результат не получен за счёт снижения audit severity и не требует
+изменений lockfile.
+
+21–30. `[~]` Dependency audit не закрывает внешние staging/production runtime,
+private S3, deployed Lighthouse или manual/participant acceptance gates;
+readiness остаётся **96.5% (193/200)**.
