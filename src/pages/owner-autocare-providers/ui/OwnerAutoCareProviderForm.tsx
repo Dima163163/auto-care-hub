@@ -434,29 +434,29 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 <section className="border-t pt-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                            <h3 className="text-sm font-bold">{locale === 'ru' ? 'Документы и подтверждения' : 'Documents and evidence'}</h3>
-                            <p className="mt-1 text-xs text-muted-foreground">{locale === 'ru' ? 'Добавьте ссылки на документы в приватном хранилище. Они попадут на проверку и не будут опубликованы.' : 'Add private storage references. Documents go to moderation and are never published.'}</p>
+                            <h3 className="text-sm font-bold">{t('autocare.ownerProviderDocumentsTitle')}</h3>
+                            <p className="mt-1 text-xs text-muted-foreground">{t('autocare.ownerProviderDocumentsDescription')}</p>
                         </div>
                         <Button type="button" variant="outline" disabled={documents.length >= 20} onClick={() => setDocuments((items) => [...items, nextDocumentId.current++])}>
-                            {locale === 'ru' ? 'Добавить документ' : 'Add document'}
+                            {t('autocare.ownerProviderAddDocument')}
                         </Button>
                     </div>
                     {documents.length > 0 && <div className="mt-4 space-y-3">
                         {documents.map((documentId, index) => <div key={`document-${documentId}`} className="grid gap-3 rounded-[var(--radius-card)] border border-border bg-background p-3 sm:grid-cols-[1fr_1.4fr_170px_auto] sm:items-end">
-                            <Field label={locale === 'ru' ? 'Название документа' : 'Document name'}><input required maxLength={160} name="documentLabel" className={inputClassName} placeholder={locale === 'ru' ? 'Свидетельство ИП' : 'Business certificate'} /></Field>
-                            <Field label={locale === 'ru' ? 'Приватная ссылка' : 'Private reference'}><input required maxLength={500} name="documentReference" pattern="^private://.*" className={inputClassName} placeholder="private://documents/..." /></Field>
-                            <Field label={locale === 'ru' ? 'Действует до' : 'Expires on'}><input name="documentExpiresAt" type="date" className={inputClassName} /></Field>
-                            <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label={`${locale === 'ru' ? 'Удалить документ' : 'Remove document'} ${index + 1}`} onClick={() => setDocuments((items) => items.filter((id) => id !== documentId))}>{locale === 'ru' ? 'Удалить' : 'Remove'}</Button>
+                            <Field label={t('autocare.ownerProviderDocumentName')}><input required maxLength={160} name="documentLabel" className={inputClassName} placeholder={t('autocare.ownerProviderDocumentNamePlaceholder')} /></Field>
+                            <Field label={t('autocare.ownerProviderPrivateReference')}><input required maxLength={500} name="documentReference" pattern="^private://.*" className={inputClassName} placeholder="private://documents/..." /></Field>
+                            <Field label={t('autocare.ownerProviderDocumentExpires')}><input name="documentExpiresAt" type="date" className={inputClassName} /></Field>
+                            <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label={`${t('autocare.ownerProviderRemoveDocument')} ${index + 1}`} onClick={() => setDocuments((items) => items.filter((id) => id !== documentId))}>{t('autocare.ownerProviderRemoveDocument')}</Button>
                         </div>)}
                     </div>}
                 </section>
 
                 <section className="border-t pt-5">
-                    <h3 className="text-sm font-bold">{locale === 'ru' ? 'Связь с клиентами' : 'Customer contact'}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{locale === 'ru' ? 'По умолчанию новая небольшая команда принимает заявку и подтверждает время по телефону. Чаты можно включить позже в профиле сервиса.' : 'By default, a small new team receives requests and confirms times by phone. You can enable chat later in the service profile.'}</p>
+                    <h3 className="text-sm font-bold">{t('autocare.ownerProviderCustomerContactTitle')}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{t('autocare.ownerProviderCustomerContactDescription')}</p>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        <label htmlFor="owner-create-chat-enabled" className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-card)] border border-primary/30 bg-primary/5 p-3 text-sm font-bold"><input id="owner-create-chat-enabled" data-testid="owner-create-chat-toggle" type="checkbox" checked={chatEnabled} disabled={communicationMode === 'phone_only'} onChange={(event) => setChatEnabled(event.target.checked)} /><span>{locale === 'ru' ? 'Принимать вопросы в чате' : 'Accept customer chat'}</span></label>
-                        <label className="grid gap-1.5 text-xs font-black"><span>{locale === 'ru' ? 'Режим записи' : 'Booking mode'}</span><select className={inputClassName} value={communicationMode} onChange={(event) => { const mode = event.target.value as typeof communicationMode; setFormError(null); setCommunicationMode(mode); if (mode === 'phone_only') setChatEnabled(false) }}><option value="request_then_confirm">{locale === 'ru' ? 'Заявка + подтверждение по телефону' : 'Request + phone confirmation'}</option><option value="online">{locale === 'ru' ? 'Онлайн-запись по слотам' : 'Online slots'}</option><option value="phone_only">{locale === 'ru' ? 'Только по телефону' : 'Phone only'}</option></select></label>
+                        <label htmlFor="owner-create-chat-enabled" className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-card)] border border-primary/30 bg-primary/5 p-3 text-sm font-bold"><input id="owner-create-chat-enabled" data-testid="owner-create-chat-toggle" type="checkbox" checked={chatEnabled} disabled={communicationMode === 'phone_only'} onChange={(event) => setChatEnabled(event.target.checked)} /><span>{t('autocare.ownerProviderAcceptChat')}</span></label>
+                        <label className="grid gap-1.5 text-xs font-black"><span>{t('autocare.ownerProviderBookingMode')}</span><select className={inputClassName} value={communicationMode} onChange={(event) => { const mode = event.target.value as typeof communicationMode; setFormError(null); setCommunicationMode(mode); if (mode === 'phone_only') setChatEnabled(false) }}><option value="request_then_confirm">{t('autocare.ownerProviderBookingRequestConfirm')}</option><option value="online">{t('autocare.ownerProviderBookingOnline')}</option><option value="phone_only">{t('autocare.ownerProviderBookingPhone')}</option></select></label>
                     </div>
                 </section>
 
