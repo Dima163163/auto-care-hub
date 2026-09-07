@@ -3870,3 +3870,22 @@ suite — **153/489 PASS**.
 request/provider query shape или branch occupancy semantics. Real-device
 language review, staging/production, deployed Lighthouse и pilot evidence
 остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 452 (07.09.2026) — localized owner capacity resources panel
+
+1–10. `[x]` Capacity resources panel больше не принимает locale prop и не
+содержит RU/EN ternaries. Заголовки, типы ресурсов, статусы, формы, loading,
+occupancy, empty/error states и mutation fallbacks используют typed translation
+contract; resource/reservation queries и create/update mutation semantics
+unchanged.
+
+11–20. `[x]` Resources regression — **1 файл / 2 теста PASS**; ESLint,
+Vite production build и полный `check:local-mvp` на resources-localization
+worktree поверх `94fef04` завершены с `all local MVP checks passed`, включая
+responsive Chromium matrix; frontend suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт raw-copy localization gap в capacity resources surface без
+изменения resource type, capacity validation, reservation occupancy или
+mutation payload semantics. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.

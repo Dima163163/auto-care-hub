@@ -325,6 +325,13 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-capacity-calendar `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted calendar coverage is
   **1 file / 2 tests PASS**, and the frontend suite remains **153/489 PASS**.
+- Owner capacity resources panel now uses typed translation keys for resource
+  types, statuses, forms, loading/error/empty states and mutation fallbacks;
+  resource/reservation query scopes plus create/update payload semantics remain
+  unchanged.
+- Post-owner-capacity-resources `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted resources coverage is
+  **1 file / 2 tests PASS**, and the frontend suite remains **153/489 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
