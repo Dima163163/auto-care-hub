@@ -3535,3 +3535,20 @@ Chromium matrix PASS.
 API или реальных данных. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 432 (07.09.2026) — localized public availability slots
+
+1–10. `[x]` Форматирование `Today/Tomorrow` вынесено в общий
+`formatAutoCareSlot`: домашний provider preview, result cards и comparison
+table теперь используют выбранную locale вместо показа исходного английского
+или русского значения API/fixture.
+
+11–20. `[x]` Добавлены тесты для EN/RU/ES и неизвестного slot-формата:
+targeted **5/5 PASS**, полный frontend suite — **151/482 PASS**, lint без
+warnings. Полный `check:local-mvp` на commit `7b3f672ff29f` завершён с
+`all local MVP checks passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Локальный public availability gap закрыт без изменения API,
+слотов или booking semantics. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.

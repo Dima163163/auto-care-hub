@@ -159,7 +159,7 @@ anonymized samples/participant rows отсутствуют.
 - `npm run check:local-mvp`: все автоматические проверки PASS; responsive Chromium matrix 30/30 также PASS после запуска Next production server с разрешённым loopback-портом. Ручная visual/keyboard/device приёмка остаётся владельческим gate.
 - Backend pilot-focused unit: **288 файлов / 1042 теста**; полный backend
   suite: **371 файл / 1245 тестов**.
-- Frontend unit: **151 файлов / 481 тест**.
+- Frontend unit: **151 файлов / 482 теста**.
 - `npm run check:threat-surface`: PASS, включая availability rate limit.
 - `npm run check:ops-harness`, `check:security-headers`, `check:capacity-ui`, API/OpenAPI checks: PASS.
 - Synthetic discovery: 10 000 — p95 4.2 ms; 100 000 — p95 21.5 ms.
@@ -208,6 +208,11 @@ anonymized samples/participant rows отсутствуют.
   formatting for both current and old prices.
 - Post-provider-price `npm run check:local-mvp` on `77b612d60eab` passes all 43
   checks, including the responsive Chromium matrix.
+- Public result cards and comparison tables now format `Today/Tomorrow` slots
+  through one locale-aware helper; the helper has EN/RU/ES regression coverage.
+- Post-slot-localization `npm run check:local-mvp` on `7b3f672ff29f` passes all
+  43 checks, including the responsive Chromium matrix; frontend suite is
+  **151/482 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
