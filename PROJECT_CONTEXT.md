@@ -45,6 +45,12 @@ The Docker-backed server integration profile remains green at **14 files / 63
 tests**, including AutoCare discovery, route guards, authorization and account
 deletion replay; these fixtures are synthetic and local.
 
+Fresh `VITE_API_MODE=real npm run build:vite` plus
+`check:production-fixture-leakage` passes across the generated JS assets with no
+demo contact markers. The Chrome spot-check showing synthetic provider contact
+data was intentionally running the local MSW/mock surface, not the real API
+bundle.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

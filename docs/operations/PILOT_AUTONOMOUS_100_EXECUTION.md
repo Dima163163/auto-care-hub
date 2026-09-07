@@ -173,6 +173,9 @@ anonymized samples/participant rows отсутствуют.
 - `npm run test:server:unit`: **291 test files / 1051 tests PASS**.
 - `npm run test:server:integration`: **14 test files / 63 tests PASS** on the
   local Docker PostgreSQL profile.
+- `VITE_API_MODE=real npm run build:vite` and
+  `npm run check:production-fixture-leakage`: PASS; no demo contact markers in
+  generated JavaScript assets. Mock-mode UI contacts are local synthetic data.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

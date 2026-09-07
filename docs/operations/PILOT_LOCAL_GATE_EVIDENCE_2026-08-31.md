@@ -3230,3 +3230,18 @@ schema.
 21–30. `[~]` Это усиливает локальную integration evidence, но не засчитывается
 как staging/production multi-process replay, backup restore, external delivery
 или participant acceptance.
+
+## Порция 413 (07.09.2026) — real-mode asset boundary and browser spot-check
+
+1–10. `[x]` `VITE_API_MODE=real npm run build:vite` завершён успешно; затем
+`npm run check:production-fixture-leakage` просканировал весь `dist/assets` и
+не нашёл `service@example.com` или demo-телефон ни в entry, ни в lazy JS.
+
+11–20. `[x]` Chrome spot-check provider profile подтвердил визуальный shell,
+список услуг, карту с видимой OpenStreetMap attribution, booking slots и
+доступные actions. Synthetic contact data в этом окне приходит из MSW/mock
+режима и не является real API или production evidence.
+
+21–30. `[~]` Deployed artifact inventory, real API/staging URL, Lighthouse,
+real-device assistive technology и owner acceptance остаются внешними gates;
+локальный asset scan их не заменяет.
