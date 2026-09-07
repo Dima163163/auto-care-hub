@@ -3168,3 +3168,18 @@ transition concurrency, PWA/SEO и responsive browser matrix.
 21–30. `[~]` Это подтверждение локального репозитория на текущем рабочем
 дереве; canonical pilot readiness остаётся ограниченной внешними Redis,
 PostgreSQL, SMTP/S3, staging и real-participant gates.
+
+## Порция 409 (07.09.2026) — post-push unit and plan-contract verification
+
+1–10. `[x]` После публикации commit `43087ae` рабочее дерево повторно
+проверено как clean. `npm test -- --run` завершён с результатом **151 test
+files / 480 tests PASS**.
+
+11–20. `[x]` `npm run test:server:unit` завершён с результатом **290 test files /
+1049 tests PASS**; ожидаемые Redis-unavailable записи относятся к
+fail-closed unit coverage и не являются ошибками suite. Оба autonomous-plan
+contract checks также PASS: **93 complete / 7 partial** и **100/100**.
+
+21–30. `[~]` Свежая локальная сверка усиливает воспроизводимость кода и
+документации, но не подменяет staging/production, deployed-URL, participant,
+device, owner или manual acceptance evidence; 7 partial остаются без изменения.

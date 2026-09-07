@@ -163,3 +163,14 @@ anonymized samples/participant rows отсутствуют.
 - Synthetic discovery: 10 000 — p95 4.2 ms; 100 000 — p95 21.5 ms.
 - `npm run check:mvp-readiness`: корректно блокируется отсутствующими PostgreSQL/Redis/JWT, SMTP, media path и bootstrap super-admin.
 - `quality:backend` включает error-code, staging-contract и autonomous-plan checks; повторный локальный прогон всех новых проверок и `git diff --check` — PASS.
+
+## Последняя локальная сверка (07.09.2026)
+
+- Commit `43087ae` опубликован в feature-ветке; рабочее дерево чистое.
+- `npm test -- --run`: **151 test files / 480 tests PASS**.
+- `npm run test:server:unit`: **290 test files / 1049 tests PASS**.
+- `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
+  `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
+- Эти результаты подтверждают текущую локальную воспроизводимость, но не
+  закрывают внешний staging/production, deployed-URL, participant или manual
+  acceptance evidence.
