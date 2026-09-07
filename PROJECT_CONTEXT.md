@@ -58,6 +58,10 @@ The GitHub Quality workflow now runs the real-mode Vite build and
 `check:production-fixture-leakage` after the Next build, so the local artifact
 boundary is enforced in CI as well as during handoff verification.
 
+The backend Quality job also runs the two-process PostgreSQL transition smoke
+against its service container, preserving the local lock/conflict contract in
+CI.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

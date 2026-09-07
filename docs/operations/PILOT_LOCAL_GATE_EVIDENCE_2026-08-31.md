@@ -3274,3 +3274,18 @@ fixture-leakage scan и `git diff --check`; все PASS. Workflow diff не со
 21–30. `[~]` Это закрывает CI gap вокруг PWA/compatibility bundle, но не даёт
 deployed URL, Lighthouse, staging API, private S3 или ручной device/owner
 acceptance evidence; readiness остаётся **96.5% (193/200)**.
+
+## Порция 416 (07.09.2026) — CI PostgreSQL transition smoke
+
+1–10. `[x]` Backend Quality job дополнен шагом
+`npm run smoke:autocare-postgres-transition` в сервисном PostgreSQL-контейнере.
+Теперь multi-process lock/conflict contract проверяется не только в локальном
+handoff, но и на CI runner.
+
+11–20. `[x]` Локальный повтор root smoke вернул
+`status=pass,processCount=2,committedCount=1,conflictCount=1,finalState=committed`;
+workflow YAML parse и `git diff --check` также PASS.
+
+21–30. `[~]` CI replay усиливает regression protection, но не является
+staging matrix с двумя API-репликами, Redis outage/reconnect или
+release-candidate acceptance; readiness остаётся **96.5% (193/200)**.

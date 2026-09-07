@@ -180,6 +180,8 @@ anonymized samples/participant rows отсутствуют.
   `__dirname`/future-native-config warning.
 - GitHub Quality now repeats the real-mode Vite build and
   `check:production-fixture-leakage` in CI after the Next build.
+- Backend Quality also runs the two-process PostgreSQL transition smoke against
+  its PostgreSQL service container.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

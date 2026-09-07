@@ -235,6 +235,10 @@ jobs:
         run: npm run test:integration
         working-directory: server
 
+      - name: Run PostgreSQL multi-process transition smoke
+        run: npm run smoke:autocare-postgres-transition
+        working-directory: server
+
       - name: Run worker lifecycle smoke test
         run: npm run test:unit -- --run src/modules/jobs/background-jobs.test.ts
         working-directory: server
