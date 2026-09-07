@@ -10,10 +10,10 @@ const sourceMap = {
         'Number.isInteger(year)',
     ].join('\n'),
     requestsPanel: [
-        'vehicleSnapshot', 'licensePlate', 'internalNumber', 'VIN ${vehicle.vin}',
+        'vehicleSnapshot', 'licensePlate', 'internalNumber', "t('autocare.clientBookingVin')",
         'booking.bonusDiscountMinor', 'request.quoteHistory',
-        "entry.type === 'refund'", "entry.type === 'expire'", 'История операций',
-        'Repeated clicks are idempotent', 'useGetMyAutoCareBonusAccountsQuery',
+        "entry.type === 'refund'", "entry.type === 'expire'", "t('autocare.clientBonusesHistory')",
+        "t('autocare.clientBonusesLimitHint'", 'useGetMyAutoCareBonusAccountsQuery',
         'useRedeemAutoCareBonusMutation', 'useAcceptAutoCareServiceQuoteMutation',
         'useDeclineAutoCareServiceQuoteMutation', "request.quote.status === 'expired'",
         "request.status === 'estimate_shared'",
