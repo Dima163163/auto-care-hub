@@ -484,6 +484,13 @@ anonymized samples/participant rows отсутствуют.
   requests. `quality.yml` now cancels in-progress runs for every event within
   the same branch group, keeping `dev` and `main` groups independent and
   ensuring the latest SHA receives the CI slot.
+- npm 10 reproduced the backend CI install failure as a real lockfile mismatch:
+  `vite-tsconfig-paths`' optional `tsconfck` peer path required
+  `typescript@5.9.3`, which was absent while the root server toolchain asked
+  for TypeScript 6. The server lockfile was regenerated with npm 10; a clean
+  npm 10 install added **372 packages**, backend build passed, and backend
+  tooling tests passed **5/5**. The next published SHA still needs a GitHub
+  Actions run to confirm the full pipeline.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

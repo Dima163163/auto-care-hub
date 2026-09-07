@@ -4357,3 +4357,22 @@ release-promotion workflow не затронут. YAML parse, lint и локал
 актуальном SHA должен подтвердить install retry и полный CI. Deployment/DNS,
 staging API, private media/restore, pilot participants и production SEO
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 477 (08.09.2026) — npm 10 lockfile compatibility
+
+1–10. `[x]` Локально воспроизведена причина GitHub Actions failure на Node 22
+toolchain: `npm@10.9.2 ci` отвергал `server/package-lock.json` с ошибкой
+`Missing: typescript@5.9.3 from lock file`. npm 11 локально этот optional peer
+gap не сигнализировал, поэтому прежняя проверка на npm 11 была недостаточной.
+
+11–20. `[x]` Lockfile пересобран npm 10 в режиме `--package-lock-only` и получил
+явную optional peer-запись `vite-tsconfig-paths/node_modules/typescript`
+`5.9.3`. Чистая установка теми же bounded retry-флагами теперь проходит:
+**372 packages added**, после чего backend `npm run build` и tooling tests
+проходят (**5/5**).
+
+21–30. `[~]` CI dependency failure имеет исправление, совместимое с Node 22 /
+npm 10; нужен новый GitHub Actions run на опубликованном SHA для подтверждения
+всего pipeline. Deployment/DNS, staging API, private media/restore, pilot
+participants и production SEO evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
