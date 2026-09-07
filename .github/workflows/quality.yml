@@ -121,6 +121,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build real-mode Vite compatibility artifact
+        run: VITE_API_MODE=real npm run build:vite
+
+      - name: Check production fixture leakage
+        run: npm run check:production-fixture-leakage
+
       - name: Check PWA update contract
         run: npm run check:pwa-update
 

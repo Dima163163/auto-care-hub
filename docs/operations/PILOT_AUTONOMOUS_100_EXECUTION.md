@@ -178,6 +178,8 @@ anonymized samples/participant rows отсутствуют.
   generated JavaScript assets. Mock-mode UI contacts are local synthetic data.
 - Vite ESM config uses `import.meta.dirname`; the real build emits no
   `__dirname`/future-native-config warning.
+- GitHub Quality now repeats the real-mode Vite build and
+  `check:production-fixture-leakage` in CI after the Next build.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

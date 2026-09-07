@@ -3258,3 +3258,19 @@ PASS, `git diff --check` PASS.
 
 21–30. `[~]` Исправление устраняет локальный build/config debt, но не меняет
 внешние staging/production gates и readiness denominator.
+
+## Порция 415 (07.09.2026) — CI real-mode artifact boundary
+
+1–10. `[x]` В `.github/workflows/quality.yml` после Next build добавлены
+`VITE_API_MODE=real npm run build:vite` и
+`npm run check:production-fixture-leakage`. Тем самым CI воспроизводит уже
+проверенный локальный real-mode asset boundary, а не проверяет только Next
+production artifact.
+
+11–20. `[x]` После изменения локально повторены real-mode Vite build,
+fixture-leakage scan и `git diff --check`; все PASS. Workflow diff не содержит
+непроверенных runtime secrets или staging-зависимостей.
+
+21–30. `[~]` Это закрывает CI gap вокруг PWA/compatibility bundle, но не даёт
+deployed URL, Lighthouse, staging API, private S3 или ручной device/owner
+acceptance evidence; readiness остаётся **96.5% (193/200)**.

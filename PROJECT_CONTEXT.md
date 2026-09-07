@@ -54,6 +54,10 @@ bundle.
 The Vite config now uses the ESM-native `import.meta.dirname`; the real build no
 longer emits the upcoming Vite `configLoader: native` `__dirname` warning.
 
+The GitHub Quality workflow now runs the real-mode Vite build and
+`check:production-fixture-leakage` after the Next build, so the local artifact
+boundary is enforced in CI as well as during handoff verification.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.
