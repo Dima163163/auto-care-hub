@@ -170,7 +170,7 @@ describe('translation coverage', () => {
     })
 
     it('translates the public automotive journey for every supported language', () => {
-        const keys = ['heroTitle', 'heroDescription', 'byService', 'byProvider', 'searchAction', 'resultsTitle', 'bookAction', 'detailsAction'] as const
+        const keys = ['heroTitle', 'heroDescription', 'byService', 'byProvider', 'searchAction', 'resultsTitle', 'bookAction', 'detailsAction', 'providerMobileService', 'providerMobileServiceWithRadius', 'providerPickupDelivery', 'heroMapLabel', 'heroMapZoomLevel'] as const
 
         for (const locale of Object.keys(translations).filter((value) => value !== 'en')) {
             for (const key of keys) {
