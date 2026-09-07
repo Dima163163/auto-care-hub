@@ -25,6 +25,13 @@ function uniqueIds(records: Array<{ id: string }>) {
     return [...new Set(idsOf(records))]
 }
 
+interface DemoOutboxReferences {
+    userIds: readonly string[]
+    bookingIds: readonly string[]
+    requestIds: readonly string[]
+    emails: readonly string[]
+}
+
 /**
  * Deletes rows owned by the demo fixture without ever interpolating an id.
  * Table and column names are compile-time constants at each call site; ids
@@ -49,6 +56,21 @@ async function deleteByAnyColumns(
     if (ids.length === 0 || columns.length === 0) return
     const predicate = columns.map((column) => `"${column}" = ANY($1::uuid[])`).join(' OR ')
     await manager.query(`DELETE FROM "${table}" WHERE ${predicate}`, [ids])
+}
+
+async function deleteDemoOutboxEvents(manager: EntityManager, references: DemoOutboxReferences) {
+    const { userIds, bookingIds, requestIds, emails } = references
+    if (userIds.length === 0 && bookingIds.length === 0 && requestIds.length === 0 && emails.length === 0) return
+
+    await manager.query(
+        `DELETE FROM "outbox_events"
+         WHERE "payload" ->> 'userId' = ANY($1::text[])
+            OR "payload" ->> 'bookingId' = ANY($2::text[])
+            OR "payload" ->> 'requestId' = ANY($3::text[])
+            OR "payload" ->> 'email' = ANY($4::text[])
+            OR "payload" ->> 'toEmail' = ANY($4::text[])`,
+        [userIds, bookingIds, requestIds, emails],
+    )
 }
 
 async function resetDemoData() {
@@ -173,6 +195,13 @@ async function resetDemoData() {
                 ? await bookingRepository.find({ where: bookingWhere })
                 : []
             const bookingIds = idsOf(bookings)
+
+            await deleteDemoOutboxEvents(manager, {
+                userIds,
+                bookingIds,
+                requestIds: autocareRequestIds,
+                emails: DEMO_USER_EMAILS,
+            })
 
             if (userIds.length > 0) {
                 // Security events are immutable, but account deletion/reset

@@ -115,13 +115,13 @@ export const OwnerProviderInvitationAcceptPage = lazy(() =>
 )
 
 export const LoginCallbackPage = lazy(() =>
-    import('@/pages/login-callback').then((module) => ({
+    import('@/app/routes/auth-pages').then((module) => ({
         default: module.LoginCallbackPage,
     })),
 )
 
 export const LoginPage = lazy(() =>
-    import('@/pages/login').then((module) => ({
+    import('@/app/routes/auth-pages').then((module) => ({
         default: module.LoginPage,
     })),
 )

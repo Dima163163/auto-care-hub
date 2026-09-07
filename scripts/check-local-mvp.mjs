@@ -45,6 +45,8 @@ export const LOCAL_MVP_CHECKS = [
     { id: 'route-inventory', label: 'Next route inventory', executable: npmCommand, args: ['run', 'check:next-route-inventory'] },
     { id: 'route-inventory-tests', label: 'Next route inventory regressions', executable: npmCommand, args: ['run', 'test:next-route-inventory'] },
     { id: 'route-contract', label: 'Next route contract', executable: npmCommand, args: ['run', 'check:next-route-contract'] },
+    { id: 'router-compatibility', label: 'React Router compatibility contract', executable: npmCommand, args: ['run', 'check:router-compatibility'] },
+    { id: 'router-compatibility-tests', label: 'React Router compatibility regressions', executable: npmCommand, args: ['run', 'test:router-compatibility'] },
     { id: 'legacy-cleanup', label: 'Legacy cleanup manifest', executable: npmCommand, args: ['run', 'check:legacy-cleanup'] },
     { id: 'legacy-file-classification', label: 'Legacy file classification', executable: npmCommand, args: ['run', 'check:legacy-files'] },
     { id: 'no-bookly-runtime', label: 'Legacy runtime guard', executable: npmCommand, args: ['run', 'check:no-bookly-runtime'] },

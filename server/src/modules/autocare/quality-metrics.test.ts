@@ -46,6 +46,32 @@ describe('quality metrics', () => {
         expect(result.reliability).toMatchObject({ responseSamples: 1, averageResponseMinutes: 15, p95ResponseMinutes: 15 })
     })
 
+    it('uses the earliest valid provider response regardless of message order', () => {
+        const createdAt = new Date('2026-08-20T10:00:00.000Z')
+        const result = buildQualityMetrics({
+            providers: [{ id: 'p1', ownerId: 'owner-1', status: 'active' }],
+            providerMemberships: [
+                { providerId: 'p1', userId: 'manager-1', locationId: null, status: 'active' },
+                { providerId: 'p1', userId: 'staff-1', locationId: 'l1', status: 'active' },
+                { providerId: 'p1', userId: 'staff-other-branch', locationId: 'l2', status: 'active' },
+            ],
+            definitions: [],
+            locations: [{ id: 'l1', providerId: 'p1', marketId: 'samara' }],
+            offers: [],
+            requests: [{ id: 'r1', clientId: 'client-1', providerId: 'p1', locationId: 'l1', status: ServiceRequestStatus.Open, createdAt, clientConfirmedAt: null, providerConfirmedAt: null }],
+            messages: [
+                { requestId: 'r1', senderId: 'owner-1', createdAt: new Date('2026-08-20T10:30:00.000Z') },
+                { requestId: 'r1', senderId: 'staff-1', createdAt: new Date('2026-08-20T10:15:00.000Z') },
+                { requestId: 'r1', senderId: 'staff-other-branch', createdAt: new Date('2026-08-20T10:05:00.000Z') },
+                { requestId: 'r1', senderId: 'client-1', createdAt: new Date('2026-08-20T10:03:00.000Z') },
+                { requestId: 'r1', senderId: 'manager-1', createdAt: new Date('2026-08-20T10:10:00.000Z') },
+                { requestId: 'r1', senderId: 'owner-1', createdAt: new Date('2026-08-20T09:59:00.000Z') },
+            ],
+        })
+
+        expect(result.reliability).toMatchObject({ responseSamples: 1, averageResponseMinutes: 10, p95ResponseMinutes: 10 })
+    })
+
     it('does not attribute a branch member response to a different request location', () => {
         const createdAt = new Date('2026-08-20T10:00:00.000Z')
         const result = buildQualityMetrics({

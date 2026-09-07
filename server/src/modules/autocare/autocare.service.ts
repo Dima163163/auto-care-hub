@@ -321,8 +321,16 @@ export async function getFeaturedAutoCareReviews(limit: number) {
         order: { createdAt: 'DESC' },
         take: normalizedLimit,
     })
+    const providerIds = [...new Set(reviews.map((review) => review.providerId))]
+    const providers = providerIds.length > 0
+        ? await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
+        : []
+    const providerNames = new Map(providers.map((provider) => [provider.id, provider.name]))
 
-    return reviews.map((review) => toAutoCareReviewResponse(review))
+    return reviews.map((review) => ({
+        ...toAutoCareReviewResponse(review),
+        providerName: providerNames.get(review.providerId) ?? review.providerId,
+    }))
 }
 
 export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promise<AutoCareDiscoveryResponse> {

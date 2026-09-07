@@ -22,24 +22,26 @@ vi.mock('@/entities/automotive-service', () => ({
 }))
 
 function renderPage() {
+    const testTranslations: Partial<Record<TranslationKey, string>> = {
+        'autocare.providerNotFound': 'This service profile is unavailable.',
+        'autocare.providerNoOffersDescription': 'No published services yet.',
+        'autocare.providerSuspendedTitle': 'This service is temporarily unavailable.',
+        'autocare.providerSuspendedDescription': 'The profile is temporarily paused.',
+        'common.failedToLoad': 'Failed to load.',
+        'common.tryAgainLater': 'Please try again later.',
+        'common.retry': 'Retry',
+        'auth.accountBlocked': 'Account blocked',
+        'auth.accountBlockedDescription': 'This account is blocked.',
+        'auth.sessionExpiredTitle': 'Your session has expired',
+        'auth.sessionExpiredDescription': 'Sign in again to continue safely.',
+        'auth.signIn': 'Sign in',
+    }
+
     return render(
         <I18nContext.Provider value={{
             locale: 'en',
             setLocale: vi.fn(),
-            t: (key: TranslationKey) => ({
-                'autocare.providerNotFound': 'This service profile is unavailable.',
-                'autocare.providerNoOffersDescription': 'No published services yet.',
-                'autocare.providerSuspendedTitle': 'This service is temporarily unavailable.',
-                'autocare.providerSuspendedDescription': 'The profile is temporarily paused.',
-                'common.failedToLoad': 'Failed to load.',
-                'common.tryAgainLater': 'Please try again later.',
-                'common.retry': 'Retry',
-                'auth.accountBlocked': 'Account blocked',
-                'auth.accountBlockedDescription': 'This account is blocked.',
-                'auth.sessionExpiredTitle': 'Your session has expired',
-                'auth.sessionExpiredDescription': 'Sign in again to continue safely.',
-                'auth.signIn': 'Sign in',
-            }[key] ?? key),
+            t: (key: TranslationKey) => testTranslations[key] ?? key,
         }}>
             <MemoryRouter initialEntries={['/services/proservice']}>
                 <Routes>

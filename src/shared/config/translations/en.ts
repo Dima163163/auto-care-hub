@@ -1359,6 +1359,7 @@ export const enTranslations = {
         availableLabel: 'Available',
         sampleDate: 'Mon, June 15 at 10:00 AM',
         fastStart: 'Fast start',
+        noCard: 'No card required',
         mobileWelcome: 'Welcome!',
         mobileSubtitle: 'Find a service, compare providers, and manage your visits.',
         mobileSearchPlaceholder: 'Search for a service, provider, or area...',

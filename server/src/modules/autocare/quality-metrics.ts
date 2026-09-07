@@ -110,16 +110,21 @@ export function buildQualityMetrics(input: {
     }
     const requestById = new Map(input.requests.map((request) => [request.id, request]))
     for (const message of input.messages) {
-        if (!message.requestId || firstProviderMessage.has(message.requestId) || message.kind === 'system') continue
+        if (!message.requestId || message.kind === 'system') continue
         const request = requestById.get(message.requestId)
         const provider = request ? providerById.get(request.providerId) : undefined
         if (!request || !provider || message.senderId === request.clientId) continue
+        const requestCreatedAt = request.createdAt.getTime()
+        const messageCreatedAt = message.createdAt.getTime()
+        if (!Number.isFinite(requestCreatedAt) || !Number.isFinite(messageCreatedAt) || messageCreatedAt < requestCreatedAt) continue
         const providerAuthored = provider.ownerId === message.senderId || (membershipsByProvider.get(request.providerId) ?? []).some((membership) => (
             membership.status === AutomotiveProviderMembershipStatus.Active
             && membership.userId === message.senderId
             && (membership.locationId === null || membership.locationId === request.locationId)
         ))
-        if (providerAuthored) firstProviderMessage.set(message.requestId, message.createdAt)
+        if (!providerAuthored) continue
+        const previousMessage = firstProviderMessage.get(message.requestId)
+        if (!previousMessage || messageCreatedAt < previousMessage.getTime()) firstProviderMessage.set(message.requestId, message.createdAt)
     }
     for (const request of input.requests) {
         const firstReply = firstProviderMessage.get(request.id)

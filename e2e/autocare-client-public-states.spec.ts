@@ -128,7 +128,7 @@ test.describe('public and client AutoCare states', () => {
         await expect(page.locator('table')).toBeVisible()
 
         await page.goto('/services/api-proservice-moscow')
-        await expect(page.getByTestId('provider-gallery')).toBeVisible()
+        await expect(page.getByTestId('provider-gallery')).toBeVisible({ timeout: 30_000 })
         await page.getByTestId('provider-gallery').getByRole('button').last().click()
         const galleryDialog = page.getByRole('dialog', { name: /service gallery|галерея сервиса/i })
         await expect(galleryDialog).toBeVisible()

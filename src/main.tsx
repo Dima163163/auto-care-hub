@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router'
 import './index.css'
 import { App } from '@/app/App'
 import { StoreProvider } from '@/app/store'
-import { IS_MOCK_API } from '@/shared/config/api'
 import { getInitialLocale } from '@/shared/config/i18n'
 import { loadTranslations } from '@/shared/config/translations'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
@@ -15,8 +14,12 @@ import {
     THEME_STORAGE_KEY,
 } from '@/shared/lib/theme'
 
+// Keep the MSW import out of real production/PWA bundles. Reading the Vite
+// public flag directly lets the bundler eliminate this dynamic import during
+// `VITE_API_MODE=real vite build`; the shared runtime config intentionally
+// remains dynamic for the Next.js entrypoint.
 const SHOULD_ENABLE_MSW =
-    IS_MOCK_API
+    (import.meta.env.VITE_API_MODE ?? 'mock') !== 'real'
     && import.meta.env.VITE_ENABLE_MSW !== 'false'
 
 applyTheme(
@@ -56,7 +59,7 @@ Promise.all([
     createRoot(document.getElementById('root')!).render(
         <StrictMode>
             <StoreProvider>
-                <BrowserRouter unstable_useTransitions={false}>
+                <BrowserRouter useTransitions={false}>
                     <App />
                 </BrowserRouter>
             </StoreProvider>

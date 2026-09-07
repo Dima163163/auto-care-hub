@@ -15,8 +15,8 @@
 
 1. `[x]` Запустить полный `check:local-mvp`: все автоматические проверки проходят; responsive Chromium matrix — 30/30 после запуска Next production preview.
 2. `[x]` Прогнать frontend unit-тесты: 150 файлов / 477 тестов.
-3. `[x]` Прогнать backend unit-тесты: 288 файлов / 1042 теста в pilot-focused
-   unit-профиле; полный backend suite — 371 файл / 1245 тестов.
+3. `[x]` Прогнать backend unit-тесты: 290 файлов / 1049 тестов в pilot-focused
+   unit-профиле; полный backend suite — 371 файл / 1246 тестов.
 4. `[x]` Проверить frontend production build.
 5. `[x]` Проверить backend TypeScript build.
 6. `[x]` Проверить inventory всех Next.js routes: 57 route constants.
@@ -79,7 +79,9 @@
 54. `[x]` Проверить JWT/session validation и revocation contracts.
 55. `[x]` Проверить rate-limit option validation.
 56. `[x]` Проверить rate-limit scope inventory.
-57. `[~]` Проверить Redis fail-closed локальными тестами; multi-process outage требует Redis infrastructure.
+57. `[~]` Redis fail-closed local tests, synthetic production-config probe,
+multi-process limiter smoke и cross-process realtime smoke проходят; staging
+outage/reconnect и production Redis infrastructure всё ещё требуются.
 58. `[x]` Проверить WebSocket origin/token authentication.
 59. `[x]` Проверить WebSocket message/event limits.
 60. `[x]` Проверить PII redaction и security-event schema contracts.
@@ -87,11 +89,14 @@
 62. `[x]` Проверить attachment envelope validation.
 63. `[x]` Проверить MIME/decode/re-encode/pixel limits.
 64. `[x]` Проверить EXIF-removal helper contract.
-65. `[~]` Подготовить signed-URL adapter contract; реальный bucket и signed delivery требуют S3.
+65. `[~]` Signed-URL adapter contract и private/no-store preflight regression
+пройдут локально; реальный bucket и signed delivery требуют S3.
 66. `[x]` Проверить upload quarantine state machine.
 67. `[x]` Проверить media output filtering.
 68. `[x]` Проверить orphan-media cleanup policy.
-69. `[~]` Проверить deletion invariants локальными policy/unit тестами; PostgreSQL/storage replay требует staging.
+69. `[~]` Policy/unit и Docker PostgreSQL deletion replay проходят, включая
+повторный terminal `Completed` и нулевые invariants; staging/restore/storage
+replay всё ещё требуется.
 70. `[x]` Проверить retention/export PII policy.
 
 ## Integrity и concurrency
@@ -118,7 +123,9 @@
 87. `[x]` Проверить backup encryption/checksum harness.
 88. `[x]` Проверить isolated-restore guard и runbook contract.
 89. `[x]` Проверить rollback/migration contract.
-90. `[~]` Проверить pilot-evidence validator; реальные anonymized samples отсутствуют, а `tsx` запускается только при разрешённом IPC.
+90. `[~]` Проверить pilot-evidence validator; repository-root path resolution,
+curated **3/3** path regressions and toolkit contracts pass, но реальные
+anonymized samples/participant rows отсутствуют.
 
 ## Release, performance и cleanup
 

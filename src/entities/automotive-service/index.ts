@@ -1,11 +1,10 @@
 export {
     automotiveServices,
     getServiceLabel,
-    getProviderProfile,
-    providerProfiles,
-    providerPreviews,
-    type AutomotivePriceType,
     type AutomotiveService,
+} from './model/autocareServiceCatalog'
+export {
+    type AutomotivePriceType,
     type ProviderOffering,
     type ProviderProfile,
     type ProviderPreview,
@@ -38,7 +37,6 @@ export type {
     UpdateSuperAdminAutoCareMarketHierarchyInput,
     UpdateSuperAdminAutoCareMarketZoneInput,
     UpdateSuperAdminMarketCountryInput,
-    AutoCareApiProvider,
     SuperAdminTrustPolicy,
     UpdateSuperAdminTrustPolicyInput,
     AutoCareCapacityResource,
@@ -189,8 +187,6 @@ export type {
     OwnerAutoCareEvidence,
     OwnerAutoCareBonusLiability,
     AutoCareOwnerWorkspaceAccess,
-    AutoCareProviderMember,
-    AutoCareProviderInvitation,
     AutoCareProviderMembersResponse,
     AutoCareProviderChangeRequest,
     CreateAutoCareProviderChangeRequestInput,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { KeyboardEvent } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { ChevronDown, MapPin } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 
@@ -47,7 +47,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         const close = (event: PointerEvent) => {
             if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setIsOpen(false)
         }
-        const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setIsOpen(false) }
+        const escape = (event: globalThis.KeyboardEvent) => { if (event.key === 'Escape') setIsOpen(false) }
         document.addEventListener('pointerdown', close)
         document.addEventListener('keydown', escape)
         return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape) }
@@ -78,7 +78,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         navigate(`${target}${query ? `?${query}` : ''}`)
     }
 
-    const openWithKeyboard = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const openWithKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
         if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             setIsOpen(true)
@@ -89,7 +89,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         }
     }
 
-    const handleOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const handleOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
         if (event.key === 'ArrowDown') {
             event.preventDefault()
             optionRefs.current[(index + 1) % flatMarkets.length]?.focus()

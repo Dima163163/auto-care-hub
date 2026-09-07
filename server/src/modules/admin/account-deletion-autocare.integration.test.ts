@@ -457,5 +457,18 @@ describe('AutoCare account deletion retention invariants', () => {
         expect(anonymized.email).not.toBe(`deletion-owner-${suffix}@example.com`)
         const invariantResults = await checkAutoCareDeletionInvariants(AppDataSource, deletedOwner.id)
         expect(invariantResults.every(({ count }) => count === 0)).toBe(true)
+
+        const repeatedCompletion = await updateAdminDeletionRequestStatus(
+            superAdmin,
+            deletionRequest.id,
+            AccountDeletionRequestStatus.Completed,
+        )
+        expect(repeatedCompletion).toMatchObject({
+            id: deletionRequest.id,
+            status: AccountDeletionRequestStatus.Completed,
+            reason: null,
+        })
+        const repeatedInvariantResults = await checkAutoCareDeletionInvariants(AppDataSource, deletedOwner.id)
+        expect(repeatedInvariantResults.every(({ count }) => count === 0)).toBe(true)
     })
 })

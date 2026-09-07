@@ -95,7 +95,9 @@ test.describe('production PWA contracts', () => {
         try {
             await page.goto('/services?service=brakes')
             await expect(page.getByRole('heading', { name: /compare automotive services/i })).toBeVisible()
-            await expect(page.getByRole('alert')).toContainText(/you are offline/i)
+            await expect(
+                page.getByRole('alert').filter({ hasText: /you are offline/i }).first(),
+            ).toBeVisible()
         } finally {
             await page.context().setOffline(false)
         }

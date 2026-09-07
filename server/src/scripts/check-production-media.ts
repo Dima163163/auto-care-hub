@@ -16,6 +16,16 @@ import { env } from '../config/env.js'
 const eicarTestPayload = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'
 export const MAX_MEDIA_PREFLIGHT_RESPONSE_BYTES = 10 * 1024 * 1024
 
+export function createPrivateAttachmentGetObjectCommand(bucket: string, key: string) {
+    return new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ResponseContentDisposition: 'inline',
+        ResponseContentType: 'application/octet-stream',
+        ResponseCacheControl: 'private, no-store',
+    })
+}
+
 export function validateSignedAttachmentUrl(signedUrl: string, expectedTtlSeconds: number, options: { requirePrivateCacheControl?: boolean } = {}) {
     let parsed
     try {
@@ -136,7 +146,7 @@ export async function runProductionMediaPreflight() {
         await client.send(new CopyObjectCommand({ Bucket: bucket, Key: privateKey, CopySource: encodeCopySource(bucket, quarantineKey), MetadataDirective: 'REPLACE', ContentType: 'application/octet-stream', ServerSideEncryption: 'AES256' }))
         const privateHead = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: privateKey }))
         validatePrivateObjectHead(privateHead)
-        const signedUrl = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: privateKey }), { expiresIn: env.autoCareAttachments.signedUrlTtlSeconds })
+        const signedUrl = await getSignedUrl(client, createPrivateAttachmentGetObjectCommand(bucket, privateKey), { expiresIn: env.autoCareAttachments.signedUrlTtlSeconds })
         validateSignedAttachmentUrl(signedUrl, env.autoCareAttachments.signedUrlTtlSeconds, { requirePrivateCacheControl: true })
         const response = await fetch(signedUrl)
         if (!response.ok) throw new Error(`Signed attachment read returned HTTP ${response.status}.`)

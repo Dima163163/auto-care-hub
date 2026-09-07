@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
-import { MAX_MEDIA_PREFLIGHT_RESPONSE_BYTES, readBoundedMediaResponse, validatePrivateObjectHead, validateSignedAttachmentUrl } from './check-production-media.js'
+import { createPrivateAttachmentGetObjectCommand, MAX_MEDIA_PREFLIGHT_RESPONSE_BYTES, readBoundedMediaResponse, validatePrivateObjectHead, validateSignedAttachmentUrl } from './check-production-media.js'
 
 describe('production media signed-url preflight', () => {
+    it('signs private objects with inline and no-store response policy', () => {
+        expect(createPrivateAttachmentGetObjectCommand('bucket', 'private/object.bin').input).toMatchObject({
+            Bucket: 'bucket',
+            Key: 'private/object.bin',
+            ResponseContentDisposition: 'inline',
+            ResponseContentType: 'application/octet-stream',
+            ResponseCacheControl: 'private, no-store',
+        })
+    })
+
     it('accepts a signed URL for a private object with the configured TTL', () => {
         expect(() => validateSignedAttachmentUrl(
             'https://objects.example.test/private/autocare-requests/file.bin?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=abc123&X-Amz-Expires=300',

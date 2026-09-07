@@ -158,7 +158,7 @@ function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, 
                     <div className="mt-3 grid grid-cols-3 gap-2">
                         {times.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
                     </div>
-                    {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('autocare.noAvailableTimes')}</p> : null}
+                    {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('booking.noAvailableTimes')}</p> : null}
                     <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" /><span>{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}<span className="ml-1 font-black text-foreground">({serviceTimezone ?? 'UTC'})</span></span></p>
                 </div>
             </div>

@@ -1,7 +1,8 @@
 import { BadgeCheck, Heart, MapPin, MessageCircle, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { automotiveServices, getServiceLabel, providerPreviews, type ProviderPreview } from '@/entities/automotive-service'
+import { automotiveServices, getServiceLabel, type ProviderPreview } from '@/entities/automotive-service'
+import { providerPreviews } from '@/entities/automotive-service/model/autocareMockProviders'
 import { useAutoCareFavorites } from '@/features/automotive-favorites'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'

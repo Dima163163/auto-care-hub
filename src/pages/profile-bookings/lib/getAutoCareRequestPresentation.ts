@@ -1,5 +1,5 @@
 import type { ClientBooking } from '@/entities/booking'
-import { getProviderProfile } from '@/entities/automotive-service'
+import { getProviderProfile } from '@/entities/automotive-service/model/autocareMockData'
 
 const providerIdsByStatus = {
     pending: 'autolux-moscow',

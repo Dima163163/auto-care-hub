@@ -234,11 +234,12 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             const hasLogo = isUploadFile(logoFile) && logoFile.size > 0
             const logoKey = hasLogo ? getUploadFileKey(logoFile) : null
             let logoUrl = logoKey && mediaCache.logo?.key === logoKey ? mediaCache.logo.url : null
-            if (hasLogo && !logoUrl) {
+            if (hasLogo && logoKey && !logoUrl) {
                 mediaStage = true
                 const preparedLogo = await prepareProviderMedia(logoFile)
-                logoUrl = (await uploadLogo(preparedLogo).unwrap()).url
-                mediaCache = { ...mediaCache, logo: { key: logoKey, url: logoUrl } }
+                const uploadedLogoUrl = (await uploadLogo(preparedLogo).unwrap()).url
+                logoUrl = uploadedLogoUrl
+                mediaCache = { ...mediaCache, logo: { key: logoKey, url: uploadedLogoUrl } }
                 setUploadedMedia(mediaCache)
             }
             mediaStage = false
@@ -247,10 +248,11 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             const hasCover = isUploadFile(coverFile) && coverFile.size > 0
             const coverKey = hasCover ? getUploadFileKey(coverFile) : null
             let coverUrl = coverKey && mediaCache.cover?.key === coverKey ? mediaCache.cover.url : null
-            if (hasCover && !coverUrl) {
+            if (hasCover && coverKey && !coverUrl) {
                 mediaStage = true
-                coverUrl = (await uploadMedia({ ...(await prepareProviderMedia(coverFile)), kind: 'cover' }).unwrap()).url
-                mediaCache = { ...mediaCache, cover: { key: coverKey, url: coverUrl } }
+                const uploadedCoverUrl = (await uploadMedia({ ...(await prepareProviderMedia(coverFile)), kind: 'cover' }).unwrap()).url
+                coverUrl = uploadedCoverUrl
+                mediaCache = { ...mediaCache, cover: { key: coverKey, url: uploadedCoverUrl } }
                 setUploadedMedia(mediaCache)
             }
             mediaStage = false

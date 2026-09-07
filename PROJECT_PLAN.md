@@ -30,6 +30,10 @@
   server value without browser timezone arithmetic, and malformed URL dates are
   bounded, normalized and recoverable. Frontend/backend tests, lint, builds and
   API/OpenAPI parity checks pass in the current working tree.
+- [x] Added local browser-level evidence for CHANGE-C004/C010: a real Chrome
+  context in `America/New_York` preserved the provider `Europe/Moscow` label and
+  submitted the selected 10:00 service-local slot as the expected UTC instant;
+  staging replay and pilot acceptance remain external.
 - [x] Closed the local code slice for CHANGE-C001: both private chat WebSocket
   routes revalidate the session and resource authorization before delivery and
   on heartbeat; revoked, blocked, deleted or expired access fails closed and
@@ -51,6 +55,138 @@
   late create/upload completions are ignored after context changes. Parser,
   request-form, lint and Next build checks pass; slow browser replay remains
   release evidence.
+- [x] Added local browser evidence for CHANGE-C009 identity isolation: UI logout
+  cleared the mock session, client A switched to owner B, and Back navigation did
+  not restore A's private profile; real API/staging replay remains external.
+- [x] Repaired the Vite/Rolldown bundle-splitting contract: React, Redux/RTK and
+  UI runtime groups now win over the API group by explicit priority, restoring a
+  separate `state-runtime` chunk. `build:vite`, bundle-splitting and performance
+  budget checks pass without raising limits.
+- [x] Rechecked active runtime boundaries and demo safety: Bookly/payment legacy
+  guards, legacy file classification, Render production config and fixture-scoped
+  demo reset all pass; deployed artifact inventory remains external.
+- [x] Separated the neutral service catalog and preview fixtures from mock
+  provider profile runtime imports. Home, favorites and MSW consumers no longer
+  pull profile-only contact fixtures; `check:production-fixture-leakage` scans
+  every generated JS asset, with no lazy-chunk exception. Deployed artifact
+  inventory remains release evidence.
+- [x] Replayed the mock browser regression after the boundary refactor: the first
+  full run was 166/168 because two mobile cold-start readiness checks timed out;
+  the exact two filtered scenarios then passed 2/2. Keep the transient harness
+  caveat explicit until a stable CI runner produces one clean full run.
+- [x] Stabilized those two mobile readiness assertions with bounded hydration
+  waits in the test harness; strict shell, overflow and localized-content checks
+  remain unchanged, and the targeted replay is 2/2 PASS.
+- [x] Replaced admin/profile review mock provider lookups with API-native provider
+  labels, added the same field to the mock/real review contract, and tightened
+  fixture scanning across all JS assets. No generated JS asset retains contact
+  fixtures; frontend 151/480 and backend 288/1043 suites pass.
+- [x] Replayed the complete browser suite after the preview/profile fixture split:
+  167/168 passed on the first run, the only mobile long-label cold-start case
+  passed 1/1 on exact rerun, and the caveat remains explicit until a stable CI
+  runner produces one clean 168/168 run.
+- [x] Rechecked local interaction, discovery-form, PWA update, Next route/runtime
+  and SEO contracts; all repository checks pass. Lighthouse and rendered
+  production HTML remain explicitly manual deployed-URL gates.
+- [x] Replayed PWA preview and visual baselines after the fixture split: 12/12
+  PWA cases and 18/18 visual cases pass across desktop/tablet/mobile; real-device
+  assistive technology and deployed sign-off remain external.
+- [x] Removed the remaining cold-start harness flake by giving the mobile
+  long-label matrix its own bounded 120-second test budget; the full mock browser
+  suite now passes 168/168 across desktop/mobile/tablet without changing product
+  assertions.
+- [x] Ran the canonical `check:local-mvp` gate on commit `59b2675e829c`; all
+  local lint, tests, builds, API/security/contracts, backup/media, accessibility,
+  concurrency, SEO and responsive checks pass. Deployment and manual evidence
+  remain separate gates.
+- [x] Ran the production operations preflight: worker/outbox, backup, alerts,
+  rollback/migration and Redis fail-closed contracts pass. Runtime secrets,
+  SMTP/S3/ClamAV, staging endpoint and external rehearsals remain blocked or
+  manual; no credentials were invented.
+- [x] Rechecked autonomous pilot-plan contracts: the main 100-item execution
+  plan is 93 complete / 7 partial, while the separate strict next-plan is 100/100
+  complete. Keep both metrics separate from the 54 canonical launch gates.
+- [x] Replayed the backend unit profile: 288 files / 1043 tests pass, including
+  authorization, input policies, concurrency, outbox, media, deletion and
+  Redis fail-closed cases; real infrastructure replays remain external.
+- [x] Rechecked security headers, Render production config, fixture-scoped demo
+  reset, Bookly/payment runtime guards and legacy cleanup/migration inventory;
+  all repository contracts pass and historical migrations remain preserved.
+- [x] Hardened demo reset with fixture-scoped outbox cleanup for current demo
+  user/booking/request IDs and demo emails; static reset checks are 4/4 and the
+  backend build/unit profile remains green. A fresh `check:local-mvp` passes all
+  local checks; real API browser replay is 25/25 PASS with no new dead-letter
+  events in the post-replay window. The historical 106-row backlog and missing
+  Redis/SMTP operations remain release blockers and were not manually cleared.
+- [x] Revalidated the dependency surface: build/CLI-only packages are dev-only,
+  `react-router` and Vite are patched, `concurrently` no longer pulls the
+  critical shell-quote advisory, and web/server production audits report 0
+  vulnerabilities. `npm ci --dry-run`, Vite/Next builds, lint, frontend tests
+  and `check:local-mvp` pass; dev-only transitive tooling findings remain
+  separately tracked and do not change production-scope evidence.
+- [x] Repaired the React Router transition compatibility boundary by replacing
+  the obsolete transition prop with supported `useTransitions={false}` in both
+  entrypoints. Targeted real logout/owner legacy coverage is 3/3 PASS and the
+  final full real API browser replay is 25/25 PASS; readiness remains locally
+  degraded only for unconfigured Redis and 106 historical dead-letter rows.
+- [x] Added a shell-free Router compatibility contract and negative regression
+  test; both entrypoints reject the removed `unstable_useTransitions` prop, and
+  the two checks now run inside `check:local-mvp`.
+- [x] Replayed visual regression after the Router guard: desktop/tablet/mobile
+  Chromium is 18/18 PASS with unchanged baselines; real-device and deployed
+  visual evidence remain separate pilot gates.
+- [x] Added and replayed a real-browser malformed request-date regression: the
+  request page remains usable and removes the invalid date query (1/1 PASS).
+  The subsequent full real API replay is 26/26 PASS; after the worker interval
+  outbox returned to pending=0 with 106 historical dead-letter rows. Full
+  booking/timezone and staging evidence remain separate gates.
+- [x] Repaired the frontend performance budget without changing its limits:
+  vendor splitting now stays below the 300 kB chunk ceiling, and login plus
+  OAuth callback share one deferred auth route bundle. The rebuilt artifact
+  has 90/90 JS assets, a 152.0 kB entry, 230.0 kB largest non-entry chunk,
+  75.5 kB largest locale and 166.3 kB CSS; performance and bundle-splitting
+  contracts pass. Full real API replay remains 26/26 PASS.
+- [x] Rechecked production operations, pilot evidence and SEO boundaries:
+  Docker plus all six repository operations contracts pass, the pilot evidence
+  toolkit passes, and SEO budgets/prerender/metadata checks pass for 12 local
+  HTML routes. The preflight still reports 8 missing configuration gates and
+  6 manual rehearsals; pilot evidence and metrics fail closed without real
+  anonymized source rows, while deployed Lighthouse/HTML and staging remain
+  external.
+- [x] Fixed the server pilot-evidence runner's relative-path boundary: default
+  evidence is now resolved from the repository root when invoked via
+  `npm --prefix server`, while explicit absolute paths remain unchanged. Added
+  3/3 path-resolution regressions and verified the server build; missing real
+  anonymized evidence still blocks acceptance by design.
+- [x] Added the pilot-evidence path regression to the curated backend unit
+  profile. Fresh `npm run test:server:unit` now passes **290 files / 1049 tests**;
+  expected Redis-unavailable logs remain fail-closed coverage. Real anonymized
+  pilot rows and staging acceptance remain external.
+- [x] Replayed the local Docker-backed database boundary: schema check and
+  idempotent migration smoke pass through migration 216; AutoCare integrity
+  checks 42 critical tables with zero ownership/context violations, and the
+  deletion-retention rehearsal passes for zero completed rows. This remains
+  synthetic local evidence and does not replace Redis fail-closed, S3/SMTP,
+  staging or real-participant evidence.
+- [x] Replayed the Redis probe under a process-only synthetic production
+  configuration: local Docker Redis returned `status=pass` with
+  `mode=fail-closed` and the bounded timeout. No secrets were persisted; the
+  multi-process outage/reconnect and external worker/alert rehearsals remain
+  open.
+- [x] Added the root integration-test wrapper and replayed the Docker-backed
+  server profile: **14 test files / 63 tests pass**, including AutoCare
+  discovery bounds and authorization/ownership route coverage. This is local
+  synthetic evidence; staging, production credentials and real-participant
+  acceptance remain external.
+- [x] Added a cross-process Redis limiter smoke and root wrapper. Two independent
+  workers sharing one synthetic bucket produce exactly one allowed and one
+  denied result, with cleanup verified; the existing two-subscriber realtime
+  smoke also passes. Staging outage/reconnect and production Redis evidence
+  remain external.
+- [x] Extended the Docker PostgreSQL account-deletion retention fixture with a
+  repeated terminal `Completed` call and a second full invariant check. The
+  targeted integration passes **1/1** with zero invariant counters; staging
+  restore/storage replay and operational retention evidence remain external.
 - [x] Added the local release-provenance slice for CHANGE-C005/C006/C007/C008:
   local reports bind full commit and dirty-manifest hashes; promotion fails closed
   without signed mandatory-gate evidence and an operator-supplied applied-migration
@@ -65,6 +201,12 @@
   CSV rows reject duplicate actor/journey IDs, aggregate metrics are recomputed
   from those rows, and the combined gate enforces the approved response/confirmation
   thresholds. It still requires real staging/production evidence and owner review.
+- [x] Hardened CHANGE-C012 reliability aggregation: provider responses are
+  attributed only to the request owner or an active provider membership scoped to
+  the request location, system/client/out-of-order messages are excluded, and
+  the earliest valid response is selected independent of input ordering. Added
+  owner/manager/staff and branch-isolation regression coverage; real pilot SLO
+  evidence remains external.
 - [ ] Implement the remaining recorded CHANGE-C findings, starting with
   staging/runtime evidence, applied-migration reconciliation and manual/legal
   acceptance; the local code slices still require release-candidate replay evidence.
@@ -100,7 +242,7 @@
   for negative, inverted and non-finite price values.
 - [x] Expanded the pilot-focused backend unit profile by 12 pure contract
   suites. The profile now passes **288 files / 1042 tests**; the complete
-  backend suite passes **371 files / 1245 tests**.
+  backend suite now passes **371 files / 1246 tests**.
 - [x] Refreshed local evidence and the 100-step execution batch without
   changing the canonical V2 gate denominator or its NO-GO external gates.
 

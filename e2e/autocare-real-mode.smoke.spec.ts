@@ -370,6 +370,12 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page.getByRole('main')).toBeVisible()
     })
 
+    test('real API recovers from a malformed request date query', async ({ page }) => {
+        await page.goto('/services/api-proservice-moscow/request?date=garbageT12:00:00&time=10:00')
+        await expect(page.getByRole('main')).toBeVisible()
+        await expect(page).not.toHaveURL(/garbageT12:00:00/)
+    })
+
     test('real API hydrates every public provider route variant', async ({ page }) => {
         for (const route of [
             '/services/api-proservice-moscow',

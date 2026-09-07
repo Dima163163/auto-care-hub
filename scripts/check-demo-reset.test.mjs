@@ -35,3 +35,18 @@ test('demo reset contract fails when append-only audit deletion is introduced', 
     assert.equal(evaluation.passed, false)
     assert.deepEqual(evaluation.forbidden, ['AuditLogEntity).delete'])
 })
+
+test('demo reset contract requires fixture-scoped outbox cleanup', () => {
+    const evaluation = evaluateDemoResetSource([
+        'DEMO_USER_EMAILS',
+        'AUTOMOTIVE_MOCK_PROVIDERS',
+        'provider.ownerId === null',
+        "demoUserIdSet.has(provider.ownerId ?? '')",
+        'ANY($1::uuid[])',
+        'ids: string[]',
+        'deleteByAny(manager, \'autocare_service_requests\'',
+        'deleteDemoOutboxEvents',
+    ].join('\n'))
+    assert.equal(evaluation.passed, false)
+    assert.ok(evaluation.missing.includes('DELETE FROM "outbox_events"'))
+})

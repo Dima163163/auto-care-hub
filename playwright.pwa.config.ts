@@ -1,7 +1,17 @@
+import { existsSync } from 'node:fs'
+
 import { defineConfig, devices } from '@playwright/test'
 
-const localChromiumPath =
-    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? undefined
+const chromiumCandidates = [
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+].filter((candidate): candidate is string => Boolean(candidate?.trim()))
+
+const localChromiumPath = chromiumCandidates.find((candidate) => existsSync(candidate))
 const testPort = Number(process.env.PLAYWRIGHT_PWA_PORT ?? 4175)
 const testBaseUrl = `http://127.0.0.1:${testPort}`
 
@@ -21,7 +31,7 @@ export default defineConfig({
             : undefined,
     },
     webServer: {
-        command: `VITE_API_MODE=real VITE_API_BASE_URL=/api npm run build && PWA_PORT=${testPort} node scripts/pwa-preview-server.mjs`,
+        command: `VITE_API_MODE=real VITE_API_BASE_URL=/api npm exec vite -- build && PWA_PORT=${testPort} node scripts/pwa-preview-server.mjs`,
         url: testBaseUrl,
         reuseExistingServer: false,
     },

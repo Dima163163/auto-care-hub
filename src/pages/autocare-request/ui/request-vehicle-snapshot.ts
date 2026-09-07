@@ -5,20 +5,23 @@ import type { RequestFormPayload } from './RequestForm'
 export function toRequestVehicleSnapshot(snapshot: Record<string, unknown> | ClientVehicle | undefined): RequestFormPayload['vehicleSnapshot'] {
     if (!snapshot) return null
 
-    const make = String(snapshot.makeLabel ?? snapshot.make ?? snapshot.brand ?? snapshot.brandId ?? '').trim()
-    const model = String(snapshot.modelLabel ?? snapshot.model ?? '').trim()
-    const year = Number(snapshot.year)
+    const source: Record<string, unknown> = 'brandId' in snapshot
+        ? { brandId: snapshot.brandId, model: snapshot.model, year: snapshot.year, fuelType: snapshot.fuelType, engineDisplacement: snapshot.engineDisplacement, horsepower: snapshot.horsepower, color: snapshot.color, licensePlate: snapshot.licensePlate, internalNumber: snapshot.internalNumber, vin: snapshot.vin }
+        : snapshot
+    const make = String(source.makeLabel ?? source.make ?? source.brand ?? source.brandId ?? '').trim()
+    const model = String(source.modelLabel ?? source.model ?? '').trim()
+    const year = Number(source.year)
 
     return make && model && Number.isInteger(year) && year > 0 ? {
         make,
         model,
         year,
-        fuelType: typeof snapshot.fuelType === 'string' ? snapshot.fuelType : undefined,
-        engineDisplacement: typeof snapshot.engineDisplacement === 'number' ? snapshot.engineDisplacement : null,
-        horsepower: typeof snapshot.horsepower === 'number' ? snapshot.horsepower : null,
-        color: typeof snapshot.color === 'string' ? snapshot.color : undefined,
-        licensePlate: typeof snapshot.licensePlate === 'string' ? snapshot.licensePlate : null,
-        internalNumber: typeof snapshot.internalNumber === 'string' ? snapshot.internalNumber : null,
-        vin: typeof snapshot.vin === 'string' ? snapshot.vin : null,
+        fuelType: typeof source.fuelType === 'string' ? source.fuelType : undefined,
+        engineDisplacement: typeof source.engineDisplacement === 'number' ? source.engineDisplacement : null,
+        horsepower: typeof source.horsepower === 'number' ? source.horsepower : null,
+        color: typeof source.color === 'string' ? source.color : undefined,
+        licensePlate: typeof source.licensePlate === 'string' ? source.licensePlate : null,
+        internalNumber: typeof source.internalNumber === 'string' ? source.internalNumber : null,
+        vin: typeof source.vin === 'string' ? source.vin : null,
     } : null
 }

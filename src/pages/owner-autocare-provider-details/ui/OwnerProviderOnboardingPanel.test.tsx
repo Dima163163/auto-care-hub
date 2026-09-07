@@ -28,17 +28,43 @@ vi.mock('./OwnerProviderProfileChangeForm', () => ({
     OwnerProviderProfileChangeForm: () => null,
 }))
 
-const provider = {
+const provider: AutoCareApiProvider = {
     id: 'provider-1',
     name: 'ProService',
     description: 'Service',
+    status: 'active',
+    yearsActive: 8,
+    staffCount: 6,
+    rating: 4.8,
+    reviewCount: 12,
+    bonusSummary: null,
     phone: '+79990000000',
-    location: { id: 'location-1', address: 'Москва, ул. Льва Толстого, 18' },
+    phones: ['+79990000000'],
+    email: 'service@example.com',
+    websiteUrl: null,
+    metroStation: null,
+    workstationCount: 4,
+    teamSize: 'small_team',
+    businessType: 'company',
+    chatEnabled: true,
+    communicationMode: 'online',
+    responseWindowMinutes: 120,
+    responseHours: 'working_hours',
+    phoneBookingEnabled: true,
+    callbackEnabled: true,
+    requestPhotosEnabled: true,
+    publicContactNote: null,
+    warrantyText: null,
+    logoUrl: null,
     coverImageUrl: 'private://cover.webp',
     galleryImageUrls: [],
-    offers: [{ id: 'offer-1' }],
+    amenityIds: [],
+    brandSpecializations: [],
+    isMultibrand: true,
+    location: { id: 'location-1', marketId: 'market-1', address: 'Москва, ул. Льва Толстого, 18', hours: '08:00–21:00', latitude: null, longitude: null },
+    offers: [],
     verified: false,
-} as AutoCareApiProvider
+}
 
 describe('OwnerProviderOnboardingPanel', () => {
     beforeEach(() => {

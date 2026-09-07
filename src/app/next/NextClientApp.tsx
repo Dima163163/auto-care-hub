@@ -111,7 +111,7 @@ export function NextClientApp({ initialPathname = '/' }: NextClientAppProps) {
     return (
         <StrictMode>
             <StoreProvider>
-                <BrowserRouter unstable_useTransitions={false}>
+                <BrowserRouter useTransitions={false}>
                     <NextApp />
                 </BrowserRouter>
             </StoreProvider>

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 
 import { automotiveAmenities, AutomotiveAmenityIcon, getAutomotiveAmenityLabel, ProviderLogo, type AutoCareApiProvider, type AutomotiveAmenity, useUpdateOwnerAutoCareCommunicationSettingsMutation, type UpdateAutoCareCommunicationSettingsInput } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
+import type { TranslationKey, TranslationParams } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { routePaths } from '@/shared/constants/routes'
 import { CommunicationSwitch } from '@/shared/ui/communication-switch'
@@ -42,7 +43,7 @@ export function OwnerAutoCareProviderList({ providers }: OwnerAutoCareProviderLi
     </div>
 }
 
-function OwnerAutoCareProviderCard({ provider, locale, t }: { provider: AutoCareApiProvider; locale: string; t: (key: string, values?: Record<string, string | number>) => string }) {
+function OwnerAutoCareProviderCard({ provider, locale, t }: { provider: AutoCareApiProvider; locale: string; t: (key: TranslationKey, values?: TranslationParams) => string }) {
     const ru = locale === 'ru'
     const amenities = provider.amenityIds.reduce<AutomotiveAmenity[]>((items, id) => {
         const amenity = automotiveAmenities.find((item) => item.id === id)

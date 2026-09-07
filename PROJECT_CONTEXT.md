@@ -34,8 +34,8 @@ or staging evidence.
 Autonomous pilot follow-up (2026-09-06): quality metrics now scope catalog and
 supply coverage to active providers, locations, definitions and attached offers,
 and reject invalid price ranges. Twelve pilot-focused pure suites are included
-in the backend unit profile (**288 files / 1042 tests PASS**); the complete
-backend suite is **371 files / 1245 tests PASS**. Canonical V2 gate counts and
+in the backend unit profile (**290 files / 1049 tests PASS**); the complete
+backend suite is now **371 files / 1246 tests PASS**. Canonical V2 gate counts and
 external NO-GO conditions are unchanged.
 
 Data-export follow-up (2026-09-06): attachment `objectKey` and content checksum
@@ -47,6 +47,215 @@ Sensitive self-service data exports now also write the append-only
 `user_data_exported` audit action with actor/target/request provenance only;
 the audit row never contains export payload, attachment metadata or content.
 The local route integration verifies both the no-store response and audit row.
+
+Reliability aggregation follow-up (2026-09-07): provider response samples now
+accept only the provider owner or an active membership scoped to the request
+location, ignore client/system/revoked/other-branch and pre-request messages,
+and select the earliest valid response independently of input ordering. The
+full backend suite passes **371 files / 1246 tests**; real pilot SLO evidence
+and staging replay remain external gates.
+
+Timezone replay follow-up (2026-09-07): a real Chrome context with
+`America/New_York` opened the mock request form for a `Europe/Moscow` provider;
+the selected 10:00 service-local slot was submitted as
+`2026-09-08T07:00:00.000Z` with HTTP 201. The local browser replay confirms the
+CHANGE-C004/C010 contract; staging and production evidence remain external.
+
+Identity replay follow-up (2026-09-07): local browser replay logged out client
+Emily, confirmed mock session cleanup, logged in owner Sophia in the same
+context, and verified two Back navigations did not restore Emily's private
+profile. This is local C009 evidence; real API/staging/device replay remains
+external.
+
+Bundle follow-up (2026-09-07): explicit Rolldown group priorities restored the
+separate Redux/RTK `state-runtime` chunk that the bundle contract expected. Vite
+build, bundle-splitting and performance checks pass; deployed artifact/CDN and
+Lighthouse evidence remain external.
+
+Runtime boundary follow-up (2026-09-07): Bookly and legacy payment runtime guards,
+legacy-file classification, Render production config and fixture-scoped demo reset
+all pass. This confirms repository boundaries only; deployed artifact contacts,
+images and owner acceptance remain external.
+
+Production fixture boundary follow-up (2026-09-07): neutral service catalog and
+preview fixtures were split from mock provider profiles; home, favorites and MSW
+consumers no longer pull profile-only contact fixtures. The full generated-asset
+scan now finds neither `service@example.com` nor the demo phone marker in the
+initial entry or any lazy JS chunk. Deployed artifact inventory and production
+release evidence remain external.
+
+Mock E2E follow-up (2026-09-07): after the provider fixture boundary refactor,
+the complete mock suite produced 166/168 on its first mobile-inclusive run; both
+failures were cold-start readiness timeouts and the exact two tests passed on a
+targeted mobile rerun. Treat this as local harness evidence, not a claim of a
+single-run 168/168 release result.
+
+Mobile harness follow-up (2026-09-07): gallery hydration and release-audit shell
+checks now use bounded route-readiness waits. The exact two mobile scenarios pass
+2/2 after the harness-only adjustment; assertions remain strict and do not skip
+layout/accessibility checks.
+
+Review-label boundary follow-up (2026-09-07): featured reviews now carry an
+API-native `providerName` in real and mock responses. Admin/profile review routes
+no longer import mock provider profiles; the full fixture scan covers every JS
+asset with no lazy-chunk exception. Frontend tests remain 151/480 and backend
+unit profile is 288/1043.
+
+Post-split browser replay (2026-09-07): production Next build passed; the full
+mock browser suite produced 167/168 on the first run, with one mobile
+Spanish/Romanian long-label cold-start timeout. The exact test passed 1/1 on
+rerun; this remains a runner-variance caveat rather than a single-run 168/168
+release claim.
+
+Local contract follow-up (2026-09-07): interaction (16 invariants), discovery
+form (8 source checks plus 2 tests), PWA update, route inventory (57 constants),
+Next runtime/route contracts and repository SEO budgets all pass. Lighthouse and
+rendered production HTML remain manual deployed-URL evidence gates.
+
+PWA/visual replay follow-up (2026-09-07): production PWA preview is 12/12 PASS
+across desktop/mobile, and visual regression is 18/18 PASS across desktop,
+tablet and mobile baselines. These are local browser evidence; real-device AT,
+deployed URL and owner sign-off remain external.
+
+Clean browser matrix follow-up (2026-09-07): the mobile long-label audit received
+a harness-only 120-second test budget for cold lazy routes. The subsequent full
+mock suite completed 168/168 PASS in 15.6 minutes across Chromium, mobile and
+tablet; product assertions and design baselines were unchanged.
+
+Canonical local MVP follow-up (2026-09-07): `npm run check:local-mvp` passed all
+local checks on commit `59b2675e829c`, including lint/tests/builds, API parity,
+migrations, media, backup/restore, security, accessibility, concurrency, SEO and
+responsive browser matrix. The worktree is dirty and deployment evidence remains
+external, so this does not change the pilot NO-GO decision.
+
+Production readiness follow-up (2026-09-07): local preflight confirms startup,
+worker, outbox, backup, alert, rollback and Redis fail-closed contracts. It
+remains blocked by missing integration secrets, SMTP, persistent media/S3,
+bootstrap admin, staging URL and external smoke/rehearsal evidence; no secrets
+were fabricated or written.
+
+Autonomous plan follow-up (2026-09-07): both pilot autonomous-plan contracts
+pass; the main 100-item execution plan reports 93 complete and 7 partial, while
+the separate strict next-plan reports 100/100 complete. This is intentionally
+tracked separately from the 54 canonical gates, which still require staging,
+manual, security and real-participant evidence.
+
+Backend unit follow-up (2026-09-07): the server unit profile is freshly green at
+288 files / 1043 tests. Redis-unavailable logs are expected fail-closed coverage;
+the result does not claim a real two-replica outage or restored production-like
+database/media evidence.
+
+Boundary contract follow-up (2026-09-07): security headers, Render production
+configuration, fixture-scoped demo reset, Bookly/payment runtime guards and the
+legacy cleanup/migration inventory all pass. Historical migrations remain intact;
+deployed traffic and independent security review are still external.
+
+Real API/reset follow-up (2026-09-07): demo reset now removes only outbox events
+whose payload references the current synthetic user/booking/request IDs or demo
+emails. Static reset checks are 4/4, server build and backend unit profile remain
+green, and the fresh real API browser replay is 25/25 PASS. The post-replay
+window contains only four completed notification events and no new dead-letter
+events. A fresh `check:local-mvp` also reports all local checks passed. Readiness
+remains 503 because Redis is not configured and 106 historical dead-letter rows
+remain; no manual backlog deletion or production GO is claimed.
+
+Dependency-surface follow-up (2026-09-07): build/CLI-only packages moved to
+`devDependencies`, `react-router`/Vite were patched, and the obsolete router
+transition prop was replaced by supported `useTransitions={false}` in the Vite
+and Next entry points. Web and server production audits are both zero, lockfile
+dry-run is reproducible, and the fresh local MVP gate is green. Thirteen
+dev-only tooling advisories remain without critical severity; this does not
+change the external staging/security gates.
+
+Router real-replay follow-up (2026-09-07): the transition compatibility repair
+passed targeted logout/owner legacy coverage 3/3 and the final full real API
+browser replay 25/25. `/health/ready` remains 503 only because Redis is not
+configured and 106 historical dead-letter rows remain; the replay produced no
+new dead-letter rows and no manual backlog deletion was performed.
+
+Router guard follow-up (2026-09-07): `check:router-compatibility` and its
+negative regression test now enforce the supported transition prop in both
+production entrypoints and are part of `check:local-mvp`.
+
+Visual follow-up (2026-09-07): current visual regression is 18/18 PASS across
+desktop, tablet and mobile Chromium; baselines are unchanged after the Router
+guard. This is local screenshot evidence only, not real-device sign-off.
+
+Request-date follow-up (2026-09-07): real Chromium now covers a malformed
+request-date query and passes 1/1; the page remains usable and normalizes the
+invalid URL value. The subsequent full real replay is 26/26 PASS; after the
+worker interval outbox returned to pending=0 with 106 historical dead letters.
+Full booking/timezone and staging evidence remain open.
+
+Performance follow-up (2026-09-07): the frontend performance budget initially
+reported 92 JS assets against the existing limit of 90. Vendor splitting was
+consolidated without raising the 300 kB chunk limit, and login plus OAuth
+callback now share one deferred auth route bundle. The rebuilt artifact is
+90/90 JS assets, 152.0 kB entry, 230.0 kB largest non-entry chunk, 75.5 kB
+largest locale and 166.3 kB CSS; performance and bundle-splitting contracts
+pass. Real browser replay remains 26/26 PASS; deployed CDN/Lighthouse evidence
+is still external.
+
+Operations evidence follow-up (2026-09-07): fresh production preflight passes
+Docker and all six repository operations contracts, plus the pilot evidence
+toolkit and SEO repository contracts. It reports eight missing configuration
+gates and six external rehearsal gates. Pilot evidence/metrics commands remain
+fail-closed because no anonymized real-pilot source file/rows exist; synthetic
+fixtures are not promoted to real evidence. Deployed Lighthouse, rendered HTML,
+staging and production credentials remain external.
+
+Pilot evidence tooling follow-up (2026-09-07): server-side evidence validation
+now resolves its default relative path from the repository root even when
+invoked through `npm --prefix server`, while preserving explicit absolute paths.
+The three path-resolution regressions and server build pass; the regression is
+now included in the curated backend unit profile, freshly green at 290 files /
+1049 tests. The command still fails closed without anonymized real-pilot
+JSON/CSV rows, as required.
+
+Docker integration follow-up (2026-09-07): the local synthetic PostgreSQL/Redis
+stack is up on ports 5433/6379. Schema check and idempotent migration smoke pass
+through migration 216; AutoCare integrity validates 42 critical tables with no
+ownership/context violations, and deletion retention finds no completed rows to
+check. This is local synthetic evidence only; Redis fail-closed production
+rehearsal, S3/SMTP, staging and real pilot journeys remain external.
+
+Redis configuration follow-up (2026-09-07): a process-only synthetic production
+configuration with HTTPS loopback origins, S3/ClamAV policy and SMTP-shaped
+values passed the Redis probe against local Docker Redis: `status=pass`,
+`mode=fail-closed`. No synthetic secrets were persisted; multi-process outage,
+reconnect and external worker/alert evidence remain open.
+
+Integration profile follow-up (2026-09-07): the root
+`npm run test:server:integration` wrapper now executes the Docker-backed server
+profile from the repository root. The fresh run passes **14 test files / 63
+tests**, including AutoCare discovery bounds (`limit=51` and `radiusKm=0` return
+400); staging, production credentials and real-participant evidence remain
+external.
+
+Final local-gate follow-up (2026-09-07): a fresh `npm run check:local-mvp`
+completed with **all local MVP checks passed**, including frontend tests, Next
+production build, backend build, contracts, security/media/backup checks,
+responsive Chromium matrix and SEO/runtime boundaries. This does not change the
+canonical pilot NO-GO while external infrastructure and participant evidence are
+missing.
+
+Redis multi-process follow-up (2026-09-07): added a root wrapper for the
+synthetic limiter smoke. Two separate worker processes sharing one local Redis
+bucket produced exactly **1 allowed / 1 denied**, and cleanup left no smoke keys;
+the existing two-subscriber realtime smoke also passes. Staging outage/reconnect
+and production Redis evidence remain external.
+
+Post-harness local gate follow-up (2026-09-07): a fresh
+`npm run check:local-mvp` after the Redis smoke addition passed every local check,
+including responsive Chromium. This confirms no local regression, but does not
+convert clean-SHA, staging, real-device or owner acceptance gates into local
+evidence.
+
+Deletion replay follow-up (2026-09-07): the Docker PostgreSQL retention fixture
+now also repeats terminal `Completed` after purge and re-runs all account-deletion
+invariants; targeted integration is **1/1 PASS** with zero counters. This is
+stronger local idempotency evidence, not a substitute for staging restore/storage
+replay or real operational retention evidence.
 
 Provider-review UI follow-up (2026-09-07): review cards use an internal flex
 column so the service label and date are consistently anchored to the lower

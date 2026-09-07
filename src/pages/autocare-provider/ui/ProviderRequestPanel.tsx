@@ -24,7 +24,7 @@ export function ProviderRequestPanel({ provider, offering }: ProviderRequestPane
     const contact = getProviderContactPresentation(provider)
     const usesOnlineSlots = contact.usesOnlineSlots
     const canChat = contact.showChat
-    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5">{usesOnlineSlots ? <BookingPanel provider={provider} offering={offering} /> : <PhoneRequestPanel provider={provider} offering={offering} mode={provider.communicationMode ?? 'request_then_confirm'} />}{canChat && <EstimatePanel provider={provider} offering={offering} />}<TrustPanel /><SupportPanel provider={provider} /></aside>
+    return <aside className="grid h-fit gap-4 lg:sticky lg:top-5">{usesOnlineSlots ? <BookingPanel provider={provider} offering={offering} /> : <PhoneRequestPanel provider={provider} offering={offering} mode={provider.communicationMode === 'phone_only' ? 'phone_only' : 'request_then_confirm'} />}{canChat && <EstimatePanel provider={provider} offering={offering} />}<TrustPanel /><SupportPanel provider={provider} /></aside>
 }
 
 function PhoneRequestPanel({ provider, offering, mode }: { provider: ProviderProfile; offering: ProviderOffering; mode: 'request_then_confirm' | 'phone_only' }) {

@@ -12,6 +12,7 @@ import {
     ShieldCheck,
     Star,
     Store,
+    WalletCards,
     UserRound,
     UsersRound,
     X,

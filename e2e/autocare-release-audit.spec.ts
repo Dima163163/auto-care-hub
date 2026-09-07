@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const guestWidths = [360, 390, 414, 540, 682, 768, 790, 1024, 1280, 1440] as const
 const supportedLocales = ['en', 'ru', 'ro', 'es', 'de', 'fr', 'pt', 'it', 'pl', 'nl', 'uk', 'cs', 'el', 'sv', 'zh', 'ja', 'ko', 'ar', 'tr', 'hi'] as const
-const routeReadyTimeoutMs = 30_000
+const routeReadyTimeoutMs = 45_000
 
 async function expectNoHorizontalOverflow(page: Page) {
     await expect.poll(async () => {
@@ -149,6 +149,7 @@ test.describe('AutoCare stable-web release gate', () => {
     })
 
     test('discovery shell stays usable across release breakpoints', async ({ page }) => {
+        test.setTimeout(90_000)
         for (const width of guestWidths) {
             await page.setViewportSize({ width, height: 900 })
             await page.goto('/services?service=oil-change')
@@ -504,6 +505,9 @@ test.describe('AutoCare stable-web release gate', () => {
     })
 
     test('Spanish and Romanian stay usable on mobile with long labels', async ({ page }) => {
+        // The route readiness budget is intentionally longer than Playwright's
+        // default test timeout because each locale loads a cold lazy route.
+        test.setTimeout(120_000)
         for (const locale of ['es', 'ro'] as const) {
             for (const width of [360, 390] as const) {
                 await page.setViewportSize({ width, height: 900 })

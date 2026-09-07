@@ -615,6 +615,7 @@ landing: {
         availableLabel: 'Доступен',
         sampleDate: 'Пн, 15 июня в 10:00',
         fastStart: 'Быстрый старт',
+        noCard: 'Карта не требуется',
         mobileWelcome: 'Добро пожаловать!',
         mobileSubtitle: 'Найдите услугу, сравните сервисы и управляйте визитами.',
         mobileSearchPlaceholder: 'Поиск услуги, сервиса или района...',

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Building2, LocateFixed, Search, Wrench } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
-import { automotiveServices, getServiceLabel, providerPreviews, type AutoCareApiMarket } from '@/entities/automotive-service'
+import { automotiveServices, getServiceLabel, type AutoCareApiMarket } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { FloatingInput, FloatingSelect } from '@/shared/ui/floating-field'
@@ -35,7 +35,7 @@ export function AutoCareSearchForm({ marketId, markets, onMarketChange }: AutoCa
             <div className="bg-background px-5 pb-3 pt-4">
                 {mode === 'service'
                     ? <FloatingSelect floatLabelWhenEmpty label={t('autocare.serviceLabel')} value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">{t('autocare.servicePlaceholder')}</option>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</FloatingSelect>
-                    : <><FloatingInput required floatLabelWhenEmpty label={t('autocare.providerLabel')} placeholder={t('autocare.providerPlaceholder')} value={providerName} onChange={(event) => setProviderName(event.target.value)} list="autocare-provider-options" /><datalist id="autocare-provider-options">{providerPreviews.slice(0, 40).map((provider) => <option key={provider.id} value={provider.name} />)}</datalist></>}
+                    : <FloatingInput required floatLabelWhenEmpty label={t('autocare.providerLabel')} placeholder={t('autocare.providerPlaceholder')} value={providerName} onChange={(event) => setProviderName(event.target.value)} />}
                 <div className="mt-3 grid grid-cols-[1.48fr_0.72fr] gap-3">
                     <FloatingSelect label={t('autocare.locationLabel')} value={marketId} onChange={(event) => onMarketChange(event.target.value)} disabled={marketOptions.length === 0} leadingAdornment={<LocateFixed className="size-4" />}><option value="" disabled aria-label={marketOptions.length === 0 ? t('common.loading') : t('autocare.selectCity')} />{marketOptions.map((market) => <option key={market.value} value={market.value}>{market.label}</option>)}</FloatingSelect>
                     <FloatingSelect label={t('autocare.radiusLabel')} value={radius} onChange={(event) => setRadius(event.target.value)}><option value="5">5 км</option><option value="10">10 км</option><option value="25">25 км</option></FloatingSelect>

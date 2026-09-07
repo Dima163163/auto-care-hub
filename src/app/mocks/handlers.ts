@@ -11,12 +11,12 @@ import {
 import {
     automotiveServices,
     vehicleCatalog,
-    providerPreviews,
     supportsVehicleBrand,
     type AutoCareApiProvider,
     type AutoCareCapacityReservation,
     type AutoCareCapacityResource,
 } from '@/entities/automotive-service'
+import { providerPreviews } from '@/entities/automotive-service/model/autocareMockProviders'
 import { emitMockAutoCareChatEvent, emitMockServiceChatEvent, type ServiceChatMessage } from '@/entities/automotive-service/lib/service-chat'
 
 import {
@@ -426,6 +426,7 @@ type MockPlatformReview = {
     organizationRespondedAt: string | null
     createdAt: string
     clientId?: string | null
+    idempotencyKey?: string | null
 }
 
 const mockPlatformReviews: MockPlatformReview[] = [
@@ -3049,7 +3050,9 @@ export const handlers = [
     http.post('/api/owner/broadcast-requests/:broadcastId/offers', async ({ params, request }) => {
         const user = currentMockUser()
         const item = mockAutoCareBroadcastRequests.find((candidate) => candidate.id === params.broadcastId)
-        if (!user || user.role !== 'owner' || !item || !hasMockProviderLocationAccess(user.id, item.providerId, item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        const providerId = item?.providerId
+        const locationId = item?.locationId
+        if (!user || user.role !== 'owner' || !item || typeof providerId !== 'string' || typeof locationId !== 'string' || !hasMockProviderLocationAccess(user.id, providerId, locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const body = await request.json() as Record<string, unknown>
         const provider = ownerAutoCareProviders[0]
         const offer = { id: `broadcast-offer-${Date.now()}`, broadcastRequestId: item.id, providerId: provider.id, providerName: provider.name, locationId: provider.location.id, address: provider.location.address, offerSnapshot: body, status: 'pending', createdAt: new Date().toISOString() }
@@ -3716,10 +3719,11 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
-        const body = await request.json().catch(() => ({})) as { quoteId?: unknown; quoteVersion?: unknown }
-        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
-        if (typeof body.quoteId !== 'string' || !Number.isInteger(body.quoteVersion) || body.quoteVersion < 1) return HttpResponse.json({ message: 'Quote id and version are required.' }, { status: 422 })
-        if (!latestQuote || !('id' in latestQuote) || latestQuote.id !== body.quoteId || latestQuote.version !== body.quoteVersion) return HttpResponse.json({ message: 'The estimate changed. Review the latest estimate before deciding.' }, { status: 409 })
+        const body = await request.json().catch(() => ({})) as { quoteId?: string; quoteVersion?: number }
+        const latestQuote = item.quoteHistory.at(-1)
+        const quoteVersion = body.quoteVersion
+        if (typeof body.quoteId !== 'string' || typeof quoteVersion !== 'number' || !Number.isInteger(quoteVersion) || quoteVersion < 1) return HttpResponse.json({ message: 'Quote id and version are required.' }, { status: 422 })
+        if (!latestQuote || latestQuote.id !== body.quoteId || latestQuote.version !== quoteVersion) return HttpResponse.json({ message: 'The estimate changed. Review the latest estimate before deciding.' }, { status: 409 })
         if (item.status === 'accepted' && item.acceptedQuoteVersion !== null && item.acceptedQuoteVersion !== undefined) {
             const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
             return HttpResponse.json(response)
@@ -3771,10 +3775,11 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((request) => request.id === params.requestId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!item || item.clientId !== user.id) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
-        const body = await request.json().catch(() => ({})) as { quoteId?: unknown; quoteVersion?: unknown }
-        const latestQuote = item.quoteHistory.at(-1) ?? item.quote
-        if (typeof body.quoteId !== 'string' || !Number.isInteger(body.quoteVersion) || body.quoteVersion < 1) return HttpResponse.json({ message: 'Quote id and version are required.' }, { status: 422 })
-        if (!latestQuote || !('id' in latestQuote) || latestQuote.id !== body.quoteId || latestQuote.version !== body.quoteVersion) return HttpResponse.json({ message: 'The estimate changed. Review the latest estimate before deciding.' }, { status: 409 })
+        const body = await request.json().catch(() => ({})) as { quoteId?: string; quoteVersion?: number }
+        const latestQuote = item.quoteHistory.at(-1)
+        const quoteVersion = body.quoteVersion
+        if (typeof body.quoteId !== 'string' || typeof quoteVersion !== 'number' || !Number.isInteger(quoteVersion) || quoteVersion < 1) return HttpResponse.json({ message: 'Quote id and version are required.' }, { status: 422 })
+        if (!latestQuote || latestQuote.id !== body.quoteId || latestQuote.version !== quoteVersion) return HttpResponse.json({ message: 'The estimate changed. Review the latest estimate before deciding.' }, { status: 409 })
         if (item.status === 'declined' && item.clientConfirmedAt) {
             const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = item
             return HttpResponse.json(response)
@@ -4156,7 +4161,7 @@ export const handlers = [
         const offer = provider?.offers?.find((item) => item.id === params.offerId)
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!provider || !offer) return HttpResponse.json({ message: 'Automotive service offer not found.' }, { status: 404 })
-        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner', 'manager'], offer.locationId)) return HttpResponse.json({ message: 'Only provider owners and managers can edit automotive service offers.' }, { status: 403 })
+        if (currentUser.role !== 'owner' || !hasMockProviderRole(currentUser.id, String(params.providerId), ['owner', 'manager'], provider.location.id)) return HttpResponse.json({ message: 'Only provider owners and managers can edit automotive service offers.' }, { status: 403 })
 
         const body = await request.json() as { description?: unknown; priceFromMinor?: unknown }
         if ((body.description !== null && (typeof body.description !== 'string' || body.description.length > 2_000)) || typeof body.priceFromMinor !== 'number' || !Number.isInteger(body.priceFromMinor) || body.priceFromMinor < 0 || body.priceFromMinor > 10_000_000_000) {
@@ -4553,7 +4558,10 @@ export const handlers = [
                 : fixture === 'photos'
                     ? mockFeaturedAutoCareReviews.filter((review) => review.photoUrls.length > 0).slice(0, 3)
                     : mockFeaturedAutoCareReviews
-        return HttpResponse.json(reviews.slice(0, Number.isFinite(limit) ? limit : 6))
+        return HttpResponse.json(reviews.slice(0, Number.isFinite(limit) ? limit : 6).map((review) => ({
+            ...review,
+            providerName: providerPreviews.find((provider) => `api-${provider.id}` === review.providerId)?.name ?? review.providerId,
+        })))
     }),
 
     http.get('/api/cabinets/:id', ({ params }) => {

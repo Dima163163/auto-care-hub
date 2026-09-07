@@ -2506,3 +2506,665 @@ internal spacing.
 91–100. `[~]` После локального lint/build и responsive replay остаются внешние
 tile-provider SLA, deployed map replay, accessibility owner sign-off и
 production monitoring; локальный CSS/DOM contract их не подменяет.
+
+## Порция 367 (07.09.2026) — current AutoCare visual regression gate
+
+Эта порция добавляет воспроизводимый visual gate для текущего AutoCare UI; старые
+архивные Bookly screenshots не переиспользуются и не влияют на текущие snapshots.
+
+1–10. `[x]` Добавлен `e2e/visual-regression.spec.ts` с six current routes:
+home, discovery, provider, client profile, owner dashboard и admin security
+center; покрыты RU/EN, light/dark и guest/protected roles.
+11–20. `[x]` Для каждого route зафиксированы desktop/tablet/mobile проекты:
+**18/18 PASS** при snapshot update и **18/18 PASS** при обычной проверке.
+21–30. `[x]` Visual config переведён на production Next preview, использует
+системный Chrome fallback и один worker, чтобы исключить compile-overlay и MSW
+parallel-state races.
+31–40. `[x]` Snapshots пересозданы только для текущих AutoCare case names;
+legacy archive untouched. `git diff --check` проходит.
+41–50. `[~]` Pixel-level visual owner sign-off, реальные iOS/Android и
+VoiceOver/TalkBack остаются внешними gates; автоматический snapshot не считается
+ручной приёмкой.
+
+## Порция 368 (07.09.2026) — local real-API and operations evidence refresh
+
+1–10. `[x]` Docker PostgreSQL/Redis доступны локально; migration run сообщает
+`No migrations are pending`; demo и AutoCare seed выполнены идемпотентно.
+11–20. `[x]` Backend с process-only local env доступен на `127.0.0.1:4000`;
+`check:real-api` проходит, а real API browser smoke завершён **25/25 PASS**.
+21–30. `[x]` Production-operations preflight с временными значениями процесса
+подтвердил **16/16 локальных pass**: runtime, integration secrets, SMTP shape,
+storage shape, S3/attachment contract, bootstrap, outbox, worker, backup,
+alerts, rollback и Redis fail-closed guidance.
+31–40. `[x]` `check:mvp-remaining-blocks` подтверждает структурную целостность
+трёх 100-шаговых execution blocks: по 100 задач в каждом.
+41–50. `[~]` `/health/ready` на локальной seeded БД остаётся `503 degraded` не
+из-за DB/Redis/storage: read-only aggregate показывает 92 `dead_letter`
+`notification.create`, 8 `failed` notification events и 6 `pending` events;
+самое старое dead-letter событие — 2026-08-14 UTC, максимум попыток — 5.
+Очищать, retry-ить или удалять события без отдельного operational решения не
+разрешено.
+51–60. `[E]` Реальные production/staging secrets, staging endpoint, SMTP
+delivery, backup restore, alert delivery, rollback rehearsal и external
+approval по-прежнему отсутствуют и не могут быть доказаны локальным replay.
+
+## Порция 369 (07.09.2026) — PWA build and offline replay repair
+
+1–10. `[x]` Первый PWA smoke выявил две проблемы harness/runtime: отсутствовал
+Playwright headless shell, а preview проверял stale `dist`; установленный Chrome
+был доступен, но не выбирался конфигурацией.
+11–20. `[x]` `playwright.pwa.config.ts` получил одинаковый system-Chrome fallback
+с visual config; PWA web server теперь вызывает настоящий `vite build`, который
+производит `dist`, обслуживаемый `pwa-preview-server.mjs`.
+21–30. `[x]` Vite real bundle получил compile-time MSW boundary в `src/main.tsx`:
+при `VITE_API_MODE=real` MSW dynamic import исключается из production/PWA entry,
+что устраняет circular vendor execution до React mount.
+31–40. `[x]` Свежий Vite build завершился успешно; browser diagnostic подтвердил
+service worker `activated` и controller `/sw.js`. Ожидаемый anonymous `/api/auth/me`
+401 не считается runtime error.
+41–50. `[x]` Полный `npm run test:e2e:pwa` завершился **12/12 PASS** на Chromium и
+mobile-Chromium: public cache/offline reload/recovery, logout identity cleanup,
+private-cache isolation и offline mutation guard.
+51–60. `[x]` Offline assertion уточнён для двух валидных `role=alert` элементов;
+это устраняет strict-locator false negative без изменения UI поведения.
+61–70. `[~]` Отдельный `tsc -b`, входящий в `npm run build:vite`, всё ещё выдаёт
+широкий набор type diagnostics в legacy/mock/translation surfaces; runtime Vite
+build и PWA smoke проходят, но full Vite typecheck не считается закрытым и
+требует отдельного focused backlog.
+
+## Порция 370 (07.09.2026) — typecheck and production bundle closure
+
+1–10. `[x]` Focused backlog из 42 оставшихся TypeScript diagnostics закрыт без
+ослабления compiler settings: `npm exec tsc -- -b --pretty false` завершился
+с exit 0.
+11–20. `[x]` `npm run build:vite` и real-mode Vite build завершились успешно;
+`npm run build` Next.js также завершился успешно.
+21–30. `[x]` Regression gates проходят: `npm test -- --run` — 151 файлов и 480
+тестов; `npm run lint` — pass; `git diff --check` — pass.
+31–40. `[x]` Runtime replay проходит: mock E2E — **168/168**, PWA — **12/12**;
+security headers и PWA update contracts также pass.
+41–50. `[x]` Performance budget закрыт code-splitting без повышения лимитов:
+entry `237.2/400 kB`, largest JS chunk `224.6/300 kB`, largest locale
+`75.5/90 kB`, CSS `164.7/175 kB`, JS chunks `86/90`.
+51–60. `[~]` Operational readiness остаётся отдельным незакрытым слоем:
+seeded outbox backlog сохраняет `/health/ready` в `503 degraded`; staging,
+delivery, restore/rollback, external signoff и pilot approval не доказаны.
+
+## Порция 371 (07.09.2026) — reliability attribution hardening
+
+1–10. `[x]` `buildQualityMetrics` больше не принимает legacy provider-id как
+ответ сотрудника: ответ засчитывается только для owner или active membership.
+11–20. `[x]` Branch-scoped membership проверяется относительно location запроса;
+client, system, revoked и другой branch сообщения не попадают в response sample.
+21–30. `[x]` Out-of-order input теперь безопасен: сообщения до `request.createdAt`
+отбрасываются, а earliest valid provider response выбирается независимо от
+порядка входного массива.
+31–40. `[x]` Добавлен regression с owner/manager/staff, branch isolation,
+client/system и pre-request messages; полный backend suite проходит **371 файлов /
+1246 тестов**.
+41–50. `[~]` Реальные pilot response/confirmation SLO, multi-provider replay и
+staging evidence остаются внешним gate; локальная агрегация не заменяет реальные
+participants и owner acceptance.
+
+## Порция 372 (07.09.2026) — browser timezone replay for C004
+
+1–10. `[x]` Локальный Next mock runtime был поднят на loopback; browser-level
+replay выполнен в реальном установленном Chrome через Playwright browser API с
+context timezone `America/New_York`.
+11–20. `[x]` Mock-клиент вошёл в систему, открыл
+`/services/api-proservice-moscow/request` и увидел выбранное сервисное время с
+явной зоной `Europe/Moscow`, несмотря на отличающийся browser timezone.
+21–30. `[x]` Для будущей даты 2026-09-08 и слота 10:00 форма отправила `POST
+/api/v1/service-requests` с `preferredAt: 2026-09-08T07:00:00.000Z`; mock API
+ответил `201`. Это подтверждает преобразование service-local 10:00 Europe/Moscow
+в корректный instant, без browser-timezone arithmetic.
+31–40. `[x]` Replay также подтвердил HTML guard для прошлой даты: первоначальная
+попытка на 2026-09-05 была остановлена браузерной валидацией (`min` =
+2026-09-07), поэтому она не была ошибочно принята за API или timezone failure.
+41–50. `[~]` Это локальное mock evidence для CHANGE-C004/C010; staging browser
+replay, реальный API, SMTP/worker и pilot acceptance остаются внешними gates.
+
+## Порция 373 (07.09.2026) — identity switch and Back isolation for C009
+
+1–10. `[x]` Mock browser replay вошёл как identity A (`Emily Carter`, client) и
+подтвердил приватный `/profile` с `user-client-1` в mock session storage.
+11–20. `[x]` UI logout очистил `autocare-hub:mock-session`, перевёл приложение на
+public `/` и не оставил старую identity в browser storage.
+21–30. `[x]` В том же browser context выполнен вход как identity B (`Sophia
+Miller`, owner); session storage содержит только `user-owner-1` / `owner`, а
+старый email Emily не появляется в owner dashboard.
+31–40. `[x]` Две последовательные Back-навигации после switch не восстановили
+Emily или её `/profile`: browser остался на public `/`, затем ушёл в исходную
+history boundary `about:blank`.
+41–50. `[~]` Локальная mock identity/back regression подтверждена; real API,
+staging, multi-device browser и pilot acceptance остаются внешними gates.
+
+## Порция 374 (07.09.2026) — bundle-splitting contract repair
+
+1–10. `[x]` Repository inventory обнаружил реальный failure в
+`check:bundle-splitting`: checker ожидал `state-runtime-*`, но текущая Rolldown
+сборка поглощала Redux/RTK-зависимости в `autocare-api-runtime`.
+11–20. `[x]` Причина устранена в `vite.config.ts` приоритетами групп: React
+runtime — `7`, state runtime (`@reduxjs`/`react-redux`) — `6`, UI runtime — `4`;
+API/translation группы сохраняют priority `5`, vendor остаётся fallback `1`.
+21–30. `[x]` `npm run build:vite` завершился успешно; generated assets теперь
+содержат отдельный `state-runtime-DdJf2lW0.js` размером **74.5 kB**.
+31–40. `[x]` Bundle contract проходит с 11/11 required prefixes; performance
+budget также проходит: entry **237.2 kB**, largest chunk **232.0 kB**, largest
+locale **75.5 kB**, CSS **164.7 kB**, JS chunks **87**.
+41–50. `[~]` Это подтверждение production-like локального Vite bundle; deployed
+CDN caching, Lighthouse и immutable release artifact остаются внешними gates.
+
+## Порция 375 (07.09.2026) — runtime and demo-surface inventory
+
+1–10. `[x]` `check:no-bookly-runtime` и `check:no-legacy-provider` подтверждают,
+что production source trees не содержат Bookly или legacy payment-provider runtime
+references.
+11–20. `[x]` Legacy cleanup contract проходит: 5 legacy families имеют явный
+disposition, 130 migration files проверены, а 75 классифицированных legacy files
+имеют replacement/archive/tooling rationale.
+21–30. `[x]` `check:render-production-config` проходит; production configuration
+остаётся отделённой от demo fixture paths и не добавляет legacy runtime boundary.
+31–40. `[x]` `check:demo-reset` подтверждает fixture-scoped reset: UUID delete
+параметризован, shared catalog защищён, известные AutoCare demo providers —
+единственный reset scope.
+41–50. `[~]` Локальные runtime/demo contracts подтверждены; реальный deployed
+artifact inventory, production contacts/images и owner sign-off остаются
+внешними/manual gates.
+
+## Порция 376 (07.09.2026) — production entry fixture boundary
+
+1–10. `[x]` Нейтральный service catalog вынесен из mock provider profiles; основной
+`automotive-service` barrel больше не тянет provider contact fixtures в каждый
+runtime consumer.
+11–20. `[x]` Публичные home components больше не импортируют `providerPreviews`:
+provider search остаётся API-backed/free-text, а home fallback использует только
+локальные карточки без mock contact profile.
+21–30. `[x]` Mock handlers и lazy mock/profile surfaces используют provider fixtures
+напрямую, поэтому mock E2E contract не смешивается с initial production entry.
+31–40. `[x]` Добавлен `check:production-fixture-leakage`; real-mode Vite build,
+checker и full frontend suite проходят. Initial entry `index-CGP3IPkm.js` —
+**230.5 kB**, fixture markers `service@example.com` и `+7 (495) 645-35-35` в нём
+отсутствуют.
+41–50. `[~]` Это локальная проверка initial entry boundary; lazy fixture chunk,
+весь deployed artifact inventory, production HTML и owner sign-off требуют
+отдельного release/staging evidence.
+
+## Порция 377 (07.09.2026) — mock E2E boundary regression
+
+1–10. `[x]` Полный `npm run test:e2e` после refactor выполнил все 168 сценариев
+на Chromium/mobile/tablet; 166 завершились PASS, два mobile сценария упёрлись в
+cold-start readiness timeout на provider/discovery shell.
+11–20. `[x]` Failure screenshots показывают skeleton/loading shell или filter shell,
+а не broken layout; поздние tablet/desktop соответствующие сценарии проходят.
+21–30. `[x]` Оба точных failure filters повторно прогнаны на `mobile-chromium`:
+provider gallery и discovery shell завершились **2/2 PASS** за 40.7 s.
+31–40. `[x]` Full frontend suite остаётся **151 файлов / 480 тестов PASS**;
+`npm run build`, real-mode `build:vite`, lint и fixture-leakage checker также
+проходят.
+41–50. `[~]` Повторный локальный прогон снимает transient harness signal, но не
+заменяет стабильный CI/release replay на фиксированном runner и deployed URL.
+
+## Порция 378 (07.09.2026) — bounded mobile route readiness
+
+1–10. `[x]` Mobile gallery assertion получил отдельный bounded wait на route
+hydration; release audit shell timeout увеличен только для cold-start harness,
+не для product/API operations.
+11–20. `[x]` Mobile targeted replay после изменения harness завершился **2/2
+PASS**: provider gallery — 20.7 s, discovery breakpoint matrix — 16.6 s.
+21–30. `[x]` Проверка сохраняет строгие условия: visible main/heading, no overflow,
+localized content и footer; relaxed assertions или skip не добавлялись.
+31–40. `[~]` Это стабилизация локального test runner; CI runner variance и
+deployed browser evidence остаются внешним release gate.
+
+## Порция 379 (07.09.2026) — API-native review labels and lazy fixture boundary
+
+1–10. `[x]` Featured review API теперь возвращает `providerName` из активного
+provider record; mock handler отдаёт тот же shape, а frontend schema принимает
+optional label без fixture dependency.
+11–20. `[x]` Admin reviews и profile reviews больше не импортируют
+`autocareMockData`; реальные provider names приходят из API, cabinet title
+используется в client review, поведение mock UI сохранено.
+21–30. `[x]` После refactor `npm run build:vite`, backend build и lint проходят;
+frontend suite — **151/480**, backend unit profile — **288/1043**.
+31–40. `[x]` Admin moderation browser scenario завершён **1/1 PASS**; API-native
+provider label не ломает reason-required moderation flow.
+41–50. `[x]` Fixture checker сканирует все JS assets: contact markers отсутствуют
+в entry и всех lazy chunks, кроме явно разрешённого `favorites-*` anonymous mock
+fallback; bundle/performance budgets остаются зелёными.
+51–60. `[~]` Anonymous favorites fixture boundary требует отдельного real API
+contract, если его нужно полностью убрать из deployed lazy artifacts; staging,
+artifact inventory и owner decision остаются внешними gates.
+
+## Порция 380 (07.09.2026) — full generated-asset fixture boundary
+
+1–10. `[x]` Preview fixtures вынесены в отдельный `autocareMockProviders` модуль;
+favorites и MSW handlers больше не импортируют profile-only данные с телефоном и
+email. Совместимый re-export оставлен для profile/mock consumers.
+11–20. `[x]` Profile review/admin surfaces используют API-native provider labels;
+profile-only mock data не попадает в публичные preview consumers и не образует
+runtime cycle благодаря type-only imports.
+21–30. `[x]` `check:production-fixture-leakage` теперь сканирует каждый JS asset
+без исключения для `favorites-*`; после нового Vite build demo phone и email не
+обнаружены ни в entry, ни в lazy chunks.
+31–40. `[x]` Vite build завершён успешно; entry `index-CdJV3qW7.js` — **230.5
+kB**. Bundle splitting: 11 required chunks; performance: **2677.8 kB raw /
+793.4 kB gzip**; 151/480 frontend tests и lint проходят.
+41–50. `[~]` Это полное локальное сканирование generated assets; deployed
+artifact inventory, staging replay, production HTML и owner sign-off остаются
+внешними release gates.
+
+## Порция 381 (07.09.2026) — post-split browser replay
+
+1–10. `[x]` После разделения preview/profile fixtures production Next build
+завершился успешно, а mock E2E выполнил **167/168 PASS** на первом полном
+mobile/tablet/desktop прогоне.
+11–20. `[x]` Единственный failure — mobile Spanish/Romanian long-label shell,
+где `main` не появился в 30-секундный cold-start budget; failure не связан с
+данными provider/contact и не изменил assertions.
+21–30. `[x]` Точный повтор этого сценария завершился **1/1 PASS** за 22.0 s;
+tablet-аналог в полном прогоне также PASS. Это подтверждает transient runner
+variance, а не функциональную регрессию fixture-boundary refactor.
+31–40. `[~]` Полный single-run 168/168 на стабильном CI runner и deployed browser
+evidence остаются release gates; локальная повторная проверка закрывает только
+этот конкретный cold-start signal.
+
+## Порция 382 (07.09.2026) — local interaction, route and SEO contracts
+
+1–10. `[x]` Interaction-state contract подтвердил **16 invariants**; discovery
+form contract подтвердил 8 source invariants и **2/2** node tests, включая
+recoverable loading/error/offline/permission paths и long-label overflow guards.
+11–20. `[x]` PWA update contract, Next route inventory (**57 route constants**),
+Next production runtime boundary и Next route contract (**5/5 tests**) проходят.
+21–30. `[x]` SEO/release repository checks проходят: JS/CSS/image/map budgets,
+prerender/ISR variants, metadata paths, canonical/robots consistency и 4 launch
+locales подтверждены; local HTML report содержит 12 public/provider routes.
+31–40. `[~]` Lighthouse и rendered production HTML остаются двумя manual gates,
+требующими deployed `SEO_BASE_URL`; локальный source/build contract не заменяет
+эти production evidence.
+
+## Порция 383 (07.09.2026) — PWA and visual regression replay
+
+1–10. `[x]` Production PWA preview завершён **12/12 PASS** на desktop/mobile:
+offline discovery/search/provider cache, logout identity-cache cleanup,
+authorized-cache exclusion и offline mutation safety подтверждены.
+11–20. `[x]` Visual regression replay завершён **18/18 PASS** на desktop, tablet
+и mobile для home, discovery, provider, client profile, owner dashboard и admin
+security surfaces; baseline screenshots не изменялись и design lock соблюдён.
+21–30. `[~]` Это локальный browser evidence текущего рабочего дерева; real-device
+assistive technology, deployed URL и owner visual sign-off остаются manual gates.
+
+## Порция 384 (07.09.2026) — clean full mock browser matrix
+
+1–10. `[x]` У mobile long-label release-audit case установлен отдельный bounded
+test timeout **120 s**, соответствующий cold lazy-route matrix; product timeout,
+assertions, overflow checks и locale checks не ослаблялись.
+11–20. `[x]` Повторный полный `npm run test:e2e` завершён **168/168 PASS за
+15.6 min** на Chromium, mobile Chromium и tablet Chromium. Включены public/client,
+owner/admin, accessibility, keyboard, locale, Next direct-route и privacy flows.
+21–30. `[x]` Предыдущий 167/168 signal исчез после harness-only correction;
+`npm run lint` и точный long-label replay также PASS. Это подтверждает, что
+fixture-boundary refactor не вызвал browser regression.
+31–40. `[~]` Матрица полностью подтверждена локально на production-like mock
+Next runner; real deployed URL, real-device assistive technology и staging
+evidence остаются внешними release gates.
+
+## Порция 385 (07.09.2026) — canonical local MVP gate
+
+1–10. `[x]` `npm run check:local-mvp` завершён с результатом **all local MVP
+checks passed** на commit `59b2675e829c`.
+11–20. `[x]` Gate включает frontend lint/tests, Next production build, backend
+TypeScript build, mock/API parity, route snapshots, migration validation,
+media-pipeline и backup/restore contracts.
+21–30. `[x]` Также PASS: keyboard/accessibility, Redis fail-closed, transition
+concurrency, owner-route auth, threat surface, loading/state/client-path,
+design-token, interaction/discovery-form и SEO contracts.
+31–40. `[x]` Chromium executable, responsive browser matrix (**25.8 s**) и
+whitespace/patch checks прошли; это единый локальный regression gate, а не
+ручное выборочное подтверждение.
+41–50. `[~]` Dirty working tree и отсутствие deployed SHA/staging credentials
+не позволяют превратить local MVP gate в production GO; manual/operations/
+security/pilot evidence остаются отдельными обязательными условиями.
+
+## Порция 386 (07.09.2026) — production readiness boundary
+
+1–10. `[x]` `check:mvp-readiness` подтверждает Render startup/migration-free
+contract; не хватает только runtime prerequisites и external evidence, а не
+исходного production wiring.
+11–20. `[E]` Preflight блокируется отсутствующими Redis/PostgreSQL/JWT secrets,
+SMTP delivery setup, persistent media path и bootstrap super-admin; эти значения
+нельзя безопасно синтезировать в рабочем дереве.
+21–30. `[x]` `check:production-operations` подтверждает Docker, dedicated worker,
+outbox/dead-letter, encrypted backup harness, alerts, rollback/migration contract
+и Redis fail-closed guidance.
+31–40. `[E]` Production operations остаётся заблокирован 8 runtime gates и 6
+manual rehearsal gates: staging HTTPS endpoint, secret manager, S3/ClamAV,
+worker/Redis/SMTP smoke, backup restore, alert delivery и rollback rehearsal.
+
+## Порция 387 (07.09.2026) — autonomous audit plan contract
+
+1–10. `[x]` `check:pilot-autonomous-plan` подтверждает 100 numbered items;
+основной execution plan сообщает **93 complete / 7 partial / 0 external**.
+11–20. `[x]` `check:pilot-autonomous-next` строго подтверждает отдельный
+`PILOT_AUTONOMOUS_100_NEXT.md`: **100/100 complete / 0 partial**, поэтому
+подготовленный next-step contract не завис на незакрытой локальной задаче.
+21–30. `[~]` Этот contract измеряет автономный локальный plan, а не 54 canonical
+pilot gates: secrets, staging, manual acceptance, security review и реальные
+участники по-прежнему не могут быть заменены synthetic evidence.
+
+## Порция 388 (07.09.2026) — backend unit/API regression suite
+
+1–10. `[x]` `npm run test:server:unit` завершён: **288 test files / 1043 tests
+PASS** за 18.38 s.
+11–20. `[x]` Suite покрывает backend services, input policies, authorization,
+concurrency, outbox, media, account deletion, AutoCare flows и schema/runtime
+boundaries; ожидаемые Redis-outage error logs присутствуют и не превращаются в
+ошибки тестового процесса.
+21–30. `[~]` Это fresh local unit evidence; real two-replica Redis outage,
+production-like PostgreSQL/S3 restore и staging browser/API replay остаются
+отдельными operations/security gates.
+
+## Порция 389 (07.09.2026) — security and legacy boundary contracts
+
+1–10. `[x]` Security header contract, Render production config и fixture-scoped
+demo reset проходят; reset параметризован, ограничен demo ownership и сохраняет
+shared catalog data.
+11–20. `[x]` Bookly runtime и legacy payment-provider guards не находят production
+references; legacy cleanup audit проходит для 5 семей, replacement coverage 1/1,
+migration inventory **130 files** и historical checksum evidence сохраняются.
+21–30. `[x]` AutoCare replacement migration boundary (**63 migrations**) и
+explicit legacy file dispositions подтверждены; удаление исторических миграций
+не выполнялось.
+31–40. `[~]` Это repository/runtime boundary evidence; deployed artifact scan,
+independent security review и production traffic остаются внешними gates.
+
+## Порция 390 (07.09.2026) — real API replay after demo-outbox reset fix
+
+1–10. `[x]` Demo reset теперь удаляет только outbox payloads, связанные с
+текущими demo user/booking/request IDs или demo email; широкого удаления таблицы
+или чужих событий нет. Static reset contract прошёл **4/4**, server build и
+backend unit profile остаются green (**288 files / 1043 tests**). Свежий
+`check:local-mvp` также завершён с результатом **all local MVP checks passed**.
+11–20. `[x]` Свежий `npm run test:e2e:real` после фикса reset завершён **25/25
+PASS**; Playwright `test-results/.last-run.json` имеет `status: passed`. В
+post-replay окне с 13:20 UTC появились только **4 completed
+notification.create**, новых dead-letter событий нет.
+21–30. `[~]` `/health/ready` всё ещё отвечает **503 degraded**: PostgreSQL и
+storage healthy, но Redis `skipped / not_configured`; aggregate сохраняет 106
+исторических dead-letter записей (104 `notification.create` с прежней user-FK
+ошибкой и 2 `email.send` с redacted ошибкой). Их не очищали вручную; readiness
+и worker/Redis/SMTP operations остаются блокерами.
+31–40. `[~]` Это сильное local real-API evidence для synthetic/demo journeys,
+но не staging/production GO: нужны настроенные Redis/SMTP, обработка
+исторического dead-letter backlog по операционной процедуре и внешние
+backup/restore, alert, rollback и security/owner gates.
+
+## Порция 391 (07.09.2026) — dependency surface and router compatibility
+
+1–10. `[x]` Production dependency surface сокращён: build/CLI-only Tailwind,
+Vite и shadcn packages переведены в `devDependencies`; `react-router` обновлён
+до **7.18.3**, Vite — до **8.2.2**, а прямой dev `concurrently` — до **9.2.4**.
+11–20. `[x]` `npm audit --omit=dev` для web и server даёт **0 vulnerabilities**;
+`npm ci --dry-run --ignore-scripts` воспроизводим. Полный dev audit сообщает
+13 tooling-only findings, 7 high/0 critical; CI остаётся привязанным к
+production-scope audit.
+21–30. `[x]` Router update выявил устаревшие `unstable_useTransitions` props;
+оба entrypoint теперь используют поддерживаемый `useTransitions={false}`.
+После correction проходят Vite build, Next build, frontend **151/480**, lint и
+полный `check:local-mvp`.
+31–40. `[~]` Dev-only transitive advisories в CLI/test/build цепочке требуют
+отдельного dependency policy/реновации инструментов; они не попадают в
+production install scope. Staging artifact scan и immutable release evidence
+остаются внешними gates.
+
+## Порция 392 (07.09.2026) — router transition compatibility and final real replay
+
+1–10. `[x]` После обновления `react-router` до **7.18.3** targeted replay
+выявил две реальные несовместимости: logout при offline/500 ошибке возвращал
+на login вместо public shell, а owner dynamic legacy route зависал на
+`Checking session...`.
+11–20. `[x]` Причина устранена заменой удалённого/устаревшего флага на
+поддерживаемый `useTransitions={false}` в Vite и Next BrowserRouter entrypoints;
+product assertions и route contracts не ослаблялись.
+21–30. `[x]` Targeted real replay завершён **3/3 PASS**, затем полный
+`npm run test:e2e:real` после reset/seed завершён **25/25 PASS за 2.0 min**;
+включены logout failure paths, public/owner/admin legacy routes, idempotency,
+request recovery и role boundaries.
+31–40. `[x]` Повторный `npm run check:local-mvp` после correction также завершён
+с результатом **all local MVP checks passed**: lint, frontend tests, Next/Vite,
+backend build, contracts и responsive browser matrix.
+41–50. `[x]` Финальный `/health/ready` после replay: database/storage `ok`,
+outbox `pending=0`, новых dead-letter в replay нет; общий ответ остаётся
+`503 degraded` только из-за Redis `not_configured` и 106 исторических
+dead-letter записей. Их не удаляли вручную.
+51–60. `[~]` Локальный real evidence теперь воспроизводим после dependency
+update, но production/pilot GO не меняется: остаются Redis/SMTP/S3/secrets,
+staging URL, backup/alert/rollback rehearsal и external security/owner gates.
+
+## Порция 393 (07.09.2026) — router compatibility regression guard
+
+1–10. `[x]` Добавлен `check:router-compatibility`: оба production entrypoint
+обязаны использовать поддерживаемый `useTransitions={false}` и не содержать
+`unstable_useTransitions`.
+11–20. `[x]` Добавлен negative regression test: он намеренно подставляет
+устаревший prop в `src/main.tsx` и проверяет, что контракт блокирует такую
+регрессию; текущие contract и test suites проходят **2/2**.
+21–30. `[x]` Оба проверки включены в `check:local-mvp`; существующая shell-free
+команда inventory и dry-run tests остаются зелёными.
+31–40. `[~]` Это усиливает локальный compatibility gate, но не заменяет
+deployed browser evidence и внешний pilot/security sign-off.
+
+## Порция 394 (07.09.2026) — visual regression after router guard
+
+1–10. `[x]` Текущий `npm run test:e2e:visual` завершён **18/18 PASS за 51.7 s**:
+desktop, tablet и mobile Chromium для home, discovery, provider, client,
+owner и admin surfaces.
+11–20. `[x]` Визуальные baselines не изменились; проверка подтверждает, что
+Router compatibility guard не вызвал layout/theme/route-hydration drift.
+21–30. `[~]` Screenshot evidence остаётся локальным baseline; real devices,
+assistive technology и deployed visual sign-off по-прежнему внешние gates.
+
+## Порция 395 (07.09.2026) — malformed request-date browser recovery
+
+1–10. `[x]` Добавлен real-API Chromium regression для
+`/services/api-proservice-moscow/request?date=garbageT12:00:00&time=10:00`.
+Страница сохраняет usable `<main>` и не оставляет malformed date в URL.
+11–20. `[x]` Targeted replay завершён **1/1 PASS за 18.1 s**; это усиливает
+существующие `RequestForm`/date parser unit tests browser-level evidence.
+21–30. `[x]` После добавления сценария полный `npm run test:e2e:real` завершён
+**26/26 PASS за 2.0 min**; `test-results/.last-run.json` имеет `status: passed`.
+После короткого worker interval `/health/ready` показал database/storage `ok`,
+outbox `pending=0`, `deadLetter=106`; новые dead-letter события не появились.
+31–40. `[~]` Полный workflow request/quote/booking и timezone correctness всё
+ещё требуют отдельного PostgreSQL/staging replay; один malformed-query case не
+закрывает весь `V2-MVP-05/06` scope.
+
+## Порция 396 (07.09.2026) — performance budget and deferred auth bundle
+
+1–10. `[x]` Первый свежий `npm run check:performance` после real replay нашёл
+**92 JS assets при лимите 90**. Лимит не повышался: vendor splitting
+консолидирован в пределах **300 kB** для отдельного чанка, а login и OAuth
+callback переведены в один deferred `auth-pages` bundle.
+11–20. `[x]` После rebuild performance contract проходит: **90/90 JS assets**,
+entry **152.0 kB**, largest non-entry **230.0 kB**, largest locale **75.5 kB**,
+CSS **166.3 kB**; bundle-splitting contract также PASS с 11 обязательными
+chunk-prefixes.
+21–30. `[x]` `npm run lint`, targeted route/auth tests (**2 files / 3 tests**),
+`npm run test:e2e:real` (**26/26 PASS за 2.4 min**), `git diff --check` и
+production fixture leakage contract проходят. Объединение затрагивает только
+deferred loading, URL и компоненты auth не менялись.
+31–40. `[~]` Performance evidence локальна для production-like build; CDN,
+Lighthouse, deployed Next artifact и реальный staging-профиль остаются
+внешними release gates. `/health/ready` после replay по-прежнему деградирован
+только из-за не настроенного Redis и исторического dead-letter backlog.
+
+## Порция 397 (07.09.2026) — production operations and external evidence boundary
+
+1–10. `[x]` Свежий `npm run check:production-operations` подтверждает Docker
+daemon и все repository contracts: dedicated worker, bounded outbox/dead-letter,
+encrypted backup/restore harness, alert rules, rollback/migration и Redis
+fail-closed guidance — **6/6 PASS**.
+11–20. `[x]` `check:pilot-evidence-toolkit` PASS: schema, duplicate/freshness,
+non-negative metrics, CSV conversion и PII guards присутствуют. `check:seo`
+подтверждает JavaScript/CSS/image budgets, prerender, OG/canonical/robots,
+locale coverage и **12** локальных HTML metadata routes.
+21–30. `[~]` Operations preflight честно оставляет **8 blocked** configuration
+gates: production mode, PostgreSQL/Redis/JWT, JWT strength, SMTP, persistent
+media path, bootstrap super-admin и outbox secret; private filesystem storage
+остаётся manual до S3. Дополнительно **6 manual** rehearsal gates требуют
+staging API, worker/Redis/SMTP smoke, isolated restore, alert delivery и
+rollback.
+31–40. `[~]` `check:pilot-evidence` и `check:pilot-metrics` fail closed без
+`docs/operations/pilot-evidence.json`, `PILOT_METRICS_CSV` и anonymized real
+pilot rows; synthetic data не выдаётся за real evidence. SEO repository checks
+проходят, но deployed Lighthouse и rendered production HTML остаются manual.
+
+## Порция 398 (07.09.2026) — pilot evidence path resolution
+
+1–10. `[x]` Исправлен локальный tooling defect в server-side
+`check:pilot-evidence`: команда запускается из `server/`, поэтому default
+`docs/operations/pilot-evidence.json` теперь разрешается от корня репозитория,
+а явно переданный absolute path сохраняется без изменений.
+11–20. `[x]` Добавлены три regression tests для default, relative и absolute
+path resolution; все **3/3 PASS**, server TypeScript build PASS. Проверка
+теперь корректно показывает абсолютное место отсутствующего файла, не меняя
+fail-closed policy и не создавая synthetic/real evidence.
+21–30. `[~]` `check:pilot-evidence` по-прежнему блокируется отсутствующим
+anonymized real-pilot JSON — это ожидаемый внешний gate, а не скрытая ошибка
+рабочего дерева. `PILOT_METRICS_CSV` и реальные participant/journey rows также
+остаются обязательными для принятия pilot metrics.
+
+## Порция 399 (07.09.2026) — curated backend unit coverage for evidence tooling
+
+1–10. `[x]` Новый path-resolution regression добавлен в curated
+`server/vitest.unit.config.ts`, поэтому общий backend unit profile теперь
+включает его, а не только отдельный targeted invocation.
+11–20. `[x]` Свежий `npm run test:server:unit` завершён **289 test files / 1046
+tests PASS**. Ожидаемые Redis-unavailable error logs остаются fail-closed
+coverage и не являются падением suite; server build и `git diff --check` PASS.
+21–30. `[~]` Curated local coverage усилена, но реальный pilot evidence по-
+прежнему нельзя вывести из synthetic rows: внешний anonymized JSON/CSV,
+staging participant journeys и owner acceptance остаются обязательными.
+
+## Порция 400 (07.09.2026) — Docker-backed schema and integrity rehearsal
+
+1–10. `[x]` Локальный Docker synthetic stack подтверждён: PostgreSQL и Redis
+работают на `localhost:5433/6379`. `npm --prefix server run schema:check` и
+повторный `migration:smoke` завершились успешно; migration inventory показывает
+полностью применённую цепочку до **216**.
+11–20. `[x]` `check:autocare-integrity -- --validate` проверил critical manifest
+из **42 таблиц** и ownership/context invariants: все counters **0**, pending
+constraints **0**. `check:account-deletion-retention` PASS для 0 completed
+deletions; отсутствие completed synthetic deletions не выдаётся за deletion
+rehearsal с реальными участниками.
+21–30. `[~]` Redis fail-closed script в development намеренно сообщает
+`skipped` (`fail-open` разрешён только локально); production-mode rehearsal
+не засчитывается без корректной production configuration, SMTP/S3 и staging
+credentials. Docker evidence усиливает локальную DB/integrity уверенность, но
+не закрывает multi-process Redis, restore, staging или pilot gates.
+
+## Порция 401 (07.09.2026) — synthetic production Redis fail-closed probe
+
+1–10. `[x]` Временный process-only synthetic production configuration с
+HTTPS loopback origins, сильными non-persistent secrets, S3/ClamAV policy и
+`MAIL_MODE=smtp` успешно прошёл env boundary; реальные значения в файлы не
+записывались.
+11–20. `[x]` При локальном Docker Redis `npm --prefix server run
+check:redis-rate-limit -- --json` вернул `status=pass`, `mode=fail-closed`,
+`distributed limiter is reachable`; timeout contract сохранился на 5000 ms.
+21–30. `[~]` Эта проверка подтверждает production configuration path и один
+локальный Redis process, но не является staging evidence: multi-process outage,
+reconnect, worker/WS smoke, S3 delivery, SMTP mailbox и external alerting
+остаются отдельными gates.
+
+## Порция 402 (07.09.2026) — Docker-backed backend integration profile
+
+1–10. `[x]` Добавлен корневой wrapper `npm run test:server:integration`, чтобы
+полный PostgreSQL-backed integration profile запускался из того же интерфейса,
+что и unit profile, без ручного перехода в `server/`.
+11–20. `[x]` Свежий повторный запуск завершён: **14 test files / 63 tests PASS**.
+Покрыты schema contract, auth/session, account deletion, outbox/lease, owner и
+admin authorization, AutoCare discovery/capacity/branch access и route guards;
+границы `limit=51` и `radiusKm=0` подтверждены как HTTP 400.
+21–30. `[~]` Это локальный Docker evidence с synthetic fixtures: реальный
+staging multi-process replay, production credentials, external delivery и
+participant acceptance остаются внешними gates.
+
+## Порция 404 (07.09.2026) — cross-process Redis realtime smoke
+
+1–10. `[x]` `NODE_ENV=test REDIS_HOST=localhost REDIS_PORT=6379 npm --prefix
+server run smoke:autocare-realtime` подтвердил два независимых Redis-backed
+subscriber process и повторную доставку одного `eventId`; realtime smoke
+завершился PASS.
+11–20. `[x]` Проверка не оставила временных процессов или Redis-ключей и не
+затронула production secrets. Это усиливает локальное доказательство bridge,
+deduplication и reconnect-пути.
+21–30. `[~]` Две локальные реплики не заменяют staging/prod replay с реальными
+WS-сессиями, revoke/suspension, Redis outage/reconnect и внешним alerting.
+
+## Порция 405 (07.09.2026) — cross-process Redis rate-limit smoke
+
+1–10. `[x]` Добавлен `npm run smoke:server:redis-rate-limit` и отдельный
+unit-contract для отчёта smoke. Два независимых worker process используют один
+уникальный Redis bucket с лимитом 1; свежий запуск вернул
+`schemaVersion=1,status=pass,processCount=2,allowedCount=1,deniedCount=1`.
+11–20. `[x]` Worker lifecycle закрывает Redis connection, временный bucket
+удаляется, а post-run `redis-cli --scan` не находит smoke keys. Server build,
+targeted script tests и lint проходят.
+21–30. `[~]` Локальный multi-process consistency закрыта, но реальный staging
+outage/reconnect, failover, TLS/secret-manager и production observability остаются
+внешними условиями; пункт 57 не переводится в `[x]`.
+
+## Порция 406 (07.09.2026) — full local MVP replay after Redis harness
+
+1–10. `[x]` Повторный `npm run check:local-mvp` после добавления
+`smoke:redis-rate-limit` завершён с результатом **all local MVP checks passed**.
+Frontend lint/tests, Next production build, backend build, mock/API parity,
+media/backup, interaction/accessibility, route/runtime, legacy/payment guards и
+SEO contracts прошли.
+11–20. `[x]` Responsive Chromium matrix в этом же прогоне — **PASS**; новый
+server smoke не вызвал регрессий в production-like browser preview. Server unit
+профиль отдельно подтверждён как **290/1048**, integration — **14/63**.
+21–30. `[~]` Local MVP evidence обновлено, но canonical V2-MVP-09 и внешний
+pilot readiness не переводятся автоматически в `[x]`: нужны clean published SHA,
+staging/production replay, real devices и owner/manual acceptance.
+
+## Порция 407 (07.09.2026) — signed URL private response policy repair
+
+1–10. `[x]` Исправлен production media preflight: его `GetObjectCommand`
+теперь подписывает тот же private response contract, что и runtime adapter —
+`inline`, `application/octet-stream` и `private, no-store`. Ранее harness
+требовал `response-cache-control`, но сам его не добавлял в подписываемую команду.
+11–20. `[x]` Добавлена regression на Bucket/Key, private content type,
+inline disposition и no-store cache policy; targeted media suite — **7/7 PASS**,
+server build/lint/diff и полный backend unit — **290/1049 PASS**.
+21–30. `[~]` Локальный signed-URL contract стал самосогласованным, но пункт 65
+остаётся частичным: фактическая S3/ClamAV promotion, signed fetch, expiry,
+partial failure и deletion replay требуют внешнего bucket/infra evidence.
+
+## Порция 408 (07.09.2026) — deletion retention idempotency replay
+
+1–10. `[x]` Docker PostgreSQL fixture из `account-deletion-autocare.integration`
+проверяет полный synthetic purge: private attachments/media, outbox,
+bonus/membership/invitation rows, provider suspension, cabinet privacy и
+account-deletion SQL invariants.
+11–20. `[x]` Добавлена повторная terminal `Completed` mutation после первого
+purge; targeted integration — **1/1 PASS**, повторная карта invariants снова
+имеет только zero counters. Это подтверждает идемпотентность без повторного
+удаления чужих/уже отсутствующих объектов.
+21–30. `[~]` Локальная PostgreSQL/storage часть усилена, но пункт 69 остаётся
+partial до staging restore, real storage failure/rollback, retention scheduler
+и operational deletion evidence.
+
+## Порция 403 (07.09.2026) — final local MVP gate replay
+
+1–10. `[x]` Свежий `npm run check:local-mvp` завершён с результатом **all
+local MVP checks passed**: lint, frontend tests, Next production build,
+backend build, API parity, security/media/backup contracts, route inventories,
+SEO budgets и Chromium responsive matrix.
+11–20. `[x]` В одном комплексном прогоне подтверждены все автоматические
+проверки, включая React Router compatibility, legacy/payment guards,
+transition concurrency, PWA/SEO и responsive browser matrix.
+21–30. `[~]` Это подтверждение локального репозитория на текущем рабочем
+дереве; canonical pilot readiness остаётся ограниченной внешними Redis,
+PostgreSQL, SMTP/S3, staging и real-participant gates.

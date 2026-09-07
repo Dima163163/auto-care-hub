@@ -107,24 +107,34 @@ export default defineConfig({
           minSize: 20_000,
           groups: [
             {
+              name: 'translation-runtime',
+              test: /src[\\/]shared[\\/]config[\\/]translations[\\/]en\.ts$/,
+              priority: 5,
+            },
+            {
+              name: 'autocare-api-runtime',
+              test: /src[\\/]entities[\\/]automotive-service[\\/]api[\\/]autocareApi\.ts$/,
+              priority: 5,
+            },
+            {
               name: 'react-runtime',
               test: /node_modules[\\/]react(?:-dom|-router)?[\\/]/,
-              priority: 3,
+              priority: 7,
             },
             {
               name: 'state-runtime',
               test: /node_modules[\\/](?:@reduxjs|react-redux)[\\/]/,
-              priority: 2,
+              priority: 6,
             },
             {
               name: 'ui-runtime',
               test: /node_modules[\\/](?:@base-ui|framer-motion|lucide-react)[\\/]/,
-              priority: 2,
+              priority: 4,
             },
             {
               name: 'vendor-runtime',
               test: /node_modules[\\/]/,
-              maxSize: 250_000,
+              maxSize: 300_000,
               priority: 1,
             },
           ],

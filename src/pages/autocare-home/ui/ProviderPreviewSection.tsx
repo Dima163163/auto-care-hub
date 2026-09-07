@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { AlertCircle, BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { mapAutoCareDiscoveryItem, ProviderLogo, providerPreviews, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { mapAutoCareDiscoveryItem, ProviderLogo, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -66,7 +66,6 @@ function toHomeProvider(provider: ProviderPreview): HomeProvider {
 
 const providers: readonly HomeProvider[] = [
     ...featuredProviders,
-    ...providerPreviews.slice(3, 15).map(toHomeProvider),
 ]
 
 function sortProviders(items: readonly HomeProvider[], sort: HomeSort) {

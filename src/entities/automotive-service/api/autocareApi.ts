@@ -633,6 +633,7 @@ const featuredReviewSchema = z.object({
     revisionUsedAt: z.string().datetime({ offset: true }).nullable().optional(),
     canContact: z.boolean().optional(),
     canEdit: z.boolean().optional(),
+    providerName: z.string().optional(),
 }) satisfies z.ZodType<AutoCareApiReview>
 
 const reviewPromoSchema = z.object({
@@ -1462,7 +1463,7 @@ export const autoCareApi = baseApi.injectEndpoints({
         acceptAutoCareProviderInvitation: build.mutation<AutoCareProviderInvitationAcceptResponse, AcceptAutoCareProviderInvitationInput>({
             query: (body) => ({ url: '/owner/autocare-provider-invitations/accept', method: 'POST', body }),
             transformResponse: (value: unknown) => z.object({
-                membership: z.object({ id: z.string(), providerId: z.string(), userId: z.string(), user: z.object({ id: z.string(), name: z.string(), email: z.string().email(), avatarUrl: z.string().nullable() }).nullable(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']) }).passthrough(),
+                membership: z.object({ id: z.string(), providerId: z.string(), userId: z.string(), user: z.object({ id: z.string(), name: z.string(), email: z.string().email(), avatarUrl: z.string().nullable() }).nullable(), locationId: z.string().nullable(), role: z.enum(['owner', 'manager', 'staff']), status: z.enum(['active', 'revoked']), createdAt: z.string().datetime({ offset: true }) }).passthrough(),
                 invitation: autoCareProviderInvitationSchema,
             }).parse(value),
             invalidatesTags: [
@@ -1824,7 +1825,7 @@ export const autoCareApi = baseApi.injectEndpoints({
         confirmAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
             query: (requestId) => ({ url: `/v1/service-requests/${requestId}/confirm`, method: 'POST' }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
-            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
         cancelAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, { requestId: string; reason?: string | null }>({
             query: ({ requestId, reason }) => ({ url: `/v1/service-requests/${requestId}/cancel`, method: 'POST', body: { reason: reason ?? null } }),
@@ -1844,7 +1845,7 @@ export const autoCareApi = baseApi.injectEndpoints({
         declineAutoCareServiceQuote: build.mutation<AutoCareServiceRequest, AutoCareQuoteDecisionInput>({
             query: ({ requestId, quoteId, quoteVersion }) => ({ url: `/v1/service-requests/${requestId}/quote/decline`, method: 'POST', body: { quoteId, quoteVersion } }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
-            invalidatesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
         getOwnerAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({
             query: () => '/owner/service-requests',
