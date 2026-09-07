@@ -3804,3 +3804,20 @@ suite — **152/488 PASS**.
 изменения invite/revoke permissions, query shape или provider scope. Real-device
 language review, staging/production, deployed Lighthouse и pilot evidence
 остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 448 (07.09.2026) — localized provider bonus and liability panel
+
+1–10. `[x]` Bonus/liability panel переведён на typed translation keys: loading,
+error/retry, metrics, manual grant form, validation, grant feedback, entry
+types и empty state. Даты переведены на общий `formatDateTime`; bonus grant
+payload, provider/client scope и idempotency key semantics unchanged.
+
+11–20. `[x]` Bonus regression — **1 файл / 1 тест PASS**; полный
+`check:local-mvp` на bonus-localization worktree поверх `86c13e9` завершён с
+`all local MVP checks passed`, включая responsive Chromium matrix; frontend
+suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт raw-copy/date-format localization gap в bonus surface без
+изменения validation helper, grant mutation или liability query shape.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
