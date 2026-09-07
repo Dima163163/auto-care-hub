@@ -3924,3 +3924,22 @@ responsive Chromium matrix; frontend suite — **153/489 PASS**.
 изменения queue predicates, sorting order или API/mutation semantics.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 455 (08.09.2026) — localized owner request details
+
+1–10. `[x]` Request details больше не содержит raw RU copy, `serviceLabels.ru`
+или ручные locale formatters. Service labels, confirmed booking/contact copy,
+parts/labour fields, price lock и quote line-item labels используют typed
+translation contract; booking/quote dates and amounts используют shared locale
+formatters; mutation payload shape and request state transitions unchanged.
+
+11–20. `[x]` Owner requests regression — **1 файл / 1 тест PASS**; ESLint,
+Vite production build и полный `check:local-mvp` на request-details-localization
+worktree поверх `ad49bc6` завершены с `all local MVP checks passed`, включая
+responsive Chromium matrix; frontend suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт raw-copy/locale-format gap в request details без изменения
+quote validation, line-item kinds, confirmation/reschedule/no-show/complete
+mutations или API contract. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
