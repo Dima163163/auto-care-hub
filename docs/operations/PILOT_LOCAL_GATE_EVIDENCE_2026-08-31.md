@@ -3943,3 +3943,20 @@ quote validation, line-item kinds, confirmation/reschedule/no-show/complete
 mutations или API contract. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 456 (08.09.2026) — shared owner numeric formatting
+
+1–10. `[x]` Shared locale formatter получил typed `formatNumber` helper с
+регрессионным покрытием; owner services offer prices и owner analytics integer/
+decimal metrics больше не создают прямые `Intl.NumberFormat` локально. Выбор
+локали, currency code, precision и API/query semantics сохранены.
+
+11–20. `[x]` Locale-format regression — **2 файла / 9 тестов PASS**; ESLint,
+Vite production build и полный `check:local-mvp` на numeric-format worktree
+поверх `01580dc` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт shared-formatting gap в owner pricing/analytics surfaces без
+изменения расчётов метрик, offer payloads или backend contracts. Real-device
+language review, staging/production, deployed Lighthouse и pilot evidence
+остаются внешними gates; readiness остаётся **96.5% (193/200)**.

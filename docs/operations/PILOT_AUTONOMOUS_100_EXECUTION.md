@@ -350,6 +350,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-request-details `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted owner-request coverage is
   **1 file / 1 test PASS**, and the frontend suite remains **153/489 PASS**.
+- Shared locale formatting now exposes `formatNumber`; owner offer prices and
+  analytics integer/decimal metrics reuse it instead of local Intl formatters.
+  The locale-format regression is **2 files / 9 tests PASS**.
+- Post-owner-numeric-format `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; pricing/analytics calculations and
+  API semantics remain unchanged.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
