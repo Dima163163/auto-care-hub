@@ -278,6 +278,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-provider-contact-copy `npm run check:local-mvp` on `23ca2e8` passes all
   43 checks, including the responsive Chromium matrix; provider form coverage
   is **1 file / 3 tests PASS**.
+- Provider evidence and onboarding panels now use typed translation keys and
+  shared locale date formatting; verification, cancellation and profile-update
+  mutations remain unchanged.
+- Post-provider-details-panels `npm run check:local-mvp` on `a4f5551` passes all
+  43 checks, including the responsive Chromium matrix; onboarding coverage is
+  **1 file / 3 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

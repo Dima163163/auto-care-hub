@@ -3737,3 +3737,19 @@ translation contract; upload, draft и create-provider semantics не измен
 валидации, media pipeline или communication mode values. Real-device language
 review, staging/production, deployed Lighthouse и pilot evidence остаются
 внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 444 (07.09.2026) — localized provider evidence and onboarding panels
+
+1–10. `[x]` Evidence и onboarding panels в provider details переведены через
+typed translation keys. Loading/error/empty states, evidence statuses,
+verification checks, cancel actions и request labels больше не зависят от raw
+RU/EN ternaries; даты используют общий `formatDateTime`.
+
+11–20. `[x]` Onboarding regression — **1 файл / 3 теста PASS**; полный
+`check:local-mvp` на commit `a4f5551` завершён с `all local MVP checks passed`,
+включая responsive Chromium matrix; frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт localization/date-format gap в moderation/onboarding UI без
+изменения verification, cancellation или profile-update mutations. Real-device
+language review, staging/production, deployed Lighthouse и pilot evidence
+остаются внешними gates; readiness остаётся **96.5% (193/200)**.
