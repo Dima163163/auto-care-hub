@@ -21,6 +21,17 @@ vi.mock('./ServiceCategoryGrid', () => ({
     ServiceCategoryGrid: () => <div data-testid="service-category-grid" />,
 }))
 
+const partnerCopy: Partial<Record<TranslationKey, string>> = {
+    'autocare.exploreLocations': 'Исследуйте локации',
+    'autocare.noLocations': 'Локации не найдены',
+    'autocare.partnerAction': 'Стать партнёром',
+    'autocare.partnerBenefitAnalytics': 'Аналитика',
+    'autocare.partnerBenefitClients': 'Клиенты',
+    'autocare.partnerBenefitControl': 'Управление',
+    'autocare.partnerDescription': 'Описание',
+    'autocare.partnerTitle': 'Для владельцев',
+}
+
 describe('HomeDiscoveryGrid', () => {
     beforeEach(() => {
         mocks.markets.mockReset().mockReturnValue({ data: [], isLoading: false })
@@ -32,16 +43,7 @@ describe('HomeDiscoveryGrid', () => {
             <I18nContext.Provider value={{
                 locale: 'ru',
                 setLocale: vi.fn(),
-                t: (key: TranslationKey) => ({
-                    'autocare.exploreLocations': 'Исследуйте локации',
-                    'autocare.noLocations': 'Локации не найдены',
-                    'autocare.partnerAction': 'Стать партнёром',
-                    'autocare.partnerBenefitAnalytics': 'Аналитика',
-                    'autocare.partnerBenefitClients': 'Клиенты',
-                    'autocare.partnerBenefitControl': 'Управление',
-                    'autocare.partnerDescription': 'Описание',
-                    'autocare.partnerTitle': 'Для владельцев',
-                }[key] ?? key),
+                t: (key: TranslationKey) => partnerCopy[key] ?? key,
             }}>
                 <MemoryRouter>
                     <HomeDiscoveryGrid marketId="moscow" />

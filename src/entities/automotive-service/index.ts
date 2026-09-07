@@ -41,6 +41,7 @@ export type {
     UpdateSuperAdminTrustPolicyInput,
     AutoCareCapacityResource,
     AutoCareCapacityReservation,
+    AutoCareQualityMonitoring,
     AutoCareProviderInvitation,
     AutoCareProviderInvitationAcceptResponse,
     AutoCareProviderMember,
