@@ -3672,3 +3672,19 @@ PASS, включая responsive Chromium matrix; frontend suite — **152/488 PA
 маршрутов, owner workflow или API semantics. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 440 (07.09.2026) — localized owner request queue and branch panel
+
+1–10. `[x]` Owner request queue и branch panel больше не держат RU/EN copy в
+компонентах. Заголовки, описания, статусы, empty states и CTA переведены через
+translation contract; дата обновления заявки использует общий `formatDateTime`,
+а type-only импорт provider отделён от value import.
+
+11–20. `[x]` `git diff --check`, ESLint без warnings, Vite production build и
+полный `check:local-mvp` на commit `5f57b25` завершены успешно: все 43 проверки
+PASS, включая responsive Chromium matrix; frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт copy/date-format localization gap в двух dashboard panels
+без изменения сортировки заявок, маршрутов, статусов API или provider data.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.

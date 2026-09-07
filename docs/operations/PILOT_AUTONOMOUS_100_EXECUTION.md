@@ -254,6 +254,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-dashboard-hero `npm run check:local-mvp` on `699dd85` passes all 43
   checks, including the responsive Chromium matrix; frontend suite is
   **152/488 PASS**.
+- Owner request queue and branch panel now use typed translation keys and the
+  shared locale date formatter; request sorting and provider data semantics are
+  unchanged.
+- Post-owner-dashboard-queue `npm run check:local-mvp` on `5f57b25` passes all
+  43 checks, including the responsive Chromium matrix; frontend suite is
+  **152/488 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
