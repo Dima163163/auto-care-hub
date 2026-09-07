@@ -238,6 +238,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-guarantee-copy `npm run check:local-mvp` on `d064edb` passes all 43
   checks, including the responsive Chromium matrix; frontend suite is
   **152/488 PASS**.
+- Owner provider cards now use typed translation keys for response windows,
+  communication modes, prices, chat state, CTAs and toast/error copy; shared
+  locale currency formatting is reused. The complete local MVP gate passes on
+  `8681a9c` with frontend **152/488 PASS**.
+- Post-owner-provider-copy `npm run check:local-mvp` on `8681a9c` passes all 43
+  checks, including the responsive Chromium matrix.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

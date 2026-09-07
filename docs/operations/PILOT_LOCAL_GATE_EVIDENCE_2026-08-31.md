@@ -3622,3 +3622,20 @@ Vite/Next/backend builds и полный `check:local-mvp` на commit `d064edb`
 claim semantics или error handling. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 437 (07.09.2026) — localized owner provider cards
+
+1–10. `[x]` Owner provider list больше не держит RU/EN ternaries для response
+time, режимов связи, estimated price, статусов чата, CTA и toast/error copy.
+Карточка использует translation contract, существующий `fromPrice` и общий
+`formatCurrency`; provider-supplied name/address/warranty остаются данными
+профиля, а не UI-копией.
+
+11–20. `[x]` Translation schema, Vite production build и lint PASS; полный
+`check:local-mvp` на commit `8681a9c` завершён с `all local MVP checks passed`,
+включая responsive Chromium matrix. Frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт multilingual copy/number-format gap в protected owner
+surface без изменения API, communication settings или mutation semantics.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
