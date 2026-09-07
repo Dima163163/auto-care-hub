@@ -182,6 +182,7 @@ autocare: {
         ownerProviderAmenitiesCount: 'Удобств: {{count}}',
         ownerProviderNotFound: 'Точка автосервиса не найдена',
         ownerProviderDetailsEyebrow: 'Обзор точки автосервиса',
+        ownerProviderRestrictedAccess: 'Ваш доступ ограничен назначенной ролью и филиалом. Управление профилем, командой и бонусной программой доступно владельцу сервиса.',
         ownerProviderProfileChangeTitle: 'Изменить публичные данные',
         ownerProviderProfileName: 'Название сервиса',
         ownerProviderProfileDescription: 'Описание',

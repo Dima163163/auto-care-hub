@@ -927,6 +927,7 @@ export const enTranslations = {
         ownerProviderAmenitiesCount: '{{count}} amenities',
         ownerProviderNotFound: 'Service location not found',
         ownerProviderDetailsEyebrow: 'Service location overview',
+        ownerProviderRestrictedAccess: 'Your access is limited to the assigned role and branch. Profile, team and bonus programme management are available to the service owner.',
         ownerProviderProfileChangeTitle: 'Change public details',
         ownerProviderProfileName: 'Service name',
         ownerProviderProfileDescription: 'Description',
