@@ -197,8 +197,13 @@ anonymized samples/participant rows отсутствуют.
   route; Lighthouse remains manual because its CLI is not installed.
 - Owner providers map now exposes a localized named `region`, extending the map
   accessibility contract to protected workspace UI.
+- Synthetic hero-map offer prices now use numeric values, locale-aware currency
+  formatting and the localized `fromPrice` copy.
 - Post-owner-map `npm run check:local-mvp` on `e03d0a34eec3` passes all 43
   checks, including the responsive Chromium matrix.
+- Post-hero-price `npm run check:local-mvp` on `bc56583886df` passes all 43
+  checks, including the responsive Chromium matrix; frontend suite is
+  **151/481 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
