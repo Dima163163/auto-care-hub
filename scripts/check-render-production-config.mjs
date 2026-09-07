@@ -9,6 +9,7 @@ const REQUIRED_FRAGMENTS = [
     ['explicit bootstrap email', 'key: BOOTSTRAP_SUPER_ADMIN_EMAIL\n        sync: false'],
     ['outbox encryption key', 'key: OUTBOX_TOKEN_ENCRYPTION_KEY\n        sync: false'],
     ['explicit cabinet uploads root', 'key: CABINET_UPLOADS_DIR\n        sync: false'],
+    ['canonical frontend origin', 'https://autocarehub.app'],
 ]
 
 export function assertRenderProductionConfig(source) {

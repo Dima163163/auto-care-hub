@@ -17,6 +17,7 @@ envVars:
         value: smtp
 preDeployCommand: "npm run release:migrate"
 startCommand: "npm run start:server"
+https://autocarehub.app
 `
 
 test('accepts a production Render config with safe startup ownership', () => {

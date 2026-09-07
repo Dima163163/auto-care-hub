@@ -24,9 +24,9 @@ services:
       - key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: https://autocare-hub.vercel.app,https://autocare-hub-client.onrender.com
+        value: https://autocarehub.app,https://autocare-hub.vercel.app,https://autocare-hub-client.onrender.com
       - key: FRONTEND_ORIGIN
-        value: https://autocare-hub.vercel.app
+        value: https://autocarehub.app
       - key: CABINET_UPLOADS_DIR
         sync: false
       - key: BOOTSTRAP_SUPER_ADMIN_EMAIL
