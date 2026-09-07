@@ -6,14 +6,13 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import {
     useGetOwnerAutoCareReviewsQuery,
     useGetOwnerAutoCareServiceRequestsQuery,
-    type OwnerAutoCareReviewsProvider,
-    type OwnerAutoCareReviews,
-    type AutoCareApiReview,
-    type AutoCareServiceRequest,
+    useIssueOwnerAutoCareReviewPromoMutation,
 } from '@/entities/automotive-service'
-import { useIssueOwnerAutoCareReviewPromoMutation } from '@/entities/automotive-service'
+import type { AutoCareApiReview, AutoCareServiceRequest, OwnerAutoCareReviews, OwnerAutoCareReviewsProvider } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { routePaths, ROUTES } from '@/shared/constants/routes'
+import { formatDateTime } from '@/shared/lib/locale-format'
+import type { I18nContextValue } from '@/shared/lib/i18n-context'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
@@ -47,7 +46,6 @@ type ReviewsCopy = {
     call: string
     issueDiscount: string
     discountPercent: string
-    serviceOptional: string
     expiresInDays: string
     issue: string
     cancel: string
@@ -56,8 +54,8 @@ type ReviewsCopy = {
     promoError: string
     copyError: string
     copyCode: string
-    copied: string
     close: string
+    completedWorkPhotoAlt: string
 }
 
 type ReviewResolutionCopy = Pick<ReviewsCopy, 'issueDiscount' | 'promoNote' | 'promoError' | 'promoCreated' | 'copyError' | 'copyCode' | 'discountPercent' | 'expiresInDays' | 'issue' | 'cancel' | 'close'>
@@ -75,7 +73,7 @@ export function OwnerAutoCareProviderReviewsPage() {
         () => filterReviews(reviews.data?.reviews ?? [], ratingFilter),
         [ratingFilter, reviews.data?.reviews],
     )
-    const copy = getReviewsCopy(locale)
+    const copy = getReviewsCopy(t)
 
     if (reviews.isLoading) {
         return <ReviewsShell><ReviewsSkeleton label={t('common.loading')} /></ReviewsShell>
@@ -136,8 +134,8 @@ function ReviewsList({ reviews, requests, ratingFilter, onRatingFilterChange, co
 }
 
 function ReviewCard({ review, request, copy, locale }: { review: AutoCareApiReview; request?: AutoCareServiceRequest; copy: ReviewsCopy; locale: string }) {
-    const publishedAt = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(review.createdAt))
-    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{review.providerName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{review.providerName} · {review.providerAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt="Фото выполненной работы" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><ContactClientDialog request={request} copy={copy} /><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
+    const publishedAt = formatDateTime(review.createdAt, locale, { day: 'numeric', month: 'short', year: 'numeric' })
+    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{review.providerName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{review.providerName} · {review.providerAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt={copy.completedWorkPhotoAlt} loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><ContactClientDialog request={request} copy={copy} /><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
 }
 
 function ContactClientDialog({ request, copy }: { request?: AutoCareServiceRequest; copy: ReviewsCopy }) {
@@ -213,8 +211,40 @@ function filterReviews(reviews: AutoCareApiReview[], filter: RatingFilter) {
     return filter === 'all' ? reviews : reviews.filter((review) => review.rating === Number(filter))
 }
 
-function getReviewsCopy(locale: string): ReviewsCopy {
-        return locale === 'ru'
-        ? { eyebrow: 'Рабочая область сервиса', title: 'Отзывы клиентов', description: 'Изучайте отзывы по всем филиалам, выбирайте адрес и связывайтесь с клиентом по телефону, если нужно обсудить решение.', back: 'Вернуться к услугам и ценам', average: 'Средняя оценка', total: 'Всего отзывов', allLocations: 'Все филиалы', locationFilterLabel: 'Филиал и адрес', distribution: 'Распределение оценок', all: 'Все оценки', review: 'отзывов', empty: 'По выбранному фильтру пока нет опубликованных отзывов.', published: 'Опубликован', noProvider: 'Филиал не найден.', noReviewsForLocation: 'У этого филиала пока нет опубликованных отзывов.', contact: 'Связаться с клиентом', contactUnavailable: 'Контакт недоступен', contactNote: 'Позвоните клиенту, чтобы обсудить решение. После разговора можно выпустить персональную скидку отдельной кнопкой в карточке.', clientFallback: 'Клиент AutoCare', phoneUnavailable: 'Номер телефона не указан в заявке.', call: 'Позвонить', issueDiscount: 'Предложить скидку', discountPercent: 'Скидка на следующий визит, %', serviceOptional: 'Услуга (необязательно)', expiresInDays: 'Срок действия, дней', issue: 'Выпустить промокод', cancel: 'Отмена', promoCreated: 'Промокод выпущен', promoNote: 'Предложите клиенту скидку от 1 до 100% после обращения по конкретной заявке. Код одноразовый.', promoError: 'Не удалось выпустить промокод. Попробуйте ещё раз.', copyError: 'Не удалось скопировать промокод.', copyCode: 'Скопировать код', copied: 'Скопировано', close: 'Готово' }
-        : { eyebrow: 'Service workspace', title: 'Customer reviews', description: 'Review every branch and call the customer when you need to discuss a resolution.', back: 'Back to services and pricing', average: 'Average rating', total: 'Total reviews', allLocations: 'All service locations', locationFilterLabel: 'Service location', distribution: 'Rating distribution', all: 'All ratings', review: 'reviews', empty: 'No published reviews match this filter.', published: 'Published', noProvider: 'Service location not found.', noReviewsForLocation: 'This service location has no published reviews yet.', contact: 'Contact customer', contactUnavailable: 'Contact unavailable', contactNote: 'Call the customer to discuss a resolution. You can issue a personal discount with the separate action on the review card.', clientFallback: 'AutoCare customer', phoneUnavailable: 'No phone number was provided in the request.', call: 'Call customer', issueDiscount: 'Offer discount', discountPercent: 'Discount for next visit, %', serviceOptional: 'Service (optional)', expiresInDays: 'Valid for, days', issue: 'Issue promo code', cancel: 'Cancel', promoCreated: 'Promo code issued', promoNote: 'Offer a 1–100% discount after discussing the issue with the client. The code can be used once.', promoError: 'Could not issue the promo code. Please try again.', copyError: 'Could not copy the promo code.', copyCode: 'Copy code', copied: 'Copied', close: 'Done' }
+function getReviewsCopy(t: I18nContextValue['t']): ReviewsCopy {
+    return {
+        eyebrow: t('autocare.ownerReviewsEyebrow'),
+        title: t('autocare.ownerReviewsTitle'),
+        description: t('autocare.ownerReviewsDescription'),
+        back: t('autocare.ownerReviewsBack'),
+        average: t('autocare.ownerReviewsAverage'),
+        total: t('autocare.ownerReviewsTotal'),
+        allLocations: t('autocare.ownerReviewsAllLocations'),
+        locationFilterLabel: t('autocare.ownerReviewsLocationFilterLabel'),
+        distribution: t('autocare.ownerReviewsDistribution'),
+        all: t('autocare.ownerReviewsAllRatings'),
+        review: t('autocare.ownerReviewsReview'),
+        empty: t('autocare.ownerReviewsEmpty'),
+        published: t('autocare.ownerReviewsPublished'),
+        noProvider: t('autocare.ownerReviewsNoProvider'),
+        noReviewsForLocation: t('autocare.ownerReviewsNoReviewsForLocation'),
+        contact: t('autocare.ownerReviewsContact'),
+        contactUnavailable: t('autocare.ownerReviewsContactUnavailable'),
+        contactNote: t('autocare.ownerReviewsContactNote'),
+        clientFallback: t('autocare.ownerReviewsClientFallback'),
+        phoneUnavailable: t('autocare.ownerReviewsPhoneUnavailable'),
+        call: t('autocare.ownerReviewsCall'),
+        issueDiscount: t('autocare.ownerReviewsIssueDiscount'),
+        discountPercent: t('autocare.ownerReviewsDiscountPercent'),
+        expiresInDays: t('autocare.ownerReviewsExpiresInDays'),
+        issue: t('autocare.ownerReviewsIssue'),
+        cancel: t('autocare.ownerReviewsCancel'),
+        promoCreated: t('autocare.ownerReviewsPromoCreated'),
+        promoNote: t('autocare.ownerReviewsPromoNote'),
+        promoError: t('autocare.ownerReviewsPromoError'),
+        copyError: t('autocare.ownerReviewsCopyError'),
+        copyCode: t('autocare.ownerReviewsCopyCode'),
+        close: t('autocare.ownerReviewsClose'),
+        completedWorkPhotoAlt: t('autocare.ownerReviewsCompletedWorkPhotoAlt'),
+    }
 }
