@@ -8,14 +8,14 @@ const resourcesSource = await readFile(resolve(projectRoot, 'src/pages/owner-aut
 
 const compactCalendarControls = [
     ['calendar test id', /data-testid="owner-capacity-calendar"/],
-    ['compact calendar title', /Календарь филиала|Branch calendar/],
-    ['branch appointment summary', /подтверждённых записей|confirmed appointments/],
+    ['compact calendar title translation', /autocare\.ownerCapacityCalendarTitle/],
+    ['branch appointment summary translation', /autocare\.ownerCapacityCalendarConfirmedCount/],
     ['branch occupancy', /appointmentCapacity/],
 ]
 const resourceControls = [
     ['resource query', /useGetOwnerAutoCareCapacityResourcesQuery/],
     ['reservation query', /useGetOwnerAutoCareCapacityReservationsQuery/],
-    ['empty resource state', /Ресурсы ещё не добавлены|No resources yet/],
+    ['empty resource state translation', /autocare\.ownerCapacityResourcesEmpty/],
     ['resource creation form', /onSubmit=\{\(event\) => void addResource\(event\)\}/],
     ['resource creation mutation', /useCreateOwnerAutoCareCapacityResourceMutation/],
     ['resource mutation error state', /createState\.error/],

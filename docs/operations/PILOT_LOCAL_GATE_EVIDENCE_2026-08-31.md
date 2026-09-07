@@ -4376,3 +4376,21 @@ npm 10; нужен новый GitHub Actions run на опубликованно
 всего pipeline. Deployment/DNS, staging API, private media/restore, pilot
 participants и production SEO evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 478 (08.09.2026) — capacity contract после i18n
+
+1–10. `[x]` GitHub Actions run для SHA `6402de8` подтвердил исправление
+lockfile: backend `npm ci` прошёл в dependency/security, backend и real-stack
+jobs; security job завершился успешно. Следующий failure был уже в
+`Backend quality gates`, а не в установке зависимостей.
+
+11–20. `[x]` Локальный CI-equivalent replay выявил устаревший source checker:
+`check-capacity-ui.mjs` требовал русские/английские raw strings после перехода
+Owner capacity UI на translation keys. Checker и его regression test теперь
+проверяют `autocare.ownerCapacityCalendar*` и
+`autocare.ownerCapacityResourcesEmpty`; contract tests проходят **2/2**,
+полный `quality:backend` — PASS, server unit — **291 файлов / 1051 тест**.
+
+21–30. `[~]` Новый checker fix готов к следующему runner result; deployment/DNS,
+staging API, private media/restore, pilot participants и production SEO
+evidence остаются внешними gates. Readiness остаётся **96.5% (193/200)**.

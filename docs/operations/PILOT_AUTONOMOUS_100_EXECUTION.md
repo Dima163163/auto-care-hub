@@ -491,6 +491,13 @@ anonymized samples/participant rows отсутствуют.
   npm 10 install added **372 packages**, backend build passed, and backend
   tooling tests passed **5/5**. The next published SHA still needs a GitHub
   Actions run to confirm the full pipeline.
+- The new SHA confirmed backend install/security success, then exposed a stale
+  `check-capacity-ui` source contract that still searched localized raw strings
+  after the Owner capacity surface moved to translation keys. The checker and
+  regression test now assert the translation keys; the contract passes **2/2**
+  and a CI-equivalent full `quality:backend` replay passes, including server
+  unit coverage **291 files / 1051 tests** and backend build. A fresh Actions
+  run is still required to confirm the published fix.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
