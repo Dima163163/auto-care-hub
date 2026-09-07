@@ -474,6 +474,11 @@ anonymized samples/participant rows отсутствуют.
   alongside compatibility hosts, uses it as primary origin, and the Render
   production config contract enforces its presence; deployment/DNS/API
   availability remains an external gate.
+- Public GitHub Actions job metadata showed the latest quality runs failing at
+  backend `npm ci` before build/test, while local package/lock metadata and
+  `npm ci --dry-run` are consistent. Backend workflow installs now use bounded
+  npm fetch retries with `--no-audit --no-fund`; the next runner result is
+  required to validate the resilience change.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

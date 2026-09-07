@@ -4320,3 +4320,22 @@ Deployment DNS, Render service state, staging API, Lighthouse и rendered HTML
 21–30. `[~]` Устранён подтверждённый CORS/origin mismatch в source config без
 отправки запросов в Render и без изменения secrets. Внешний deployment blocker
 остаётся открытым; readiness остаётся **96.5% (193/200)**.
+
+## Порция 475 (08.09.2026) — CI backend install resilience
+
+1–10. `[x]` GitHub Actions probe по run для `ca044d3`/`7166ace` показал
+одинаковое падение трёх jobs на шаге backend `npm ci`, до build/test; публичный
+job metadata подтверждает failure именно install step, а API job logs требуют
+админский доступ. Локальный `npm ci --dry-run` и lockfile/package metadata
+согласованы: **18/18 dependencies, 17/17 devDependencies**, missing/extra
+entries отсутствуют.
+
+11–20. `[x]` Backend install steps в quality workflow получили
+`--no-audit --no-fund` и bounded npm registry retries (5 попыток, exponential
+factor 2, timeout 1–30 s). Это устраняет лишние сетевые обращения и делает
+transient registry failures recoverable, не меняя dependency graph или lockfile.
+
+21–30. `[~]` Source-level CI resilience улучшена и локально проверена; нужен
+следующий GitHub runner result для подтверждения. External deployment/DNS,
+staging API, S3/AV, backup restore, pilot participants и production SEO
+evidence остаются открытыми; readiness остаётся **96.5% (193/200)**.
