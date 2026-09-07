@@ -28,6 +28,16 @@ vi.mock('./OwnerProviderProfileChangeForm', () => ({
     OwnerProviderProfileChangeForm: () => null,
 }))
 
+vi.mock('@/shared/lib/useTranslation', () => ({
+    useTranslation: () => ({
+        locale: 'ru',
+        t: (key: string) => ({
+            'autocare.ownerProviderOnboardingCancel': 'Отменить',
+            'autocare.ownerProviderOnboardingSubmitVerification': 'Отправить на проверку',
+        }[key] ?? key),
+    }),
+}))
+
 const provider: AutoCareApiProvider = {
     id: 'provider-1',
     name: 'ProService',
