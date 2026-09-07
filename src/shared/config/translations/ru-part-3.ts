@@ -1038,6 +1038,7 @@ export const ruPart3 = {
         providerAmenities: 'Удобства для клиентов',
         providerFindUs: 'Как нас найти',
         providerMapLabel: 'Карта расположения сервиса',
+        providerMapMarkerLabel: 'Расположение сервиса «{{name}}»',
         providerMobileService: 'Выездной сервис',
         providerMobileServiceWithRadius: 'Выездной сервис · до {{radius}} км',
         providerPickupDelivery: 'Заберём и доставим авто',

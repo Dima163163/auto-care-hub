@@ -1783,6 +1783,7 @@ export const enTranslations = {
         providerAmenities: 'Customer amenities',
         providerFindUs: 'How to find us',
         providerMapLabel: 'Service location map',
+        providerMapMarkerLabel: '{{name}} service location',
         providerMobileService: 'Mobile service',
         providerMobileServiceWithRadius: 'Mobile service · up to {{radius}} km',
         providerPickupDelivery: 'Vehicle pickup and delivery',

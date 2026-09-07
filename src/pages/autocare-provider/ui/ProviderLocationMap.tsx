@@ -31,11 +31,16 @@ export function ProviderLocationMap({ provider }: { provider: ProviderProfile })
             tileLayer.addTo(map)
         })
         tileLayer.addTo(map)
-        L.marker(position, { icon: L.divIcon({ className: 'provider-map-marker-host', html: '<span class="provider-map-marker" aria-hidden="true"></span>', iconSize: [32, 42], iconAnchor: [16, 42] }) }).addTo(map)
+        const marker = L.marker(position, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'provider-map-marker-host', html: '<span class="provider-map-marker" aria-hidden="true"></span>', iconSize: [32, 42], iconAnchor: [16, 42] }) }).addTo(map)
+        const markerElement = marker.getElement()
+        const markerLabel = t('autocare.providerMapMarkerLabel', { name: provider.name })
+        markerElement?.setAttribute('role', 'img')
+        markerElement?.setAttribute('aria-label', markerLabel)
+        markerElement?.setAttribute('title', markerLabel)
         const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => map.invalidateSize())
         resizeObserver?.observe(container)
         return () => { resizeObserver?.disconnect(); map.remove() }
-    }, [latitude, longitude])
+    }, [latitude, longitude, provider.name, t])
 
     return <div className="relative h-full min-h-36 overflow-hidden rounded-[var(--radius-card)]"><div ref={mapContainerRef} role="region" aria-label={t('autocare.providerMapLabel')} className="provider-location-map h-full w-full" /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provider.address)}`} target="_blank" rel="noreferrer" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-control)] bg-card px-3 py-2 text-xs font-black text-primary shadow-lg">{t('autocare.viewOnMap')}</a></div>
 }

@@ -70,7 +70,7 @@ export function AboutPage() {
                     <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         {process.map(({ icon: Icon, titleKey, textKey }, index) => (
                             <article key={titleKey} className="relative rounded-[var(--radius-panel)] border border-border bg-background p-5">
-                                <span className="absolute right-5 top-5 text-xs font-black text-primary/60">0{index + 1}</span>
+                                <span className="absolute right-5 top-5 text-xs font-black text-primary">0{index + 1}</span>
                                 <span className="flex size-11 items-center justify-center rounded-[var(--radius-control)] bg-primary text-primary-foreground"><Icon className="size-5" /></span>
                                 <h2 className="mt-5 text-base font-black">{t(titleKey)}</h2>
                                 <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">{t(textKey)}</p>
@@ -115,7 +115,7 @@ export function AboutPage() {
                 <div className="absolute inset-0 -z-10 bg-hero-overlay/75" />
                 <div className="mx-auto flex max-w-[var(--layout-public-max)] flex-col gap-6 px-[var(--layout-gutter)] py-12 sm:flex-row sm:items-center sm:justify-between sm:py-16">
                     <div className="max-w-2xl">
-                        <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">{t('marketing.about.ctaEyebrow')}</p>
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-map-pin">{t('marketing.about.ctaEyebrow')}</p>
                         <h2 className="mt-3 text-3xl font-black tracking-tight">{t('marketing.about.ctaTitle')}</h2>
                         <p className="mt-3 text-sm font-medium leading-6 text-primary-foreground/75">{t('marketing.about.ctaText')}</p>
                     </div>
@@ -137,7 +137,7 @@ function AboutHero() {
             <div className="absolute inset-0 -z-10 bg-gradient-to-r from-hero-overlay via-hero-overlay/90 to-hero-overlay/55" />
             <div className="mx-auto grid max-w-[var(--layout-public-max)] gap-10 px-[var(--layout-gutter)] py-16 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
                 <div className="max-w-3xl">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{t('marketing.about.eyebrow')}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-map-pin">{t('marketing.about.eyebrow')}</p>
                     <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-[-0.035em] sm:text-5xl">{t('marketing.about.detailedTitle')}</h1>
                     <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-primary-foreground/80">{t('marketing.about.detailedDescription')}</p>
                     <div className="mt-8 flex flex-wrap gap-3">
@@ -156,7 +156,7 @@ function AboutHero() {
 }
 
 function StatCard({ value, label }: { value: string; label: string }) {
-    return <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.08] p-5 backdrop-blur-sm"><p className="text-2xl font-black text-primary">{value}</p><p className="mt-2 text-xs font-bold leading-5 text-primary-foreground/70">{label}</p></div>
+    return <div className="rounded-[var(--radius-panel)] border border-primary-foreground/15 bg-primary-foreground/[0.08] p-5 backdrop-blur-sm"><p className="text-2xl font-black text-map-pin">{value}</p><p className="mt-2 text-xs font-bold leading-5 text-primary-foreground/70">{label}</p></div>
 }
 
 function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
