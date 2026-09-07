@@ -244,6 +244,11 @@ anonymized samples/participant rows отсутствуют.
   `8681a9c` with frontend **152/488 PASS**.
 - Post-owner-provider-copy `npm run check:local-mvp` on `8681a9c` passes all 43
   checks, including the responsive Chromium matrix.
+- Owner dashboard metric cards now use typed translation keys for labels/notes
+  and shared locale currency formatting; metric calculations and API semantics
+  are unchanged.
+- Post-owner-metrics `npm run check:local-mvp` on `b953ac8` passes all 43 checks,
+  including the responsive Chromium matrix; frontend suite is **152/488 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

@@ -3639,3 +3639,20 @@ time, режимов связи, estimated price, статусов чата, CTA
 surface без изменения API, communication settings или mutation semantics.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 438 (07.09.2026) — localized owner dashboard metrics
+
+1–10. `[x]` Owner dashboard metric grid больше не держит RU/EN copy, raw
+`total/active locations` и локальное системное форматирование RUB внутри
+компонента. Карточки заявок, конверсии, подтверждённых смет и рейтинга теперь
+используют translation contract и общий `formatCurrency`.
+
+11–20. `[x]` Translation schema, `git diff --check`, ESLint без warnings,
+Vite production build и полный `check:local-mvp` на commit `b953ac8` завершены
+успешно: все 43 проверки PASS, включая responsive Chromium matrix;
+frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт multilingual copy/number-format gap в owner dashboard
+metrics без изменения расчётов метрик или API semantics. Real-device language
+review, staging/production, deployed Lighthouse и pilot evidence остаются
+внешними gates; readiness остаётся **96.5% (193/200)**.
