@@ -3245,3 +3245,16 @@ schema.
 21–30. `[~]` Deployed artifact inventory, real API/staging URL, Lighthouse,
 real-device assistive technology и owner acceptance остаются внешними gates;
 локальный asset scan их не заменяет.
+
+## Порция 414 (07.09.2026) — Vite ESM config warning removal
+
+1–10. `[x]` В `vite.config.ts` заменён CommonJS-style `__dirname` на
+ESM-native `import.meta.dirname` и нормализован `node:path` import. Это
+соответствует текущему Node 24 runtime и будущему Vite native config loader.
+
+11–20. `[x]` Повторный `VITE_API_MODE=real npm run build:vite` завершён без
+прежнего `configLoader: native` warning; production fixture-leakage scan снова
+PASS, `git diff --check` PASS.
+
+21–30. `[~]` Исправление устраняет локальный build/config debt, но не меняет
+внешние staging/production gates и readiness denominator.

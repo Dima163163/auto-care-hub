@@ -51,6 +51,9 @@ demo contact markers. The Chrome spot-check showing synthetic provider contact
 data was intentionally running the local MSW/mock surface, not the real API
 bundle.
 
+The Vite config now uses the ESM-native `import.meta.dirname`; the real build no
+longer emits the upcoming Vite `configLoader: native` `__dirname` warning.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

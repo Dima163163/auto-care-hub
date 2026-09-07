@@ -176,6 +176,8 @@ anonymized samples/participant rows отсутствуют.
 - `VITE_API_MODE=real npm run build:vite` and
   `npm run check:production-fixture-leakage`: PASS; no demo contact markers in
   generated JavaScript assets. Mock-mode UI contacts are local synthetic data.
+- Vite ESM config uses `import.meta.dirname`; the real build emits no
+  `__dirname`/future-native-config warning.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
