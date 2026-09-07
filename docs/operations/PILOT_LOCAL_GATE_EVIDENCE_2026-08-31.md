@@ -3821,3 +3821,18 @@ suite — **153/489 PASS**.
 изменения validation helper, grant mutation или liability query shape.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 449 (07.09.2026) — localized restricted provider access state
+
+1–10. `[x]` Restricted-access branch в provider details page больше не содержит
+RU/EN ternary. Сообщение о доступе переведено через typed translation contract;
+workspace scope lookup и owner permission check не изменены.
+
+11–20. `[x]` Полный `check:local-mvp` на access-localization worktree поверх
+`131e138` завершён с `all local MVP checks passed`, включая responsive
+Chromium matrix; ESLint и frontend suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт последний raw-copy gap в restricted branch provider details
+без изменения authorization semantics. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.
