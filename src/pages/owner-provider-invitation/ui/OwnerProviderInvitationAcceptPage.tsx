@@ -10,6 +10,7 @@ import {
 import { useGetMeQuery } from '@/features/auth'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
+import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type InvitationError = {
@@ -27,72 +28,44 @@ function getErrorStatus(error: unknown) {
     return undefined
 }
 
-function getRoleLabel(role: AutoCareProviderInvitationAcceptResponse['membership']['role'], isRussian: boolean) {
-    if (isRussian) {
-        return role === 'manager' ? 'Менеджер филиала' : 'Сотрудник'
-    }
-
-    return role === 'manager' ? 'Branch manager' : 'Staff member'
+function getRoleLabel(role: AutoCareProviderInvitationAcceptResponse['membership']['role'], t: (key: TranslationKey) => string) {
+    return role === 'manager'
+        ? t('autocare.ownerInvitationRoleManager')
+        : t('autocare.ownerInvitationRoleStaff')
 }
 
 export function OwnerProviderInvitationAcceptPage() {
-    const { locale } = useTranslation()
+    const { t } = useTranslation()
     const [searchParams] = useSearchParams()
     const { data: user } = useGetMeQuery()
     const [acceptInvitation, acceptState] = useAcceptAutoCareProviderInvitationMutation()
     const [token, setToken] = useState(() => searchParams.get('token')?.trim() ?? '')
     const [hasSubmitted, setHasSubmitted] = useState(false)
     const [acceptedResult, setAcceptedResult] = useState<AutoCareProviderInvitationAcceptResponse | null>(null)
-    const isRussian = locale === 'ru'
-    const copy = isRussian
-        ? {
-            back: 'Вернуться в профиль',
-            eyebrow: 'Команда автосервиса',
-            title: 'Принять приглашение',
-            description: 'Подключите свой аккаунт к рабочему пространству автосервиса. После принятия появятся доступные вам филиалы и заявки.',
-            account: 'Аккаунт получателя',
-            tokenLabel: 'Токен приглашения',
-            tokenPlaceholder: 'Вставьте токен из письма или уведомления',
-            accept: 'Принять приглашение',
-            accepting: 'Принимаем…',
-            required: 'Введите токен приглашения, чтобы продолжить.',
-            expired: 'Срок действия приглашения истёк. Попросите владельца отправить новое приглашение.',
-            wrongEmail: 'Это приглашение выдано на другой адрес электронной почты. Войдите в нужный аккаунт и попробуйте снова.',
-            invalid: 'Приглашение недействительно, отозвано или уже использовано.',
-            failed: 'Не удалось принять приглашение. Попробуйте ещё раз.',
-            acceptedTitle: 'Приглашение принято',
-            acceptedDescription: 'Теперь у вас есть доступ к рабочему пространству автосервиса.',
-            role: 'Роль',
-            scope: 'Область доступа',
-            allBranches: 'Все филиалы',
-            assignedBranch: 'Назначенный филиал',
-            openWorkspace: 'Открыть рабочее пространство',
-            goToProfile: 'Перейти в профиль',
-        }
-        : {
-            back: 'Back to profile',
-            eyebrow: 'Automotive service team',
-            title: 'Accept invitation',
-            description: 'Connect your account to the service workspace. After accepting, you will see the branches and requests available to you.',
-            account: 'Recipient account',
-            tokenLabel: 'Invitation token',
-            tokenPlaceholder: 'Paste the token from the email or notification',
-            accept: 'Accept invitation',
-            accepting: 'Accepting…',
-            required: 'Enter an invitation token to continue.',
-            expired: 'This invitation has expired. Ask the owner to send a new invitation.',
-            wrongEmail: 'This invitation was issued for another email address. Sign in to the intended account and try again.',
-            invalid: 'This invitation is invalid, revoked, or already used.',
-            failed: 'We could not accept the invitation. Please try again.',
-            acceptedTitle: 'Invitation accepted',
-            acceptedDescription: 'You now have access to the automotive service workspace.',
-            role: 'Role',
-            scope: 'Access scope',
-            allBranches: 'All branches',
-            assignedBranch: 'Assigned branch',
-            openWorkspace: 'Open workspace',
-            goToProfile: 'Go to profile',
-        }
+    const copy = {
+        back: t('autocare.ownerInvitationBack'),
+        eyebrow: t('autocare.ownerInvitationEyebrow'),
+        title: t('autocare.ownerInvitationTitle'),
+        description: t('autocare.ownerInvitationDescription'),
+        account: t('autocare.ownerInvitationAccount'),
+        tokenLabel: t('autocare.ownerInvitationTokenLabel'),
+        tokenPlaceholder: t('autocare.ownerInvitationTokenPlaceholder'),
+        accept: t('autocare.ownerInvitationAccept'),
+        accepting: t('autocare.ownerInvitationAccepting'),
+        required: t('autocare.ownerInvitationRequired'),
+        expired: t('autocare.ownerInvitationExpired'),
+        wrongEmail: t('autocare.ownerInvitationWrongEmail'),
+        invalid: t('autocare.ownerInvitationInvalid'),
+        failed: t('autocare.ownerInvitationFailed'),
+        acceptedTitle: t('autocare.ownerInvitationAcceptedTitle'),
+        acceptedDescription: t('autocare.ownerInvitationAcceptedDescription'),
+        role: t('autocare.ownerInvitationRole'),
+        scope: t('autocare.ownerInvitationScope'),
+        allBranches: t('autocare.ownerInvitationAllBranches'),
+        assignedBranch: t('autocare.ownerInvitationAssignedBranch'),
+        openWorkspace: t('autocare.ownerInvitationOpenWorkspace'),
+        goToProfile: t('autocare.ownerInvitationGoToProfile'),
+    }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -139,7 +112,7 @@ export function OwnerProviderInvitationAcceptPage() {
                         <dl className="mt-7 grid gap-3 sm:grid-cols-2">
                             <div className="rounded-xl border border-border bg-muted/40 p-4">
                                 <dt className="text-xs font-semibold text-muted-foreground">{copy.role}</dt>
-                                <dd className="mt-1 text-sm font-bold text-foreground">{getRoleLabel(acceptedResult.membership.role, isRussian)}</dd>
+                                <dd className="mt-1 text-sm font-bold text-foreground">{getRoleLabel(acceptedResult.membership.role, t)}</dd>
                             </div>
                             <div className="rounded-xl border border-border bg-muted/40 p-4">
                                 <dt className="text-xs font-semibold text-muted-foreground">{copy.scope}</dt>
@@ -187,7 +160,7 @@ export function OwnerProviderInvitationAcceptPage() {
                         <Mail aria-hidden="true" className="size-4 shrink-0 text-primary" />
                         <div className="min-w-0">
                             <p className="text-xs font-semibold text-muted-foreground">{copy.account}</p>
-                            <p className="truncate text-sm font-bold text-foreground">{user?.email ?? '—'}</p>
+                            <p className="truncate text-sm font-bold text-foreground">{user?.email ?? t('common.notProvided')}</p>
                         </div>
                     </div>
 
@@ -222,13 +195,13 @@ export function OwnerProviderInvitationAcceptPage() {
 
                     <div className="mt-6 flex items-start gap-3 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
                         <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
-                        <span>{isRussian ? 'Токен используется один раз и не сохраняется в профиле после принятия.' : 'The token is single-use and is not stored in your profile after acceptance.'}</span>
+                        <span>{t('autocare.ownerInvitationSecurityNote')}</span>
                     </div>
                 </div>
 
                 <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock3 aria-hidden="true" className="size-3.5" />
-                    {isRussian ? 'Если приглашение больше не действует, попросите владельца создать новое.' : 'If the invitation is no longer active, ask the owner to create a new one.'}
+                    {t('autocare.ownerInvitationInactiveHint')}
                 </p>
             </section>
         </main>

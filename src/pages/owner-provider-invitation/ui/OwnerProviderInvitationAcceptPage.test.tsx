@@ -22,11 +22,41 @@ vi.mock('@/entities/automotive-service', () => ({
 }))
 
 function renderPage(initialEntry = '/owner/invitations/accept?token=invite-token', locale: 'en' | 'ru' = 'en') {
+    const testTranslations: Partial<Record<TranslationKey, string>> = {
+        'autocare.ownerInvitationBack': 'Back to profile',
+        'autocare.ownerInvitationEyebrow': 'Automotive service team',
+        'autocare.ownerInvitationTitle': 'Accept invitation',
+        'autocare.ownerInvitationDescription': 'Connect your account to the service workspace.',
+        'autocare.ownerInvitationAccount': 'Recipient account',
+        'autocare.ownerInvitationTokenLabel': 'Invitation token',
+        'autocare.ownerInvitationTokenPlaceholder': 'Paste the token from the email or notification',
+        'autocare.ownerInvitationAccept': 'Accept invitation',
+        'autocare.ownerInvitationAccepting': 'Accepting…',
+        'autocare.ownerInvitationRequired': 'Enter an invitation token to continue.',
+        'autocare.ownerInvitationExpired': 'This invitation has expired. Ask the owner to send a new invitation.',
+        'autocare.ownerInvitationWrongEmail': 'Wrong email',
+        'autocare.ownerInvitationInvalid': 'Invalid invitation',
+        'autocare.ownerInvitationFailed': 'Could not accept invitation.',
+        'autocare.ownerInvitationAcceptedTitle': 'Invitation accepted',
+        'autocare.ownerInvitationAcceptedDescription': 'You now have access.',
+        'autocare.ownerInvitationRole': 'Role',
+        'autocare.ownerInvitationScope': 'Access scope',
+        'autocare.ownerInvitationAllBranches': 'All branches',
+        'autocare.ownerInvitationAssignedBranch': 'Assigned branch',
+        'autocare.ownerInvitationOpenWorkspace': 'Open workspace',
+        'autocare.ownerInvitationGoToProfile': 'Go to profile',
+        'autocare.ownerInvitationRoleManager': 'Branch manager',
+        'autocare.ownerInvitationRoleStaff': 'Staff member',
+        'autocare.ownerInvitationSecurityNote': 'The token is single-use.',
+        'autocare.ownerInvitationInactiveHint': 'Ask the owner to create a new one.',
+        'common.notProvided': 'Not provided',
+    }
+
     return render(
         <I18nContext.Provider value={{
             locale,
             setLocale: vi.fn(),
-            t: (key: TranslationKey) => key,
+            t: (key: TranslationKey) => testTranslations[key] ?? key,
         }}>
             <MemoryRouter initialEntries={[initialEntry]}>
                 <OwnerProviderInvitationAcceptPage />
