@@ -3319,3 +3319,20 @@ backend dependency trees вернули **0 vulnerabilities**.
 21–30. `[~]` Dependency audit не закрывает внешние staging/production runtime,
 private S3, deployed Lighthouse или manual/participant acceptance gates;
 readiness остаётся **96.5% (193/200)**.
+
+## Порция 419 (07.09.2026) — provider profile accessibility-tree replay
+
+1–10. `[x]` В Chrome на локальном маршруте
+`/services/api-proservice-moscow` подтверждены заголовки профиля, CTA
+`Выбрать и записаться` и `Уточнить стоимость`, список из **18 услуг**, gallery
+controls и booking section со слотами.
+
+11–20. `[x]` Accessibility tree также показывает language/theme controls,
+profile navigation, legal/footer links, help action и карту с видимой
+OpenStreetMap attribution. В профиле нет показанного runtime error state,
+который был на отдельном discovery screenshot.
+
+21–30. `[~]` Это read-only local synthetic/mock replay; контакты и provider data
+не являются real API evidence. Pixel-level owner sign-off, real devices,
+deployed URL и production/staging behavior остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.

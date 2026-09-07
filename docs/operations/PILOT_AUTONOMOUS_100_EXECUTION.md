@@ -186,6 +186,9 @@ anonymized samples/participant rows отсутствуют.
   including the responsive Chromium matrix.
 - Frontend and backend production dependency audits pass with zero high-level
   vulnerabilities.
+- Chrome accessibility-tree spot-check confirms the synthetic provider profile
+  exposes booking/request CTAs, service rows, booking slots, language/theme
+  controls, legal links and visible map attribution.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

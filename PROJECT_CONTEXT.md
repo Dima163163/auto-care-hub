@@ -69,6 +69,12 @@ Chromium matrix.
 Both frontend and backend `npm audit --omit=dev --audit-level=high` checks also
 report zero vulnerabilities, matching the dependency gates in Quality CI.
 
+The current Chrome accessibility-tree spot-check of the synthetic provider
+profile shows the primary booking/request CTAs, 18 service rows, booking slots,
+language/theme controls, legal/footer links, and visible OpenStreetMap
+attribution. This remains local mock-mode evidence, not real API or production
+acceptance.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.
