@@ -31,7 +31,7 @@ const CONTRACTS = [
         id: 15,
         name: 'Icon-only aria labels',
         files: {
-            'src/pages/autocare-results/ui/AutoCareMapPreview.tsx': ['aria-label="Zoom in"', 'aria-label="Zoom out"', 'mapCurrentLocation'],
+            'src/pages/autocare-results/ui/AutoCareMapPreview.tsx': ["aria-label={t('cabinet.publicList.mapZoomIn')}", "aria-label={t('cabinet.publicList.mapZoomOut')}", 'mapCurrentLocation'],
             'src/widgets/workspace-shell/ui/WorkspaceHeader.tsx': ["aria-label={t('common.menu')}", "aria-label={t('navigation.notifications')}"],
             'src/widgets/workspace-shell/ui/WorkspaceMobileMenu.tsx': ["aria-label={t('common.close')}"],
         },

@@ -191,6 +191,8 @@ autocare: {
         ownerProviderOffersLabel: 'услуг',
         heroTitle: 'Найдите лучший автосервис рядом',
         heroDescription: 'Сравните цены, рейтинги и время записи за пару кликов',
+        heroMapLabel: 'Карта поиска автосервисов',
+        heroMapZoomLevel: 'Масштаб карты: {{percent}} процентов',
         byService: 'По услуге',
         byProvider: 'По автосервису',
         searchModeLabel: 'Режим поиска',

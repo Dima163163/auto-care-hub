@@ -936,6 +936,8 @@ export const enTranslations = {
         ownerProviderOffersLabel: 'services',
         heroTitle: 'Find the best auto service near you',
         heroDescription: 'Compare prices, ratings and booking times in a few clicks',
+        heroMapLabel: 'Auto service discovery map',
+        heroMapZoomLevel: 'Map zoom: {{percent}} percent',
         byService: 'By service',
         byProvider: 'By auto service',
         searchModeLabel: 'Search mode',

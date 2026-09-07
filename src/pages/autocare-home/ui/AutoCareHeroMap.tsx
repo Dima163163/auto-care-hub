@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { MapPin, Minus, Plus, Star, Wrench } from 'lucide-react'
+
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 const offers = [
     { id: 'north', top: '9%', left: '41%', price: 'от 3 200 ₽', rating: '4.7', tone: 'green' },
@@ -16,21 +19,30 @@ const servicePins = [
 ] as const
 
 export function AutoCareHeroMap() {
+    const { t } = useTranslation()
+    const [zoom, setZoom] = useState(1)
+
+    const zoomIn = () => setZoom((current) => Math.min(1.2, current + 0.1))
+    const zoomOut = () => setZoom((current) => Math.max(1, current - 0.1))
+
     return (
-        <div className="absolute inset-0 overflow-hidden bg-map-surface">
-            <img src="/images/autocare/hero-map-generated.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-center" aria-hidden="true" />
-            <div className="absolute inset-0 bg-hero-overlay/15" aria-hidden="true" />
-            <div className="absolute left-[71%] top-[48%] size-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/50 bg-primary/15 shadow-[0_0_34px_var(--hero-glow)] lg:size-56" aria-hidden="true">
-                <span className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-primary-foreground bg-primary shadow-[0_0_16px_var(--primary)]" />
-            </div>
-            <div className="hidden lg:block">
-                {servicePins.map((pin) => <ServicePin key={`${pin.top}-${pin.left}`} {...pin} />)}
-                {offers.map((offer) => <OfferMarker key={offer.id} {...offer} />)}
+        <div className="absolute inset-0 overflow-hidden bg-map-surface" role="region" aria-label={t('autocare.heroMapLabel')}>
+            <div className="absolute inset-0 origin-center transition-transform duration-300" style={{ transform: `scale(${zoom})` }}>
+                <img src="/images/autocare/hero-map-generated.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-center" aria-hidden="true" />
+                <div className="absolute inset-0 bg-hero-overlay/15" aria-hidden="true" />
+                <div className="absolute left-[71%] top-[48%] size-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/50 bg-primary/15 shadow-[0_0_34px_var(--hero-glow)] lg:size-56" aria-hidden="true">
+                    <span className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-primary-foreground bg-primary shadow-[0_0_16px_var(--primary)]" />
+                </div>
+                <div className="hidden lg:block">
+                    {servicePins.map((pin) => <ServicePin key={`${pin.top}-${pin.left}`} {...pin} />)}
+                    {offers.map((offer) => <OfferMarker key={offer.id} {...offer} />)}
+                </div>
             </div>
             <div className="absolute bottom-12 right-8 hidden flex-col overflow-hidden rounded-[9px] border border-primary-foreground/20 bg-map-overlay/90 text-primary-foreground shadow-xl lg:flex">
-                <button type="button" className="flex size-12 items-center justify-center border-b border-primary-foreground/15" aria-label="Увеличить карту"><Plus className="size-6" /></button>
-                <button type="button" className="flex size-12 items-center justify-center" aria-label="Уменьшить карту"><Minus className="size-6" /></button>
+                <button type="button" onClick={zoomIn} className="flex size-12 items-center justify-center border-b border-primary-foreground/15 disabled:cursor-not-allowed disabled:opacity-50" aria-label={t('cabinet.publicList.mapZoomIn')} disabled={zoom >= 1.2}><Plus className="size-6" /></button>
+                <button type="button" onClick={zoomOut} className="flex size-12 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50" aria-label={t('cabinet.publicList.mapZoomOut')} disabled={zoom <= 1}><Minus className="size-6" /></button>
             </div>
+            <span className="sr-only" aria-live="polite">{t('autocare.heroMapZoomLevel', { percent: Math.round(zoom * 100) })}</span>
         </div>
     )
 }
