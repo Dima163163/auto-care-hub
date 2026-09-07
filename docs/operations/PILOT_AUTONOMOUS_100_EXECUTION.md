@@ -296,6 +296,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-provider-profile-form `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; profile/onboarding coverage is
   **2 files / 4 tests PASS**.
+- Provider members panel now uses typed translation keys for team access,
+  invitations, loading/error/retry states and revoke aria-labels; provider and
+  location scopes plus invite/revoke mutations remain unchanged.
+- Post-provider-members `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted members coverage is
+  **1 file / 3 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

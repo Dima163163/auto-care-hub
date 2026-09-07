@@ -3787,3 +3787,20 @@ responsive Chromium matrix; frontend suite — **152/488 PASS**.
 изменения draft persistence, validation или mutation payload. Real-device
 language review, staging/production, deployed Lighthouse и pilot evidence
 остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 447 (07.09.2026) — localized provider members panel
+
+1–10. `[x]` Members panel больше не держит локальный copy-object или locale
+prop. Заголовки, роли, состояния membership/invitation, loading/error/retry,
+invite/revoke feedback и action aria-labels используют typed translation
+contract; provider/location scopes и mutation semantics unchanged.
+
+11–20. `[x]` Members regression — **1 файл / 3 теста PASS**; полный
+`check:local-mvp` на profile-members worktree поверх `c7e9edc` завершён с
+`all local MVP checks passed`, включая responsive Chromium matrix; frontend
+suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт raw-copy localization gap в team-access surface без
+изменения invite/revoke permissions, query shape или provider scope. Real-device
+language review, staging/production, deployed Lighthouse и pilot evidence
+остаются внешними gates; readiness остаётся **96.5% (193/200)**.
