@@ -159,7 +159,7 @@ anonymized samples/participant rows отсутствуют.
 - `npm run check:local-mvp`: все автоматические проверки PASS; responsive Chromium matrix 30/30 также PASS после запуска Next production server с разрешённым loopback-портом. Ручная visual/keyboard/device приёмка остаётся владельческим gate.
 - Backend pilot-focused unit: **288 файлов / 1042 теста**; полный backend
   suite: **371 файл / 1245 тестов**.
-- Frontend unit: **152 файла / 486 тестов**.
+- Frontend unit: **152 файла / 487 тестов**.
 - `npm run check:threat-surface`: PASS, включая availability rate limit.
 - `npm run check:ops-harness`, `check:security-headers`, `check:capacity-ui`, API/OpenAPI checks: PASS.
 - Synthetic discovery: 10 000 — p95 4.2 ms; 100 000 — p95 21.5 ms.
@@ -225,6 +225,13 @@ anonymized samples/participant rows отсутствуют.
 - Post-provider-offering-price `npm run check:local-mvp` on `2f94a34` passes
   all 43 checks, including the responsive Chromium matrix; frontend suite is
   **152/486 PASS**.
+- Request and order summaries now use locale-aware structured offering price
+  and duration formatting; the total label uses the existing `booking.total`
+  translation key. Targeted request/formatter coverage is **4 files / 14 tests
+  PASS**, and production Vite build passes on `3d8264b`.
+- Post-request-summary-localization `npm run check:local-mvp` on `3d8264b` passes
+  all 43 checks, including the responsive Chromium matrix; frontend suite is
+  **152/487 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

@@ -3587,3 +3587,21 @@ Vite production build и полный `check:local-mvp` на commit `2f94a34` з
 payload или booking semantics. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 435 (07.09.2026) — localized request summary pricing and duration
+
+1–10. `[x]` Request summary и order summary теперь используют тот же
+structured price formatter, а hardcoded `Итого` заменён на `booking.total`.
+Длительность предложения хранится численно и форматируется через locale-aware
+minute units; диапазоны `45–60` сохраняют смысл, legacy duration/price strings
+остаются fallback для старых данных.
+
+11–20. `[x]` Добавлены regression tests для duration/price helpers и locale
+formatting: полный frontend suite — **152/487 PASS**, targeted заявочный набор
+**4 файла / 14 тестов PASS**, Vite production build, lint и `check:local-mvp`
+на commit `3d8264b` завершены успешно, включая responsive Chromium matrix.
+
+21–30. `[~]` Закрыт ещё один raw-copy gap в public request flow без изменения
+API payload или booking semantics. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
+**96.5% (193/200)**.
