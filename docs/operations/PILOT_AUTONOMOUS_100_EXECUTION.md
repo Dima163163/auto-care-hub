@@ -414,6 +414,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-admin-catalog-gap `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted catalog-gap coverage is
   **1 file / 1 test PASS**.
+- AutoCare admin dashboard hero and metric grid now use typed translation keys
+  and shared locale number formatting for moderation copy and provider/user
+  counts; statistics calculation and dashboard composition remain unchanged.
+- Post-admin-dashboard-summary `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted dashboard-summary
+  coverage is **1 file / 2 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

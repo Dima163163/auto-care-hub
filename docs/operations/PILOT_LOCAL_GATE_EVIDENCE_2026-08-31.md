@@ -4135,3 +4135,23 @@ Chromium matrix.
 изменения query status, decision/update payloads или service definition fields.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 466 (08.09.2026) — localized admin AutoCare dashboard summary
+
+1–10. `[x]` AutoCare admin dashboard hero и metric grid больше не используют
+локальные RU/EN copy-objects. Hero/metric labels и queue wording используют
+typed translation contract, а pending/metric counts форматируются через shared
+locale number formatter; provider/user statistics и dashboard composition
+остались без изменений.
+
+11–20. `[x]` Dashboard-summary regression — **1 файл / 2 теста PASS**:
+локализованный hero и metric labels отображаются, числа `1 234` и `2 400`
+форматируются для RU locale. ESLint, production build и полный
+`check:local-mvp` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-number-format gap в верхней части admin
+dashboard без изменения provider/user query, statistics calculation или
+dashboard composition. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
