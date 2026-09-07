@@ -3753,3 +3753,20 @@ RU/EN ternaries; даты используют общий `formatDateTime`.
 изменения verification, cancellation или profile-update mutations. Real-device
 language review, staging/production, deployed Lighthouse и pilot evidence
 остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 445 (07.09.2026) — localized provider communication settings
+
+1–10. `[x]` Communication settings form больше не использует raw RU/EN
+ternaries. Labels, select options, switch descriptions, public note и save
+states используют typed translation contract; communication payload и mutation
+semantics unchanged.
+
+11–20. `[x]` Targeted communication regression — **1 файл / 1 тест PASS**;
+полный `check:local-mvp` на commit `c5a123d` завершён с
+`all local MVP checks passed`, включая responsive Chromium matrix; frontend
+suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт raw-copy localization gap в contact/booking settings
+без изменения API payload или mutation semantics. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.

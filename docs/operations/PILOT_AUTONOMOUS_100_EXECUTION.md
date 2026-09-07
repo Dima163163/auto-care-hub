@@ -284,6 +284,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-provider-details-panels `npm run check:local-mvp` on `a4f5551` passes all
   43 checks, including the responsive Chromium matrix; onboarding coverage is
   **1 file / 3 tests PASS**.
+- Provider communication settings now use typed translation keys for all team,
+  business, booking, response-window and switch copy; payload and mutation
+  semantics are unchanged.
+- Post-provider-communication `npm run check:local-mvp` on `c5a123d` passes all
+  43 checks, including the responsive Chromium matrix; targeted communication
+  coverage is **1 file / 1 test PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
