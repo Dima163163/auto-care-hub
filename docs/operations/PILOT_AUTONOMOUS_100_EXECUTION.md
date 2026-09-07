@@ -171,6 +171,8 @@ anonymized samples/participant rows отсутствуют.
 - Feature-ветка опубликована; рабочее дерево чистое.
 - `npm test -- --run`: **151 test files / 480 tests PASS**.
 - `npm run test:server:unit`: **291 test files / 1051 tests PASS**.
+- `npm run test:server:integration`: **14 test files / 63 tests PASS** on the
+  local Docker PostgreSQL profile.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

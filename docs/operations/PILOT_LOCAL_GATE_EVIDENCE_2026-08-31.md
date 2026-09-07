@@ -3216,3 +3216,17 @@ finalState=committed`; cleanup проверен через Docker PostgreSQL —
 21–30. `[~]` Это усиливает локальное PostgreSQL lock evidence для пункта 75,
 но не заменяет staging matrix с реальными API-репликами, Redis/worker
 interleavings и release-candidate acceptance.
+
+## Порция 412 (07.09.2026) — post-smoke Docker integration replay
+
+1–10. `[x]` После добавления multi-process PostgreSQL smoke повторно запущен
+корневой `npm run test:server:integration`; все **14 test files / 63 tests PASS**.
+
+11–20. `[x]` В прогоне подтверждены schema/auth/session, account deletion,
+outbox/lease, owner/admin authorization, AutoCare discovery, capacity и branch
+guards; smoke не оставил временных таблиц и не изменил production-like fixture
+schema.
+
+21–30. `[~]` Это усиливает локальную integration evidence, но не засчитывается
+как staging/production multi-process replay, backup restore, external delivery
+или participant acceptance.

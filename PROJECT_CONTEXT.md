@@ -41,6 +41,10 @@ with one committed winner and one controlled conflict; temporary state tables
 are removed after the run. This strengthens local lock evidence for the
 transition matrix but does not close the external staging replay gate.
 
+The Docker-backed server integration profile remains green at **14 files / 63
+tests**, including AutoCare discovery, route guards, authorization and account
+deletion replay; these fixtures are synthetic and local.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.
