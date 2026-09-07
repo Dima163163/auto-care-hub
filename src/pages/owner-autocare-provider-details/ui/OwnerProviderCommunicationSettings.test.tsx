@@ -14,6 +14,15 @@ vi.mock('@/entities/automotive-service', () => ({
     useUpdateOwnerAutoCareCommunicationSettingsMutation: () => [mocks.update, { isLoading: false, isSuccess: false, error: { status: 503, data: { message: 'temporary failure' } } }],
 }))
 
+vi.mock('@/shared/lib/useTranslation', () => ({
+    useTranslation: () => ({
+        t: (key: string) => ({
+            'autocare.ownerProviderCommunicationSave': 'Сохранить режим связи',
+            'autocare.ownerProviderCommunicationSaveError': 'Не удалось сохранить настройки.',
+        }[key] ?? key),
+    }),
+}))
+
 const provider = {
     id: 'provider-1',
     teamSize: 'small_team',
@@ -36,7 +45,7 @@ describe('OwnerProviderCommunicationSettings', () => {
         process.on('unhandledRejection', onUnhandled)
 
         try {
-            render(<OwnerProviderCommunicationSettings provider={provider} locale="ru" />)
+            render(<OwnerProviderCommunicationSettings provider={provider} />)
 
             await user.click(screen.getByRole('button', { name: 'Сохранить режим связи' }))
 
