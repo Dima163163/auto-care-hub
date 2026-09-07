@@ -3705,3 +3705,19 @@ suite — **152/488 PASS**.
 без изменения API payloads или mutation semantics. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 442 (07.09.2026) — localized owner fleet panel and vehicle form
+
+1–10. `[x]` Fleet panel, responsive vehicle table и add-vehicle form больше не
+держат локальный RU/EN copy object. Заголовки, labels, placeholders, table
+aria-label, submit/toast copy используют translation contract; locale по-прежнему
+принимается из i18n context для brand labels и payload semantics.
+
+11–20. `[x]` Targeted fleet regression — **2 файла / 3 теста PASS**; полный
+`check:local-mvp` на commit `1499b63` завершён с `all local MVP checks passed`,
+включая responsive Chromium matrix; frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт protected fleet copy-localization gap без изменения fleet
+mutation, draft persistence или vehicle snapshot shape. Real-device language
+review, staging/production, deployed Lighthouse и pilot evidence остаются
+внешними gates; readiness остаётся **96.5% (193/200)**.

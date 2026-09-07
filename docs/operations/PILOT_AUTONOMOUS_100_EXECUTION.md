@@ -266,6 +266,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-analytics `npm run check:local-mvp` on `9655361` passes all 43
   checks, including the responsive Chromium matrix; frontend suite is
   **152/488 PASS**.
+- Owner fleet panel, responsive vehicle table and add-vehicle form now use typed
+  translation keys; fleet mutations, draft persistence and vehicle snapshots
+  remain unchanged.
+- Post-owner-fleet `npm run check:local-mvp` on `1499b63` passes all 43 checks,
+  including the responsive Chromium matrix; targeted fleet coverage is **2 files
+  / 3 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
