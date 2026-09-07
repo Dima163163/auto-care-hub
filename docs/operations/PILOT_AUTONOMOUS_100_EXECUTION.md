@@ -439,6 +439,15 @@ anonymized samples/participant rows отсутствуют.
 - Post-super-admin-trust-policy `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted trust-policy coverage is
   **1 file / 2 tests PASS**, including the invalid-value `role="alert"` path.
+- Production-like Next browser audit covers 5 canonical routes × desktop/mobile
+  (**10/10 HTTP 200**), with no horizontal overflow or page errors; mobile
+  menu/Escape, theme round-trip, distance sorting and provider CTA redirect
+  smoke all pass.
+- Real-browser axe WCAG2A/AA matrix initially exposed low-contrast marketing
+  accents, low-contrast review ratings and an unnamed Leaflet marker. Semantic
+  token and marker-label fixes reduce post-fix violations to **0 across 10
+  route/viewport combinations**; the marker regression is **1 file / 1 test
+  PASS**, and the full local MVP gate remains **43/43 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

@@ -4214,3 +4214,28 @@ super-admin trust policy без изменения numeric bounds, rollout selec
 mutation payload. Real-device language review, staging/production, deployed
 Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 470 (08.09.2026) — production-like visual and WCAG axe audit
+
+1–10. `[x]` Production-like `next start` browser matrix для канонических
+маршрутов `/`, `/services`, `/for-owners`, `/about` и
+`/services/api-proservice-moscow` на desktop 1440×900 и mobile 390×844 дала
+**10/10 HTTP 200**, непустой документ, h1, отсутствие horizontal overflow и
+page errors. Interaction smoke подтвердил открытие/закрытие mobile menu через
+Escape, round-trip light↔dark theme, сортировку по расстоянию и redirect CTA
+провайдера на `/login` для anonymous пользователя.
+
+11–20. `[x]` Реальный Chromium axe WCAG2A/AA-аудит сначала выявил serious
+нарушения контраста hero/stat/process accents и review ratings, а также
+недоступный Leaflet marker. Исправления используют semantic tokens
+`text-map-pin`, `text-primary` и `text-rating-foreground`; marker теперь
+неинтерактивен и имеет `role="img"` с локализованными `aria-label`/`title`.
+Post-fix axe matrix дала **0 нарушений во всех 10 route/viewport комбинациях**.
+Добавлен regression **1 файл / 1 тест PASS**; ESLint, production build и
+полный `check:local-mvp -- --json` PASS (43/43, responsive 30/30).
+
+21–30. `[~]` Закрыт local visual/WCAG gap без изменения маршрутов, map
+navigation, rating semantics или auth redirect. Anonymous `GET /api/auth/me`
+с ожидаемым 401 остаётся штатной auth boundary; real-device VoiceOver/
+TalkBack, staging/production, deployed Lighthouse и pilot evidence остаются
+внешними gates. Readiness остаётся **96.5% (193/200)**.
