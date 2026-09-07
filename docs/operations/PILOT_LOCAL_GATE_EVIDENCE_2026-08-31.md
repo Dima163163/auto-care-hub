@@ -3552,3 +3552,20 @@ warnings. Полный `check:local-mvp` на commit `7b3f672ff29f` заверш
 слотов или booking semantics. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 433 (07.09.2026) — localized public distance formatting
+
+1–10. `[x]` Числовой `distanceKm` теперь сохраняется в discovery/API и mock
+модели, а общий `formatDistanceKm` используется в result cards, comparison
+table, focused map card и favorites. Старые string-only fixtures безопасно
+проходят через `parseDistanceKm`; неизвестное расстояние отображается как `—`.
+
+11–20. `[x]` Targeted model/mapper/locale suite — **3 файла / 11 тестов PASS**;
+полный frontend suite — **151/483 PASS**, lint без warnings. Полный
+`check:local-mvp` на commit `a458350530ed` завершён с `all local MVP checks
+passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Исправление закрывает raw-distance multilingual UX gap без изменения
+API payload shape или booking semantics. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.
