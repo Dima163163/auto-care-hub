@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { mapAutoCareDiscoveryItem, ProviderLogo, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
-import { formatCurrency } from '@/shared/lib/locale-format'
+import { formatAutoCareSlot, formatCurrency } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
@@ -41,14 +41,6 @@ const featuredProviders: readonly HomeProvider[] = [
 function formatDistance(distanceKm: number, locale: string) {
     if (distanceKm === Number.MAX_SAFE_INTEGER) return '—'
     return new Intl.NumberFormat(locale, { maximumFractionDigits: 1, style: 'unit', unit: 'kilometer', unitDisplay: 'short' }).format(distanceKm)
-}
-
-function formatSlot(slot: string, locale: string) {
-    const match = /^(Today|Tomorrow|Сегодня|Завтра),\s*(.+)$/.exec(slot)
-    if (!match) return slot
-    const offset = match[1] === 'Tomorrow' || match[1] === 'Завтра' ? 1 : 0
-    const relativeDay = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(offset, 'day')
-    return `${relativeDay.charAt(0).toLocaleUpperCase(locale)}${relativeDay.slice(1)}, ${match[2]}`
 }
 
 function toHomeProvider(provider: ProviderPreview): HomeProvider {
@@ -220,7 +212,7 @@ function ProviderCard({ provider, locale }: { provider: HomeProvider; locale: st
             </div>
             <div className="mt-5 min-h-[36px]">
                 <p className="text-xs leading-4 text-muted-foreground">{t('autocare.nearestBooking')}</p>
-                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{formatSlot(provider.next, locale)}</p>
+                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{formatAutoCareSlot(provider.next, locale)}</p>
             </div>
             <Link to={routePaths.serviceProviderDetails(provider.id)} className="mt-auto flex h-[42px] items-center justify-center rounded-[6px] bg-primary text-sm font-bold text-primary-foreground">{t('autocare.bookAction')}</Link>
             <Link to={routePaths.serviceProviderDetails(provider.id)} className="mt-3 text-center text-xs font-semibold text-primary">{t('autocare.detailsAction')}</Link>

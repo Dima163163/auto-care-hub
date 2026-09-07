@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCurrency, formatDateTime, formatPlural, getIntlLocale } from './locale-format'
+import { formatAutoCareSlot, formatCurrency, formatDateTime, formatPlural, getIntlLocale } from './locale-format'
 
 describe('locale formatting', () => {
     it('maps supported locales to stable Intl tags', () => {
@@ -34,5 +34,12 @@ describe('locale formatting', () => {
         expect(formatPlural(1, 'ru', { one: 'сервис', few: 'сервиса', many: 'сервисов', other: 'сервисов' })).toBe('сервис')
         expect(formatPlural(5, 'ru', { one: 'сервис', few: 'сервиса', many: 'сервисов', other: 'сервисов' })).toBe('сервисов')
         expect(formatPlural(1, 'ro', { one: 'service', few: 'service', other: 'de servicii' })).toBe('service')
+    })
+
+    it('formats automotive availability slots with the selected locale', () => {
+        expect(formatAutoCareSlot('Today, 14:30', 'en')).toBe('Today, 14:30')
+        expect(formatAutoCareSlot('Tomorrow, 09:30', 'ru')).toBe('Завтра, 09:30')
+        expect(formatAutoCareSlot('Today, 14:30', 'es')).toBe('Hoy, 14:30')
+        expect(formatAutoCareSlot('—', 'en')).toBe('—')
     })
 })
