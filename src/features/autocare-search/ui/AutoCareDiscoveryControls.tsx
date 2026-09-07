@@ -50,6 +50,11 @@ type AutoCareDiscoveryControlsProps = {
     vehicleYear: string
 }
 
+// Empty vehicle values should read as one coherent placeholder group. The
+// model/year controls are disabled until a brand is chosen, but that state
+// must not make their empty labels visually disappear beside the brand field.
+const vehiclePlaceholderClass = 'disabled:!text-primary-foreground/65 disabled:!opacity-100'
+
 /**
  * The discovery controls are shared by the loaded results route and its route
  * fallback. Keeping one structure prevents loading from becoming a second,
@@ -129,9 +134,9 @@ function DisabledVehicleSelects() {
     const { t } = useTranslation()
 
     return <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(8rem,0.55fr)]">
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleMakeLabel')} tone="dark" value="" disabled><option value="">{t('autocare.anyBrand')}</option></FloatingSelect>
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleModelLabel')} tone="dark" value="" disabled><option value="">{t('autocare.anyModel')}</option></FloatingSelect>
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleYearLabel')} tone="dark" value="" disabled><option value="">{t('autocare.anyYear')}</option></FloatingSelect>
+        <FloatingSelect className={vehiclePlaceholderClass} floatLabelWhenEmpty label={t('autocare.vehicleMakeLabel')} tone="dark" value="" disabled><option value="">{t('autocare.anyBrand')}</option></FloatingSelect>
+        <FloatingSelect className={vehiclePlaceholderClass} floatLabelWhenEmpty label={t('autocare.vehicleModelLabel')} tone="dark" value="" disabled><option value="">{t('autocare.anyModel')}</option></FloatingSelect>
+        <FloatingSelect className={vehiclePlaceholderClass} floatLabelWhenEmpty label={t('autocare.vehicleYearLabel')} tone="dark" value="" disabled><option value="">{t('autocare.anyYear')}</option></FloatingSelect>
     </div>
 }
 
@@ -143,9 +148,9 @@ function EnabledVehicleSelects({ brandId, vehicleModel, vehicleYear, onChange }:
     const years = Array.from({ length: 22 }, (_, index) => String(new Date().getFullYear() - index))
 
     return <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(8rem,0.55fr)]">
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleMakeLabel')} tone="dark" value={brandId} onChange={(event) => onChange({ brandId: event.target.value, vehicleModel: '', vehicleYear: '' })}><option value="">{t('autocare.anyBrand')}</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</FloatingSelect>
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleModelLabel')} tone="dark" value={vehicleModel} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel: event.target.value, vehicleYear })}><option value="">{t('autocare.anyModel')}</option>{models.map((model) => <option key={model} value={model}>{model}</option>)}</FloatingSelect>
-        <FloatingSelect floatLabelWhenEmpty label={t('autocare.vehicleYearLabel')} tone="dark" value={vehicleYear} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel, vehicleYear: event.target.value })}><option value="">{t('autocare.anyYear')}</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</FloatingSelect>
+        <FloatingSelect className={vehiclePlaceholderClass} floatLabelWhenEmpty label={t('autocare.vehicleMakeLabel')} tone="dark" value={brandId} onChange={(event) => onChange({ brandId: event.target.value, vehicleModel: '', vehicleYear: '' })}><option value="">{t('autocare.anyBrand')}</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{getVehicleBrandLabel(brand, locale)}</option>)}</FloatingSelect>
+        <FloatingSelect className={vehiclePlaceholderClass} floatLabelWhenEmpty label={t('autocare.vehicleModelLabel')} tone="dark" value={vehicleModel} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel: event.target.value, vehicleYear })}><option value="">{t('autocare.anyModel')}</option>{models.map((model) => <option key={model} value={model}>{model}</option>)}</FloatingSelect>
+        <FloatingSelect className={vehiclePlaceholderClass} floatLabelWhenEmpty label={t('autocare.vehicleYearLabel')} tone="dark" value={vehicleYear} disabled={!brandId} onChange={(event) => onChange({ brandId, vehicleModel, vehicleYear: event.target.value })}><option value="">{t('autocare.anyYear')}</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</FloatingSelect>
     </div>
 }
 
