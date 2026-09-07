@@ -3605,3 +3605,20 @@ formatting: полный frontend suite — **152/487 PASS**, targeted заяв�
 API payload или booking semantics. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 436 (07.09.2026) — localized guarantee claim copy
+
+1–10. `[x]` Guarantee claim card больше не держит RU/EN copy и fallback error
+внутри компонента. Заголовок, описание, placeholder, submit/success/error copy
+вынесены в `autocare.*` translation keys; русская локаль получает явный override,
+остальные locale используют единый English fallback без русского протекания.
+
+11–20. `[x]` Translation coverage и component regression проверены: targeted
+**2 файла / 12 тестов PASS**, полный frontend suite — **152/489 PASS**, lint,
+Vite/Next/backend builds и полный `check:local-mvp` на commit `d064edb`
+завершены успешно, включая responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy localization gap в заявке без изменения API,
+claim semantics или error handling. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.
