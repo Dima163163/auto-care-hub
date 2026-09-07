@@ -1,4 +1,5 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import { CalendarCheck, CheckCircle2, Clock3, ListFilter, Phone, Send, Wrench } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 
@@ -14,6 +15,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import type { TranslationKey } from '@/shared/lib/i18n'
+import { formatCurrency, formatDateTime } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { PageHeader } from '@/shared/ui/page-header'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
@@ -23,11 +25,13 @@ import { StateCard } from '@/shared/ui/state-card'
 import { OwnerCapacityCalendar } from './OwnerCapacityCalendar'
 
 const emptyRequests: AutoCareServiceRequest[] = []
+type RequestQueue = 'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted'
+const requestQueueOptions = ['all', 'urgent', 'awaiting_reply', 'estimate_shared', 'accepted'] as const
 
 export function OwnerAutoCareRequestsPage() {
-    const { locale, t } = useTranslation()
+    const { t } = useTranslation()
     const [searchParams] = useSearchParams()
-    const [queue, setQueue] = useState<'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted'>('all')
+    const [queue, setQueue] = useState<RequestQueue>('all')
     const query = useGetOwnerAutoCareServiceRequestsQuery()
     const requests = query.data ?? emptyRequests
     const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('request'))
@@ -49,15 +53,19 @@ export function OwnerAutoCareRequestsPage() {
         confirmed: requests.filter((item) => item.status === 'accepted').length,
     }), [requests])
 
-    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} loading={query.isLoading} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} loading={query.isLoading} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} loading={query.isLoading} /></div>{!query.error && <OwnerCapacityCalendar requests={requests} />}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <><WorkQueue active={queue} requests={requests} onChange={setQueue} locale={locale} /><div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={queueRequests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div></>}</section></main>
+    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} loading={query.isLoading} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} loading={query.isLoading} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} loading={query.isLoading} /></div>{!query.error && <OwnerCapacityCalendar requests={requests} />}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <><WorkQueue active={queue} requests={requests} onChange={setQueue} /><div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={queueRequests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div></>}</section></main>
 }
 
-function WorkQueue({ active, requests, onChange, locale }: { active: 'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted'; requests: AutoCareServiceRequest[]; onChange: (value: 'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted') => void; locale: string }) {
-    const labels = locale === 'ru'
-        ? { all: 'Все', urgent: 'Нужно ответить', awaiting_reply: 'Ждут ответа', estimate_shared: 'Смета', accepted: 'Подтверждены' }
-        : { all: 'All', urgent: 'Needs attention', awaiting_reply: 'Awaiting reply', estimate_shared: 'Estimate', accepted: 'Confirmed' }
-    const options = Object.keys(labels) as Array<keyof typeof labels>
-    return <section className="mb-5 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex flex-wrap items-center gap-2"><ListFilter className="size-4 text-primary" /><p className="mr-2 text-sm font-black text-foreground">{locale === 'ru' ? 'Рабочая очередь' : 'Work queue'}</p>{options.map((option) => <button key={option} type="button" onClick={() => onChange(option)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${active === option ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}>{labels[option]} <span className="ml-1 opacity-70">{option === 'all' ? requests.length : option === 'urgent' ? requests.filter((item) => ['open', 'awaiting_reply'].includes(item.status)).length : requests.filter((item) => item.status === option).length}</span></button>)}</div></section>
+function WorkQueue({ active, requests, onChange }: { active: RequestQueue; requests: AutoCareServiceRequest[]; onChange: (value: RequestQueue) => void }) {
+    const { t } = useTranslation()
+    const labels = {
+        all: t('autocare.ownerRequestsQueueAll'),
+        urgent: t('autocare.ownerRequestsQueueUrgent'),
+        awaiting_reply: t('autocare.ownerRequestsQueueAwaitingReply'),
+        estimate_shared: t('autocare.ownerRequestsQueueEstimate'),
+        accepted: t('autocare.ownerRequestsQueueAccepted'),
+    }
+    return <section className="mb-5 rounded-[var(--radius-panel)] border border-border bg-card p-4 shadow-sm"><div className="flex flex-wrap items-center gap-2"><ListFilter className="size-4 text-primary" /><p className="mr-2 text-sm font-black text-foreground">{t('autocare.ownerRequestsQueueTitle')}</p>{requestQueueOptions.map((option) => <button key={option} type="button" onClick={() => onChange(option)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${active === option ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}>{labels[option]} <span className="ml-1 opacity-70">{option === 'all' ? requests.length : option === 'urgent' ? requests.filter((item) => ['open', 'awaiting_reply'].includes(item.status)).length : requests.filter((item) => item.status === option).length}</span></button>)}</div></section>
 }
 
 function SummaryCard({ icon: Icon, label, value, loading = false }: { icon: typeof Clock3; label: string; value: number; loading?: boolean }) {
@@ -65,8 +73,8 @@ function SummaryCard({ icon: Icon, label, value, loading = false }: { icon: type
 }
 
 function RequestList({ requests, selectedId, onSelect }: { requests: AutoCareServiceRequest[]; selectedId: string | null; onSelect: (id: string) => void }) {
-    const { t } = useTranslation()
-    return <div className="space-y-3">{requests.map((request) => <button key={request.id} type="button" onClick={() => onSelect(request.id)} className={`w-full rounded-[var(--radius-panel)] border bg-card p-4 text-left transition ${selectedId === request.id ? 'border-primary shadow-sm' : 'border-border hover:border-primary/50'}`}><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-black text-foreground">{request.serviceLabels.ru ?? request.serviceSlug}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{request.providerName}</p></div><StatusBadge status={request.status} /></div><div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><span>{formatDate(request.createdAt)}</span>{request.priceFromMinor !== null && request.currencyCode ? <span className="font-black text-foreground">{formatMoney(request.priceFromMinor, request.currencyCode)}</span> : null}</div><p className="mt-1 line-clamp-2 text-sm text-foreground">{request.note || t('autocare.ownerRequestsNoNote')}</p></button>)}</div>
+    const { locale, t } = useTranslation()
+    return <div className="space-y-3">{requests.map((request) => <button key={request.id} type="button" onClick={() => onSelect(request.id)} className={`w-full rounded-[var(--radius-panel)] border bg-card p-4 text-left transition ${selectedId === request.id ? 'border-primary shadow-sm' : 'border-border hover:border-primary/50'}`}><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-black text-foreground">{request.serviceLabels[locale] ?? request.serviceLabels.en ?? request.serviceSlug}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{request.providerName}</p></div><StatusBadge status={request.status} /></div><div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><span>{formatDateTime(request.createdAt, locale, { dateStyle: 'medium', timeStyle: 'short' })}</span>{request.priceFromMinor !== null && request.currencyCode ? <span className="font-black text-foreground">{formatCurrency(request.priceFromMinor / 100, request.currencyCode, locale)}</span> : null}</div><p className="mt-1 line-clamp-2 text-sm text-foreground">{request.note || t('autocare.ownerRequestsNoNote')}</p></button>)}</div>
 }
 
 function RequestDetails({ request }: { request: AutoCareServiceRequest | null }) {
