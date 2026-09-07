@@ -778,6 +778,13 @@ export const enTranslations = {
         ownerRequestsRescheduleSend: 'Offer new time',
         ownerRequestsNoShow: 'Mark as no-show',
         ownerRequestsComplete: 'Complete visit',
+        ownerCapacityCalendarTitle: 'Branch calendar',
+        ownerCapacityCalendarDescription: 'Select a date to review confirmed appointments and branch load.',
+        ownerCapacityCalendarConfirmedCount: '{{count}} confirmed appointments',
+        ownerCapacityCalendarLoadingBranches: 'Loading branches',
+        ownerCapacityCalendarLoadError: 'Could not load branches. Please retry.',
+        ownerCapacityCalendarEmptyBranches: 'No service locations are available.',
+        ownerCapacityCalendarNoConfirmed: 'No confirmed appointments.',
         ownerRequestStatus: {
             draft: 'Draft', open: 'New', awaiting_reply: 'Awaiting reply', estimate_shared: 'Estimate sent', accepted: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', no_show: 'No-show', closed: 'Closed',
         },

@@ -32,6 +32,13 @@ autocare: {
         ownerRequestsRescheduleSend: 'Предложить новое время',
         ownerRequestsNoShow: 'Отметить как неявку',
         ownerRequestsComplete: 'Завершить визит',
+        ownerCapacityCalendarTitle: 'Календарь филиала',
+        ownerCapacityCalendarDescription: 'Выберите дату, чтобы увидеть подтверждённые записи и загрузку филиалов.',
+        ownerCapacityCalendarConfirmedCount: '{{count}} подтверждённых записей',
+        ownerCapacityCalendarLoadingBranches: 'Загрузка филиалов',
+        ownerCapacityCalendarLoadError: 'Не удалось загрузить филиалы. Повторите попытку.',
+        ownerCapacityCalendarEmptyBranches: 'Нет доступных точек сервиса.',
+        ownerCapacityCalendarNoConfirmed: 'Подтверждённых записей нет.',
         ownerRequestStatus: {
             draft: 'Черновик', open: 'Новая', awaiting_reply: 'Ждёт ответа', estimate_shared: 'Смета отправлена', accepted: 'Подтверждена', declined: 'Отклонена', cancelled: 'Отменена', no_show: 'Неявка', closed: 'Завершена',
         },

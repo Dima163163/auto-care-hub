@@ -5,6 +5,17 @@ import type { AutoCareServiceRequest } from '@/entities/automotive-service'
 
 import { OwnerCapacityCalendar } from './OwnerCapacityCalendar'
 
+vi.mock('@/shared/lib/useTranslation', () => ({
+    useTranslation: () => ({
+        locale: 'ru',
+        t: (key: string, params?: { count?: number }) => ({
+            'autocare.ownerCapacityCalendarTitle': 'Календарь филиала',
+            'autocare.ownerCapacityCalendarConfirmedCount': `${params?.count ?? 0} подтверждённых записей`,
+            'autocare.ownerCapacityCalendarNoConfirmed': 'Подтверждённых записей нет.',
+        }[key] ?? key),
+    }),
+}))
+
 const providerQuery = vi.hoisted(() => ({
     data: [{
         id: 'provider-1',
@@ -57,7 +68,7 @@ describe('OwnerCapacityCalendar', () => {
     })
 
     it('shows branch occupancy and appointments without the post-MVP resource editor', () => {
-        render(<OwnerCapacityCalendar requests={[makeRequest()]} locale="ru" />)
+        render(<OwnerCapacityCalendar requests={[makeRequest()]} />)
 
         const calendar = screen.getByTestId('owner-capacity-calendar')
         expect(calendar).toHaveTextContent('Календарь филиала')
@@ -69,7 +80,7 @@ describe('OwnerCapacityCalendar', () => {
     })
 
     it('keeps a useful empty branch state when there are no appointments', () => {
-        render(<OwnerCapacityCalendar requests={[]} locale="ru" />)
+        render(<OwnerCapacityCalendar requests={[]} />)
 
         expect(screen.getByTestId('owner-capacity-calendar')).toHaveTextContent('0 подтверждённых записей')
         expect(screen.getByTestId('owner-capacity-calendar')).toHaveTextContent('Подтверждённых записей нет.')
