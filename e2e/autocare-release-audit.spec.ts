@@ -159,6 +159,39 @@ test.describe('AutoCare stable-web release gate', () => {
         }
     })
 
+    test('provider content aligns with the public header container', async ({ page }) => {
+        for (const width of [1280, 1440] as const) {
+            await page.setViewportSize({ width, height: 900 })
+            await gotoStable(page, '/services/api-proservice-moscow')
+            await expectPublicShell(page)
+
+            const bounds = await page.evaluate(() => {
+                const selectors = [
+                    '.public-desktop-header__inner',
+                    '[data-testid="provider-hero-container"]',
+                    '[data-testid="provider-section-navigation-container"]',
+                    '[data-testid="provider-page-main"]',
+                ]
+
+                return selectors.map((selector) => {
+                    const element = document.querySelector(selector)
+                    if (!(element instanceof HTMLElement)) return null
+
+                    const { left, right, width: elementWidth } = element.getBoundingClientRect()
+                    return { left, right, width: elementWidth }
+                })
+            })
+
+            expect(bounds.every((value) => value !== null)).toBe(true)
+            const [header, ...content] = bounds as Array<{ left: number; right: number; width: number }>
+            for (const value of content) {
+                expect(Math.abs(value.left - header.left)).toBeLessThanOrEqual(1)
+                expect(Math.abs(value.right - header.right)).toBeLessThanOrEqual(1)
+                expect(Math.abs(value.width - header.width)).toBeLessThanOrEqual(1)
+            }
+        }
+    })
+
     test('manual acceptance widths keep route-specific shells usable', async ({ page }) => {
         test.setTimeout(240_000)
 
