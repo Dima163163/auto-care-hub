@@ -3614,7 +3614,7 @@ deployed Lighthouse и pilot evidence остаются внешними gates; r
 остальные locale используют единый English fallback без русского протекания.
 
 11–20. `[x]` Translation coverage и component regression проверены: targeted
-**2 файла / 12 тестов PASS**, полный frontend suite — **152/489 PASS**, lint,
+**2 файла / 12 тестов PASS**, полный frontend suite — **152/488 PASS**, lint,
 Vite/Next/backend builds и полный `check:local-mvp` на commit `d064edb`
 завершены успешно, включая responsive Chromium matrix.
 
