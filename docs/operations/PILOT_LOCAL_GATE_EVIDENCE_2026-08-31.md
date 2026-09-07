@@ -4056,3 +4056,24 @@ provider change review surface без изменения API query, profile payl
 moderation decision semantics. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 462 (08.09.2026) — localized admin appeals review
+
+1–10. `[x]` Admin appeals panel больше не использует локальный RU/EN copy-object,
+locale-тернарии или ручной date formatter. Appeal/status/subject filters,
+reason/evidence labels, decision errors, empty state и decision note используют
+typed translation contract; appeal query filters, accepted/rejected mutation и
+notification semantics unchanged. Appeal timestamps используют shared locale
+formatter.
+
+11–20. `[x]` Appeals regression — **1 файл / 1 тест PASS**: пустая decision note
+блокирует submit и объявляется через `role="alert"`, после заполнения mutation
+получает исходные `id`, `status` и `reason`. ESLint, production build и полный
+`check:local-mvp` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format и validation-announcement gap в
+appeals review surface без изменения appeal predicates, query filters или
+decision mutation semantics. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
