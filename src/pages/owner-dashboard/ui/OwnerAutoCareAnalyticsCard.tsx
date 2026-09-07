@@ -1,9 +1,10 @@
 import { BarChart3, Clock3, Eye, Gift, Repeat2, Star, Wrench } from 'lucide-react'
 
 import type { AutoCareApiProvider, AutoCareProviderAnalytics } from '@/entities/automotive-service'
+import { formatDurationMinutes, getIntlLocale } from '@/shared/lib/locale-format'
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 type Props = {
-    locale: string
     analytics?: AutoCareProviderAnalytics
     isLoading: boolean
     isError: boolean
@@ -13,43 +14,37 @@ type Props = {
     onRetry: () => unknown
 }
 
-export function OwnerAutoCareAnalyticsCard({ locale, analytics, isLoading, isError, providers, selectedProviderId, onProviderChange, onRetry }: Props) {
-    const text = locale === 'ru' ? copy.ru : copy.en
+export function OwnerAutoCareAnalyticsCard({ analytics, isLoading, isError, providers, selectedProviderId, onProviderChange, onRetry }: Props) {
+    const { locale, t } = useTranslation()
+    const intlLocale = getIntlLocale(locale)
+    const formatInteger = (value: number) => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 0 }).format(value)
+    const formatDecimal = (value: number) => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 1 }).format(value)
     return (
         <section className="rounded-[var(--radius-panel)] border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">AutoCare</p>
-                    <h2 className="mt-1 text-lg font-black tracking-tight">{text.title}</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">{text.description}</p>
+                    <h2 className="mt-1 text-lg font-black tracking-tight">{t('autocare.ownerAnalyticsTitle')}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{t('autocare.ownerAnalyticsDescription')}</p>
                 </div>
                 <BarChart3 className="size-5 text-primary" aria-hidden="true" />
             </div>
-            {providers.length > 1 && <div className="mt-4 flex flex-wrap gap-2" aria-label={text.providerChoice}>{providers.map((provider) => <button key={provider.location.id} type="button" onClick={() => onProviderChange(provider.id)} aria-pressed={provider.id === selectedProviderId} className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${provider.id === selectedProviderId ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:border-primary/50'}`}>{provider.name}</button>)}</div>}
+            {providers.length > 1 && <div className="mt-4 flex flex-wrap gap-2" aria-label={t('autocare.ownerAnalyticsProviderChoice')}>{providers.map((provider) => <button key={provider.location.id} type="button" onClick={() => onProviderChange(provider.id)} aria-pressed={provider.id === selectedProviderId} className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${provider.id === selectedProviderId ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:border-primary/50'}`}>{provider.name}</button>)}</div>}
             {isLoading && <div className="mt-5 grid animate-pulse gap-3 sm:grid-cols-3"><div className="h-16 rounded-xl bg-muted" /><div className="h-16 rounded-xl bg-muted" /><div className="h-16 rounded-xl bg-muted" /></div>}
-            {isError && <div role="alert" className="mt-5 rounded-[var(--radius-card)] border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"><p className="font-bold">{text.failed}</p><button type="button" onClick={() => void onRetry()} className="mt-2 text-xs font-black underline">{text.retry}</button></div>}
+            {isError && <div role="alert" className="mt-5 rounded-[var(--radius-card)] border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"><p className="font-bold">{t('autocare.ownerAnalyticsFailed')}</p><button type="button" onClick={() => void onRetry()} className="mt-2 text-xs font-black underline">{t('autocare.ownerAnalyticsRetry')}</button></div>}
             {!isLoading && analytics && <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <Metric icon={Wrench} label={text.inquiries} value={String(analytics.inquiries)} />
-                <Metric icon={Clock3} label={text.response} value={analytics.averageResponseMinutes === null ? '—' : `${analytics.averageResponseMinutes} ${text.minutes}`} />
-                <Metric icon={BarChart3} label={text.quoteConversion} value={`${analytics.quoteConversionRate}%`} />
-                <Metric icon={Star} label={text.rating} value={`${analytics.averageRating} (${analytics.reviewCount})`} />
-                <Metric icon={Repeat2} label={text.repeatCustomers} value={String(analytics.repeatCustomers)} />
-                <Metric icon={Gift} label={text.bonusLiability} value={String(analytics.bonusLiabilityPoints)} />
-                <Metric icon={Eye} label={text.impressions} value={analytics.tracking.available ? String(analytics.tracking.impressions) : '—'} />
-                <Metric icon={Eye} label={text.profileOpens} value={analytics.tracking.available ? String(analytics.tracking.profileOpens) : '—'} />
+                <Metric icon={Wrench} label={t('autocare.ownerAnalyticsInquiries')} value={formatInteger(analytics.inquiries)} />
+                <Metric icon={Clock3} label={t('autocare.ownerAnalyticsResponse')} value={analytics.averageResponseMinutes === null ? '—' : formatDurationMinutes(analytics.averageResponseMinutes, locale)} />
+                <Metric icon={BarChart3} label={t('autocare.ownerAnalyticsQuoteConversion')} value={`${formatInteger(analytics.quoteConversionRate)}%`} />
+                <Metric icon={Star} label={t('autocare.ownerAnalyticsRating')} value={`${formatDecimal(analytics.averageRating)} (${formatInteger(analytics.reviewCount)})`} />
+                <Metric icon={Repeat2} label={t('autocare.ownerAnalyticsRepeatCustomers')} value={formatInteger(analytics.repeatCustomers)} />
+                <Metric icon={Gift} label={t('autocare.ownerAnalyticsBonusLiability')} value={formatInteger(analytics.bonusLiabilityPoints)} />
+                <Metric icon={Eye} label={t('autocare.ownerAnalyticsImpressions')} value={analytics.tracking.available ? formatInteger(analytics.tracking.impressions) : '—'} />
+                <Metric icon={Eye} label={t('autocare.ownerAnalyticsProfileOpens')} value={analytics.tracking.available ? formatInteger(analytics.tracking.profileOpens) : '—'} />
             </div>}
-            {!isLoading && analytics && <p className="mt-4 text-xs text-muted-foreground">{analytics.privacy.consentRequired ? text.privacyConsent : text.privacyNoConsent} · {text.retention}: {analytics.privacy.retentionDays} {text.days}</p>}
+            {!isLoading && analytics && <p className="mt-4 text-xs text-muted-foreground">{analytics.privacy.consentRequired ? t('autocare.ownerAnalyticsPrivacyConsent') : t('autocare.ownerAnalyticsPrivacyNoConsent')} · {t('autocare.ownerAnalyticsRetention')}: {formatInteger(analytics.privacy.retentionDays)} {t('autocare.ownerAnalyticsDays')}</p>}
         </section>
     )
-}
-
-const copy = {
-        ru: {
-        title: 'Операционная аналитика', description: 'Заявки, запись, отзывы, бонусы и видимость выбранного сервиса.', providerChoice: 'Выбор сервиса для аналитики', failed: 'Не удалось загрузить аналитику.', retry: 'Повторить', inquiries: 'Заявки', response: 'Ответ', minutes: 'мин', quoteConversion: 'Конверсия смет', rating: 'Рейтинг', repeatCustomers: 'Повторные клиенты', bonusLiability: 'Бонусы в обороте', impressions: 'Показы', profileOpens: 'Открытия профиля', privacyConsent: 'Аналитика собирается только с согласия клиента', privacyNoConsent: 'Аналитика работает без согласия', retention: 'Срок хранения', days: 'дн.',
-    },
-    en: {
-        title: 'Operational analytics', description: 'Requests, bookings, reviews, bonuses and visibility for the selected service.', providerChoice: 'Choose service for analytics', failed: 'Could not load analytics.', retry: 'Retry', inquiries: 'Requests', response: 'Response', minutes: 'min', quoteConversion: 'Quote conversion', rating: 'Rating', repeatCustomers: 'Returning customers', bonusLiability: 'Bonus liability', impressions: 'Impressions', profileOpens: 'Profile opens', privacyConsent: 'Analytics is collected with customer consent', privacyNoConsent: 'Analytics works without consent', retention: 'Retention', days: 'days',
-    },
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof Wrench; label: string; value: string }) {
