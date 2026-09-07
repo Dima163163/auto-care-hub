@@ -17,6 +17,18 @@ vi.mock('@/entities/automotive-service', () => ({
     useGetOwnerAutoCareCapacityReservationsQuery: () => ({ data: [], isLoading: false, isFetching: false, isError: false }),
 }))
 
+vi.mock('@/shared/lib/useTranslation', () => ({
+    useTranslation: () => ({
+        locale: 'ru',
+        t: (key: string) => ({
+            'autocare.ownerCapacityResourcesAdd': 'Добавить',
+            'autocare.ownerCapacityResourcesResourceName': 'Название ресурса',
+            'autocare.ownerCapacityResourcesStatusActive': 'включён',
+            'autocare.ownerCapacityResourcesStatusInactive': 'выключен',
+        }[key] ?? key),
+    }),
+}))
+
 describe('OwnerCapacityResourcesPanel', () => {
     beforeEach(() => {
         mocks.resources = []
@@ -31,7 +43,7 @@ describe('OwnerCapacityResourcesPanel', () => {
         process.on('unhandledRejection', onUnhandled)
 
         try {
-            render(<OwnerCapacityResourcesPanel providerId="provider-1" locationId="location-1" selectedDay={new Date('2026-08-30T10:00:00.000Z')} locale="ru" />)
+            render(<OwnerCapacityResourcesPanel providerId="provider-1" locationId="location-1" selectedDay={new Date('2026-08-30T10:00:00.000Z')} />)
             const name = screen.getByRole('textbox', { name: 'Название ресурса' })
             await user.type(name, 'Пост 1')
             await user.click(screen.getByRole('button', { name: 'Добавить' }))
@@ -52,7 +64,7 @@ describe('OwnerCapacityResourcesPanel', () => {
         process.on('unhandledRejection', onUnhandled)
 
         try {
-            render(<OwnerCapacityResourcesPanel providerId="provider-1" locationId="location-1" selectedDay={new Date('2026-08-30T10:00:00.000Z')} locale="ru" />)
+            render(<OwnerCapacityResourcesPanel providerId="provider-1" locationId="location-1" selectedDay={new Date('2026-08-30T10:00:00.000Z')} />)
             await user.click(screen.getByRole('button', { name: /Специалист 1 · 1/ }))
 
             expect(await screen.findByRole('alert')).toHaveTextContent('Ресурс уже изменён.')
