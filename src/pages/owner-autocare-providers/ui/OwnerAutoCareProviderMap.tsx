@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 
 import type { AutoCareApiProvider } from '@/entities/automotive-service'
 import { getMapTileFallback, RESULTS_MAP_CONFIG } from '@/shared/config/map'
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 import './owner-autocare-provider-map.css'
 
@@ -39,6 +40,7 @@ type OwnerAutoCareProviderMapProps = {
 }
 
 export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMapProps) {
+    const { t } = useTranslation()
     const mapContainerRef = useRef<HTMLDivElement | null>(null)
     const mapRef = useRef<L.Map | null>(null)
     const markerLayerRef = useRef<L.LayerGroup | null>(null)
@@ -120,5 +122,5 @@ export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMap
         }
     }, [branches, positions])
 
-    return <div className="owner-provider-map h-full w-full" ref={mapContainerRef} />
+    return <div className="owner-provider-map h-full w-full" ref={mapContainerRef} role="region" aria-label={t('autocare.ownerProvidersMapLabel')} />
 }

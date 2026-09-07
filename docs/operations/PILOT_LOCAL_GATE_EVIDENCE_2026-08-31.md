@@ -3351,6 +3351,19 @@ frontend tests и Next production build; TypeScript принял обе translat
 assistive technology, deployed URL или owner acceptance; readiness остаётся
 **96.5% (193/200)**.
 
+## Порция 423 (07.09.2026) — protected owner map accessibility
+
+1–10. `[x]` `OwnerAutoCareProviderMap` получил `role="region"` и локализованный
+`aria-label` (`Карта моих автосервисов` / `Map of my auto services`). Leaflet
+markers, fallback coordinates, tile policy и layout не изменялись.
+
+11–20. `[x]` После изменения прошли frontend lint без warnings, **151/480**
+frontend tests и Next production build; TypeScript принял обе translation keys.
+
+21–30. `[~]` Protected local UI contract усилен, но real owner/device
+assistive-technology acceptance, deployed runtime и внешние pilot gates не
+закрыты; readiness остаётся **96.5% (193/200)**.
+
 ## Порция 422 (07.09.2026) — rendered HTTP SEO replay
 
 1–10. `[x]` `npm run check:seo -- --url http://127.0.0.1:3000 --json`

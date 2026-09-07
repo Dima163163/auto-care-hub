@@ -195,6 +195,8 @@ anonymized samples/participant rows отсутствуют.
   including the responsive Chromium matrix.
 - HTTP SEO replay against the local server passes every rendered metadata/robots
   route; Lighthouse remains manual because its CLI is not installed.
+- Owner providers map now exposes a localized named `region`, extending the map
+  accessibility contract to protected workspace UI.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

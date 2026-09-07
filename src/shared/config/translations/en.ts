@@ -872,6 +872,7 @@ export const enTranslations = {
         ownerProvidersEyebrow: 'Business profile',
         ownerProvidersTitle: 'My auto services',
         ownerProvidersDescription: 'Create a service profile and choose exactly which customer amenities are available at each location.',
+        ownerProvidersMapLabel: 'Map of my auto services',
         ownerProvidersCreate: 'Add auto service',
         ownerProvidersCreateTitle: 'New auto service',
         ownerProvidersCreateDescription: 'The profile will be saved as a draft until it passes verification.',

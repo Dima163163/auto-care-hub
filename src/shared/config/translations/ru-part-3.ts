@@ -127,6 +127,7 @@ autocare: {
         ownerProvidersEyebrow: 'Профиль бизнеса',
         ownerProvidersTitle: 'Мои автосервисы',
         ownerProvidersDescription: 'Создайте профиль сервиса и выберите именно те удобства, которые доступны клиентам на каждой точке.',
+        ownerProvidersMapLabel: 'Карта моих автосервисов',
         ownerProvidersCreate: 'Добавить автосервис',
         ownerProvidersCreateTitle: 'Новый автосервис',
         ownerProvidersCreateDescription: 'Профиль сохранится как черновик до прохождения проверки.',
