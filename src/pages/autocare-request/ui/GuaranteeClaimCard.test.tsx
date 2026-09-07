@@ -5,17 +5,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { GuaranteeClaimCard } from './GuaranteeClaimCard'
 
 const createClaim = vi.hoisted(() => vi.fn())
+const selectedLocale = vi.hoisted(() => ({ value: 'ru' as 'en' | 'ru' }))
 
 vi.mock('@/entities/automotive-service', () => ({
     useCreateAutoCareGuaranteeClaimMutation: () => [createClaim, { isLoading: false, isSuccess: false }],
 }))
 
 vi.mock('@/shared/lib/useTranslation', () => ({
-    useTranslation: () => ({ locale: 'ru', t: (key: string) => key }),
+    useTranslation: () => ({
+        locale: selectedLocale.value,
+        t: (key: string) => ({
+            'autocare.guaranteeClaimTitle': selectedLocale.value === 'ru' ? 'Гарантия AutoCare' : 'AutoCare guarantee',
+            'autocare.guaranteeClaimDescription': selectedLocale.value === 'ru' ? 'Если работа не соответствует согласованной смете, опишите ситуацию — сервис и команда поддержки увидят обращение.' : 'If the result differs from the agreed estimate, tell us what happened so the provider and support team can review it.',
+            'autocare.guaranteeClaimPlaceholder': selectedLocale.value === 'ru' ? 'Что нужно исправить?' : 'What needs to be fixed?',
+            'autocare.guaranteeClaimSubmit': selectedLocale.value === 'ru' ? 'Создать обращение' : 'Open a claim',
+            'autocare.guaranteeClaimError': selectedLocale.value === 'ru' ? 'Не удалось создать обращение. Попробуйте ещё раз.' : 'Could not open the claim. Please try again.',
+        }[key] ?? key),
+    }),
 }))
 
 describe('GuaranteeClaimCard', () => {
     beforeEach(() => {
+        selectedLocale.value = 'ru'
         createClaim.mockReset().mockImplementation(() => ({
             unwrap: vi.fn().mockRejectedValue({ data: { message: 'Обращение уже существует.' } }),
         }))
@@ -40,5 +51,14 @@ describe('GuaranteeClaimCard', () => {
         } finally {
             process.off('unhandledRejection', onUnhandled)
         }
+    })
+
+    it('uses translation keys for the non-Russian surface', () => {
+        selectedLocale.value = 'en'
+        render(<GuaranteeClaimCard requestId="request-1" />)
+
+        expect(screen.getByRole('heading', { name: 'AutoCare guarantee' })).toBeVisible()
+        expect(screen.getByPlaceholderText('What needs to be fixed?')).toBeVisible()
+        expect(screen.getByRole('button', { name: 'Open a claim' })).toBeVisible()
     })
 })
