@@ -3978,3 +3978,21 @@ Chromium matrix.
 изменения offer mutation payload, branch expansion semantics или provider
 scopes. Real-device language review, staging/production, deployed Lighthouse и
 pilot evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 458 (08.09.2026) — localized owner invitation acceptance flow
+
+1–10. `[x]` Invitation acceptance flow больше не использует локальный RU/EN
+copy-object или `isRussian` ternaries. Form, accepted state, role/scope labels,
+status-specific errors, security note и inactive hint используют typed
+translation contract; token normalization, status mapping и invitation mutation
+semantics unchanged.
+
+11–20. `[x]` Invitation regression — **1 файл / 3 теста PASS**; ESLint,
+Vite production build и полный `check:local-mvp` на invitation-localization
+worktree поверх `eba08ec` завершены с `all local MVP checks passed`, включая
+responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/i18n gap в invitation acceptance surface без
+изменения token flow, API mutation или provider scope. Real-device language
+review, staging/production, deployed Lighthouse и pilot evidence остаются
+внешними gates; readiness остаётся **96.5% (193/200)**.

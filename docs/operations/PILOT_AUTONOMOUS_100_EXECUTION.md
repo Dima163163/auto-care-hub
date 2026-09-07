@@ -362,6 +362,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-services-catalogue `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted services coverage is
   **2 files / 3 tests PASS**.
+- Owner invitation acceptance page now uses typed translation keys for form,
+  accepted state, roles, status errors and security hints; token flow and
+  provider scope remain unchanged.
+- Post-owner-invitation `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted invitation coverage is
+  **1 file / 3 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
