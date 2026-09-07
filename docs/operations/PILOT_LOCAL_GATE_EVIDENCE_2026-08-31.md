@@ -3456,7 +3456,7 @@ runtime, deployed Lighthouse или pilot evidence; readiness остаётся
 русских fixture strings и не заменяет `Today/Tomorrow` на русский независимо
 от locale. `Intl.NumberFormat` форматирует километры, а
 `Intl.RelativeTimeFormat` форматирует ближайший слот; обработаны и
-`Today/Today` API values, и русские fallback fixtures.
+`Today/Tomorrow` API values, и русские fallback fixtures.
 
 11–20. `[x]` Lint без warnings, Next production build с TypeScript PASS; полный
 `check:local-mvp` на commit `6f8d11911ddd` завершён с `all local MVP checks
@@ -3466,3 +3466,22 @@ security/API regressions и responsive Chromium matrix.
 21–30. `[~]` Исправление усиливает локальный multilingual UX, но не является
 real-device language review и не закрывает staging/production, deployed
 Lighthouse или pilot evidence; readiness остаётся **96.5% (193/200)**.
+
+## Порция 428 (07.09.2026) — public price and review media copy localization
+
+1–10. `[x]` Fair-price benchmark переведён с locale-ветки `ru/else` на
+translation keys для заголовка, `from/up to`, типичной цены, методологии и
+источника. Active price chips теперь используют `fromPrice/toPrice`, поэтому
+русские `от/до` не протекают в EN и другие локали; review-photo alt также
+использует существующий локализованный key.
+
+11–20. `[x]` Translation coverage **9/9 PASS**, lint без warnings, Next и
+backend TypeScript builds PASS. На commit `0c3cf5361b0d` полный
+`check:local-mvp` завершён с `all local MVP checks passed`: frontend
+**151/480**, API/media/backup/security/route contracts и responsive Chromium
+matrix PASS.
+
+21–30. `[~]` Локальный public-copy/a11y gap закрыт без изменения API или
+данных; real-device language review, staging/production, deployed Lighthouse и
+pilot evidence остаются внешними gates. Readiness остаётся
+**96.5% (193/200)**.
