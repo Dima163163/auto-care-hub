@@ -3721,3 +3721,19 @@ aria-label, submit/toast copy используют translation contract; locale 
 mutation, draft persistence или vehicle snapshot shape. Real-device language
 review, staging/production, deployed Lighthouse и pilot evidence остаются
 внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 443 (07.09.2026) — localized provider documents and customer contact
+
+1–10. `[x]` В owner provider creation form блоки документов и customer contact
+больше не используют locale ternaries. Заголовки, описания, labels,
+placeholders, remove aria-label и booking/chat options переведены через typed
+translation contract; upload, draft и create-provider semantics не изменены.
+
+11–20. `[x]` Provider form regression — **1 файл / 3 теста PASS**; полный
+`check:local-mvp` на commit `23ca2e8` завершён с `all local MVP checks passed`,
+включая responsive Chromium matrix; frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт raw-copy localization gap в provider onboarding без изменения
+валидации, media pipeline или communication mode values. Real-device language
+review, staging/production, deployed Lighthouse и pilot evidence остаются
+внешними gates; readiness остаётся **96.5% (193/200)**.
