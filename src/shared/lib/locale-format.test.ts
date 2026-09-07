@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDistanceKm, formatDurationMinutes, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
+import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDistanceKm, formatDurationMinutes, formatNumber, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
 
 describe('locale formatting', () => {
     it('maps supported locales to stable Intl tags', () => {
@@ -13,6 +13,11 @@ describe('locale formatting', () => {
     it('formats currency using the selected locale instead of the browser locale', () => {
         expect(formatCurrency(2900, 'RUB', 'ru')).toContain('2 900')
         expect(formatCurrency(2900, 'EUR', 'es')).toMatch(/(?:2900|2[.\u00a0]900)/)
+    })
+
+    it('formats plain numbers using the selected locale', () => {
+        expect(formatNumber(1234.5, 'ru', { maximumFractionDigits: 1 })).toMatch(/1[\s\u00a0]234,5/)
+        expect(formatNumber(1234, 'en', { maximumFractionDigits: 0 })).toContain('1,234')
     })
 
     it('formats dates with the selected locale', () => {

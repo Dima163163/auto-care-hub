@@ -1,7 +1,7 @@
 import { BarChart3, Clock3, Eye, Gift, Repeat2, Star, Wrench } from 'lucide-react'
 
 import type { AutoCareApiProvider, AutoCareProviderAnalytics } from '@/entities/automotive-service'
-import { formatDurationMinutes, getIntlLocale } from '@/shared/lib/locale-format'
+import { formatDurationMinutes, formatNumber } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type Props = {
@@ -16,9 +16,8 @@ type Props = {
 
 export function OwnerAutoCareAnalyticsCard({ analytics, isLoading, isError, providers, selectedProviderId, onProviderChange, onRetry }: Props) {
     const { locale, t } = useTranslation()
-    const intlLocale = getIntlLocale(locale)
-    const formatInteger = (value: number) => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 0 }).format(value)
-    const formatDecimal = (value: number) => new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 1 }).format(value)
+    const formatInteger = (value: number) => formatNumber(value, locale, { maximumFractionDigits: 0 })
+    const formatDecimal = (value: number) => formatNumber(value, locale, { maximumFractionDigits: 1 })
     return (
         <section className="rounded-[var(--radius-panel)] border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex items-start justify-between gap-3">

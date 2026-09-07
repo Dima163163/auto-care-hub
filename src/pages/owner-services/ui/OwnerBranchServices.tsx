@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import type { AutoCareApiOffer, AutoCareApiProvider, AutoCareApiServiceDefinition } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
+import { formatCurrency } from '@/shared/lib/locale-format'
 
 import { EditOfferButton, OwnerOfferDialog } from './OwnerOfferEditor'
 
@@ -88,7 +89,7 @@ function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { 
     const [isEditing, setIsEditing] = useState(false)
     const definition = definitions.find((item) => item.id === offer.serviceDefinitionId || item.slug === offer.serviceSlug)
     const title = offer.serviceLabels?.[locale] ?? definition?.labels[locale] ?? offer.serviceLabels?.en ?? definition?.labels.en ?? offer.serviceSlug ?? 'AutoCare service'
-    const price = new Intl.NumberFormat(locale === 'ru' ? 'ru-RU' : 'en-US', { style: 'currency', currency: offer.currencyCode, maximumFractionDigits: 0 }).format(offer.priceFromMinor / 100)
+    const price = formatCurrency(offer.priceFromMinor / 100, offer.currencyCode, locale)
 
     return (
         <>
