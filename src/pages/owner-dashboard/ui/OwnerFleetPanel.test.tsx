@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { OwnerFleetPanel } from './OwnerFleetPanel'
 
 const createFleet = vi.hoisted(() => vi.fn())
+const translate = vi.hoisted(() => (key: string) => ({
+    'autocare.ownerFleetNamePlaceholder': 'Название автопарка',
+    'autocare.ownerFleetAdd': 'Добавить автопарк',
+}[key] ?? key))
 
 vi.mock('@/entities/automotive-service', () => ({
     useCreateAutoCareFleetMutation: () => [createFleet, { isLoading: false }],
@@ -12,7 +16,7 @@ vi.mock('@/entities/automotive-service', () => ({
 }))
 
 vi.mock('@/shared/lib/useTranslation', () => ({
-    useTranslation: () => ({ locale: 'ru', t: (key: string) => key }),
+    useTranslation: () => ({ locale: 'ru', t: translate }),
 }))
 
 vi.mock('./OwnerFleetVehicleForm', () => ({

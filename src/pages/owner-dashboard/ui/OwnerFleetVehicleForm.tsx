@@ -12,6 +12,7 @@ import {
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { readFormDraft } from '@/shared/lib/form-draft'
 import { useFormDraft } from '@/shared/lib/useFormDraft'
+import { useTranslation } from '@/shared/lib/useTranslation'
 import { FormDraftNotice } from '@/shared/ui/form-draft-notice/FormDraftNotice'
 
 import {
@@ -23,12 +24,12 @@ import {
 
 type Props = {
     fleetId: string
-    locale: string
     onCancel: () => void
     onCreated: () => void
 }
 
-export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: Props) {
+export function OwnerFleetVehicleForm({ fleetId, onCancel, onCreated }: Props) {
+    const { locale, t } = useTranslation()
     const catalogQuery = useGetVehicleCatalogQuery()
     const [createVehicle, createState] = useCreateAutoCareFleetVehicleMutation()
     const storageKey = `autocare-owner-fleet-vehicle:${fleetId}`
@@ -39,7 +40,6 @@ export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: 
     const [internalReference, setInternalReference] = useState('')
     const [vin, setVin] = useState('')
     const [isDraftRestored, setIsDraftRestored] = useState(false)
-    const copy = getCopy(locale)
     const brands = catalogQuery.data ?? vehicleCatalog
     const selectedBrand = useMemo(() => brands.find((brand) => brand.id === brandId), [brandId, brands])
     const selectedModel = useMemo(() => selectedBrand?.models.find((model) => model.id === modelId), [modelId, selectedBrand])
@@ -108,25 +108,25 @@ export function OwnerFleetVehicleForm({ fleetId, locale, onCancel, onCreated }: 
                 },
             }).unwrap()
             clearDraft()
-            toast.success(copy.success)
+            toast.success(t('autocare.ownerFleetVehicleSuccess'))
             onCreated()
         } catch (error) {
-            toast.error(getApiErrorMessage(error, copy.error))
+            toast.error(getApiErrorMessage(error, t('autocare.ownerFleetVehicleError')))
         }
     }
 
     return <form className="mt-3 grid gap-2 rounded-[var(--radius-control)] border border-primary/25 bg-muted/35 p-3" onSubmit={(event) => void submit(event)}>
-        <p className="text-xs font-black text-foreground">{copy.title}</p>
+        <p className="text-xs font-black text-foreground">{t('autocare.ownerFleetVehicleFormTitle')}</p>
         {isDraftRestored ? <FormDraftNotice onDiscard={discardDraft} /> : null}
-        <SelectField label={copy.make} value={brandId} onChange={(value) => { setBrandId(value); setModelId(''); setYear('') }} options={brands.map((brand) => [brand.id, getVehicleBrandLabel(brand, locale)] as const)} placeholder={copy.selectMake} />
-        <SelectField label={copy.model} value={modelId} onChange={(value) => { setModelId(value); setYear('') }} options={selectedBrand?.models.map((model) => [model.id, model.label] as const) ?? []} placeholder={copy.selectModel} disabled={!selectedBrand} />
-        <SelectField label={copy.year} value={year} onChange={setYear} options={years.map((entry) => [String(entry), String(entry)] as const)} placeholder={copy.selectYear} />
-        <TextField label={copy.registrationNumber} value={registrationNumber} maxLength={32} onChange={setRegistrationNumber} />
-        <TextField label={copy.internalReference} value={internalReference} maxLength={40} onChange={setInternalReference} />
-        <TextField label={copy.vin} value={vin} maxLength={17} onChange={setVin} />
+        <SelectField label={t('autocare.ownerFleetVehicleMake')} value={brandId} onChange={(value) => { setBrandId(value); setModelId(''); setYear('') }} options={brands.map((brand) => [brand.id, getVehicleBrandLabel(brand, locale)] as const)} placeholder={t('autocare.ownerFleetSelectMake')} />
+        <SelectField label={t('autocare.ownerFleetVehicleModel')} value={modelId} onChange={(value) => { setModelId(value); setYear('') }} options={selectedBrand?.models.map((model) => [model.id, model.label] as const) ?? []} placeholder={t('autocare.ownerFleetSelectModel')} disabled={!selectedBrand} />
+        <SelectField label={t('autocare.ownerFleetVehicleYear')} value={year} onChange={setYear} options={years.map((entry) => [String(entry), String(entry)] as const)} placeholder={t('autocare.ownerFleetSelectYear')} />
+        <TextField label={t('autocare.ownerFleetRegistrationOptional')} value={registrationNumber} maxLength={32} onChange={setRegistrationNumber} />
+        <TextField label={t('autocare.ownerFleetInternalOptional')} value={internalReference} maxLength={40} onChange={setInternalReference} />
+        <TextField label={t('autocare.ownerFleetVinOptional')} value={vin} maxLength={17} onChange={setVin} />
         <div className="flex flex-wrap justify-end gap-2 pt-1">
-            <button type="button" onClick={() => { discardDraft(); onCancel() }} className="h-8 rounded-[var(--radius-control)] px-2.5 text-xs font-bold text-muted-foreground hover:bg-background">{copy.cancel}</button>
-            <button type="submit" disabled={!selectedBrand || !year || createState.isLoading} className="h-8 rounded-[var(--radius-control)] bg-primary px-2.5 text-xs font-black text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60">{copy.save}</button>
+            <button type="button" onClick={() => { discardDraft(); onCancel() }} className="h-8 rounded-[var(--radius-control)] px-2.5 text-xs font-bold text-muted-foreground hover:bg-background">{t('common.cancel')}</button>
+            <button type="submit" disabled={!selectedBrand || !year || createState.isLoading} className="h-8 rounded-[var(--radius-control)] bg-primary px-2.5 text-xs font-black text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60">{t('autocare.ownerFleetVehicleSave')}</button>
         </div>
     </form>
 }
@@ -144,12 +144,6 @@ function SelectField({ label, value, onChange, options, placeholder, disabled = 
     disabled?: boolean
 }) {
     return <label className="relative grid gap-1 text-xs font-bold text-foreground"><span>{label}</span><select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="select-with-icon h-8 appearance-none rounded-[var(--radius-control)] border border-border bg-background px-2.5 pr-8 text-xs font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50"><option value="">{placeholder}</option>{options.map(([option, optionLabel]) => <option key={option} value={option}>{optionLabel}</option>)}</select><ChevronDown className="pointer-events-none absolute bottom-2.5 right-2.5 size-3.5 text-muted-foreground" aria-hidden="true" /></label>
-}
-
-function getCopy(locale: string) {
-    return locale === 'ru'
-        ? { title: 'Добавить автомобиль', make: 'Марка автомобиля', model: 'Модель', year: 'Год выпуска', selectMake: 'Выберите марку', selectModel: 'Выберите модель', selectYear: 'Выберите год', registrationNumber: 'Госномер (необязательно)', internalReference: 'Внутренний номер (необязательно)', vin: 'VIN (необязательно)', save: 'Добавить', cancel: 'Отмена', success: 'Автомобиль добавлен', error: 'Не удалось добавить автомобиль' }
-        : { title: 'Add vehicle', make: 'Vehicle make', model: 'Model', year: 'Model year', selectMake: 'Select make', selectModel: 'Select model', selectYear: 'Select year', registrationNumber: 'Registration number (optional)', internalReference: 'Internal number (optional)', vin: 'VIN (optional)', save: 'Add vehicle', cancel: 'Cancel', success: 'Vehicle added', error: 'Could not add vehicle' }
 }
 
 function getSelectableYears(yearsFrom?: number, yearsTo?: number) {
