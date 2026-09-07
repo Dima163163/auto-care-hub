@@ -454,6 +454,14 @@ anonymized samples/participant rows отсутствуют.
   the same five canonical routes and desktop/mobile viewports; the CTA
   regression is **1 file / 1 test PASS** and the full local MVP gate remains
   **43/43 PASS**.
+- Russian supplemental translations are now split into statically analyzable
+  lazy payloads: admin overrides ride the existing `ru-part-2` chunk and
+  AutoCare overrides use a dedicated `ru-part-3-autocare` chunk; the
+  compatibility `ru-part-3.ts` export remains available and merge/fallback
+  semantics are unchanged. Translation/i18n coverage is **33/33 PASS**, Vite
+  bundle budgets are **90 JS chunks / 79.7 kB largest locale / 152.6 kB
+  entry**, and the full local MVP gate remains **43/43 PASS** (frontend
+  **167/510**, responsive **30/30**).
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

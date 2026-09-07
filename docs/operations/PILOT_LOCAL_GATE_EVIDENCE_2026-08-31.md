@@ -4261,3 +4261,23 @@ dark matrix дала **0 нарушений в 20/20 комбинациях**; �
 search flow или theme persistence. Real-device VoiceOver/TalkBack,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 472 (08.09.2026) — translation bundle budget
+
+1–10. `[x]` Русский supplemental translation payload разделён на statically
+analyzable lazy-модули: admin overrides остаются в существующем `ru-part-2`
+chunk, а AutoCare overrides вынесены в отдельный `ru-part-3-autocare` chunk.
+Совместимый `ru-part-3.ts` aggregator сохранён для прямых импортов; порядок
+merge и fallback на English schema не изменены.
+
+11–20. `[x]` Bundle regression — **2 файла / 33 теста PASS** для translation и
+i18n: admin и AutoCare ключи проверяются после lazy split. Vite production
+bundle и bundle-splitting checks PASS: **90 JS chunks**, largest locale chunk
+**79,7 kB** (лимит 90 kB), entry **152,6 kB**, required lazy/runtime chunks
+**11/11**. ESLint и полный `check:local-mvp -- --json` PASS: **43/43**, включая
+frontend **167 файлов / 510 тестов** и responsive **30/30**.
+
+21–30. `[~]` Закрыт local translation bundle-budget gap без изменения
+translation values, locale fallback, route loading или API semantics.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
