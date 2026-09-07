@@ -3770,3 +3770,20 @@ suite — **152/488 PASS**.
 без изменения API payload или mutation semantics. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 446 (07.09.2026) — localized provider profile change form
+
+1–10. `[x]` Profile change form больше не держит локальный RU/EN copy-object
+или locale prop. Поля публичного профиля, multibrand, документы, private
+reference placeholder и submit action используют typed translation contract;
+draft restoration, document payload и profile-update semantics unchanged.
+
+11–20. `[x]` Profile/onboarding regression — **2 файла / 4 теста PASS**;
+ESLint, Vite production build и полный `check:local-mvp` на profile-localization
+worktree поверх `87705b6` завершены с `all local MVP checks passed`, включая
+responsive Chromium matrix; frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт raw-copy localization gap в profile-change surface без
+изменения draft persistence, validation или mutation payload. Real-device
+language review, staging/production, deployed Lighthouse и pilot evidence
+остаются внешними gates; readiness остаётся **96.5% (193/200)**.

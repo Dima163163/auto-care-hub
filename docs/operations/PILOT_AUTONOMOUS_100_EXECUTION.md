@@ -290,6 +290,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-provider-communication `npm run check:local-mvp` on `c5a123d` passes all
   43 checks, including the responsive Chromium matrix; targeted communication
   coverage is **1 file / 1 test PASS**.
+- Provider profile change form now uses typed translation keys for public fields,
+  multibrand and private document references; draft restoration, document
+  payload and profile-update semantics remain unchanged.
+- Post-provider-profile-form `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; profile/onboarding coverage is
+  **2 files / 4 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
