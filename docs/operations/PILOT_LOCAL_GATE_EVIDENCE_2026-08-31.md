@@ -4281,3 +4281,25 @@ frontend **167 файлов / 510 тестов** и responsive **30/30**.
 translation values, locale fallback, route loading или API semantics.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 473 (08.09.2026) — внешний deployment probe
+
+1–10. `[x]` Выполнен безопасный GET-only probe URL, зафиксированных в
+`render.yaml` и `vercel.json`: custom host `autocarehub.app` не резолвится
+(HTTP 000/DNS), `autocare-hub.vercel.app` не дал рабочий production ответ
+(первичный ответ — `404 DEPLOYMENT_NOT_FOUND`, повторный header probe — timeout),
+`autocare-hub-client.onrender.com` вернул `404`, а
+`autocare-hub-api.onrender.com/health` вернул `404`. Mutating HTTP requests,
+credentials и cookies не использовались.
+
+11–20. `[x]` Probe подтвердил, что доступный из репозитория deployment сейчас
+не может служить evidence для production HTML/OG/robots, Lighthouse или
+staging API: frontend custom host unavailable, Vercel deployment missing/
+unstable, Render client/API не совпадают с ожидаемыми route contracts. Это
+уточняет внешний blocker и не маскируется под локальный PASS.
+
+21–30. `[~]` Deployment evidence остаётся открытым: нужен владелец окружения,
+который восстановит/подтвердит frontend deployment, DNS и API service либо
+передаст актуальный HTTPS staging URL. До этого readiness не изменяется и
+остаётся **96.5% (193/200)**; local gate, source contracts и synthetic fixtures
+не заменяют deployed evidence.
