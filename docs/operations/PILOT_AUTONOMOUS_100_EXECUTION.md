@@ -319,6 +319,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-reviews `npm run check:local-mvp` passes all 43 checks, including
   the responsive Chromium matrix; targeted reviews coverage is **1 file / 1
   test PASS**, and the frontend suite is **153/489 PASS**.
+- Owner capacity calendar now uses typed translation keys and shared locale
+  date formatting; occupancy grouping, capacity calculations and selected-day
+  behavior remain unchanged.
+- Post-owner-capacity-calendar `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted calendar coverage is
+  **1 file / 2 tests PASS**, and the frontend suite remains **153/489 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

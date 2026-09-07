@@ -3853,3 +3853,20 @@ suite — **153/489 PASS**.
 surface без изменения API query shape, rating filters или promo payload.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 451 (07.09.2026) — localized owner capacity calendar
+
+1–10. `[x]` Capacity calendar больше не принимает locale prop и не содержит
+RU/EN ternaries. Заголовки, date/count copy, loading/error/empty states и
+appointment labels используют typed translation contract; occupancy grouping,
+capacity calculation и selected-day behavior unchanged.
+
+11–20. `[x]` Capacity calendar regression — **1 файл / 2 теста PASS**; полный
+`check:local-mvp` на calendar-localization worktree поверх `805dc49` завершён
+с `all local MVP checks passed`, включая responsive Chromium matrix; frontend
+suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт raw-copy/date-format gap в capacity calendar без изменения
+request/provider query shape или branch occupancy semantics. Real-device
+language review, staging/production, deployed Lighthouse и pilot evidence
+остаются внешними gates; readiness остаётся **96.5% (193/200)**.
