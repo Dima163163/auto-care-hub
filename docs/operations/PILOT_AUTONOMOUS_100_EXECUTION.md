@@ -368,6 +368,14 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-invitation `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted invitation coverage is
   **1 file / 3 tests PASS**.
+- Client requests panel now uses typed translation keys for bonus lifecycle,
+  booking/VIN snapshots, quote history and review composer; shared locale
+  number/date/currency formatters and localized service-label fallback are used
+  without changing request, quote, booking, bonus or review semantics.
+- Client-path source contract now accepts typed translation keys for localized
+  UI controls; its **2 contract tests PASS**, targeted profile-request coverage
+  is **1 file / 1 test PASS**, and `npm run check:local-mvp` passes all 43 checks
+  including the responsive Chromium matrix.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

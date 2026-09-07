@@ -3996,3 +3996,22 @@ responsive Chromium matrix.
 изменения token flow, API mutation или provider scope. Real-device language
 review, staging/production, deployed Lighthouse и pilot evidence остаются
 внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 459 (08.09.2026) — localized client requests, bonuses and review composer
+
+1–10. `[x]` Client requests panel больше не содержит RU/EN-тернарии для bonus
+summary, booking snapshot, quote history и review composer. Bonus lifecycle,
+vehicle/VIN snapshot, request service labels, dates, prices, points и review
+validation используют typed translation contract и shared locale formatters;
+query, mutation, idempotency и request-scope semantics unchanged.
+
+11–20. `[x]` Client-path regression — **2 contract tests PASS** и profile
+requests regression — **1 файл / 1 тест PASS**; после обновления source contract
+на typed translation keys ESLint, production build и полный `check:local-mvp`
+завершены с `all local MVP checks passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format gap в клиентской заявочной панели
+без изменения API payloads, booking/quote transitions, bonus ledger или review
+validation rules. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
