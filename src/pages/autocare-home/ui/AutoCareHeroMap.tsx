@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { MapPin, Minus, Plus, Star, Wrench } from 'lucide-react'
 
+import { formatCurrency } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 const offers = [
-    { id: 'north', top: '9%', left: '41%', price: 'от 3 200 ₽', rating: '4.7', tone: 'green' },
-    { id: 'north-east', top: '17%', left: '79%', price: 'от 2 900 ₽', rating: '4.5', tone: 'blue' },
-    { id: 'west', top: '37%', left: '36%', price: 'от 3 500 ₽', rating: '4.8', tone: 'blue' },
-    { id: 'east', top: '61%', left: '78%', price: 'от 2 800 ₽', rating: '4.6', tone: 'green' },
-    { id: 'south-west', top: '68%', left: '36%', price: 'от 2 800 ₽', rating: '4.6', tone: 'green' },
-    { id: 'south', top: '84%', left: '69%', price: 'от 3 900 ₽', rating: '4.4', tone: 'blue' },
+    { id: 'north', top: '9%', left: '41%', price: 3200, rating: '4.7', tone: 'green' },
+    { id: 'north-east', top: '17%', left: '79%', price: 2900, rating: '4.5', tone: 'blue' },
+    { id: 'west', top: '37%', left: '36%', price: 3500, rating: '4.8', tone: 'blue' },
+    { id: 'east', top: '61%', left: '78%', price: 2800, rating: '4.6', tone: 'green' },
+    { id: 'south-west', top: '68%', left: '36%', price: 2800, rating: '4.6', tone: 'green' },
+    { id: 'south', top: '84%', left: '69%', price: 3900, rating: '4.4', tone: 'blue' },
 ] as const
 
 const servicePins = [
@@ -19,7 +20,7 @@ const servicePins = [
 ] as const
 
 export function AutoCareHeroMap() {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
     const [zoom, setZoom] = useState(1)
 
     const zoomIn = () => setZoom((current) => Math.min(1.2, current + 0.1))
@@ -35,7 +36,7 @@ export function AutoCareHeroMap() {
                 </div>
                 <div className="hidden lg:block">
                     {servicePins.map((pin) => <ServicePin key={`${pin.top}-${pin.left}`} {...pin} />)}
-                    {offers.map((offer) => <OfferMarker key={offer.id} {...offer} />)}
+                    {offers.map((offer) => <OfferMarker key={offer.id} {...offer} priceLabel={t('autocare.fromPrice', { price: formatCurrency(offer.price, 'RUB', locale) })} />)}
                 </div>
             </div>
             <div className="absolute bottom-12 right-8 hidden flex-col overflow-hidden rounded-[9px] border border-primary-foreground/20 bg-map-overlay/90 text-primary-foreground shadow-xl lg:flex">
@@ -51,13 +52,13 @@ function ServicePin({ top, left }: { top: string; left: string }) {
     return <span className="absolute flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-primary-foreground/30 bg-map-overlay/85 text-primary-foreground shadow-lg" style={{ top, left }}><Wrench className="size-5" /></span>
 }
 
-function OfferMarker({ top, left, price, rating, tone }: typeof offers[number]) {
+function OfferMarker({ top, left, priceLabel, rating, tone }: typeof offers[number] & { priceLabel: string }) {
     const toneClass = tone === 'green' ? 'bg-map-marker-success' : 'bg-map-marker-primary'
 
     return (
         <span className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-[12px] border border-primary-foreground/20 bg-map-overlay/80 px-2.5 py-2 text-primary-foreground shadow-xl backdrop-blur-sm" style={{ top, left }}>
             <span className={`flex size-9 items-center justify-center rounded-full ${toneClass}`}><MapPin className="size-5" /></span>
-            <span className="pr-1"><strong className="block whitespace-nowrap text-sm">{price}</strong><span className="flex items-center gap-1 text-xs font-semibold">{rating}<Star className="size-3 fill-map-rating text-map-rating" /></span></span>
+            <span className="pr-1"><strong className="block whitespace-nowrap text-sm">{priceLabel}</strong><span className="flex items-center gap-1 text-xs font-semibold">{rating}<Star className="size-3 fill-map-rating text-map-rating" /></span></span>
         </span>
     )
 }
