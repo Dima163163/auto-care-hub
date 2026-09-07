@@ -3289,3 +3289,19 @@ workflow YAML parse и `git diff --check` также PASS.
 21–30. `[~]` CI replay усиливает regression protection, но не является
 staging matrix с двумя API-репликами, Redis outage/reconnect или
 release-candidate acceptance; readiness остаётся **96.5% (193/200)**.
+
+## Порция 417 (07.09.2026) — canonical local MVP replay on published SHA
+
+1–10. `[x]` На опубликованном `2201da15f186` повторён полный
+`npm run check:local-mvp`; команда завершилась с `exit=0`. Все **43 проверки**
+прошли, включая frontend lint/tests, Next production build, backend build,
+API/media/backup/security contracts и regressions.
+
+11–20. `[x]` Runtime часть также PASS: временный Next production server был
+поднят на loopback-порту, а responsive Chromium matrix завершила **PASS**.
+Отдельный `--static-only` намеренно оставляет responsive gate manual и не
+использовался как итоговый результат.
+
+21–30. `[~]` Свежий clean local replay подтверждает текущий опубликованный
+SHA, но не даёт staging API/Redis, private S3, deployed Lighthouse, real-device
+или owner/participant evidence; readiness остаётся **96.5% (193/200)**.
