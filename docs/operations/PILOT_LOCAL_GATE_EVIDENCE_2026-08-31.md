@@ -3889,3 +3889,20 @@ responsive Chromium matrix; frontend suite — **153/489 PASS**.
 mutation payload semantics. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 453 (08.09.2026) — localized owner clients page
+
+1–10. `[x]` Owner clients page больше не использует локальный RU/EN copy-object
+или raw locale fallback. Заголовки, описание, issue summary, request count,
+empty state и fallback name используют typed translation contract; клиентская
+группировка по email/phone, сортировка и service-label fallback unchanged.
+
+11–20. `[x]` Owner clients regression — **1 файл / 2 теста PASS**; ESLint,
+Vite production build и полный `check:local-mvp` на clients-localization
+worktree поверх `bf13041` завершены с `all local MVP checks passed`, включая
+responsive Chromium matrix; frontend suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт raw-copy/localized-fallback gap в owner clients surface без
+изменения request query shape, identity grouping или service label semantics.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.

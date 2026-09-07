@@ -332,6 +332,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-capacity-resources `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted resources coverage is
   **1 file / 2 tests PASS**, and the frontend suite remains **153/489 PASS**.
+- Owner clients page now uses typed translation keys for page/card copy,
+  empty state and fallback customer names; client grouping, sorting and service
+  label fallback semantics remain unchanged.
+- Post-owner-clients `npm run check:local-mvp` passes all 43 checks, including
+  the responsive Chromium matrix; targeted clients coverage is **1 file / 2
+  tests PASS**, and the frontend suite remains **153/489 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
