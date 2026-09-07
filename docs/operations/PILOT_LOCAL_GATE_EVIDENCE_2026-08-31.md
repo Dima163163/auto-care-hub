@@ -3337,38 +3337,6 @@ OpenStreetMap attribution. В профиле нет показанного runti
 deployed URL и production/staging behavior остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
 
-## Порция 431 (07.09.2026) — locale-aware home provider prices
-
-1–10. `[x]` Home provider preview теперь хранит цены fixture/API-мэппинга как
-числа, а не русские display strings. Основная и зачёркнутая цена форматируются
-через `formatCurrency` в выбранной locale; `fromPrice` остаётся переводимым.
-
-11–20. `[x]` Lint без warnings и полный `check:local-mvp` на commit
-`77b612d60eab` завершён с `all local MVP checks passed`: frontend **151/481**,
-Next/backend builds, API/media/backup/security/route contracts и responsive
-Chromium matrix PASS.
-
-21–30. `[~]` Исправление закрывает локальный price-formatting gap без изменения
-API или реальных данных. Real-device language review, staging/production,
-deployed Lighthouse и pilot evidence остаются внешними gates; readiness
-остаётся **96.5% (193/200)**.
-
-## Порция 430 (07.09.2026) — localized synthetic hero offer prices
-
-1–10. `[x]` Synthetic offer markers в hero map больше не содержат русские
-`от … ₽`: цены хранятся числовыми значениями, форматируются через
-`formatCurrency` и оборачиваются в локализованный `fromPrice`. Геометрия,
-рейтинги, artwork и synthetic-статус визуального слоя не изменились.
-
-11–20. `[x]` Lint без warnings и полный `check:local-mvp` на commit
-`bc56583886df` завершён с `all local MVP checks passed`: frontend **151/481**,
-Next/backend builds, API/media/backup/security/route contracts и responsive
-Chromium matrix PASS.
-
-21–30. `[~]` Это закрывает ещё один локальный copy/localization gap; реальные
-offer data, deployed map и внешние staging/production, Lighthouse и pilot
-evidence gates не затронуты. Readiness остаётся **96.5% (193/200)**.
-
 ## Порция 420 (07.09.2026) — named provider map region
 
 1–10. `[x]` `ProviderLocationMap` получил `role="region"` и локализованный
@@ -3533,5 +3501,37 @@ passed`, включая responsive Chromium matrix.
 
 21–30. `[~]` Исправление закрывает ещё один локальный multilingual UX gap без
 изменения API или данных. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
+
+## Порция 430 (07.09.2026) — localized synthetic hero offer prices
+
+1–10. `[x]` Synthetic offer markers в hero map больше не содержат русские
+`от … ₽`: цены хранятся числовыми значениями, форматируются через
+`formatCurrency` и оборачиваются в локализованный `fromPrice`. Геометрия,
+рейтинги, artwork и synthetic-статус визуального слоя не изменились.
+
+11–20. `[x]` Lint без warnings и полный `check:local-mvp` на commit
+`bc56583886df` завершён с `all local MVP checks passed`: frontend **151/481**,
+Next/backend builds, API/media/backup/security/route contracts и responsive
+Chromium matrix PASS.
+
+21–30. `[~]` Это закрывает ещё один локальный copy/localization gap; реальные
+offer data, deployed map и внешние staging/production, Lighthouse и pilot
+evidence gates не затронуты. Readiness остаётся **96.5% (193/200)**.
+
+## Порция 431 (07.09.2026) — locale-aware home provider prices
+
+1–10. `[x]` Home provider preview теперь хранит цены fixture/API-мэппинга как
+числа, а не русские display strings. Основная и зачёркнутая цена форматируются
+через `formatCurrency` в выбранной locale; `fromPrice` остаётся переводимым.
+
+11–20. `[x]` Lint без warnings и полный `check:local-mvp` на commit
+`77b612d60eab` завершён с `all local MVP checks passed`: frontend **151/481**,
+Next/backend builds, API/media/backup/security/route contracts и responsive
+Chromium matrix PASS.
+
+21–30. `[~]` Исправление закрывает локальный price-formatting gap без изменения
+API или реальных данных. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
