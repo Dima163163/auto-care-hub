@@ -249,6 +249,11 @@ anonymized samples/participant rows отсутствуют.
   are unchanged.
 - Post-owner-metrics `npm run check:local-mvp` on `b953ac8` passes all 43 checks,
   including the responsive Chromium matrix; frontend suite is **152/488 PASS**.
+- Owner dashboard hero and quick actions now use typed translation keys; the
+  obsolete locale prop was removed from the context-driven quick-actions card.
+- Post-owner-dashboard-hero `npm run check:local-mvp` on `699dd85` passes all 43
+  checks, including the responsive Chromium matrix; frontend suite is
+  **152/488 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

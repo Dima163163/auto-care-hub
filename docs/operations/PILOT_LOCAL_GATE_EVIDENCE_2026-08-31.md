@@ -3656,3 +3656,19 @@ frontend suite — **152/488 PASS**.
 metrics без изменения расчётов метрик или API semantics. Real-device language
 review, staging/production, deployed Lighthouse и pilot evidence остаются
 внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 439 (07.09.2026) — localized owner dashboard hero and quick actions
+
+1–10. `[x]` Dashboard hero и quick actions больше не хранят RU/EN copy в
+компонентах. Заголовок с именем владельца, описание, CTA и четыре операционных
+действия используют общий translation contract; устаревший `locale` prop у
+quick actions удалён после перехода на `useTranslation`.
+
+11–20. `[x]` `git diff --check`, ESLint без warnings, Vite production build и
+полный `check:local-mvp` на commit `699dd85` завершены успешно: все 43 проверки
+PASS, включая responsive Chromium matrix; frontend suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт copy-localization gap в hero/quick-actions без изменения
+маршрутов, owner workflow или API semantics. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.
