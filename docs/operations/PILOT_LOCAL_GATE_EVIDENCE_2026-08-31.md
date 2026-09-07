@@ -3449,3 +3449,20 @@ responsive Chromium matrix.
 journey, но не заменяет real-device language review, staging/production
 runtime, deployed Lighthouse или pilot evidence; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 427 (07.09.2026) — locale-aware home provider preview
+
+1–10. `[x]` Домашний provider preview больше не выводит расстояния из
+русских fixture strings и не заменяет `Today/Tomorrow` на русский независимо
+от locale. `Intl.NumberFormat` форматирует километры, а
+`Intl.RelativeTimeFormat` форматирует ближайший слот; обработаны и
+`Today/Today` API values, и русские fallback fixtures.
+
+11–20. `[x]` Lint без warnings, Next production build с TypeScript PASS; полный
+`check:local-mvp` на commit `6f8d11911ddd` завершён с `all local MVP checks
+passed`, включая frontend **151/480**, accessibility/interaction contracts,
+security/API regressions и responsive Chromium matrix.
+
+21–30. `[~]` Исправление усиливает локальный multilingual UX, но не является
+real-device language review и не закрывает staging/production, deployed
+Lighthouse или pilot evidence; readiness остаётся **96.5% (193/200)**.
