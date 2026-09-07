@@ -3428,3 +3428,24 @@ frontend **151/480**, Next production build и полный `check:local-mvp` PA
 не превращает synthetic hero surface в deployed map evidence и не закрывает
 staging/production, real-device, Lighthouse или owner/participant gates;
 readiness остаётся **96.5% (193/200)**.
+
+## Порция 426 (07.09.2026) — AutoCare locale consistency replay
+
+1–10. `[x]` В публичной форме поиска `5/10/25 км` заменены на
+`autocare.radiusOption`; badges профиля сервиса (`mobile service` и
+`pickup/delivery`) больше не содержат русские literals и форматируют радиус
+через выбранную locale. Исправлены EN/RU, popular locales и European locale
+family overrides.
+
+11–20. `[x]` Добавлена regression-проверка, что public automotive journey
+copy, map labels, service badges и radius labels не используют English fallback
+для поддерживаемых locale loaders. Translation coverage — **9/9 PASS**;
+frontend lint без warnings, полный frontend unit — **151/480 PASS**, Next и
+backend builds PASS. На commit `26a3cad99fbe` полный `check:local-mvp` завершён
+с `all local MVP checks passed`, включая accessibility, security contracts и
+responsive Chromium matrix.
+
+21–30. `[~]` Это закрывает локальный translation/a11y gap публичного AutoCare
+journey, но не заменяет real-device language review, staging/production
+runtime, deployed Lighthouse или pilot evidence; readiness остаётся
+**96.5% (193/200)**.
