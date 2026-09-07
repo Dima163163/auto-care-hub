@@ -9,7 +9,7 @@ import { getMediaUrl } from '@/shared/lib/getMediaUrl'
 import { getCabinetImageSources } from '@/shared/lib/getCabinetImageSources'
 import { routePaths } from '@/shared/constants/routes'
 import { formatCurrency } from '@/shared/lib/formatCurrency'
-import { MAP_CONFIG } from '@/shared/config/map'
+import { FALLBACK_MAP_TILE_URL, MAP_CONFIG } from '@/shared/config/map'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ResilientImage } from '@/shared/ui/resilient-image'
 import { getCabinetMapPosition, type CabinetMapPosition } from '../lib/cabinetMapCoordinates'
@@ -73,10 +73,22 @@ export function CabinetMapPanel({ cabinets, selectedCabinetId, onSelect, onClear
                 preferCanvas: true,
             }).setView(FALLBACK_MAP_POSITION, 11)
             const markerLayer = L.layerGroup().addTo(map)
-            const tileLayer = L.tileLayer(MAP_CONFIG.tileUrl, MAP_CONFIG)
+            let usingFallback = false
+            let tileLayer = L.tileLayer(MAP_CONFIG.tileUrl, MAP_CONFIG)
 
             tileLayer.on('load', () => setTileStatus('ready'))
-            tileLayer.on('tileerror', () => setTileStatus('error'))
+            tileLayer.on('tileerror', () => {
+                if (!usingFallback && MAP_CONFIG.tileUrl !== FALLBACK_MAP_TILE_URL) {
+                    usingFallback = true
+                    tileLayer.removeFrom(map)
+                    tileLayer = L.tileLayer(FALLBACK_MAP_TILE_URL, { attribution: MAP_CONFIG.attribution, subdomains: MAP_CONFIG.subdomains })
+                    tileLayer.on('load', () => setTileStatus('ready'))
+                    tileLayer.on('tileerror', () => setTileStatus('error'))
+                    tileLayer.addTo(map)
+                    return
+                }
+                setTileStatus('error')
+            })
             tileLayer.addTo(map)
             map.on('locationfound', ({ latlng }) => {
                 map.setView(latlng, Math.max(map.getZoom(), 13), { animate: true })

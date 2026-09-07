@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css'
 
 import type { ProviderPreview } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
-import { RESULTS_MAP_CONFIG } from '@/shared/config/map'
+import { FALLBACK_MAP_TILE_URL, RESULTS_MAP_CONFIG } from '@/shared/config/map'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { formatCurrency } from '@/shared/lib/locale-format'
 
@@ -66,8 +66,21 @@ export function AutoCareMapPreview({ providers, serviceId, selectedProviders, fo
 
         const map = L.map(container, { zoomControl: false, scrollWheelZoom: true, preferCanvas: true }).setView(MOSCOW_CENTER, 12)
         const markerLayer = L.layerGroup().addTo(map)
-        const tileLayer = L.tileLayer(RESULTS_MAP_CONFIG.tileUrl, { ...RESULTS_MAP_CONFIG, detectRetina: true })
-        tileLayer.on('tileerror', () => setTileError(true))
+        let usingFallback = false
+        let tileLayer = L.tileLayer(RESULTS_MAP_CONFIG.tileUrl, { ...RESULTS_MAP_CONFIG, detectRetina: true })
+        tileLayer.on('load', () => setTileError(false))
+        tileLayer.on('tileerror', () => {
+            if (!usingFallback && RESULTS_MAP_CONFIG.tileUrl !== FALLBACK_MAP_TILE_URL) {
+                usingFallback = true
+                tileLayer.removeFrom(map)
+                tileLayer = L.tileLayer(FALLBACK_MAP_TILE_URL, { attribution: RESULTS_MAP_CONFIG.attribution, subdomains: RESULTS_MAP_CONFIG.subdomains, detectRetina: true })
+                tileLayer.on('load', () => setTileError(false))
+                tileLayer.on('tileerror', () => setTileError(true))
+                tileLayer.addTo(map)
+                return
+            }
+            setTileError(true)
+        })
         tileLayer.addTo(map)
         mapRef.current = map
         markerLayerRef.current = markerLayer
