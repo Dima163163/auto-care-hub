@@ -191,6 +191,8 @@ anonymized samples/participant rows отсутствуют.
   controls, legal links and visible map attribution.
 - Provider location map now exposes a localized named `region` without changing
   the visual layout or external map action.
+- Post-fix `npm run check:local-mvp` on `2af350756dd6` passes all 43 checks,
+  including the responsive Chromium matrix.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

@@ -79,6 +79,9 @@ The provider map container now exposes a localized `region` name, preserving
 the visual map and external map link while making the location landmark
 discoverable to assistive technology.
 
+The post-fix canonical `npm run check:local-mvp` replay on `2af350756dd6` also
+passes all 43 checks, including the responsive Chromium matrix.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

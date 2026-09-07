@@ -3350,3 +3350,18 @@ frontend tests и Next production build; TypeScript принял обе translat
 21–30. `[~]` Исправление подтверждено локально и не закрывает real-device
 assistive technology, deployed URL или owner acceptance; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 421 (07.09.2026) — post-a11y canonical local MVP replay
+
+1–10. `[x]` После named-map-region fix повторён полный
+`npm run check:local-mvp` на SHA `2af350756dd6`; команда завершилась с
+`exit=0`. Все **43 проверки** PASS: lint/tests/builds, API/media/backup,
+security, route, interaction и legacy contracts.
+
+11–20. `[x]` Runtime/browser часть также PASS: Next production server поднят
+на ephemeral loopback-порту, responsive Chromium matrix завершена PASS.
+
+21–30. `[~]` Replay подтверждает текущий опубликованный код в local
+production-like среде, но не закрывает staging/production, real-device,
+deployed Lighthouse или owner/participant evidence; readiness остаётся
+**96.5% (193/200)**.
