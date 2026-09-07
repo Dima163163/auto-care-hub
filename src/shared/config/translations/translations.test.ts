@@ -187,6 +187,19 @@ describe('translation coverage', () => {
         expect(translations.ru.autocare.resultCount).toBe('{{count}} сервисов найдено')
     })
 
+    it('keeps home location service counts localized for every supported language', () => {
+        for (const locale of Object.keys(translations).filter((value) => value !== 'en')) {
+            const autocare = translations[locale as keyof typeof translations].autocare
+            expect(autocare.locationServiceOne, `${locale}.autocare.locationServiceOne is missing`).toBeTruthy()
+            expect(autocare.locationServicePlural, `${locale}.autocare.locationServicePlural uses English fallback`).not.toBe(
+                translations.en.autocare.locationServicePlural,
+            )
+        }
+
+        expect(translations.ru.autocare.locationServiceFew).toBe('автосервиса')
+        expect(translations.ru.autocare.locationServiceMany).toBe('автосервисов')
+    })
+
     it('uses a concise automotive-services label in the main navigation', () => {
         expect(translations.ru.navigation.services).toBe('Автоуслуги')
         expect(translations.en.navigation.services).toBe('Auto services')

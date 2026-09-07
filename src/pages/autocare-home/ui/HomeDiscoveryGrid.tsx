@@ -28,15 +28,18 @@ function LocationCard({ marketId }: { marketId: string }) {
     const { data: zones = [], isLoading, isError, refetch } = useGetAutoCareLocationZonesQuery({ marketId: apiMarketId, limit: 4 }, { skip: !apiMarketId || isMarketsLoading })
     const getZoneName = (names: Record<string, string>) => names[locale] ?? names[locale.split('-')[0] ?? ''] ?? names.en ?? names.ru ?? Object.values(names)[0] ?? ''
     const countLabel = (count: number) => {
-        if (!locale.startsWith('ru')) return `${count.toLocaleString(locale)} services`
+        const formattedCount = count.toLocaleString(locale)
+        if (!locale.startsWith('ru')) {
+            return `${formattedCount} ${t(count === 1 ? 'autocare.locationServiceOne' : 'autocare.locationServicePlural')}`
+        }
         const mod10 = count % 10
         const mod100 = count % 100
-        const noun = mod10 === 1 && mod100 !== 11
-            ? 'автосервис'
+        const nounKey = mod10 === 1 && mod100 !== 11
+            ? 'autocare.locationServiceOne'
             : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)
-                ? 'автосервиса'
-                : 'автосервисов'
-        return `${count.toLocaleString(locale)} ${noun}`
+                ? 'autocare.locationServiceFew'
+                : 'autocare.locationServiceMany'
+        return `${formattedCount} ${t(nounKey)}`
     }
     return (
         <section className="h-full rounded-[10px] bg-card p-5">
