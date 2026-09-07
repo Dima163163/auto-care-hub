@@ -131,6 +131,24 @@ export const ruPart3 = {
         priceTypeRange: 'Диапазон цены',
         priceTypeQuoteRequired: 'Нужна оценка',
     },
+    adminAutoCareDashboard: {
+        hero: {
+            eyebrow: 'Модерация платформы',
+            title: 'Поддерживайте доверие к маркетплейсу.',
+            description: 'Проверяйте профили сервисов, сигналы качества и данные владельцев каждой карточки.',
+            pending: 'профилей ждут проверки',
+        },
+        metrics: {
+            services: 'Профили сервисов',
+            active: 'активно',
+            review: 'Очередь проверки',
+            reviewNote: 'профилей ожидают проверки',
+            trust: 'Проверенные сервисы',
+            signals: 'сигналы доверия',
+            users: 'Пользователи платформы',
+            owners: 'владельцев сервисов',
+        },
+    },
     autocare: {
         ownerRequestsEyebrow: 'Заявки клиентов',
         ownerRequestsTitle: 'Входящие заявки AutoCare',

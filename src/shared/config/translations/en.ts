@@ -547,6 +547,24 @@ export const enTranslations = {
         priceTypeRange: 'Price range',
         priceTypeQuoteRequired: 'Quote required',
     },
+    adminAutoCareDashboard: {
+        hero: {
+            eyebrow: 'Platform moderation',
+            title: 'Keep the marketplace trustworthy.',
+            description: 'Review service profiles, quality signals and the people behind every listing.',
+            pending: 'profiles need review',
+        },
+        metrics: {
+            services: 'Service profiles',
+            active: 'active',
+            review: 'Review queue',
+            reviewNote: 'profiles awaiting review',
+            trust: 'Verified services',
+            signals: 'trust signals',
+            users: 'Platform users',
+            owners: 'service owners',
+        },
+    },
     adminUsers: {
         title: 'Users',
         description: 'Manage user statuses and account access.',
