@@ -401,6 +401,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-admin-data-quality `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted data-quality coverage is
   **1 file / 1 test PASS**.
+- Provider moderation queue now uses typed translation keys and shared locale
+  number formatting for provider status/actions and trust scores; ordering,
+  visible cap and status mutation semantics remain unchanged.
+- Post-provider-moderation `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted provider-moderation
+  coverage is **1 file / 1 test PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

@@ -4096,3 +4096,22 @@ production build и полный `check:local-mvp` завершены с
 изменения monitoring query, threshold predicates или admin queue destinations.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 464 (08.09.2026) — localized provider moderation queue
+
+1–10. `[x]` Provider moderation queue больше не использует локальный RU/EN
+copy-object. Queue title/description, owner/trust labels, provider statuses,
+publish/suspend/draft actions и empty state используют typed translation
+contract; provider ordering, visible limit и status mutation semantics
+unchanged. Trust scores используют shared locale number formatter.
+
+11–20. `[x]` Provider-moderation regression — **1 файл / 1 тест PASS**:
+локализованный queue title и trust score отображаются, publish mutation сохраняет
+`{ id, status: 'active' }`. ESLint, production build и полный
+`check:local-mvp` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format gap в provider moderation surface без
+изменения provider sorting, visible cap или status transition semantics.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
