@@ -8,9 +8,13 @@
 }
 
 .autocarehub-results-leaflet .leaflet-tile-pane {
-    filter: sepia(0.24) hue-rotate(168deg) saturate(2.3) brightness(1.64) contrast(0.78);
-    mix-blend-mode: screen;
-    opacity: 0.6;
+    filter: none;
+    mix-blend-mode: normal;
+    opacity: 1;
+}
+
+.dark .autocarehub-results-leaflet .leaflet-tile-pane {
+    filter: brightness(38%) saturate(65%) contrast(115%);
 }
 
 .autocare-results-heading {
