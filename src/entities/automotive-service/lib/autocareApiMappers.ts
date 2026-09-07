@@ -23,6 +23,7 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         rating: item.provider.rating,
         reviewCount: item.provider.reviewCount,
         distance: formatDistance(item.distanceKm),
+        distanceKm: item.distanceKm,
         price: item.offer.priceFromMinor / 100,
         priceTo: item.offer.priceToMinor === null ? null : item.offer.priceToMinor / 100,
         currency: item.offer.currencyCode,

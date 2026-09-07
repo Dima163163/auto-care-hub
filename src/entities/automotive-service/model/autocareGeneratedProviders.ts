@@ -89,6 +89,7 @@ function createProvider(index: number): ProviderPreview {
         rating,
         reviewCount: 18 + ((index * 47) % 640),
         distance: `${distance.toFixed(1)} km`,
+        distanceKm: distance,
         price: servicePrices[primaryServiceId] ?? SERVICE_BASE_PRICES[primaryServiceId],
         priceTo: priceType === 'range' ? Math.round((servicePrices[primaryServiceId] ?? SERVICE_BASE_PRICES[primaryServiceId]) * 1.2) : null,
         currency: 'RUB',

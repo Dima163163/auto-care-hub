@@ -12,6 +12,7 @@ export type ProviderPreview = {
     rating: number
     reviewCount: number
     distance: string
+    distanceKm?: number
     price: number
     priceTo?: number | null
     currency: string

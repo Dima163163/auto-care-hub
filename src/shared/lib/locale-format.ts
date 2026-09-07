@@ -17,6 +17,16 @@ export function formatCurrency(value: number, currency: string, locale: string |
     }).format(value)
 }
 
+export function parseDistanceKm(value: string): number | undefined {
+    const parsed = Number.parseFloat(value.replace(',', '.'))
+    return Number.isFinite(parsed) ? parsed : undefined
+}
+
+export function formatDistanceKm(distanceKm: number | undefined, locale: string | SupportedLocale): string {
+    if (distanceKm === undefined || distanceKm === Number.MAX_SAFE_INTEGER || !Number.isFinite(distanceKm)) return '—'
+    return new Intl.NumberFormat(getIntlLocale(locale), { maximumFractionDigits: 1, style: 'unit', unit: 'kilometer', unitDisplay: 'short' }).format(distanceKm)
+}
+
 export function formatDateTime(value: string | number | Date, locale: string | SupportedLocale, options?: Intl.DateTimeFormatOptions): string {
     return new Intl.DateTimeFormat(getIntlLocale(locale), options).format(new Date(value))
 }

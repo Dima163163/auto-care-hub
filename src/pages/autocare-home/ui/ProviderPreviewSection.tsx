@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { mapAutoCareDiscoveryItem, ProviderLogo, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { routePaths } from '@/shared/constants/routes'
-import { formatAutoCareSlot, formatCurrency } from '@/shared/lib/locale-format'
+import { formatAutoCareSlot, formatCurrency, formatDistanceKm, parseDistanceKm } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
@@ -38,13 +38,8 @@ const featuredProviders: readonly HomeProvider[] = [
     { id: 'turbo-tech-moscow', name: 'Turbo Tech', logoUrl: null, rating: 4.5, reviews: 132, distance: '5,1 км', distanceKm: 5.1, address: 'Ленинский пр-т, 68', price: 3500, priceValue: 3500, next: 'Завтра, 09:00', verified: false },
 ]
 
-function formatDistance(distanceKm: number, locale: string) {
-    if (distanceKm === Number.MAX_SAFE_INTEGER) return '—'
-    return new Intl.NumberFormat(locale, { maximumFractionDigits: 1, style: 'unit', unit: 'kilometer', unitDisplay: 'short' }).format(distanceKm)
-}
-
 function toHomeProvider(provider: ProviderPreview): HomeProvider {
-    const distanceKm = Number.parseFloat(provider.distance)
+    const distanceKm = provider.distanceKm ?? parseDistanceKm(provider.distance)
     return {
         id: provider.id,
         name: provider.name,
@@ -52,7 +47,7 @@ function toHomeProvider(provider: ProviderPreview): HomeProvider {
         rating: provider.rating,
         reviews: provider.reviewCount,
         distance: provider.distance.replace(' km', ' км').replace('.', ','),
-        distanceKm: Number.isFinite(distanceKm) ? distanceKm : Number.MAX_SAFE_INTEGER,
+        distanceKm: distanceKm ?? Number.MAX_SAFE_INTEGER,
         address: provider.address?.replace(/^Москва,\s*/, '') ?? 'ул. Автомобильная',
         price: provider.price,
         priceValue: provider.price,
@@ -205,7 +200,7 @@ function ProviderCard({ provider, locale }: { provider: HomeProvider; locale: st
                 {provider.trustBadge === 'trusted' ? <span className="shrink-0 rounded-full bg-status-success-surface px-1.5 py-0.5 text-[9px] font-black leading-4 text-status-success-foreground">{t('autocare.trustBadgeLabel')}</span> : null}
             </div>
             <p className="mt-3 flex min-h-[20px] items-center gap-1 text-sm"><strong className="text-rating-foreground">{provider.rating}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="size-3.5 fill-rating-fill text-rating-fill" />)}<span className="ml-1 text-xs text-muted-foreground">({t('autocare.reviews', { count: provider.reviews })})</span></p>
-            <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{formatDistance(provider.distanceKm, locale)}<span className="px-1">·</span>{provider.address}</span></p>
+            <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{formatDistanceKm(provider.distanceKm, locale)}<span className="px-1">·</span>{provider.address}</span></p>
             <div className="mt-6 min-h-[44px]">
                 <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{t('autocare.fromPrice', { price: formatCurrency(provider.price, 'RUB', locale) })}{provider.oldPrice ? <><span className="text-xs font-medium text-muted-foreground line-through">{formatCurrency(provider.oldPrice, 'RUB', locale)}</span><span className="rounded bg-status-danger-surface px-1.5 py-1 text-xs leading-4 text-status-danger-foreground">{provider.discount}</span></> : null}</p>
                 <p className="mt-1 text-xs leading-4 text-muted-foreground">{t('autocare.partsIncluded')}</p>

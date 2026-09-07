@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatAutoCareSlot, formatCurrency, formatDateTime, formatPlural, getIntlLocale } from './locale-format'
+import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDistanceKm, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
 
 describe('locale formatting', () => {
     it('maps supported locales to stable Intl tags', () => {
@@ -19,6 +19,13 @@ describe('locale formatting', () => {
         const value = '2026-08-25T12:30:00.000Z'
         expect(formatDateTime(value, 'en', { timeZone: 'UTC', dateStyle: 'medium' })).toContain('Aug')
         expect(formatDateTime(value, 'ru', { timeZone: 'UTC', dateStyle: 'medium' })).toContain('авг')
+    })
+
+    it('formats distances using numeric kilometers and locale-aware units', () => {
+        expect(parseDistanceKm('2.1 km')).toBe(2.1)
+        expect(parseDistanceKm('4,2 км')).toBe(4.2)
+        expect(formatDistanceKm(2.1, 'ru')).toContain('2,1')
+        expect(formatDistanceKm(undefined, 'en')).toBe('—')
     })
 
     it('uses locale-specific plural categories for customer-facing counts', () => {
