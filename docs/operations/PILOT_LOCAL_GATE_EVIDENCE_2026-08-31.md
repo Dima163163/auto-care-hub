@@ -4239,3 +4239,25 @@ navigation, rating semantics или auth redirect. Anonymous `GET /api/auth/me`
 с ожидаемым 401 остаётся штатной auth boundary; real-device VoiceOver/
 TalkBack, staging/production, deployed Lighthouse и pilot evidence остаются
 внешними gates. Readiness остаётся **96.5% (193/200)**.
+
+## Порция 471 (08.09.2026) — dark-mode contrast regression
+
+1–10. `[x]` Повторный production-like Chromium-аудит с принудительно
+сохранённой dark theme проверил те же 5 канонических маршрутов на desktop
+1440×900 и mobile 390×844. Все 10 dark route/viewport комбинаций установили
+ожидаемую тему, не дали page errors и сохранили zero horizontal overflow;
+mobile home и desktop provider дополнительно просмотрены по реальным
+скриншотам.
+
+11–20. `[x]` Dark axe WCAG2A/AA сначала нашёл один serious contrast defect в
+партнёрском CTA на обеих ширинах: наследуемый светлый текст на bright primary
+blue (2.53:1). CTA получил явный `text-primary-foreground`, после чего
+существующий dark semantic override применился корректно. Итоговая light +
+dark matrix дала **0 нарушений в 20/20 комбинациях**; добавлен UI regression
+**1 файл / 1 тест PASS**. Production build, ESLint и полный
+`check:local-mvp -- --json` на `b0781675949f` PASS (43/43, responsive 30/30).
+
+21–30. `[~]` Закрыт dark-mode contrast gap без изменения CTA destination,
+search flow или theme persistence. Real-device VoiceOver/TalkBack,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.

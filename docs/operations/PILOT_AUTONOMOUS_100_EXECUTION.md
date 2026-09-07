@@ -448,6 +448,12 @@ anonymized samples/participant rows отсутствуют.
   token and marker-label fixes reduce post-fix violations to **0 across 10
   route/viewport combinations**; the marker regression is **1 file / 1 test
   PASS**, and the full local MVP gate remains **43/43 PASS**.
+- A forced dark-theme Chromium audit found and closed an inherited light-text
+  contrast defect in the home partner CTA. After the explicit foreground class
+  fix, the combined light + dark WCAG2A/AA matrix is **20/20 clean** across
+  the same five canonical routes and desktop/mobile viewports; the CTA
+  regression is **1 file / 1 test PASS** and the full local MVP gate remains
+  **43/43 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
