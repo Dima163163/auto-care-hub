@@ -479,6 +479,11 @@ anonymized samples/participant rows отсутствуют.
   `npm ci --dry-run` are consistent. Backend workflow installs now use bounded
   npm fetch retries with `--no-audit --no-fund`; the next runner result is
   required to validate the resilience change.
+- The same Actions metadata showed stale push-runs queueing behind older
+  `dev`/`main` runs because concurrency cancellation applied only to pull
+  requests. `quality.yml` now cancels in-progress runs for every event within
+  the same branch group, keeping `dev` and `main` groups independent and
+  ensuring the latest SHA receives the CI slot.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

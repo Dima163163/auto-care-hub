@@ -4339,3 +4339,21 @@ transient registry failures recoverable, не меняя dependency graph или
 следующий GitHub runner result для подтверждения. External deployment/DNS,
 staging API, S3/AV, backup restore, pilot participants и production SEO
 evidence остаются открытыми; readiness остаётся **96.5% (193/200)**.
+
+## Порция 476 (08.09.2026) — свежесть CI push-runs
+
+1–10. `[x]` GitHub Actions metadata показала, что устаревшие push-runs на
+`dev`/`main` оставались pending/in-progress после последующих публикаций,
+поскольку workflow отменял только pull-request runs. Это задерживало проверку
+актуального SHA и не добавляло новых доказательств.
+
+11–20. `[x]` `quality.yml` теперь отменяет устаревший run внутри той же branch
+concurrency group для всех событий. `dev` и `main` сохраняют независимые
+groups, поэтому требуемая последовательность promotion не меняется; manual
+release-promotion workflow не затронут. YAML parse, lint и локальный
+`check:local-mvp` остаются PASS.
+
+21–30. `[~]` Source-level queue/staleness gap закрыт; следующий Actions run на
+актуальном SHA должен подтвердить install retry и полный CI. Deployment/DNS,
+staging API, private media/restore, pilot participants и production SEO
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
