@@ -4195,3 +4195,22 @@ summary без изменения platform overview query, child panel compositi
 navigation targets. Real-device language review, staging/production, deployed
 Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 469 (08.09.2026) — localized super-admin trust policy
+
+1–10. `[x]` Super-admin trust policy panel больше не использует локальный
+RU/EN copy-object или raw UI labels. Policy/rollout field labels, loading,
+saving, retry, error and success states используют typed translation contract;
+validation rules и update policy payload semantics unchanged.
+
+11–20. `[x]` Trust-policy regression — **1 файл / 2 теста PASS**: локальные
+labels отображаются, valid submit сохраняет исходный policy payload, invalid
+rollout value объявляется через `role="alert"` и не отправляет mutation.
+ESLint, production build и полный `check:local-mvp` завершены с
+`all local MVP checks passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format и validation-announcement gap в
+super-admin trust policy без изменения numeric bounds, rollout selection или
+mutation payload. Real-device language review, staging/production, deployed
+Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
+**96.5% (193/200)**.

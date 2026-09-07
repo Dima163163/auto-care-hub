@@ -433,6 +433,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-super-admin-summary `npm run check:local-mvp` passes all 43 checks,
   including the responsive Chromium matrix; targeted super-admin summary coverage
   is **1 file / 1 test PASS**.
+- Super-admin trust policy now uses typed translation keys for policy, rollout and
+  state copy; numeric validation, market selection and update payload semantics
+  remain unchanged.
+- Post-super-admin-trust-policy `npm run check:local-mvp` passes all 43 checks,
+  including the responsive Chromium matrix; targeted trust-policy coverage is
+  **1 file / 2 tests PASS**, including the invalid-value `role="alert"` path.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
