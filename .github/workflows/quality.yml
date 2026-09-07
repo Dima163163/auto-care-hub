@@ -64,7 +64,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
       - name: Install backend dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=30000
         working-directory: server
 
       - name: Audit backend production dependencies
@@ -206,7 +206,7 @@ jobs:
           cache-dependency-path: server/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=30000
         working-directory: server
 
       - name: Check integration prerequisites
@@ -360,7 +360,7 @@ jobs:
         run: npm ci
 
       - name: Install backend dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=30000
         working-directory: server
 
       - name: Build production Next artifact
