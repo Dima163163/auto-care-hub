@@ -4015,3 +4015,23 @@ requests regression — **1 файл / 1 тест PASS**; после обнов�
 validation rules. Real-device language review, staging/production,
 deployed Lighthouse и pilot evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 460 (08.09.2026) — localized admin moderation evidence
+
+1–10. `[x]` Admin moderation evidence panel больше не использует локальный
+RU/EN copy-object или ручные locale-тернарии. Filter/status/kind labels,
+review/document/media states, decision errors и moderator note используют typed
+translation contract; evidence filters, moderation decision payload и audit
+semantics unchanged. Evidence timestamps используют shared locale formatter.
+
+11–20. `[x]` Admin moderation regression — **1 файл / 1 тест PASS**:
+обязательная причина решения объявляется через `role="alert"`, а approve
+payload сохраняет `{ id, status, reason }`. ESLint, production build и полный
+`check:local-mvp` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/locale-format и validation-announcement gap в
+moderation evidence surface без изменения query filters, decision mutation или
+document/review rendering semantics. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.
