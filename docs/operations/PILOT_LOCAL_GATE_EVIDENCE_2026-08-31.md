@@ -3351,6 +3351,21 @@ frontend tests и Next production build; TypeScript принял обе translat
 assistive technology, deployed URL или owner acceptance; readiness остаётся
 **96.5% (193/200)**.
 
+## Порция 422 (07.09.2026) — rendered HTTP SEO replay
+
+1–10. `[x]` `npm run check:seo -- --url http://127.0.0.1:3000 --json`
+проверил локальный HTTP-rendered server: public routes, query-aware
+`/services?service=oil-change`, 3 provider routes и private routes вернули
+HTTP 200 с ожидаемыми title/description/canonical/Open Graph/Twitter и robots
+политиками.
+
+11–20. `[x]` Все repository budgets, prerender, image assets, locale coverage и
+local HTML metadata checks также PASS; remote URL safety contract PASS.
+
+21–30. `[~]` `Production Lighthouse` честно остаётся manual: локальный server
+не является deployed URL, а Lighthouse CLI отсутствует. Пункт 94 поэтому не
+переводится в полное `[x]`; readiness остаётся **96.5% (193/200)**.
+
 ## Порция 421 (07.09.2026) — post-a11y canonical local MVP replay
 
 1–10. `[x]` После named-map-region fix повторён полный

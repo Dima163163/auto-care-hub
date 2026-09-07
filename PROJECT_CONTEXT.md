@@ -82,6 +82,10 @@ discoverable to assistive technology.
 The post-fix canonical `npm run check:local-mvp` replay on `2af350756dd6` also
 passes all 43 checks, including the responsive Chromium matrix.
 
+An HTTP SEO replay with `npm run check:seo -- --url http://127.0.0.1:3000
+--json` passes all local rendered metadata/robots routes; only Lighthouse
+remains manual because the CLI is not installed.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.
