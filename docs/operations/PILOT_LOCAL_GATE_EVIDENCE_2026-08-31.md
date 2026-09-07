@@ -4414,3 +4414,23 @@ root checks, включая root Vitest command.
 integration. Deployment/DNS, staging API, private media/restore, pilot
 participants и production SEO evidence остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 480 (08.09.2026) — real-stack Next build environment
+
+1–10. `[x]` CI real full-stack job показал failure на `Build production Next
+artifact` после успешной установки dependencies. Локальный replay с тем же
+`RUNTIME_MODE=api`, real API variables и `NEXT_DIST_DIR` воспроизвёл ошибку
+только при глобальном `NODE_ENV=development`: Next сообщил non-standard
+`NODE_ENV`, затем prerender `/_not-found` завершился `useContext` null.
+
+11–20. `[x]` Локальный replay с `NODE_ENV=production` проходит полностью:
+compiled, TypeScript, prerender **15/15**, route optimization и artifact
+finalization. В real-stack workflow frontend Next build теперь получает
+production override; backend job environment остаётся development для API,
+migrations и integration smoke.
+
+21–30. `[~]` Устранён подтверждённый environment-only build failure; новый
+Actions run на опубликованном SHA должен подтвердить real-stack Next smoke и
+дальнейшие API/browser gates. Deployment/DNS, staging API, private
+media/restore, pilot participants и production SEO evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.

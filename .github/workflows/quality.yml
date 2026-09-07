@@ -370,6 +370,8 @@ jobs:
 
       - name: Build production Next artifact
         run: npm run build
+        env:
+          NODE_ENV: production
 
       - name: Build backend
         run: npm run build

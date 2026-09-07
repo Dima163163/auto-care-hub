@@ -505,6 +505,12 @@ anonymized samples/participant rows отсутствуют.
   `npm ci` before server `npm ci`; this keeps its root contract commands
   executable while preserving the existing backend install and integration
   gates. A fresh Actions run is still required to confirm downstream jobs.
+- The real full-stack job also exposed a Next environment defect: its global
+  `NODE_ENV=development` made `next build` fail while prerendering `/_not-found`
+  with a null `useContext` error. A local replay with the same real-mode
+  variables passes when the frontend build step overrides `NODE_ENV=production`,
+  so the workflow now applies that override only to Next artifact creation and
+  leaves the backend migration/API environment unchanged.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
