@@ -12,7 +12,7 @@
 }
 
 .dark .owner-provider-map .leaflet-tile-pane {
-    filter: brightness(38%) saturate(65%) contrast(115%);
+    filter: brightness(46%) saturate(70%) contrast(108%);
 }
 
 .owner-provider-map .leaflet-control-attribution,
