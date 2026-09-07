@@ -4394,3 +4394,23 @@ Owner capacity UI на translation keys. Checker и его regression test те�
 21–30. `[~]` Новый checker fix готов к следующему runner result; deployment/DNS,
 staging API, private media/restore, pilot participants и production SEO
 evidence остаются внешними gates. Readiness остаётся **96.5% (193/200)**.
+
+## Порция 479 (08.09.2026) — root dependency gap в backend CI job
+
+1–10. `[x]` После исправления capacity checker чистая копия репозитория без
+root `node_modules` воспроизвела следующий CI-only failure:
+`npm run check:next-route-contract` завершался `sh: vitest: command not found`.
+Backend job ставил только `server` dependencies, но `quality:backend` запускает
+root checks, включая root Vitest command.
+
+11–20. `[x]` Backend job теперь кеширует оба lockfile и сначала выполняет root
+`npm ci`, затем server `npm ci`. Frontend/security и real-full-stack jobs уже
+имели необходимый root install; production logic и backend test scope не
+изменялись. YAML parse, `git diff --check` и CI-equivalent `quality:backend`
+после source checker fix проходят локально.
+
+21–30. `[~]` Устранён подтверждённый clean-run dependency gap; новый Actions run
+на опубликованном SHA должен подтвердить backend job и downstream migrations /
+integration. Deployment/DNS, staging API, private media/restore, pilot
+participants и production SEO evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.

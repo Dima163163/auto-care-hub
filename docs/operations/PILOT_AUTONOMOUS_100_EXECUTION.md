@@ -498,6 +498,13 @@ anonymized samples/participant rows отсутствуют.
   and a CI-equivalent full `quality:backend` replay passes, including server
   unit coverage **291 files / 1051 tests** and backend build. A fresh Actions
   run is still required to confirm the published fix.
+- A clean archive without root `node_modules` reproduced the next backend-job
+  failure: `quality:backend` reached the root `check:next-route-contract`, but
+  `vitest` was unavailable because that job installed only `server`
+  dependencies. The backend job now caches both lockfiles and runs root
+  `npm ci` before server `npm ci`; this keeps its root contract commands
+  executable while preserving the existing backend install and integration
+  gates. A fresh Actions run is still required to confirm downstream jobs.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
