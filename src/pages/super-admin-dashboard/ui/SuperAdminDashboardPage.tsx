@@ -63,7 +63,7 @@ export function SuperAdminDashboardPage() {
                 <AdminDataQualityPanel />
                 <AdminAutoCareAppealsPanel />
                 <AdminChatReportsPanel />
-                <SuperAdminTrustPolicyPanel locale={locale} />
+                <SuperAdminTrustPolicyPanel />
                 <SuperAdminMarketsPanel locale={locale} />
             </>}
         </section>
