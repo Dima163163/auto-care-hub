@@ -3960,3 +3960,21 @@ Chromium matrix.
 изменения расчётов метрик, offer payloads или backend contracts. Real-device
 language review, staging/production, deployed Lighthouse и pilot evidence
 остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 457 (08.09.2026) — localized owner services catalogue
+
+1–10. `[x]` Owner services catalogue больше не использует локальный `copy.ru /
+copy.en` object. Page/metric/branch/offer editor labels, expand-all controls,
+booking modes, validation/error copy и service/warranty fallbacks используют
+typed translation contract; branch collapse state, offer editing и API
+semantics unchanged.
+
+11–20. `[x]` Services regression — **2 файла / 3 теста PASS**; ESLint, Vite
+production build и полный `check:local-mvp` на services-localization worktree
+поверх `0bb1c06` завершены с `all local MVP checks passed`, включая responsive
+Chromium matrix.
+
+21–30. `[~]` Закрыт raw-copy/fallback gap в owner services catalogue без
+изменения offer mutation payload, branch expansion semantics или provider
+scopes. Real-device language review, staging/production, deployed Lighthouse и
+pilot evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
