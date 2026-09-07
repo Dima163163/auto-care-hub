@@ -312,6 +312,13 @@ anonymized samples/participant rows отсутствуют.
   workspace scope lookup and owner permission checks remain unchanged.
 - Post-provider-access `npm run check:local-mvp` passes all 43 checks, including
   the responsive Chromium matrix; frontend suite remains **153/489 PASS**.
+- Owner provider reviews page now uses typed translation keys for all review,
+  contact and promo surfaces, shared locale date formatting and translated
+  completed-work photo alt text; filters and promo mutation semantics remain
+  unchanged.
+- Post-owner-reviews `npm run check:local-mvp` passes all 43 checks, including
+  the responsive Chromium matrix; targeted reviews coverage is **1 file / 1
+  test PASS**, and the frontend suite is **153/489 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

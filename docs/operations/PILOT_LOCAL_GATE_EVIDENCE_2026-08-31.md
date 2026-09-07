@@ -3836,3 +3836,20 @@ Chromium matrix; ESLint и frontend suite — **153/489 PASS**.
 без изменения authorization semantics. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 450 (07.09.2026) — localized owner provider reviews page
+
+1–10. `[x]` Owner reviews page больше не использует локальный `getReviewsCopy`
+RU/EN object или raw locale date formatter. Заголовки, фильтры, contact/promo
+dialogs, promo errors, review states и photo alt используют typed translation
+contract; review filtering, contact flow и promo mutation semantics unchanged.
+
+11–20. `[x]` Reviews regression — **1 файл / 1 тест PASS**; полный
+`check:local-mvp` на reviews-localization worktree поверх `eb43d8b` завершён с
+`all local MVP checks passed`, включая responsive Chromium matrix; frontend
+suite — **153/489 PASS**.
+
+21–30. `[~]` Закрыт raw-copy/date-format/accessibility gap в owner reviews
+surface без изменения API query shape, rating filters или promo payload.
+Real-device language review, staging/production, deployed Lighthouse и pilot
+evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
