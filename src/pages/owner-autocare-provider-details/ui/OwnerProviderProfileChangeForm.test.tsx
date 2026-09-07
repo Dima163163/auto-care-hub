@@ -6,6 +6,14 @@ import type { AutoCareApiProvider } from '@/entities/automotive-service'
 
 import { OwnerProviderProfileChangeForm } from './OwnerProviderProfileChangeForm'
 
+vi.mock('@/shared/lib/useTranslation', () => ({
+    useTranslation: () => ({
+        t: (key: string) => ({
+            'autocare.ownerProviderProfileSubmit': 'Отправить изменение на проверку',
+        }[key] ?? key),
+    }),
+}))
+
 const provider = {
     id: 'provider-1',
     name: 'ProService',
@@ -31,7 +39,7 @@ describe('OwnerProviderProfileChangeForm', () => {
         process.on('unhandledRejection', onUnhandled)
 
         try {
-            render(<OwnerProviderProfileChangeForm provider={provider} locale="ru" disabled={false} onSubmit={onSubmit} />)
+            render(<OwnerProviderProfileChangeForm provider={provider} disabled={false} onSubmit={onSubmit} />)
 
             const name = screen.getByDisplayValue('ProService')
             await user.clear(name)
