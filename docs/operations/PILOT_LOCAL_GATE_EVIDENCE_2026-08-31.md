@@ -4303,3 +4303,20 @@ unstable, Render client/API не совпадают с ожидаемыми rout
 передаст актуальный HTTPS staging URL. До этого readiness не изменяется и
 остаётся **96.5% (193/200)**; local gate, source contracts и synthetic fixtures
 не заменяют deployed evidence.
+
+## Порция 474 (08.09.2026) — canonical frontend origin в Render config
+
+1–10. `[x]` После внешнего probe найден конфигурационный gap: canonical host из
+`NEXT_PUBLIC_SITE_URL`, sitemap и metadata отсутствовал в Render
+`CORS_ORIGINS`, а `FRONTEND_ORIGIN` указывал только на Vercel. `render.yaml`
+теперь разрешает canonical host плюс compatibility hosts и использует
+`https://autocarehub.app` как primary frontend origin.
+
+11–20. `[x]` Render production config contract расширен обязательной проверкой
+canonical origin; contract tests и локальные production/config gates проходят.
+Deployment DNS, Render service state, staging API, Lighthouse и rendered HTML
+по-прежнему требуют внешнего окружения и не считаются закрытыми конфигурацией.
+
+21–30. `[~]` Устранён подтверждённый CORS/origin mismatch в source config без
+отправки запросов в Render и без изменения secrets. Внешний deployment blocker
+остаётся открытым; readiness остаётся **96.5% (193/200)**.

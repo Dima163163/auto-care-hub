@@ -468,6 +468,12 @@ anonymized samples/participant rows отсутствуют.
   out on a repeat probe, and both Render client/API hosts returned `404` for
   their expected entry/health paths. This is recorded as an external
   deployment blocker; no mutation, credential or cookie was sent.
+- The deployment probe also exposed a source-config mismatch: the canonical
+  `NEXT_PUBLIC_SITE_URL`/sitemap host was absent from Render `CORS_ORIGINS` and
+  was not the `FRONTEND_ORIGIN`. `render.yaml` now includes the canonical host
+  alongside compatibility hosts, uses it as primary origin, and the Render
+  production config contract enforces its presence; deployment/DNS/API
+  availability remains an external gate.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
