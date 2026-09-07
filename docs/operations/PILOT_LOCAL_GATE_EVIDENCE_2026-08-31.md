@@ -3569,3 +3569,21 @@ passed`, включая responsive Chromium matrix.
 API payload shape или booking semantics. Real-device language review,
 staging/production, deployed Lighthouse и pilot evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 434 (07.09.2026) — localized provider offering prices
+
+1–10. `[x]` Provider profile и booking panel больше не показывают API/mock
+`priceLabel` как готовую системно-локализованную строку. `ProviderOffering`
+теперь сохраняет числовую цену, валюту, диапазон и `priceType`, а общий
+formatter строит fixed/from/range/quote-required через выбранную locale;
+legacy label остаётся безопасным fallback.
+
+11–20. `[x]` Добавлены regression tests для API mapper и formatter: targeted
+**2 файла / 6 тестов PASS**, полный frontend suite — **152/486 PASS**; lint,
+Vite production build и полный `check:local-mvp` на commit `2f94a34` завершены
+успешно, включая responsive Chromium matrix.
+
+21–30. `[~]` Локализован public provider pricing surface без изменения API
+payload или booking semantics. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness остаётся
+**96.5% (193/200)**.
