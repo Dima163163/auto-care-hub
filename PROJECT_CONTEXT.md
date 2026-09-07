@@ -22,13 +22,19 @@ uses separate fixed EXT batches; optional features never enter readiness percent
 This classification closed no product gate. Purchases, account ownership,
 participant consent and independent review require the owner or a third party.
 
-Latest verification (2026-09-07, commit `43087ae`): the feature branch is
+Latest verification (2026-09-07, current published feature branch): the branch is
 published and the worktree is clean; frontend unit tests pass at **151 files /
 480 tests**, backend pilot-focused unit tests pass at **290 files / 1049 tests**,
 and both autonomous-plan contracts pass (main plan **93 complete / 7 partial**,
 next plan **100/100**). These are local repository results only; the seven
 partial items still require staging, production, deployed-URL, participant or
 owner evidence as described below.
+
+The staging compatibility probe also passes against the running local real API
+(`http://127.0.0.1:4000`): OpenAPI 3.1, security headers, cache policy and both
+discovery variants are verified with redacted SHA-256 evidence. This is a local
+runtime check, not staging evidence; `STAGING_API_BASE_URL` remains required for
+the external gate.
 
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider

@@ -13,6 +13,7 @@ import {
     normalizeStagingDiscoveryQuery,
     normalizeStagingApiBaseUrl,
     readBoundedJson,
+    OPENAPI_DOCUMENT_PATH,
     REQUIRED_STAGING_PATHS,
 } from './check-staging-api-compatibility.mjs'
 
@@ -22,6 +23,11 @@ test('accepts the required staging OpenAPI compatibility surface', () => {
         paths: Object.fromEntries(REQUIRED_STAGING_PATHS.map((path) => [path, { get: {} }])),
     }
     assert.deepEqual(getStagingOpenApiIssues(document), [])
+})
+
+test('keeps the OpenAPI document endpoint separate from document paths', () => {
+    assert.equal(OPENAPI_DOCUMENT_PATH, '/openapi.json')
+    assert.equal(REQUIRED_STAGING_PATHS.includes(OPENAPI_DOCUMENT_PATH), false)
 })
 
 test('reports OpenAPI version and path drift', () => {

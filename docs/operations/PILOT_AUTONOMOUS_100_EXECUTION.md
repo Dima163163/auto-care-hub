@@ -46,7 +46,9 @@
 27. `[x]` Проверить public media output policy.
 28. `[x]` Проверить location coordinate guard.
 29. `[x]` Проверить OpenAPI shape и structural contracts.
-30. `[~]` Подготовить staging API compatibility probe; локальная parity проходит, `STAGING_API_BASE_URL` не задан.
+30. `[~]` Staging API compatibility probe подготовлен и теперь проходит против
+локального реального API (OpenAPI и две discovery-вариации); `STAGING_API_BASE_URL`
+для настоящего staging endpoint не задан.
 31. `[x]` Проверить service-request normalizer.
 32. `[x]` Проверить contact snapshot и preferred-date normalization.
 33. `[x]` Проверить idempotency-key policy.
@@ -166,7 +168,7 @@ anonymized samples/participant rows отсутствуют.
 
 ## Последняя локальная сверка (07.09.2026)
 
-- Commit `43087ae` опубликован в feature-ветке; рабочее дерево чистое.
+- Feature-ветка опубликована; рабочее дерево чистое.
 - `npm test -- --run`: **151 test files / 480 tests PASS**.
 - `npm run test:server:unit`: **290 test files / 1049 tests PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;

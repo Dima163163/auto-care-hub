@@ -13,7 +13,7 @@
 > Git flow: `main` is production; active implementation branch is `dev`; all
 > reviewed implementation commits are pushed only to `dev`
 >
-> Latest verification (2026-09-07, commit `43087ae`): the feature branch is
+> Latest verification (2026-09-07, current published feature branch): the branch is
 > published and clean; frontend unit tests pass at **151 files / 480 tests** and
 > the backend pilot-focused unit profile passes **290 files / 1049 tests**. The
 > autonomous 100-item execution plan remains **93 complete / 7 partial**; the

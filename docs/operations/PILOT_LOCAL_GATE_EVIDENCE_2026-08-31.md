@@ -3183,3 +3183,20 @@ contract checks также PASS: **93 complete / 7 partial** и **100/100**.
 21–30. `[~]` Свежая локальная сверка усиливает воспроизводимость кода и
 документации, но не подменяет staging/production, deployed-URL, participant,
 device, owner или manual acceptance evidence; 7 partial остаются без изменения.
+
+## Порция 410 (07.09.2026) — staging probe OpenAPI endpoint correction
+
+1–10. `[x]` Исправлен дефект `check-staging-api-compatibility`: endpoint
+`/openapi.json` больше не ошибочно требуется внутри `document.paths`; он
+проверяется отдельно как документ, а `REQUIRED_STAGING_PATHS` содержит только
+API-маршруты. Добавлена отдельная regression на это разделение.
+
+11–20. `[x]` `npm run test:staging-api` завершён **10/10 PASS**. Probe против
+работающего локального real API с `REQUIRE_STAGING_API=true` вернул PASS:
+OpenAPI 3.1, response SHA-256, `nosniff`, и две discovery-вариации с
+`max-age=5, stale-while-revalidate=15`.
+
+21–30. `[~]` Локальный real-API runtime теперь покрыт корректно, но это не
+staging evidence: для закрытия пункта 30 нужен настоящий HTTPS staging URL,
+а для остальных внешних пунктов — соответствующая инфраструктура и owner/
+participant acceptance.

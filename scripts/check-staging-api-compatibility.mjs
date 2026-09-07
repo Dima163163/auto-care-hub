@@ -16,8 +16,8 @@ export const REQUIRED_STAGING_PATHS = [
     '/v1/service-requests/{requestId}/reschedule/decision',
     '/owner/service-requests/{requestId}/quote',
     '/owner/service-requests/{requestId}/reschedule',
-    '/openapi.json',
 ]
+export const OPENAPI_DOCUMENT_PATH = '/openapi.json'
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 10_000
 const MAX_REQUEST_TIMEOUT_MS = 30_000
@@ -158,7 +158,7 @@ export async function checkStaging(baseUrl, fetchImpl = fetch, timeoutMs = getRe
         throw new Error(`Staging request ${path} failed after retries.`)
     }
 
-    const response = await request('/openapi.json')
+    const response = await request(OPENAPI_DOCUMENT_PATH)
     if (!response.ok) throw new Error(`Staging OpenAPI request failed with HTTP ${response.status}.`)
     assertJsonContentType(response.headers, 'OpenAPI')
     const openApiPayload = await readBoundedJson(response, 'OpenAPI', maxResponseBytes)
