@@ -3407,3 +3407,24 @@ security, route, interaction и legacy contracts.
 production-like среде, но не закрывает staging/production, real-device,
 deployed Lighthouse или owner/participant evidence; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 425 (07.09.2026) — localized and functional map controls
+
+1–10. `[x]` `AutoCareHeroMap` получил доступное имя, локализованные zoom
+labels и реальные `onClick`-действия с bounded visual zoom **100–120%**;
+кнопки корректно disabled на границах, а текущий масштаб объявляется через
+`aria-live`. Static hero artwork и provider markers остаются synthetic visual
+surface без claims о real tile data.
+
+11–20. `[x]` `AutoCareMapPreview` больше не содержит hardcoded English
+`Zoom in/out`: controls используют translation keys. Interaction contract был
+обновлён под этот локализованный API. Targeted interaction check и **2/2** его
+regression tests PASS; translation coverage **9/9**, lint без warnings,
+frontend **151/480**, Next production build и полный `check:local-mvp` PASS,
+включая responsive Chromium matrix.
+
+21–30. `[~]` Commit `2a4955bd82ef` опубликован по цепочке
+`feature → dev → main`. Это закрывает локальный map a11y/interaction gap, но
+не превращает synthetic hero surface в deployed map evidence и не закрывает
+staging/production, real-device, Lighthouse или owner/participant gates;
+readiness остаётся **96.5% (193/200)**.
