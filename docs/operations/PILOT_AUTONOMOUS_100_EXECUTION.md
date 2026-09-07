@@ -159,7 +159,7 @@ anonymized samples/participant rows отсутствуют.
 - `npm run check:local-mvp`: все автоматические проверки PASS; responsive Chromium matrix 30/30 также PASS после запуска Next production server с разрешённым loopback-портом. Ручная visual/keyboard/device приёмка остаётся владельческим gate.
 - Backend pilot-focused unit: **288 файлов / 1042 теста**; полный backend
   suite: **371 файл / 1245 тестов**.
-- Frontend unit: **150 файлов / 477 тестов**.
+- Frontend unit: **151 файлов / 481 тест**.
 - `npm run check:threat-surface`: PASS, включая availability rate limit.
 - `npm run check:ops-harness`, `check:security-headers`, `check:capacity-ui`, API/OpenAPI checks: PASS.
 - Synthetic discovery: 10 000 — p95 4.2 ms; 100 000 — p95 21.5 ms.

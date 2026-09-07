@@ -3485,3 +3485,21 @@ matrix PASS.
 данных; real-device language review, staging/production, deployed Lighthouse и
 pilot evidence остаются внешними gates. Readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 429 (07.09.2026) — localized home location counts
+
+1–10. `[x]` Карточка зон на главной больше не держит английское `services` для
+не-английских locale и не содержит русские существительные в компоненте.
+Добавлены локализованные singular/plural keys для popular и European locale
+families; для русского сохранена грамматика `автосервис / автосервиса /
+автосервисов` через translation keys.
+
+11–20. `[x]` Регрессионный translation test расширен до **10/10 PASS**;
+полный frontend suite — **151/481 PASS**, lint без warnings, полный
+`check:local-mvp` на commit `f3e7211fede3` завершён с `all local MVP checks
+passed`, включая responsive Chromium matrix.
+
+21–30. `[~]` Исправление закрывает ещё один локальный multilingual UX gap без
+изменения API или данных. Real-device language review, staging/production,
+deployed Lighthouse и pilot evidence остаются внешними gates; readiness
+остаётся **96.5% (193/200)**.
