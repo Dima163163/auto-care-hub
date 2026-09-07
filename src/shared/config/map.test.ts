@@ -7,6 +7,8 @@ describe('map tile fallback policy', () => {
         expect(MAP_CONFIG.tileUrl).toBe(FALLBACK_MAP_TILE_URL)
         expect(RESULTS_MAP_CONFIG.tileUrl).toBe(FALLBACK_MAP_TILE_URL)
         expect(MAP_CONFIG.subdomains).toEqual(['a', 'b', 'c'])
+        expect(MAP_CONFIG.attribution).toContain('OpenStreetMap')
+        expect(MAP_CONFIG.attribution).toContain('openstreetmap.org/copyright')
     })
 
     it('falls back to the keyless OpenStreetMap template for a custom provider', () => {

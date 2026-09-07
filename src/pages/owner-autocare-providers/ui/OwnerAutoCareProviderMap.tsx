@@ -55,7 +55,6 @@ export function OwnerAutoCareProviderMap({ providers }: OwnerAutoCareProviderMap
         if (!container || mapRef.current) return
 
         const map = L.map(container, {
-            attributionControl: false,
             preferCanvas: true,
             scrollWheelZoom: false,
             zoomControl: false,

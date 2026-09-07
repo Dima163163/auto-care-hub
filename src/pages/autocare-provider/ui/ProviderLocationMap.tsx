@@ -18,7 +18,7 @@ export function ProviderLocationMap({ provider }: { provider: ProviderProfile })
         const container = mapContainerRef.current
         if (!container) return
         const position: [number, number] = [latitude, longitude]
-        const map = L.map(container, { zoomControl: false, attributionControl: false, scrollWheelZoom: false }).setView(position, 14)
+        const map = L.map(container, { zoomControl: false, scrollWheelZoom: false }).setView(position, 14)
         let usingFallback = false
         let tileLayer = L.tileLayer(MAP_CONFIG.tileUrl, MAP_CONFIG)
         tileLayer.on('tileerror', () => {

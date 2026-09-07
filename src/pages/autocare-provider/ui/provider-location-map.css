@@ -12,6 +12,29 @@
     filter: brightness(46%) saturate(70%) contrast(108%);
 }
 
+.provider-location-map .leaflet-control-attribution {
+    margin: 0 8px 8px 0;
+    padding: 2px 4px;
+    border: 1px solid rgb(30 64 175 / 0.16);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.88);
+    box-shadow: 0 2px 8px rgb(15 23 42 / 0.12);
+    color: rgb(51 65 85 / 0.88);
+    font-size: 9px;
+    line-height: 1.2;
+}
+
+.provider-location-map .leaflet-control-attribution a {
+    color: inherit;
+}
+
+.dark .provider-location-map .leaflet-control-attribution {
+    border-color: rgb(147 197 253 / 0.24);
+    background: rgb(7 27 53 / 0.84);
+    box-shadow: 0 2px 8px rgb(0 5 18 / 0.3);
+    color: rgb(219 234 254 / 0.82);
+}
+
 .provider-map-marker-host { background: transparent; border: 0; }
 
 .provider-map-marker {

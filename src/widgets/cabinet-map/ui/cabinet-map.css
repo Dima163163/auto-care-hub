@@ -42,6 +42,15 @@
     color: inherit;
 }
 
+.dark .autocarehub-leaflet .leaflet-control-attribution {
+    padding: 2px 4px;
+    border: 1px solid rgb(147 197 253 / 0.24);
+    border-radius: 6px;
+    background: rgb(7 27 53 / 0.84);
+    box-shadow: 0 2px 8px rgb(0 5 18 / 0.3);
+    color: rgb(219 234 254 / 0.82);
+}
+
 .autocarehub-leaflet .leaflet-tooltip.price-label {
     border: 1px solid #dfe5ef;
     border-radius: 6px;

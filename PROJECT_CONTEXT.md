@@ -65,6 +65,12 @@ and apply a normal light profile or a moderated night profile to tile pixels
 based on the active theme. Markers, controls and booking content remain
 outside the tile filter.
 
+Map-attribution follow-up (2026-09-07): results, owner-provider,
+provider-location and cabinet Leaflet surfaces now keep the OpenStreetMap
+attribution control visible. The control uses a compact light or dark surface
+with readable contrast; map zoom controls remain intentionally hidden where
+the existing interaction design requires it.
+
 ## Current objective
 
 AutoCare Hub is a web-first aggregator for

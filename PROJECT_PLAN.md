@@ -84,6 +84,9 @@
   cabinet maps: light theme uses normal keyless OSM tiles, dark theme uses a
   moderated night profile, and provider-location tiles now share the one-shot
   keyless fallback.
+- [x] Restored visible OpenStreetMap attribution on every Leaflet surface,
+  including provider and owner maps that previously disabled Leaflet's
+  attribution control; light and dark variants keep the text readable.
 - [x] Added an append-only `user_data_exported` audit event for self-service
   data exports. It records only actor/target/request provenance and no export
   payload, private attachment metadata or content-derived values.

@@ -2478,3 +2478,31 @@ tile failure не оставлял карту на ошибочном endpoint.
 91–100. `[x]` Static local MVP gate даёт **40 PASS / 1 manual**; manual — только
 пропущенный runtime responsive sub-gate (`--static-only`), закрытый отдельным
 30/30 replay. Внешние tile SLA, staging и owner sign-off не подменяются.
+
+## Порция 366 (07.09.2026) — map attribution/compliance batch из 100 шагов
+
+Это локальный UX/compliance batch для карт. Он сохраняет keyless OSM policy и
+не объявляет наличие коммерческого tile SLA, staging или production approval.
+
+1–10. `[x]` Повторно инвентаризированы все Leaflet-поверхности: results,
+owner-provider, provider-location и cabinet catalog.
+11–20. `[x]` Сверен источник атрибуции с `MAP_CONFIG`: ссылка ведёт на
+`openstreetmap.org/copyright`, а текст содержит `OpenStreetMap` contributors.
+21–30. `[x]` Подтверждено, что results map уже получает attribution от tile
+layer и не требует отдельного API key.
+31–40. `[x]` В owner-provider map удалён `attributionControl: false`; default
+Leaflet control теперь создаётся вместе с fallback tile layer.
+41–50. `[x]` В provider-location map удалён `attributionControl: false`;
+one-shot tile fallback и marker lifecycle не изменены.
+51–60. `[x]` На results, owner-provider и provider-location attribution
+получил компактную light surface: border, contrast, readable font и safe
+internal spacing.
+61–70. `[x]` Для всех четырёх поверхностей добавлен dark-theme вариант без
+применения tile brightness filter к тексту атрибуции.
+71–80. `[x]` Zoom controls остаются скрытыми только там, где это было частью
+существующего interaction design; attribution не скрывается.
+81–90. `[x]` Map config regression расширен проверкой OSM attribution link и
+текста; focused map tests проходят **3/3**.
+91–100. `[~]` После локального lint/build и responsive replay остаются внешние
+tile-provider SLA, deployed map replay, accessibility owner sign-off и
+production monitoring; локальный CSS/DOM contract их не подменяет.
