@@ -260,6 +260,12 @@ anonymized samples/participant rows отсутствуют.
 - Post-owner-dashboard-queue `npm run check:local-mvp` on `5f57b25` passes all
   43 checks, including the responsive Chromium matrix; frontend suite is
   **152/488 PASS**.
+- Owner analytics and broadcast panels now use typed translation keys and
+  shared locale-aware metric formatting; the broadcast regression fixture now
+  supplies the translated RU labels used by the component.
+- Post-owner-analytics `npm run check:local-mvp` on `9655361` passes all 43
+  checks, including the responsive Chromium matrix; frontend suite is
+  **152/488 PASS**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

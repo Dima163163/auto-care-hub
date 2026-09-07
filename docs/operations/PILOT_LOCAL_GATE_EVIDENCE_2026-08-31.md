@@ -3688,3 +3688,20 @@ PASS, включая responsive Chromium matrix; frontend suite — **152/488 PA
 без изменения сортировки заявок, маршрутов, статусов API или provider data.
 Real-device language review, staging/production, deployed Lighthouse и pilot
 evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 441 (07.09.2026) — localized owner analytics and broadcast panels
+
+1–10. `[x]` Analytics card и broadcast panel переведены на typed translation
+keys. Analytics использует общий locale formatter для минут, рейтинга,
+счётчиков и retention days; broadcast сохраняет прежние offer mutation и
+error semantics, но больше не держит локальный RU/EN copy object.
+
+11–20. `[x]` Targeted broadcast regression — **1/1 PASS**; после обновления
+translation mock полный `check:local-mvp` на commit `9655361` завершён с
+`all local MVP checks passed`, включая responsive Chromium matrix; frontend
+suite — **152/488 PASS**.
+
+21–30. `[~]` Закрыт copy/number-format gap в analytics и broadcast surfaces
+без изменения API payloads или mutation semantics. Real-device language review,
+staging/production, deployed Lighthouse и pilot evidence остаются внешними
+gates; readiness остаётся **96.5% (193/200)**.
