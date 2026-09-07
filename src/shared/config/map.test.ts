@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { FALLBACK_MAP_TILE_URL, getMapTileFallback } from './map'
+import { FALLBACK_MAP_TILE_URL, getMapTileFallback, MAP_CONFIG, RESULTS_MAP_CONFIG } from './map'
 
 describe('map tile fallback policy', () => {
+    it('uses keyless OpenStreetMap tiles by default', () => {
+        expect(MAP_CONFIG.tileUrl).toBe(FALLBACK_MAP_TILE_URL)
+        expect(RESULTS_MAP_CONFIG.tileUrl).toBe(FALLBACK_MAP_TILE_URL)
+        expect(MAP_CONFIG.subdomains).toEqual(['a', 'b', 'c'])
+    })
+
     it('falls back to the keyless OpenStreetMap template for a custom provider', () => {
         expect(getMapTileFallback('https://tiles.example.test/{z}/{x}/{y}.png')).toBe(FALLBACK_MAP_TILE_URL)
     })
