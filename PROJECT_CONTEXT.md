@@ -75,6 +75,10 @@ language/theme controls, legal/footer links, and visible OpenStreetMap
 attribution. This remains local mock-mode evidence, not real API or production
 acceptance.
 
+The provider map container now exposes a localized `region` name, preserving
+the visual map and external map link while making the location landmark
+discoverable to assistive technology.
+
 Next code work: external staging evidence, applied-migration reconciliation and
 manual/legal acceptance; local release provenance, checksums, suspended-provider
 policy, truthful pilot metrics and production Next full-stack CI are prepared.

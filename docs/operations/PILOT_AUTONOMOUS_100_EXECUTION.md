@@ -189,6 +189,8 @@ anonymized samples/participant rows отсутствуют.
 - Chrome accessibility-tree spot-check confirms the synthetic provider profile
   exposes booking/request CTAs, service rows, booking slots, language/theme
   controls, legal links and visible map attribution.
+- Provider location map now exposes a localized named `region` without changing
+  the visual layout or external map action.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

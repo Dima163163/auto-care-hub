@@ -3336,3 +3336,17 @@ OpenStreetMap attribution. В профиле нет показанного runti
 не являются real API evidence. Pixel-level owner sign-off, real devices,
 deployed URL и production/staging behavior остаются внешними gates; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 420 (07.09.2026) — named provider map region
+
+1–10. `[x]` `ProviderLocationMap` получил `role="region"` и локализованный
+`aria-label` (`Карта расположения сервиса` / `Service location map`). Это
+устраняет обнаруженный accessibility gap без изменения визуального layout,
+Leaflet tile policy или внешней ссылки `Смотреть на карте`.
+
+11–20. `[x]` После изменения прошли frontend lint без warnings, **151/480**
+frontend tests и Next production build; TypeScript принял обе translation keys.
+
+21–30. `[~]` Исправление подтверждено локально и не закрывает real-device
+assistive technology, deployed URL или owner acceptance; readiness остаётся
+**96.5% (193/200)**.

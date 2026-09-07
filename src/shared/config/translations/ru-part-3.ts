@@ -371,6 +371,7 @@ autocare: {
         providerAbout: 'О сервисе',
         providerAmenities: 'Удобства для клиентов',
         providerFindUs: 'Как нас найти',
+        providerMapLabel: 'Карта расположения сервиса',
         providerPhone: 'Позвонить в сервис',
         providerGalleryTitle: 'Галерея сервиса',
         providerViewAllPhotos: 'Смотреть все фото ({{count}})',

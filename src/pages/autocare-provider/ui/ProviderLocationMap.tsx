@@ -37,5 +37,5 @@ export function ProviderLocationMap({ provider }: { provider: ProviderProfile })
         return () => { resizeObserver?.disconnect(); map.remove() }
     }, [latitude, longitude])
 
-    return <div className="relative h-full min-h-36 overflow-hidden rounded-[var(--radius-card)]"><div ref={mapContainerRef} className="provider-location-map h-full w-full" /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provider.address)}`} target="_blank" rel="noreferrer" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-control)] bg-card px-3 py-2 text-xs font-black text-primary shadow-lg">{t('autocare.viewOnMap')}</a></div>
+    return <div className="relative h-full min-h-36 overflow-hidden rounded-[var(--radius-card)]"><div ref={mapContainerRef} role="region" aria-label={t('autocare.providerMapLabel')} className="provider-location-map h-full w-full" /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provider.address)}`} target="_blank" rel="noreferrer" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-control)] bg-card px-3 py-2 text-xs font-black text-primary shadow-lg">{t('autocare.viewOnMap')}</a></div>
 }

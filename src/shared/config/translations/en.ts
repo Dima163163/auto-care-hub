@@ -1116,6 +1116,7 @@ export const enTranslations = {
         providerAbout: 'About the service',
         providerAmenities: 'Customer amenities',
         providerFindUs: 'How to find us',
+        providerMapLabel: 'Service location map',
         providerPhone: 'Call the service',
         providerGalleryTitle: 'Service gallery',
         providerViewAllPhotos: 'View all photos ({{count}})',
