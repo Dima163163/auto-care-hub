@@ -21,3 +21,13 @@ test('rejects a promotion workflow without an explicit CI wait', async () => {
 
     assert.ok(checks.some(({ name, passed }) => name === 'Promotion requires successful CI' && !passed))
 })
+
+test('rejects promotion that does not bind Quality to the exact dev commit', async () => {
+    const sources = await readCiCdPolicySources()
+    const checks = validateCiCdPolicy({
+        ...sources,
+        promotion: sources.promotion.replace('head_sha', 'head_branch'),
+    })
+
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion is limited to the trusted dev branch' && !passed))
+})

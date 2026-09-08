@@ -219,9 +219,10 @@ feature/<short-task-name>
 - Keep `dev` based on the latest `main` and push completed work to `origin/dev`.
 - Create `feature/*` branches from `dev` for isolated tasks; merge them into
   `dev` after checks pass.
-- A successful push to `dev` starts the checked-in promotion workflow. It
-  creates or reuses the `dev` → `main` pull request, waits for pull-request CI,
-  and enables GitHub auto-merge only after the checks pass.
+- A successful push to `dev` starts the checked-in promotion workflow. It waits
+  for the complete `Quality` workflow for that exact commit, creates or reuses
+  the `dev` → `main` pull request, waits for pull-request CI, and enables
+  GitHub auto-merge only after the checks pass.
 - Preserve unrelated user changes and stage explicit files; never use `git add .`.
 - Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
 

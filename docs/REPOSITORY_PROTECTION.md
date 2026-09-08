@@ -19,11 +19,12 @@ Git commit alone:
 - block force pushes and branch deletion;
 - restrict direct pushes to the repository owner/release maintainers.
 
-The checked-in `.github/workflows/promote-dev-to-main.yml` creates or reuses
-the `dev` → `main` pull request after a successful `Quality` run on `dev`, waits
-for the pull-request checks, and enables GitHub auto-merge. A failed check
-leaves the pull request open and prevents promotion; fix the source branch and
-push a new commit to run the gates again.
+The checked-in `.github/workflows/promote-dev-to-main.yml` starts on a push to
+`dev`, waits for a successful `Quality` run for that exact commit, creates or
+reuses the `dev` → `main` pull request, waits for the pull-request checks, and
+enables GitHub auto-merge. A failed check leaves the pull request open and
+prevents promotion; fix the source branch and push a new commit to run the
+gates again.
 
 The checked-in `.github/CODEOWNERS`, `Quality` workflow, aggregate
 `Application CI` job, and promotion workflow provide the review, status-check,
