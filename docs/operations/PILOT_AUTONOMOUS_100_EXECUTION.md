@@ -538,6 +538,12 @@ anonymized samples/participant rows отсутствуют.
   assertions in Chromium (`Review photo`/`Brake diagnostics` versus their
   Russian labels); the E2E checks now use bilingual role locators, and the
   focused Node 22 Linux replay passes **2/2** scenarios.
+- The published SHA `5d10ae3` was then confirmed by Actions runs
+  `34177761488` (`dev`) and `34177763990` (`main`): all jobs passed, including
+  Browser E2E **168/168** and production PWA smoke **12/12**. A GET-only probe
+  still found no usable deployed gate: the public Render API returned **404**
+  for `/health/ready` and `/openapi.json`, while `autocarehub.app` failed DNS
+  resolution; no credentials, cookies or mutating requests were used.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

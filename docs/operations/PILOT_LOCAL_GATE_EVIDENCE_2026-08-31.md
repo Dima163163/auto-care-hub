@@ -4528,3 +4528,20 @@ photo и pending quote. В Node 22 Linux replay с Chromium оба пробле�
 21–30. `[~]` Остаются внешние gates: deployment/DNS, staging API evidence,
 private media/restore, pilot participants и production SEO evidence; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 486 (08.09.2026) — published green gate и внешний deployment probe
+
+1–10. `[x]` Новый SHA `5d10ae3` подтверждён GitHub Actions runs
+`34177761488` для `dev` и `34177763990` для `main`: оба workflow завершились
+успешно, включая Browser E2E **168/168** и production PWA smoke **12/12**.
+Локальные и опубликованные refs feature/`dev`/`main` совпадают.
+
+11–20. `[~]` Безопасный GET-only probe публичного Render API не подтвердил
+staging: `/health/ready` и `/openapi.json` отвечают **404**, поэтому
+`check:staging-api` завершается `STAGING_COMPATIBILITY_FAILED`; canonical
+frontend `autocarehub.app` не разрешается через DNS. Запросы не отправляли
+мутаций, credentials или cookies.
+
+21–30. `[~]` Внешние gates остаются deployment/DNS, staging API evidence,
+private media/restore, pilot participants и production SEO evidence; readiness
+остаётся **96.5% (193/200)**.
