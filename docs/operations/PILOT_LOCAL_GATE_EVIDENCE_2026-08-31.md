@@ -4622,3 +4622,19 @@ security, accessibility, media, backup/restore и legacy checks.
 Production deployment/DNS, staging infrastructure, private S3 delivery,
 pilot participants и production Lighthouse/HTML evidence остаются внешними;
 canonical readiness без изменений: **96.5% (193/200)**.
+
+## Порция 493 (08.09.2026) — расширенный backend quality gate
+
+1–10. `[x]` После восстановления optional server-native binding команда
+`npm run quality:backend` завершилась до конца: tooling **5/5**, серверные
+unit-тесты **291/291 файлов и 1051/1051 тестов**, TypeScript build PASS;
+миграции, API parity, security, media, backup/restore, release, UI-state и
+autonomous-plan контракты также прошли. `git diff --check` и lockfile остаются
+чистыми — исправление было только восстановлением локальной установки из уже
+зафиксированного lockfile.
+
+11–20. `[~]` Первичный локальный сбой был вызван отсутствующим
+`@rolldown/binding-darwin-arm64` в stale `server/node_modules`; после
+`npm --prefix server install --include=optional` повторный unit и полный gate
+проходят. Внешние staging/production/pilot gates не изменились; readiness
+остаётся **96.5% (193/200)**.
