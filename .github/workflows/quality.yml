@@ -236,6 +236,10 @@ jobs:
         env:
           NODE_ENV: development
 
+      - name: Seed AutoCare integration fixtures
+        run: npm run demo:seed && npm run autocare:seed
+        working-directory: server
+
       - name: Run PostgreSQL integration and concurrency profile
         run: npm run test:integration
         working-directory: server

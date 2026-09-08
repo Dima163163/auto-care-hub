@@ -521,6 +521,12 @@ anonymized samples/participant rows отсутствуют.
   while the repository checkout is `auto-care-hub`. The assertions now verify
   the root-relative evidence path suffix with portable separators and no
   repository-name assumption.
+- The Node 22 PostgreSQL replay then exposed a real CI fixture gap: backend
+  integration applied migrations but did not seed the demo AutoCare catalog,
+  leaving service discovery empty. The backend quality workflow now runs the
+  bounded demo/AutoCare seed before integration, and the AutoCare seed now
+  upserts market countries before linking markets through the required
+  `countryId`; the clean replay passes **14 files / 63 tests**.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

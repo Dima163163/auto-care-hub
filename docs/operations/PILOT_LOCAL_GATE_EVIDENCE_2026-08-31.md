@@ -4473,3 +4473,23 @@ GitHub Linux, macOS и локальном checkout.
 backend quality и downstream integration. Deployment/DNS, staging API
 evidence, private media/restore, pilot participants и production SEO evidence
 остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 483 (08.09.2026) — fixtures для PostgreSQL integration job
+
+1–10. `[x]` После сборки backend и исправления checkout-path локальный Node 22
+ replay прошёл schema-contract: **6/6**. Следующий failure был не в API-коде:
+ `autocare.routes.integration.test.ts` получал пустой каталог, потому что
+ backend CI применял миграции, но не запускал demo/AutoCare fixture seed.
+
+11–20. `[x]` В `quality.yml` добавлен явный шаг
+ `demo:seed && autocare:seed` перед PostgreSQL integration. Одновременно
+ `seed-autocare-mock-data.ts` теперь идемпотентно upsert'ит страны и связывает
+ каждый mock market с `countryId`; это устраняет `NOT NULL` failure после
+ миграции market hierarchy. На чистой локальной PostgreSQL БД seed завершился,
+ затем Node 22 integration replay прошёл **14 файлов / 63 теста**.
+
+21–30. `[~]` Исправлен воспроизводимый CI fixture gap; новый Actions run на
+ опубликованном SHA должен подтвердить backend integration, transition smoke и
+ downstream jobs. Deployment/DNS, staging API evidence, private media/restore,
+ pilot participants и production SEO evidence остаются внешними gates;
+ readiness остаётся **96.5% (193/200)**.

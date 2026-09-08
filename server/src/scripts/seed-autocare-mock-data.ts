@@ -1,6 +1,7 @@
 import { AppDataSource } from '../database/data-source.js'
 import { IsNull } from 'typeorm'
 import {
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
@@ -34,6 +35,7 @@ async function seedAutoCareMockData() {
 
     try {
         await AppDataSource.transaction(async (manager) => {
+            const countryRepository = manager.getRepository(AutomotiveMarketCountryEntity)
             const marketRepository = manager.getRepository(AutomotiveMarketEntity)
             const zoneRepository = manager.getRepository(AutomotiveLocationZoneEntity)
             const definitionRepository = manager.getRepository(AutomotiveServiceDefinitionEntity)
@@ -49,10 +51,43 @@ async function seedAutoCareMockData() {
             const benchmarkRepository = manager.getRepository(AutoCarePriceBenchmarkEntity)
             const trustEvidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
 
+            const countries = new Map<string, AutomotiveMarketCountryEntity>()
+            for (const marketInput of AUTOMOTIVE_MOCK_MARKETS) {
+                if (countries.has(marketInput.countryCode)) continue
+
+                const existingCountry = await countryRepository.findOneBy({ code: marketInput.countryCode })
+                const country = await countryRepository.save(countryRepository.create({
+                    ...existingCountry,
+                    code: marketInput.countryCode,
+                    names: existingCountry?.names ?? {
+                        en: marketInput.countryName,
+                        ru: marketInput.countryName,
+                    },
+                    defaultLocale: marketInput.defaultLocale,
+                    supportedLocales: [...marketInput.supportedLocales],
+                    timezone: marketInput.timezone,
+                    currencyCode: marketInput.currencyCode,
+                    capabilities: existingCountry?.capabilities ?? {},
+                    legalLinks: existingCountry?.legalLinks ?? {},
+                    active: true,
+                }))
+                countries.set(marketInput.countryCode, country)
+            }
+
             const markets = new Map<string, AutomotiveMarketEntity>()
             for (const marketInput of AUTOMOTIVE_MOCK_MARKETS) {
+                const country = countries.get(marketInput.countryCode)
+                if (!country) throw new Error(`Mock country ${marketInput.countryCode} was not seeded.`)
+
                 const existingMarket = await marketRepository.findOneBy({ countryCode: marketInput.countryCode, cityCode: marketInput.cityCode })
-                const market = marketRepository.create({ ...existingMarket, ...marketInput, supportedLocales: [...marketInput.supportedLocales] })
+                const market = marketRepository.create({
+                    ...existingMarket,
+                    ...marketInput,
+                    countryId: country.id,
+                    supportedLocales: [...marketInput.supportedLocales],
+                    capabilities: existingMarket?.capabilities ?? {},
+                    legalLinks: existingMarket?.legalLinks ?? {},
+                })
                 markets.set(marketInput.cityCode, await marketRepository.save(market))
             }
             const zoneIdsByMarket = new Map<string, Map<string, string>>()
