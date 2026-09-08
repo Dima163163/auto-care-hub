@@ -4558,3 +4558,16 @@ private media/restore, pilot participants и production SEO evidence; readiness
 заменяет staging replay с реальными API-репликами, PostgreSQL/Redis и
 deployment-конфигурацией. Внешние gates и readiness **96.5% (193/200)** без
 изменений.
+
+## Порция 488 (08.09.2026) — единый 200-пунктовый audit contract
+
+1–10. `[x]` Две существующие очереди по 100 пунктов объединены проверяемым
+контрактом `npm run check:pilot-autonomous-200`: он проверяет обе половины,
+перенумеровывает вторую как пункты **101–200**, не допускает пропуски и
+дубликаты и печатает общий readiness. Результат: **200/200 пунктов,
+193 complete, 7 partial, 96.5%**.
+
+11–20. `[x]` Добавлен regression-набор нового контракта **3/3 PASS** и команда
+подключена к `quality:backend`; отдельные проверки исходных половин остаются
+неизменными. Частичные пункты по-прежнему требуют внешнего staging/production,
+pilot или deployed SEO evidence и не превращены в локальные `[x]`.
