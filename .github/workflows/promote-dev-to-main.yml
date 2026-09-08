@@ -75,25 +75,61 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head dev --state open --json number --jq '.[0].number')"
-          if [ -z "$pr_number" ]; then
-            pr_number="$(gh pr create \
-              --repo "$GITHUB_REPOSITORY" \
-              --base main \
-              --head dev \
-              --title "chore(release): promote verified dev to main" \
-              --body "Automated promotion. The source commit passed the complete Quality workflow, including Application CI, before this pull request was created.")"
+          if [ -n "$pr_number" ]; then
+            echo "mode=pull-request" >> "$GITHUB_OUTPUT"
+            echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+            echo "Reusing promotion PR #$pr_number."
+            exit 0
           fi
-          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
-          echo "Promoting PR #$pr_number."
+
+          if create_output="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head dev \
+            --title "chore(release): promote verified dev to main" \
+            --body "Automated promotion. The source commit passed the complete Quality workflow, including Application CI, before this pull request was created." 2>&1)"; then
+            pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head dev --state open --json number --jq '.[0].number')"
+            test -n "$pr_number"
+            echo "mode=pull-request" >> "$GITHUB_OUTPUT"
+            echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+            echo "Created promotion PR #$pr_number."
+            exit 0
+          fi
+
+          printf '%s\n' "$create_output"
+          {
+            echo "### Promotion fallback"
+            echo "GitHub did not allow the workflow token to create the promotion PR."
+            echo "The verified SHA will use the guarded fast-forward path instead."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "mode=direct" >> "$GITHUB_OUTPUT"
+
+      - name: Fast-forward main after verified application CI
+        if: ${{ steps.promotion-pr.outputs.mode == 'direct' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin main dev --quiet
+          main_sha="$(git rev-parse origin/main)"
+          remote_dev_sha="$(git rev-parse origin/dev)"
+          test "$remote_dev_sha" = "$SOURCE_SHA"
+          test "$(git merge-base "$main_sha" "$SOURCE_SHA")" = "$main_sha"
+          git push origin "$SOURCE_SHA:refs/heads/main"
+          echo "Fast-forwarded main to the exact Quality-tested SHA $SOURCE_SHA."
 
       - name: Wait for pull-request CI to pass
+        if: ${{ steps.promotion-pr.outputs.mode == 'pull-request' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.promotion-pr.outputs.number }}
         run: gh pr checks "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --watch --fail-fast
 
       - name: Enable merge after all required checks pass
+        if: ${{ steps.promotion-pr.outputs.mode == 'pull-request' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.promotion-pr.outputs.number }}

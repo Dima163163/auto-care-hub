@@ -222,7 +222,9 @@ feature/<short-task-name>
 - A successful push to `dev` starts the checked-in promotion workflow. It waits
   for the complete `Quality` workflow for that exact commit, creates or reuses
   the `dev` → `main` pull request, waits for pull-request CI, and enables
-  GitHub auto-merge only after the checks pass.
+  GitHub auto-merge only after the checks pass. If GitHub does not allow the
+  workflow token to create a pull request, it can only use the guarded
+  fast-forward fallback after the same exact-SHA CI gate succeeds.
 - Preserve unrelated user changes and stage explicit files; never use `git add .`.
 - Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
 
