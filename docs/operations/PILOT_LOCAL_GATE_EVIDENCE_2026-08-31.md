@@ -4609,3 +4609,16 @@ API/route/media/backup/security/accessibility contracts и legacy cleanup про
 lockfile без изменения зависимостей проекта. Production deployment, real
 staging/Redis/S3/PostgreSQL replays, pilot participants и Lighthouse остаются
 внешними gates; canonical readiness сохраняется **96.5% (193/200)**.
+
+## Порция 492 (08.09.2026) — полный local MVP gate
+
+1–10. `[x]` На опубликованном SHA `6a8a96d9c0db` полный
+`npm run check:local-mvp -- --json` завершён **43/43 PASS**. Включены lint,
+**167/167** test files и **510/510** tests, production builds, route/API,
+security, accessibility, media, backup/restore и legacy checks.
+
+11–20. `[x]` Release-server responsive matrix прошёл **30/30** проверок для
+ширин `360, 390, 414, 540, 682, 768, 790, 1024, 1280, 1440`, failures `0`.
+Production deployment/DNS, staging infrastructure, private S3 delivery,
+pilot participants и production Lighthouse/HTML evidence остаются внешними;
+canonical readiness без изменений: **96.5% (193/200)**.
