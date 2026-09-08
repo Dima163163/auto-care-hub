@@ -659,7 +659,7 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
         const attachment = await AppDataSource.transaction(async (manager) => {
             const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
             if (!lockedRequest) notFound('Service request not found.')
-            if (lockedRequest.clientId !== user.id) {
+            if (lockedRequest.clientId !== user.id && user.role !== UserRole.SuperAdmin) {
                 const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
                 if (!provider || !(await hasProviderWorkspacePermission(user.id, provider.id, 'requests', lockedRequest.locationId))) {
                     forbidden('You do not have access to this service request.')
@@ -976,6 +976,7 @@ async function getRequest(requestId: string) {
 }
 
 async function assertParticipant(user: UserEntity, request: ServiceRequestEntity) {
+    if (user.role === UserRole.SuperAdmin) return
     if (request.clientId === user.id) return
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
     if (provider && await hasProviderWorkspacePermission(user.id, provider.id, 'requests', request.locationId)) return

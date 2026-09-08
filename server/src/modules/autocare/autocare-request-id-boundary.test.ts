@@ -9,6 +9,7 @@ vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
 import {
     acceptAutoCareServiceQuote,
+    assertAutoCareServiceRequestRealtimeAccess,
     cancelAutoCareServiceRequest,
     completeAutoCareServiceRequest,
     confirmAutoCareServiceRequest,
@@ -30,6 +31,7 @@ import {
 
 const owner = { id: 'owner-1', role: 'owner' } as never
 const client = { id: 'client-1', role: 'client' } as never
+const superAdmin = { id: 'super-admin-1', role: 'super_admin' } as never
 
 describe('service request identifier boundary', () => {
     beforeEach(() => {
@@ -58,6 +60,23 @@ describe('service request identifier boundary', () => {
         for (const call of calls) await expect(call).rejects.toMatchObject({ statusCode: 422 })
         expect(mocks.getRepository).not.toHaveBeenCalled()
         expect(mocks.transaction).not.toHaveBeenCalled()
+    })
+
+    it('allows super admins through service-request participant checks', async () => {
+        const requestId = '11111111-1111-4111-8111-111111111111'
+        const requestRepository = {
+            findOneBy: vi.fn().mockResolvedValue({
+                id: requestId,
+                clientId: 'client-1',
+                providerId: 'provider-1',
+                locationId: 'location-1',
+            }),
+        }
+        mocks.getRepository.mockReturnValue(requestRepository)
+
+        await expect(assertAutoCareServiceRequestRealtimeAccess(superAdmin, requestId)).resolves.toBe(true)
+        expect(requestRepository.findOneBy).toHaveBeenCalledWith({ id: requestId })
+        expect(mocks.getRepository).toHaveBeenCalledTimes(1)
     })
 
     it('rejects malformed quote decision request ids before opening a transaction', async () => {
