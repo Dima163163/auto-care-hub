@@ -5,8 +5,8 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { getAdminOperationsOverview } from './operations-overview.service.js'
 
 describe('admin operations overview boundary', () => {
-    it('allows only a super admin to request the operational snapshot', async () => {
-        const actor = { role: UserRole.Admin } as UserEntity
+    it('rejects non-admin actors before collecting the operational snapshot', async () => {
+        const actor = { role: UserRole.Client } as UserEntity
 
         await expect(getAdminOperationsOverview(actor)).rejects.toMatchObject({
             statusCode: 403,

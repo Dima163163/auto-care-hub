@@ -97,6 +97,7 @@ import {
     getSecurityCenterExportHeaders,
     getSecurityCenterSummary,
     securityCenterEventsToCsv,
+    assertSecurityCenterExportAccess,
     revokeSecurityCenterUserSessions,
     updateSecurityCenterEventStatus,
     type SecurityCenterEventResponse,
@@ -857,6 +858,7 @@ export async function adminRoutes(
 
     app.get('/admin/security-center/events/export', async (request, reply) => {
         const user = await requireAuth(request)
+        assertSecurityCenterExportAccess(user)
         const query = validateQuery(securityCenterExportQuerySchema, request.query)
         const result = await getSecurityCenterEvents(user, { ...query, limit: Math.min(query.limit, 100) })
         const events = Array.isArray(result) ? result : result.items

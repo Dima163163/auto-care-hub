@@ -30,6 +30,8 @@ export function AdminUsersListItem({
     const isSuperViewer = viewerRole === 'super_admin'
 
     const handleRoleChange = async (newRole: UserRole) => {
+        if (newRole === user.role) return
+        if (!window.confirm(t('adminUsers.roleChangeConfirm'))) return
         try {
             await updateRole({ id: user.id, role: newRole }).unwrap()
             toast.success(t('adminUsers.roleUpdatedSuccessfully'))

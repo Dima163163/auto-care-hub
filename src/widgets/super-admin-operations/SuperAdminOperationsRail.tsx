@@ -80,9 +80,9 @@ function MetricRow({
 export function SuperAdminOperationsRail() {
     const { t } = useTranslation()
     const { data: currentUser } = useGetMeQuery()
-    const isSuperAdmin = currentUser?.role === 'super_admin'
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin'
     const overview = useGetAdminOperationsOverviewQuery(undefined, {
-        skip: !isSuperAdmin,
+        skip: !isAdmin,
         pollingInterval: 30_000,
         refetchOnFocus: true,
         refetchOnReconnect: true,
@@ -90,7 +90,7 @@ export function SuperAdminOperationsRail() {
     const [expanded, setExpanded] = useState(false)
     const [collapsed, setCollapsed] = useState(false)
 
-    if (!isSuperAdmin) return null
+    if (!isAdmin) return null
 
     const status = overview.data?.overallStatus ?? 'unavailable'
     const schema = overview.data?.database.schema

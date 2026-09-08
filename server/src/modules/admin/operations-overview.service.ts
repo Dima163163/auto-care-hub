@@ -15,7 +15,7 @@ import { SystemIncidentEntity, SystemIncidentSeverity, SystemIncidentStatus } fr
 import { UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { isSuperAdmin } from '../../shared/auth/roles.js'
+import { isAdminRole } from '../../shared/auth/roles.js'
 import { metrics } from '../../shared/observability/metrics.js'
 import { getRedisClient, isRedisEnabled } from '../../shared/redis/redis.js'
 import { getOutboxHealthSummary } from '../outbox/outbox-health.service.js'
@@ -117,12 +117,12 @@ const activeOutboxStatuses = [
     OutboxEventStatus.Failed,
 ]
 
-function assertSuperAdmin(user: UserEntity) {
-    if (!isSuperAdmin(user)) {
+function assertAdmin(user: UserEntity) {
+    if (!isAdminRole(user.role)) {
         throw new AppError({
             statusCode: 403,
             code: ERROR_CODES.Forbidden,
-            message: 'Only super admin can access the operations overview.',
+            message: 'Only admins can access the operations overview.',
         })
     }
 }
@@ -408,7 +408,7 @@ function getSafeMetrics() {
 }
 
 export async function getAdminOperationsOverview(user: UserEntity): Promise<AdminOperationsOverview> {
-    assertSuperAdmin(user)
+    assertAdmin(user)
 
     const database = await collectDatabaseOverview()
     const [redis, outbox, signals] = await Promise.all([

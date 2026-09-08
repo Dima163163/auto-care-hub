@@ -1,6 +1,7 @@
 import { useGetMeQuery } from '@/features/auth/api/authApi'
 import {
     useGetAuditLogsPageQuery,
+    useLazyGetAuditLogsExportQuery,
     useLazyGetAuditLogsPageQuery,
     type AuditLog,
 } from '@/features/admin/api/adminApi'
@@ -39,6 +40,7 @@ export function AdminAuditLogsPage() {
     const { t } = useTranslation()
     const { data: currentUser } = useGetMeQuery()
     const [loadAuditPage, { isFetching: isLoadingMore }] = useLazyGetAuditLogsPageQuery()
+    const [exportAuditLogs, { isFetching: isExporting }] = useLazyGetAuditLogsExportQuery()
     const [query, setQuery] = useState(() => readAdminAuditFilter()?.query ?? '')
     const [action, setAction] = useState('')
     const [targetType, setTargetType] = useState('')
@@ -141,23 +143,24 @@ export function AdminAuditLogsPage() {
         setActorId('')
     }
 
-    const exportCsv = () => {
-        const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`
-        const rows = logs.map((log) => [
-            log.createdAt,
-            log.actor?.name ?? t('common.system'),
-            log.action,
-            log.targetType ?? '',
-            log.targetId ?? '',
-            JSON.stringify(log.metadata),
-        ].map(escape).join(','))
-        const blob = new Blob([[['createdAt', 'actor', 'action', 'targetType', 'targetId', 'metadata'].join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = 'autocarehub-audit-logs.csv'
-        link.click()
-        URL.revokeObjectURL(url)
+    const exportCsv = async () => {
+        try {
+            const blob = await exportAuditLogs({
+                search: deferredQuery.trim() || undefined,
+                action: action.trim() || undefined,
+                targetType: targetType.trim() || undefined,
+                actorId: actorId.trim() || undefined,
+                limit: 10_000,
+            }).unwrap()
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `autocarehub-audit-logs-${new Date().toISOString().slice(0, 10)}.csv`
+            link.click()
+            window.setTimeout(() => URL.revokeObjectURL(url), 0)
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t('common.tryAgainLater')))
+        }
     }
 
     if (auditError && !hasStaleLogs) {
@@ -304,9 +307,9 @@ export function AdminAuditLogsPage() {
                                 <Trash2 className="size-4" />
                                 {t('adminAuditLogs.clearFilter')}
                             </Button>
-                            <Button variant="outline" size="sm" className="min-h-11" disabled={isAuditLoading || logs.length === 0} onClick={exportCsv}>
-                            <Download className="size-4" />
-                            {t('adminAuditLogs.export')}
+                            <Button variant="outline" size="sm" className="min-h-11" disabled={isAuditLoading || isExporting || logs.length === 0} loading={isExporting} onClick={() => void exportCsv()}>
+                            {!isExporting && <Download className="size-4" />}
+                            {isExporting ? t('common.loading') : t('adminAuditLogs.export')}
                             </Button>
                         </div>
                     </div>

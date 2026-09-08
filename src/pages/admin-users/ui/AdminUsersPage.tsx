@@ -4,7 +4,9 @@ import { toast } from 'sonner'
 import {
     canManageUserStatus,
     type UserStatus,
-    useGetAdminUsersQuery,
+    type User,
+    useGetAdminUsersPageQuery,
+    useLazyGetAdminUsersPageQuery,
     useUpdateAdminUserStatusMutation,
 } from '@/entities/user'
 import { useGetMeQuery } from '@/features/auth'
@@ -22,27 +24,52 @@ import { AdminUsersList } from './AdminUsersList'
 import { AdminUsersStateCard } from './AdminUsersStateCard'
 import { AdminCreateDialog } from './AdminCreateDialog'
 
+type AdminUsersPaginationState = {
+    items: User[]
+    nextCursor: string | null | undefined
+    pageKey: string
+}
+
 export function AdminUsersPage() {
     const { t } = useTranslation()
     const [userIdToBlock, setUserIdToBlock] = useState<string | null>(null)
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const {
-        data: usersData,
+        data: usersPage,
         isFetching,
         isLoading,
         isError,
         error,
         refetch,
-    } = useGetAdminUsersQuery()
+    } = useGetAdminUsersPageQuery({ limit: 50 })
+    const [loadUsersPage, { isFetching: isLoadingMore }] = useLazyGetAdminUsersPageQuery()
+    const [paginationState, setPaginationState] = useState<AdminUsersPaginationState>({
+        items: [],
+        nextCursor: undefined,
+        pageKey: '',
+    })
     const { data: currentUser } = useGetMeQuery()
     const isOnline = useOnlineStatus()
-    const users = usersData ?? []
+    const pageKey = usersPage
+        ? `${usersPage.items.map((user) => user.id).join('|')}::${usersPage.nextCursor ?? ''}`
+        : ''
+    const currentPagination = paginationState.pageKey === pageKey
+        ? paginationState
+        : {
+            items: [],
+            nextCursor: usersPage?.nextCursor,
+            pageKey,
+        }
+    const users = [
+        ...(usersPage?.items ?? []),
+        ...currentPagination.items.filter((user) => !(usersPage?.items ?? []).some((item) => item.id === user.id)),
+    ]
     const errorState = getApiErrorState(error)
     const queryState = resolveQueryViewState({
         isLoading,
         isFetching,
         isError,
-        hasData: usersData !== undefined,
+        hasData: usersPage !== undefined,
         hasResults: users.length > 0,
         isOffline: !isOnline,
         isPermissionDenied: getApiErrorCode(error) === 'FORBIDDEN',
@@ -53,6 +80,26 @@ export function AdminUsersPage() {
         useUpdateAdminUserStatusMutation()
 
     const userToBlock = users.find((user) => user.id === userIdToBlock)
+
+    const handleLoadMore = async () => {
+        if (!currentPagination.nextCursor || isLoadingMore) return
+        try {
+            const nextPage = await loadUsersPage({ limit: 50, cursor: currentPagination.nextCursor }).unwrap()
+            setPaginationState((current) => {
+                const base = current.pageKey === pageKey ? current : currentPagination
+                return {
+                    items: [
+                        ...base.items,
+                        ...nextPage.items.filter((user) => !base.items.some((item) => item.id === user.id)),
+                    ],
+                    nextCursor: nextPage.nextCursor,
+                    pageKey,
+                }
+            })
+        } catch (loadError) {
+            toast.error(getApiErrorMessage(loadError, t('common.tryAgainLater')))
+        }
+    }
 
     const handleStatusChange = async (id: string, status: UserStatus) => {
         const user = users.find((user) => user.id === id)
@@ -185,6 +232,9 @@ export function AdminUsersPage() {
                         viewerRole={currentUser?.role}
                         users={users}
                         onStatusChange={handleStatusChange}
+                        hasMore={Boolean(currentPagination.nextCursor)}
+                        isLoadingMore={isLoadingMore}
+                        onLoadMore={() => void handleLoadMore()}
                     />
                 )}
                 <AdminUserBlockDialog

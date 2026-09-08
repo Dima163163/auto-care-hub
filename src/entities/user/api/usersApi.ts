@@ -271,6 +271,7 @@ export const usersApi = baseApi.injectEndpoints({
 export const {
     useGetAdminUsersQuery,
     useGetAdminUsersPageQuery,
+    useLazyGetAdminUsersPageQuery,
     useGetOwnerClientsQuery,
     useUpdateAdminUserStatusMutation,
     useUpdateAdminUserRoleMutation,

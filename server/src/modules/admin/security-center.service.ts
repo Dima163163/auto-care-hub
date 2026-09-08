@@ -23,7 +23,7 @@ import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entit
 import { revokeAllUserSessions } from '../auth/session.service.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { isSuperAdmin } from '../../shared/auth/roles.js'
+import { isAdminRole, isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
     decodeCursor,
@@ -162,13 +162,24 @@ type SecurityEventActionLike = Pick<
 > & { createdAt: Date | string }
 
 function assertSecurityCenterReader(user: UserEntity) {
-    if (isSuperAdmin(user)) return
+    if (isAdminRole(user.role)) return
 
     throw new AppError({
         statusCode: 403,
         code: ERROR_CODES.Forbidden,
-        message: 'Only super admin can access the security center.',
+        message: 'Only admins can access the security center.',
     })
+}
+
+export function assertSecurityCenterExportAccess(user: UserEntity) {
+    assertSecurityCenterReader(user)
+    if (!isSuperAdmin(user)) {
+        throw new AppError({
+            statusCode: 403,
+            code: ERROR_CODES.Forbidden,
+            message: 'Only super admin can export security telemetry.',
+        })
+    }
 }
 
 function requireSecurityCenterUuid(value: unknown) {
@@ -467,7 +478,7 @@ export async function updateSecurityCenterEventStatus(
     const resolvedAssigneeId = normalizedMutation.assigneeId === undefined
         ? previousAction?.assigneeId ?? null
         : normalizedMutation.assigneeId
-    if (resolvedAssigneeId) {
+    if (resolvedAssigneeId && resolvedAssigneeId !== user.id) {
         const assignee = await AppDataSource.getRepository(UserEntity).findOne({
             where: { id: resolvedAssigneeId },
             select: { id: true, role: true, status: true },
@@ -476,7 +487,7 @@ export async function updateSecurityCenterEventStatus(
             throw new AppError({
                 statusCode: 409,
                 code: ERROR_CODES.Conflict,
-                message: 'Security events can only be assigned to an active super-admin.',
+                message: 'Security events can only be assigned to an active super-admin or the current admin.',
             })
         }
     }
@@ -497,6 +508,13 @@ export async function revokeSecurityCenterUserSessions(
     targetUserId: unknown,
 ): Promise<SecurityCenterSessionRevocationResponse> {
     assertSecurityCenterReader(user)
+    if (!isSuperAdmin(user)) {
+        throw new AppError({
+            statusCode: 403,
+            code: ERROR_CODES.Forbidden,
+            message: 'Only super admin can revoke sessions from the security center.',
+        })
+    }
     const normalizedTargetUserId = normalizeSecurityCenterUuid(targetUserId)
     if (user.id === targetUserId || (normalizedTargetUserId !== null && user.id.toLowerCase() === normalizedTargetUserId)) {
         throw new AppError({

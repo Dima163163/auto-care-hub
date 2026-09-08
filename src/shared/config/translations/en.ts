@@ -719,6 +719,8 @@ export const enTranslations = {
         roleOwner: 'Owner',
         roleAdmin: 'Admin',
         roleSuperAdmin: 'Super admin',
+        loadMore: 'Load more',
+        roleChangeConfirm: 'Change this user role? Existing sessions will be invalidated.',
     },
     adminOwners: {
         description: 'Manage automotive service owners and account access.',
@@ -853,9 +855,9 @@ export const enTranslations = {
     },
     securityCenter: {
         title: 'Security center',
-        description: 'Review authentication failures, abuse signals, source IPs, routes, and investigation status in one super-admin workspace.',
-        permissionTitle: 'Super-admin access required',
-        permissionDescription: 'This workspace exposes sensitive security telemetry and is available only to the super-admin role.',
+        description: 'Review authentication failures, abuse signals, source IPs, routes, and investigation status in one admin workspace.',
+        permissionTitle: 'Admin access required',
+        permissionDescription: 'This workspace exposes sensitive security telemetry and is available to admin and super-admin roles.',
         loadError: 'Security telemetry could not be loaded.',
         exportReport: 'Export report',
         exportingReport: 'Exporting...',

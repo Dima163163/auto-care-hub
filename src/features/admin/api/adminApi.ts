@@ -3,6 +3,7 @@ import type { CursorPage, CursorQuery } from '@/shared/api/cursorPagination'
 import {
     normalizeAuditLogListResponse,
     normalizeAuditLogPageResponse,
+    normalizeAuditLogsExportResponse,
     normalizeSecurityEventListResponse,
     normalizeSecurityEventPageResponse,
     normalizeSecurityCenterEventPageResponse,
@@ -13,6 +14,7 @@ import {
     normalizeSecurityMitigationResponse,
     normalizeSecuritySessionRevocationResponse,
     normalizeOutboxHealthResponse,
+    normalizeOutboxActionResponse,
     normalizeAdminOperationsOverviewResponse,
     normalizeSystemIncidentListResponse,
     normalizeSystemIncidentPageResponse,
@@ -25,6 +27,8 @@ type AuditLogsQuery = CursorQuery & {
     targetType?: string | undefined
     actorId?: string | undefined
 }
+
+type AuditLogsExportQuery = Omit<AuditLogsQuery, 'cursor'> & { limit?: number }
 
 type SystemIncidentsQuery = CursorQuery & {
     search?: string | undefined
@@ -269,6 +273,12 @@ export type OutboxHealth = {
     }>
 }
 
+export type OutboxActionResponse = {
+    success: true
+    eventId: string
+    status: string
+}
+
 export type AdminOperationsOverview = {
     generatedAt: string
     overallStatus: 'healthy' | 'degraded' | 'unavailable'
@@ -358,6 +368,15 @@ export const adminApi = baseApi.injectEndpoints({
             transformResponse: normalizeAuditLogPageResponse,
             providesTags: ['AuditLogs'],
         }),
+        getAuditLogsExport: build.query<Blob, AuditLogsExportQuery>({
+            query: (query) => ({
+                url: '/admin/audit-logs/export',
+                params: query,
+                responseHandler: (response) => response.blob(),
+            }),
+            transformResponse: normalizeAuditLogsExportResponse,
+            providesTags: [],
+        }),
         getSystemIncidents: build.query<SystemIncident[], void>({
             query: () => '/admin/system-incidents',
             transformResponse: normalizeSystemIncidentListResponse,
@@ -375,6 +394,22 @@ export const adminApi = baseApi.injectEndpoints({
             query: () => '/admin/outbox/health',
             transformResponse: normalizeOutboxHealthResponse,
             providesTags: ['SystemIncidents'],
+        }),
+        retryOutboxEvent: build.mutation<OutboxActionResponse, string>({
+            query: (id) => ({
+                url: `/admin/outbox/${id}/retry`,
+                method: 'POST',
+            }),
+            transformResponse: normalizeOutboxActionResponse,
+            invalidatesTags: ['SystemIncidents'],
+        }),
+        deadLetterOutboxEvent: build.mutation<OutboxActionResponse, string>({
+            query: (id) => ({
+                url: `/admin/outbox/${id}/dead-letter`,
+                method: 'POST',
+            }),
+            transformResponse: normalizeOutboxActionResponse,
+            invalidatesTags: ['SystemIncidents'],
         }),
         getAdminOperationsOverview: build.query<AdminOperationsOverview, void>({
             query: () => '/admin/operations/overview',
@@ -501,11 +536,14 @@ export const adminApi = baseApi.injectEndpoints({
 export const {
     useGetAuditLogsQuery,
     useGetAuditLogsPageQuery,
+    useLazyGetAuditLogsExportQuery,
     useLazyGetAuditLogsPageQuery,
     useGetSystemIncidentsQuery,
     useGetSystemIncidentsPageQuery,
     useLazyGetSystemIncidentsPageQuery,
     useGetOutboxHealthQuery,
+    useRetryOutboxEventMutation,
+    useDeadLetterOutboxEventMutation,
     useGetAdminOperationsOverviewQuery,
     useGetSecurityEventsQuery,
     useGetSecurityEventsPageQuery,

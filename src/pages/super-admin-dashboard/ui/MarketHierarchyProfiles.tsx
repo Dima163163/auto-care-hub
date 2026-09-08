@@ -15,6 +15,7 @@ import {
     createMarketProfileDraft,
     parseNames,
     parseOptionalFiniteNumber,
+    confirmMarketDeletion,
     toMarketProfileInput,
     type MarketProfileDraft,
 } from './market-hierarchy-form-utils'
@@ -64,7 +65,7 @@ export function CountryProfileForm({ country, onSubmit, state, onDelete }: Count
         </div>
         <div className="mt-3"><MarketProfileFields draft={profile} setDraft={setProfile} /></div>
         <label className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />Активна для создания городов и запуска</label>
-        <div className="mt-3 flex flex-wrap items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{country ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : country ? 'Сохранить страну' : 'Создать страну'}</button>{onDelete && <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive" onClick={() => { if (window.confirm('Удалить страну? У страны не должно быть городов.')) void onDelete().catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось удалить страну.')) }}><Trash2 className="size-4" />Удалить</button>}{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
+        <div className="mt-3 flex flex-wrap items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{country ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : country ? 'Сохранить страну' : 'Создать страну'}</button>{onDelete && <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive" onClick={() => { if (confirmMarketDeletion('страну', 'У страны не должно быть городов.')) void onDelete().catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось удалить страну.')) }}><Trash2 className="size-4" />Удалить</button>}{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
     </form>
 }
 
@@ -102,6 +103,6 @@ export function CityProfileForm({ country, city, onSubmit, state, onDelete }: Ci
         </div>
         <div className="mt-3"><MarketProfileFields draft={profile} setDraft={setProfile} /></div>
         <label className="mt-3 flex items-center gap-2 text-sm font-bold text-foreground"><input type="checkbox" checked={launchReady} onChange={(event) => setLaunchReady(event.target.checked)} />Город готов к публичному запуску</label>
-        <div className="mt-3 flex flex-wrap items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{city ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : city ? 'Сохранить город' : 'Создать город'}</button>{onDelete && <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive" onClick={() => { if (window.confirm('Удалить город? Сначала удалите его зоны и филиалы.')) void onDelete().catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось удалить город.')) }}><Trash2 className="size-4" />Удалить</button>}{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
+        <div className="mt-3 flex flex-wrap items-center gap-3"><button type="submit" disabled={state.isLoading} className={primaryButton}>{city ? <Save className="size-4" /> : <Plus className="size-4" />}{state.isLoading ? 'Сохранение…' : city ? 'Сохранить город' : 'Создать город'}</button>{onDelete && <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-destructive/40 px-3 text-xs font-black text-destructive" onClick={() => { if (confirmMarketDeletion('город', 'Сначала удалите его зоны и филиалы.')) void onDelete().catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось удалить город.')) }}><Trash2 className="size-4" />Удалить</button>}{state.isSuccess && <span className="text-xs font-bold text-status-success-foreground">Сохранено</span>}</div><ErrorMessage error={error} />
     </form>
 }

@@ -82,3 +82,8 @@ export function parseOptionalFiniteNumber(value: string, label: string, min: num
 
     return parsed
 }
+
+export function confirmMarketDeletion(target: string, dependencyHint: string) {
+    if (!window.confirm(`Удалить ${target}? ${dependencyHint}`)) return false
+    return window.prompt(`Для подтверждения удаления введите DELETE.`)?.trim().toUpperCase() === 'DELETE'
+}

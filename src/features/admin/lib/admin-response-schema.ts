@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { CursorPage } from '@/shared/api/cursorPagination'
 import type {
     OutboxHealth,
+    OutboxActionResponse,
     AuditLog,
     SecurityCenterEvent,
     SecurityCenterSummary,
@@ -58,6 +59,12 @@ const outboxHealthSchema = z.object({
         createdAt: z.string(),
     })).max(100),
 }) satisfies z.ZodType<OutboxHealth>
+
+const outboxActionResponseSchema = z.object({
+    success: z.literal(true),
+    eventId: z.string().uuid(),
+    status: z.string().min(1),
+}) satisfies z.ZodType<OutboxActionResponse>
 
 const adminOperationsOverviewSchema = z.object({
     generatedAt: z.string().datetime({ offset: true }),
@@ -279,6 +286,14 @@ export function normalizeAuditLogPageResponse(value: unknown): CursorPage<AuditL
     return normalizePage(value, auditLogSchema)
 }
 
+export function normalizeAuditLogsExportResponse(value: unknown): Blob {
+    if (typeof Blob === 'undefined' || !(value instanceof Blob)) {
+        throw new Error('Audit log export response must be a Blob.')
+    }
+
+    return value
+}
+
 export function normalizeSystemIncidentListResponse(value: unknown): SystemIncident[] {
     return z.array(systemIncidentSchema).parse(value)
 }
@@ -289,6 +304,10 @@ export function normalizeSystemIncidentPageResponse(value: unknown): CursorPage<
 
 export function normalizeOutboxHealthResponse(value: unknown): OutboxHealth {
     return outboxHealthSchema.parse(value)
+}
+
+export function normalizeOutboxActionResponse(value: unknown): OutboxActionResponse {
+    return outboxActionResponseSchema.parse(value)
 }
 
 export function normalizeAdminOperationsOverviewResponse(value: unknown): AdminOperationsOverview {

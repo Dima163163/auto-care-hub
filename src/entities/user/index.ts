@@ -1,5 +1,7 @@
 export {
     useGetAdminUsersQuery,
+    useGetAdminUsersPageQuery,
+    useLazyGetAdminUsersPageQuery,
     useGetOwnerClientsQuery,
     useUpdateAdminUserStatusMutation,
     useUpdateAdminUserRoleMutation,

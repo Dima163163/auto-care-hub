@@ -13,14 +13,19 @@ import {
 } from './security-center.service.js'
 
 describe('Security Center service', () => {
-    it('requires a super administrator before reading or mutating data', async () => {
-        const admin = { role: UserRole.Admin } as never
+    it('allows admins to inspect security events but keeps session revocation super-admin scoped', async () => {
+        const admin = { id: 'admin-1', role: UserRole.Admin } as never
 
-        await expect(getSecurityCenterSummary(admin)).rejects.toMatchObject({ statusCode: 403 })
-        await expect(getSecurityCenterEvents(admin)).rejects.toMatchObject({ statusCode: 403 })
-        await expect(getSecurityCenterEvent(admin, 'event-1')).rejects.toMatchObject({ statusCode: 403 })
-        await expect(updateSecurityCenterEventStatus(admin, 'event-1', SecurityEventActionStatus.Investigating)).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getSecurityCenterEvent(admin, 'event-1')).rejects.toMatchObject({ statusCode: 422 })
+        await expect(updateSecurityCenterEventStatus(admin, 'event-1', SecurityEventActionStatus.Investigating)).rejects.toMatchObject({ statusCode: 422 })
         await expect(revokeSecurityCenterUserSessions(admin, 'user-1')).rejects.toMatchObject({ statusCode: 403 })
+    })
+
+    it('rejects non-admin readers before touching security data', async () => {
+        const client = { role: UserRole.Client } as never
+
+        await expect(getSecurityCenterSummary(client)).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getSecurityCenterEvents(client)).rejects.toMatchObject({ statusCode: 403 })
     })
 
     it('sanitizes legacy metadata before returning an investigation event', () => {

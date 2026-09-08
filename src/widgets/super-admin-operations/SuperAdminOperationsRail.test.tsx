@@ -119,12 +119,12 @@ describe('SuperAdminOperationsRail', () => {
         expect(screen.getByText('Database')).toBeVisible()
     })
 
-    it('does not render or request the snapshot for an ordinary admin', () => {
+    it('renders the safe operational snapshot for an ordinary admin', () => {
         mocks.role = 'admin'
 
         renderRail()
 
-        expect(screen.queryByLabelText('System operations')).not.toBeInTheDocument()
-        expect(mocks.getOverview).toHaveBeenCalledWith(undefined, expect.objectContaining({ skip: true }))
+        expect(screen.getByLabelText('System operations')).toBeVisible()
+        expect(mocks.getOverview).toHaveBeenCalledWith(undefined, expect.objectContaining({ skip: false }))
     })
 })

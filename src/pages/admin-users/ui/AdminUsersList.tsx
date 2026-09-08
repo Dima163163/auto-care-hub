@@ -1,4 +1,5 @@
 import type { User, UserRole, UserStatus } from '@/entities/user'
+import { Button } from '@/components/ui/button'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { AdminUsersListItem } from './AdminUsersListItem'
@@ -8,6 +9,9 @@ type AdminUsersListProps = {
     onStatusChange: (id: string, status: UserStatus) => void
     users: User[]
     viewerRole?: UserRole | undefined
+    hasMore: boolean
+    isLoadingMore: boolean
+    onLoadMore: () => void
 }
 
 export function AdminUsersList({
@@ -15,6 +19,9 @@ export function AdminUsersList({
     onStatusChange,
     users,
     viewerRole,
+    hasMore,
+    isLoadingMore,
+    onLoadMore,
 }: AdminUsersListProps) {
     const { t } = useTranslation()
 
@@ -41,6 +48,7 @@ export function AdminUsersList({
                     />
                 ))}
             </div>
+            {hasMore && <div className="flex justify-center border-t p-4"><Button type="button" variant="outline" loading={isLoadingMore} onClick={onLoadMore}>{t('adminUsers.loadMore')}</Button></div>}
         </div>
     )
 }
