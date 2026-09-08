@@ -4712,3 +4712,15 @@ contract подтвердил entry **152.6 kB** и **11 required chunks**.
 11–20. `[~]` Эти проверки усиливают local API, cache/update и artifact proof,
 но не создают production deployment evidence и не изменяют внешний blocker
 список. Readiness остаётся **96.5% (193/200)**.
+
+## Порция 500 (08.09.2026) — исправление stale OpenAPI regression
+
+1–10. `[x]` Targeted test выявил расхождение `expected=22` против фактических
+**21** required OpenAPI operations; список контрактов и `openapi.route.ts` уже
+были согласованы, поэтому исправлено stale assertion без добавления фиктивного
+endpoint. `check:openapi-structure` и его tests прошли **2/2**, route snapshot —
+**2/2**, API contract — PASS, lint и `git diff --check` — PASS.
+
+11–20. `[~]` Это закрывает реальный локальный regression в API test harness, но
+не меняет external deployment/staging/pilot evidence и не повышает readiness
+искусственно: **96.5% (193/200)**.

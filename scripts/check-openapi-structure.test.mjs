@@ -7,7 +7,7 @@ import { validateOpenApiStructure } from './check-openapi-structure.mjs'
 const source = await readFile(new URL('../server/src/routes/openapi.route.ts', import.meta.url), 'utf8')
 
 test('OpenAPI structural checker accepts the current document structure', () => {
-    assert.deepEqual(validateOpenApiStructure(source), { operations: 22 })
+    assert.deepEqual(validateOpenApiStructure(source), { operations: 21 })
 })
 
 test('OpenAPI structural checker rejects a missing operation id', () => {
