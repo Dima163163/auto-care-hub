@@ -4676,3 +4676,14 @@ source binding и PII/synthetic evidence rejection.
 он намеренно не генерирует real participants, journeys или production pilot
 rows. Поэтому пункт 90 остаётся partial до внешнего сбора данных, а canonical
 readiness остаётся **96.5% (193/200)**.
+
+## Порция 497 (08.09.2026) — production dependency audit
+
+1–10. `[x]` Независимый audit production-зависимостей завершён без находок:
+`npm audit --omit=dev --audit-level=high` в root и
+`npm --prefix server audit --omit=dev --audit-level=high` в server сообщили
+**0 vulnerabilities**.
+
+11–20. `[~]` Это закрывает текущий локальный dependency-security gate, но не
+заменяет runtime/staging incident validation, external S3/Redis/PostgreSQL и
+real pilot evidence. Readiness остаётся **96.5% (193/200)**.
