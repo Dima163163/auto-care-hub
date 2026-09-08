@@ -688,6 +688,18 @@ export function getOpenApiDocument() {
             '/admin/system-incidents': {
                 get: { operationId: 'listAdminSystemIncidents', parameters: adminIncidentParameters, responses: { '200': { description: 'Legacy array or cursor page of incidents.' } } },
             },
+            '/admin/operations/overview': {
+                get: {
+                    operationId: 'getAdminOperationsOverview',
+                    responses: {
+                        '200': {
+                            description: 'No-store super-admin operational snapshot with redacted database and backend telemetry.',
+                            headers: { 'Cache-Control': { schema: { type: 'string', example: 'no-store' } } },
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/AdminOperationsOverview' } } },
+                        },
+                    },
+                },
+            },
             '/admin/security-events': {
                 get: { operationId: 'listAdminSecurityEvents', parameters: adminSecurityEventParameters, responses: { '200': { description: 'No-store super-admin security event reader.' } } },
             },
@@ -1082,6 +1094,63 @@ export function getOpenApiDocument() {
                                     lastError: { type: ['string', 'null'] },
                                     createdAt: { type: 'string', format: 'date-time' },
                                 },
+                            },
+                        },
+                    },
+                },
+                AdminOperationsOverview: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['generatedAt', 'overallStatus', 'database', 'backend'],
+                    properties: {
+                        generatedAt: { type: 'string', format: 'date-time' },
+                        overallStatus: { type: 'string', enum: ['healthy', 'degraded', 'unavailable'] },
+                        database: {
+                            type: 'object',
+                            required: ['status', 'latencyMs', 'schema', 'pool'],
+                            properties: {
+                                status: { type: 'string', enum: ['connected', 'failed', 'not_connected'] },
+                                latencyMs: { type: 'integer', minimum: 0 },
+                                schema: {
+                                    type: 'object',
+                                    required: ['status', 'reasonCodes', 'missingTables', 'missingColumns', 'missingIndexes', 'missingConstraints', 'missingMigrations', 'aheadMigrations'],
+                                    properties: {
+                                        status: { type: 'string', enum: ['complete', 'incomplete', 'unavailable'] },
+                                        reasonCodes: { type: 'array', items: { type: 'string' } },
+                                        missingTables: { type: 'array', items: { type: 'string' } },
+                                        missingColumns: { type: 'array', items: { type: 'string' } },
+                                        missingIndexes: { type: 'array', items: { type: 'string' } },
+                                        missingConstraints: { type: 'array', items: { type: 'string' } },
+                                        missingMigrations: { type: 'array', items: { type: 'string' } },
+                                        aheadMigrations: { type: 'array', items: { type: 'string' } },
+                                    },
+                                },
+                                pool: {
+                                    type: 'object',
+                                    required: ['status', 'total', 'idle', 'active', 'waiting', 'activeRatio', 'reasons', 'thresholds'],
+                                    properties: {
+                                        status: { type: 'string', enum: ['ok', 'pressure', 'unavailable'] },
+                                        total: { type: ['integer', 'null'], minimum: 0 },
+                                        idle: { type: ['integer', 'null'], minimum: 0 },
+                                        active: { type: ['integer', 'null'], minimum: 0 },
+                                        waiting: { type: ['integer', 'null'], minimum: 0 },
+                                        activeRatio: { type: ['number', 'null'], minimum: 0 },
+                                        reasons: { type: 'array', items: { type: 'string' } },
+                                        thresholds: { type: 'object', required: ['maxActiveRatio', 'maxWaitingRequests'], properties: { maxActiveRatio: { type: 'number', minimum: 0 }, maxWaitingRequests: { type: 'integer', minimum: 0 } } },
+                                    },
+                                },
+                            },
+                        },
+                        backend: {
+                            type: 'object',
+                            required: ['signals', 'redis', 'outbox', 'storage', 'runtime', 'metrics'],
+                            properties: {
+                                signals: { type: 'object', required: ['available', 'openIncidents', 'criticalIncidents', 'openSecurityEvents', 'highSecurityEvents', 'criticalSecurityEvents', 'blockedSecuritySignals'], properties: { available: { type: 'boolean' }, openIncidents: { type: 'integer', minimum: 0 }, criticalIncidents: { type: 'integer', minimum: 0 }, openSecurityEvents: { type: 'integer', minimum: 0 }, highSecurityEvents: { type: 'integer', minimum: 0 }, criticalSecurityEvents: { type: 'integer', minimum: 0 }, blockedSecuritySignals: { type: 'integer', minimum: 0 } } },
+                                redis: { type: 'object', required: ['status', 'latencyMs'], properties: { status: { type: 'string', enum: ['ok', 'failed', 'unavailable', 'disabled'] }, latencyMs: { type: 'integer', minimum: 0 } } },
+                                outbox: { type: 'object', required: ['status', 'latencyMs', 'counts', 'activeCount', 'failedCount', 'abandonedCount', 'deadLetterCount', 'oldestAgeMs', 'readiness'], properties: { status: { type: 'string', enum: ['ok', 'failed', 'unavailable'] }, latencyMs: { type: 'integer', minimum: 0 }, counts: { type: 'object', additionalProperties: { type: 'integer', minimum: 0 } }, activeCount: { type: ['integer', 'null'], minimum: 0 }, failedCount: { type: ['integer', 'null'], minimum: 0 }, abandonedCount: { type: ['integer', 'null'], minimum: 0 }, deadLetterCount: { type: ['integer', 'null'], minimum: 0 }, oldestAgeMs: { type: ['integer', 'null'], minimum: 0 }, readiness: { type: 'object', required: ['ok', 'reasons', 'thresholds'], properties: { ok: { type: 'boolean' }, reasons: { type: 'array', items: { type: 'string' } }, thresholds: { type: 'object', required: ['maxPending', 'maxDeadLetter', 'maxOldestAgeMs'], properties: { maxPending: { type: 'integer', minimum: 0 }, maxDeadLetter: { type: 'integer', minimum: 0 }, maxOldestAgeMs: { type: 'integer', minimum: 0 } } } } } } },
+                                storage: { type: 'object', required: ['provider', 'antivirusMode'], properties: { provider: { type: 'string' }, antivirusMode: { type: 'string' } } },
+                                runtime: { type: 'object', required: ['nodeEnv', 'runtimeMode', 'mailMode', 'redisEnabled', 'metricsTokenConfigured', 'databaseSslRejectUnauthorized', 'deploymentMarket', 'attachmentStorageProvider', 'attachmentAntivirusMode'], properties: { nodeEnv: { type: 'string' }, runtimeMode: { type: 'string' }, mailMode: { type: 'string' }, redisEnabled: { type: 'boolean' }, metricsTokenConfigured: { type: 'boolean' }, databaseSslRejectUnauthorized: { type: 'boolean' }, deploymentMarket: { type: 'string' }, attachmentStorageProvider: { type: 'string' }, attachmentAntivirusMode: { type: 'string' } } },
+                                metrics: { type: 'object', required: ['gauges', 'counters', 'histograms', 'seriesCount'], properties: { gauges: { type: 'array', items: { type: 'object' } }, counters: { type: 'array', items: { type: 'object' } }, histograms: { type: 'array', items: { type: 'object' } }, seriesCount: { type: 'integer', minimum: 0 } } },
                             },
                         },
                     },

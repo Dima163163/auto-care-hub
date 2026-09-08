@@ -6,6 +6,7 @@ import { BottomNav } from '@/widgets/bottom-nav'
 import { WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
 import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { SuperAdminOperationsRail } from '@/widgets/super-admin-operations'
 
 export function AdminLayout() {
     const { t } = useTranslation()
@@ -24,6 +25,7 @@ export function AdminLayout() {
                 </div>
             </div>
             <BottomNav />
+            <SuperAdminOperationsRail />
         </div>
     )
 }

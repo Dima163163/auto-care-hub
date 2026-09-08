@@ -13,6 +13,7 @@ import {
     normalizeSecurityMitigationResponse,
     normalizeSecuritySessionRevocationResponse,
     normalizeOutboxHealthResponse,
+    normalizeAdminOperationsOverviewResponse,
     normalizeSystemIncidentListResponse,
     normalizeSystemIncidentPageResponse,
     normalizeSystemIncidentResponse,
@@ -268,6 +269,80 @@ export type OutboxHealth = {
     }>
 }
 
+export type AdminOperationsOverview = {
+    generatedAt: string
+    overallStatus: 'healthy' | 'degraded' | 'unavailable'
+    database: {
+        status: 'connected' | 'failed' | 'not_connected'
+        latencyMs: number
+        schema: {
+            status: 'complete' | 'incomplete' | 'unavailable'
+            reasonCodes: Array<'missing_tables' | 'missing_columns' | 'missing_indexes' | 'missing_constraints' | 'pending_migrations' | 'ahead_migrations'>
+            missingTables: string[]
+            missingColumns: string[]
+            missingIndexes: string[]
+            missingConstraints: string[]
+            missingMigrations: string[]
+            aheadMigrations: string[]
+        }
+        pool: {
+            status: 'ok' | 'pressure' | 'unavailable'
+            total: number | null
+            idle: number | null
+            active: number | null
+            waiting: number | null
+            activeRatio: number | null
+            reasons: Array<'active_ratio_exceeded' | 'waiting_requests_exceeded'>
+            thresholds: { maxActiveRatio: number; maxWaitingRequests: number }
+        }
+    }
+    backend: {
+        signals: {
+            available: boolean
+            openIncidents: number
+            criticalIncidents: number
+            openSecurityEvents: number
+            highSecurityEvents: number
+            criticalSecurityEvents: number
+            blockedSecuritySignals: number
+        }
+        redis: { status: 'ok' | 'failed' | 'unavailable' | 'disabled'; latencyMs: number }
+        outbox: {
+            status: 'ok' | 'failed' | 'unavailable'
+            latencyMs: number
+            counts: Record<string, number>
+            activeCount: number | null
+            failedCount: number | null
+            abandonedCount: number | null
+            deadLetterCount: number | null
+            oldestAgeMs: number | null
+            readiness: {
+                ok: boolean
+                reasons: Array<'pending_threshold_exceeded' | 'dead_letter_threshold_exceeded' | 'oldest_age_threshold_exceeded'>
+                thresholds: { maxPending: number; maxDeadLetter: number; maxOldestAgeMs: number }
+            }
+        }
+        storage: { provider: string; antivirusMode: string }
+        runtime: {
+            nodeEnv: string
+            runtimeMode: string
+            mailMode: string
+            redisEnabled: boolean
+            metricsTokenConfigured: boolean
+            databaseSslRejectUnauthorized: boolean
+            deploymentMarket: string
+            attachmentStorageProvider: string
+            attachmentAntivirusMode: string
+        }
+        metrics: {
+            gauges: Array<{ name: string; labels: Record<string, string>; value: number }>
+            counters: Array<{ name: string; labels: Record<string, string>; value: number }>
+            histograms: Array<{ name: string; labels: Record<string, string>; count: number; sum: number; max: number }>
+            seriesCount: number
+        }
+    }
+}
+
 export const adminApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         getAuditLogs: build.query<AuditLog[], void>({
@@ -300,6 +375,11 @@ export const adminApi = baseApi.injectEndpoints({
             query: () => '/admin/outbox/health',
             transformResponse: normalizeOutboxHealthResponse,
             providesTags: ['SystemIncidents'],
+        }),
+        getAdminOperationsOverview: build.query<AdminOperationsOverview, void>({
+            query: () => '/admin/operations/overview',
+            transformResponse: normalizeAdminOperationsOverviewResponse,
+            providesTags: ['SystemIncidents', 'SecurityEvents'],
         }),
         getSecurityEvents: build.query<SecurityEvent[], void>({
             query: () => '/admin/security-events',
@@ -426,6 +506,7 @@ export const {
     useGetSystemIncidentsPageQuery,
     useLazyGetSystemIncidentsPageQuery,
     useGetOutboxHealthQuery,
+    useGetAdminOperationsOverviewQuery,
     useGetSecurityEventsQuery,
     useGetSecurityEventsPageQuery,
     useLazyGetSecurityEventsPageQuery,

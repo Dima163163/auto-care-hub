@@ -2541,6 +2541,80 @@ export const handlers = [
         failedEvents: [],
     })),
 
+    http.get('/api/admin/operations/overview', () => {
+        if (!hasMockSuperAdminAccess()) {
+            return HttpResponse.json({ message: 'Only super admin can access the operations overview.' }, { status: 403 })
+        }
+
+        const openIncidents = mockSystemIncidents.filter((incident) => incident.status === 'open')
+        const openSecurityEvents = mockSecurityEvents.filter((event) => event.status === 'open')
+
+        return HttpResponse.json({
+            generatedAt: new Date().toISOString(),
+            overallStatus: 'healthy',
+            database: {
+                status: 'connected',
+                latencyMs: 5,
+                schema: {
+                    status: 'complete',
+                    reasonCodes: [],
+                    missingTables: [],
+                    missingColumns: [],
+                    missingIndexes: [],
+                    missingConstraints: [],
+                    missingMigrations: [],
+                    aheadMigrations: [],
+                },
+                pool: {
+                    status: 'ok',
+                    total: 10,
+                    idle: 8,
+                    active: 2,
+                    waiting: 0,
+                    activeRatio: 0.2,
+                    reasons: [],
+                    thresholds: { maxActiveRatio: 0.85, maxWaitingRequests: 0 },
+                },
+            },
+            backend: {
+                signals: {
+                    available: true,
+                    openIncidents: openIncidents.length,
+                    criticalIncidents: openIncidents.filter((incident) => incident.severity === 'critical').length,
+                    openSecurityEvents: openSecurityEvents.length,
+                    highSecurityEvents: mockSecurityEvents.filter((event) => event.severity === 'high').length,
+                    criticalSecurityEvents: mockSecurityEvents.filter((event) => event.severity === 'critical').length,
+                    blockedSecuritySignals: mockSecurityEvents.filter((event) => event.type === 'rate_limit_exceeded' || event.type === 'privilege_denied').length,
+                },
+                redis: { status: 'disabled', latencyMs: 0 },
+                outbox: {
+                    status: 'ok',
+                    latencyMs: 2,
+                    counts: { pending: 0, processing: 0, completed: 0, failed: 0, dead_letter: 0 },
+                    activeCount: 0,
+                    failedCount: 0,
+                    abandonedCount: 0,
+                    deadLetterCount: 0,
+                    oldestAgeMs: null,
+                    readiness: { ok: true, reasons: [], thresholds: { maxPending: 1_000, maxDeadLetter: 0, maxOldestAgeMs: 900_000 } },
+                },
+                storage: { provider: 'filesystem', antivirusMode: 'off' },
+                runtime: {
+                    nodeEnv: 'development',
+                    runtimeMode: 'local',
+                    mailMode: 'logger',
+                    redisEnabled: false,
+                    metricsTokenConfigured: false,
+                    databaseSslRejectUnauthorized: false,
+                    deploymentMarket: 'ru',
+                    attachmentStorageProvider: 'filesystem',
+                    attachmentAntivirusMode: 'off',
+                },
+                metrics: { gauges: [], counters: [], histograms: [], seriesCount: 0 },
+            },
+        }, { headers: { 'cache-control': 'no-store' } })
+    }),
+
     http.patch('/api/admin/system-incidents/:id/status', async ({ params, request }) => {
         const body = await request.json() as { status: 'open' | 'acknowledged' | 'resolved' }
         const incident = mockSystemIncidents.find((item) => item.id === params.id)

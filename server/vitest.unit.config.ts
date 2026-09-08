@@ -60,6 +60,7 @@ export default defineConfig({
       'src/modules/admin/admin-provider-status.service.test.ts',
       'src/modules/admin/outbox-event-policy.test.ts',
       'src/modules/admin/outbox-monitor.service.test.ts',
+      'src/modules/admin/operations-overview.service.test.ts',
       'src/modules/admin/security-center-input-policy.test.ts',
       'src/modules/admin/system-incident-input-policy.test.ts',
       'src/modules/admin/system-incidents.service-boundary.test.ts',

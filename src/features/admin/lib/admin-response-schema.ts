@@ -10,6 +10,7 @@ import type {
     SecuritySessionRevocation,
     SecurityEvent,
     SystemIncident,
+    AdminOperationsOverview,
 } from '../api/adminApi'
 
 const metadataSchema = z.record(z.string(), z.unknown())
@@ -57,6 +58,90 @@ const outboxHealthSchema = z.object({
         createdAt: z.string(),
     })).max(100),
 }) satisfies z.ZodType<OutboxHealth>
+
+const adminOperationsOverviewSchema = z.object({
+    generatedAt: z.string().datetime({ offset: true }),
+    overallStatus: z.enum(['healthy', 'degraded', 'unavailable']),
+    database: z.object({
+        status: z.enum(['connected', 'failed', 'not_connected']),
+        latencyMs: z.number().int().nonnegative(),
+        schema: z.object({
+            status: z.enum(['complete', 'incomplete', 'unavailable']),
+            reasonCodes: z.array(z.enum(['missing_tables', 'missing_columns', 'missing_indexes', 'missing_constraints', 'pending_migrations', 'ahead_migrations'])),
+            missingTables: z.array(z.string()),
+            missingColumns: z.array(z.string()),
+            missingIndexes: z.array(z.string()),
+            missingConstraints: z.array(z.string()),
+            missingMigrations: z.array(z.string()),
+            aheadMigrations: z.array(z.string()),
+        }),
+        pool: z.object({
+            status: z.enum(['ok', 'pressure', 'unavailable']),
+            total: z.number().int().nonnegative().nullable(),
+            idle: z.number().int().nonnegative().nullable(),
+            active: z.number().int().nonnegative().nullable(),
+            waiting: z.number().int().nonnegative().nullable(),
+            activeRatio: z.number().min(0).nullable(),
+            reasons: z.array(z.enum(['active_ratio_exceeded', 'waiting_requests_exceeded'])),
+            thresholds: z.object({
+                maxActiveRatio: z.number().min(0),
+                maxWaitingRequests: z.number().int().nonnegative(),
+            }),
+        }),
+    }),
+    backend: z.object({
+        signals: z.object({
+            available: z.boolean(),
+            openIncidents: z.number().int().nonnegative(),
+            criticalIncidents: z.number().int().nonnegative(),
+            openSecurityEvents: z.number().int().nonnegative(),
+            highSecurityEvents: z.number().int().nonnegative(),
+            criticalSecurityEvents: z.number().int().nonnegative(),
+            blockedSecuritySignals: z.number().int().nonnegative(),
+        }),
+        redis: z.object({
+            status: z.enum(['ok', 'failed', 'unavailable', 'disabled']),
+            latencyMs: z.number().int().nonnegative(),
+        }),
+        outbox: z.object({
+            status: z.enum(['ok', 'failed', 'unavailable']),
+            latencyMs: z.number().int().nonnegative(),
+            counts: z.record(z.string(), z.number().int().nonnegative()),
+            activeCount: z.number().int().nonnegative().nullable(),
+            failedCount: z.number().int().nonnegative().nullable(),
+            abandonedCount: z.number().int().nonnegative().nullable(),
+            deadLetterCount: z.number().int().nonnegative().nullable(),
+            oldestAgeMs: z.number().int().nonnegative().nullable(),
+            readiness: z.object({
+                ok: z.boolean(),
+                reasons: z.array(z.enum(['pending_threshold_exceeded', 'dead_letter_threshold_exceeded', 'oldest_age_threshold_exceeded'])),
+                thresholds: z.object({
+                    maxPending: z.number().int().nonnegative(),
+                    maxDeadLetter: z.number().int().nonnegative(),
+                    maxOldestAgeMs: z.number().int().nonnegative(),
+                }),
+            }),
+        }),
+        storage: z.object({ provider: z.string(), antivirusMode: z.string() }),
+        runtime: z.object({
+            nodeEnv: z.string(),
+            runtimeMode: z.string(),
+            mailMode: z.string(),
+            redisEnabled: z.boolean(),
+            metricsTokenConfigured: z.boolean(),
+            databaseSslRejectUnauthorized: z.boolean(),
+            deploymentMarket: z.string(),
+            attachmentStorageProvider: z.string(),
+            attachmentAntivirusMode: z.string(),
+        }),
+        metrics: z.object({
+            gauges: z.array(z.object({ name: z.string(), labels: z.record(z.string(), z.string()), value: z.number() })),
+            counters: z.array(z.object({ name: z.string(), labels: z.record(z.string(), z.string()), value: z.number() })),
+            histograms: z.array(z.object({ name: z.string(), labels: z.record(z.string(), z.string()), count: z.number(), sum: z.number(), max: z.number() })),
+            seriesCount: z.number().int().nonnegative(),
+        }),
+    }),
+}) satisfies z.ZodType<AdminOperationsOverview>
 
 const securityEventSchema = z.object({
     id: z.string(),
@@ -204,6 +289,10 @@ export function normalizeSystemIncidentPageResponse(value: unknown): CursorPage<
 
 export function normalizeOutboxHealthResponse(value: unknown): OutboxHealth {
     return outboxHealthSchema.parse(value)
+}
+
+export function normalizeAdminOperationsOverviewResponse(value: unknown): AdminOperationsOverview {
+    return adminOperationsOverviewSchema.parse(value)
 }
 
 export function normalizeSystemIncidentResponse(value: unknown): SystemIncident {

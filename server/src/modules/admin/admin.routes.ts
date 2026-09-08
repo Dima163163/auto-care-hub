@@ -113,6 +113,7 @@ import {
     getOutboxHealth,
     retryOutboxEvent,
 } from './outbox-monitor.service.js'
+import { getAdminOperationsOverview, type AdminOperationsOverview } from './operations-overview.service.js'
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import type { SystemIncidentEntity } from '../../entities/system-incident/system-incident.entity.js'
 import type { CursorPage } from '../../shared/http/cursor-pagination.js'
@@ -743,6 +744,15 @@ export async function adminRoutes(
 
             return mapCursorResponse(incidents, toSystemIncidentResponse)
         }
+    )
+
+    app.get<{ Reply: AdminOperationsOverview }>(
+        '/admin/operations/overview',
+        async (request, reply) => {
+            const overview = await getAdminOperationsOverview(await requireAuth(request))
+            reply.header('cache-control', 'no-store')
+            return overview
+        },
     )
 
     app.get<{ Querystring: unknown; Reply: SecurityEventsListResponse }>(
