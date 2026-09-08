@@ -4582,3 +4582,15 @@ light. Все три viewport-проекта прошли стабильност
 11–20. `[~]` Это закрывает локальный визуальный regression gate; physical
 devices, real screen readers, deployed production rendering и Lighthouse
 остаются внешними условиями. Общая readiness сохраняется **96.5% (193/200)**.
+
+## Порция 490 (08.09.2026) — повторный performance budget gate
+
+1–10. `[x]` `npm run check:performance` завершён без превышений: initial entry
+**152.6 kB / 400 kB**, largest non-entry JS **230.0 kB / 300 kB**, largest
+locale **79.7 kB / 90 kB**, CSS **166.2 kB / 175 kB**, JS chunks **90 / 90**.
+Полный JS объём составил **2742.2 kB raw / 799.8 kB gzip**; lazy locale и
+runtime chunks остаются в пределах launch-бюджетов.
+
+11–20. `[~]` Это локальное production-build evidence; CDN compression,
+deployed Next rendering и Lighthouse на production URL остаются внешними
+gates. Readiness без изменений: **96.5% (193/200)**.
