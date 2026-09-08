@@ -4664,3 +4664,15 @@ DNS. Поэтому `STAGING_API_BASE_URL` по-прежнему нельзя б
 deployment owner action и не повышает readiness искусственно: **96.5%
 (193/200)**. Локальные API parity, HTML metadata и security contracts остаются
 PASS отдельно от недоступного deployment.
+
+## Порция 496 (08.09.2026) — pilot-evidence toolkit boundary
+
+1–10. `[x]` `npm run test:pilot-evidence-toolkit` завершён **7/7 PASS**, а
+`npm run check:pilot-evidence-toolkit` подтвердил schema/version, duplicate actor
+и journey guards, freshness, non-negative metrics, CSV conversion, aggregate
+source binding и PII/synthetic evidence rejection.
+
+11–20. `[~]` Toolkit принимает только корректно оформленные anonymized records;
+он намеренно не генерирует real participants, journeys или production pilot
+rows. Поэтому пункт 90 остаётся partial до внешнего сбора данных, а canonical
+readiness остаётся **96.5% (193/200)**.
