@@ -4489,7 +4489,25 @@ evidence, private media/restore, pilot participants и production SEO evidence
  затем Node 22 integration replay прошёл **14 файлов / 63 теста**.
 
 21–30. `[~]` Исправлен воспроизводимый CI fixture gap; новый Actions run на
- опубликованном SHA должен подтвердить backend integration, transition smoke и
- downstream jobs. Deployment/DNS, staging API evidence, private media/restore,
- pilot participants и production SEO evidence остаются внешними gates;
- readiness остаётся **96.5% (193/200)**.
+опубликованном SHA должен подтвердить backend integration, transition smoke и
+downstream jobs. Deployment/DNS, staging API evidence, private media/restore,
+pilot participants и production SEO evidence остаются внешними gates;
+readiness остаётся **96.5% (193/200)**.
+
+## Порция 484 (08.09.2026) — Browser E2E timeout budget
+
+1–10. `[x]` Runs **336/337** на SHA `8603e89` подтвердили новый seed и весь
+ backend path: security, frontend, backend quality, migrations, demo/AutoCare
+ fixtures, integration **63/63**, transition smoke, worker tests и полный
+ backend `npm test` — зелёные; real full-stack production Next smoke также
+ зелёный.
+
+11–20. `[x]` Оба workflow были остановлены ровно на job timeout **30 минут** во
+ время Browser E2E; failure assertions не зафиксированы. Browser suite включает
+ три viewport-проекта, retries и отдельный PWA smoke. Лимит `browser-e2e` в
+ `quality.yml` увеличен до **45 минут**, синхронно с real full-stack budget.
+
+21–30. `[~]` Новый Actions run должен подтвердить, что увеличенный budget
+ позволяет завершить Browser E2E и закрыть full quality workflow. Deployment/DNS,
+ staging API evidence, private media/restore, pilot participants и production
+ SEO evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.

@@ -527,6 +527,12 @@ anonymized samples/participant rows отсутствуют.
   bounded demo/AutoCare seed before integration, and the AutoCare seed now
   upserts market countries before linking markets through the required
   `countryId`; the clean replay passes **14 files / 63 tests**.
+- The next published SHA confirmed security, frontend, backend quality,
+  migrations, seeded integration, transition smoke, worker tests, full backend
+  tests and real full-stack Next smoke, but both workflows hit the Browser E2E
+  job's **30-minute** timeout without an assertion failure. The browser job
+  budget is now **45 minutes** so the three viewport projects, retries and PWA
+  smoke can finish within the same release gate.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
