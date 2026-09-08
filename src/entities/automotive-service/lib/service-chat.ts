@@ -85,7 +85,18 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
     const handleEvent = (event: ServiceChatEvent) => {
         if (!event.eventId || rememberEvent(event.eventId)) listener(event)
     }
-    if (IS_MOCK_API) return connectMockChannel(channelId, handleEvent)
+    const presence = (connected: boolean): ServiceChatEvent => path.includes('/service-requests/')
+        ? { type: 'presence', requestId: channelId, payload: { connected } }
+        : { type: 'presence', threadId: channelId, payload: { connected } }
+
+    if (IS_MOCK_API) {
+        const disconnect = connectMockChannel(channelId, handleEvent)
+        handleEvent(presence(true))
+        return () => {
+            handleEvent(presence(false))
+            disconnect()
+        }
+    }
 
     const token = getAccessToken()
     if (!token || typeof window === 'undefined') return () => undefined
@@ -113,7 +124,10 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
     const connect = () => {
         if (stopped || !navigator.onLine || document.visibilityState === 'hidden') return
         socket = new WebSocket(url, [`bearer.${token}`])
-        socket.addEventListener('open', () => { attempt = 0 })
+        socket.addEventListener('open', () => {
+            attempt = 0
+            handleEvent(presence(true))
+        })
         socket.addEventListener('message', (message) => {
             try {
                 const parsed: unknown = JSON.parse(String(message.data))
@@ -126,6 +140,7 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
         })
         socket.addEventListener('close', (event) => {
             socket = null
+            handleEvent(presence(false))
             if (event.code !== 4001 && event.code !== 4003) scheduleReconnect()
         })
     }

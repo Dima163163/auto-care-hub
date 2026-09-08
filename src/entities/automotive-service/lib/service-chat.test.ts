@@ -38,4 +38,15 @@ describe('service chat event deduplication', () => {
 
         expect(events).toEqual([repeated.eventId])
     })
+
+    it('exposes connection lifecycle as presence events', () => {
+        const events: Array<{ type: string; payload: Record<string, unknown> }> = []
+        const disconnect = connectServiceChat('request-presence', (event) => {
+            events.push({ type: event.type, payload: event.payload })
+        })
+
+        expect(events.at(-1)).toEqual({ type: 'presence', payload: { connected: true } })
+        disconnect()
+        expect(events.at(-1)).toEqual({ type: 'presence', payload: { connected: false } })
+    })
 })

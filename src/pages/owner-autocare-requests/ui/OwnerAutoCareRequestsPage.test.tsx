@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => {
     return {
         rejectedTrigger,
         confirm: vi.fn(() => Promise.resolve({ error: { status: 503, data: { message: 'temporary failure' } } })),
+        createResource: vi.fn(() => ({ unwrap: vi.fn().mockResolvedValue({}) })),
+        updateResource: vi.fn(() => ({ unwrap: vi.fn().mockResolvedValue({}) })),
         request: {
             id: 'request-1',
             status: 'accepted',
@@ -39,6 +41,7 @@ const mocks = vi.hoisted(() => {
 })
 
 vi.mock('@/entities/automotive-service', () => ({
+    useCreateOwnerAutoCareCapacityResourceMutation: () => [mocks.createResource, { isLoading: false, error: null }],
     useCompleteAutoCareServiceRequestMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useConfirmOwnerAutoCareServiceRequestMutation: () => [mocks.confirm, { isLoading: false, error: { status: 503 } }],
     useCreateAutoCareServiceQuoteMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
@@ -47,9 +50,12 @@ vi.mock('@/entities/automotive-service', () => ({
         isLoading: false,
         isError: false,
     }),
+    useGetOwnerAutoCareCapacityReservationsQuery: () => ({ data: [], isLoading: false, isFetching: false, isError: false }),
+    useGetOwnerAutoCareCapacityResourcesQuery: () => ({ data: [], isLoading: false, isError: false }),
     useGetOwnerAutoCareServiceRequestsQuery: () => ({ data: [mocks.request], isLoading: false, error: null }),
     useMarkAutoCareServiceRequestNoShowMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useRequestAutoCareServiceRescheduleMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
+    useUpdateOwnerAutoCareCapacityResourceMutation: () => [mocks.updateResource, { isLoading: false }],
 }))
 
 function renderPage() {
@@ -94,5 +100,14 @@ describe('OwnerAutoCareRequestsPage', () => {
         } finally {
             process.off('unhandledRejection', onUnhandled)
         }
+    })
+
+    it('opens the post-MVP resource workspace for the selected branch', async () => {
+        const user = userEvent.setup()
+        renderPage()
+
+        await user.click(screen.getByRole('button', { name: 'autocare.ownerCapacityResourcesManage' }))
+
+        expect(screen.getByTestId('owner-capacity-resources')).toBeInTheDocument()
     })
 })

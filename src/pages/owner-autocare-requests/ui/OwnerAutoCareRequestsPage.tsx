@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { CalendarCheck, CheckCircle2, Clock3, ListFilter, Phone, Send, Wrench } from 'lucide-react'
+import { CalendarCheck, CheckCircle2, Clock3, ListFilter, Phone, Send, Settings2, Wrench } from 'lucide-react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -23,6 +23,7 @@ import { SplitListSkeleton } from '@/shared/ui/loading-skeleton'
 import { StateCard } from '@/shared/ui/state-card'
 
 import { OwnerCapacityCalendar } from './OwnerCapacityCalendar'
+import { OwnerCapacityResourcesPanel } from './OwnerCapacityResourcesPanel'
 
 const emptyRequests: AutoCareServiceRequest[] = []
 type RequestQueue = 'all' | 'urgent' | 'awaiting_reply' | 'estimate_shared' | 'accepted'
@@ -32,6 +33,7 @@ export function OwnerAutoCareRequestsPage() {
     const { t } = useTranslation()
     const [searchParams] = useSearchParams()
     const [queue, setQueue] = useState<RequestQueue>('all')
+    const [showResources, setShowResources] = useState(false)
     const query = useGetOwnerAutoCareServiceRequestsQuery()
     const requests = query.data ?? emptyRequests
     const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('request'))
@@ -53,7 +55,7 @@ export function OwnerAutoCareRequestsPage() {
         confirmed: requests.filter((item) => item.status === 'accepted').length,
     }), [requests])
 
-    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} loading={query.isLoading} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} loading={query.isLoading} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} loading={query.isLoading} /></div>{!query.error && <OwnerCapacityCalendar requests={requests} />}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <><WorkQueue active={queue} requests={requests} onChange={setQueue} /><div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={queueRequests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div></>}</section></main>
+    return <main className="min-h-full bg-background px-[var(--layout-gutter)] py-7 lg:py-10"><section className="mx-auto max-w-6xl"><PageHeader eyebrow={t('autocare.ownerRequestsEyebrow')} title={t('autocare.ownerRequestsTitle')} description={t('autocare.ownerRequestsDescription')} /><div className="mb-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Clock3} label={t('autocare.ownerRequestsOpen')} value={counts.open} loading={query.isLoading} /><SummaryCard icon={Send} label={t('autocare.ownerRequestsEstimates')} value={counts.estimates} loading={query.isLoading} /><SummaryCard icon={CheckCircle2} label={t('autocare.ownerRequestsConfirmed')} value={counts.confirmed} loading={query.isLoading} /></div>{!query.error && <OwnerCapacityCalendar requests={requests} />}{!query.error && selected && <><button type="button" aria-expanded={showResources} onClick={() => setShowResources((value) => !value)} className="mt-4 inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary/30 px-3 text-xs font-black text-primary transition hover:bg-primary/5"><Settings2 className="size-3.5" />{t('autocare.ownerCapacityResourcesManage')}</button>{showResources && <div className="mt-3"><OwnerCapacityResourcesPanel providerId={selected.providerId} locationId={selected.locationId} selectedDay={selected.preferredAt ? new Date(selected.preferredAt) : new Date()} /></div>}</>}{query.isLoading && <SplitListSkeleton label={t('common.loading')} />}{query.error && <StateCard className="mt-5" variant="error" title={t('common.failedToLoad')} description={getApiErrorMessage(query.error, t('common.failedToLoad'))} action={<RetryButton onRetry={query.refetch} label={t('common.retry')} />} />}{!query.isLoading && !query.error && requests.length === 0 && <StateCard className="mt-5" variant="empty" title={t('autocare.ownerRequestsEmpty')} description={t('autocare.ownerRequestsDescription')} />}{!query.isLoading && !query.error && requests.length > 0 && <><WorkQueue active={queue} requests={requests} onChange={setQueue} /><div className="grid gap-5 lg:grid-cols-[minmax(270px,0.7fr)_minmax(0,1.3fr)]"><RequestList requests={queueRequests} selectedId={effectiveSelectedId} onSelect={setSelectedId} /><RequestDetails key={selected?.id ?? 'empty'} request={selected} /></div></>}</section></main>
 }
 
 function WorkQueue({ active, requests, onChange }: { active: RequestQueue; requests: AutoCareServiceRequest[]; onChange: (value: RequestQueue) => void }) {
