@@ -44,9 +44,10 @@ function getSchemaObjectCount(schema: AdminOperationsOverview['database']['schem
 }
 
 function statusTone(status: AdminOperationsOverview['overallStatus'] | 'ok' | 'failed' | 'disabled' | 'unavailable') {
-    if (status === 'healthy' || status === 'ok') return 'text-emerald-700 dark:text-emerald-300'
+    if (status === 'healthy' || status === 'ok') return 'text-status-success-foreground'
     if (status === 'disabled') return 'text-muted-foreground'
-    return 'text-amber-700 dark:text-amber-300'
+    if (status === 'failed' || status === 'unavailable') return 'text-status-danger-foreground'
+    return 'text-status-warning-foreground'
 }
 
 function StatusIcon({ status }: { status: AdminOperationsOverview['overallStatus'] }) {
@@ -114,7 +115,7 @@ export function SuperAdminOperationsRail() {
                 className="pointer-events-auto ml-auto w-[min(24rem,100%)] overflow-hidden rounded-2xl border border-border/80 bg-card/95 text-card-foreground shadow-2xl shadow-black/10 backdrop-blur supports-[backdrop-filter]:bg-card/85"
                 aria-label={t('adminDashboard.operationsRail.title')}
             >
-                <div className={`h-1 ${status === 'healthy' ? 'bg-emerald-500' : status === 'degraded' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                <div className={`h-1 ${status === 'healthy' ? 'bg-status-success-foreground' : status === 'degraded' ? 'bg-status-warning-foreground' : 'bg-status-danger-foreground'}`} />
                 <div className="flex items-start gap-3 p-3.5">
                     <div className={`mt-0.5 rounded-full bg-muted p-2 ${statusTone(status)}`}>
                         <StatusIcon status={status} />
@@ -150,7 +151,7 @@ export function SuperAdminOperationsRail() {
                 {shouldShowDetails && (
                     <div className="max-h-[min(68dvh,34rem)] space-y-3 overflow-y-auto border-t border-border/70 px-3.5 pb-3.5 pt-3">
                         {!overview.data && overview.isError && (
-                            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200">
+                            <div className="rounded-xl border border-status-danger-border bg-status-danger-surface p-3 text-xs text-status-danger-foreground">
                                 <div className="flex items-center justify-between gap-3">
                                     <span>{t('adminDashboard.operationsRail.unavailable')}</span>
                                     <button
@@ -233,7 +234,7 @@ export function SuperAdminOperationsRail() {
                                 </div>
 
                                 {(schemaObjectCount > 0 || (outbox?.readiness.reasons.length ?? 0) > 0 || overview.data.database.pool.status === 'pressure' || signals?.available === false) && (
-                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-100">
+                                    <div className="rounded-xl border border-status-warning-border bg-status-warning-surface p-3 text-xs text-status-warning-foreground">
                                         {schemaObjectCount > 0 && <p>{t('adminDashboard.operationsRail.missingObjects', { count: schemaObjectCount })}</p>}
                                         {(outbox?.readiness.reasons.length ?? 0) > 0 && <p>{t('adminDashboard.operationsRail.thresholdBreaches')}</p>}
                                         {overview.data.database.pool.status === 'pressure' && <p>{t('adminDashboard.operationsRail.poolPressure')}</p>}
