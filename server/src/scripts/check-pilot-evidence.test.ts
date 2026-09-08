@@ -4,11 +4,11 @@ import { resolvePilotEvidencePath } from './check-pilot-evidence'
 
 describe('resolvePilotEvidencePath', () => {
     it('resolves the default evidence file from the repository root', () => {
-        expect(resolvePilotEvidencePath()).toMatch(/autocare-hub\/docs\/operations\/pilot-evidence\.json$/)
+        expect(resolvePilotEvidencePath()).toMatch(/[\\/]docs[\\/]operations[\\/]pilot-evidence\.json$/)
     })
 
     it('resolves relative configured paths from the repository root', () => {
-        expect(resolvePilotEvidencePath('tmp/pilot-evidence.json')).toMatch(/autocare-hub\/tmp\/pilot-evidence\.json$/)
+        expect(resolvePilotEvidencePath('tmp/pilot-evidence.json')).toMatch(/[\\/]tmp[\\/]pilot-evidence\.json$/)
     })
 
     it('preserves absolute configured paths', () => {

@@ -516,6 +516,11 @@ anonymized samples/participant rows отсутствуют.
   event-loop handle and Node 22 cancelled the test before the abort callback.
   The bounded request timer now stays referenced until `finally` clears it,
   guaranteeing timeout enforcement on Node 22 as well as newer local Node.
+- The exact GitHub-style Node 22 checkout then exposed two stale pilot-evidence
+  assertions: they expected the misspelled directory fragment `autocare-hub`,
+  while the repository checkout is `auto-care-hub`. The assertions now verify
+  the root-relative evidence path suffix with portable separators and no
+  repository-name assumption.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

@@ -4453,3 +4453,23 @@ Node 22 завершал event loop раньше abort callback; Node 24 лок�
 Deployment/DNS, staging API evidence, private media/restore, pilot participants
 и production SEO evidence остаются внешними gates; readiness остаётся
 **96.5% (193/200)**.
+
+## Порция 482 (08.09.2026) — checkout-path независимость pilot evidence test
+
+1–10. `[x]` Exact GitHub-style Node 22 checkout replay выявил два failing
+assertions в `server/src/scripts/check-pilot-evidence.test.ts`: regex ожидал
+каталог `autocare-hub`, тогда как repository checkout называется
+`auto-care-hub`. Реализуемая функция корректно вычисляла repository root;
+ошибочными были только environment-specific expected paths.
+
+11–20. `[x]` Assertions теперь проверяют канонический suffix
+`docs/operations/pilot-evidence.json` и `tmp/pilot-evidence.json` с обоими
+вариантами path separator, без привязки к имени репозитория или mount point.
+Это сохраняет проверку root-relative resolution и делает её одинаковой на
+GitHub Linux, macOS и локальном checkout.
+
+21–30. `[~]` Последний Node 22 unit failure имеет исправление; focused test в
+точном GitHub checkout path и новый Actions run должны подтвердить полный
+backend quality и downstream integration. Deployment/DNS, staging API
+evidence, private media/restore, pilot participants и production SEO evidence
+остаются внешними gates; readiness остаётся **96.5% (193/200)**.
