@@ -200,13 +200,16 @@ than runtime tests.
 
 ## Git workflow
 
-`main` is the production branch. No direct push, merge, or deployment to
-`main` happens without explicit user approval.
+`main` is the production branch. Direct pushes are prohibited. Promotion from
+`dev` to `main` is performed only through the protected pull-request workflow
+after the complete `Quality / Application CI` check succeeds. If any gate
+fails, the pull request remains unmerged until the failure is fixed and a new
+commit passes CI.
 
 All implementation work goes through `dev` and short-lived feature branches:
 
 ```text
-main  <- production, approval required
+main  <- production, protected auto-promotion after CI
   ^
 dev   <- integration branch, normal development push target
   ^
@@ -216,6 +219,9 @@ feature/<short-task-name>
 - Keep `dev` based on the latest `main` and push completed work to `origin/dev`.
 - Create `feature/*` branches from `dev` for isolated tasks; merge them into
   `dev` after checks pass.
+- A successful push to `dev` starts the checked-in promotion workflow. It
+  creates or reuses the `dev` → `main` pull request, waits for pull-request CI,
+  and enables GitHub auto-merge only after the checks pass.
 - Preserve unrelated user changes and stage explicit files; never use `git add .`.
 - Do not delete files outside `/Users/a1/Desktop/my-projects/AutoCareHub`.
 

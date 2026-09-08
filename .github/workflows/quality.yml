@@ -94,6 +94,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check CI/CD policy contract
+        run: npm run check:ci-cd-policy
+
+      - name: Test CI/CD policy contract
+        run: npm run test:ci-cd-policy
+
       - name: Lint
         run: npm run lint
 
@@ -443,3 +449,34 @@ jobs:
             echo "- API log:"
             cat "$RUNNER_TEMP/autocare-hub-api.log" || true
           } >> "$GITHUB_STEP_SUMMARY"
+
+  application-ci:
+    name: Application CI
+    if: ${{ always() }}
+    needs:
+      - production-promotion-policy
+      - security
+      - frontend
+      - backend
+      - browser-e2e
+      - real-full-stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require every application gate to pass
+        env:
+          PROMOTION_POLICY: ${{ needs.production-promotion-policy.result }}
+          SECURITY: ${{ needs.security.result }}
+          FRONTEND: ${{ needs.frontend.result }}
+          BACKEND: ${{ needs.backend.result }}
+          BROWSER_E2E: ${{ needs.browser-e2e.result }}
+          REAL_FULL_STACK: ${{ needs.real-full-stack.result }}
+        run: |
+          test "$PROMOTION_POLICY" = "success" || test "$PROMOTION_POLICY" = "skipped"
+          test "$SECURITY" = "success"
+          test "$FRONTEND" = "success"
+          test "$BACKEND" = "success"
+          test "$BROWSER_E2E" = "success"
+          test "$REAL_FULL_STACK" = "success"
+          echo "All application CI gates passed."
