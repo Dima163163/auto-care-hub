@@ -4700,3 +4700,15 @@ fail-closed с **8 blocked prerequisite gates** и **6 manual rehearsal gates**:
 нет production-like DB/Redis/JWT/SMTP/S3/bootstrap/staging configuration.
 Это ожидаемое evidence boundary, не повод повышать readiness выше **96.5%
 (193/200)**.
+
+## Порция 499 (08.09.2026) — API/runtime/PWA release checks
+
+1–10. `[x]` Отдельный release-набор прошёл без ошибок: frontend API runtime
+boundaries покрывают **237 endpoints в 12 API modules**, API contract — **18
+backend/OpenAPI и 8 mock paths**, production fixture leakage не найден, PWA
+update contract подтвердил `skipWaiting`/`clientsClaim`, bundle-splitting
+contract подтвердил entry **152.6 kB** и **11 required chunks**.
+
+11–20. `[~]` Эти проверки усиливают local API, cache/update и artifact proof,
+но не создают production deployment evidence и не изменяют внешний blocker
+список. Readiness остаётся **96.5% (193/200)**.
