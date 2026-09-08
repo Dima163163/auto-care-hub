@@ -424,6 +424,17 @@ export type AutoCareApiReview = {
     providerAddress?: string
 }
 
+export type AdminAutoCareReview = AutoCareApiReview & {
+    providerName: string
+    status: 'pending' | 'approved' | 'rejected'
+}
+
+export type UpdateAdminAutoCareReviewStatusInput = {
+    reviewId: string
+    status: 'approved' | 'rejected'
+    reason?: string
+}
+
 export type AutoCareReviewPromo = {
     id: string
     reviewId: string
@@ -635,6 +646,11 @@ const featuredReviewSchema = z.object({
     canEdit: z.boolean().optional(),
     providerName: z.string().optional(),
 }) satisfies z.ZodType<AutoCareApiReview>
+
+const adminAutoCareReviewSchema = featuredReviewSchema.extend({
+    providerName: z.string(),
+    status: z.enum(['pending', 'approved', 'rejected']),
+}) satisfies z.ZodType<AdminAutoCareReview>
 
 const reviewPromoSchema = z.object({
     id: z.string(),
@@ -1336,6 +1352,27 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => z.array(featuredReviewSchema).parse(value),
             providesTags: [{ type: 'AutoCareReview', id: 'FEATURED' }],
         }),
+        getAdminAutoCareReviews: build.query<AdminAutoCareReview[], void>({
+            query: () => '/admin/autocare-reviews',
+            transformResponse: (value: unknown) => z.array(adminAutoCareReviewSchema).parse(value),
+            providesTags: (result) => result
+                ? [
+                    ...result.map((review) => ({ type: 'AutoCareReview' as const, id: review.id })),
+                    { type: 'AutoCareReview' as const, id: 'ADMIN_LIST' },
+                ]
+                : [{ type: 'AutoCareReview' as const, id: 'ADMIN_LIST' }],
+        }),
+        updateAdminAutoCareReviewStatus: build.mutation<AdminAutoCareReview, UpdateAdminAutoCareReviewStatusInput>({
+            query: ({ reviewId, ...body }) => ({ url: `/admin/autocare-reviews/${encodeURIComponent(reviewId)}/status`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => adminAutoCareReviewSchema.parse(value),
+            invalidatesTags: (result, _error, { reviewId }) => [
+                { type: 'AutoCareReview' as const, id: reviewId },
+                { type: 'AutoCareReview' as const, id: 'ADMIN_LIST' },
+                { type: 'AutoCareReview' as const, id: 'FEATURED' },
+                ...(result ? [{ type: 'AutoCareReview' as const, id: `PUBLIC_${result.providerId}` }] : []),
+                'AuditLogs',
+            ],
+        }),
         getAutoCareDiscovery: build.query<AutoCareApiDiscoveryResponse, AutoCareDiscoveryQuery | void>({
             query: (params) => ({ url: '/v1/discovery/providers', params: params ?? undefined }),
             transformResponse: (value: unknown) => autoCareDiscoverySchema.parse(value),
@@ -1960,6 +1997,8 @@ export const {
     useUpdateAdminAutoCareServiceDefinitionMutation,
     useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
+    useGetAdminAutoCareReviewsQuery,
+    useUpdateAdminAutoCareReviewStatusMutation,
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,

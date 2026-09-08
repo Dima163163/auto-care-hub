@@ -53,6 +53,8 @@ import {
     adminAutoCareModerationEvidenceQuerySchema,
     adminAutoCareModerationEvidenceParamsSchema,
     decideAdminAutoCareModerationEvidenceSchema,
+    adminAutoCareReviewParamsSchema,
+    decideAdminAutoCareReviewSchema,
     createSuperAdminAutoCareMarketSchema,
     createSuperAdminAutoCareMarketZoneSchema,
     createSuperAdminMarketCountrySchema,
@@ -131,6 +133,7 @@ import { getRequestLocale } from '../../shared/i18n/request-locale.js'
 import { getAutoCareQualityMonitoring, type AutoCareQualityMonitoringResponse } from '../autocare/autocare-quality-monitoring.service.js'
 import { decideAdminAutoCareAppeal, listAdminAutoCareAppeals } from '../autocare/appeal.service.js'
 import { decideAdminAutoCareModerationEvidence, listAdminAutoCareModerationEvidence } from '../autocare/moderation-evidence.service.js'
+import { decideAdminAutoCareReview, listAdminAutoCareReviews } from '../autocare/review-moderation.service.js'
 import {
     createSuperAdminAutoCareMarket,
     createSuperAdminAutoCareMarketZone,
@@ -286,6 +289,39 @@ export async function adminRoutes(
             request,
         })
         return result
+    })
+
+    app.get('/admin/autocare-reviews', async (request) => {
+        const user = await requireAuth(request)
+        const result = await listAdminAutoCareReviews(user)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCareModerationQueueViewed,
+            targetType: 'autocare_reviews',
+            metadata: { itemCount: result.length },
+            request,
+        })
+        return result
+    })
+
+    app.patch('/admin/autocare-reviews/:reviewId/status', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminAutoCareReviewParamsSchema, request.params)
+        const body = validateBody(decideAdminAutoCareReviewSchema, request.body)
+        const result = await decideAdminAutoCareReview(user, params.reviewId, body)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.ReviewModerated,
+            targetId: result.review.id,
+            targetType: 'autocare_review',
+            metadata: {
+                oldStatus: result.oldStatus,
+                newStatus: result.newStatus,
+                reason: result.reason,
+            },
+            request,
+        })
+        return result.review
     })
 
     app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {

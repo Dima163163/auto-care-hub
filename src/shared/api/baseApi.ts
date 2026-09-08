@@ -118,6 +118,8 @@ function needsCsrfToken(args: string | FetchArgs) {
     const isVehicleWrite = isVehicleMutation && ['POST', 'PATCH', 'DELETE'].includes(method)
     const isMutationPath = args.url.startsWith('/v1/')
         || args.url.startsWith('/owner/')
+        || args.url.startsWith('/admin/')
+        || args.url.startsWith('/super-admin/')
         || args.url.startsWith('/users/me/')
     const isExistingProtectedPost = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && (
         CSRF_PROTECTED_PATHS.has(args.url) || isOAuthFlowStart || isServiceRequestTransition || isMutationPath

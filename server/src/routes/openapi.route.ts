@@ -362,6 +362,20 @@ export function getOpenApiDocument() {
                     responses: { '200': { description: 'Admin moderation queue for service gallery media and verified reviews.' } },
                 },
             },
+            '/admin/autocare-reviews': {
+                get: {
+                    operationId: 'listAdminAutoCareReviews',
+                    responses: { '200': { description: 'Automotive reviews available to admin and super-admin moderation.' } },
+                },
+            },
+            '/admin/autocare-reviews/{reviewId}/status': {
+                patch: {
+                    operationId: 'decideAdminAutoCareReview',
+                    parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: 'string', minLength: 1, maxLength: 2000 } }, additionalProperties: false } } } },
+                    responses: { '200': { description: 'Publishes or blocks an automotive review and records the moderation reason.' } },
+                },
+            },
             '/admin/autocare-moderation-evidence/{id}/decision': {
                 patch: {
                     operationId: 'decideAutoCareModerationEvidence',

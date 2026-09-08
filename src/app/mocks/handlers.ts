@@ -4622,6 +4622,38 @@ export const handlers = [
         return HttpResponse.json({ success: true })
     }),
 
+    http.get('/api/admin/autocare-reviews', () => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') return HttpResponse.json({ message: 'Only administrators can moderate automotive reviews.' }, { status: 403 })
+
+        return HttpResponse.json(mockFeaturedAutoCareReviews.map((review) => ({
+            ...review,
+            providerName: providerPreviews.find((provider) => `api-${provider.id}` === review.providerId)?.name ?? review.providerId,
+            status: review.status ?? 'approved',
+        })))
+    }),
+
+    http.patch('/api/admin/autocare-reviews/:reviewId/status', async ({ params, request }) => {
+        const currentUser = currentMockUser()
+        if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') return HttpResponse.json({ message: 'Only administrators can moderate automotive reviews.' }, { status: 403 })
+
+        const review = mockFeaturedAutoCareReviews.find((item) => item.id === String(params.reviewId))
+        if (!review) return HttpResponse.json({ message: 'Automotive review not found.' }, { status: 404 })
+
+        const body = await request.json() as { status?: unknown; reason?: unknown }
+        if (body.status !== 'approved' && body.status !== 'rejected') return invalidMockBodyResponse()
+        if (body.status === 'rejected' && (typeof body.reason !== 'string' || body.reason.trim().length === 0)) return invalidMockBodyResponse()
+
+        review.status = body.status
+        return HttpResponse.json({
+            ...review,
+            providerName: providerPreviews.find((provider) => `api-${provider.id}` === review.providerId)?.name ?? review.providerId,
+            status: review.status,
+        })
+    }),
+
     http.get('/api/v1/reviews/featured', ({ request }) => {
         const limit = Number(new URL(request.url).searchParams.get('limit') ?? 6)
         const fixture = request.headers.get('x-autocare-review-fixture')
@@ -4632,7 +4664,7 @@ export const handlers = [
                 : fixture === 'photos'
                     ? mockFeaturedAutoCareReviews.filter((review) => review.photoUrls.length > 0).slice(0, 3)
                     : mockFeaturedAutoCareReviews
-        return HttpResponse.json(reviews.slice(0, Number.isFinite(limit) ? limit : 6).map((review) => ({
+        return HttpResponse.json(reviews.filter((review) => (review.status ?? 'approved') === 'approved').slice(0, Number.isFinite(limit) ? limit : 6).map((review) => ({
             ...review,
             providerName: providerPreviews.find((provider) => `api-${provider.id}` === review.providerId)?.name ?? review.providerId,
         })))

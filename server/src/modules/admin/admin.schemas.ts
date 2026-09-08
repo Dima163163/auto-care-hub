@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
-import { AutomotiveLocationZoneType, AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import { AutomotiveLocationZoneType, AutomotiveProviderStatus, AutomotiveReviewStatus } from '../../entities/automotive/automotive.entity.js'
 import { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
@@ -375,6 +375,23 @@ export const adminAutoCareModerationEvidenceParamsSchema = z.object({
 export const decideAdminAutoCareModerationEvidenceSchema = z.object({
     status: z.enum(['approved', 'rejected']),
     reason: z.string().trim().min(1).max(2_000),
+})
+
+export const adminAutoCareReviewParamsSchema = z.object({
+    reviewId: z.string().uuid(),
+})
+
+export const decideAdminAutoCareReviewSchema = z.object({
+    status: z.enum([AutomotiveReviewStatus.Approved, AutomotiveReviewStatus.Rejected]),
+    reason: z.string().trim().min(1).max(2_000).optional(),
+}).superRefine((value, context) => {
+    if (value.status === AutomotiveReviewStatus.Rejected && !value.reason) {
+        context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['reason'],
+            message: 'A reason is required when blocking an automotive review.',
+        })
+    }
 })
 
 export const updateUserStatusSchema = z.object({

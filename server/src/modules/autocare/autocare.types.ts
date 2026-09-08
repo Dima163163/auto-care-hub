@@ -1,4 +1,4 @@
-import type { AutomotivePriceType, AutomotiveProviderBusinessType, AutomotiveProviderCommunicationMode, AutomotiveProviderResponseHours, AutomotiveProviderStatus, AutomotiveProviderTeamSize } from '../../entities/automotive/automotive.entity.js'
+import type { AutomotivePriceType, AutomotiveProviderBusinessType, AutomotiveProviderCommunicationMode, AutomotiveProviderResponseHours, AutomotiveProviderStatus, AutomotiveProviderTeamSize, AutomotiveReviewStatus } from '../../entities/automotive/automotive.entity.js'
 import type { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import type { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import type { ServiceMessageOffer, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
@@ -307,6 +307,11 @@ export type AutoCareReviewResponse = {
     revisionUsedAt: string | null
     canContact: boolean
     canEdit: boolean
+}
+
+export type AdminAutoCareReviewResponse = AutoCareReviewResponse & {
+    providerName: string
+    status: AutomotiveReviewStatus
 }
 
 export type AutoCareReviewPromoResponse = {

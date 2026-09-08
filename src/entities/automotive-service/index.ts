@@ -45,9 +45,11 @@ export type {
     AutoCareProviderInvitation,
     AutoCareProviderInvitationAcceptResponse,
     AutoCareProviderMember,
+    AdminAutoCareReview,
     CreateAutoCareCapacityResourceInput,
     UpdateAutoCareCapacityResourceInput,
     UpdateAutoCareCommunicationSettingsInput,
+    UpdateAdminAutoCareReviewStatusInput,
 } from './api/autocareApi'
 export {
     useGetAutoCareDiscoveryQuery,
@@ -130,6 +132,8 @@ export {
     useUpdateAdminAutoCareServiceDefinitionMutation,
     useGetVehicleCatalogQuery,
     useGetFeaturedAutoCareReviewsQuery,
+    useGetAdminAutoCareReviewsQuery,
+    useUpdateAdminAutoCareReviewStatusMutation,
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,
