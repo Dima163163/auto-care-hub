@@ -4545,3 +4545,16 @@ frontend `autocarehub.app` не разрешается через DNS. Запр�
 21–30. `[~]` Внешние gates остаются deployment/DNS, staging API evidence,
 private media/restore, pilot participants и production SEO evidence; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 487 (08.09.2026) — двухпроцессный PostgreSQL transition smoke
+
+1–10. `[x]` `npm run smoke:server:postgres-transition` завершился PASS:
+`schemaVersion=1`, `processCount=2`, `committedCount=1`, `conflictCount=1`,
+`finalState=committed`. Smoke запускает два отдельных Node-процесса,
+синхронизирует их барьером, проверяет `FOR UPDATE`-сериализацию и удаляет
+временные таблицы в `finally`.
+
+11–20. `[~]` Это усиливает локальное доказательство transition race, но не
+заменяет staging replay с реальными API-репликами, PostgreSQL/Redis и
+deployment-конфигурацией. Внешние gates и readiness **96.5% (193/200)** без
+изменений.

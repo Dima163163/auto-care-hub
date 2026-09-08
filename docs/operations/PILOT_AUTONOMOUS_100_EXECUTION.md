@@ -544,6 +544,10 @@ anonymized samples/participant rows отсутствуют.
   still found no usable deployed gate: the public Render API returned **404**
   for `/health/ready` and `/openapi.json`, while `autocarehub.app` failed DNS
   resolution; no credentials, cookies or mutating requests were used.
+- A fresh local `npm run smoke:server:postgres-transition` replay passed with
+  two child processes, exactly one committed winner, one conflict and final
+  state `committed`. This strengthens the local transition evidence; the
+  multi-process staging/replica matrix remains an external partial gate.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
