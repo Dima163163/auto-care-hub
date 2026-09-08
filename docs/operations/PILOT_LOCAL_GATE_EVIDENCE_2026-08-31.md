@@ -4638,3 +4638,16 @@ autonomous-plan контракты также прошли. `git diff --check` �
 `npm --prefix server install --include=optional` повторный unit и полный gate
 проходят. Внешние staging/production/pilot gates не изменились; readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 494 (08.09.2026) — release evidence и provenance gate
+
+1–10. `[x]` Локальный `npm run check:release-summary` завершён **8/8 PASS**:
+commit SHA и clean worktree, migration inventory/checksum, historical migration
+immutability, replacement coverage, Open Graph, canonical/robots, URL safety,
+locale coverage и local HTML metadata. Summary явно сохраняет
+`environment=local` и `productionClaims=false`.
+
+11–20. `[x]` Regression-наборы прошли: release summary **3/3**, release
+promotion **3/3**, release provenance **2/2**. Эти проверки усиливают local
+release proof, но не создают production claims; readiness остаётся **96.5%
+(193/200)** из-за реального staging/production/pilot evidence.
