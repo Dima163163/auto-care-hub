@@ -155,7 +155,7 @@ test.describe('public and client AutoCare states', () => {
         await useReviewFixture(page, 'photos')
         await page.goto('/services/api-proservice-moscow')
 
-        await expect(page.locator('#reviews img[alt="Фото из отзыва"]')).toHaveCount(1)
+        await expect(page.getByRole('img', { name: /Фото из отзыва|Review photo/ })).toHaveCount(1)
     })
 
     test('renders a recoverable not-found state for a removed provider profile', async ({ page }) => {
@@ -281,7 +281,7 @@ test.describe('public and client AutoCare states', () => {
         await signInAsClient(page)
         await page.goto('/profile/bookings')
 
-        await page.getByRole('button', { name: /Диагностика тормозной системы/ }).first().click()
+        await page.getByRole('button', { name: /Диагностика тормозной системы|Brake diagnostics/ }).first().click()
         const accept = page.getByRole('button', { name: /Принять смету|Accept estimate/i })
         await expect(accept).toBeVisible()
         await accept.click()

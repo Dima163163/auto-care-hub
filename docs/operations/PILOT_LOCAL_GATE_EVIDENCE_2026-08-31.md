@@ -4511,3 +4511,20 @@ readiness остаётся **96.5% (193/200)**.
  позволяет завершить Browser E2E и закрыть full quality workflow. Deployment/DNS,
  staging API evidence, private media/restore, pilot participants и production
  SEO evidence остаются внешними gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 485 (08.09.2026) — locale-stable Browser E2E assertions
+
+1–10. `[x]` Runs **338/339** на SHA `4fc3daa` завершили Browser E2E за
+31–32 минуты: **162/168** тестов прошли. Оставшиеся 6 были одним дефектом
+тестовых локаторов, а не продуктовым падением: Linux Chromium использует
+английский locale и не совпал с жёстко заданными русскими подписями
+`Фото из отзыва` и `Диагностика тормозной системы`.
+
+11–20. `[x]` E2E assertions переведены на двуязычные role locators для review
+photo и pending quote. В Node 22 Linux replay с Chromium оба проблемных
+сценария прошли **2/2**; повторный workflow на новом SHA должен подтвердить
+все три viewport-проекта.
+
+21–30. `[~]` Остаются внешние gates: deployment/DNS, staging API evidence,
+private media/restore, pilot participants и production SEO evidence; readiness
+остаётся **96.5% (193/200)**.

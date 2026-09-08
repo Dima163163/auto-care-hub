@@ -533,6 +533,11 @@ anonymized samples/participant rows отсутствуют.
   job's **30-minute** timeout without an assertion failure. The browser job
   budget is now **45 minutes** so the three viewport projects, retries and PWA
   smoke can finish within the same release gate.
+- Runs **338/339** then completed Browser E2E in about 32 minutes with
+  **162/168** tests passing. The six failures were the same locale-sensitive
+  assertions in Chromium (`Review photo`/`Brake diagnostics` versus their
+  Russian labels); the E2E checks now use bilingual role locators, and the
+  focused Node 22 Linux replay passes **2/2** scenarios.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не
