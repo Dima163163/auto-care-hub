@@ -122,7 +122,7 @@ function ThreadItem({ thread, active, onSelect, t, pinned = false }: { thread: A
 function GenericChatConversation({ chatId }: { chatId: string }) {
     const { t, locale } = useTranslation()
     const [beforeCursor, setBeforeCursor] = useState<string | undefined>(undefined)
-    const { data, isLoading, isFetching, refetch } = useGetAutoCareChatQuery({ chatId, beforeCursor, limit: 50 })
+    const { data, isLoading, isFetching, isUninitialized, refetch } = useGetAutoCareChatQuery({ chatId, beforeCursor, limit: 50 })
     const [messageState, dispatchMessages] = useReducer(conversationMessagesReducer, { chatId, pages: new Map<string, AutoCareServiceMessage[]>(), items: [] })
     const [sendMessage, sendState] = useCreateAutoCareChatMessageMutation()
     const [markRead] = useMarkAutoCareChatReadMutation()
@@ -131,9 +131,18 @@ function GenericChatConversation({ chatId }: { chatId: string }) {
     const [attachmentError, setAttachmentError] = useState(false)
     const [messageError, setMessageError] = useState(false)
     useEffect(() => {
+        if (isLoading || isUninitialized) return
         void markRead(chatId)
-        return connectAutoCareChat(chatId, () => { void refetch(); void markRead(chatId) })
-    }, [chatId, markRead, refetch])
+        return connectAutoCareChat(chatId, () => {
+            try {
+                void refetch()
+            } catch {
+                // A realtime event can race query teardown; keep it from
+                // turning an otherwise recoverable chat update into a route error.
+            }
+            void markRead(chatId)
+        })
+    }, [chatId, isLoading, isUninitialized, markRead, refetch])
     const messages = messageState.items
     useEffect(() => {
         if (!data) return

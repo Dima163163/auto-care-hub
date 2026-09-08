@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
     markRead: vi.fn(),
     refetch: vi.fn(),
     cleanup: vi.fn(),
+    connectAutoCareChat: vi.fn(),
+    chatIsLoading: false,
+    emitPresenceOnConnect: false,
     chatData: {
         thread: { id: 'chat-1', type: 'support', subject: 'Support', providerName: null, clientId: 'client-1' },
         messages: [],
@@ -30,13 +33,14 @@ vi.mock('@/features/auth', () => ({
 
 vi.mock('@/entities/automotive-service', () => ({
     ServiceRequestChat: () => null,
-    connectAutoCareChat: vi.fn(() => mocks.cleanup),
+    connectAutoCareChat: mocks.connectAutoCareChat,
     useCreateAutoCareChatMessageMutation: () => [mocks.sendMessage, { isLoading: false }],
     useCreateAutoCareChatAttachmentMutation: () => [mocks.createAttachment, { isLoading: false }],
     useCreateAutoCareChatMutation: () => [mocks.createChat, { isLoading: false }],
     useGetAutoCareChatQuery: () => ({
         data: mocks.chatData,
-        isLoading: false,
+        isLoading: mocks.chatIsLoading,
+        isUninitialized: false,
         isFetching: false,
         refetch: mocks.refetch,
     }),
@@ -59,9 +63,30 @@ function renderPage() {
 
 describe('ChatsPage', () => {
     beforeEach(() => {
+        mocks.chatIsLoading = false
+        mocks.emitPresenceOnConnect = false
+        mocks.connectAutoCareChat.mockClear()
+        mocks.connectAutoCareChat.mockImplementation((_chatId: string, listener: (event: { type: 'presence'; threadId: string; payload: { connected: boolean } }) => void) => {
+            if (mocks.emitPresenceOnConnect) listener({ type: 'presence', threadId: 'chat-1', payload: { connected: true } })
+            return mocks.cleanup
+        })
+        mocks.refetch.mockReset()
         mocks.sendMessage.mockReset().mockImplementation(() => ({
             unwrap: vi.fn().mockRejectedValue(new Error('temporary failure')),
         }))
+    })
+
+    it('does not connect realtime chat before the conversation query starts', () => {
+        mocks.chatIsLoading = true
+        mocks.emitPresenceOnConnect = true
+        mocks.refetch.mockImplementation(() => {
+            throw new Error('Cannot refetch a query that has not been started yet')
+        })
+
+        renderPage()
+
+        expect(mocks.connectAutoCareChat).not.toHaveBeenCalled()
+        expect(screen.getByRole('status', { name: 'common.loading' })).toBeVisible()
     })
 
     it('keeps a failed generic-chat draft and exposes an accessible send error', async () => {
