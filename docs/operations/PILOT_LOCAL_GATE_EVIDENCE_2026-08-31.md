@@ -4724,3 +4724,15 @@ endpoint. `check:openapi-structure` и его tests прошли **2/2**, route 
 11–20. `[~]` Это закрывает реальный локальный regression в API test harness, но
 не меняет external deployment/staging/pilot evidence и не повышает readiness
 искусственно: **96.5% (193/200)**.
+
+## Порция 501 (08.09.2026) — включение OpenAPI regression в quality chain
+
+1–10. `[x]` `quality:backend` теперь запускает не только
+`check:openapi-structure`, но и `test:openapi-structure`; полный gate после
+изменения дошёл до server build без ошибок. Подтверждены server unit
+**291/291 файлов и 1051/1051 тестов**, tooling **5/5**, OpenAPI regression
+**2/2** и TypeScript build PASS.
+
+11–20. `[~]` Это предотвращает повторное выпадение stale OpenAPI assertion из
+CI-quality цепочки, но не меняет внешние deployment/staging/pilot условия.
+Readiness остаётся **96.5% (193/200)**.
