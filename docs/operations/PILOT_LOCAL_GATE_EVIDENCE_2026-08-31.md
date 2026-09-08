@@ -4434,3 +4434,22 @@ Actions run на опубликованном SHA должен подтверд�
 дальнейшие API/browser gates. Deployment/DNS, staging API, private
 media/restore, pilot participants и production SEO evidence остаются внешними
 gates; readiness остаётся **96.5% (193/200)**.
+
+## Порция 481 (08.09.2026) — Node 22 staging timeout
+
+1–10. `[x]` Clean Node 22 replay дошёл до `test:staging-api`, где timeout
+regression test отменялся `cancelledByParent`: implementation делал request
+timer `unref()`, а fake fetch оставлял только pending Promise без ref’ов.
+Node 22 завершал event loop раньше abort callback; Node 24 локально скрывал
+этот runtime-specific defect.
+
+11–20. `[x]` `checkStaging` теперь сохраняет bounded timeout ref до завершения
+запроса. Это гарантирует, что зависший staging request будет abort’нут и
+вернёт redacted timeout error даже в Node 22; normal successful requests
+по-прежнему очищают timer в `finally`.
+
+21–30. `[~]` Исправление готово к Node 22 runner replay; новый Actions run
+должен подтвердить staging contract, backend quality и downstream integration.
+Deployment/DNS, staging API evidence, private media/restore, pilot participants
+и production SEO evidence остаются внешними gates; readiness остаётся
+**96.5% (193/200)**.

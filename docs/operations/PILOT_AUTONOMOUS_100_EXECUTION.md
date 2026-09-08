@@ -511,6 +511,11 @@ anonymized samples/participant rows отсутствуют.
   variables passes when the frontend build step overrides `NODE_ENV=production`,
   so the workflow now applies that override only to Next artifact creation and
   leaves the backend migration/API environment unchanged.
+- A clean Node 22 replay exposed a staging compatibility test cancellation:
+  `checkStaging` unref’ed its timeout, so a fake pending fetch left no referenced
+  event-loop handle and Node 22 cancelled the test before the abort callback.
+  The bounded request timer now stays referenced until `finally` clears it,
+  guaranteeing timeout enforcement on Node 22 as well as newer local Node.
 - `npm run check:pilot-autonomous-plan -- --json`: **93 complete / 7 partial**;
   `check:pilot-autonomous-next -- --json`: **100 complete / 0 partial**.
 - Эти результаты подтверждают текущую локальную воспроизводимость, но не

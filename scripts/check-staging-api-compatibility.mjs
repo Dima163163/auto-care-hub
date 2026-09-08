@@ -130,7 +130,6 @@ export async function checkStaging(baseUrl, fetchImpl = fetch, timeoutMs = getRe
         for (let attempt = 0; attempt <= retryAttempts; attempt += 1) {
             const controller = new AbortController()
             const timeout = setTimeout(() => controller.abort(), timeoutMs)
-            timeout.unref?.()
             try {
                 const response = await fetchImpl(`${origin}${path}`, {
                     headers: { accept: 'application/json', ...(corsOrigin ? { origin: corsOrigin } : {}) },
