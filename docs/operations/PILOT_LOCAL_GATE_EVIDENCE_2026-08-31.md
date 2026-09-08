@@ -4736,3 +4736,18 @@ endpoint. `check:openapi-structure` и его tests прошли **2/2**, route 
 11–20. `[~]` Это предотвращает повторное выпадение stale OpenAPI assertion из
 CI-quality цепочки, но не меняет внешние deployment/staging/pilot условия.
 Readiness остаётся **96.5% (193/200)**.
+
+## Порция 502 (08.09.2026) — полный mock browser replay и CI E2E
+
+1–10. `[x]` Независимый локальный `CI=1 npm run test:e2e` завершён без
+ошибок: Playwright выполнил **168/168 тестов PASS за 13.6 минуты**. Replay
+прошёл на текущем commit `f1ae1f947d82e08d11e002ad73458c22fd55a616` с тремя
+browser-проектами и одним worker; после завершения рабочее дерево осталось
+чистым.
+
+11–20. `[x]` Публичные GitHub job pages для запусков `34182765871` (`dev`) и
+`34182771137` (`main`) подтвердили `success` для Browser E2E и production PWA
+preview smoke; frontend, backend и dependency/security jobs также завершены
+успешно. Это усиливает уже закрытые browser/PWA пункты, но не создаёт
+staging/production/pilot evidence для 7 partial items. Canonical readiness
+остаётся **96.5% (193/200)**.
