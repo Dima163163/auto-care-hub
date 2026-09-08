@@ -4594,3 +4594,18 @@ runtime chunks остаются в пределах launch-бюджетов.
 11–20. `[~]` Это локальное production-build evidence; CDN compression,
 deployed Next rendering и Lighthouse на production URL остаются внешними
 gates. Readiness без изменений: **96.5% (193/200)**.
+
+## Порция 491 (08.09.2026) — восстановление local MVP release harness
+
+1–10. `[x]` Повторный `npm run check:local-mvp -- --static-only --json` после
+восстановления optional platform-native зависимостей завершён: **42 PASS** и
+один ожидаемый `manual` responsive-browser шаг. Frontend lint, **167/167**
+frontend test files (**510/510** tests), Next production build, backend build,
+API/route/media/backup/security/accessibility contracts и legacy cleanup прошли.
+
+11–20. `[x]` Исправлен harness-дефект: legacy payment scan теперь пропускает
+сгенерированные `.next-real-*`/`.next-mock-*` каталоги и имеет отдельный
+регрессионный тест; optional `lightningcss` native bindings восстановлены из
+lockfile без изменения зависимостей проекта. Production deployment, real
+staging/Redis/S3/PostgreSQL replays, pilot participants и Lighthouse остаются
+внешними gates; canonical readiness сохраняется **96.5% (193/200)**.
