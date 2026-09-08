@@ -4571,3 +4571,14 @@ deployment-конфигурацией. Внешние gates и readiness **96.5%
 подключена к `quality:backend`; отдельные проверки исходных половин остаются
 неизменными. Частичные пункты по-прежнему требуют внешнего staging/production,
 pilot или deployed SEO evidence и не превращены в локальные `[x]`.
+
+## Порция 489 (08.09.2026) — visual regression matrix
+
+1–10. `[x]` `npm run test:e2e:visual` завершён **18/18 PASS** без обновления
+snapshot-файлов: desktop/tablet/mobile Chromium покрыли home, discovery RU
+dark, provider, client profile, owner dashboard RU dark и admin security EN
+light. Все три viewport-проекта прошли стабильность пиксельных снимков.
+
+11–20. `[~]` Это закрывает локальный визуальный regression gate; physical
+devices, real screen readers, deployed production rendering и Lighthouse
+остаются внешними условиями. Общая readiness сохраняется **96.5% (193/200)**.
