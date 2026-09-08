@@ -4687,3 +4687,16 @@ readiness остаётся **96.5% (193/200)**.
 11–20. `[~]` Это закрывает текущий локальный dependency-security gate, но не
 заменяет runtime/staging incident validation, external S3/Redis/PostgreSQL и
 real pilot evidence. Readiness остаётся **96.5% (193/200)**.
+
+## Порция 498 (08.09.2026) — operations preflight boundary
+
+1–10. `[x]` `npm run test:ops-harness` завершён **15/15 PASS**: backup/restore,
+ops harness, Bookly runtime guard, production-operations negative paths и real
+API preflight проверены; secret redaction и ambiguous URL handling остаются
+покрытыми regression-тестами.
+
+11–20. `[~]` Сам `npm run check:production-operations` в текущем окружении
+fail-closed с **8 blocked prerequisite gates** и **6 manual rehearsal gates**:
+нет production-like DB/Redis/JWT/SMTP/S3/bootstrap/staging configuration.
+Это ожидаемое evidence boundary, не повод повышать readiness выше **96.5%
+(193/200)**.
