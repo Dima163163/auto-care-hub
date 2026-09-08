@@ -4651,3 +4651,16 @@ locale coverage и local HTML metadata. Summary явно сохраняет
 promotion **3/3**, release provenance **2/2**. Эти проверки усиливают local
 release proof, но не создают production claims; readiness остаётся **96.5%
 (193/200)** из-за реального staging/production/pilot evidence.
+
+## Порция 495 (08.09.2026) — повторная внешняя доступность deployment
+
+1–10. `[~]` Новый GET-only probe без credentials, cookies и mutations снова
+получил `404 text/plain` для Render API `/health/ready`, `/health/live`,
+`/openapi.json` и client root; `https://autocarehub.app/` не разрешается через
+DNS. Поэтому `STAGING_API_BASE_URL` по-прежнему нельзя безопасно привязать к
+реальному staging service, а production HTML/Lighthouse probe не запускается.
+
+11–20. `[~]` Это подтверждает текущий внешний blocker, но не заменяет
+deployment owner action и не повышает readiness искусственно: **96.5%
+(193/200)**. Локальные API parity, HTML metadata и security contracts остаются
+PASS отдельно от недоступного deployment.
