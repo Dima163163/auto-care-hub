@@ -9,6 +9,10 @@ These settings must be applied by a repository administrator in GitHub because
 branch protection is remote repository state and cannot be encoded by a local
 Git commit alone:
 
+- under **Settings → Actions → General → Workflow permissions**, enable
+  **Allow GitHub Actions to create and approve pull requests** so the protected
+  promotion workflow can open the dev → main PR; this does not bypass the
+  required human approval on `main`;
 - require a pull request before merging;
 - require at least one approving review from a code owner;
 - dismiss stale approvals after new commits;
