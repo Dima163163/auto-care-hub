@@ -294,7 +294,11 @@ jobs:
         run: npm ci
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # The hosted Ubuntu image already contains the libraries required by
+        # Playwright. Avoid --with-deps here: it refreshes the Google Chrome
+        # apt repository, whose metadata can briefly be inconsistent and make
+        # an otherwise healthy CI run fail with Hash Sum mismatch.
+        run: npx playwright install chromium
 
       - name: Verify Chromium
         run: npm run check:e2e:browser
@@ -427,7 +431,9 @@ jobs:
         working-directory: server
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # Keep the real-mode smoke independent from transient apt metadata
+        # issues in the external Google Chrome repository.
+        run: npx playwright install chromium
 
       - name: Verify Chromium
         run: npm run check:e2e:browser
