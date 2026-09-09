@@ -22,8 +22,8 @@ function createRegisterSchema(t: I18nContextValue['t']) {
             .string()
             .min(1, t('auth.validation.confirmPasswordRequired')),
         role: z.enum(['client', 'owner']),
-        termsAccepted: z.literal(true, { error: t('auth.validation.termsRequired') }),
-        privacyAccepted: z.literal(true, { error: t('auth.validation.privacyRequired') }),
+        termsAccepted: z.boolean().refine((value) => value, { message: t('auth.validation.termsRequired') }),
+        privacyAccepted: z.boolean().refine((value) => value, { message: t('auth.validation.privacyRequired') }),
     }).refine((values) => values.password === values.confirmPassword, {
         message: t('auth.validation.passwordsMustMatch'),
         path: ['confirmPassword'],

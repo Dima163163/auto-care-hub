@@ -31,6 +31,10 @@ const completeProductionEnvironment = {
     BOOTSTRAP_SUPER_ADMIN_NAME: 'AutoCare owner',
     OUTBOX_TOKEN_ENCRYPTION_KEY: 'c'.repeat(40),
     STAGING_API_BASE_URL: 'https://staging.autocare.test',
+    LEGAL_DOCUMENT_STATUS: 'final',
+    LEGAL_CONTROLLER_NAME: 'AutoCare Hub operator',
+    LEGAL_CONTROLLER_ADDRESS: 'Operator address',
+    LEGAL_PRIVACY_CONTACT: 'privacy@autocare.test',
 }
 
 test('production operations preflight separates local controls from external rehearsals', () => {
