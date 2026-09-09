@@ -32,12 +32,12 @@ test('rejects promotion that does not bind Quality to the exact dev commit', asy
     assert.ok(checks.some(({ name, passed }) => name === 'Promotion is limited to the trusted dev branch' && !passed))
 })
 
-test('rejects promotion without a guarded main update path', async () => {
+test('rejects promotion without a protected pull-request path to main', async () => {
     const sources = await readCiCdPolicySources()
     const checks = validateCiCdPolicy({
         ...sources,
-        promotion: sources.promotion.replace('refs/heads/main', 'refs/heads/release'),
+        promotion: sources.promotion.replaceAll('--base main', '--base release'),
     })
 
-    assert.ok(checks.some(({ name, passed }) => name === 'Promotion targets main through guarded PR or fast-forward' && !passed))
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion targets main through a protected pull request' && !passed))
 })

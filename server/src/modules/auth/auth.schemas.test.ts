@@ -3,8 +3,26 @@ import { describe, expect, it } from 'vitest'
 import {
     completePasswordResetSchema,
     passwordResetTokenSchema,
+    registerSchema,
     requestPasswordResetSchema,
 } from './auth.schemas'
+
+const validRegistration = {
+    name: 'Client User',
+    email: 'client@example.com',
+    password: 'S3cure-password-123!',
+    role: 'client' as const,
+    termsAccepted: true,
+    privacyAccepted: true,
+}
+
+describe('registration legal consent schema', () => {
+    it('requires both legal confirmations', () => {
+        expect(registerSchema.safeParse(validRegistration).success).toBe(true)
+        expect(registerSchema.safeParse({ ...validRegistration, termsAccepted: false }).success).toBe(false)
+        expect(registerSchema.safeParse({ ...validRegistration, privacyAccepted: false }).success).toBe(false)
+    })
+})
 
 describe('password reset schemas', () => {
     it('accepts a valid reset request email', () => {

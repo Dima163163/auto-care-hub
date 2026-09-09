@@ -57,6 +57,16 @@ import {
     assertPasswordSecurityPolicy,
     assertPasswordVerificationInput,
 } from './password-policy.js'
+import {
+    LEGAL_DOCUMENT_VERSIONS,
+    recordConsentWithManager,
+    getConsentEvidence,
+} from '../users/user-consent.service.js'
+import {
+    UserConsentAction,
+    UserConsentSource,
+    UserConsentType,
+} from '../../entities/user-consent/user-consent.entity.js'
 
 const PASSWORD_SALT_ROUNDS = 10
 
@@ -71,6 +81,8 @@ type RegisterInput = {
     email: string
     password: string
     role: 'client' | 'owner'
+    termsAccepted: true
+    privacyAccepted: true
 } & SessionInfo
 
 type LoginInput = {
@@ -240,7 +252,31 @@ export async function registerUser(input: RegisterInput) {
         emailVerifiedAt: null,
     })
 
-    const savedUser = await userRepository.save(user)
+    const savedUser = await AppDataSource.transaction(async (manager) => {
+        const saved = await manager.getRepository(UserEntity).save(user)
+        const evidence = getConsentEvidence(input.request)
+
+        await Promise.all([
+            recordConsentWithManager(manager, {
+                userId: saved.id,
+                consentType: UserConsentType.Terms,
+                action: UserConsentAction.Granted,
+                documentVersion: LEGAL_DOCUMENT_VERSIONS.terms,
+                source: UserConsentSource.Registration,
+                ...evidence,
+            }),
+            recordConsentWithManager(manager, {
+                userId: saved.id,
+                consentType: UserConsentType.Privacy,
+                action: UserConsentAction.Granted,
+                documentVersion: LEGAL_DOCUMENT_VERSIONS.privacy,
+                source: UserConsentSource.Registration,
+                ...evidence,
+            }),
+        ])
+
+        return saved
+    })
 
     const session = await createUserSession({
         userId: savedUser.id,

@@ -36,6 +36,14 @@ import {
     type GoogleProfileResponse,
     type YandexProfileResponse,
 } from './oauth-response-schemas.js'
+import {
+    recordConsentWithManager,
+} from '../users/user-consent.service.js'
+import {
+    UserConsentAction,
+    UserConsentSource,
+    UserConsentType,
+} from '../../entities/user-consent/user-consent.entity.js'
 
 type OAuthUserProfile = {
     providerId: string
@@ -207,7 +215,14 @@ function getRefreshTokenExpiry() {
 export async function processOAuthCallback(
     provider: OAuthProvider,
     code: string,
-    sessionInfo: { userAgent?: string | null; ipAddress?: string | null }
+    sessionInfo: {
+        userAgent?: string | null
+        ipAddress?: string | null
+        consent?: {
+            termsVersion: string
+            privacyVersion: string
+        }
+    }
 ) {
     const oauthProfile = await fetchOAuthProfile(provider, normalizeOAuthCallbackCode(code))
 
@@ -253,6 +268,14 @@ export async function processOAuthCallback(
             })
         }
 
+        if (!sessionInfo.consent) {
+            throw new AppError({
+                statusCode: 400,
+                code: ERROR_CODES.BadRequest,
+                message: 'Legal consent is required to create an account.',
+            })
+        }
+
         const newUser = await userRepository.save(
             userRepository.create({
                 name: oauthProfile.name,
@@ -274,6 +297,27 @@ export async function processOAuthCallback(
                 userId: newUser.id,
             })
         )
+
+        await Promise.all([
+            recordConsentWithManager(manager, {
+                userId: newUser.id,
+                consentType: UserConsentType.Terms,
+                action: UserConsentAction.Granted,
+                documentVersion: sessionInfo.consent.termsVersion,
+                source: UserConsentSource.OAuthRegistration,
+                ipAddress: sessionInfo.ipAddress,
+                userAgent: sessionInfo.userAgent,
+            }),
+            recordConsentWithManager(manager, {
+                userId: newUser.id,
+                consentType: UserConsentType.Privacy,
+                action: UserConsentAction.Granted,
+                documentVersion: sessionInfo.consent.privacyVersion,
+                source: UserConsentSource.OAuthRegistration,
+                ipAddress: sessionInfo.ipAddress,
+                userAgent: sessionInfo.userAgent,
+            }),
+        ])
 
         return newUser
     })

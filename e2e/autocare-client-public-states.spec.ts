@@ -205,9 +205,12 @@ test.describe('public and client AutoCare states', () => {
             await page.goto('/services/api-proservice-moscow/request?service=oil-change')
 
             const form = page.locator('main form').first()
-            const confirmation = form.locator('input[type="checkbox"]')
-            await expect(confirmation).toBeVisible()
-            await confirmation.check()
+            const confirmations = form.locator('input[type="checkbox"]')
+            await expect(confirmations).toHaveCount(2)
+            for (let index = 0; index < 2; index += 1) {
+                await expect(confirmations.nth(index)).toBeVisible()
+                await confirmations.nth(index).check()
+            }
 
             const submit = form.getByRole('button', { name: /send appointment request|отправить запрос/i })
             await expect(submit).toBeEnabled()

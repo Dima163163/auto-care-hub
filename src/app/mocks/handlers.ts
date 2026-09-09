@@ -40,6 +40,8 @@ const registerRequestSchema = z.object({
     email: z.string().email(),
     password: z.string().min(1),
     role: z.enum(['client', 'owner']),
+    termsAccepted: z.literal(true),
+    privacyAccepted: z.literal(true),
 })
 
 const bookingRequestSchema = z.object({
@@ -3274,6 +3276,7 @@ export const handlers = [
             vehicleSnapshot?: Record<string, string | number | null> | null
             contactSnapshot?: Record<string, string | number | null>
             note?: string | null
+            dataProcessingConsent?: boolean
         }
         const idempotencyKey = request.headers.get('Idempotency-Key')
         const fingerprint = JSON.stringify({ providerId: body.providerId, locationId: body.locationId, offeringId: body.offeringId, preferredAt: body.preferredAt, vehicleId: body.vehicleId ?? null, vehicleSnapshot: body.vehicleSnapshot ?? null, contactSnapshot: body.contactSnapshot, note: body.note ?? null })
@@ -3291,7 +3294,7 @@ export const handlers = [
         const service = automotiveServices.find((item) => body.offeringId?.endsWith(`-${item.id}`)) ?? automotiveServices[0]
         const definition = autoCareDefinitions.find((item) => item.slug === service?.id) ?? autoCareDefinitions[0]
         const offer = provider?.offers?.find((item) => item.id === body.offeringId)
-        if (!provider || !body.locationId || !body.offeringId || !body.preferredAt || !body.contactSnapshot || !definition) {
+        if (!provider || !body.locationId || !body.offeringId || !body.preferredAt || !body.contactSnapshot || !body.dataProcessingConsent || !definition) {
             return HttpResponse.json({ message: 'Invalid service request.' }, { status: 400 })
         }
         const now = new Date().toISOString()
@@ -4148,7 +4151,7 @@ export const handlers = [
                 ...(mockAutoCareProviderActivity.get(provider.id) ?? { impressions: 0, profileOpens: 0 }),
                 available: hasProviderWideAnalyticsScope,
             },
-            privacy: { consentRequired: true, retentionDays: 365 },
+            privacy: { consentRequired: false, retentionDays: 365 },
         })
     }),
 

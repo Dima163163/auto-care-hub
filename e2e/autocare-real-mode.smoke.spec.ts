@@ -481,6 +481,7 @@ test.describe('AutoCare real API smoke', () => {
                     phone: '+79990000000',
                 },
                 note: 'Real API idempotency smoke request.',
+                dataProcessingConsent: true,
             }
             const headers = {
                 'content-type': 'application/json',
@@ -543,9 +544,12 @@ test.describe('AutoCare real API smoke', () => {
             await contactInputs.nth(0).fill('Demo Client')
             await contactInputs.nth(1).fill('+79990000000')
             await contactInputs.nth(2).fill('client.demo@autocarehub.test')
-            const confirmation = form.locator('input[type="checkbox"]')
-            await expect(confirmation).toBeVisible()
-            await confirmation.check()
+            const confirmations = form.locator('input[type="checkbox"]')
+            await expect(confirmations).toHaveCount(2)
+            for (let index = 0; index < 2; index += 1) {
+                await expect(confirmations.nth(index)).toBeVisible()
+                await confirmations.nth(index).check()
+            }
 
             const submit = form.getByRole('button', { name: /send appointment request|отправить запрос/i })
             await expect(submit).toBeEnabled()

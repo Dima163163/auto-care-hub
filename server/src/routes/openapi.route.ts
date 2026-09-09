@@ -754,6 +754,30 @@ export function getOpenApiDocument() {
                     },
                 },
             },
+            '/users/me/consents': {
+                get: {
+                    operationId: 'getMyConsents',
+                    responses: {
+                        '200': {
+                            description: 'Current legal and optional consent state for the authenticated user.',
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/UserConsentState' } } },
+                        },
+                    },
+                },
+                patch: {
+                    operationId: 'updateMyConsents',
+                    requestBody: {
+                        required: true,
+                        content: { 'application/json': { schema: { $ref: '#/components/schemas/OptionalConsentUpdate' } } },
+                    },
+                    responses: {
+                        '200': {
+                            description: 'Updated optional consent state for the authenticated user.',
+                            content: { 'application/json': { schema: { $ref: '#/components/schemas/UserConsentState' } } },
+                        },
+                    },
+                },
+            },
             '/admin/outbox/health': {
                 get: {
                     operationId: 'getAdminOutboxHealth',
@@ -1315,7 +1339,7 @@ export function getOpenApiDocument() {
                 },
                 UserDataExport: {
                     type: 'object',
-                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets', 'vehicles'],
+                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets', 'vehicles', 'consents'],
                     properties: {
                         schemaVersion: { type: 'integer', enum: [1] },
                         generatedAt: { type: 'string', format: 'date-time' },
@@ -1328,7 +1352,7 @@ export function getOpenApiDocument() {
                         },
                         truncated: {
                             type: 'object',
-                            required: ['favorites', 'bookings', 'notifications', 'cabinets', 'vehicles'],
+                            required: ['favorites', 'bookings', 'notifications', 'cabinets', 'vehicles', 'consents'],
                             properties: {
                                 favorites: { type: 'boolean' },
                                 bookings: { type: 'boolean' },
@@ -1336,6 +1360,7 @@ export function getOpenApiDocument() {
                                 cabinets: { type: 'boolean' },
                                 vehicles: { type: 'boolean' },
                                 appeals: { type: 'boolean' },
+                                consents: { type: 'boolean' },
                             },
                         },
                         user: { $ref: '#/components/schemas/PublicUser' },
@@ -1345,6 +1370,49 @@ export function getOpenApiDocument() {
                         cabinets: { type: 'array', items: { type: 'object' } },
                         vehicles: { type: 'array', items: { $ref: '#/components/schemas/ClientVehicle' } },
                         appeals: { type: 'array', items: { type: 'object' } },
+                        consents: { type: 'array', items: { type: 'object' } },
+                    },
+                },
+                UserConsentState: {
+                    type: 'object',
+                    required: ['versions', 'consents'],
+                    properties: {
+                        versions: {
+                            type: 'object',
+                            required: ['terms', 'privacy'],
+                            properties: {
+                                terms: { type: 'string', minLength: 1, maxLength: 80 },
+                                privacy: { type: 'string', minLength: 1, maxLength: 80 },
+                            },
+                        },
+                        consents: {
+                            type: 'object',
+                            required: ['terms', 'privacy', 'analytics', 'marketing'],
+                            properties: {
+                                terms: { $ref: '#/components/schemas/ConsentStatus' },
+                                privacy: { $ref: '#/components/schemas/ConsentStatus' },
+                                analytics: { $ref: '#/components/schemas/ConsentStatus' },
+                                marketing: { $ref: '#/components/schemas/ConsentStatus' },
+                            },
+                        },
+                    },
+                },
+                ConsentStatus: {
+                    type: 'object',
+                    required: ['granted', 'version', 'recordedAt'],
+                    properties: {
+                        granted: { type: 'boolean' },
+                        version: { type: ['string', 'null'] },
+                        recordedAt: { type: ['string', 'null'], format: 'date-time' },
+                    },
+                },
+                OptionalConsentUpdate: {
+                    type: 'object',
+                    minProperties: 1,
+                    additionalProperties: false,
+                    properties: {
+                        analytics: { type: 'boolean' },
+                        marketing: { type: 'boolean' },
                     },
                 },
                 PublicUser: {

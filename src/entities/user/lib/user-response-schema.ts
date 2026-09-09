@@ -72,8 +72,28 @@ const userDataExportSchema = z.object({
     vehicles: z.array(z.object({})).default([]),
 }).passthrough()
 
+const consentStateSchema = z.object({
+    granted: z.boolean(),
+    version: z.string().nullable(),
+    recordedAt: z.string().datetime({ offset: true }).nullable(),
+})
+
+export const userConsentStateSchema = z.object({
+    versions: z.object({
+        terms: z.string(),
+        privacy: z.string(),
+    }),
+    consents: z.object({
+        terms: consentStateSchema,
+        privacy: consentStateSchema,
+        analytics: consentStateSchema,
+        marketing: consentStateSchema,
+    }),
+})
+
 export type AccountDeletionRequest = z.infer<typeof accountDeletionRequestSchema>
 export type UserDataExport = z.infer<typeof userDataExportSchema>
+export type UserConsentState = z.infer<typeof userConsentStateSchema>
 
 export function normalizeUserResponse(value: unknown): User {
     return userSchema.parse(value)
@@ -117,6 +137,10 @@ export function normalizeAccountDeletionRequest(value: unknown) {
 
 export function normalizeUserDataExport(value: unknown) {
     return userDataExportSchema.parse(value)
+}
+
+export function normalizeUserConsentState(value: unknown): UserConsentState {
+    return userConsentStateSchema.parse(value)
 }
 
 export const clientVehicleSchema = z.object({

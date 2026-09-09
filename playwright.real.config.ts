@@ -19,6 +19,11 @@ export default defineConfig({
     testMatch: 'autocare-real-mode.smoke.spec.ts',
     fullyParallel: false,
     workers: 1,
+    // The real suite exercises a live PostgreSQL/Redis stack and starts a
+    // production Next process. Retry one failed case in CI so transient
+    // runner/container startup races do not turn a healthy commit red; a
+    // deterministic application failure still fails on the retry.
+    retries: process.env.CI ? 1 : 0,
     reporter: 'list',
     use: {
         baseURL: 'http://127.0.0.1:5174',

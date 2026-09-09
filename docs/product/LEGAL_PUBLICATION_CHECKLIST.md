@@ -33,3 +33,30 @@ The draft banner can be removed only after every applicable packet is signed
 off by the owner and counsel. Until then, no page may imply that AutoCare Hub
 collects repair payments, guarantees a provider's workmanship, or has a final
 legal controller designation.
+
+## Implemented in the application
+
+- [x] Registration requires acceptance of the user agreement and acknowledgement
+  of the privacy policy on both the client and server.
+- [x] Consent records keep the document version, action, source, timestamp and
+  keyed network/browser evidence without storing the raw IP or user-agent.
+- [x] Service requests require a separate processing confirmation covering
+  contact details, vehicle data and uploaded photos; the record is linked to the
+  request identifier.
+- [x] Optional analytics and marketing consents can be granted or revoked from
+  the profile and are included in the personal-data export.
+- [x] Current provider visibility counters are explicitly documented as daily,
+  aggregated operational metrics without account or device identifiers; the
+  optional analytics switch is reserved for future optional telemetry.
+- [x] OAuth account creation requires the same legal confirmations through a
+  short-lived server-side consent request.
+
+## Owner-only actions before production
+
+- [ ] Replace draft versions with counsel-approved versions and set
+  `LEGAL_DOCUMENT_STATUS=final` only after approval.
+- [ ] Fill the operator/controller identity, address, privacy contact, hosting
+  locations, subprocessors and retention schedule.
+- [ ] Submit the applicable regulator notices and keep the external references
+  in the deployment records. The repository intentionally does not perform or
+  claim those filings.

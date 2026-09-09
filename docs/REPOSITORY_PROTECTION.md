@@ -9,6 +9,10 @@ These settings must be applied by a repository administrator in GitHub because
 branch protection is remote repository state and cannot be encoded by a local
 Git commit alone:
 
+- under **Settings → Actions → General → Workflow permissions**, enable
+  **Allow GitHub Actions to create and approve pull requests** so the protected
+  promotion workflow can open the dev → main PR; this does not bypass the
+  required human approval on `main`;
 - require a pull request before merging;
 - require at least one approving review from a code owner;
 - dismiss stale approvals after new commits;
@@ -22,11 +26,10 @@ Git commit alone:
 The checked-in `.github/workflows/promote-dev-to-main.yml` starts on a push to
 `dev`, waits for a successful `Quality` run for that exact commit, creates or
 reuses the `dev` → `main` pull request, waits for the pull-request checks, and
-enables GitHub auto-merge. If the repository setting disallows the workflow
-token from creating pull requests, the workflow uses a guarded fast-forward
-fallback only after the same exact-SHA CI gate succeeds and only when `main`
-has not diverged. A failed check leaves promotion incomplete; fix the source
-branch and push a new commit to run the gates again.
+enables GitHub auto-merge. The workflow fails closed if the repository setting
+disallows the workflow token from creating pull requests; it never attempts to
+bypass protected `main` with a direct push. A failed check leaves promotion
+incomplete; fix the source branch and push a new commit to run the gates again.
 
 The checked-in `.github/CODEOWNERS`, `Quality` workflow, aggregate
 `Application CI` job, and promotion workflow provide the review, status-check,
@@ -43,7 +46,7 @@ branch-protection toggle.
    complete CI gate and any configured code-owner approval pass.
 
 Human direct pushes to `main` are prohibited by policy even when a local Git
-client would technically allow them. Only the checked-in promotion workflow
-may use its guarded fast-forward fallback, and only after the full CI gate.
+client would technically allow them. The checked-in promotion workflow uses
+only the protected `dev` → `main` pull request path after the full CI gate.
 If the CI workflow fails, do not bypass it: diagnose the failing gate, fix it
 on `dev`, and push again.

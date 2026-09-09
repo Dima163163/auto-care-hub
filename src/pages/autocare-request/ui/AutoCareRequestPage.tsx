@@ -60,6 +60,7 @@ export function AutoCareRequestPage() {
     }
 
     const handleSubmit = async (payload: RequestFormPayload) => {
+        if (!payload.dataProcessingConsent) return false
         if (!user?.emailVerifiedAt) {
             navigate('/verify-email', { state: { from: location } })
             return false
@@ -79,6 +80,7 @@ export function AutoCareRequestPage() {
                 vehicleSnapshot: payload.vehicleSnapshot,
                 contactSnapshot: payload.contactSnapshot,
                 note: payload.note,
+                dataProcessingConsent: true,
                 idempotencyKey: requestKey,
             }).unwrap()
             if (latestContextKeyRef.current !== requestContextKey) return false

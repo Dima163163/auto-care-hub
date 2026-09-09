@@ -19,6 +19,7 @@ import { AutoCareServiceQuoteEntity } from '../../entities/index.js'
 import { toPublicUser } from '../auth/public-user.js'
 import { sanitizeExportMetadata } from './data-export-privacy.js'
 import { getDataExportIntegrityChecksum } from './data-export-integrity.js'
+import { UserConsentEntity } from '../../entities/user-consent/user-consent.entity.js'
 
 export const MAX_EXPORT_RECORDS = 5_000
 
@@ -38,6 +39,7 @@ export type UserDataExportCollections = {
     fleets: AutoCareFleetAccountEntity[]
     quotes?: AutoCareServiceQuoteEntity[]
     appeals?: AutoCareAppealEntity[]
+    consents?: UserConsentEntity[]
 }
 
 function serializeDate(value: Date | null | undefined) {
@@ -65,6 +67,7 @@ export function serializeUserDataExport(
         fleets,
         quotes = [],
         appeals = [],
+        consents = [],
     } = collections
 
     const exportPayload = {
@@ -89,12 +92,22 @@ export function serializeUserDataExport(
             fleets: fleets.length > MAX_EXPORT_RECORDS,
             quotes: quotes.length > MAX_EXPORT_RECORDS,
             appeals: appeals.length > MAX_EXPORT_RECORDS,
+            consents: consents.length > MAX_EXPORT_RECORDS,
         },
         user: {
             ...toPublicUser(user),
             emailVerifiedAt: serializeDate(user.emailVerifiedAt),
             createdAt: serializeDate(user.createdAt),
         },
+        consents: consents.slice(0, MAX_EXPORT_RECORDS).map((consent) => ({
+            id: consent.id,
+            consentType: consent.consentType,
+            action: consent.action,
+            documentVersion: consent.documentVersion,
+            source: consent.source,
+            resourceId: consent.resourceId,
+            createdAt: serializeDate(consent.createdAt),
+        })),
         favorites: favorites.slice(0, MAX_EXPORT_RECORDS).map((favorite) => ({
             id: favorite.id,
             cabinetId: favorite.cabinetId,

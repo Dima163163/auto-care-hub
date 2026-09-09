@@ -15,7 +15,7 @@ export function RegisterPage() {
         navigate,
         formError,
         isLoading,
-        form: { register, formState: { errors, isSubmitting } },
+        form: { register, watch, formState: { errors, isSubmitting } },
         onSubmit
     } = useRegister()
     const formErrorRef = useRef<HTMLParagraphElement>(null)
@@ -148,6 +148,22 @@ export function RegisterPage() {
                             </div>
                         </div>
 
+                        <div className="grid gap-3 rounded-[var(--radius-card)] border border-border bg-background p-4 text-sm">
+                            <label className="flex items-start gap-3 text-muted-foreground">
+                                <input type="checkbox" className="mt-1 size-4 shrink-0 accent-primary" {...register('termsAccepted')} />
+                                <span>
+                                    {t('auth.termsConsentPrefix')} <Link className="font-bold text-primary hover:underline" to={ROUTES.agreement} target="_blank" rel="noreferrer">{t('info.legal.agreement.shortTitle')}</Link>.
+                                </span>
+                            </label>
+                            {errors.termsAccepted && <p role="alert" className="text-sm text-destructive">{errors.termsAccepted.message}</p>}
+                            <label className="flex items-start gap-3 text-muted-foreground">
+                                <input type="checkbox" className="mt-1 size-4 shrink-0 accent-primary" {...register('privacyAccepted')} />
+                                <span>
+                                    {t('auth.privacyConsentPrefix')} <Link className="font-bold text-primary hover:underline" to={ROUTES.privacy} target="_blank" rel="noreferrer">{t('info.legal.privacy.shortTitle')}</Link>.
+                                </span>
+                            </label>
+                            {errors.privacyAccepted && <p role="alert" className="text-sm text-destructive">{errors.privacyAccepted.message}</p>}
+                        </div>
                     </div>
 
                     <Button
@@ -168,6 +184,8 @@ export function RegisterPage() {
                     <div className="mt-6">
                         <SocialAuthButtons
                             onSuccess={(path) => navigate(path, { replace: true })}
+                            requireLegalConsent
+                            legalConsentAccepted={watch('termsAccepted') && watch('privacyAccepted')}
                         />
                     </div>
 

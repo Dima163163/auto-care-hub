@@ -543,6 +543,11 @@ export type CreateAutoCareServiceRequestInput = {
     vehicleSnapshot?: AutoCareRequestSnapshot | null
     contactSnapshot: AutoCareRequestSnapshot
     note?: string | null
+    dataProcessingConsent?: boolean
+    consentEvidence?: {
+        ipAddress?: string | null
+        userAgent?: string | null
+    }
     idempotencyKey?: string
 }
 

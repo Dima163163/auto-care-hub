@@ -50,6 +50,7 @@ export type RequestFormPayload = {
     contactSnapshot: { name: string; email: string; phone: string }
     note: string | null
     files: File[]
+    dataProcessingConsent: boolean
 }
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
@@ -70,6 +71,7 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
     const [files, setFiles] = useState<File[]>([])
     const [attachmentIssue, setAttachmentIssue] = useState<{ invalidCount: number; tooManyCount: number } | null>(null)
     const [note, setNote] = useState('')
+    const [dataProcessingConsent, setDataProcessingConsent] = useState(false)
     const draftValues = useMemo<RequestDraft>(() => ({ selectedDate, customDate, selectedTime }), [customDate, selectedDate, selectedTime])
     const { clearDraft } = useFormDraft({ storageKey: draftKey, values: draftValues, enabled: Boolean(draftKey), parse: parseRequestDraft })
     const availabilityDate = customDate || getRequestDateInputValue(Math.max(appointmentDates.indexOf(selectedDate), 0), serviceTimezone)
@@ -100,6 +102,7 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
             contactSnapshot,
             note: note.trim() || null,
             files,
+            dataProcessingConsent,
         })
         if (result !== false) clearDraft()
     }
@@ -110,6 +113,7 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} vehicle={vehicleSnapshot} onVehicleChange={setVehicleSnapshot} />
             <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} attachmentIssue={attachmentIssue} onAttachmentIssueChange={setAttachmentIssue} />
             <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
+            <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required checked={dataProcessingConsent} onChange={(event) => setDataProcessingConsent(event.target.checked)} className="mt-0.5 size-4 accent-primary" />{t('autocare.requestDataProcessingConsent')} <a className="font-bold text-primary hover:underline" href="/privacy" target="_blank" rel="noreferrer">{t('info.legal.privacy.shortTitle')}</a></label>
             {errorMessage && <p role="alert" className="rounded-[var(--radius-control)] bg-status-danger-surface px-3 py-2 text-sm font-semibold text-status-danger-foreground">{errorMessage}</p>}
             <button type="submit" disabled={isSubmitting || isAvailabilityLoading || !effectiveSelectedTime} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : errorMessage ? t('common.retry') : t('autocare.requestSubmit')}</button>
             {isAvailabilityError ? <p role="alert" className="text-xs font-semibold text-status-danger-foreground">{t('autocare.requestAvailabilityError')}</p> : null}

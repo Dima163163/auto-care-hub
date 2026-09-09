@@ -20,7 +20,7 @@ export function validateCiCdPolicy({ quality, promotion, protection, readme }) {
         ['Promotion waits for the completed Quality workflow', /push:[\t ]*\n[\t ]+branches:[\t ]*\n[\t ]+- dev/.test(promotion) && /actions\/workflows\/quality\.yml\/runs/.test(promotion) && /status.*completed/.test(promotion)],
         ['Promotion is limited to the trusted dev branch', /branches:[\t ]*\n[\t ]+- dev/.test(promotion) && /branch=dev/.test(promotion) && /head_sha/.test(promotion)],
         ['Promotion requires successful CI', /conclusion.*success/.test(promotion) && /gh pr checks/.test(promotion)],
-        ['Promotion targets main through guarded PR or fast-forward', /--base main/.test(promotion) && /--head dev/.test(promotion) && /gh pr merge/.test(promotion) && /refs\/heads\/main/.test(promotion) && /git merge-base/.test(promotion)],
+        ['Promotion targets main through a protected pull request', /--base main/.test(promotion) && /--head dev/.test(promotion) && /gh pr merge/.test(promotion) && /pull request/.test(promotion) && !/mode=direct/.test(promotion)],
         ['Repository protection names the aggregate required check', /Quality \/ Application CI/.test(protection)],
         ['Repository documentation describes automated promotion', /automated promotion|auto.?merge|automatic promotion/i.test(protection) && /dev.*main|main.*dev/i.test(readme)],
     ]
