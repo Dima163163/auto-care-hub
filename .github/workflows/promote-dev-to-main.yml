@@ -76,6 +76,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          promotion_title="chore(release): promote verified dev to main"
+          promotion_body="Automated promotion. The source commit passed the complete Quality workflow, including Application CI, before this pull request was created."
           pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head dev --state open --json number --jq '.[0].number')"
           if [ -n "$pr_number" ]; then
             echo "mode=pull-request" >> "$GITHUB_OUTPUT"
@@ -88,8 +90,8 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --base main \
             --head dev \
-            --title "chore(release): promote verified dev to main" \
-            --body "Automated promotion. The source commit passed the complete Quality workflow, including Application CI, before this pull request was created." 2>&1)"; then
+            --title "$promotion_title" \
+            --body "$promotion_body" 2>&1)"; then
             pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head dev --state open --json number --jq '.[0].number')"
             test -n "$pr_number"
             echo "mode=pull-request" >> "$GITHUB_OUTPUT"
@@ -98,28 +100,28 @@ jobs:
             exit 0
           fi
 
-          printf '%s\n' "$create_output"
-          {
-            echo "### Promotion fallback"
-            echo "GitHub did not allow the workflow token to create the promotion PR."
-            echo "The verified SHA will use the guarded fast-forward path instead."
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "mode=direct" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$create_output" >&2
+          if api_output="$(gh api --method POST "repos/$GITHUB_REPOSITORY/pulls" \
+            -f title="$promotion_title" \
+            -f head="dev" \
+            -f base="main" \
+            -f body="$promotion_body" 2>&1)"; then
+            pr_number="$(printf '%s' "$api_output" | jq -r '.number // empty')"
+            test -n "$pr_number"
+            echo "mode=pull-request" >> "$GITHUB_OUTPUT"
+            echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+            echo "Created promotion PR #$pr_number through the REST API."
+            exit 0
+          fi
 
-      - name: Fast-forward main after verified application CI
-        if: ${{ steps.promotion-pr.outputs.mode == 'direct' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SOURCE_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          git fetch origin main dev --quiet
-          main_sha="$(git rev-parse origin/main)"
-          remote_dev_sha="$(git rev-parse origin/dev)"
-          test "$remote_dev_sha" = "$SOURCE_SHA"
-          test "$(git merge-base "$main_sha" "$SOURCE_SHA")" = "$main_sha"
-          git push origin "$SOURCE_SHA:refs/heads/main"
-          echo "Fast-forwarded main to the exact Quality-tested SHA $SOURCE_SHA."
+          printf '%s\n' "$api_output" >&2
+          {
+            echo "### Promotion blocked"
+            echo "Quality passed, but the workflow token could not create the dev to main pull request."
+            echo "Enable GitHub Actions pull-request creation for this repository or create the promotion PR manually."
+            echo "A direct push is intentionally not attempted because main is protected."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
 
       - name: Wait for pull-request CI to pass
         if: ${{ steps.promotion-pr.outputs.mode == 'pull-request' }}
