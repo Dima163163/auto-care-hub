@@ -68,7 +68,25 @@ jobs:
         working-directory: server
 
       - name: Audit backend production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high --json > /tmp/backend-npm-audit.json
+          audit_status=$?
+          if [ "$audit_status" -ne 0 ]; then
+            node <<'NODE'
+          const fs = require('node:fs');
+          const audit = JSON.parse(fs.readFileSync('/tmp/backend-npm-audit.json', 'utf8'));
+          for (const [name, item] of Object.entries(audit.vulnerabilities ?? {})) {
+            const via = (item.via ?? []).map((entry) => {
+              if (typeof entry === 'string') return entry;
+              return `${entry.title ?? 'advisory'} (${entry.range ?? 'unknown range'})`;
+            }).join('; ');
+            const nodes = (item.nodes ?? []).join(', ');
+            console.log(`::error file=server/package-lock.json,line=1,title=npm audit: ${name}::severity=${item.severity}; range=${item.range}; nodes=${nodes}; via=${via}`);
+          }
+          NODE
+          fi
+          exit "$audit_status"
         working-directory: server
 
       - name: Scan repository for secrets
