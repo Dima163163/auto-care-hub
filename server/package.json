@@ -61,13 +61,13 @@
     "@fastify/websocket": "^11.3.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "fastify": "^5.12.1",
+    "fastify": "5.12.2",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.5",
     "pg": "^8.21.0",
     "reflect-metadata": "^0.2.2",
-    "sharp": "^0.35.3",
+    "sharp": "0.35.4",
     "typeorm": "^0.3.31",
     "ws": "^8.21.3",
     "zod": "^4.4.3"
@@ -93,7 +93,7 @@
   },
   "overrides": {
     "brace-expansion": "2.1.4",
-    "fast-uri": "3.1.6",
+    "fast-uri": "3.1.7",
     "find-my-way": "9.9.0"
   }
 }
