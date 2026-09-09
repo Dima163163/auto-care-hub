@@ -86,7 +86,7 @@
     "fastify-tsconfig": "^3.0.0",
     "supertest": "^7.2.2",
     "tsx": "^4.22.1",
-    "typescript": "^6.0.3",
+    "typescript": "5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.8",
     "vitest-tsconfig-paths": "^3.4.1"
