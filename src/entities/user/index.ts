@@ -7,6 +7,8 @@ export {
     useUpdateAdminUserRoleMutation,
     useCreateAdminUserMutation,
     useUpdateUserPreferencesMutation,
+    useGetMyConsentsQuery,
+    useUpdateMyConsentsMutation,
     useGetMyVehiclesQuery,
     useCreateMyVehicleMutation,
     useUpdateMyVehicleMutation,
@@ -33,5 +35,6 @@ export type {
 
 export type {
     AccountDeletionRequest,
+    UserConsentState,
     UserDataExport,
 } from './lib/user-response-schema'

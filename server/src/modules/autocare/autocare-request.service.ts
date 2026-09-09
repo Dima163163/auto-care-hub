@@ -68,6 +68,15 @@ import { normalizeAutoCareQuoteDecisionInput, normalizeAutoCareServiceQuoteInput
 import { normalizeAutoCareRequestTransitionReason, normalizeAutoCareRescheduleInput, normalizeAutoCareRescheduleReason } from './reschedule-input-policy.js'
 import { normalizeAutoCareRequestUuid, normalizeAutoCareServiceRequestInput } from './request-input-policy.js'
 import { normalizeAutoCareAvailabilityDate, normalizeAutoCareAvailabilityUuid } from './availability-input-policy.js'
+import {
+    LEGAL_DOCUMENT_VERSIONS,
+    recordConsentWithManager,
+} from '../users/user-consent.service.js'
+import {
+    UserConsentAction,
+    UserConsentSource,
+    UserConsentType,
+} from '../../entities/user-consent/user-consent.entity.js'
 import { normalizeAutoCareRepairEventInput } from './repair-event-input-policy.js'
 
 function clientOnly(user: UserEntity) {
@@ -1084,6 +1093,18 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
                 notes: createdRequest.note,
                 metadata: { providerId: provider.id, serviceSlug: definition.slug },
             })
+            if (input.dataProcessingConsent === true) {
+                await recordConsentWithManager(manager, {
+                    userId: user.id,
+                    consentType: UserConsentType.ServiceRequest,
+                    action: UserConsentAction.Granted,
+                    documentVersion: LEGAL_DOCUMENT_VERSIONS.privacy,
+                    source: UserConsentSource.ServiceRequest,
+                    resourceId: createdRequest.id,
+                    ipAddress: input.consentEvidence?.ipAddress,
+                    userAgent: input.consentEvidence?.userAgent,
+                })
+            }
             await ensureAutoCareRequestChatThread(createdRequest, manager)
             if (provider.ownerId) {
                 await notifyAutoCareParticipant({

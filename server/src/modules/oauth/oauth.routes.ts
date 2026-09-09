@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify'
+import { IsNull } from 'typeorm'
 
 import { env } from '../../config/env.js'
 import { AppDataSource } from '../../database/data-source.js'
@@ -10,6 +11,7 @@ import {
     OAuthLinkRequestEntity,
     OAuthLinkRequestPurpose,
 } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
+import { OAuthConsentRequestEntity } from '../../entities/oauth-consent-request/oauth-consent-request.entity.js'
 import { OAUTH_PROVIDERS } from './oauth.types.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
@@ -27,6 +29,7 @@ import {
 } from '../../shared/validation/validate.js'
 import {
     oauthCallbackQuerySchema,
+    oauthAuthorizationQuerySchema,
     oauthProviderParamsSchema,
 } from './oauth.schemas.js'
 import {
@@ -37,6 +40,11 @@ import {
     setOAuthStateCookie,
 } from './oauth-state.js'
 import { buildOAuthAuthorizationUrl } from './oauth-url.js'
+import {
+    LEGAL_DOCUMENT_VERSIONS,
+    getConsentEvidence,
+    hashConsentEvidence,
+} from '../users/user-consent.service.js'
 import {
     processOAuthCallback,
     processOAuthLinkCallback,
@@ -255,7 +263,24 @@ export async function oauthRoutes(app: FastifyInstance) {
                 request.params
             )
             assertDeploymentOAuthProviderAllowed(params.provider)
+            const consentQuery = validateQuery(oauthAuthorizationQuerySchema, request.query)
             const state = generateOAuthState()
+            const evidence = getConsentEvidence(request)
+
+            if (consentQuery.termsAccepted === 'true' && consentQuery.privacyAccepted === 'true') {
+                await AppDataSource.getRepository(OAuthConsentRequestEntity).save(
+                    AppDataSource.getRepository(OAuthConsentRequestEntity).create({
+                        stateHash: hashOAuthState(state),
+                        provider: params.provider === 'google' ? OAuthIdentityProvider.Google : OAuthIdentityProvider.Yandex,
+                        termsVersion: LEGAL_DOCUMENT_VERSIONS.terms,
+                        privacyVersion: LEGAL_DOCUMENT_VERSIONS.privacy,
+                        ipAddressHash: hashConsentEvidence(evidence.ipAddress),
+                        userAgentHash: hashConsentEvidence(evidence.userAgent),
+                        expiresAt: new Date(Date.now() + OAUTH_LINK_TTL_MS),
+                        consumedAt: null,
+                    }),
+                )
+            }
             const authUrl = buildOAuthAuthorizationUrl(params.provider, state)
 
             setOAuthStateCookie(reply, params.provider, state)
@@ -310,6 +335,15 @@ export async function oauthRoutes(app: FastifyInstance) {
         const linkRequest = query.state
             ? await AppDataSource.getRepository(OAuthLinkRequestEntity).findOne({
                 where: { stateHash: hashOAuthState(query.state) },
+            })
+            : null
+        const consentRequest = query.state
+            ? await AppDataSource.getRepository(OAuthConsentRequestEntity).findOne({
+                where: {
+                    stateHash: hashOAuthState(query.state),
+                    provider: params.provider === 'google' ? OAuthIdentityProvider.Google : OAuthIdentityProvider.Yandex,
+                    consumedAt: IsNull(),
+                },
             })
             : null
 
@@ -396,7 +430,19 @@ export async function oauthRoutes(app: FastifyInstance) {
             const result = await processOAuthCallback(params.provider, query.code, {
                 userAgent: request.headers['user-agent'],
                 ipAddress: request.ip,
+                consent: consentRequest
+                    ? {
+                        termsVersion: consentRequest.termsVersion,
+                        privacyVersion: consentRequest.privacyVersion,
+                    }
+                    : undefined,
             })
+
+            if (consentRequest) {
+                await AppDataSource.getRepository(OAuthConsentRequestEntity).update(consentRequest.id, {
+                    consumedAt: new Date(),
+                })
+            }
 
             setRefreshTokenCookie(reply, result.refreshToken)
 

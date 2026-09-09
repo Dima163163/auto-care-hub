@@ -6,6 +6,11 @@ export const oauthProviderParamsSchema = z.object({
     provider: z.enum(OAUTH_PROVIDERS),
 })
 
+export const oauthAuthorizationQuerySchema = z.object({
+    termsAccepted: z.enum(['true', 'false']).optional(),
+    privacyAccepted: z.enum(['true', 'false']).optional(),
+})
+
 export const oauthCallbackQuerySchema = z.object({
     code: z.string().max(2_048).optional(),
     state: z.string().max(512).optional(),

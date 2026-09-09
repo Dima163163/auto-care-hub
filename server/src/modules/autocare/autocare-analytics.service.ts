@@ -131,7 +131,9 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
             available: isProviderWide,
         },
         privacy: {
-            consentRequired: true,
+            // These counters are daily, provider-level aggregates and do not
+            // store an account, device identifier or event-level history.
+            consentRequired: false,
             retentionDays: env.autoCareAnalyticsRetentionDays,
         },
     }

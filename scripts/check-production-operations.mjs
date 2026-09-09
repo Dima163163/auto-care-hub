@@ -117,6 +117,15 @@ function getRuntimeConfigurationChecks(environment) {
         ? check('Outbox secret', 'pass', 'OUTBOX_TOKEN_ENCRYPTION_KEY is configured without exposing its value')
         : check('Outbox secret', 'blocked', 'set a random OUTBOX_TOKEN_ENCRYPTION_KEY of at least 32 characters'))
 
+    const legalStatus = String(environment.LEGAL_DOCUMENT_STATUS ?? 'draft').trim().toLowerCase()
+    const legalIdentityNames = ['LEGAL_CONTROLLER_NAME', 'LEGAL_PRIVACY_CONTACT', 'LEGAL_CONTROLLER_ADDRESS']
+        .filter((name) => !hasConfiguredValue(environment[name]))
+    checks.push(legalStatus === 'final' && legalIdentityNames.length === 0
+        ? check('Legal publication gate', 'pass', 'final legal document status and controller contact fields are configured')
+        : check('Legal publication gate', 'blocked', legalStatus !== 'final'
+            ? 'LEGAL_DOCUMENT_STATUS must be final after owner and counsel approval; draft documents cannot be used for production launch'
+            : `missing or placeholder values: ${legalIdentityNames.join(', ')}`))
+
     return checks
 }
 

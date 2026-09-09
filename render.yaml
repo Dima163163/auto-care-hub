@@ -27,6 +27,14 @@ services:
         value: https://autocarehub.app,https://autocare-hub.vercel.app,https://autocare-hub-client.onrender.com
       - key: FRONTEND_ORIGIN
         value: https://autocarehub.app
+      - key: LEGAL_DOCUMENT_STATUS
+        sync: false
+      - key: LEGAL_CONTROLLER_NAME
+        sync: false
+      - key: LEGAL_CONTROLLER_ADDRESS
+        sync: false
+      - key: LEGAL_PRIVACY_CONTACT
+        sync: false
       - key: CABINET_UPLOADS_DIR
         sync: false
       - key: BOOTSTRAP_SUPER_ADMIN_EMAIL

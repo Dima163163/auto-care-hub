@@ -4,6 +4,7 @@ import { ServiceAttachmentEntity, ServiceAttachmentStatus } from '../../entities
 import { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { UserProvider, UserRole, UserStatus, UserEntity } from '../../entities/user/user.entity.js'
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
+import { UserConsentAction, UserConsentSource, UserConsentType, UserConsentEntity } from '../../entities/user-consent/user-consent.entity.js'
 import {
     MAX_EXPORT_RECORDS,
     serializeUserDataExport,
@@ -70,6 +71,7 @@ describe('serializeUserDataExport', () => {
             fleets: false,
             quotes: false,
             appeals: false,
+            consents: false,
         })
         expect(result.user).not.toHaveProperty('passwordHash')
     })
@@ -111,6 +113,50 @@ describe('serializeUserDataExport', () => {
         expect(JSON.stringify(result)).not.toContain(attachment.objectKey)
         expect(JSON.stringify(result)).not.toContain(attachment.checksum)
         expect(result.attachments[0]).toMatchObject({ id: attachment.id, contentType: 'image/png', bytes: 128 })
+    })
+
+    it('exports consent decisions without keyed evidence digests', () => {
+        const consent = {
+            id: '00000000-0000-0000-0000-000000000010',
+            userId: user.id,
+            consentType: UserConsentType.Privacy,
+            action: UserConsentAction.Granted,
+            documentVersion: 'draft-2026-08-13',
+            source: UserConsentSource.Registration,
+            resourceId: null,
+            ipAddressHash: 'a'.repeat(64),
+            userAgentHash: 'b'.repeat(64),
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        } as UserConsentEntity
+
+        const result = serializeUserDataExport(user, {
+            favorites: [],
+            bookings: [],
+            notifications: [],
+            cabinets: [],
+            vehicles: [],
+            serviceRequests: [],
+            broadcasts: [],
+            claims: [],
+            questions: [],
+            chats: [],
+            messages: [],
+            attachments: [],
+            fleets: [],
+            consents: [consent],
+        })
+
+        expect(result.consents).toEqual([{
+            id: consent.id,
+            consentType: UserConsentType.Privacy,
+            action: UserConsentAction.Granted,
+            documentVersion: 'draft-2026-08-13',
+            source: UserConsentSource.Registration,
+            resourceId: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        }])
+        expect(JSON.stringify(result)).not.toContain(consent.ipAddressHash)
+        expect(JSON.stringify(result)).not.toContain(consent.userAgentHash)
     })
 
     it('exports submitted appeals without moderator identity or private object keys', () => {

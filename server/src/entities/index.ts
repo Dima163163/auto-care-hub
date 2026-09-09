@@ -18,6 +18,7 @@ import { SystemIncidentEntity } from './system-incident/system-incident.entity.j
 import { FavoriteCabinetEntity } from './favorite-cabinet/favorite-cabinet.entity.js'
 import { OAuthIdentityEntity } from './oauth-identity/oauth-identity.entity.js'
 import { OAuthLinkRequestEntity } from './oauth-link-request/oauth-link-request.entity.js'
+import { OAuthConsentRequestEntity } from './oauth-consent-request/oauth-consent-request.entity.js'
 import { AccountDeletionRequestEntity } from './account-deletion-request/account-deletion-request.entity.js'
 import { SecurityEventEntity } from './security-event/security-event.entity.js'
 import { SecurityEventActionEntity } from './security-event/security-event-action.entity.js'
@@ -68,6 +69,7 @@ import {
     AutoCareTrustSnapshotEntity,
 } from './automotive/marketplace-enhancements.entity.js'
 import { AutoCareTrustPolicyEntity } from './automotive/trust-policy.entity.js'
+import { UserConsentEntity } from './user-consent/user-consent.entity.js'
 
 export const entities = [
     UserEntity,
@@ -90,6 +92,7 @@ export const entities = [
     FavoriteCabinetEntity,
     OAuthIdentityEntity,
     OAuthLinkRequestEntity,
+    OAuthConsentRequestEntity,
     AccountDeletionRequestEntity,
     SecurityEventEntity,
     SecurityEventActionEntity,
@@ -136,6 +139,7 @@ export const entities = [
     AutoCareFleetAccountEntity,
     AutoCareFleetVehicleEntity,
     AutoCareTrustPolicyEntity,
+    UserConsentEntity,
 ]
 
 export { BookingEntity } from './booking/booking.entity.js'
@@ -170,6 +174,12 @@ export { ReviewEntity } from './review/review.entity.js'
 export { SecurityTokenEntity } from './security-token/security-token.entity.js'
 export { ServiceEntity } from './service/service.entity.js'
 export { UserEntity } from './user/user.entity.js'
+export {
+    UserConsentAction,
+    UserConsentEntity,
+    UserConsentSource,
+    UserConsentType,
+} from './user-consent/user-consent.entity.js'
 export { ClientVehicleEntity } from './user/client-vehicle.entity.js'
 export { UserSessionEntity } from './user-session/user-session.entity.js'
 export { AuditLogEntity, AuditAction } from './audit-log/audit-log.entity.js'
@@ -195,6 +205,7 @@ export {
     OAuthLinkRequestEntity,
     OAuthLinkRequestPurpose,
 } from './oauth-link-request/oauth-link-request.entity.js'
+export { OAuthConsentRequestEntity } from './oauth-consent-request/oauth-consent-request.entity.js'
 export {
     AccountDeletionRequestEntity,
     AccountDeletionRequestStatus,

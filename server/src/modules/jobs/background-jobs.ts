@@ -93,6 +93,7 @@ export function startBackgroundJobs(logger: FastifyBaseLogger, mailer: Mailer) {
                 result.authCleanup.tokens > 0 ||
                 result.authCleanup.sessions > 0 ||
                 result.authCleanup.oauthLinkRequests > 0 ||
+                result.authCleanup.oauthConsentRequests > 0 ||
                 result.auditCleanup.auditLogs > 0 ||
                 result.auditCleanup.securityEvents > 0 ||
                 result.orphanImageCleanup.removed > 0 ||

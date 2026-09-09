@@ -49,6 +49,8 @@ type RegisterRequest = {
     email: string
     password: string
     role: 'client' | 'owner'
+    termsAccepted: true
+    privacyAccepted: true
 }
 
 type VerifyPasswordSetupTokenRequest = {
@@ -104,6 +106,8 @@ export type OAuthProvider = DeploymentOAuthProvider
 
 type OAuthUrlRequest = {
     provider: OAuthProvider
+    termsAccepted?: boolean
+    privacyAccepted?: boolean
 }
 
 export type OAuthUrlResponse = {
@@ -355,8 +359,8 @@ export const authApi = baseApi.injectEndpoints({
         }),
 
         getOAuthUrl: build.mutation<OAuthUrlResponse, OAuthUrlRequest>({
-            query: ({ provider }) => ({
-                url: `/auth/oauth/${provider}/url`,
+            query: ({ provider, termsAccepted, privacyAccepted }) => ({
+                url: `/auth/oauth/${provider}/url?termsAccepted=${termsAccepted === true ? 'true' : 'false'}&privacyAccepted=${privacyAccepted === true ? 'true' : 'false'}`,
                 method: 'GET',
             }),
             transformResponse: normalizeOAuthUrlResponse,

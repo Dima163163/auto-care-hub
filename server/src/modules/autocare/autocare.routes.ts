@@ -347,7 +347,14 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return result
     })
     app.post('/owner/autocare-providers', { preHandler: autoCareMutationRateLimit }, async (request) => createOwnerAutoCareProvider(await requireVerifiedEmail(request), validateBody(ownerAutoCareProviderSchema, request.body)))
-    app.post('/v1/service-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareServiceRequest(await requireVerifiedEmail(request), { ...validateBody(createAutoCareServiceRequestSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
+    app.post('/v1/service-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareServiceRequest(await requireVerifiedEmail(request), {
+        ...validateBody(createAutoCareServiceRequestSchema, request.body),
+        idempotencyKey: getOptionalIdempotencyKey(request.headers),
+        consentEvidence: {
+            ipAddress: request.ip,
+            userAgent: request.headers['user-agent'],
+        },
+    }))
     app.get('/v1/service-requests/my', async (request) => getMyAutoCareServiceRequests(await requireAuth(request)))
     app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/broadcast-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareBroadcastRequest(await requireVerifiedEmail(request), validateBody(createAutoCareBroadcastRequestSchema, request.body)))

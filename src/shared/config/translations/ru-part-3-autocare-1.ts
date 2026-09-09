@@ -578,7 +578,7 @@ export const ruPart3Autocare1 = {
         ownerAnalyticsImpressions: 'Показы',
         ownerAnalyticsProfileOpens: 'Открытия профиля',
         ownerAnalyticsPrivacyConsent: 'Аналитика собирается только с согласия клиента',
-        ownerAnalyticsPrivacyNoConsent: 'Аналитика работает без согласия',
+        ownerAnalyticsPrivacyNoConsent: 'Операционные показатели агрегируются и не требуют согласия',
         ownerAnalyticsRetention: 'Срок хранения',
         ownerAnalyticsDays: 'дн.',
         ownerBroadcastTitle: 'Запросы от клиентов',

@@ -22,6 +22,8 @@ function createRegisterSchema(t: I18nContextValue['t']) {
             .string()
             .min(1, t('auth.validation.confirmPasswordRequired')),
         role: z.enum(['client', 'owner']),
+        termsAccepted: z.literal(true, { error: t('auth.validation.termsRequired') }),
+        privacyAccepted: z.literal(true, { error: t('auth.validation.privacyRequired') }),
     }).refine((values) => values.password === values.confirmPassword, {
         message: t('auth.validation.passwordsMustMatch'),
         path: ['confirmPassword'],
@@ -44,7 +46,9 @@ export function useRegister() {
             email: '',
             password: '',
             confirmPassword: '',
-            role: 'client'
+            role: 'client',
+            termsAccepted: false,
+            privacyAccepted: false,
         }
     })
 
@@ -56,7 +60,9 @@ export function useRegister() {
                 name: values.name,
                 email: values.email,
                 password: values.password,
-                role: values.role
+                role: values.role,
+                termsAccepted: true,
+                privacyAccepted: true,
             }).unwrap()
 
             navigate(ROUTES.onboarding, {

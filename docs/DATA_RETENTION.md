@@ -64,6 +64,20 @@ with the customer's jurisdiction and privacy notices before production launch.
   recovery, idempotent retries and metadata/object reconciliation remain required
   release evidence under V2-SEC-14 in `operations/PILOT_SCOPE_FREEZE.md`.
 
+## Consent evidence
+
+- The `user_consent_records` ledger stores accepted/revoked document versions,
+  source, resource linkage and timestamp.
+- IP address and user-agent are stored only as keyed HMAC digests; raw values
+  are not copied into the consent ledger.
+- Registration records the terms and privacy versions. Service-request consent
+  is linked to the request identifier and covers contact data, vehicle data and
+  uploaded photos. Optional analytics and marketing permissions can be revoked
+  independently.
+- Consent records are included in the authenticated personal-data export. The
+  exact retention period must be approved in the jurisdiction-specific schedule
+  before production launch.
+
 ## Open work
 
 Authenticated account export and the audited deletion-request completion flow

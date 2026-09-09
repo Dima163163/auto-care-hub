@@ -1142,6 +1142,7 @@ export type CreateAutoCareServiceRequestInput = {
         phone: string
     }
     note?: string | null
+    dataProcessingConsent: true
     idempotencyKey?: string
 }
 

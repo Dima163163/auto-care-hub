@@ -34,7 +34,9 @@ describe('Auth Flow Integration', () => {
                 name: 'Test User',
                 email,
                 password: 'password123',
-                role: 'client'
+                role: 'client',
+                termsAccepted: true,
+                privacyAccepted: true,
             })
 
         expect(response.status).toBe(200)

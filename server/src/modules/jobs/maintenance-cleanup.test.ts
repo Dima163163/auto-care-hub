@@ -22,7 +22,7 @@ describe('summarizeMaintenanceCycle', () => {
         expect(summarizeMaintenanceCycle({
             remindersScheduled: 1,
             outbox: { claimed: 2, completed: 2, failed: 0, abandoned: 0, deadLetter: 0, secretsRedacted: 1 },
-            authCleanup: { tokens: 3, sessions: 4, oauthLinkRequests: 5, accountDeletionRequests: 6 },
+            authCleanup: { tokens: 3, sessions: 4, oauthLinkRequests: 5, oauthConsentRequests: 6, accountDeletionRequests: 7 },
             auditCleanup: { auditLogs: 5, securityEvents: 2 },
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
@@ -31,7 +31,7 @@ describe('summarizeMaintenanceCycle', () => {
         })).toEqual({
             remindersScheduled: 1,
             outbox: { claimed: 2, completed: 2, failed: 0, abandoned: 0, deadLetter: 0, secretsRedacted: 1 },
-            authCleanup: { tokens: 3, sessions: 4, oauthLinkRequests: 5, accountDeletionRequests: 6 },
+            authCleanup: { tokens: 3, sessions: 4, oauthLinkRequests: 5, oauthConsentRequests: 6, accountDeletionRequests: 7 },
             auditCleanup: { auditLogs: 5, securityEvents: 2 },
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },

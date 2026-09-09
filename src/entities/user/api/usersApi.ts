@@ -16,8 +16,9 @@ import {
     normalizeOwnerClientListResponse,
     normalizeUserResponse,
     normalizeUserDataExport,
+    normalizeUserConsentState,
 } from '../lib/user-response-schema'
-import type { AccountDeletionRequest, UserDataExport } from '../lib/user-response-schema'
+import type { AccountDeletionRequest, UserConsentState, UserDataExport } from '../lib/user-response-schema'
 
 type UpdateAdminUserStatusRequest = {
     id: string
@@ -211,6 +212,22 @@ export const usersApi = baseApi.injectEndpoints({
             ],
         }),
 
+        getMyConsents: build.query<UserConsentState, void>({
+            query: () => '/users/me/consents',
+            transformResponse: normalizeUserConsentState,
+            providesTags: [{ type: 'User', id: 'CONSENTS' }],
+        }),
+
+        updateMyConsents: build.mutation<UserConsentState, { analytics?: boolean; marketing?: boolean }>({
+            query: (body) => ({
+                url: '/users/me/consents',
+                method: 'PATCH',
+                body,
+            }),
+            transformResponse: normalizeUserConsentState,
+            invalidatesTags: [{ type: 'User', id: 'CONSENTS' }],
+        }),
+
         getMyVehicles: build.query<ClientVehicle[], void>({
             query: () => '/users/me/vehicles',
             transformResponse: normalizeClientVehicleListResponse,
@@ -277,6 +294,8 @@ export const {
     useUpdateAdminUserRoleMutation,
     useCreateAdminUserMutation,
     useUpdateUserPreferencesMutation,
+    useGetMyConsentsQuery,
+    useUpdateMyConsentsMutation,
     useGetMyVehiclesQuery,
     useCreateMyVehicleMutation,
     useUpdateMyVehicleMutation,

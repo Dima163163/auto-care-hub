@@ -6,6 +6,8 @@ export const registerSchema = z.object({
     email: z.string().trim().email('Enter a valid email.').max(320),
     password: passwordSchema,
     role: z.enum(['client', 'owner']),
+    termsAccepted: z.literal(true, { error: 'Terms acceptance is required.' }),
+    privacyAccepted: z.literal(true, { error: 'Privacy policy acceptance is required.' }),
 })
 
 export const loginSchema = z.object({

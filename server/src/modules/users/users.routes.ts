@@ -31,6 +31,11 @@ import {
     getAuthenticatedUserRateLimitIdentifier,
 } from '../../shared/security/rate-limit.js'
 import { SUPPORTED_LOCALES } from '../../config/i18n.js'
+import {
+    getUserConsentState,
+    setOptionalConsent,
+} from './user-consent.service.js'
+import { UserConsentType } from '../../entities/user-consent/user-consent.entity.js'
 
 type OwnerClientsResponse = OwnerClient[]
 type UpdatePreferencesResponse = PublicUser
@@ -66,6 +71,13 @@ const accountDeletionRateLimit = createRateLimitPreHandler({
 
 const accountDeletionRequestSchema = z.object({
     reason: z.string().trim().max(500).optional(),
+})
+
+const optionalConsentUpdateSchema = z.object({
+    analytics: z.boolean().optional(),
+    marketing: z.boolean().optional(),
+}).refine((value) => value.analytics !== undefined || value.marketing !== undefined, {
+    message: 'At least one optional consent must be provided.',
 })
 
 const clientVehicleInputSchema = z.object({
@@ -109,6 +121,25 @@ const syncFavoritesSchema = z.object({
 })
 
 export async function usersRoutes(app: FastifyInstance) {
+    app.get('/users/me/consents', async (request, reply) => {
+        const user = await requireAuth(request)
+        return reply.headers(getPrivateUserResponseHeaders()).send(await getUserConsentState(user.id))
+    })
+
+    app.patch('/users/me/consents', { preHandler: updatePreferencesRateLimit }, async (request, reply) => {
+        const user = await requireAuth(request)
+        const body = validateBody(optionalConsentUpdateSchema, request.body)
+
+        if (body.analytics !== undefined) {
+            await setOptionalConsent(user.id, UserConsentType.Analytics, body.analytics, request)
+        }
+        if (body.marketing !== undefined) {
+            await setOptionalConsent(user.id, UserConsentType.Marketing, body.marketing, request)
+        }
+
+        return reply.headers(getPrivateUserResponseHeaders()).send(await getUserConsentState(user.id))
+    })
+
     app.get('/users/me/export', { preHandler: dataExportRateLimit }, async (request, reply) => {
         const user = await requireAuth(request)
         const data = await getUserDataExport(user)

@@ -327,6 +327,7 @@ export const createAutoCareServiceRequestSchema = z.object({
     vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
     contactSnapshot: requestContactSnapshotSchema,
     note: z.string().trim().max(4_000).nullable().optional(),
+    dataProcessingConsent: z.literal(true, { error: 'Data processing consent is required.' }),
 })
 
 export const cancelAutoCareServiceRequestSchema = z.object({

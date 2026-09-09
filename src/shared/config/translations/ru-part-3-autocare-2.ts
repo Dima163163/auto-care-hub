@@ -228,6 +228,7 @@ export const ruPart3Autocare2 = {
         requestAttachmentInvalid: 'Пропущено файлов: {{count}}. Используйте изображения JPG, PNG или WebP размером до 10 МБ.',
         requestAttachmentLimit: 'Добавлены только первые {{count}} фото.',
         requestCustomerConfirmation: 'Я подтверждаю услугу, желаемое время и показанные условия.',
+        requestDataProcessingConsent: 'Я согласен на обработку контактных данных, данных автомобиля и отправленных фото для рассмотрения этой заявки.',
         requestProviderConfirmation: 'Сервис подтвердит время или отправит смету в переписке по услуге.',
         guaranteeClaimTitle: 'Гарантия AutoCare',
         guaranteeClaimDescription: 'Если работа не соответствует согласованной смете, опишите ситуацию — сервис и команда поддержки увидят обращение.',

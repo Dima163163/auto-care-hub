@@ -168,6 +168,9 @@ auth: {
         confirmPasswordPlaceholder: 'Повторите пароль',
         creatingAccount: 'Создание аккаунта',
         failedToCreateAccount: 'Не удалось создать аккаунт.',
+        legalConsentRequired: 'Перед регистрацией через провайдера примите соглашение и подтвердите ознакомление с политикой конфиденциальности.',
+        termsConsentPrefix: 'Я принимаю',
+        privacyConsentPrefix: 'Я подтверждаю ознакомление с',
         alreadyHaveAccount: 'Уже есть аккаунт',
         orContinueWith: 'Или продолжить через',
         continueWithGoogle: 'Продолжить с Google',
@@ -256,6 +259,8 @@ auth: {
             passwordMin: 'Пароль должен содержать минимум {{count}} символов.',
             confirmPasswordRequired: 'Подтвердите пароль.',
             passwordsMustMatch: 'Пароли должны совпадать',
+            termsRequired: 'Примите пользовательское соглашение.',
+            privacyRequired: 'Подтвердите ознакомление с политикой конфиденциальности.',
         },
     },
 

@@ -5,8 +5,10 @@ import { toast } from 'sonner'
 import {
     useCancelAccountDeletionMutation,
     useGetAccountDeletionRequestQuery,
+    useGetMyConsentsQuery,
     useLazyExportMyDataQuery,
     useRequestAccountDeletionMutation,
+    useUpdateMyConsentsMutation,
 } from '@/entities/user'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { formatDateTime } from '@/shared/lib/formatDateTime'
@@ -22,6 +24,8 @@ export function ProfilePrivacy() {
     const { data: deletionRequest, isLoading: isLoadingDeletion } = useGetAccountDeletionRequestQuery()
     const [requestDeletion, { isLoading: isRequestingDeletion }] = useRequestAccountDeletionMutation()
     const [cancelDeletion, { isLoading: isCancellingDeletion }] = useCancelAccountDeletionMutation()
+    const { data: consentState, isLoading: isLoadingConsents } = useGetMyConsentsQuery()
+    const [updateConsents, { isLoading: isUpdatingConsents }] = useUpdateMyConsentsMutation()
 
     const handleExport = async () => {
         try {
@@ -61,6 +65,14 @@ export function ProfilePrivacy() {
         }
     }
 
+    const handleConsentChange = async (type: 'analytics' | 'marketing', granted: boolean) => {
+        try {
+            await updateConsents({ [type]: granted }).unwrap()
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, t('profile.privacy.consentError')))
+        }
+    }
+
     return (
         <section data-testid="profile-privacy" className="rounded-xl border bg-card p-6 shadow-sm">
             <div className="flex items-start gap-3">
@@ -70,6 +82,39 @@ export function ProfilePrivacy() {
                 <div>
                     <h2 className="text-xl font-semibold tracking-tight">{t('profile.privacy.title')}</h2>
                     <p className="mt-2 text-sm text-muted-foreground">{t('profile.privacy.description')}</p>
+                </div>
+            </div>
+
+            <div className="mt-6 rounded-lg border bg-muted/20 p-4">
+                <h3 className="font-semibold">{t('profile.privacy.consentTitle')}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t('profile.privacy.consentDescription')}</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <label className="flex items-start gap-3 text-sm">
+                        <input
+                            type="checkbox"
+                            className="mt-1 size-4 shrink-0 accent-primary"
+                            checked={consentState?.consents.analytics.granted ?? false}
+                            disabled={isLoadingConsents || isUpdatingConsents}
+                            onChange={(event) => void handleConsentChange('analytics', event.target.checked)}
+                        />
+                        <span>
+                            <span className="block font-semibold">{t('profile.privacy.analyticsConsent')}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">{t('profile.privacy.analyticsConsentDescription')}</span>
+                        </span>
+                    </label>
+                    <label className="flex items-start gap-3 text-sm">
+                        <input
+                            type="checkbox"
+                            className="mt-1 size-4 shrink-0 accent-primary"
+                            checked={consentState?.consents.marketing.granted ?? false}
+                            disabled={isLoadingConsents || isUpdatingConsents}
+                            onChange={(event) => void handleConsentChange('marketing', event.target.checked)}
+                        />
+                        <span>
+                            <span className="block font-semibold">{t('profile.privacy.marketingConsent')}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">{t('profile.privacy.marketingConsentDescription')}</span>
+                        </span>
+                    </label>
                 </div>
             </div>
 

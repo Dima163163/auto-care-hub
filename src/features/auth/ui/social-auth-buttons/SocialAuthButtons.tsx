@@ -21,9 +21,11 @@ import {
 type SocialAuthButtonsProps = {
     onSuccess: (path: string) => void
     redirectPath?: string | null
+    requireLegalConsent?: boolean
+    legalConsentAccepted?: boolean
 }
 
-export const SocialAuthButtons = ({ onSuccess, redirectPath }: SocialAuthButtonsProps) => {
+export const SocialAuthButtons = ({ onSuccess, redirectPath, requireLegalConsent = false, legalConsentAccepted = true }: SocialAuthButtonsProps) => {
     const { t } = useTranslation()
     const { data: deploymentCapabilities, isLoading: isCapabilitiesLoading, isError: isCapabilitiesError } = useGetDeploymentCapabilitiesQuery()
     const [googleMockLogin, { isLoading: isGoogleLoading }] = useGoogleMockLoginMutation()
@@ -40,10 +42,14 @@ export const SocialAuthButtons = ({ onSuccess, redirectPath }: SocialAuthButtons
     const isYandexActionLoading = activeProvider === 'yandex' && (IS_REAL_API ? isUrlLoading : isYandexLoading)
 
     const handleGoogleLogin = async () => {
+        if (requireLegalConsent && !legalConsentAccepted) {
+            toast.error(t('auth.legalConsentRequired'))
+            return
+        }
         setActiveProvider('google')
         try {
             if (IS_REAL_API) {
-                const { authUrl } = await getOAuthUrl({ provider: 'google' }).unwrap()
+                const { authUrl } = await getOAuthUrl({ provider: 'google', termsAccepted: requireLegalConsent, privacyAccepted: requireLegalConsent }).unwrap()
                 window.location.href = authUrl
                 return
             }
@@ -65,10 +71,14 @@ export const SocialAuthButtons = ({ onSuccess, redirectPath }: SocialAuthButtons
     }
 
     const handleYandexLogin = async () => {
+        if (requireLegalConsent && !legalConsentAccepted) {
+            toast.error(t('auth.legalConsentRequired'))
+            return
+        }
         setActiveProvider('yandex')
         try {
             if (IS_REAL_API) {
-                const { authUrl } = await getOAuthUrl({ provider: 'yandex' }).unwrap()
+                const { authUrl } = await getOAuthUrl({ provider: 'yandex', termsAccepted: requireLegalConsent, privacyAccepted: requireLegalConsent }).unwrap()
                 window.location.href = authUrl
                 return
             }

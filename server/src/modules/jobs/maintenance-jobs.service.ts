@@ -16,6 +16,7 @@ import { AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { SecurityEventEntity } from '../../entities/security-event/security-event.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
 import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
+import { OAuthConsentRequestEntity } from '../../entities/oauth-consent-request/oauth-consent-request.entity.js'
 import {
     AccountDeletionRequestEntity,
     AccountDeletionRequestStatus,
@@ -82,6 +83,7 @@ export type MaintenanceCycleResult = {
         tokens: number
         sessions: number
         oauthLinkRequests: number
+        oauthConsentRequests: number
         accountDeletionRequests: number
     }
     auditCleanup: {
@@ -323,7 +325,7 @@ function formatAutoCareReminderVisit(
 export async function cleanupExpiredAuthData(now = new Date()) {
     metrics.setGauge('maintenance_cleanup_batch_size', env.authCleanupBatchSize, { resource: 'auth' })
 
-    const [tokens, expiredSessions, revokedSessions, oauthLinkRequests, accountDeletionRequests] = await Promise.all([
+    const [tokens, expiredSessions, revokedSessions, oauthLinkRequests, oauthConsentRequests, accountDeletionRequests] = await Promise.all([
         deleteExpiredEntityBatch(
             AppDataSource.getRepository(SecurityTokenEntity),
             now,
@@ -340,16 +342,23 @@ export async function cleanupExpiredAuthData(now = new Date()) {
             now,
             env.authCleanupBatchSize,
         ),
+        deleteExpiredEntityBatch(
+            AppDataSource.getRepository(OAuthConsentRequestEntity),
+            now,
+            env.authCleanupBatchSize,
+        ),
         deleteExpiredAccountDeletionRequestBatch(now, env.authCleanupBatchSize),
     ])
     const sessions = expiredSessions + revokedSessions
-    const result = { tokens, sessions, oauthLinkRequests, accountDeletionRequests }
+    const result = { tokens, sessions, oauthLinkRequests, oauthConsentRequests, accountDeletionRequests }
     metrics.setGauge('maintenance_cleanup_last_deleted', result.tokens, { resource: 'security_tokens' })
     metrics.setGauge('maintenance_cleanup_last_deleted', result.sessions, { resource: 'user_sessions' })
     metrics.increment('maintenance_cleanup_deleted_total', result.tokens, { resource: 'security_tokens' })
     metrics.increment('maintenance_cleanup_deleted_total', result.sessions, { resource: 'user_sessions' })
     metrics.setGauge('maintenance_cleanup_last_deleted', result.oauthLinkRequests, { resource: 'oauth_link_requests' })
     metrics.increment('maintenance_cleanup_deleted_total', result.oauthLinkRequests, { resource: 'oauth_link_requests' })
+    metrics.setGauge('maintenance_cleanup_last_deleted', result.oauthConsentRequests, { resource: 'oauth_consent_requests' })
+    metrics.increment('maintenance_cleanup_deleted_total', result.oauthConsentRequests, { resource: 'oauth_consent_requests' })
     metrics.setGauge('maintenance_cleanup_last_deleted', result.accountDeletionRequests, { resource: 'account_deletion_requests' })
     metrics.increment('maintenance_cleanup_deleted_total', result.accountDeletionRequests, { resource: 'account_deletion_requests' })
 
@@ -660,6 +669,7 @@ export async function runMaintenanceCycle(
             tokens: 0,
             sessions: 0,
             oauthLinkRequests: 0,
+            oauthConsentRequests: 0,
             accountDeletionRequests: 0,
         })
         const auditCleanup = await runPhase('audit_cleanup', () => cleanupExpiredAuditLogs(now), {
