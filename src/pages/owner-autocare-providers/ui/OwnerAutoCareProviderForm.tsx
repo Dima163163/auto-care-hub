@@ -32,7 +32,14 @@ import {
 import { validateOwnerProviderForm, type OwnerProviderFormValidationReason } from './owner-provider-form-validation'
 
 type OwnerAutoCareProviderFormProps = {
-    market: { id: string; cityName: string } | undefined
+    market?: {
+        id: string
+        countryCode?: string
+        countryName?: string
+        cityName: string
+        currencyCode?: string
+        timezone?: string
+    }
 }
 
 type ProviderMediaCacheEntry = {
@@ -77,8 +84,16 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
     const [uploadMedia, { isLoading: isMediaUploading }] = useUploadOwnerAutoCareProviderMediaMutation()
     const storageKey = `autocare-owner-provider:${market?.id ?? 'new'}`
     const initialDraft = useMemo(() => readFormDraft(storageKey, parseOwnerProviderDraft), [storageKey])
+    const defaultTextDraft = useMemo(() => ({
+        ...EMPTY_OWNER_PROVIDER_TEXT_DRAFT,
+        countryCode: market?.countryCode ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT.countryCode,
+        countryName: market?.countryName ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT.countryName,
+        cityName: market?.cityName ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT.cityName,
+        currencyCode: market?.currencyCode ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT.currencyCode,
+        timezone: market?.timezone ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT.timezone,
+    }), [market])
     const initialAmenities = initialDraft?.selectedAmenities.filter(isKnownAmenityId) ?? [...defaultAutomotiveAmenityIds]
-    const [textDraft, setTextDraft] = useState<OwnerProviderTextDraft>(() => initialDraft?.text ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT)
+    const [textDraft, setTextDraft] = useState<OwnerProviderTextDraft>(() => initialDraft ? { ...defaultTextDraft, ...initialDraft.text } : defaultTextDraft)
     const [isMultibrand, setIsMultibrand] = useState(() => initialDraft?.isMultibrand ?? true)
     const [chatEnabled, setChatEnabled] = useState(() => initialDraft?.communicationMode === 'phone_only' ? false : initialDraft?.chatEnabled ?? false)
     const [communicationMode, setCommunicationMode] = useState<'online' | 'request_then_confirm' | 'phone_only'>(() => initialDraft?.communicationMode ?? 'request_then_confirm')
@@ -127,7 +142,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
     const discardDraft = () => {
         clearDraft()
         formRef.current?.reset()
-        setTextDraft(EMPTY_OWNER_PROVIDER_TEXT_DRAFT)
+        setTextDraft(defaultTextDraft)
         setIsMultibrand(DEFAULT_OWNER_PROVIDER_DRAFT.isMultibrand)
         setChatEnabled(DEFAULT_OWNER_PROVIDER_DRAFT.chatEnabled)
         setCommunicationMode(DEFAULT_OWNER_PROVIDER_DRAFT.communicationMode)
@@ -186,11 +201,6 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
         event.preventDefault()
         setFormError(null)
         setMediaError(false)
-        if (!market) {
-            setFormError('market')
-            return
-        }
-
         const form = event.currentTarget
         const formData = new FormData(form)
         const optionalText = (value: FormDataEntryValue | null) => String(value ?? '').trim()
@@ -204,7 +214,11 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             expiresAt: String(formData.getAll('documentExpiresAt')[index] ?? ''),
         }))
         const validation = validateOwnerProviderForm({
-            marketId: market.id,
+            countryCode: String(formData.get('countryCode') ?? ''),
+            countryName: String(formData.get('countryName') ?? ''),
+            cityName: String(formData.get('cityName') ?? ''),
+            currencyCode: String(formData.get('currencyCode') ?? ''),
+            timezone: String(formData.get('timezone') ?? ''),
             name: String(formData.get('name') ?? ''),
             description: String(formData.get('description') ?? ''),
             address: String(formData.get('address') ?? ''),
@@ -276,7 +290,11 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             const body: CreateOwnerAutoCareProviderInput = {
                 name: validation.name,
                 description: validation.description,
-                marketId: validation.marketId,
+                countryCode: validation.countryCode,
+                countryName: validation.countryName,
+                cityName: validation.cityName,
+                currencyCode: validation.currencyCode,
+                timezone: validation.timezone,
                 address: validation.address,
                 hours: validation.hours,
                 yearsActive: validation.yearsActive,
@@ -310,7 +328,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             await createProvider(body).unwrap()
             form.reset()
             clearDraft()
-            setTextDraft(EMPTY_OWNER_PROVIDER_TEXT_DRAFT)
+            setTextDraft(defaultTextDraft)
             setIsMultibrand(true)
             setChatEnabled(false)
             setCommunicationMode('request_then_confirm')
@@ -342,13 +360,25 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             {formError ? <p id="owner-provider-form-error" role="alert" className="mb-4 rounded-[var(--radius-control)] border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{t('autocare.ownerProviderValidationError')}</p> : null}
             {mediaError ? <p id="owner-provider-media-error" role="alert" className="mb-4 rounded-[var(--radius-control)] border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{t('autocare.ownerProviderMediaUploadFailed')}</p> : null}
 
-            <fieldset disabled={isLoading || isLogoUploading || isMediaUploading || !market} className="space-y-6 disabled:cursor-not-allowed disabled:opacity-60">
+            <fieldset disabled={isLoading || isLogoUploading || isMediaUploading} className="space-y-6 disabled:cursor-not-allowed disabled:opacity-60">
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field label={t('autocare.ownerProviderNameLabel')}>
                         <input required minLength={2} maxLength={160} name="name" value={textDraft.name} onChange={(event) => updateText('name', event.target.value)} aria-invalid={formError === 'name'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder={t('autocare.ownerProviderNamePlaceholder')} />
                     </Field>
-                    <Field label={t('autocare.ownerProviderMarketLabel')}>
-                        <input readOnly value={market?.cityName ?? ''} className={inputClassName} placeholder={t('common.loading')} />
+                    <Field label={t('autocare.ownerProviderCountryCodeLabel')}>
+                        <input required minLength={2} maxLength={3} name="countryCode" value={textDraft.countryCode} onChange={(event) => updateText('countryCode', event.target.value.toUpperCase())} aria-invalid={formError === 'market'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder={t('autocare.ownerProviderCountryCodePlaceholder')} />
+                    </Field>
+                    <Field label={t('autocare.ownerProviderCountryNameLabel')}>
+                        <input required minLength={1} maxLength={160} name="countryName" value={textDraft.countryName} onChange={(event) => updateText('countryName', event.target.value)} aria-invalid={formError === 'market'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder={t('autocare.ownerProviderCountryNamePlaceholder')} />
+                    </Field>
+                    <Field label={t('autocare.ownerProviderCityLabel')}>
+                        <input required minLength={1} maxLength={160} name="cityName" value={textDraft.cityName} onChange={(event) => updateText('cityName', event.target.value)} aria-invalid={formError === 'market'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder={t('autocare.ownerProviderCityPlaceholder')} />
+                    </Field>
+                    <Field label={t('autocare.ownerProviderCurrencyLabel')}>
+                        <input maxLength={3} name="currencyCode" value={textDraft.currencyCode} onChange={(event) => updateText('currencyCode', event.target.value.toUpperCase())} aria-invalid={formError === 'market'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder="RUB" />
+                    </Field>
+                    <Field label={t('autocare.ownerProviderTimezoneLabel')}>
+                        <input maxLength={80} name="timezone" value={textDraft.timezone} onChange={(event) => updateText('timezone', event.target.value)} aria-invalid={formError === 'market'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder="Europe/Moscow" />
                     </Field>
                     <Field label={t('autocare.ownerProviderAddressLabel')}>
                         <input required minLength={2} maxLength={240} name="address" value={textDraft.address} onChange={(event) => updateText('address', event.target.value)} aria-invalid={formError === 'address'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder={t('autocare.ownerProviderAddressPlaceholder')} />
@@ -492,7 +522,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 </section>
 
                 <div className="flex justify-end border-t pt-5">
-                    <Button type="submit" loading={isLoading || isLogoUploading || isMediaUploading} disabled={!market || (!isMultibrand && selectedBrands.length === 0)}>
+                    <Button type="submit" loading={isLoading || isLogoUploading || isMediaUploading} disabled={!isMultibrand && selectedBrands.length === 0}>
                         {isLoading || isLogoUploading || isMediaUploading ? t('autocare.ownerProviderSaving') : t('autocare.ownerProviderSave')}
                     </Button>
                 </div>

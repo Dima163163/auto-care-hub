@@ -5,7 +5,12 @@ export type OwnerProviderDocumentDraft = {
 }
 
 export type OwnerProviderFormDraft = {
-    marketId: string
+    marketId?: string
+    countryCode?: string
+    countryName?: string
+    cityName?: string
+    currencyCode?: string
+    timezone?: string
     name: string
     description: string
     address: string
@@ -45,7 +50,12 @@ export type OwnerProviderFormValidationReason =
 export type OwnerProviderFormValidation =
     | {
         valid: true
-        marketId: string
+        marketId?: string
+        countryCode?: string
+        countryName?: string
+        cityName?: string
+        currencyCode?: string
+        timezone?: string
         name: string
         description: string | undefined
         address: string
@@ -91,8 +101,17 @@ function normalizeExpiry(value: string) {
 }
 
 export function validateOwnerProviderForm(draft: OwnerProviderFormDraft): OwnerProviderFormValidation {
-    const marketId = draft.marketId.trim()
-    if (!marketId) return { valid: false, reason: 'market' }
+    const marketId = draft.marketId?.trim() || undefined
+    const countryCode = draft.countryCode?.trim().toUpperCase() || undefined
+    const countryName = draft.countryName?.trim() || undefined
+    const cityName = draft.cityName?.trim() || undefined
+    const currencyCode = draft.currencyCode?.trim().toUpperCase() || undefined
+    const timezone = draft.timezone?.trim() || undefined
+    if (!marketId && (!countryCode || !/^[A-Z]{2,3}$/.test(countryCode) || !countryName || countryName.length > 160 || !cityName || cityName.length > 160)) {
+        return { valid: false, reason: 'market' }
+    }
+    if (currencyCode && !/^[A-Z]{3}$/.test(currencyCode)) return { valid: false, reason: 'market' }
+    if (timezone && timezone.length > 80) return { valid: false, reason: 'market' }
 
     const name = draft.name.trim()
     if (name.length < 2 || name.length > 160) return { valid: false, reason: 'name' }
@@ -164,6 +183,11 @@ export function validateOwnerProviderForm(draft: OwnerProviderFormDraft): OwnerP
     return {
         valid: true,
         marketId,
+        countryCode,
+        countryName,
+        cityName,
+        currencyCode,
+        timezone,
         name,
         description: description || undefined,
         address,

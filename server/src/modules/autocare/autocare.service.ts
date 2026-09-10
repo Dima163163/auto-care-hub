@@ -1,9 +1,10 @@
-import { randomBytes } from 'node:crypto'
-import { In, IsNull } from 'typeorm'
+import { createHash, randomBytes } from 'node:crypto'
+import { In, IsNull, type EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutomotiveMarketEntity,
+    AutomotiveMarketCountryEntity,
     AutomotiveLocationZoneEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
@@ -912,11 +913,89 @@ export async function updateClientAutoCareReview(client: UserEntity, reviewId: s
     return toAutoCareReviewResponse(savedReview, { exposeActions: true })
 }
 
+type OwnerAutoCareLocationInput = {
+    countryCode?: string
+    countryName?: string
+    cityName?: string
+    currencyCode?: string
+    timezone?: string
+}
+
+function buildOwnerMarketCityCode(countryCode: string, cityName: string) {
+    const normalizedCityName = cityName.normalize('NFKC').trim().toLocaleLowerCase()
+    const slug = normalizedCityName
+        .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100) || 'city'
+    const suffix = createHash('sha256').update(`${countryCode}:${normalizedCityName}`).digest('hex').slice(0, 8)
+    return `${slug}-${suffix}`.slice(0, 120)
+}
+
+async function findOrCreateOwnerMarket(manager: EntityManager, input: OwnerAutoCareLocationInput) {
+    const countryCode = input.countryCode?.trim().toUpperCase()
+    const countryName = input.countryName?.trim()
+    const cityName = input.cityName?.trim()
+    if (!countryCode || !countryName || !cityName) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Country code, country name and city name are required.' })
+    }
+
+    const timezone = input.timezone?.trim() || 'UTC'
+    const currencyCode = input.currencyCode?.trim().toUpperCase() || 'USD'
+    const countryRepository = manager.getRepository(AutomotiveMarketCountryEntity)
+    let country = await countryRepository.findOneBy({ code: countryCode })
+    if (!country) {
+        country = await countryRepository.save(countryRepository.create({
+            code: countryCode,
+            names: { en: countryName, ru: countryName },
+            defaultLocale: 'en',
+            supportedLocales: ['en', 'ru'],
+            timezone,
+            currencyCode,
+            capabilities: {},
+            legalLinks: {},
+            active: true,
+        }))
+    }
+
+    const marketRepository = manager.getRepository(AutomotiveMarketEntity)
+    const existingMarket = await marketRepository.createQueryBuilder('market')
+        .where('market.countryCode = :countryCode', { countryCode })
+        .andWhere('LOWER(market.cityName) = LOWER(:cityName)', { cityName })
+        .getOne()
+    if (existingMarket) return existingMarket
+
+    const canonicalCountryName = country.names.en ?? country.names.ru ?? countryName
+
+    return marketRepository.save(marketRepository.create({
+        countryId: country.id,
+        countryCode,
+        countryName: canonicalCountryName,
+        cityCode: buildOwnerMarketCityCode(countryCode, cityName),
+        cityName,
+        regionCode: null,
+        regionName: null,
+        centerLatitude: null,
+        centerLongitude: null,
+        currencyCode,
+        defaultLocale: 'en',
+        supportedLocales: ['en', 'ru'],
+        timezone,
+        capabilities: {},
+        legalLinks: {},
+        // A provider starts as a draft, so exposing the new market does not
+        // publish an unverified service. It simply makes the location usable.
+        launchReady: true,
+    }))
+}
+
 export async function createOwnerAutoCareProvider(owner: UserEntity, input: unknown) {
     const normalizedLocationIds = normalizeAutoCareProviderLocationIds(input)
     if (!normalizedLocationIds) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Market and zone ids must be valid UUIDs.' })
     const schemaInput = input && typeof input === 'object' && !Array.isArray(input)
-        ? { ...(input as Record<string, unknown>), marketId: normalizedLocationIds.marketId, zoneId: normalizedLocationIds.zoneId }
+        ? {
+            ...(input as Record<string, unknown>),
+            ...(normalizedLocationIds.marketId ? { marketId: normalizedLocationIds.marketId, zoneId: normalizedLocationIds.zoneId } : {}),
+        }
         : input
     const parsedInput = ownerAutoCareProviderSchema.safeParse(schemaInput)
     if (!parsedInput.success) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider profile payload is invalid.' })
@@ -924,17 +1003,21 @@ export async function createOwnerAutoCareProvider(owner: UserEntity, input: unkn
     assertOwner(owner)
     const publicMedia = normalizeAutoCareProviderPublicMediaForWrite(normalizedInput)
     if (!publicMedia) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider media references are invalid.' })
-    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: normalizedLocationIds.marketId })
-    if (!market) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
-    const zone = normalizedLocationIds.zoneId
-        ? await AppDataSource.getRepository(AutomotiveLocationZoneEntity).findOneBy({ id: normalizedLocationIds.zoneId, marketId: market.id, active: true })
+    const existingMarket = normalizedLocationIds.marketId
+        ? await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: normalizedLocationIds.marketId })
         : null
-    if (normalizedLocationIds.zoneId && !zone) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'The selected service zone does not belong to this market.' })
+    if (normalizedLocationIds.marketId && !existingMarket) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
+    const existingZone = normalizedLocationIds.zoneId && existingMarket
+        ? await AppDataSource.getRepository(AutomotiveLocationZoneEntity).findOneBy({ id: normalizedLocationIds.zoneId, marketId: existingMarket.id, active: true })
+        : null
+    if (normalizedLocationIds.zoneId && !existingZone) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'The selected service zone does not belong to this market.' })
 
     const phones = [...new Set((normalizedInput.phones ?? []).map((phone) => phone.trim()).filter(Boolean))]
     if (phones.length === 0 && normalizedInput.phone?.trim()) phones.push(normalizedInput.phone.trim())
 
     return AppDataSource.transaction(async (manager) => {
+        const market = existingMarket ?? await findOrCreateOwnerMarket(manager, normalizedInput)
+        const zone = existingZone
         const provider = await manager.getRepository(AutomotiveProviderEntity).save(manager.getRepository(AutomotiveProviderEntity).create({
             ownerId: owner.id,
             name: normalizedInput.name,

@@ -432,7 +432,11 @@ export type AutoCareAvailabilityResponse = {
 export type OwnerAutoCareProviderInput = {
     name: string
     description?: string | null
-    marketId: string
+    marketId?: string
+    countryCode?: string
+    countryName?: string
+    cityName?: string
+    currencyCode?: string
     zoneId?: string | null
     address: string
     hours: string

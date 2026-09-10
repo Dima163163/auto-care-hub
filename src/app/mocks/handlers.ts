@@ -4450,6 +4450,11 @@ export const handlers = [
             name?: string
             description?: string
             marketId?: string
+            countryCode?: string
+            countryName?: string
+            cityName?: string
+            currencyCode?: string
+            timezone?: string
             address?: string
             hours?: string
             yearsActive?: number
@@ -4480,11 +4485,12 @@ export const handlers = [
             galleryImageUrls?: string[]
         }
 
-        if (!body.name?.trim() || !body.marketId || !body.address?.trim() || !body.hours?.trim()) {
+        if (!body.name?.trim() || (!body.marketId && (!body.countryCode?.trim() || !body.countryName?.trim() || !body.cityName?.trim())) || !body.address?.trim() || !body.hours?.trim()) {
             return HttpResponse.json({ message: 'Invalid service profile.' }, { status: 400 })
         }
 
         const id = `owner-provider-${Date.now()}`
+        const mockMarketId = body.marketId ?? `market-${body.countryCode?.trim().toUpperCase()}-${body.cityName?.trim().toLowerCase().replace(/\s+/g, '-')}`
         const provider = {
             id,
             name: body.name.trim(),
@@ -4521,7 +4527,7 @@ export const handlers = [
             amenityIds: [...new Set(body.amenityIds ?? [])],
             location: {
                 id: `location-${id}`,
-                marketId: body.marketId,
+                marketId: mockMarketId,
                 address: body.address.trim(),
                 hours: body.hours.trim(),
                 latitude: null,

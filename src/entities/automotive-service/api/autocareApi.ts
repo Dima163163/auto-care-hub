@@ -1149,7 +1149,11 @@ export type CreateAutoCareServiceRequestInput = {
 export type CreateOwnerAutoCareProviderInput = {
     name: string
     description?: string
-    marketId: string
+    marketId?: string
+    countryCode?: string
+    countryName?: string
+    cityName?: string
+    currencyCode?: string
     address: string
     hours: string
     timezone?: string

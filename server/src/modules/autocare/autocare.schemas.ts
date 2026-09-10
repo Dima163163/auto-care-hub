@@ -512,7 +512,14 @@ export const autoCareCommunicationSettingsSchema = z.object(providerCommunicatio
 export const ownerAutoCareProviderSchema = z.object({
     name: z.string().trim().min(2).max(160),
     description: z.string().trim().max(5_000).nullable().optional(),
-    marketId: z.string().uuid(),
+    // Existing clients may still reference a persisted market. New owner
+    // onboarding may provide an arbitrary country/city and the service will
+    // provision the market record when needed.
+    marketId: z.string().uuid().optional(),
+    countryCode: z.string().trim().regex(/^[A-Z]{2,3}$/i).optional(),
+    countryName: z.string().trim().min(1).max(160).optional(),
+    cityName: z.string().trim().min(1).max(160).optional(),
+    currencyCode: z.string().trim().regex(/^[A-Z]{3}$/i).optional(),
     zoneId: z.string().uuid().nullable().optional(),
     address: z.string().trim().min(2).max(240),
     hours: z.string().trim().min(2).max(120),
@@ -545,6 +552,14 @@ export const ownerAutoCareProviderSchema = z.object({
         expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
     })).max(20).optional(),
 }).superRefine((value, context) => {
+    const hasMarketReference = Boolean(value.marketId)
+    const hasFreeLocation = Boolean(value.countryCode && value.countryName && value.cityName)
+    if (!hasMarketReference && !hasFreeLocation) {
+        context.addIssue({ code: 'custom', path: ['cityName'], message: 'Provide a persisted market or a country and city.' })
+    }
+    if (value.zoneId && !hasMarketReference) {
+        context.addIssue({ code: 'custom', path: ['zoneId'], message: 'A service zone requires an existing market.' })
+    }
     if (!value.isMultibrand && value.brandSpecializations.length === 0) {
         context.addIssue({ code: 'custom', path: ['brandSpecializations'], message: 'Choose at least one brand or enable multibrand service.' })
     }
