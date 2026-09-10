@@ -323,9 +323,9 @@ export function SecurityCenterPage() {
                                 [t('securityCenter.affectedAccounts'), summary?.affectedAccountCount ?? 0, 'text-foreground'],
                                 [t('securityCenter.repeatedFailedLogins'), summary?.repeatedFailedLoginCount ?? 0, 'text-severity-high-foreground'],
                             ].map(([label, value, color]) => (
-                                <div key={String(label)} className="rounded-lg border bg-card p-4">
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-                                    <p className={`mt-2 text-2xl font-semibold ${color}`}>{value}</p>
+                                <div key={String(label)} className="flex h-full flex-col rounded-lg border bg-card p-4">
+                                    <p className="min-h-8 text-xs font-semibold uppercase leading-4 tracking-wide text-muted-foreground">{label}</p>
+                                    <p className={`mt-auto pt-2 text-2xl font-semibold ${color}`}>{value}</p>
                                 </div>
                             ))}
                         </div>

@@ -1,14 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/commissioner";
-@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource/russo-one";
+@import "@fontsource-variable/onest";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: 'Commissioner Variable', 'Commissioner', 'Avenir Next', ui-sans-serif, sans-serif;
-    --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-heading: 'Russo One', 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-sans: 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -94,8 +94,8 @@
 
 :root {
     /* Shared foundation tokens for responsive public and operational surfaces. */
-    --font-display: 'Commissioner Variable', 'Commissioner', 'Avenir Next', ui-sans-serif, sans-serif;
-    --font-body: 'IBM Plex Sans Variable', 'IBM Plex Sans', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-display: 'Russo One', 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-body: 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
     --type-label-size: 0.6875rem;
     --type-label-line: 1rem;
     --type-body-size: 1rem;

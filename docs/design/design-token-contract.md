@@ -12,7 +12,7 @@ radius, focus, or motion values.
 
 - Typography: `--font-display`, `--font-body`, `--type-*`, and
   `--measure-readable` define the readable hierarchy and copy measure. The
-  approved Option A pairing is Commissioner for display text and IBM Plex Sans
+  approved Option B pairing is Russo One for display text and Onest
   for body/form text; see `font-license-contract.md` for the source and
   license record. Both families include Latin and Cyrillic coverage, so a
   heading does not change its typeface between English and Russian.
