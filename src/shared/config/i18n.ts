@@ -25,6 +25,13 @@ export type SupportedLocale = typeof SUPPORTED_LOCALES[number]
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en'
 
+/**
+ * Languages exposed to users during the current launch phase.
+ * The remaining translation packs stay in the registry for future rollout,
+ * SEO and existing data compatibility, but are intentionally not selectable.
+ */
+export const VISIBLE_LOCALES = ['en', 'ru'] as const satisfies ReadonlyArray<SupportedLocale>
+
 export const LOCALE_STORAGE_KEY = 'autocare-hub-locale'
 const LEGACY_LOCALE_STORAGE_KEY = 'autocare-hub-locale-v1'
 
@@ -57,6 +64,14 @@ export const LOCALE_OPTIONS = [
     direction: 'ltr' | 'rtl'
 }>
 
+export const VISIBLE_LOCALE_OPTIONS = LOCALE_OPTIONS.filter((option) =>
+    VISIBLE_LOCALES.includes(option.value as typeof VISIBLE_LOCALES[number]),
+)
+
+export function isVisibleLocale(locale: SupportedLocale) {
+    return VISIBLE_LOCALES.includes(locale as typeof VISIBLE_LOCALES[number])
+}
+
 export function getLocaleOption(locale: SupportedLocale) {
     return LOCALE_OPTIONS.find((option) => option.value === locale) ?? LOCALE_OPTIONS[0]!
 }
@@ -82,17 +97,17 @@ export function getStoredLocale(): SupportedLocale {
         undefined,
     )
 
-    if (savedLocale) return savedLocale
+    if (savedLocale && isVisibleLocale(savedLocale)) return savedLocale
 
     const browserLocale = normalizeLocale(window.navigator.language)
 
-    return browserLocale ?? DEFAULT_LOCALE
+    return browserLocale && isVisibleLocale(browserLocale) ? browserLocale : DEFAULT_LOCALE
 }
 
 export function getInitialLocale(): SupportedLocale {
     if (typeof window !== 'undefined') {
         const urlLocale = normalizeLocale(new URLSearchParams(window.location.search).get('lang') ?? undefined)
-        if (urlLocale) return urlLocale
+        if (urlLocale && isVisibleLocale(urlLocale)) return urlLocale
     }
 
     return getStoredLocale()
