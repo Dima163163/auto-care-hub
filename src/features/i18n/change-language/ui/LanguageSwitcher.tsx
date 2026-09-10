@@ -1,4 +1,4 @@
-import { SUPPORTED_LOCALES } from '@/shared/config/i18n'
+import { VISIBLE_LOCALES } from '@/shared/config/i18n'
 import { Button } from '@/components/ui/button'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -7,7 +7,7 @@ export function LanguageSwitcher() {
 
     return (
         <div className="flex items-center gap-2" aria-label={t('common.language')}>
-            {SUPPORTED_LOCALES.map((item) => {
+            {VISIBLE_LOCALES.map((item) => {
                 const isActive = item === locale
 
                 return (
