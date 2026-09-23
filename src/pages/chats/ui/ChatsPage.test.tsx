@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
     cleanup: vi.fn(),
     connectAutoCareChat: vi.fn(),
     chatIsLoading: false,
+    chatListIsSuccess: true,
+    chatListIsError: false,
     emitPresenceOnConnect: false,
     chatData: {
         thread: { id: 'chat-1', type: 'support', subject: 'Support', providerName: null, clientId: 'client-1' },
@@ -47,14 +49,16 @@ vi.mock('@/entities/automotive-service', () => ({
     useGetAutoCareChatsQuery: () => ({
         data: mocks.chats,
         isLoading: false,
+        isSuccess: mocks.chatListIsSuccess,
+        isError: mocks.chatListIsError,
     }),
     useMarkAutoCareChatReadMutation: () => [mocks.markRead],
 }))
 
-function renderPage() {
+function renderPage(entry = '/chats') {
     return render(
         <I18nContext.Provider value={{ locale: 'en', setLocale: vi.fn(), t: (key: TranslationKey) => key }}>
-            <MemoryRouter initialEntries={['/chats']}>
+            <MemoryRouter initialEntries={[entry]}>
                 <ChatsPage />
             </MemoryRouter>
         </I18nContext.Provider>,
@@ -64,6 +68,10 @@ function renderPage() {
 describe('ChatsPage', () => {
     beforeEach(() => {
         mocks.chatIsLoading = false
+        mocks.chatListIsSuccess = true
+        mocks.chatListIsError = false
+        mocks.chats = [{ id: 'chat-1', type: 'support', providerId: null, requestId: null, subject: 'Support', unreadCount: 0, updatedAt: '2026-08-30T10:00:00.000Z' }]
+        mocks.createChat.mockReset()
         mocks.emitPresenceOnConnect = false
         mocks.connectAutoCareChat.mockClear()
         mocks.connectAutoCareChat.mockImplementation((_chatId: string, listener: (event: { type: 'presence'; threadId: string; payload: { connected: boolean } }) => void) => {
@@ -87,6 +95,46 @@ describe('ChatsPage', () => {
 
         expect(mocks.connectAutoCareChat).not.toHaveBeenCalled()
         expect(screen.getByRole('status', { name: 'common.loading' })).toBeVisible()
+    })
+
+    it('waits for successful chat-list resolution before creating a provider inquiry', async () => {
+        const previousChats = mocks.chats
+        mocks.chats = []
+        mocks.chatListIsSuccess = false
+        mocks.chatListIsError = true
+        mocks.createChat.mockReset().mockImplementation(() => ({
+            unwrap: vi.fn().mockResolvedValue({ id: 'inquiry-1' }),
+        }))
+        const view = renderPage('/chats?providerId=provider-1')
+
+        expect(mocks.createChat).not.toHaveBeenCalled()
+
+        mocks.chatListIsSuccess = true
+        view.rerender(
+            <I18nContext.Provider value={{ locale: 'en', setLocale: vi.fn(), t: (key: TranslationKey) => key }}>
+                <MemoryRouter initialEntries={['/chats?providerId=provider-1']}>
+                    <ChatsPage />
+                </MemoryRouter>
+            </I18nContext.Provider>,
+        )
+
+        await waitFor(() => expect(mocks.createChat).toHaveBeenCalledTimes(1))
+        mocks.chats = previousChats
+        mocks.chatListIsError = false
+    })
+
+    it('does not post a duplicate inquiry while chat-list loading is in error', () => {
+        const previousChats = mocks.chats
+        mocks.chats = []
+        mocks.chatListIsSuccess = false
+        mocks.chatListIsError = true
+        mocks.createChat.mockReset()
+
+        renderPage('/chats?providerId=provider-1')
+
+        expect(mocks.createChat).not.toHaveBeenCalled()
+        mocks.chats = previousChats
+        mocks.chatListIsError = false
     })
 
     it('keeps a failed generic-chat draft and exposes an accessible send error', async () => {

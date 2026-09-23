@@ -25,13 +25,15 @@ import { PageHeader } from '@/shared/ui/page-header'
 import { ChatConversationSkeleton, SplitListSkeleton } from '@/shared/ui/loading-skeleton'
 
 type ChatsPageProps = { workspace?: 'client' | 'owner' | 'admin' | 'super_admin' }
+const emptyThreads: AutoCareChatThread[] = []
 
 export function ChatsPage({ workspace }: ChatsPageProps) {
     const { t } = useTranslation()
     const { data: user } = useGetMeQuery()
     const [searchParams, setSearchParams] = useSearchParams()
     const role = workspace ?? user?.role ?? 'client'
-    const { data: threads = [], isLoading } = useGetAutoCareChatsQuery()
+    const { data: loadedThreads, isLoading, isSuccess: isThreadsLoaded } = useGetAutoCareChatsQuery()
+    const threads = loadedThreads ?? emptyThreads
     const [createChat, createState] = useCreateAutoCareChatMutation()
     const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('chat'))
     const [chatActionError, setChatActionError] = useState<unknown>(null)
@@ -55,7 +57,7 @@ export function ChatsPage({ workspace }: ChatsPageProps) {
     const activeThread = threads.find((thread) => thread.id === activeId) ?? null
 
     useEffect(() => {
-        if (!providerId || role !== 'client' || createState.isLoading || providerCreationAttemptedRef.current === providerId) return
+        if (!providerId || role !== 'client' || !isThreadsLoaded || createState.isLoading || providerCreationAttemptedRef.current === providerId) return
         const existing = threads.find((thread) => thread.providerId === providerId && thread.type === 'provider_inquiry')
         if (existing) {
             setSearchParams({ chat: existing.id })
@@ -72,7 +74,7 @@ export function ChatsPage({ workspace }: ChatsPageProps) {
             }
         }
         void startProviderChat()
-    }, [createChat, createState.isLoading, providerId, role, setSearchParams, t, threads])
+    }, [createChat, createState.isLoading, isThreadsLoaded, providerId, role, setSearchParams, t, threads])
 
     const selectThread = (thread: AutoCareChatThread) => {
         setChatActionError(null)
