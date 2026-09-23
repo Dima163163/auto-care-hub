@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
+import { useState } from 'react'
 import { Building2, LocateFixed, Search, Wrench } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
@@ -9,6 +10,7 @@ import { FloatingInput, FloatingSelect } from '@/shared/ui/floating-field'
 
 type AutoCareSearchFormProps = { marketId: string; markets: AutoCareApiMarket[]; onMarketChange: (marketId: string) => void }
 type SearchMode = 'service' | 'provider'
+const SEARCH_MODES = ['service', 'provider'] as const satisfies readonly SearchMode[]
 
 export function AutoCareSearchForm({ marketId, markets, onMarketChange }: AutoCareSearchFormProps) {
     const { t, locale } = useTranslation()
@@ -24,6 +26,34 @@ export function AutoCareSearchForm({ marketId, markets, onMarketChange }: AutoCa
         navigate(routePaths.serviceDiscovery({ service: mode === 'service' ? serviceId : undefined, provider: mode === 'provider' ? providerName : undefined, market: marketId, radius }))
     }
 
+    const handleSearchModeKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentMode: SearchMode) => {
+        const currentIndex = SEARCH_MODES.indexOf(currentMode)
+        let nextIndex: number
+
+        switch (event.key) {
+            case 'ArrowRight':
+                nextIndex = (currentIndex + 1) % SEARCH_MODES.length
+                break
+            case 'ArrowLeft':
+                nextIndex = (currentIndex - 1 + SEARCH_MODES.length) % SEARCH_MODES.length
+                break
+            case 'Home':
+                nextIndex = 0
+                break
+            case 'End':
+                nextIndex = SEARCH_MODES.length - 1
+                break
+            default:
+                return
+        }
+
+        event.preventDefault()
+        const nextMode = SEARCH_MODES[nextIndex]
+        if (!nextMode) return
+        setMode(nextMode)
+        event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-search-mode="${nextMode}"]`)?.focus()
+    }
+
     const tabClass = (tab: SearchMode) => {
         const activeRadius = tab === 'service' ? 'rounded-tl-[10px]' : 'rounded-tr-[10px]'
         return `flex h-[52px] items-center justify-center gap-2 text-base font-black transition ${mode === tab ? `${activeRadius} bg-background text-primary` : 'bg-transparent text-primary-foreground/85 hover:bg-primary-foreground/10'}`
@@ -31,8 +61,8 @@ export function AutoCareSearchForm({ marketId, markets, onMarketChange }: AutoCa
 
     return (
         <form onSubmit={handleSubmit} className="overflow-hidden rounded-[12px] border-[5px] border-primary-foreground/20 bg-transparent text-foreground shadow-2xl shadow-black/30">
-            <div role="tablist" aria-label={t('autocare.searchModeLabel')} className="grid grid-cols-2 bg-map-overlay/65 text-primary-foreground backdrop-blur-[2px]"><button type="button" role="tab" aria-selected={mode === 'service'} onClick={() => setMode('service')} className={tabClass('service')}><Wrench className="size-5" />{t('autocare.byService')}</button><button type="button" role="tab" aria-selected={mode === 'provider'} onClick={() => setMode('provider')} className={tabClass('provider')}><Building2 className="size-5" />{t('autocare.byProvider')}</button></div>
-            <div className="bg-background px-5 pb-3 pt-4">
+            <div role="tablist" aria-label={t('autocare.searchModeLabel')} aria-orientation="horizontal" className="grid grid-cols-2 bg-map-overlay/65 text-primary-foreground backdrop-blur-[2px]"><button id="autocare-search-service-tab" data-search-mode="service" type="button" role="tab" aria-selected={mode === 'service'} aria-controls="autocare-search-panel" tabIndex={mode === 'service' ? 0 : -1} onClick={() => setMode('service')} onKeyDown={(event) => handleSearchModeKeyDown(event, 'service')} className={tabClass('service')}><Wrench className="size-5" />{t('autocare.byService')}</button><button id="autocare-search-provider-tab" data-search-mode="provider" type="button" role="tab" aria-selected={mode === 'provider'} aria-controls="autocare-search-panel" tabIndex={mode === 'provider' ? 0 : -1} onClick={() => setMode('provider')} onKeyDown={(event) => handleSearchModeKeyDown(event, 'provider')} className={tabClass('provider')}><Building2 className="size-5" />{t('autocare.byProvider')}</button></div>
+            <div id="autocare-search-panel" role="tabpanel" aria-labelledby={mode === 'service' ? 'autocare-search-service-tab' : 'autocare-search-provider-tab'} className="bg-background px-5 pb-3 pt-4">
                 {mode === 'service'
                     ? <FloatingSelect floatLabelWhenEmpty label={t('autocare.serviceLabel')} value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">{t('autocare.servicePlaceholder')}</option>{automotiveServices.map((service) => <option key={service.id} value={service.id}>{getServiceLabel(service, locale)}</option>)}</FloatingSelect>
                     : <FloatingInput required floatLabelWhenEmpty label={t('autocare.providerLabel')} placeholder={t('autocare.providerPlaceholder')} value={providerName} onChange={(event) => setProviderName(event.target.value)} />}
