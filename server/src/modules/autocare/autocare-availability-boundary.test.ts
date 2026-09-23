@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
+import { AutomotiveMarketCountryEntity, AutomotiveMarketEntity, AutomotiveProviderEntity, AutomotiveServiceLocationEntity, AutomotiveServiceOfferingEntity } from '../../entities/index.js'
 import { getAutoCareAvailability } from './autocare-request.service.js'
 
 const providerId = '11111111-1111-4111-8111-111111111111'
@@ -29,5 +30,43 @@ describe('availability service input boundary', () => {
 
         await expect(getAutoCareAvailability(` ${providerId.toUpperCase()} `, ` ${locationId.toUpperCase()} `, ` ${offeringId.toUpperCase()} `, ' 2026-09-04 ')).rejects.toMatchObject({ statusCode: 404 })
         expect(providerRepository.findOneBy).toHaveBeenCalledWith({ id: providerId, status: 'active' })
+    })
+
+    it('rejects availability for an unlaunched market before loading its offering or slots', async () => {
+        const providerRepository = { findOneBy: vi.fn().mockResolvedValue({ id: providerId }) }
+        const locationRepository = { findOneBy: vi.fn().mockResolvedValue({ id: locationId, providerId, marketId: 'market-hidden' }) }
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue(null) }
+        const offeringRepository = { findOneBy: vi.fn() }
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutomotiveProviderEntity) return providerRepository
+            if (entity === AutomotiveServiceLocationEntity) return locationRepository
+            if (entity === AutomotiveMarketEntity) return marketRepository
+            if (entity === AutomotiveServiceOfferingEntity) return offeringRepository
+            return undefined
+        })
+
+        await expect(getAutoCareAvailability(providerId, locationId, offeringId, '2026-09-04')).rejects.toMatchObject({ statusCode: 404 })
+        expect(marketRepository.findOneBy).toHaveBeenCalledWith({ id: 'market-hidden', launchReady: true })
+        expect(offeringRepository.findOneBy).not.toHaveBeenCalled()
+    })
+
+    it('rejects availability when the containing country is inactive', async () => {
+        const providerRepository = { findOneBy: vi.fn().mockResolvedValue({ id: providerId }) }
+        const locationRepository = { findOneBy: vi.fn().mockResolvedValue({ id: locationId, providerId, marketId: 'market-ready' }) }
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-ready', countryId: 'country-disabled', launchReady: true }) }
+        const countryRepository = { findOneBy: vi.fn().mockResolvedValue(null) }
+        const offeringRepository = { findOneBy: vi.fn() }
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutomotiveProviderEntity) return providerRepository
+            if (entity === AutomotiveServiceLocationEntity) return locationRepository
+            if (entity === AutomotiveMarketEntity) return marketRepository
+            if (entity === AutomotiveMarketCountryEntity) return countryRepository
+            if (entity === AutomotiveServiceOfferingEntity) return offeringRepository
+            return undefined
+        })
+
+        await expect(getAutoCareAvailability(providerId, locationId, offeringId, '2026-09-04')).rejects.toMatchObject({ statusCode: 404 })
+        expect(countryRepository.findOneBy).toHaveBeenCalledWith({ id: 'country-disabled', active: true })
+        expect(offeringRepository.findOneBy).not.toHaveBeenCalled()
     })
 })

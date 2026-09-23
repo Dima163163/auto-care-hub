@@ -5,7 +5,7 @@ import { normalizeAutoCareVehicleSnapshot } from './request-input-policy.js'
 
 export type NormalizedAutoCareBroadcastRequestInput = {
     serviceDefinitionId: string
-    marketId: string | null
+    marketId: string
     issueDescription: string
     vehicleSnapshot: AutoCareRequestSnapshot | null
     photoUrls: string[]
@@ -37,7 +37,7 @@ export function normalizeAutoCareBroadcastRequestInput(input: unknown): Normaliz
     if (Object.keys(value).some((key) => !allowedKeys.has(key))) return null
 
     const serviceDefinitionId = normalizeAutoCarePublicServiceId(value.serviceDefinitionId)
-    const marketId = value.marketId === undefined || value.marketId === null ? null : normalizeAutoCarePublicServiceId(value.marketId)
+    const marketId = normalizeAutoCarePublicServiceId(value.marketId)
     const issueDescription = normalizeText(value.issueDescription, 10, 4_000)
     const vehicleSnapshot = normalizeAutoCareVehicleSnapshot(value.vehicleSnapshot)
     const photoInput = value.photoUrls === undefined || value.photoUrls === null ? [] : value.photoUrls
@@ -45,7 +45,7 @@ export function normalizeAutoCareBroadcastRequestInput(input: unknown): Normaliz
     const preferredAt = normalizePreferredAt(value.preferredAt)
     const maxProviders: unknown = value.maxProviders === undefined ? 5 : value.maxProviders
 
-    if (!serviceDefinitionId || (value.marketId !== undefined && value.marketId !== null && !marketId) || !issueDescription) return null
+    if (!serviceDefinitionId || !marketId || !issueDescription) return null
     if (value.vehicleSnapshot !== undefined && value.vehicleSnapshot !== null && !vehicleSnapshot) return null
     if (!photoUrls || preferredAt === undefined || typeof maxProviders !== 'number' || !Number.isSafeInteger(maxProviders) || maxProviders < 1 || maxProviders > 10) return null
 

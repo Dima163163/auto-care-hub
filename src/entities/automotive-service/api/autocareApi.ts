@@ -772,15 +772,15 @@ const ownerAutoCareReviewsSchema = z.object({
     reviews: z.array(featuredReviewSchema.extend({ providerName: z.string(), providerAddress: z.string() })),
 }) satisfies z.ZodType<OwnerAutoCareReviews>
 
-const autoCareOfferSchema = z.object({
+export const autoCareOfferSchema = z.object({
     id: z.string(),
     serviceDefinitionId: z.string(),
     serviceSlug: z.string().optional(),
     serviceLabels: z.record(z.string(), z.string()).optional(),
     description: z.string().nullable().optional(),
-    priceFromMinor: z.number().finite(),
-    priceToMinor: z.number().finite().nullable(),
-    currencyCode: z.string().min(3),
+    priceFromMinor: z.number().int().nonnegative().max(10_000_000_000),
+    priceToMinor: z.number().int().nonnegative().max(10_000_000_000).nullable(),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
     durationMinutes: z.number().int().nonnegative(),
     inclusions: z.array(z.string()),
     warrantyText: z.string().nullable(),
@@ -789,7 +789,10 @@ const autoCareOfferSchema = z.object({
     bookingMode: z.enum(['request', 'instant']).optional(),
     requiredResourceTypes: z.array(z.enum(['specialist', 'bay', 'lift', 'equipment'])).optional(),
     requiredResourceIds: z.array(z.string()).optional(),
-}).passthrough() satisfies z.ZodType<AutoCareApiOffer>
+}).passthrough().refine((offer) => offer.priceToMinor === null || offer.priceToMinor >= offer.priceFromMinor, {
+    message: 'priceToMinor must be greater than or equal to priceFromMinor',
+    path: ['priceToMinor'],
+}) satisfies z.ZodType<AutoCareApiOffer>
 
 const autoCareCapacityResourceSchema = z.object({
     id: z.string(),
@@ -916,8 +919,26 @@ const superAdminMarketHierarchySchema = autoCareMarketCountrySchema.extend({
 }).passthrough() satisfies z.ZodType<SuperAdminMarketHierarchy>
 const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.string().optional(), durationMinutes: z.number().int().nonnegative(), slots: z.array(z.object({ startTime: z.string(), endTime: z.string(), startsAt: z.string().datetime({ offset: true }) }).passthrough()) }).passthrough() satisfies z.ZodType<AutoCareAvailability>
 
-const autoCareQuoteLineItemSchema = z.object({ kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']), title: z.string(), quantity: z.number().finite(), unitPriceMinor: z.number().finite(), totalMinor: z.number().finite() }).passthrough()
-const autoCareQuoteSchema = z.object({ amountMinor: z.number().finite(), currencyCode: z.string(), note: z.string().nullable(), createdAt: z.string(), lineItems: z.array(autoCareQuoteLineItemSchema).optional(), subtotalMinor: z.number().finite().optional(), taxMinor: z.number().finite().optional(), feesMinor: z.number().finite().optional(), validUntil: z.string().nullable().optional(), priceLocked: z.boolean().optional(), status: z.enum(['pending', 'accepted', 'declined', 'expired', 'superseded']).optional() }).passthrough()
+const autoCareQuoteLineItemSchema = z.object({
+    kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']),
+    title: z.string(),
+    quantity: z.number().finite(),
+    unitPriceMinor: z.number().int().min(-1_000_000_000).max(1_000_000_000),
+    totalMinor: z.number().int(),
+}).passthrough()
+export const autoCareQuoteSchema = z.object({
+    amountMinor: z.number().int().min(1).max(1_000_000_000),
+    lineItems: z.array(autoCareQuoteLineItemSchema),
+    subtotalMinor: z.number().int().nonnegative().max(1_000_000_000),
+    taxMinor: z.number().int().nonnegative().max(1_000_000_000),
+    feesMinor: z.number().int().nonnegative().max(1_000_000_000),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    note: z.string().nullable(),
+    validUntil: z.string().datetime({ offset: true }).nullable(),
+    priceLocked: z.boolean(),
+    status: z.enum(['pending', 'accepted', 'declined', 'expired', 'superseded']),
+    createdAt: z.string().datetime({ offset: true }),
+}).passthrough()
 const autoCareQuoteHistorySchema = autoCareQuoteSchema.extend({ id: z.string().min(1), version: z.number().int().positive() }).passthrough()
 const autoCareBookingSnapshotSchema = z.object({
     requestId: z.string(), quoteVersion: z.number().int().nonnegative(), amountMinor: z.number().finite(), currencyCode: z.string(),
@@ -943,7 +964,7 @@ const autoCareChatThreadSchema = z.object({ id: z.string().min(1), type: z.enum(
 const autoCareChatThreadsSchema = z.array(autoCareChatThreadSchema)
 const autoCareServiceMessageOfferSchema = z.object({ type: z.enum(['discount', 'alternative']), title: z.string(), description: z.string().nullable(), discountPercent: z.number().int().nullable(), couponCode: z.string().nullable(), amountMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), expiresAt: z.string().nullable(), status: z.enum(['pending', 'accepted', 'declined']) }).passthrough()
 const autoCareServiceMessageSchema = z.object({ id: z.string().min(1), senderId: z.string().min(1), kind: z.enum(['text', 'system', 'offer']), body: z.string().nullable(), offer: autoCareServiceMessageOfferSchema.nullable(), deliveredAt: z.string().nullable(), readAt: z.string().nullable(), createdAt: z.string() }).passthrough()
-const autoCareServiceAttachmentSchema = z.object({ id: z.string().min(1), uploadedById: z.string().min(1), contentType: z.string(), bytes: z.number().int().positive(), status: z.enum(['pending', 'ready', 'rejected']), url: z.string(), createdAt: z.string() }).passthrough()
+export const autoCareServiceAttachmentSchema = z.object({ id: z.string().min(1), uploadedById: z.string().min(1), contentType: z.enum(['image/jpeg', 'image/png', 'image/webp']), bytes: z.number().int().positive(), status: z.enum(['pending', 'ready', 'rejected']), url: z.string(), createdAt: z.string().datetime({ offset: true }) }).passthrough()
 const autoCareServiceConversationSchema = z.object({ request: autoCareServiceRequestSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null) }).passthrough()
 const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null) }).passthrough()
 const autoCareChatReportSchema = z.object({ id: z.string(), threadId: z.string(), reporterId: z.string(), reportedUserId: z.string().nullable(), category: z.enum(['spam', 'harassment', 'fraud', 'unsafe', 'other']), description: z.string().nullable(), status: z.enum(['pending', 'resolved', 'dismissed']), reviewedById: z.string().nullable(), resolutionReason: z.string().nullable(), createdAt: z.string(), reviewedAt: z.string().nullable() }).passthrough()

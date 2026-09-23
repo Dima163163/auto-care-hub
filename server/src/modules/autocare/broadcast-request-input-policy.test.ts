@@ -25,16 +25,11 @@ describe('AutoCare broadcast request input policy', () => {
         })
     })
 
-    it('applies stable defaults for optional fields', () => {
-        expect(normalizeAutoCareBroadcastRequestInput({ serviceDefinitionId: 'brake-pads', issueDescription: 'Нужно проверить тормозную систему' })).toEqual({
-            serviceDefinitionId: 'brake-pads',
-            marketId: null,
-            issueDescription: 'Нужно проверить тормозную систему',
-            vehicleSnapshot: null,
-            photoUrls: [],
-            preferredAt: null,
-            maxProviders: 5,
-        })
+    it('requires an explicit market for every broadcast request', () => {
+        const payload = { serviceDefinitionId: 'brake-pads', issueDescription: 'Нужно проверить тормозную систему' }
+        expect(normalizeAutoCareBroadcastRequestInput(payload)).toBeNull()
+        expect(normalizeAutoCareBroadcastRequestInput({ ...payload, marketId: null })).toBeNull()
+        expect(normalizeAutoCareBroadcastRequestInput({ ...payload, marketId: 'samara' })).toMatchObject({ marketId: 'samara' })
     })
 
     it('rejects malformed descriptions, references, snapshots and dates', () => {

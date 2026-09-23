@@ -2753,7 +2753,7 @@ export const handlers = [
         })
     }),
 
-    http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : editableAutoCareMarkets.map(toMockMarket))),
+    http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : editableAutoCareMarkets.filter((market) => market.launchReady).map(toMockMarket))),
     http.patch('/api/super-admin/markets/:id', async ({ params, request }) => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })

@@ -97,7 +97,7 @@ describe('AutoCare appointment capacity integration', () => {
                 defaultLocale: 'en',
                 supportedLocales: ['en'],
                 timezone: 'UTC',
-                launchReady: false,
+                launchReady: true,
             }),
         )
         provider = await AppDataSource.getRepository(AutomotiveProviderEntity).save(

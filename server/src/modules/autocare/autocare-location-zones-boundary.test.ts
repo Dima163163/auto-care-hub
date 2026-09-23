@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
-import { AutomotiveMarketEntity, AutomotiveLocationZoneEntity } from '../../entities/index.js'
+import { AutomotiveMarketCountryEntity, AutomotiveMarketEntity, AutomotiveLocationZoneEntity } from '../../entities/index.js'
 import { getAutoCareLocationZones } from './autocare.service.js'
 
 const parentId = '11111111-1111-4111-8111-111111111111'
@@ -30,7 +30,7 @@ describe('public location zones input boundary', () => {
     })
 
     it('trims a market code before fallback lookup', async () => {
-        const marketRepository = { findOneBy: vi.fn().mockResolvedValue(null) }
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue(null), count: vi.fn().mockResolvedValue(0) }
         mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveMarketEntity ? marketRepository : undefined)
 
         const zones = await getAutoCareLocationZones('  moscow  ')
@@ -39,15 +39,26 @@ describe('public location zones input boundary', () => {
     })
 
     it('uses canonical parent UUID in the database zone query', async () => {
-        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-1', cityCode: 'unknown-market' }) }
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-1', cityCode: 'unknown-market', launchReady: true }) }
+        const countryRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'country-1', active: true }) }
         const zoneRepository = { find: vi.fn().mockResolvedValue([]) }
         mocks.getRepository.mockImplementation((entity: unknown) => {
             if (entity === AutomotiveMarketEntity) return marketRepository
+            if (entity === AutomotiveMarketCountryEntity) return countryRepository
             if (entity === AutomotiveLocationZoneEntity) return zoneRepository
             return undefined
         })
 
         await expect(getAutoCareLocationZones('unknown-market', ` ${parentId.toUpperCase()} `)).resolves.toEqual([])
         expect(zoneRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { marketId: 'market-1', parentId, active: true } }))
+    })
+
+    it('does not expose zone data for a persisted but unlaunched market', async () => {
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-1', cityCode: 'hidden-market', launchReady: false }) }
+        const zoneRepository = { find: vi.fn() }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveMarketEntity ? marketRepository : zoneRepository)
+
+        await expect(getAutoCareLocationZones('hidden-market')).resolves.toEqual([])
+        expect(zoneRepository.find).not.toHaveBeenCalled()
     })
 })

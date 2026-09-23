@@ -43,6 +43,22 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         : 'border-border bg-card text-foreground hover:border-primary hover:text-primary'
 
     useEffect(() => {
+        if (isLoading || isError || markets.length === 0 || markets.some((market) => market.cityCode === selectedMarketId)) return
+
+        const fallbackMarket = markets.find((market) => market.launchReady) ?? markets[0]
+        if (!fallbackMarket) return
+
+        if (queryMarketId) {
+            const params = new URLSearchParams(location.search)
+            params.set('market', fallbackMarket.cityCode)
+            params.delete('zone')
+            navigate(`${location.pathname}?${params.toString()}`, { replace: true })
+        }
+
+        setAutoCareMarketPreference(fallbackMarket.cityCode)
+    }, [isError, isLoading, location.pathname, location.search, markets, navigate, queryMarketId, selectedMarketId])
+
+    useEffect(() => {
         if (!isOpen) return
         const close = (event: PointerEvent) => {
             if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setIsOpen(false)

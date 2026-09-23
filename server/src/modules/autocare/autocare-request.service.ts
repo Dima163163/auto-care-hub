@@ -6,6 +6,8 @@ import {
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
     AutomotiveBookingMode,
+    AutomotiveMarketEntity,
+    AutomotiveMarketCountryEntity,
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
@@ -1018,6 +1020,10 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     if (!provider) notFound('Automotive provider not found.')
     const location = await locationRepository.findOneBy({ id: normalizedInput.locationId, providerId: provider.id })
     if (!location) notFound('Automotive service location not found.')
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: location.marketId, launchReady: true })
+    if (!market) notFound('Automotive service market is not available.')
+    const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true })
+    if (!country) notFound('Automotive service market is not available.')
     const offering = await offeringRepository.findOneBy({ id: normalizedInput.offeringId, locationId: location.id, active: true })
     if (!offering) notFound('Automotive service offering not found.')
     const definition = await definitionRepository.findOneBy({ id: offering.definitionId, active: true })
@@ -1027,6 +1033,19 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     let savedRequest: ServiceRequestEntity
     try {
         savedRequest = await AppDataSource.transaction(async (manager) => {
+            // Serialize with super-admin market/country updates. FOR SHARE
+            // blocks their row UPDATE until this booking is persisted (and
+            // makes a concurrent unpublish take effect for the next request).
+            const lockedMarket = await manager.getRepository(AutomotiveMarketEntity).findOne({
+                where: { id: location.marketId, launchReady: true },
+                lock: { mode: 'pessimistic_read' },
+            })
+            if (!lockedMarket) notFound('Automotive service market is not available.')
+            const lockedCountry = await manager.getRepository(AutomotiveMarketCountryEntity).findOne({
+                where: { id: lockedMarket.countryId, active: true },
+                lock: { mode: 'pessimistic_read' },
+            })
+            if (!lockedCountry) notFound('Automotive service market is not available.')
             const lockedLocation = await assertAutoCareSlotCapacity(manager, {
                 locationId: location.id,
                 providerId: provider.id,
@@ -1267,8 +1286,13 @@ export async function getAutoCareAvailability(providerId: string, locationId: st
     if (!normalizedProviderId || !normalizedLocationId || !normalizedOfferingId || !normalizedDate) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Availability query is invalid.' })
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId, status: AutomotiveProviderStatus.Active })
     const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: normalizedLocationId, providerId: normalizedProviderId })
+    if (!provider || !location) notFound('Automotive availability references missing service data.')
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: location.marketId, launchReady: true })
+    if (!market) notFound('Automotive availability references missing service data.')
+    const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true })
+    if (!country) notFound('Automotive availability references missing service data.')
     const offering = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: normalizedOfferingId, locationId: normalizedLocationId, active: true })
-    if (!provider || !location || !offering) notFound('Automotive availability references missing service data.')
+    if (!offering) notFound('Automotive availability references missing service data.')
 
     const timezone = isValidTimeZone(location.timezone) ? location.timezone : 'UTC'
     const range = localDateRangeToUtc(normalizedDate, timezone)

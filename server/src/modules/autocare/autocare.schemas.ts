@@ -425,7 +425,7 @@ export const autoCareQuoteDecisionSchema = z.object({
 
 export const createAutoCareBroadcastRequestSchema = z.object({
     serviceDefinitionId: z.string().trim().min(1).max(120),
-    marketId: z.string().trim().min(1).max(120).nullable().optional(),
+    marketId: z.string().trim().min(1).max(120),
     issueDescription: z.string().trim().min(10).max(4_000),
     vehicleSnapshot: autoCareVehicleSnapshotSchema.nullable().optional(),
     // Broadcast photos must be opaque private-media references. Public URLs

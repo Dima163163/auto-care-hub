@@ -103,6 +103,10 @@ function assertProviderActive(provider: AutomotiveProviderEntity | null): assert
     }
 }
 
+function throwNotFound(message: string): never {
+    throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message })
+}
+
 function assertOwner(user: UserEntity) {
     if (user.role !== UserRole.Owner) {
         throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'Only owners can manage automotive service profiles.' })
@@ -240,14 +244,58 @@ async function findMarket(value: string) {
     return /^[0-9a-f-]{36}$/i.test(value) ? repository.findOneBy({ id: value }) : null
 }
 
+async function filterLocationsToLaunchReadyMarkets(locations: AutomotiveServiceLocationEntity[]) {
+    if (locations.length === 0) return []
+    const marketIds = [...new Set(locations.map((location) => location.marketId))]
+    const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
+        where: { id: In(marketIds), launchReady: true },
+        select: { id: true, countryId: true },
+    })
+    if (markets.length === 0) return []
+    const activeCountries = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).find({
+        where: { id: In([...new Set(markets.map((market) => market.countryId))]), active: true },
+        select: { id: true },
+    })
+    const activeCountryIds = new Set(activeCountries.map((country) => country.id))
+    const publicMarketIds = new Set(markets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
+    return locations.filter((location) => publicMarketIds.has(location.marketId))
+}
+
+async function isPublicAutoCareMarket(market: AutomotiveMarketEntity) {
+    if (!market.launchReady) return false
+    const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true })
+    return Boolean(country)
+}
+
+async function getPublicProviderLocations(providerId: string) {
+    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({
+        where: { providerId },
+        order: { id: 'ASC' },
+    })
+    return filterLocationsToLaunchReadyMarkets(locations)
+}
+
 export async function getAutoCareMarkets() {
     const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({ order: { countryName: 'ASC', cityName: 'ASC' } })
     // Keep the real API usable before the optional demo seed has been run. The
     // fallback is read-only and is only used when the table is empty; once the
     // database has catalog data it remains the sole source of truth.
-    return markets.length > 0
-        ? markets.map(toMarketResponse)
-        : AUTOMOTIVE_MOCK_MARKETS.map(toFallbackMarketResponse)
+    if (markets.length > 0) {
+        const publicMarketIds = await getPublicAutoCareMarketIds(markets)
+        return markets.filter((market) => publicMarketIds.has(market.id)).map(toMarketResponse)
+    }
+    return AUTOMOTIVE_MOCK_MARKETS.filter((market) => market.launchReady).map(toFallbackMarketResponse)
+}
+
+async function getPublicAutoCareMarketIds(markets: AutomotiveMarketEntity[]) {
+    const readyMarkets = markets.filter((market) => market.launchReady)
+    if (readyMarkets.length === 0) return new Set<string>()
+    const countries = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).find({
+        where: { id: In([...new Set(readyMarkets.map((market) => market.countryId))]), active: true },
+        select: { id: true },
+    })
+    const activeCountryIds = new Set(countries.map((country) => country.id))
+    return new Set(readyMarkets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
 }
 
 export async function getAutoCareLocationZones(marketValue: string, parentId?: string, coordinates?: { latitude: number; longitude: number }, limit = 24) {
@@ -261,10 +309,15 @@ export async function getAutoCareLocationZones(marketValue: string, parentId?: s
     }
     const market = await findMarket(normalizedMarketValue)
     if (!market) {
+        // Static catalog fallback is only a local empty-database bootstrap. If
+        // the persisted catalog exists, an unknown market must not be mapped to
+        // a similarly named mock city.
+        if (await AppDataSource.getRepository(AutomotiveMarketEntity).count() > 0) return []
         const fallbackMarket = findFallbackMarket(normalizedMarketValue)
         if (!fallbackMarket) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive market not found.' })
         return getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !normalizedParentId || zone.parentId === normalizedParentId)
     }
+    if (!(await isPublicAutoCareMarket(market))) return []
 
     const zoneRepository = AppDataSource.getRepository(AutomotiveLocationZoneEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
@@ -274,12 +327,7 @@ export async function getAutoCareLocationZones(marketValue: string, parentId?: s
         order: { displayOrder: 'ASC', slug: 'ASC' },
         take: coordinates ? undefined : limit,
     })
-    if (zones.length === 0) {
-        const fallbackMarket = findFallbackMarket(market.cityCode)
-        return fallbackMarket
-            ? getFallbackZones(fallbackMarket, { coordinates, limit }).filter((zone) => !normalizedParentId || zone.parentId === normalizedParentId)
-            : []
-    }
+    if (zones.length === 0) return []
 
     const locations = await locationRepository.find({ where: { marketId: market.id } })
     const providers = await providerRepository.find({ where: { status: AutomotiveProviderStatus.Active } })
@@ -317,11 +365,18 @@ export async function saveAutoCareProviderMedia(owner: UserEntity, kind: AutoCar
 export async function getFeaturedAutoCareReviews(limit: number) {
     const normalizedLimit = normalizeAutoCarePublicReviewLimit(limit, 6)
     if (!normalizedLimit) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review limit must be an integer between 1 and 50.' })
-    const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
-        where: { status: AutomotiveReviewStatus.Approved },
-        order: { createdAt: 'DESC' },
-        take: normalizedLimit,
-    })
+    const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity)
+        .createQueryBuilder('review')
+        .innerJoin(ServiceRequestEntity, 'request', 'request.id = review.serviceRequestId')
+        .innerJoin(AutomotiveServiceLocationEntity, 'location', 'location.id = request.locationId')
+        .innerJoin(AutomotiveMarketEntity, 'market', 'market.id = location.marketId AND market.launchReady = true')
+        .innerJoin(AutomotiveMarketCountryEntity, 'country', 'country.id = market.countryId AND country.active = true')
+        .where('review.status = :status', { status: AutomotiveReviewStatus.Approved })
+        .andWhere('review.serviceRequestId IS NOT NULL')
+        .orderBy('review.createdAt', 'DESC')
+        .addOrderBy('review.id', 'DESC')
+        .take(normalizedLimit)
+        .getMany()
     const providerIds = [...new Set(reviews.map((review) => review.providerId))]
     const providers = providerIds.length > 0
         ? await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
@@ -350,13 +405,6 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     if (cursorValues && (!cursorValues.providerId || !cursorValues.locationId || !Number.isFinite(cursorValues.primary) || !Number.isFinite(cursorValues.secondary))) {
         throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Cursor is invalid or expired.' })
     }
-    const cacheEnabled = env.nodeEnv !== 'test'
-    const cacheKey = cacheEnabled ? getDiscoveryCacheKey(input) : null
-    const cachedResponse = cacheKey ? getDiscoveryCache(cacheKey) : null
-    if (cachedResponse) {
-        void recordAutoCareProviderDiscoveryImpressions(cachedResponse.items.map((item) => item.provider.id))
-        return cachedResponse
-    }
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
@@ -368,10 +416,28 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
     const definition = input.serviceId ? await findServiceDefinition(input.serviceId) : null
     if (input.serviceId && !definition) return { items: [], nextCursor: null }
     const market = input.marketId ? await findMarket(input.marketId) : null
-    // A selected market is a hard scope. Returning all locations when an unknown
-    // market code is supplied would leak another region's providers and diverge
-    // from the mock discovery contract, which returns an empty result instead.
-    if (input.marketId && !market) return { items: [], nextCursor: null }
+    const launchReadyMarkets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
+        where: { launchReady: true },
+        select: { id: true, countryId: true, launchReady: true },
+    })
+    const publicMarketIds = await getPublicAutoCareMarketIds(launchReadyMarkets)
+    const launchReadyMarketIds = [...publicMarketIds].sort()
+    const launchReadyMarketIdSet = new Set(launchReadyMarketIds)
+    // A selected market is a hard scope. Unknown/unlaunched markets return a
+    // safe empty response; unscoped discovery remains limited to launch-ready
+    // markets in the database predicate below.
+    if (launchReadyMarketIds.length === 0 || (input.marketId && (!market || !launchReadyMarketIdSet.has(market.id)))) {
+        return { items: [], nextCursor: null }
+    }
+    const cacheEnabled = env.nodeEnv !== 'test'
+    const cacheKey = cacheEnabled
+        ? `${getDiscoveryCacheKey(input)}&launchReadyMarkets=${launchReadyMarketIds.join(',')}`
+        : null
+    const cachedResponse = cacheKey ? getDiscoveryCache(cacheKey) : null
+    if (cachedResponse) {
+        void recordAutoCareProviderDiscoveryImpressions(cachedResponse.items.map((item) => item.provider.id))
+        return cachedResponse
+    }
     // Stock postgres is used in local and staging Docker, so use the
     // portable indexed bounding-box strategy here. The exact distance check
     // below remains the source of truth and PostGIS can replace this query
@@ -388,6 +454,8 @@ export async function getAutoCareDiscovery(input: AutoCareDiscoveryQuery): Promi
 
     const candidateQuery = locationRepository
         .createQueryBuilder('location')
+        .innerJoin(AutomotiveMarketEntity, 'market', 'market.id = location.marketId AND market.launchReady = true')
+        .innerJoin(AutomotiveMarketCountryEntity, 'country', 'country.id = market.countryId AND country.active = true')
         .innerJoin(AutomotiveProviderEntity, 'provider', 'provider.id = location.providerId AND provider.status = :providerStatus', { providerStatus: AutomotiveProviderStatus.Active })
         .innerJoin(AutomotiveServiceOfferingEntity, 'offer', offerJoinCondition, input.serviceId ? { definitionId: definition!.id } : {})
         .select('location.id', 'locationId')
@@ -510,10 +578,9 @@ export async function getAutoCareProviderProfile(providerId: string): Promise<Au
     if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     assertProviderActive(provider)
-    const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const offeringRepository = AppDataSource.getRepository(AutomotiveServiceOfferingEntity)
-    const locations = await locationRepository.find({ where: { providerId: provider.id }, order: { id: 'ASC' } })
-    if (locations.length === 0) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider location not found.' })
+    const locations = await getPublicProviderLocations(provider.id)
+    if (locations.length === 0) throwNotFound('Automotive provider location not found.')
     const offers = await offeringRepository.find({ where: { locationId: In(locations.map((item) => item.id)), active: true }, order: { priceFromMinor: 'ASC' } })
     const definitions = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findByIds(offers.map((offer) => offer.definitionId))
     const definitionById = new Map(definitions.map((definition) => [definition.id, definition]))
@@ -683,21 +750,24 @@ export async function getAutoCareProviderReviews(providerId: string, limit = 20)
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     assertProviderActive(provider)
 
+    const locations = await getPublicProviderLocations(provider.id)
+    if (locations.length === 0) throwNotFound('Automotive provider not found.')
     const reviews = await AppDataSource.getRepository(AutomotiveReviewEntity).find({
         where: { providerId: provider.id, status: AutomotiveReviewStatus.Approved },
         order: { createdAt: 'DESC' },
     })
+    const visibleReviews = await filterReviewsByRequestLocations(reviews, locations.map((location) => location.id))
     const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
-    for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
-    const totalReviews = reviews.length
-    const averageRating = totalReviews === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1))
+    for (const review of visibleReviews) distribution[String(review.rating) as keyof typeof distribution]++
+    const totalReviews = visibleReviews.length
+    const averageRating = totalReviews === 0 ? 0 : Number((visibleReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews).toFixed(1))
 
     return {
         providerId: provider.id,
         totalReviews,
         averageRating,
         distribution,
-        reviews: reviews.slice(0, normalizedLimit).map((review) => toAutoCareReviewResponse(review)),
+        reviews: visibleReviews.slice(0, normalizedLimit).map((review) => toAutoCareReviewResponse(review)),
     }
 }
 
@@ -982,9 +1052,9 @@ async function findOrCreateOwnerMarket(manager: EntityManager, input: OwnerAutoC
         timezone,
         capabilities: {},
         legalLinks: {},
-        // A provider starts as a draft, so exposing the new market does not
-        // publish an unverified service. It simply makes the location usable.
-        launchReady: true,
+        // Creating an owner draft must not publish a market. Super-admin
+        // review is the only action that can mark a market launch-ready.
+        launchReady: false,
     }))
 }
 

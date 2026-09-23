@@ -82,7 +82,8 @@ describe('AutoCare service request schema', () => {
     })
 
     it('rejects public broadcast photo URLs until private media storage is available', () => {
-        const base = { serviceDefinitionId: 'oil-change', issueDescription: 'Нужна диагностика двигателя' }
+        const base = { serviceDefinitionId: 'oil-change', marketId: 'samara', issueDescription: 'Нужна диагностика двигателя' }
+        expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, marketId: undefined }).success).toBe(false)
         expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, photoUrls: ['https://evil.example/photo.webp'] }).success).toBe(false)
         expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, photoUrls: ['private://autocare/requests/../photo'] }).success).toBe(false)
         expect(createAutoCareBroadcastRequestSchema.parse({ ...base, photoUrls: ['private://autocare/requests/request-1/photo-1'] }).photoUrls).toEqual(['private://autocare/requests/request-1/photo-1'])
