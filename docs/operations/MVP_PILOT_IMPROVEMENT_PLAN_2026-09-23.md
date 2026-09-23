@@ -20,8 +20,8 @@ avoidable failure ambiguity from booking and support journeys.
 
 | Priority | Improvement | Status / owner | Acceptance |
 | --- | --- | --- | --- |
-| P1 | Redact all query strings from application request logs. OAuth callback `code` and `state` are credentials, and request URL logging could persist them. | Implemented locally in this review; not yet committed. | A callback request and error path never emit `code` or `state`; the path and method remain useful for diagnosis. |
-| P1 | Distinguish “provider not found” from a provider-profile API failure, and do not describe an availability request failure as a genuinely empty schedule. | Implemented locally in this review; not yet committed. | Missing profiles retain the not-found state; failed API requests show a load error; “no times” appears only after a successful empty response. |
+| P1 | Redact all query strings from application request logs. OAuth callback `code` and `state` are credentials, and request URL logging could persist them. | Implemented in `5eee151` and pushed to `dev`; log-capture regression evidence remains to be collected. | A callback request and error path never emit `code` or `state`; the path and method remain useful for diagnosis. |
+| P1 | Distinguish “provider not found” from a provider-profile API failure, and do not describe an availability request failure as a genuinely empty schedule. | Implemented in `5eee151` and pushed to `dev`; automated/browser regression evidence remains to be collected. | Missing profiles retain the not-found state; failed API requests show a load error; “no times” appears only after a successful empty response. |
 | P1 | Make release evidence cryptographically verifiable and bind it to a trusted source workflow run, repository, successful conclusion and exact release SHA. The current checker accepts arbitrary text as a “signature”; the repository has no evidence-producing workflow or established signer/key custody contract. | Engineering + release owner; deliberately not patched with a cosmetic check. | Tampered payload, invalid signature, untrusted signer/workflow, wrong SHA, failed run or missing artifact blocks promotion. A trusted signer and evidence-generation contract are configured before enabling the gate. |
 | P1 | Require MFA or an approved SSO/step-up policy for admin and super-admin accounts, including account recovery and session revocation. | Owner decision required on IdP, recovery and staff scope; then engineering. | No privileged password-only path; recovery, step-up, session revocation and audit are exercised. |
 | P1 | Add an in-chat “report conversation/message” action that reaches the existing moderation queue, with participant-only authorization, duplicate handling and clear success/error states. | Backend mutation/queue already exist; visible UX is deferred by the repository design-approval lock. | Client and provider can submit a categorized report; unauthorized participants cannot; a moderator can resolve it without leaking reporter details to the other party. |
@@ -95,10 +95,12 @@ avoidable failure ambiguity from booking and support journeys.
 ## Work performed during this review
 
 - Existing uncommitted work was committed separately as
-  `30d688e fix(mvp): specify booking and locale acceptance` and pushed only to
-  the current feature branch. It did not touch `main` or `dev`.
-- This review’s code changes remove query values from request URLs in Fastify
-  logs and correct two booking error/empty-state misclassifications.
+  `30d688e fix(mvp): specify booking and locale acceptance` and pushed first to
+  the current feature branch.
+- This review’s code changes in `5eee151 fix(pilot): redact OAuth logs and
+  clarify booking errors` remove query values from Fastify logs and correct two
+  booking error/empty-state misclassifications. Both commits are now on `dev`;
+  `main` is being handled by the repository’s verified promotion PR/workflow.
 - Security, product and UX reviews were static and read-only. No browser,
   staging, production or participant acceptance is implied. Tests have not been
   run in this review.

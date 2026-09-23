@@ -594,14 +594,17 @@ explicit `git add <file>` paths.
 
 The pre-existing booking-date, calendar-contrast, locale-deep-link and E2E-wait
 changes were committed as `30d688e fix(mvp): specify booking and locale
-acceptance` and pushed to the current feature branch only. The audit plan is
+acceptance`; they were first pushed to the current feature branch and later
+fast-forwarded into `dev`. The audit plan is
 `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md`; it preserves the
-54-gate freeze and NO-GO for real user data. Current uncommitted local fixes
-strip query strings from Fastify request logs (protecting OAuth callback
-`code`/`state`) and distinguish failed provider/availability requests from
-genuine missing-provider/empty-schedule states. Tests and browser/staging
-verification have not been run for this follow-up. The release promotion
-checker’s text-only signature check remains a blocker until a trusted signer,
-evidence producer and source-workflow trust contract are chosen; admin MFA/SSO,
-infrastructure, legal/privacy approval and independent security review remain
-external/owner-dependent.
+54-gate freeze and NO-GO for real user data. Commit
+`5eee151 fix(pilot): redact OAuth logs and clarify booking errors` strips query
+strings from Fastify request logs (protecting OAuth callback `code`/`state`) and
+distinguishes failed provider/availability requests from genuine
+missing-provider/empty-schedule states. Both commits are now on `dev`; the
+repository promotion PR is handling `main`. Automated tests and
+browser/staging verification have not been run by this task. The release
+promotion checker’s text-only signature check remains a blocker until a trusted
+signer, evidence producer and source-workflow trust contract are chosen; admin
+MFA/SSO, infrastructure, legal/privacy approval and independent security
+review remain external/owner-dependent.
