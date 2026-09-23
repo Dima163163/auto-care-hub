@@ -34,6 +34,10 @@ rating presentation uses the `--rating-fill` and `--rating-foreground` roles
 in both themes. Shared UI and inspectable product surfaces use semantic color
 roles from the theme; raw color values are limited to the token definitions
 themselves and are rejected in TypeScript/TSX source by the contract check.
+Controls that place text on the brighter primary action surface use
+`--primary-strong-foreground`; its light/dark values keep selected calendar
+days and similarly high-emphasis controls readable without component-level
+color literals.
 
 Run `npm run check:design-tokens` after changing the foundation or semantic
 theme. The check verifies required light/dark semantic roles, foundation

@@ -4751,3 +4751,39 @@ preview smoke; frontend, backend и dependency/security jobs также заве
 успешно. Это усиливает уже закрытые browser/PWA пункты, но не создаёт
 staging/production/pilot evidence для 7 partial items. Canonical readiness
 остаётся **96.5% (193/200)**.
+
+## Порция 503 (11.09.2026) — первый SDD-блок даты, quote и release surface
+
+1–10. `[x]` Для существующих условий `V2-MVP-05/06` добавлена исполняемая
+спецификация `docs/specs/MVP_BOOKING_QUOTE_SPEC.md`: нормативные требования
+для сервисного часового пояса, канонической даты, server-provided `startsAt`,
+quote id/version, expiry/stale conflict и идемпотентного повторного решения.
+Focused frontend tests прошли **12/12**, backend quote/chat/deletion tests —
+**20/20**, migration/API/remaining-block contracts — **3/3**.
+
+11–20. `[x]` Acceptance-прогон выявил и исправил два локальных regression-дефекта:
+выбранный день календаря в тёмной теме имел контраст **2.53:1** (теперь
+тёмный текст на ярком primary), а прямые URL локалей `es/ro` откатывались в
+`ru`/`en` вопреки зарегистрированным переводам (теперь URL остаются
+адресуемыми, меню запуска по-прежнему ограничено `VISIBLE_LOCALES`).
+Playwright acceptance прошёл **3/3**: protected workspace Axe, все
+зарегистрированные locale URLs и mobile Spanish/Romanian; lint, Next build и
+server TypeScript build — PASS. Production/staging, Redis/PostgreSQL/S3 и
+реальный пилот по-прежнему не подтверждены. Повторный
+`npm run check:local-mvp -- --static-only --json` подтвердил **42/42 PASS**
+и один ожидаемый manual responsive-browser gate. Canonical readiness не
+меняется искусственно и остаётся **96.5% (193/200)**.
+
+## Порция 504 (11.09.2026) — детерминированный communication-mode acceptance
+
+1–10. `[x]` В `e2e/autocare-client-public-states.spec.ts` сценарий режимов
+записи больше не считает общий loading-`<main>` признаком готовой страницы:
+он ждёт `provider-page-main` с таймаутом холодной компиляции и сохраняет
+общий timeout сценария **90 с**. Изолированный mock-прогон на трёх browser
+профилях завершён **3/3 PASS за 35.2 с**.
+
+11–20. `[~]` Это делает SDD acceptance воспроизводимым и не меняет обязательный
+знаменатель. Полный повторный replay в окружении без backend на `:4000` не
+используется как новое release evidence: он был остановлен после фиксации
+ожидаемых proxy warning и одной cold-start flaky попытки; целевой сценарий
+подтверждён отдельно. Canonical readiness остаётся **96.5% (193/200)**.

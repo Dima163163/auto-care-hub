@@ -107,7 +107,10 @@ export function getStoredLocale(): SupportedLocale {
 export function getInitialLocale(): SupportedLocale {
     if (typeof window !== 'undefined') {
         const urlLocale = normalizeLocale(new URLSearchParams(window.location.search).get('lang') ?? undefined)
-        if (urlLocale && isVisibleLocale(urlLocale)) return urlLocale
+        // Keep every registered locale addressable through an explicit URL.
+        // The launch menu remains limited to VISIBLE_LOCALES, while direct
+        // locale URLs continue to work for translated pages and SEO links.
+        if (urlLocale) return urlLocale
     }
 
     return getStoredLocale()
