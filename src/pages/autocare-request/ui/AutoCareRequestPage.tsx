@@ -52,7 +52,7 @@ export function AutoCareRequestPage() {
 
     if (isLoading) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !offering || !data) {
-        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
+        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{isError ? t('common.failedToLoad') : t('autocare.providerNotFound')}</h1></main>
     }
 
     if (requestedVehicleId && !isUserLoading && user?.role === 'client' && !isFleetsFetching && !isVehiclesFetching && !selectedSavedVehicle && !selectedVehicle) {

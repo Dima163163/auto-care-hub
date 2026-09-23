@@ -68,8 +68,15 @@ export async function buildApp() {
         logger: {
             level: env.nodeEnv === 'production' ? 'info' : 'debug',
             redact: {
-                censor: '[REDACTED]',
+                censor: (value, path) => {
+                    if (path.length === 2 && path[0] === 'req' && path[1] === 'url' && typeof value === 'string') {
+                        return value.split('?', 1)[0]
+                    }
+
+                    return '[REDACTED]'
+                },
                 paths: [
+                    'req.url',
                     'req.headers.authorization',
                     'req.headers.cookie',
                     'req.headers.sec-websocket-protocol',

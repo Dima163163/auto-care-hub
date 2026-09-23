@@ -1572,3 +1572,12 @@ default workspace unless research proves otherwise.
 
 Until these are resolved, implementation must isolate the decision behind
 configuration/policy or stop at the affected phase rather than guessing.
+
+## MVP / pilot audit follow-up — 2026-09-23
+
+Use [`docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md`](docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md)
+for the current evidence-backed recommendation list, implemented local fixes,
+design-locked UX follow-ups and owner/operations steps. The canonical
+`PILOT_SCOPE_FREEZE.md` v2.0 remains authoritative: no gates or readiness
+denominators were added, and real-user data remains NO-GO until external gates
+are accepted.

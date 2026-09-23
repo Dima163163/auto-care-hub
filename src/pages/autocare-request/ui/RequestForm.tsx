@@ -77,7 +77,7 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
     const availabilityDate = customDate || getRequestDateInputValue(Math.max(appointmentDates.indexOf(selectedDate), 0), serviceTimezone)
     const { data: availability, isError: isAvailabilityError, isFetching: isAvailabilityLoading } = useGetAutoCareAvailabilityQuery({ providerId, locationId, offeringId, date: availabilityDate })
     const currentAvailability = availability?.date === availabilityDate ? availability : undefined
-    const availableTimes = currentAvailability?.slots.map((slot) => slot.startTime) ?? []
+    const availableTimes = isAvailabilityError ? [] : currentAvailability?.slots.map((slot) => slot.startTime) ?? []
     const effectiveSelectedTime = availableTimes.includes(selectedTime) ? selectedTime : availableTimes[0] ?? ''
 
     useEffect(() => {
@@ -109,7 +109,7 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
 
     return (
         <form onSubmit={(event) => void handleSubmit(event)} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
-            <AppointmentPicker locale={locale} serviceTimezone={currentAvailability?.timezone ?? serviceTimezone} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={currentAvailability} isLoading={isAvailabilityLoading} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { const normalized = parseRequestDate(value); if (normalized) { setCustomDate(normalized); setSelectedDate('') } }} onTimeChange={setSelectedTime} />
+            <AppointmentPicker locale={locale} serviceTimezone={currentAvailability?.timezone ?? serviceTimezone} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={currentAvailability} isLoading={isAvailabilityLoading} isError={isAvailabilityError} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { const normalized = parseRequestDate(value); if (normalized) { setCustomDate(normalized); setSelectedDate('') } }} onTimeChange={setSelectedTime} />
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} vehicle={vehicleSnapshot} onVehicleChange={setVehicleSnapshot} />
             <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} attachmentIssue={attachmentIssue} onAttachmentIssueChange={setAttachmentIssue} />
             <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
@@ -129,12 +129,13 @@ type AppointmentPickerProps = {
     selectedTime: string
     availability?: AutoCareAvailability
     isLoading?: boolean
+    isError?: boolean
     onDateChange: (date: string) => void
     onCustomDateChange: (date: string) => void
     onTimeChange: (time: string) => void
 }
 
-function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, selectedTime, availability, isLoading = false, onDateChange, onCustomDateChange, onTimeChange }: AppointmentPickerProps) {
+function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, selectedTime, availability, isLoading = false, isError = false, onDateChange, onCustomDateChange, onTimeChange }: AppointmentPickerProps) {
     const { t } = useTranslation()
     const days = appointmentDates.map((id, index) => ({
         id,
@@ -162,7 +163,7 @@ function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, 
                     <div className="mt-3 grid grid-cols-3 gap-2">
                         {times.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
                     </div>
-                    {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('booking.noAvailableTimes')}</p> : null}
+                    {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : isError ? null : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('booking.noAvailableTimes')}</p> : null}
                     <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" /><span>{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}<span className="ml-1 font-black text-foreground">({serviceTimezone ?? 'UTC'})</span></span></p>
                 </div>
             </div>

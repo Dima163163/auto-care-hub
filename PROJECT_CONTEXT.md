@@ -589,3 +589,19 @@ For docs-only work, inspect the full diff and validate internal links/terminolog
 For implementation, follow the quality gates in `AGENTS.md` and
 `.codex/rules/workflow.md`. Preserve unrelated user changes and always use
 explicit `git add <file>` paths.
+
+## MVP/pilot review follow-up — 2026-09-23
+
+The pre-existing booking-date, calendar-contrast, locale-deep-link and E2E-wait
+changes were committed as `30d688e fix(mvp): specify booking and locale
+acceptance` and pushed to the current feature branch only. The audit plan is
+`docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md`; it preserves the
+54-gate freeze and NO-GO for real user data. Current uncommitted local fixes
+strip query strings from Fastify request logs (protecting OAuth callback
+`code`/`state`) and distinguish failed provider/availability requests from
+genuine missing-provider/empty-schedule states. Tests and browser/staging
+verification have not been run for this follow-up. The release promotion
+checker’s text-only signature check remains a blocker until a trusted signer,
+evidence producer and source-workflow trust contract are chosen; admin MFA/SSO,
+infrastructure, legal/privacy approval and independent security review remain
+external/owner-dependent.
