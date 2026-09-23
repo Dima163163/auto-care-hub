@@ -1299,7 +1299,7 @@ export function getOpenApiDocument() {
                     type: 'object',
                     required: ['status', 'latencyMs'],
                     properties: {
-                        status: { type: 'string', enum: ['ok', 'failed', 'skipped'] },
+                        status: { type: 'string', enum: ['ok', 'failed', 'skipped', 'checking'] },
                         latencyMs: { type: 'integer', minimum: 0 },
                         reason: { type: 'string', enum: ['timeout', 'unavailable', 'not_connected', 'not_configured', 'database_unavailable'] },
                     },
@@ -1327,12 +1327,13 @@ export function getOpenApiDocument() {
                         database: { type: 'string', enum: ['connected', 'disconnected'] },
                         checks: {
                             type: 'object',
-                            required: ['database', 'redis', 'outbox', 'storage'],
+                            required: ['database', 'redis', 'outbox', 'storage', 'mail'],
                             properties: {
                                 database: { $ref: '#/components/schemas/HealthProbe' },
                                 redis: { $ref: '#/components/schemas/HealthProbe' },
                                 outbox: { $ref: '#/components/schemas/OutboxHealthProbe' },
                                 storage: { $ref: '#/components/schemas/HealthProbe' },
+                                mail: { $ref: '#/components/schemas/HealthProbe' },
                             },
                         },
                     },

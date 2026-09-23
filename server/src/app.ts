@@ -28,6 +28,7 @@ import { registerNotFoundHandler } from './shared/errors/not-found-handler.js'
 import { getSecurityHeadersOptions } from './shared/security/security-headers.js'
 import { getCorsOptions } from './shared/security/cors.js'
 import { createMailer } from './shared/mail/create-mailer.js'
+import { mailReadiness, verifyMailerInBackground } from './shared/mail/mail-readiness.js'
 import { enqueuePasswordSetupEmailSafely } from './modules/outbox/password-setup-outbox.service.js'
 import { createTrustedProxyPolicy } from './shared/security/trusted-proxy.js'
 import { setApplicationLogger } from './shared/observability/logger.js'
@@ -169,8 +170,9 @@ export async function buildApp() {
     app.decorate('mailer', mailer)
 
     if (env.mail.mode === 'smtp') {
-        await mailer.verify()
-        app.log.info('SMTP transport verified')
+        verifyMailerInBackground(mailer, mailReadiness, app.log)
+    } else {
+        mailReadiness.markNotConfigured()
     }
 
     await connectDatabase()

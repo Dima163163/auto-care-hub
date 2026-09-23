@@ -17,6 +17,7 @@ envVars:
         value: smtp
 preDeployCommand: "npm run release:migrate"
 startCommand: "npm run start:server"
+healthCheckPath: /health/ready
 https://autocarehub.app
 `
 
@@ -28,6 +29,13 @@ test('rejects a logger mail mode in production', () => {
     assert.throws(
         () => assertRenderProductionConfig(validConfig.replace('value: smtp', 'value: logger')),
         /no production logger mail mode/,
+    )
+})
+
+test('rejects a web service without an application readiness health check', () => {
+    assert.throws(
+        () => assertRenderProductionConfig(validConfig.replace('healthCheckPath: /health/ready', '')),
+        /HTTP readiness health check/,
     )
 })
 

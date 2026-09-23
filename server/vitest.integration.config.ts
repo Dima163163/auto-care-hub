@@ -21,6 +21,7 @@ export default defineConfig({
             'src/modules/autocare/autocare-capacity.integration.test.ts',
             'src/modules/autocare/provider-branch-access.integration.test.ts',
             'src/modules/admin/admin-authorization.integration.test.ts',
+            'src/modules/admin/admin-user-status-concurrency.integration.test.ts',
             'src/modules/admin/super-admin-market-hierarchy.integration.test.ts',
             'src/database/schema-contract.integration.test.ts',
         ],

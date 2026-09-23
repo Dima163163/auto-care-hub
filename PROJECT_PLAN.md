@@ -1584,3 +1584,57 @@ are accepted. The current follow-up branch adds encrypted, keylessly-attested
 release evidence and behavior-only accessible keyboard support for search-mode
 tabs; it does not waive the protected-environment secret, real evidence,
 production acceptance or design-approval requirements.
+
+## Implementation progress — 2026-09-23
+
+- [x] SMTP verification no longer blocks API startup; health readiness reports
+  optional mail degradation without taking core API readiness offline. Render
+  now probes `/health/ready`.
+- [x] Public market/discovery/profile/review/trust/benchmark reads are limited
+  to launch-ready markets; new availability and requests are blocked in
+  unlaunched markets; owner-created markets remain drafts. Existing request
+  management and the super-admin all-market controls are preserved.
+- [x] Client DTO validation, chat initialization ordering, owner calendar
+  location-timezone formatting and request-button navigation were hardened.
+  Stale market preferences now normalize with the existing URL/storage controls.
+- [x] Demo reset now verifies the connected/configured disposable database and
+  requires exact operator confirmation before opening the deletion transaction.
+  CI also exercises the release migration integrity command after fixture seed.
+- [x] Auth hardening now persists/revokes setup sessions, protects blocked and
+  unverified accounts during setup, clears logout cookies reliably, and
+  serializes bootstrap/super-admin status changes. Unit coverage passes; the
+  PostgreSQL concurrency integration test is restricted to the disposable CI
+  fixture, so real PostgreSQL lock evidence remains a CI/release gate.
+- [x] Role-based browser smoke completed for client, owner, staff-like account,
+  admin, super-admin and signed-out access. Admin was denied super-admin access;
+  no booking, quote, moderation, catalog, market, trust-policy or other business
+  mutation was submitted. The demo staff account has no branch membership, so a
+  true branch-scoped staff journey still needs a suitable fixture.
+- [x] Root-caused and fixed Moscow discovery returning zero despite a matching
+  active offer: the launch-market query selected `id`/`countryId` but omitted
+  `launchReady`, which a shared policy helper then checked and rejected. Added
+  a regression test. HTTP returns ProService at 3.1 km for both 10 km and 50 km
+  searches; the real browser renders its card and map marker.
+- [!] The home screen still shows a fixed “3 216” count and static map
+  price/rating markers rather than live supply. A one-result search also renders
+  “1 сервисов найдено”; public and owner review totals differ (256 vs. 12 in
+  the observed demo data). These need truthful product-copy/metric decisions;
+  no display changes were made under the design lock.
+- [!] Local operator dashboard reports 126 dead-letter outbox items and 208
+  open incidents (187 critical), while Redis and antivirus are disabled and
+  media storage is filesystem-backed. These are observed local environment/data
+  conditions, not release-environment evidence; they keep pilot readiness at
+  NO-GO. The home page also renders static map price/rating markers and the
+  fixed “3 216” count. Demo data includes past pending request dates, two
+  “Capacity Test” market rows and test-like user records; provenance was not
+  changed or assumed.
+- [x] Verification completed: frontend 536 tests, backend 1,106 tests, focused
+  market tests 40, backend build, lint, SEO checks, and diff whitespace checks
+  passed. No database reset, seed, migration, commit or push was performed in
+  this batch. External legal/privacy approval, market choice, protected
+  environment secrets, CI PostgreSQL concurrency evidence and independent
+  review remain owner/platform/reviewer gates.
+- External privacy/legal approval, participant recruitment, launch-market
+  choice, protected-environment secrets and production infrastructure remain
+  owner/platform/reviewer gates; this implementation does not change pilot
+  status or the frozen readiness denominator.
