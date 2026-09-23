@@ -35,9 +35,10 @@ export async function createSecurityToken({
     user,
     purpose,
     expiresInMinutes = PASSWORD_TOKEN_TTL_MINUTES,
-}: CreateSecurityTokenInput): Promise<CreatedSecurityToken> {
-    const securityTokenRepository =
-        AppDataSource.getRepository(SecurityTokenEntity)
+}: CreateSecurityTokenInput, manager?: EntityManager): Promise<CreatedSecurityToken> {
+    const securityTokenRepository = manager
+        ? manager.getRepository(SecurityTokenEntity)
+        : AppDataSource.getRepository(SecurityTokenEntity)
     const now = new Date()
     const token = createSecurityTokenValue()
     const tokenHash = hashSecurityTokenValue(assertSecurityTokenInput(token))
@@ -120,7 +121,10 @@ export async function consumeUsableSecurityToken<T>(
         const repository = manager.getRepository(SecurityTokenEntity)
         const securityToken = await repository
             .createQueryBuilder('securityToken')
-            .leftJoinAndSelect('securityToken.user', 'user')
+            // The user relation is backed by a non-null FK. An inner join keeps
+            // PostgreSQL's FOR UPDATE legal while locking both rows so all
+            // token-consuming flows serialize against user status changes.
+            .innerJoinAndSelect('securityToken.user', 'user')
             .where('securityToken.tokenHash = :tokenHash', { tokenHash })
             .andWhere('securityToken.purpose = :purpose', { purpose })
             .andWhere('securityToken.usedAt IS NULL')

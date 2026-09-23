@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../database/data-source.js'
-import { In } from 'typeorm'
+import { In, IsNull } from 'typeorm'
 import {
     CabinetEntity,
 } from '../../entities/cabinet/cabinet.entity.js'
@@ -15,6 +15,7 @@ import {
     UserRole,
     UserStatus,
 } from '../../entities/user/user.entity.js'
+import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import {
@@ -23,6 +24,7 @@ import {
     isSuperAdmin,
 } from '../../shared/auth/roles.js'
 import { createPasswordSetupTokenForUser } from '../auth/auth.service.js'
+import { getSessionRevocationMetadata } from '../auth/session-revocation.js'
 import { logError } from '../../shared/observability/logger.js'
 import { toAdminCabinet, toAdminUser } from './admin.mappers.js'
 import { NotificationCategory } from '../../entities/notification/notification.entity.js'
@@ -55,6 +57,8 @@ import {
 } from './super-admin-market-hierarchy-policy.js'
 import type { z } from 'zod'
 import type { updateSuperAdminAutoCareMarketSchema } from './admin.schemas.js'
+
+const ADMINISTRATOR_MUTATION_LOCK_KEY = 'autocare-admin:active-super-admin-invariant'
 
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) {
@@ -309,58 +313,84 @@ export async function updateAdminUserStatus(
         })
     }
 
-    const userRepository = AppDataSource.getRepository(UserEntity)
+    return AppDataSource.transaction(async (manager) => {
+        // The active-super-admin invariant spans multiple user rows. Lock its
+        // decision boundary before loading a target so concurrent block or
+        // role-demotion requests cannot both observe the same active count.
+        await manager.query(
+            'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+            [ADMINISTRATOR_MUTATION_LOCK_KEY],
+        )
 
-    const user = await userRepository.findOne({
-        where: {
-            id: normalizedUserId,
-        },
-    })
+        const userRepository = manager.getRepository(UserEntity)
+        const user = await userRepository
+            .createQueryBuilder('user')
+            .where('user.id = :userId', { userId: normalizedUserId })
+            .setLock('pessimistic_write')
+            .getOne()
 
-    if (!user) {
-        throw new AppError({
-            statusCode: 404,
-            code: ERROR_CODES.NotFound,
-            message: 'User not found.',
-        })
-    }
-
-    if (!canManageUserStatus(admin.role, user.role)) {
-        throw new AppError({
-            statusCode: 403,
-            code: ERROR_CODES.Forbidden,
-            message: 'Only super admin can manage admin accounts.',
-        })
-    }
-
-    // Protection: Cannot block the last active super-admin
-    if (user.role === UserRole.SuperAdmin && normalizedStatus === UserStatus.Blocked) {
-        const activeSuperAdminsCount = await userRepository.count({
-            where: {
-                role: UserRole.SuperAdmin,
-                status: UserStatus.Active,
-            },
-        })
-
-        if (activeSuperAdminsCount <= 1) {
+        if (!user) {
             throw new AppError({
-                statusCode: 400,
-                code: ERROR_CODES.BadRequest,
-                message: 'Cannot block the last active super administrator.',
+                statusCode: 404,
+                code: ERROR_CODES.NotFound,
+                message: 'User not found.',
             })
         }
-    }
 
-    const oldStatus = user.status
-    user.status = normalizedStatus
+        if (!canManageUserStatus(admin.role, user.role)) {
+            throw new AppError({
+                statusCode: 403,
+                code: ERROR_CODES.Forbidden,
+                message: 'Only super admin can manage admin accounts.',
+            })
+        }
 
-    const savedUser = await userRepository.save(user)
+        // Protection: Cannot block the last active super-admin.
+        if (user.role === UserRole.SuperAdmin && normalizedStatus === UserStatus.Blocked) {
+            const activeSuperAdminsCount = await userRepository.count({
+                where: {
+                    role: UserRole.SuperAdmin,
+                    status: UserStatus.Active,
+                },
+            })
 
-    return {
-        user: toAdminUser(savedUser),
-        oldStatus,
-        newStatus: savedUser.status,
-    }
+            if (activeSuperAdminsCount <= 1) {
+                throw new AppError({
+                    statusCode: 400,
+                    code: ERROR_CODES.BadRequest,
+                    message: 'Cannot block the last active super administrator.',
+                })
+            }
+        }
+
+        const oldStatus = user.status
+        const isBlocking = normalizedStatus === UserStatus.Blocked
+        user.status = normalizedStatus
+        if (oldStatus !== normalizedStatus) {
+            // Invalidate credentials on both block and unblock transitions.
+            // This also handles accounts blocked before this revocation path
+            // existed, so their old JWTs cannot revive when status is active.
+            user.tokenVersion += 1
+        }
+
+        const savedUser = await userRepository.save(user)
+
+        if (isBlocking) {
+            // Match the auth flow's lock order: user row first, then session
+            // rows. Password setup also holds the user row through session
+            // creation, so no setup session can slip past this revocation.
+            await manager.getRepository(UserSessionEntity).update(
+                { userId: user.id, revokedAt: IsNull() },
+                getSessionRevocationMetadata('all_sessions'),
+            )
+        }
+
+        return {
+            user: toAdminUser(savedUser),
+            oldStatus,
+            newStatus: savedUser.status,
+        }
+    })
 }
 
 export async function updateAdminUserRole(
@@ -388,49 +418,59 @@ export async function updateAdminUserRole(
         })
     }
 
-    const userRepository = AppDataSource.getRepository(UserEntity)
+    return AppDataSource.transaction(async (manager) => {
+        // Share the status mutation lock: changing a super-admin's role also
+        // changes the count protected by the last-active-super-admin rule.
+        await manager.query(
+            'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+            [ADMINISTRATOR_MUTATION_LOCK_KEY],
+        )
 
-    const user = await userRepository.findOne({
-        where: { id: normalizedUserId },
-    })
+        const userRepository = manager.getRepository(UserEntity)
+        const user = await userRepository
+            .createQueryBuilder('user')
+            .where('user.id = :userId', { userId: normalizedUserId })
+            .setLock('pessimistic_write')
+            .getOne()
 
-    if (!user) {
-        throw new AppError({
-            statusCode: 404,
-            code: ERROR_CODES.NotFound,
-            message: 'User not found.',
-        })
-    }
-
-    // Protection: Cannot demote the last active super-admin
-    if (user.role === UserRole.SuperAdmin && normalizedRole !== UserRole.SuperAdmin) {
-        const activeSuperAdminsCount = await userRepository.count({
-            where: {
-                role: UserRole.SuperAdmin,
-                status: UserStatus.Active,
-            },
-        })
-
-        if (activeSuperAdminsCount <= 1) {
+        if (!user) {
             throw new AppError({
-                statusCode: 400,
-                code: ERROR_CODES.BadRequest,
-                message: 'Cannot demote the last active super administrator.',
+                statusCode: 404,
+                code: ERROR_CODES.NotFound,
+                message: 'User not found.',
             })
         }
-    }
 
-    const oldRole = user.role
-    user.role = normalizedRole
-    user.tokenVersion += 1 // Invalidate sessions on role change
+        // Protection: Cannot demote the last active super-admin
+        if (user.role === UserRole.SuperAdmin && normalizedRole !== UserRole.SuperAdmin) {
+            const activeSuperAdminsCount = await userRepository.count({
+                where: {
+                    role: UserRole.SuperAdmin,
+                    status: UserStatus.Active,
+                },
+            })
 
-    const savedUser = await userRepository.save(user)
+            if (activeSuperAdminsCount <= 1) {
+                throw new AppError({
+                    statusCode: 400,
+                    code: ERROR_CODES.BadRequest,
+                    message: 'Cannot demote the last active super administrator.',
+                })
+            }
+        }
 
-    return {
-        user: toAdminUser(savedUser),
-        oldRole,
-        newRole: savedUser.role,
-    }
+        const oldRole = user.role
+        user.role = normalizedRole
+        user.tokenVersion += 1 // Invalidate sessions on role change
+
+        const savedUser = await userRepository.save(user)
+
+        return {
+            user: toAdminUser(savedUser),
+            oldRole,
+            newRole: savedUser.role,
+        }
+    })
 }
 
 export async function getAdminCabinets(admin: UserEntity) {
