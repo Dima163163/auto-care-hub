@@ -603,8 +603,12 @@ strings from Fastify request logs (protecting OAuth callback `code`/`state`) and
 distinguishes failed provider/availability requests from genuine
 missing-provider/empty-schedule states. Both commits are now on `dev`; the
 repository promotion PR is handling `main`. Automated tests and
-browser/staging verification have not been run by this task. The release
-promotion checker’s text-only signature check remains a blocker until a trusted
-signer, evidence producer and source-workflow trust contract are chosen; admin
-MFA/SSO, infrastructure, legal/privacy approval and independent security
-review remain external/owner-dependent.
+browser/staging verification have not been run by this task. The current
+follow-up branch implements encrypted release-evidence production, keyless
+GitHub artifact attestations and exact source/Quality-run verification. It
+cannot be used until the owner configures `RELEASE_EVIDENCE_ENCRYPTION_KEY` on
+the protected `production` environment and supplies fresh real gate evidence.
+Admin MFA/SSO, infrastructure, legal/privacy approval, pilot participants and
+independent security review remain external/owner-dependent. Search-mode tabs
+now have keyboard navigation and ARIA panel associations, pending human
+accessibility verification.

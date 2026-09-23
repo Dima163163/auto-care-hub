@@ -1580,4 +1580,7 @@ for the current evidence-backed recommendation list, implemented local fixes,
 design-locked UX follow-ups and owner/operations steps. The canonical
 `PILOT_SCOPE_FREEZE.md` v2.0 remains authoritative: no gates or readiness
 denominators were added, and real-user data remains NO-GO until external gates
-are accepted.
+are accepted. The current follow-up branch adds encrypted, keylessly-attested
+release evidence and behavior-only accessible keyboard support for search-mode
+tabs; it does not waive the protected-environment secret, real evidence,
+production acceptance or design-approval requirements.
