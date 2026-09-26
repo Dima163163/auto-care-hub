@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import {
     checkCanonicalRobotsConsistency,
     checkLocaleCoverage,
+    checkLocalHtmlMetadataReport,
     checkOgImageExistence,
     checkProductionUrlSafety,
     normalizeSeoBaseUrl,
@@ -40,6 +41,10 @@ test('local SEO source contracts pass without a production URL', () => {
     assert.equal(checkCanonicalRobotsConsistency().status, 'pass')
     assert.equal(checkProductionUrlSafety().status, 'pass')
     assert.equal(checkLocaleCoverage().status, 'pass')
+})
+
+test('request-aware root locale reports HTML verification as manual until a server URL is available', () => {
+    assert.equal(checkLocalHtmlMetadataReport().status, 'manual')
 })
 
 test('bounded SEO response reader accepts UTF-8 bodies and rejects oversized headers or streams', async () => {
