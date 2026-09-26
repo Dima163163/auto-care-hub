@@ -7,6 +7,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum ServiceRequestStatus {
     Draft = 'draft',
@@ -43,7 +44,7 @@ export class AutoCareChatThreadEntity {
     @Column({ type: 'uuid', nullable: true }) providerId!: string | null
     @Column({ type: 'uuid', nullable: true }) clientId!: string | null
     @Column({ type: 'uuid', nullable: true }) createdById!: string | null
-    @Column({ type: 'text' }) subject!: string
+    @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_chat_threads', 'subject', 'text') }) subject!: string
     @Column({ type: 'enum', enum: AutoCareChatThreadStatus, enumName: 'autocare_chat_thread_status', default: AutoCareChatThreadStatus.Open }) status!: AutoCareChatThreadStatus
     @Column({ type: 'timestamptz', nullable: true }) lastMessageAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
@@ -70,7 +71,6 @@ export type AutomotiveOfferingSnapshot = {
 @Index(['clientId', 'createdAt'])
 @Index(['providerId', 'status', 'createdAt'])
 @Index('IDX_autocare_service_requests_client_idempotency_key', ['clientId', 'idempotencyKey'], { unique: true })
-@Check('CHK_autocare_service_requests_note', '"note" IS NULL OR char_length("note") <= 4000')
 export class ServiceRequestEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) clientId!: string
@@ -80,31 +80,31 @@ export class ServiceRequestEntity {
     @Column({ type: 'uuid', nullable: true }) offeringId!: string | null
     @Column({ type: 'jsonb', nullable: true }) offeringSnapshot!: AutomotiveOfferingSnapshot | null
     @Column({ type: 'uuid', nullable: true }) vehicleId!: string | null
-    @Column({ type: 'jsonb', nullable: true }) vehicleSnapshot!: Record<string, unknown> | null
-    @Column({ type: 'jsonb', nullable: true }) contactSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'contactSnapshot', 'jsonb') }) contactSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
-    @Column({ type: 'text', nullable: true }) note!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'note', 'text') }) note!: string | null
     @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
-    @Column({ type: 'jsonb', nullable: true }) estimateSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'estimateSnapshot', 'jsonb') }) estimateSnapshot!: Record<string, unknown> | null
     /** Immutable price and scope captured when the client accepts a quote. */
     @Column({ type: 'integer', nullable: true }) acceptedQuoteVersion!: number | null
-    @Column({ type: 'jsonb', nullable: true }) acceptedQuoteSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'acceptedQuoteSnapshot', 'jsonb') }) acceptedQuoteSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) acceptedQuoteAt!: Date | null
     /** Immutable booking contract derived from the accepted quote. */
-    @Column({ type: 'jsonb', nullable: true }) bookingSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'bookingSnapshot', 'jsonb') }) bookingSnapshot!: Record<string, unknown> | null
     @Column({ type: 'timestamptz', nullable: true }) bookingCreatedAt!: Date | null
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) providerConfirmedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) cancelledAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) cancelledById!: string | null
-    @Column({ type: 'text', nullable: true }) cancellationReason!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'cancellationReason', 'text') }) cancellationReason!: string | null
     @Column({ type: 'timestamptz', nullable: true }) noShowAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) noShowById!: string | null
-    @Column({ type: 'text', nullable: true }) noShowReason!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'noShowReason', 'text') }) noShowReason!: string | null
     @Column({ type: 'timestamptz', nullable: true }) completedAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) completedById!: string | null
-    @Column({ type: 'text', nullable: true }) completionNote!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'completionNote', 'text') }) completionNote!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }
@@ -130,19 +130,22 @@ export type ServiceMessageOffer = {
 @Entity('autocare_service_messages')
 @Index(['requestId', 'createdAt'])
 @Index('IDX_autocare_service_messages_idempotency', ['requestId', 'senderId', 'idempotencyKey'], { unique: true, where: '"idempotencyKey" IS NOT NULL' })
-@Check('CHK_autocare_service_messages_body', '"body" IS NULL OR char_length("body") BETWEEN 1 AND 4000')
+@Index('IDX_autocare_service_messages_thread_idempotency', ['threadId', 'senderId', 'idempotencyKey'], { unique: true, where: '"idempotencyKey" IS NOT NULL' })
 export class ServiceMessageEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid', nullable: true }) requestId!: string | null
     @Column({ type: 'uuid', nullable: true }) threadId!: string | null
     @Column({ type: 'uuid' }) senderId!: string
     @Column({ type: 'enum', enum: ServiceMessageKind, enumName: 'autocare_service_message_kind', default: ServiceMessageKind.Text }) kind!: ServiceMessageKind
-    @Column({ type: 'text', nullable: true }) body!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_messages', 'body', 'text') }) body!: string | null
     @Column({ type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'char', length: 64, nullable: true }) idempotencyFingerprint!: string | null
-    @Column({ type: 'jsonb', nullable: true }) offer!: ServiceMessageOffer | null
+    @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_messages', 'offer', 'jsonb') }) offer!: ServiceMessageOffer | null
     @Column({ type: 'timestamptz', nullable: true }) deliveredAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) readAt!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) deletedAt!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) evidenceRetainUntil!: Date | null
+    @Column({ type: 'uuid', nullable: true }) deletedById!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 

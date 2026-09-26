@@ -246,6 +246,10 @@ jobs:
         run: npm run demo:seed && npm run autocare:seed
         working-directory: server
 
+      - name: Validate release migration integrity gate
+        run: npm run release:migrate
+        working-directory: server
+
       - name: Run PostgreSQL integration and concurrency profile
         run: npm run test:integration
         working-directory: server
@@ -429,6 +433,8 @@ jobs:
       - name: Reset and seed demo data
         run: npm run demo:reset && npm run demo:seed && npm run autocare:seed
         working-directory: server
+        env:
+          DEMO_RESET_CONFIRM_DATABASE: autocarehub_real_e2e
 
       - name: Install Chromium
         # Keep the real-mode smoke independent from transient apt metadata

@@ -22,6 +22,7 @@ import {
 } from '../../entities/index.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { createEmailBlindIndex, encryptRedactedFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -62,7 +63,7 @@ async function redactAccountDeletionOutboxEvents(
         `DELETE FROM "outbox_events" event
           WHERE event."status" IN ('pending', 'failed')
             AND ${recipientMatch}`,
-        [userId, originalEmail],
+        [userId, createEmailBlindIndex(originalEmail)],
     )
 
     // Completed/dead-letter rows are retained for operational history, but
@@ -72,8 +73,16 @@ async function redactAccountDeletionOutboxEvents(
             SET "payload" = '{"redacted": true}'::jsonb
           WHERE event."status" IN ('completed', 'dead_letter')
             AND ${recipientMatch}`,
-        [userId, originalEmail],
+        [userId, createEmailBlindIndex(originalEmail)],
     )
+}
+
+function encryptedRedactedText(table: string, column: string, value: string) {
+    return JSON.stringify(encryptRedactedFieldValue(table, column, value))
+}
+
+function encryptedRedactedJson(table: string, column: string, value: unknown) {
+    return encryptRedactedFieldValue(table, column, value)
 }
 
 async function anonymizeAccount(manager: EntityManager, userId: string) {
@@ -118,7 +127,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
 
     const ownedProviders = await manager.getRepository(AutomotiveProviderEntity).find({
         where: { ownerId: userId },
-        select: { logoUrl: true, coverImageUrl: true, galleryImageUrls: true },
+        select: { id: true, logoUrl: true, coverImageUrl: true, galleryImageUrls: true },
     })
     // Provider media is public by URL, so it must be removed before the
     // account is anonymized. If storage deletion fails, the transaction rolls
@@ -154,6 +163,8 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     const identity = getAnonymizedIdentity(userId)
     user.name = identity.name
     user.email = identity.email
+    user.communityProfileEnabled = false
+    user.communityDisplayName = null
     user.status = UserStatus.Blocked
     user.passwordHash = null
     user.phone = null
@@ -223,6 +234,9 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
             SET "contactSnapshot" = NULL,
                 "vehicleSnapshot" = NULL,
                 "note" = NULL,
+                "estimateSnapshot" = NULL,
+                "acceptedQuoteSnapshot" = NULL,
+                "bookingSnapshot" = NULL,
                 "cancelledById" = NULL,
                 "noShowById" = NULL,
                 "completedById" = NULL
@@ -232,14 +246,14 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "completedById" = $1`,
         [userId],
     )
-    await manager.query('UPDATE "autocare_service_quotes" SET "snapshot" = jsonb_build_object(\'redacted\', true) WHERE "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)', [userId])
-    await manager.query('UPDATE "autocare_broadcast_requests" SET "issueDescription" = $1, "vehicleSnapshot" = NULL, "photoUrls" = \'{}\' WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
-    await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_service_quotes" SET "snapshot" = $1 WHERE "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $2)', [encryptedRedactedJson('autocare_service_quotes', 'snapshot', { redacted: true }), userId])
+    await manager.query('UPDATE "autocare_broadcast_requests" SET "issueDescription" = $1, "vehicleSnapshot" = NULL, "photoUrls" = \'{}\' WHERE "clientId" = $2', [encryptedRedactedText('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT), userId])
+    await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_guarantee_claims" SET "resolvedById" = NULL WHERE "resolvedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_expert_questions" SET "symptoms" = $1, "vehicleSnapshot" = NULL, "answer" = NULL WHERE "clientId" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_expert_questions" SET "symptoms" = $1, "vehicleSnapshot" = NULL, "answer" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_expert_questions', 'symptoms', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_expert_questions" SET "answeredById" = NULL WHERE "answeredById" = $1', [userId])
     await manager.query('UPDATE "autocare_fleet_accounts" SET "notes" = NULL WHERE "ownerId" = $1', [userId])
-    await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = \'{}\', "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $2)', [identity.name, userId])
+    await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = $2, "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $3)', [encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name), encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {}), userId])
     await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "noShowReason" = NULL, "completionNote" = NULL WHERE "clientId" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_service_messages"
@@ -249,22 +263,22 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)`,
         [userId],
     )
-    await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
+    await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL, "assignmentReason" = NULL, "extensionReason" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "assignedModeratorId" = $1 OR "assignedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
     await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
-    await manager.query('UPDATE "autocare_chat_threads" SET "subject" = $2, "clientId" = NULL, "createdById" = NULL WHERE "clientId" = $1 OR "createdById" = $1', [userId, ANONYMIZED_REVIEW_TEXT])
+    await manager.query('UPDATE "autocare_chat_threads" SET "subject" = $2, "clientId" = NULL, "createdById" = NULL WHERE "clientId" = $1 OR "createdById" = $1', [userId, encryptedRedactedText('autocare_chat_threads', 'subject', ANONYMIZED_REVIEW_TEXT)])
     await manager.query(
         `UPDATE "autocare_repair_events"
-            SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = '{}'::jsonb
+            SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = $3
           WHERE "actorId" = $1
              OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
-        [userId, ANONYMIZED_REVIEW_TEXT],
+        [userId, encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT), encryptedRedactedJson('autocare_repair_events', 'metadata', {})],
     )
-    await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL WHERE "verifiedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = \'{"redacted": true}\'::jsonb, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $1', [userId])
+    await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "notes" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
+    await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = $1, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $2', [encryptedRedactedJson('autocare_provider_change_requests', 'payload', { redacted: true }), userId])
     await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = \'{}\'::jsonb, "comparisonAttributes" = \'[]\'::jsonb, "rationale" = $1, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = $1, "comparisonAttributes" = $2, "rationale" = $3, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $4', [encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {}), encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', []), encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL WHERE "submittedById" = $2', [ANONYMIZED_REVIEW_TEXT, userId])
+    await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL WHERE "submittedById" = $2', [encryptedRedactedText('autocare_appeals', 'reason', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL WHERE "decidedById" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_reschedule_requests"

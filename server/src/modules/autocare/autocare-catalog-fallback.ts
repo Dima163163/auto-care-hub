@@ -1,5 +1,6 @@
 import type { AutoCareLocationZoneResponse, AutoCareMarketResponse } from './autocare.types.js'
 import { AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
+import { isAutoCareCountryEnabled } from '../../config/enabled-market-countries.js'
 import {
     AUTOMOTIVE_MOCK_LOCATION_ZONES,
     AUTOMOTIVE_MOCK_MARKETS,
@@ -12,7 +13,8 @@ type MockMarket = (typeof AUTOMOTIVE_MOCK_MARKETS)[number]
 export function findFallbackMarket(value: string | undefined) {
     if (!value) return null
     const normalized = value.startsWith('market-') ? value.slice('market-'.length) : value
-    return AUTOMOTIVE_MOCK_MARKETS.find((market) => market.cityCode === value || market.cityCode === normalized) ?? null
+    const market = AUTOMOTIVE_MOCK_MARKETS.find((item) => item.cityCode === value || item.cityCode === normalized)
+    return market && isAutoCareCountryEnabled(market.countryCode) ? market : null
 }
 
 export function toFallbackMarketResponse(market: MockMarket): AutoCareMarketResponse {

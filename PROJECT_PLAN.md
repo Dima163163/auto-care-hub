@@ -1580,4 +1580,188 @@ for the current evidence-backed recommendation list, implemented local fixes,
 design-locked UX follow-ups and owner/operations steps. The canonical
 `PILOT_SCOPE_FREEZE.md` v2.0 remains authoritative: no gates or readiness
 denominators were added, and real-user data remains NO-GO until external gates
-are accepted.
+are accepted. The current follow-up branch adds encrypted, keylessly-attested
+release evidence and behavior-only accessible keyboard support for search-mode
+tabs; it does not waive the protected-environment secret, real evidence,
+production acceptance or design-approval requirements.
+
+## Implementation progress — 2026-09-23
+
+- [x] SMTP verification no longer blocks API startup; health readiness reports
+  optional mail degradation without taking core API readiness offline. Render
+  now probes `/health/ready`.
+- [x] Public market/discovery/profile/review/trust/benchmark reads are limited
+  to launch-ready markets; new availability and requests are blocked in
+  unlaunched markets; owner-created markets remain drafts. Existing request
+  management and the super-admin all-market controls are preserved.
+- [x] Client DTO validation, chat initialization ordering, owner calendar
+  location-timezone formatting and request-button navigation were hardened.
+  Stale market preferences now normalize with the existing URL/storage controls.
+- [x] Demo reset now verifies the connected/configured disposable database and
+  requires exact operator confirmation before opening the deletion transaction.
+  CI also exercises the release migration integrity command after fixture seed.
+- [x] Auth hardening now persists/revokes setup sessions, protects blocked and
+  unverified accounts during setup, clears logout cookies reliably, and
+  serializes bootstrap/super-admin status changes. Unit coverage passes; the
+  PostgreSQL concurrency integration test is restricted to the disposable CI
+  fixture, so real PostgreSQL lock evidence remains a CI/release gate.
+- [~] Role-based browser smoke covers client, owner, staff-like account, admin,
+  super-admin and signed-out access. The AutoCare seed already upserts an active
+  staff membership scoped to the ProService location, and branch-access
+  integration coverage exists. This task did not run that seed or create test
+  records against the unspecified local database, so a live demo-staff login
+  remains unverified; no business mutations were submitted.
+- [x] Root-caused and fixed Moscow discovery returning zero despite a matching
+  active offer: the launch-market query selected `id`/`countryId` but omitted
+  `launchReady`, which a shared policy helper then checked and rejected. Added
+  a regression test. HTTP returns ProService at 3.1 km for both 10 km and 50 km
+  searches; the real browser renders its card and map marker.
+- [x] Home supply count and map offer markers now use live discovery data; the
+  boot shell makes no fixed supply claim, and empty/loading/error states avoid
+  inventing a count. Discovery returns `totalCount` plus an explicit
+  lower-bound flag for the bounded scan. Result-count strings use locale-aware
+  plural forms, including Russian 1/2/5 cases. No layout or visual-system
+  changes were made.
+- [~] Public ratings/counts no longer trust stale stored provider counters.
+  Public aggregates, review lists and featured reviews include only approved
+  `verifiedVisit` rows linked to closed, mutually confirmed requests at a
+  launch-ready public location; owner summaries derive from actual approved
+  rows and respect review membership scope. Approved but unlinked/unverified
+  demo rows may remain visible to an authorized owner and intentionally not
+  appear publicly. Mock mode now follows the same boundary. They must not be
+  published until attached to a valid, mutually confirmed visit/location.
+- [x] Fixed Russian singular/plural for one provider/result and one review;
+  count labels use locale-aware forms on home, result and provider surfaces.
+- [!] Local operator dashboard reports 126 dead-letter outbox items and 208
+  open incidents (187 critical), while Redis and antivirus are disabled and
+  media storage is filesystem-backed. These are observed local environment/data
+  conditions, not release-environment evidence; they keep pilot readiness at
+  NO-GO. This task did not retry, delete or resolve any event or incident, and
+  did not provision external services. Demo data includes past pending request
+  dates, two “Capacity Test” market rows and test-like user records; provenance
+  was not changed or assumed.
+- [x] Verification completed: frontend 539 tests, backend 1,108 tests, frontend
+  and backend builds, lint, API parity, OpenAPI structure and diff whitespace
+  checks passed. No database reset, seed, migration, commit or push was
+  performed in this batch. External legal/privacy approval, market choice, protected
+  environment secrets, CI PostgreSQL concurrency evidence and independent
+  review remain owner/platform/reviewer gates.
+- External privacy/legal approval, participant recruitment, launch-market
+  choice, protected-environment secrets and production infrastructure remain
+  owner/platform/reviewer gates; this implementation does not change pilot
+  status or the frozen readiness denominator.
+
+## AutoCare security audit fixes — 2026-09-24
+
+- [x] Implemented code changes for all 11 findings in the 2026-09-24 security
+  audit: AC-01 block checks share transaction lock ordering across chat/request
+  paths; AC-02 revokes access after report closure and audits read-only
+  moderation, while AC-10 prevents request-PII access from chat reports;
+  AC-03/04/07/09 enforce quote, reschedule and offer lifecycle
+  rules; AC-05 fetches private media with bearer authorization; AC-06/08 harden
+  WebSocket rate limiting and reconnect tokens; AC-11 makes generic chat sends
+  idempotent with a database uniqueness migration.
+- [x] AC-02 report-specific moderation and message-action policy implemented:
+  SuperAdmin assignment grants one ordinary Admin 24-hour read-only access to
+  the complete reported request conversation and attachments, with one
+  reasoned 24-hour extension. Reads, assignment/reassignment and emergency
+  SuperAdmin access are audited; expired, closed or reassigned grants stop
+  access. The reporter must confirm the full-thread review notice; Cancel sends
+  no report and grants no access. Only the reporter sees status, and the other
+  participant does not learn their identity. Counter-reports on messages posted
+  after review starts are blocked; a distinct later threat requires explicit
+  threat category and 20+ characters of context and links to the active case.
+  Message deletion is limited to the sender's text within five minutes; later
+  hide is local to the current user/device. Legacy unanchored reports are
+  metadata-only and cannot grant access.
+- [x] Final mock browser role pass covered the client and service owner report
+  entry, SuperAdmin assignment, and assigned Admin access. The assigned Admin
+  opened the scoped read-only request chat; no message or attachment controls
+  were exposed and the UI stated that reads do not mark messages as read. A
+  synthetic case was resolved with a reason and without blocking anyone.
+  Unassigned Admin metadata-only behavior was also verified. Since the seed
+  had no attachment, a temporary local mock image was added only for this check;
+  the assigned Admin rendered it successfully, then the fixture was removed.
+  Private-attachment authorization and viewing are also covered by server and
+  UI tests. SPA logout/login preserved the temporary assignment, while Vite
+  HMR reset the in-memory mock state; PostgreSQL persistence remains unverified.
+  Emergency access was inspected but not activated. A
+  graduated sanctions proposal is in
+  [`docs/security/CHAT_REPORT_ENFORCEMENT_POLICY_DRAFT_2026-09-24.md`](docs/security/CHAT_REPORT_ENFORCEMENT_POLICY_DRAFT_2026-09-24.md);
+  automatic penalties remain disabled pending policy approval. Production
+  object-storage GET CORS still needs the exact frontend origins. The two new
+  migrations were validated only against a disposable local database; the
+  developer's `autocarehub` database was not migrated. Production-origin
+  browser verification and external release checks remain open; pilot remains
+  NO-GO.
+- [x] Latest verification: frontend **175 files / 553 tests**, backend **306
+  files / 1,139 unit tests**, frontend/backend builds, full ESLint, API parity
+  (**236/236 mock routes; 2/2 WebSocket routes**), migration-order validation
+  (**134 migrations**) and `git diff --check` passed. A fresh disposable
+  PostgreSQL database accepted all 134 migrations and the migration smoke
+  check; the main local database remained at 132 migrations through
+  `1786340000000`. The full backend integration suite passed **15 files / 64
+  tests**, with 1 skipped. One first run had a transient 401 in an admin
+  authorization test; that file passed alone and the repeated full suite passed.
+  Real-mode Chromium E2E against the local API and disposable PostgreSQL passed
+  **26/26 scenarios**, including client, owner, staff, admin and super-admin
+  access, real discovery, request submission/idempotency, expired sessions and
+  recovery states. During that run, an outbox edge case was found and fixed:
+  notifications whose recipient account was deleted now complete without
+  repeated foreign-key failures, with the user row locked across creation.
+  After verification the temporary database was dropped. No production
+  database, commit or push was used.
+
+### Product audit remediation — 2026-09-26
+
+- [x] Implemented the code-fixable findings from `docs/audits/PRODUCT_AUDIT_2026-09-25.md`: request lead-time validation; preserved moderation evidence and scoped access; complaint decisions, sanctions, appeals, anti-retaliation, notifications and outbox idempotency; cursor pagination for discovery and the admin report queue; accurate offer, availability, location, vehicle, rating and promotion data; security headers, robots/canonical/sitemap, business error codes, 404 handling, localized counts/labels/metadata, and retryable partial photo uploads.
+- [x] Fixed the unbounded-block edge case where a missing expiry field caused a runtime exception: absent expiry remains an active restriction. Server unit tests cover this boundary.
+- [x] Verified frontend **177 files / 564 tests**, backend **306 files / 1150 unit tests**, ESLint, TypeScript, API build, Next production build, security-header/threat-surface, migration inventory/order, error-code and SEO source contracts.
+- [x] Complete A21 report-history behavior: clients can page through their own reports; the admin queue supports active/archive scope, report/chat ID search, assignment and category filters applied before cursor pagination, matching counts, and retryable stale/error states. Browser-checked the Super Admin assignment+category filter combination; requester scoping and pagination are covered by frontend and server boundary tests. The queue remains metadata-only and shows no conversation text.
+- [x] Complete A29 server-rendered public profile content without changing the existing composition: allowlisted public DTOs provide provider details, published offers and prices to first HTML; RTK Query is seeded before hydration; mock mode uses the same public fixture source; closed/unknown profiles remain 404/noindex. Provider-specific title, description and image persist after hydration. Browser-checked the first render, hydrated page, metadata and 390px layout with no horizontal overflow.
+- [x] Re-ran A32 dependency advisories after the lockfile changes: root and backend `npm audit` both report **0 vulnerabilities**.
+- [x] Rechecked the final production mock build in a browser: Russian home/provider page titles, loaded provider profile, and Russian owner-profile role/status labels. The earlier full user/service/admin/super-admin moderation walkthrough is recorded in `PROJECT_CONTEXT.md`.
+- [x] Walked the provider profile and booking flow as a client, owner, and admin moderator. The selected date, time, and service timezone stay in sync through the client form; a local mock request now carries the branch timezone into the owner queue, which renders Moscow local time. The admin moderator sees report metadata but no conversation without assignment. No moderation assignment or decision was changed during this pass.
+- [x] Added regression coverage for service-timezone propagation across mock client submission and owner request listing, plus owner-side local-time rendering. Full frontend verification passes: 179 test files / 569 tests, ESLint, TypeScript, and Vite/Next production builds.
+- [ ] Production-domain, external database, mail, object-storage and HTTPS checks remain launch-environment work.
+
+- [x] Final complaint-flow pass fixed the local conversation response so both
+  participants receive active-review/evidence-protection flags. The owner UI
+  now falls back to the reporter's own pending-report history when that
+  response is stale; it hides new-report and delete actions for the reported
+  participant. Mock deletion now blocks every message in an active case and
+  preserves all thread evidence for 90 days after a decision, matching the
+  server policy. Focused verification: **3 files / 10 tests**, targeted ESLint,
+  and the Vite production build pass.
+- [x] The SuperAdmin assigned `QA Moderator` to one local synthetic
+  harassment report for 24 hours. The report remains pending; no decision or
+  restriction was applied. The page confirms the moderator assignment.
+- [x] Recorded visual proposal **01** for the `/admin/users` heading, with the
+  live before view in the QA session and generated opaque-card after concept
+  in [`docs/design/proposals/2026-09-26-final-pass/README.md`](docs/design/proposals/2026-09-26-final-pass/README.md).
+- [ ] Still needs one final browser login as the assigned QA Moderator to open
+  this exact report and verify its attachments. The QA account's current
+  password is not available in the workspace; do not guess or reset it.
+
+### Client community badges, public profiles and helpful votes — 2026-09-26
+
+- [x] Added client-only achievement badges based on mutually confirmed visits,
+  approved verified reviews and distinct verified clients who found reviews
+  useful. Complaint counts and star ratings do not contribute to reputation.
+- [x] Added an explicit, default-off public profile consent control. The
+  disclosure names the data that will appear, including the alias and avatar on
+  published verified reviews. Revoking consent hides the profile, restores
+  anonymous review authorship and leaves the consent record; re-enabling rotates
+  the public profile ID. Public profile responses are allowlisted, no-store and
+  noindex.
+- [x] Added authenticated helpful-vote actions with email-verification and
+  self-vote checks, unique voter/review storage, a public aggregate count,
+  private vote state, and user-data export coverage. The profile metrics query
+  batches authors rather than issuing per-review queries.
+- [x] Added the PostgreSQL migration, mock behavior and focused frontend and
+  backend regressions for opt-in/revocation, privacy projection, self-vote
+  rejection, idempotent vote removal, display-name normalization, migration
+  structure and export privacy. API/OpenAPI route checks and migration
+  inventory/order checks pass.
+- [ ] The new migration has not been applied to the developer database, and
+  the feature has not yet been rehearsed against a running PostgreSQL API.

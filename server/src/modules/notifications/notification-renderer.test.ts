@@ -56,6 +56,16 @@ describe('notification renderer', () => {
         expect(russian.message).not.toBe(english.message)
     })
 
+    it('renders chat moderation notices without including private report content', () => {
+        const received = renderNotificationTemplate('autocare.chat_report_received', {}, 'ru')
+        const assigned = renderNotificationTemplate('autocare.chat_report_assigned', {}, 'en')
+
+        expect(received.link).toBe('/admin/dashboard')
+        expect(received.message).toContain('Поступила новая жалоба')
+        expect(assigned.title).toBe('Chat report assigned to you')
+        expect(assigned.message).not.toMatch(/reported message|conversation text|report description/i)
+    })
+
     it('reads only valid template metadata parameters', () => {
         const template = readNotificationTemplateMetadata({
             templateKey: 'booking.reminder',

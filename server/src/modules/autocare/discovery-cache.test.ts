@@ -11,7 +11,7 @@ describe('discovery cache', () => {
 
     it('expires entries and keeps the cache bounded', () => {
         clearDiscoveryCache()
-        const response = { items: [], nextCursor: null }
+        const response = { items: [], nextCursor: null, totalCount: 0, totalCountIsLowerBound: false }
         setDiscoveryCache('one', response, 100)
         expect(getDiscoveryCache('one', 104)).toEqual(response)
         expect(getDiscoveryCache('one', 100 + discoveryCachePolicy.ttlMs)).toBeNull()

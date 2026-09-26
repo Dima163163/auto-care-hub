@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
+import { outboxPayloadEncryptionTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum OutboxEventStatus {
     Pending = 'pending',
@@ -17,7 +18,7 @@ export class OutboxEventEntity {
     @Column({ type: 'text' })
     type!: string
 
-    @Column({ type: 'jsonb' })
+    @Column({ type: 'jsonb', transformer: outboxPayloadEncryptionTransformer })
     payload!: Record<string, unknown>
 
     @Column({ type: 'text', unique: true, nullable: true })

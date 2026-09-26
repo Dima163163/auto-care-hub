@@ -12,6 +12,7 @@ import { Footer } from '@/widgets/footer'
 import {
     WorkspaceMobileHeader,
     WorkspaceSidebar,
+    WorkspaceIconDefinitions,
     type WorkspaceRole,
 } from '@/widgets/workspace-shell'
 
@@ -34,7 +35,11 @@ export function PublicLayout() {
                 : 'client'
 
     return (
-        <div className={isWorkspaceRoute ? 'autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden overflow-x-clip md:pb-0' : 'autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col overflow-x-clip md:pb-0'}>
+        <div
+            className={isWorkspaceRoute ? 'autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden overflow-x-clip md:pb-0' : 'autocare-app-surface mobile-bottom-safe flex min-h-screen flex-col overflow-x-clip md:pb-0'}
+            data-workspace-icon-theme={isWorkspaceRoute ? 'true' : undefined}
+        >
+            <WorkspaceIconDefinitions />
             <SeoHead />
             <DesktopPublicHeader />
             <div className="md:hidden">

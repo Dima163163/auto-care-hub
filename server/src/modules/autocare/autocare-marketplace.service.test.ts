@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
 import { AutomotiveProviderStatus } from '../../entities/automotive/automotive.entity.js'
+import { AutoCareTrustEvidenceEntity, AutoCareTrustSnapshotEntity, AutomotiveMarketCountryEntity, AutomotiveMarketEntity, AutomotiveProviderEntity, AutomotiveServiceLocationEntity } from '../../entities/index.js'
 import { UserRole } from '../../entities/user/user.entity.js'
 import { assertOwnerBroadcastAccess, getAutoCareProviderTrust } from './autocare-marketplace.service.js'
 
@@ -78,11 +79,18 @@ describe('AutoCare broadcast ownership', () => {
             },
             reasonCodes: [],
         }
+        const location = { id: 'location-1', providerId: trustProviderId, marketId: 'market-1' }
         const evidenceRepository = { find: vi.fn().mockResolvedValue([]) }
-        mocks.getRepository
-            .mockReturnValueOnce({ findOneBy: vi.fn().mockResolvedValue(provider) })
-            .mockReturnValueOnce(evidenceRepository)
-            .mockReturnValueOnce({ find: vi.fn().mockResolvedValue([snapshot]) })
+        const snapshotRepository = { find: vi.fn().mockResolvedValue([snapshot]) }
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutomotiveProviderEntity) return { findOneBy: vi.fn().mockResolvedValue(provider) }
+            if (entity === AutomotiveServiceLocationEntity) return { find: vi.fn().mockResolvedValue([location]) }
+            if (entity === AutomotiveMarketEntity) return { find: vi.fn().mockResolvedValue([{ id: 'market-1', countryId: 'country-1', countryCode: 'RU', launchReady: true }]) }
+            if (entity === AutomotiveMarketCountryEntity) return { find: vi.fn().mockResolvedValue([{ id: 'country-1' }]) }
+            if (entity === AutoCareTrustEvidenceEntity) return evidenceRepository
+            if (entity === AutoCareTrustSnapshotEntity) return snapshotRepository
+            return undefined
+        })
 
         const result = await getAutoCareProviderTrust(trustProviderId)
 
@@ -90,6 +98,19 @@ describe('AutoCare broadcast ownership', () => {
         expect(result.snapshots).toHaveLength(1)
         expect(result.factors.confidence).toBeGreaterThan(0)
         expect(evidenceRepository.find).toHaveBeenCalledWith(expect.objectContaining({ take: 100 }))
+        expect(snapshotRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ providerId: trustProviderId }) }))
+    })
+
+    it('does not serve public trust for a provider whose only location is in an unlaunched market', async () => {
+        const trustProviderId = '11111111-1111-4111-8111-111111111111'
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutomotiveProviderEntity) return { findOneBy: vi.fn().mockResolvedValue({ id: trustProviderId, status: AutomotiveProviderStatus.Active }) }
+            if (entity === AutomotiveServiceLocationEntity) return { find: vi.fn().mockResolvedValue([{ id: 'location-1', marketId: 'market-1' }]) }
+            if (entity === AutomotiveMarketEntity) return { find: vi.fn().mockResolvedValue([]) }
+            return { find: vi.fn() }
+        })
+
+        await expect(getAutoCareProviderTrust(trustProviderId)).rejects.toMatchObject({ statusCode: 404 })
         expect(mocks.getRepository).toHaveBeenCalledTimes(3)
     })
 })

@@ -721,6 +721,26 @@ export const enTranslations = {
                 title: 'AutoCare visit reminder',
                 message: 'Your confirmed visit is coming up. Open the request to check the details.',
             },
+            chatReportReceived: {
+                title: 'Chat report needs assignment',
+                message: 'A new report is waiting for a moderator. Open the moderation queue to assign it.',
+            },
+            chatReportAssigned: {
+                title: 'Chat report assigned to you',
+                message: 'A report has been assigned to you for a time-limited, read-only review.',
+            },
+            chatReportResolved: {
+                title: 'Chat report reviewed',
+                message: 'Your report was reviewed and action was taken. Open the chat to see the conversation.',
+            },
+            chatReportDismissed: {
+                title: 'Chat report reviewed',
+                message: 'Your report was reviewed and no violation was found. Open the chat to see the conversation.',
+            },
+            chatReportOverturned: {
+                title: 'Chat decision reviewed again',
+                message: 'A later appeal changed the moderation decision on your report. Open the chat for its current status.',
+            },
         },
         moderation: {
             reviewUpdated: {

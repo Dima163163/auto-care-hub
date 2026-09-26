@@ -29,6 +29,8 @@ import {
 import { mockSession, clearMockSession, setMockSession } from './session'
 import { parseMockJson } from './parseMockJson'
 import { getMockScenario, isMockEmpty, isMockPartial, mockScenarioResponse } from './mock-scenario'
+import { clearMockChatReportAssignment, persistMockChatReportAssignment, readMockChatReportAssignment } from './mock-chat-report-assignment'
+import { mockChatReportSyntheticAttachment } from './data/mockChatReportSyntheticAttachment'
 
 const loginRequestSchema = z.object({
     email: z.string().email(),
@@ -85,6 +87,12 @@ function invalidMockBodyResponse() {
     )
 }
 
+function parseMockOffset(cursor: string | null) {
+    if (!cursor?.startsWith('offset:')) return 0
+    const offset = Number(cursor.slice('offset:'.length))
+    return Number.isSafeInteger(offset) && offset > 0 ? offset : 0
+}
+
 function mockZonedWallTimeToIso(date: string, time: string, timezone: string) {
     const wallTime = Date.parse(`${date}T${time}:00.000Z`)
     if (!Number.isFinite(wallTime)) return null
@@ -100,8 +108,91 @@ function mockZonedWallTimeToIso(date: string, time: string, timezone: string) {
     return estimate.toISOString()
 }
 
+function getMockZonedDateTimeParts(instant: Date, timezone: string) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(instant)
+    const values = Object.fromEntries(parts.filter(({ type }) => type !== 'literal').map(({ type, value }) => [type, value]))
+    return {
+        date: `${values.year}-${values.month}-${values.day}`,
+        time: `${values.hour}:${values.minute}`,
+    }
+}
+
+function addMockCalendarDays(date: string, days: number) {
+    const next = new Date(`${date}T12:00:00.000Z`)
+    next.setUTCDate(next.getUTCDate() + days)
+    return next.toISOString().slice(0, 10)
+}
+
+function getMockProviderAvailabilitySlots(provider: AutoCareApiProvider, date: string, now = Date.now(), durationMinutes = 60) {
+    const timezone = provider.location.timezone ?? 'UTC'
+    if (provider.location.blackoutDates?.includes(date)) return []
+
+    const weekday = new Date(`${date}T12:00:00.000Z`).getUTCDay()
+    const weekdayKey = (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const)[weekday]
+    const schedule = provider.location.weeklySchedule?.[weekdayKey]
+    if (!schedule || schedule.closed) return []
+
+    const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
+    const openMinutes = toMinutes(schedule.open)
+    const closeMinutes = toMinutes(schedule.close)
+    const reserved = new Set(mockAutoCareServiceRequests
+        .filter((request) => request.providerId === provider.id && request.locationId === provider.location.id && request.status !== 'declined' && request.status !== 'closed' && request.preferredAt)
+        .map((request) => getMockZonedDateTimeParts(new Date(request.preferredAt!), timezone))
+        .filter((parts) => parts.date === date)
+        .map((parts) => parts.time))
+    const slots: Array<{ startTime: string; endTime: string; startsAt: string }> = []
+
+    for (let start = openMinutes; start + durationMinutes <= closeMinutes; start += 30) {
+        const startTime = `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`
+        if (reserved.has(startTime)) continue
+        const startsAt = mockZonedWallTimeToIso(date, startTime, timezone)
+        if (!startsAt || Date.parse(startsAt) <= now) continue
+        const end = start + durationMinutes
+        slots.push({
+            startTime,
+            endTime: `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`,
+            startsAt,
+        })
+    }
+
+    return slots
+}
+
+function getMockNextProviderSlot(provider: AutoCareApiProvider, now = Date.now()) {
+    const timezone = provider.location.timezone ?? 'UTC'
+    const today = getMockZonedDateTimeParts(new Date(now), timezone).date
+    for (let offset = 0; offset <= 1; offset += 1) {
+        const date = addMockCalendarDays(today, offset)
+        const firstAvailable = getMockProviderAvailabilitySlots(provider, date, now)[0]
+        if (firstAvailable) return `${offset === 0 ? 'Today' : 'Tomorrow'}, ${firstAvailable.startTime}`
+    }
+
+    return null
+}
+
 const mockFavoritesByUser = new Map<string, string[]>()
 const mockAutoCareProviderActivity = new Map<string, { impressions: number; profileOpens: number }>()
+type MockCommunityProfileState = { enabled: boolean; displayName: string | null; profileId: string }
+const mockCommunityProfiles = new Map<string, MockCommunityProfileState>([
+    ['user-client-1', { enabled: false, displayName: 'Алексей Авто', profileId: '10000000-0000-4000-8000-000000000001' }],
+    ['user-client-2', { enabled: false, displayName: 'Мария Сервис', profileId: '10000000-0000-4000-8000-000000000002' }],
+])
+const mockHelpfulVotesByReview = new Map<string, Set<string>>()
+const mockCommunityConsentLedger: Array<{ userId: string; action: 'granted' | 'revoked'; at: string }> = []
+let nextMockCommunityProfileId = 3
+const mockOptionalConsents = new Map<string, {
+    analytics: { granted: boolean; version: string | null; recordedAt: string | null }
+    marketing: { granted: boolean; version: string | null; recordedAt: string | null }
+}>()
+const mockLegalDocumentVersions = { terms: 'draft-2026-08-13', privacy: 'draft-2026-08-13' } as const
 const mockOAuthIdentitiesByUser = new Map<string, Set<'google' | 'yandex'>>()
 const mockVehiclesByUser = new Map<string, ClientVehicle[]>([
     ['user-client-1', [{
@@ -383,6 +474,7 @@ type MockAutoCareReview = {
     clientId?: string | null
     idempotencyKey?: string | null
     serviceRequestId?: string | null
+    verifiedVisit?: boolean
     serviceSlug?: string | null
     revisionAllowedUntil?: string | null
     revisionUsedAt?: string | null
@@ -390,31 +482,123 @@ type MockAutoCareReview = {
 }
 
 const mockFeaturedAutoCareReviews: MockAutoCareReview[] = [
-    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', photoUrls: [reviewPhotoAssets[0]], createdAt: '2026-08-12T10:00:00.000Z', clientId: 'user-client-1', serviceRequestId: 'owner-request-1', serviceSlug: 'oil-change' },
+    { id: 'featured-review-1', providerId: 'api-proservice-moscow', authorName: 'Алексей С.', vehicleLabel: 'BMW X5', rating: 5, text: 'Быстро приняли машину, заранее объяснили стоимость и прислали понятный фотоотчёт.', avatarUrl: '/images/autocare/avatars/alexey.webp', photoUrls: [reviewPhotoAssets[0]], createdAt: '2026-08-12T10:00:00.000Z', clientId: 'user-client-1', serviceRequestId: 'client-request-closed', serviceSlug: 'oil-change', verifiedVisit: true, status: 'approved' },
     { id: 'featured-review-2', providerId: 'api-autolux-moscow', authorName: 'Мария К.', vehicleLabel: 'Toyota RAV4', rating: 4, text: 'Удобная запись и внимательный мастер. Итоговая цена совпала с предварительной оценкой.', avatarUrl: '/images/autocare/avatars/maria.webp', photoUrls: [reviewPhotoAssets[2]], createdAt: '2026-08-05T10:00:00.000Z' },
     { id: 'featured-review-3', providerId: 'api-formula-moscow', authorName: 'Игорь П.', vehicleLabel: 'Skoda Octavia', rating: 3, text: 'Работу выполнили, но пришлось немного подождать. Специалист подробно ответил на вопросы.', avatarUrl: '/images/autocare/avatars/igor.webp', photoUrls: [reviewPhotoAssets[1]], createdAt: '2026-07-29T10:00:00.000Z' },
     { id: 'featured-review-4', providerId: 'api-proservice-moscow', authorName: 'Ольга Н.', vehicleLabel: 'Volkswagen Tiguan', rating: 2, text: 'Цена оказалась выше ожиданий, зато сервис оперативно объяснил состав работ и предложил решение.', avatarUrl: null, photoUrls: [], createdAt: '2026-07-21T10:00:00.000Z' },
-    ...Array.from({ length: 24 }, (_, index) => {
-        const providers = ['api-proservice-moscow', 'api-autolux-moscow'] as const
+    ...[
+        ...Array.from({ length: 10 }, () => 'api-proservice-moscow' as const),
+        ...Array.from({ length: 11 }, () => 'api-autolux-moscow' as const),
+    ].map((providerId, index) => {
         const names = ['Сергей В.', 'Елена Р.', 'Дмитрий Л.', 'Наталья А.', 'Андрей К.', 'Виктор М.', 'Полина Т.', 'Роман Д.']
         const vehicles = ['Kia Sportage', 'Hyundai Tucson', 'Ford Focus', 'Mazda CX-5', 'Volvo XC60', 'Honda CR-V', 'Renault Duster', 'Nissan X-Trail']
-        const ratings = [5, 4, 3, 2, 1] as const
-        const photoUrls = index % 5 === 3 ? [] : [reviewPhotoAssets[index % reviewPhotoAssets.length], ...(index % 6 === 0 ? [reviewPhotoAssets[(index + 1) % reviewPhotoAssets.length]] : [])]
+        const proServiceRatings = [5, 4, 1, 5, 4, 3, 2, 5, 4, 3] as const
+        const autoLuxRatings = [5, 4, 3, 2, 5, 4, 1, 5, 4, 3, 3] as const
+        const providerIndex = providerId === 'api-proservice-moscow' ? index : index - 10
+        const rating = providerId === 'api-proservice-moscow' ? proServiceRatings[providerIndex] : autoLuxRatings[providerIndex]
+        const photoUrls = providerIndex % 5 === 3 ? [] : [reviewPhotoAssets[providerIndex % reviewPhotoAssets.length], ...(providerIndex % 6 === 0 ? [reviewPhotoAssets[(providerIndex + 1) % reviewPhotoAssets.length]] : [])]
         return {
             id: `featured-review-generated-${index + 1}`,
-            providerId: providers[index % providers.length],
-            authorName: names[index % names.length]!,
-            vehicleLabel: vehicles[index % vehicles.length]!,
-            rating: ratings[index % ratings.length]!,
-            text: index % 5 === 4
+            providerId,
+            authorName: names[providerIndex % names.length]!,
+            vehicleLabel: vehicles[providerIndex % vehicles.length]!,
+            rating: rating!,
+            verifiedVisit: true,
+            text: providerIndex % 5 === 4
                 ? 'Остались вопросы по срокам, но сервис быстро вышел на связь и предложил понятное решение.'
                 : 'Мастер заранее объяснил состав работ, прислал фотографии и выдал автомобиль в согласованное время.',
             avatarUrl: null,
             photoUrls,
-            createdAt: new Date(Date.UTC(2026, 7, 19 - index, 10, 0, 0)).toISOString(),
+            createdAt: new Date(Date.UTC(2026, 7, 19 - providerIndex, 10, 0, 0)).toISOString(),
         }
     }),
 ]
+
+function summarizeMockAutoCareReviews(reviews: readonly MockAutoCareReview[]) {
+    const approvedReviews = reviews.filter((review) => (review.status ?? 'approved') === 'approved')
+    return {
+        rating: approvedReviews.length === 0
+            ? 0
+            : Number((approvedReviews.reduce((sum, review) => sum + review.rating, 0) / approvedReviews.length).toFixed(1)),
+        reviewCount: approvedReviews.length,
+    }
+}
+
+function getMockAutoCareReviewSummary(providerId: string) {
+    return summarizeMockAutoCareReviews(getMockPublicAutoCareReviews(providerId))
+}
+
+function getMockPublicAutoCareReviews(providerId: string) {
+    const provider = autoCareProviders.find((item) => item.id === providerId)
+    if (!provider || provider.status !== 'active' || !autoCareMarkets.some((market) => market.id === provider.location.marketId && market.launchReady && market.countryCode === 'RU')) return []
+
+    const requestsById = new Map(mockAutoCareServiceRequests
+        .filter((request) => request.providerId === providerId && request.locationId === provider.location.id)
+        .map((request) => [request.id, request]))
+
+    return mockFeaturedAutoCareReviews.filter((review) => {
+        if (review.providerId !== providerId || (review.status ?? 'approved') !== 'approved' || !review.verifiedVisit || !review.serviceRequestId) return false
+        const request = requestsById.get(review.serviceRequestId)
+        return request?.providerId === review.providerId
+            && request.status === 'closed'
+            && Boolean(request.clientConfirmedAt && request.providerConfirmedAt)
+    })
+}
+
+function getMockCommunityProfileState(userId: string) {
+    let profile = mockCommunityProfiles.get(userId)
+    if (!profile) {
+        profile = { enabled: false, displayName: null, profileId: `10000000-0000-4000-8000-${String(nextMockCommunityProfileId++).padStart(12, '0')}` }
+        mockCommunityProfiles.set(userId, profile)
+    }
+    return profile
+}
+
+function getMockCommunityMetrics(userId: string) {
+    const confirmedVisits = mockAutoCareServiceRequests.filter((request) => request.clientId === userId
+        && request.status === 'closed' && Boolean(request.clientConfirmedAt && request.providerConfirmedAt)
+        && autoCareProviders.some((provider) => provider.id === request.providerId && provider.status === 'active' && autoCareMarkets.some((market) => market.id === provider.location.marketId && market.launchReady && market.countryCode === 'RU'))).length
+    const eligibleReviews = [...new Set(mockFeaturedAutoCareReviews.map((review) => review.providerId))]
+        .flatMap((providerId) => getMockPublicAutoCareReviews(providerId))
+        .filter((review) => review.clientId === userId)
+    const helpfulVoters = new Set(eligibleReviews.flatMap((review) => [...(mockHelpfulVotesByReview.get(review.id) ?? [])]
+        .filter((voterId) => mockUsers.some((user) => user.id === voterId && user.role === 'client' && user.status === 'active' && user.emailVerifiedAt))))
+    return { confirmedVisits, publishedReviews: eligibleReviews.length, helpfulVoters: helpfulVoters.size }
+}
+
+function getMockCommunityBadges(metrics: ReturnType<typeof getMockCommunityMetrics>) {
+    const badges: Array<'verified_client' | 'regular_client' | 'helpful_reviewer' | 'autocare_expert'> = []
+    if (metrics.confirmedVisits >= 1) badges.push('verified_client')
+    if (metrics.confirmedVisits >= 3) badges.push('regular_client')
+    if (metrics.confirmedVisits >= 1 && metrics.publishedReviews >= 3 && metrics.helpfulVoters >= 5) badges.push('helpful_reviewer')
+    if (metrics.confirmedVisits >= 5 && metrics.publishedReviews >= 5 && metrics.helpfulVoters >= 15) badges.push('autocare_expert')
+    return badges
+}
+
+function getMockHelpfulCount(reviewId: string) {
+    return [...(mockHelpfulVotesByReview.get(reviewId) ?? [])].filter((voterId) => mockUsers.some((user) => user.id === voterId && user.role === 'client' && user.status === 'active' && user.emailVerifiedAt)).length
+}
+
+function toMockPublicAutoCareReview(review: MockAutoCareReview) {
+    const state = review.clientId ? getMockCommunityProfileState(review.clientId) : null
+    const user = review.clientId ? mockUsers.find((candidate) => candidate.id === review.clientId) : undefined
+    const optedIn = Boolean(state?.enabled && state.displayName && user?.role === 'client' && user.status === 'active')
+    const metrics = review.clientId && optedIn ? getMockCommunityMetrics(review.clientId) : null
+    return {
+        id: review.id,
+        providerId: review.providerId,
+        authorName: optedIn ? state!.displayName! : '',
+        vehicleLabel: '',
+        rating: review.rating,
+        text: review.text,
+        avatarUrl: optedIn ? user?.avatarUrl ?? null : null,
+        photoUrls: review.photoUrls,
+        createdAt: review.createdAt,
+        serviceSlug: review.serviceSlug ?? null,
+        communityProfile: optedIn && metrics ? { profileId: state!.profileId, badgeCodes: getMockCommunityBadges(metrics) } : null,
+        helpfulCount: getMockHelpfulCount(review.id),
+    }
+}
 
 type MockPlatformReview = {
     id: string
@@ -466,8 +650,11 @@ function toAutoCareProvider(provider: typeof providerPreviews[number]) {
         verified: provider.verified,
         yearsActive: provider.id === 'proservice-moscow' ? 8 : 5,
         staffCount: provider.id === 'proservice-moscow' ? 24 : 12,
-        rating: provider.rating,
-        reviewCount: provider.reviewCount,
+        // Public review metrics are added lazily by API handlers after mock
+        // service requests are initialized. Never seed provider-owned metrics
+        // from unrelated or unlinked review fixtures.
+        rating: 0,
+        reviewCount: 0,
         bonusSummary: provider.bonus ?? null,
         phone: '+7 (495) 645-35-35',
         phones: ['+7 (495) 645-35-35'],
@@ -634,12 +821,13 @@ type MockAutoCareServiceRequest = {
         priceType: string
     } | null
     preferredAt: string | null
+    timezone?: string | null
     vehicleId?: string | null
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
     note: string | null
-    quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'; validUntil?: string | null } | null
-    quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'; validUntil?: string | null }>
+    quote: { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; lineItems?: Array<{ kind: string; title: string; quantity: number; unitPriceMinor: number; totalMinor: number }>; subtotalMinor?: number; taxMinor?: number; feesMinor?: number; priceLocked?: boolean; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'; validUntil?: string | null } | null
+    quoteHistory: Array<{ id: string; version: number; amountMinor: number; currencyCode: string; note: string | null; createdAt: string; lineItems?: Array<{ kind: string; title: string; quantity: number; unitPriceMinor: number; totalMinor: number }>; subtotalMinor?: number; taxMinor?: number; feesMinor?: number; priceLocked?: boolean; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded'; validUntil?: string | null }>
     acceptedQuoteVersion?: number | null
     acceptedQuoteSnapshot?: Record<string, unknown> | null
     acceptedQuoteAt?: string | null
@@ -693,10 +881,10 @@ type MockAutoCareServiceRequest = {
 
 const mockAutoCareServiceRequests: MockAutoCareServiceRequest[] = [
     {
-        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, serviceDescription: 'Замена масла и масляного фильтра', offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', vehicleId: 'mock-vehicle-1', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel', engineDisplacement: 3, horsepower: 249, color: 'Черный', licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, quoteHistory: [], idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
+        id: 'owner-request-1', providerId: 'api-proservice-moscow', providerName: 'ProService', locationId: 'location-proservice-moscow', address: 'Москва, ул. Льва Толстого, 18', definitionId: 'definition-oil-change', serviceSlug: 'oil-change', serviceLabels: { ru: 'Замена масла', en: 'Oil change' }, serviceDescription: 'Замена масла и масляного фильтра', offeringId: 'offer-api-proservice-moscow-oil-change', priceFromMinor: 290_000, currencyCode: 'RUB', preferredAt: '2026-08-20T11:00:00.000Z', timezone: 'Europe/Moscow', vehicleId: 'mock-vehicle-1', vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel', engineDisplacement: 3, horsepower: 249, color: 'Черный', licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' }, contactSnapshot: { name: 'Алексей Смирнов', phone: '+7 999 123-45-67' }, note: 'Нужно подобрать масло и фильтр по VIN.', quote: null, quoteHistory: [], idempotencyKey: null, idempotencyFingerprint: 'seed-1', status: 'open', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-13T09:00:00.000Z', updatedAt: '2026-08-13T09:00:00.000Z',
     },
     {
-        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, serviceDescription: 'Диагностика тормозной системы', offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
+        id: 'owner-request-2', providerId: 'api-autolux-moscow', providerName: 'АвтоЛюкс', locationId: 'location-autolux-moscow', address: 'Москва, Комсомольский пр-т, 45', definitionId: 'definition-brake-service', serviceSlug: 'brake-service', serviceLabels: { ru: 'Диагностика тормозной системы', en: 'Brake diagnostics' }, serviceDescription: 'Диагностика тормозной системы', offeringId: 'offer-api-autolux-moscow-brake-service', priceFromMinor: 320_000, currencyCode: 'RUB', preferredAt: '2026-08-21T14:00:00.000Z', timezone: 'Europe/Moscow', vehicleSnapshot: { make: 'Toyota', model: 'RAV4', year: 2019 }, contactSnapshot: { name: 'Мария К.', phone: '+7 999 555-11-22' }, note: 'Слышу скрип при торможении, прикладываю фото дисков.', quote: { amountMinor: 450_000, lineItems: [], subtotalMinor: 450_000, taxMinor: 0, feesMinor: 0, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', validUntil: null, priceLocked: false, createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }, quoteHistory: [{ id: 'mock-quote-2-v1', version: 1, amountMinor: 450_000, lineItems: [], subtotalMinor: 450_000, taxMinor: 0, feesMinor: 0, currencyCode: 'RUB', note: 'Диагностика, замена колодок при необходимости.', validUntil: null, priceLocked: false, createdAt: '2026-08-12T16:00:00.000Z', status: 'pending' }], idempotencyKey: null, idempotencyFingerprint: 'seed-2', status: 'estimate_shared', clientId: 'user-client-1', clientConfirmedAt: null, providerConfirmedAt: null, createdAt: '2026-08-12T15:00:00.000Z', updatedAt: '2026-08-12T16:00:00.000Z',
     },
 ]
 
@@ -725,6 +913,8 @@ mockAutoCareServiceRequests.push({
     ...mockAutoCareServiceRequests[0]!,
     id: 'client-request-closed',
     status: 'closed',
+    clientConfirmedAt: '2026-08-10T11:05:00.000Z',
+    providerConfirmedAt: '2026-08-10T11:10:00.000Z',
     preferredAt: '2026-08-10T09:30:00.000Z',
     vehicleId: 'mock-vehicle-1',
     vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, fuelType: 'diesel', engineDisplacement: 3, horsepower: 249, color: 'Черный', licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
@@ -745,6 +935,26 @@ mockAutoCareServiceRequests.push({
         vehicleId: 'mock-vehicle-1',
         vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, licensePlate: 'А123ВС163', internalNumber: 'AC-001', vin: 'WBAJU71030L012345' },
     },
+})
+
+mockAutoCareServiceRequests.push({
+    ...mockAutoCareServiceRequests[0]!,
+    id: 'community-visit-client-2',
+    clientId: 'user-client-2',
+    status: 'closed',
+    clientConfirmedAt: '2026-08-11T12:05:00.000Z',
+    providerConfirmedAt: '2026-08-11T12:10:00.000Z',
+    preferredAt: '2026-08-11T10:30:00.000Z',
+    completedAt: '2026-08-11T12:00:00.000Z',
+    createdAt: '2026-08-10T09:00:00.000Z',
+    updatedAt: '2026-08-11T12:10:00.000Z',
+})
+
+mockFeaturedAutoCareReviews.push({
+    id: 'community-review-client-2', providerId: 'api-proservice-moscow', authorName: 'Мария К.', vehicleLabel: 'Toyota RAV4',
+    rating: 5, text: 'Смету согласовали заранее, сроки выдержали, а после обслуживания прислали фотоотчёт.',
+    avatarUrl: '/images/autocare/avatars/maria.webp', photoUrls: [], createdAt: '2026-08-12T13:00:00.000Z',
+    clientId: 'user-client-2', serviceRequestId: 'community-visit-client-2', verifiedVisit: true, serviceSlug: 'oil-change', status: 'approved',
 })
 
 // A confirmed request is kept in the mock dataset so the client can exercise
@@ -790,6 +1000,16 @@ function expireMockAutoCareQuotes(now = Date.now()) {
 
 const mockAutoCareMessages = new Map<string, ServiceChatMessage[]>()
 const mockAutoCareAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
+mockAutoCareAttachments.set('owner-request-2', [{
+    id: 'chat-report-synthetic-attachment-1',
+    uploadedById: 'user-client-1',
+    contentType: mockChatReportSyntheticAttachment.contentType,
+    bytes: mockChatReportSyntheticAttachment.bytes,
+    status: 'ready',
+    url: '/api/v1/chats/chat-request-owner-request-2/attachments/chat-report-synthetic-attachment-1',
+    createdAt: '2026-08-13T09:15:00.000Z',
+    contentBase64: mockChatReportSyntheticAttachment.contentBase64,
+}])
 const mockAutoCareChatAttachments = new Map<string, Array<{ id: string; uploadedById: string; contentType: string; bytes: number; status: 'ready'; url: string; createdAt: string; contentBase64: string }>>()
 type MockAutoCareChatThread = {
     id: string
@@ -813,15 +1033,29 @@ const mockAutoCareChatThreads: MockAutoCareChatThread[] = [
 type MockAutoCareChatReport = {
     id: string
     threadId: string
+    messageId: string | null
     reporterId: string
     reportedUserId: string | null
-    category: 'spam' | 'harassment' | 'fraud' | 'unsafe' | 'other'
+    category: 'spam' | 'harassment' | 'threat' | 'fraud' | 'unsafe' | 'other'
     description: string | null
+    acknowledgeFullThreadReview: true
+    acknowledgedAt: string
+    policyVersion: string
+    relatedReportId: string | null
+    assignedModeratorId: string | null
+    accessExpiresAt: string | null
+    extensionUsed: boolean
     status: 'pending' | 'resolved' | 'dismissed'
     reviewedById: string | null
     resolutionReason: string | null
     createdAt: string
     reviewedAt: string | null
+    overturnedAt?: string | null
+}
+type MockNewChatReportCategory = 'harassment' | 'threat' | 'fraud' | 'other'
+const mockChatReportCategories = ['harassment', 'threat', 'fraud', 'other'] as const
+function isMockChatReportCategory(value: unknown): value is MockNewChatReportCategory {
+    return typeof value === 'string' && mockChatReportCategories.some((category) => category === value)
 }
 type MockAutoCareChatBlock = {
     id: string
@@ -830,26 +1064,63 @@ type MockAutoCareChatBlock = {
     blockedUserId: string
     status: 'active' | 'revoked'
     reason: string | null
+    sourceReportId: string | null
+    expiresAt: string | null
     createdAt: string
     revokedAt: string | null
 }
 const mockAutoCareChatReports: MockAutoCareChatReport[] = [{
     id: 'chat-report-demo-1',
-    threadId: 'chat-inquiry-proservice',
+    threadId: 'chat-request-owner-request-1',
+    messageId: 'mock-message-2',
     reporterId: 'user-client-1',
     reportedUserId: 'user-owner-1',
-    category: 'other',
+    category: 'harassment',
     description: 'Проверочный отчёт для очереди модерации: клиент просит проверить переписку и вложения.',
+    acknowledgeFullThreadReview: true,
+    acknowledgedAt: '2026-08-14T08:25:00.000Z',
+    policyVersion: 'chat-report-full-thread-v1',
+    relatedReportId: null,
+    assignedModeratorId: null,
+    accessExpiresAt: null,
+    extensionUsed: false,
     status: 'pending',
     reviewedById: null,
     resolutionReason: null,
-    createdAt: '2026-08-14T08:25:00.000Z',
+    createdAt: '2026-08-14T08:09:00.000Z',
+    reviewedAt: null,
+}, {
+    id: 'chat-report-legacy-unanchored',
+    threadId: 'chat-inquiry-proservice',
+    messageId: null,
+    reporterId: 'user-client-1',
+    reportedUserId: null,
+    category: 'other',
+    description: 'Legacy report created before message-level evidence was supported.',
+    acknowledgeFullThreadReview: true,
+    acknowledgedAt: '2026-07-01T12:00:00.000Z',
+    policyVersion: 'legacy-unanchored',
+    relatedReportId: null,
+    assignedModeratorId: null,
+    accessExpiresAt: null,
+    extensionUsed: false,
+    status: 'pending',
+    reviewedById: null,
+    resolutionReason: null,
+    createdAt: '2026-07-01T12:00:00.000Z',
     reviewedAt: null,
 }]
+const demoChatReport = mockAutoCareChatReports.find((report) => report.id === 'chat-report-demo-1')
+const persistedDemoAssignment = readMockChatReportAssignment()
+if (demoChatReport && persistedDemoAssignment && mockUsers.some((user) => user.id === persistedDemoAssignment.moderatorId && user.role === 'admin' && user.status === 'active')) {
+    demoChatReport.assignedModeratorId = persistedDemoAssignment.moderatorId
+    demoChatReport.accessExpiresAt = persistedDemoAssignment.accessExpiresAt
+    demoChatReport.extensionUsed = persistedDemoAssignment.extensionUsed
+}
 const mockAutoCareChatBlocks: MockAutoCareChatBlock[] = []
 type MockAutoCareAppeal = {
     id: string
-    subject: 'provider' | 'review' | 'suspension' | 'catalog'
+    subject: 'provider' | 'review' | 'suspension' | 'catalog' | 'chat_restriction'
     subjectId: string
     submittedById: string
     providerId: string | null
@@ -927,6 +1198,7 @@ mockAutoCareMessages.set('owner-request-1', [
     { id: 'mock-message-3', senderId: 'user-owner-1', kind: 'offer', body: 'Предложение по заявке', offer: { type: 'discount', title: 'Скидка 15% на замену масла', description: 'Действует при записи в течение 7 дней. В стоимость входит масло и фильтр.', discountPercent: 15, couponCode: 'AC-OIL15', amountMinor: null, currencyCode: 'RUB', expiresAt: '2026-08-21T23:59:59.000Z', status: 'pending' }, deliveredAt: '2026-08-14T08:08:00.000Z', readAt: null, createdAt: '2026-08-14T08:08:00.000Z' },
 ])
 mockAutoCareMessages.set('owner-request-2', [
+    { id: 'mock-message-report-fixture', senderId: 'user-owner-1', kind: 'text', body: 'Сначала проверим состояние тормозных колодок и согласуем стоимость до ремонта.', offer: null, deliveredAt: '2026-08-13T09:20:00.000Z', readAt: null, createdAt: '2026-08-13T09:20:00.000Z' },
     { id: 'mock-message-4', senderId: 'user-owner-1', kind: 'offer', body: 'Альтернативный вариант', offer: { type: 'alternative', title: 'Диагностика тормозов сегодня', description: 'Можем начать с бесплатной проверки дисков, а замену выполнить после согласования.', discountPercent: null, couponCode: null, amountMinor: 0, currencyCode: 'RUB', expiresAt: null, status: 'pending' }, deliveredAt: '2026-08-13T09:30:00.000Z', readAt: null, createdAt: '2026-08-13T09:30:00.000Z' },
 ])
 type MockAutoCareReviewPromo = {
@@ -1108,6 +1380,31 @@ function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
 }
 
+function getMockUserConsentState(userId: string) {
+    const emptyOptionalConsent = { granted: false, version: null, recordedAt: null }
+    const optional = mockOptionalConsents.get(userId) ?? {
+        analytics: { ...emptyOptionalConsent },
+        marketing: { ...emptyOptionalConsent },
+    }
+    const communityRecord = [...mockCommunityConsentLedger].reverse().find((record) => record.userId === userId)
+    const communityProfile = communityRecord
+        ? { granted: communityRecord.action === 'granted', version: mockLegalDocumentVersions.privacy, recordedAt: communityRecord.at }
+        : { ...emptyOptionalConsent }
+    const acceptedAt = mockUsers.find((user) => user.id === userId)?.createdAt ?? null
+    const requiredConsent = { granted: true, version: mockLegalDocumentVersions.terms, recordedAt: acceptedAt }
+
+    return {
+        versions: mockLegalDocumentVersions,
+        consents: {
+            terms: requiredConsent,
+            privacy: { ...requiredConsent, version: mockLegalDocumentVersions.privacy },
+            analytics: optional.analytics,
+            marketing: optional.marketing,
+            communityProfile,
+        },
+    }
+}
+
 function getMockManagedProviderAssignments(userId: string): MockManagedProviderAssignment[] {
     return [...mockAutoCareProviderMemberships.values()].flatMap((memberships) => memberships
         .filter((membership) => membership.userId === userId && membership.status === 'active')
@@ -1169,7 +1466,7 @@ function hasMockProviderRoleAtLocation(userId: string, providerId: string, allow
 function getMockScopedProviderReviews(userId: string, providerId: string, allowedRoles: readonly MockAutoCareProviderMembership['role'][]) {
     const requestsById = new Map(mockAutoCareServiceRequests.filter((request) => request.providerId === providerId).map((request) => [request.id, request]))
     return mockFeaturedAutoCareReviews.filter((review) => {
-        if (review.providerId !== providerId) return false
+        if (review.providerId !== providerId || (review.status ?? 'approved') !== 'approved') return false
         const request = review.serviceRequestId ? requestsById.get(review.serviceRequestId) : null
         // Provider-wide roles can also see reviews not tied to a request. A
         // branch-scoped role must have an explicit request/location link.
@@ -1210,12 +1507,52 @@ function mockChatThreadFromRequest(request: MockAutoCareServiceRequest): MockAut
 }
 
 function getMockAutoCareChatThreads(user: User) {
-    const reportedThreadIds = new Set(mockAutoCareChatReports.map((report) => report.threadId))
+    const activeModeratedThreadIds = new Set(mockAutoCareChatReports
+        .filter((report) => report.messageId !== null && report.status === 'pending' && report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now())
+        .map((report) => report.threadId))
     const requestThreads = mockAutoCareServiceRequests
-        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && reportedThreadIds.has(`chat-request-${request.id}`)))
+        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && activeModeratedThreadIds.has(`chat-request-${request.id}`)))
         .map(mockChatThreadFromRequest)
-    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || reportedThreadIds.has(thread.id))) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
+    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || activeModeratedThreadIds.has(thread.id))) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
     return [...requestThreads, ...genericThreads].sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
+}
+
+function getMockChatReportAccess(user: User, threadId: string) {
+    const reports = mockAutoCareChatReports.filter((report) => report.threadId === threadId && report.messageId !== null && report.status === 'pending')
+    if (user.role === 'super_admin') return { allowed: true, reports }
+    const assigned = reports.filter((report) => report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now())
+    return { allowed: user.role === 'admin' && assigned.length > 0, reports: assigned }
+}
+
+function getMockModerationRestriction(thread: MockAutoCareChatThread, user: User) {
+    const sanction = mockAutoCareChatBlocks
+        .filter((block) => block.threadId === thread.id
+            && block.blockedUserId === user.id
+            && block.status === 'active'
+            && block.sourceReportId
+            && block.expiresAt
+            && block.reason)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0]
+    if (!sanction?.sourceReportId || !sanction.expiresAt || !sanction.reason) return null
+    const pendingAppeal = mockAutoCareAppeals.find((appeal) => appeal.subject === 'chat_restriction'
+        && appeal.subjectId === sanction.id
+        && appeal.submittedById === user.id
+        && appeal.status === 'pending')
+    return {
+        id: sanction.id,
+        reason: sanction.reason,
+        expiresAt: sanction.expiresAt,
+        state: Date.parse(sanction.expiresAt) > Date.now() ? 'active' as const : 'expired' as const,
+        appealStatus: pendingAppeal?.status ?? null,
+    }
+}
+
+function isMockChatMessagingBlocked(threadId: string, userId: string) {
+    const now = Date.now()
+    return mockAutoCareChatBlocks.some((block) => block.threadId === threadId
+        && block.status === 'active'
+        && (block.blockerId === userId || block.blockedUserId === userId)
+        && (!block.expiresAt || Date.parse(block.expiresAt) > now))
 }
 
 function mockChatMessages(thread: MockAutoCareChatThread) {
@@ -1592,7 +1929,137 @@ export const handlers = [
             )
         }
 
-        return HttpResponse.json(currentUser)
+       return HttpResponse.json(currentUser)
+    }),
+
+    http.get('/api/users/me/consents', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
+        return HttpResponse.json(getMockUserConsentState(user.id), {
+            headers: { 'cache-control': 'no-store', pragma: 'no-cache' },
+        })
+    }),
+
+    http.patch('/api/users/me/consents', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+
+        const body = await request.json().catch(() => null) as Record<string, unknown> | null
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return invalidMockBodyResponse()
+        if ((body.analytics !== undefined && typeof body.analytics !== 'boolean') || (body.marketing !== undefined && typeof body.marketing !== 'boolean')) return invalidMockBodyResponse()
+        if (body.analytics === undefined && body.marketing === undefined) return invalidMockBodyResponse()
+
+        const current = mockOptionalConsents.get(user.id) ?? {
+            analytics: { granted: false, version: null, recordedAt: null },
+            marketing: { granted: false, version: null, recordedAt: null },
+        }
+        const recordedAt = new Date().toISOString()
+        const updateConsent = (granted: boolean) => ({
+            granted,
+            version: mockLegalDocumentVersions.privacy,
+            recordedAt,
+        })
+        const next = {
+            analytics: body.analytics === undefined ? current.analytics : updateConsent(body.analytics),
+            marketing: body.marketing === undefined ? current.marketing : updateConsent(body.marketing),
+        }
+        mockOptionalConsents.set(user.id, next)
+
+        return HttpResponse.json(getMockUserConsentState(user.id), {
+            headers: { 'cache-control': 'no-store', pragma: 'no-cache' },
+        })
+    }),
+
+    http.get('/api/users/me/community-profile', () => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client' || user.status !== 'active') return HttpResponse.json({ message: 'Only active clients can use community profiles.' }, { status: 403 })
+        const profile = getMockCommunityProfileState(user.id)
+        const metrics = getMockCommunityMetrics(user.id)
+        return HttpResponse.json({
+            enabled: profile.enabled,
+            displayName: profile.displayName,
+            publicProfileId: profile.enabled ? profile.profileId : null,
+            profileUrl: profile.enabled ? `/community/clients/${profile.profileId}` : null,
+            badgeCodes: getMockCommunityBadges(metrics),
+            metrics,
+        })
+    }),
+
+    http.patch('/api/users/me/community-profile', async ({ request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client' || user.status !== 'active') return HttpResponse.json({ message: 'Only active clients can use community profiles.' }, { status: 403 })
+        const body = await request.json() as { enabled?: unknown; displayName?: unknown }
+        if ((body.enabled !== undefined && typeof body.enabled !== 'boolean') || (body.displayName !== undefined && body.displayName !== null && typeof body.displayName !== 'string')) return invalidMockBodyResponse()
+        if (body.enabled === undefined && body.displayName === undefined) return invalidMockBodyResponse()
+        const profile = getMockCommunityProfileState(user.id)
+        const normalizedDisplayName = typeof body.displayName === 'string' ? [...body.displayName.normalize('NFKC')]
+            .map((character) => /\s/u.test(character) ? ' ' : character)
+            .filter((character) => {
+                const codePoint = character.codePointAt(0) ?? 0
+                return codePoint >= 32 && !(codePoint >= 127 && codePoint <= 159)
+            })
+            .join('')
+            .replace(/\s+/gu, ' ')
+            .trim() : body.displayName
+        if (typeof normalizedDisplayName === 'string' && normalizedDisplayName.length > 0 && ([...normalizedDisplayName].length < 2 || [...normalizedDisplayName].length > 40)) return HttpResponse.json({ message: 'Display name must contain 2 to 40 visible characters.' }, { status: 422 })
+        const displayName = normalizedDisplayName === '' ? null : normalizedDisplayName
+        const wasEnabled = profile.enabled
+        const nextDisplayName = body.displayName === undefined ? profile.displayName : displayName
+        const nextEnabled = typeof body.enabled === 'boolean' ? body.enabled : profile.enabled
+        if (nextEnabled && !nextDisplayName?.trim()) return HttpResponse.json({ message: 'Choose a public display name before enabling the community profile.' }, { status: 422 })
+        if (body.displayName !== undefined) profile.displayName = typeof displayName === 'string' ? displayName : null
+        if (typeof body.enabled === 'boolean') profile.enabled = body.enabled
+        if (body.enabled === true && !wasEnabled) profile.profileId = `10000000-0000-4000-8000-${String(nextMockCommunityProfileId++).padStart(12, '0')}`
+        if (body.enabled !== undefined && body.enabled !== wasEnabled) mockCommunityConsentLedger.push({ userId: user.id, action: body.enabled ? 'granted' : 'revoked', at: new Date().toISOString() })
+        const metrics = getMockCommunityMetrics(user.id)
+        return HttpResponse.json({ enabled: profile.enabled, displayName: profile.displayName, publicProfileId: profile.enabled ? profile.profileId : null, profileUrl: profile.enabled ? `/community/clients/${profile.profileId}` : null, badgeCodes: getMockCommunityBadges(metrics), metrics })
+    }),
+
+    http.get('/api/v1/community/clients/:profileId', ({ params }) => {
+        const entry = [...mockCommunityProfiles.entries()].find(([, profile]) => profile.profileId === String(params.profileId) && profile.enabled && Boolean(profile.displayName))
+        const user = entry ? mockUsers.find((candidate) => candidate.id === entry[0] && candidate.role === 'client' && candidate.status === 'active') : undefined
+        if (!entry || !user) return HttpResponse.json({ message: 'Public client profile not found.' }, { status: 404, headers: { 'x-robots-tag': 'noindex, nofollow' } })
+        const metrics = getMockCommunityMetrics(user.id)
+        return HttpResponse.json({ profileId: entry[1].profileId, displayName: entry[1].displayName, avatarUrl: user.avatarUrl, badgeCodes: getMockCommunityBadges(metrics), metrics }, { headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' } })
+    }),
+
+    http.get('/api/v1/autocare-reviews/helpful/my', ({ request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client' || user.status !== 'active' || !user.emailVerifiedAt) return HttpResponse.json({ message: 'Email-verified active clients can view helpful votes.' }, { status: 403 })
+        const providerId = new URL(request.url).searchParams.get('providerId')
+        if (!providerId) return invalidMockBodyResponse()
+        const reviews = getMockPublicAutoCareReviews(providerId)
+        return HttpResponse.json({
+            reviewIds: reviews.filter((review) => mockHelpfulVotesByReview.get(review.id)?.has(user.id)).map((review) => review.id),
+            ownReviewIds: reviews.filter((review) => review.clientId === user.id).map((review) => review.id),
+        }, { headers: { 'cache-control': 'no-store' } })
+    }),
+
+    http.put('/api/v1/autocare-reviews/:reviewId/helpful', ({ params }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client' || user.status !== 'active' || !user.emailVerifiedAt) return HttpResponse.json({ message: 'Email-verified active clients can vote.' }, { status: 403 })
+        const review = [...new Set(mockFeaturedAutoCareReviews.map((item) => item.providerId))].flatMap((providerId) => getMockPublicAutoCareReviews(providerId)).find((item) => item.id === String(params.reviewId))
+        if (!review) return HttpResponse.json({ message: 'Review not found.' }, { status: 404 })
+        if (review.clientId === user.id) return HttpResponse.json({ message: 'You cannot vote for your own review.' }, { status: 403 })
+        const voters = mockHelpfulVotesByReview.get(review.id) ?? new Set<string>()
+        voters.add(user.id)
+        mockHelpfulVotesByReview.set(review.id, voters)
+        return HttpResponse.json({ reviewId: review.id, providerId: review.providerId, helpfulCount: getMockHelpfulCount(review.id), voted: true }, { headers: { 'cache-control': 'no-store' } })
+    }),
+
+    http.delete('/api/v1/autocare-reviews/:reviewId/helpful', ({ params }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client' || user.status !== 'active' || !user.emailVerifiedAt) return HttpResponse.json({ message: 'Email-verified active clients can vote.' }, { status: 403 })
+        const review = [...new Set(mockFeaturedAutoCareReviews.map((item) => item.providerId))].flatMap((providerId) => getMockPublicAutoCareReviews(providerId)).find((item) => item.id === String(params.reviewId))
+        if (!review) return HttpResponse.json({ message: 'Review not found.' }, { status: 404 })
+        mockHelpfulVotesByReview.get(review.id)?.delete(user.id)
+        return HttpResponse.json({ reviewId: review.id, providerId: review.providerId, helpfulCount: getMockHelpfulCount(review.id), voted: false }, { headers: { 'cache-control': 'no-store' } })
     }),
 
     http.post('/api/auth/refresh', () => {
@@ -2544,8 +3011,9 @@ export const handlers = [
     })),
 
     http.get('/api/admin/operations/overview', () => {
-        if (!hasMockSuperAdminAccess()) {
-            return HttpResponse.json({ message: 'Only super admin can access the operations overview.' }, { status: 403 })
+        const user = currentMockUser()
+        if (!user || !['admin', 'super_admin'].includes(user.role)) {
+            return HttpResponse.json({ message: 'Only admins can access the operations overview.' }, { status: 403 })
         }
 
         const openIncidents = mockSystemIncidents.filter((incident) => incident.status === 'open')
@@ -2753,7 +3221,7 @@ export const handlers = [
         })
     }),
 
-    http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : editableAutoCareMarkets.map(toMockMarket))),
+    http.get('/api/v1/markets', ({ request }) => mockScenarioResponse(request) ?? HttpResponse.json(isMockEmpty(request) ? [] : editableAutoCareMarkets.filter((market) => market.launchReady).map(toMockMarket))),
     http.patch('/api/super-admin/markets/:id', async ({ params, request }) => {
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })
@@ -2975,7 +3443,7 @@ export const handlers = [
     http.get('/api/v1/discovery/providers', ({ request }) => {
         const scenario = mockScenarioResponse(request)
         if (scenario) return scenario
-        if (isMockEmpty(request)) return HttpResponse.json({ items: [], nextCursor: null })
+        if (isMockEmpty(request)) return HttpResponse.json({ items: [], nextCursor: null, totalCount: 0, totalCountIsLowerBound: false })
         const url = new URL(request.url)
         // No service filter means the catalog is unscoped: return every
         // provider using a representative published offer below.
@@ -2996,12 +3464,12 @@ export const handlers = [
         const marketId = url.searchParams.get('marketId') ?? ''
         const zoneId = url.searchParams.get('zoneId') ?? ''
         const items = autoCareProviders.map((provider, index) => ({
-            provider,
+            provider: { ...provider, ...getMockAutoCareReviewSummary(provider.id) },
             offer: serviceId
                 ? toAutoCareOffer(provider.id, serviceId, provider.servicePrices?.[serviceId] ?? providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType)
                 : provider.offers?.[0] ?? toAutoCareOffer(provider.id, provider.serviceIds?.[0] ?? autoCareDefinitions[0]?.slug ?? 'oil-change', providerPreviews[index]?.price ?? 0, providerPreviews[index]?.priceType),
             distanceKm: providerPreviews[index]?.distance ? Number.parseFloat(providerPreviews[index]!.distance) : index + 1,
-            nextSlot: providerPreviews[index]?.nextSlot ?? null,
+            nextSlot: getMockNextProviderSlot(provider),
         })).filter((item) => {
             const hasService = !serviceId || (item.provider.serviceIds?.includes(item.offer.serviceSlug) ?? true)
             const price = item.offer.priceFromMinor / 100
@@ -3029,7 +3497,7 @@ export const handlers = [
             mockAutoCareProviderActivity.set(item.provider.id, activity)
         })
         const responseItems = isMockPartial(request) ? items.slice(0, Math.max(1, Math.ceil(items.length / 2))) : items
-        return HttpResponse.json({ items: responseItems, nextCursor: null, partial: isMockPartial(request) })
+        return HttpResponse.json({ items: responseItems, nextCursor: null, totalCount: items.length, totalCountIsLowerBound: false, partial: isMockPartial(request) })
     }),
 
     http.get('/api/v1/favorites/providers', () => {
@@ -3216,7 +3684,7 @@ export const handlers = [
         const activity = mockAutoCareProviderActivity.get(provider.id) ?? { impressions: 0, profileOpens: 0 }
         activity.profileOpens += 1
         mockAutoCareProviderActivity.set(provider.id, activity)
-        return HttpResponse.json({ ...provider, offers, partial: isMockPartial(request) })
+        return HttpResponse.json({ ...provider, ...getMockAutoCareReviewSummary(provider.id), offers, partial: isMockPartial(request) })
     }),
 
     http.get('/api/v1/providers/:providerId/reviews', ({ params, request }) => {
@@ -3225,21 +3693,36 @@ export const handlers = [
         const provider = [...autoCareProviders, ...ownerAutoCareProviders].find((item) => item.id === params.providerId || item.id.replace('api-', '') === params.providerId)
         if (!provider) return HttpResponse.json({ message: 'Automotive provider not found.' }, { status: 404 })
 
-        const allProviderReviews = mockFeaturedAutoCareReviews.filter((review) => review.providerId === provider.id)
+        const allProviderReviews = getMockPublicAutoCareReviews(provider.id)
         const reviewFixture = request.headers.get('x-autocare-review-fixture')
+        const reviewFixtureItem: MockAutoCareReview | null = reviewFixture === 'one' || reviewFixture === 'photos'
+            ? {
+                id: `browser-review-fixture-${reviewFixture}`,
+                providerId: provider.id,
+                authorName: 'Тестовый клиент',
+                vehicleLabel: 'Test vehicle',
+                rating: 5,
+                text: 'Тестовый подтверждённый отзыв о завершённом визите.',
+                avatarUrl: null,
+                photoUrls: reviewFixture === 'photos' ? [reviewPhotoAssets[0]!] : [],
+                createdAt: '2026-08-12T10:00:00.000Z',
+                serviceRequestId: 'browser-fixture-closed-request',
+                serviceSlug: 'oil-change',
+                verifiedVisit: true,
+                status: 'approved',
+            }
+            : null
         const providerReviews = reviewFixture === 'empty'
             ? []
-            : reviewFixture === 'one'
-                ? allProviderReviews.slice(0, 1)
-                : reviewFixture === 'photos'
-                    ? allProviderReviews.filter((review) => review.photoUrls.length > 0).slice(0, 1)
-                    : allProviderReviews
+            : reviewFixtureItem
+                ? [reviewFixtureItem]
+                : allProviderReviews
         const distribution: Record<'1' | '2' | '3' | '4' | '5', number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
         providerReviews.forEach((review) => { distribution[String(review.rating) as keyof typeof distribution] += 1 })
         const averageRating = providerReviews.length === 0 ? 0 : Number((providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerReviews.length).toFixed(1))
         const rawLimit = Number(new URL(request.url).searchParams.get('limit') ?? 20)
         const limit = Number.isFinite(rawLimit) ? Math.min(50, Math.max(1, Math.floor(rawLimit))) : 20
-        return HttpResponse.json({ providerId: provider.id, totalReviews: providerReviews.length, averageRating, distribution, reviews: providerReviews.slice(0, limit) })
+        return HttpResponse.json({ providerId: provider.id, totalReviews: providerReviews.length, averageRating, distribution, reviews: providerReviews.slice(0, limit).map(toMockPublicAutoCareReview) })
     }),
 
     http.get('/api/v1/providers/:providerId/availability', ({ params, request }) => {
@@ -3252,14 +3735,9 @@ export const handlers = [
         const offeringId = url.searchParams.get('offeringId')
         const source = provider ? providerPreviews.find((item) => item.id === provider.id.replace('api-', '')) : undefined
         if (!provider || !date || !locationId || !offeringId) return HttpResponse.json({ message: 'Invalid availability request.' }, { status: 400 })
-        const durationMinutes = 60
+        const durationMinutes = provider.offers?.find((offer) => offer.id === offeringId)?.durationMinutes ?? 60
         const timezone = provider.location.timezone ?? 'UTC'
-        const reserved = mockAutoCareServiceRequests.filter((item) => item.providerId === provider.id && item.locationId === locationId && item.preferredAt?.slice(0, 10) === date && item.status !== 'declined' && item.status !== 'closed').map((item) => item.preferredAt?.slice(11, 16))
-        const slots = Array.from({ length: 20 }, (_, index) => 8 * 60 + index * 30).map((start) => {
-            const startTime = `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`
-            const endTime = `${String(Math.floor((start + durationMinutes) / 60)).padStart(2, '0')}:${String((start + durationMinutes) % 60).padStart(2, '0')}`
-            return { startTime, endTime, startsAt: mockZonedWallTimeToIso(date, startTime, timezone) }
-        }).filter((slot) => slot.startsAt && !reserved.includes(slot.startTime))
+        const slots = getMockProviderAvailabilitySlots(provider, date, Date.now(), durationMinutes)
         return HttpResponse.json({ date, timezone, durationMinutes, slots, source: source?.name ?? null })
     }),
 
@@ -3297,6 +3775,15 @@ export const handlers = [
         if (!provider || !body.locationId || !body.offeringId || !body.preferredAt || !body.contactSnapshot || !body.dataProcessingConsent || !definition) {
             return HttpResponse.json({ message: 'Invalid service request.' }, { status: 400 })
         }
+        const timezone = provider.location.timezone ?? 'UTC'
+        const requestedInstant = new Date(body.preferredAt)
+        if (!Number.isFinite(requestedInstant.getTime())) return HttpResponse.json({ message: 'Invalid requested visit time.' }, { status: 400 })
+        const requestedParts = getMockZonedDateTimeParts(requestedInstant, timezone)
+        const durationMinutes = provider.offers?.find((offer) => offer.id === body.offeringId)?.durationMinutes ?? 60
+        const slotIsAvailable = body.locationId === provider.location.id && getMockProviderAvailabilitySlots(provider, requestedParts.date, Date.now(), durationMinutes)
+            .some((slot) => Date.parse(slot.startsAt) === requestedInstant.getTime())
+        if (!slotIsAvailable) return HttpResponse.json({ message: 'The requested visit time is no longer available.' }, { status: 409 })
+
         const now = new Date().toISOString()
         const result: MockAutoCareServiceRequest = {
             id: `mock-request-${Date.now()}`,
@@ -3324,6 +3811,7 @@ export const handlers = [
                 priceType: offer.priceType ?? definition.priceType,
             } : null,
             preferredAt: body.preferredAt,
+            timezone,
             vehicleId: body.vehicleId ?? null,
             vehicleSnapshot: body.vehicleSnapshot ?? null,
             contactSnapshot: body.contactSnapshot,
@@ -3355,12 +3843,23 @@ export const handlers = [
         return HttpResponse.json(items)
     }),
 
+    http.get('/api/v1/service-requests/:requestId/chat-thread', ({ params }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const request = mockAutoCareServiceRequests.find((item) => item.id === params.requestId)
+        if (!request) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
+        const thread = mockChatThreadFromRequest(request)
+        const isParticipant = request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId))
+        if (!isParticipant && !getMockChatReportAccess(user, thread.id).allowed && user.role !== 'super_admin') return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        return HttpResponse.json({ ...thread, unreadCount: 0, moderationRestriction: getMockModerationRestriction(thread, user) })
+    }),
+
     http.get('/api/v1/chats', ({ request }) => {
         const scenario = mockScenarioResponse(request)
         if (scenario) return scenario
         const user = currentMockUser()
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        const threads = getMockAutoCareChatThreads(user).map((thread) => ({ ...thread, unreadCount: mockChatMessages(thread).filter((message) => message.senderId !== user.id && !message.readAt).length }))
+        const threads = getMockAutoCareChatThreads(user).map((thread) => ({ ...thread, unreadCount: mockChatMessages(thread).filter((message) => message.senderId !== user.id && !message.readAt).length, moderationRestriction: getMockModerationRestriction(thread, user) }))
         return HttpResponse.json(threads)
     }),
 
@@ -3392,16 +3891,63 @@ export const handlers = [
         const user = currentMockUser()
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (user.role !== 'client' && user.role !== 'owner') return HttpResponse.json({ message: 'Only chat participants can submit reports.' }, { status: 403 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
-        const body = await request.json() as { category?: MockAutoCareChatReport['category']; description?: string | null }
-        if (!body.category || !['spam', 'harassment', 'fraud', 'unsafe', 'other'].includes(body.category)) return HttpResponse.json({ message: 'Invalid report.' }, { status: 400 })
-        const existing = mockAutoCareChatReports.find((report) => report.threadId === thread.id && report.reporterId === user.id)
-        if (existing) return HttpResponse.json(existing, { status: 201 })
-        const reportedUserId = thread.clientId === user.id ? 'user-owner-1' : thread.clientId
+        const body = await request.json() as { messageId?: unknown; category?: unknown; description?: unknown; acknowledgeFullThreadReview?: unknown }
+        if (typeof body.messageId !== 'string' || !isMockChatReportCategory(body.category) || body.acknowledgeFullThreadReview !== true || (body.description !== undefined && body.description !== null && typeof body.description !== 'string')) return HttpResponse.json({ message: 'Invalid report.' }, { status: 400 })
+        const message = mockChatMessages(thread).find((candidate) => candidate.id === body.messageId)
+        if (!message || message.senderId === user.id || message.deletedAt) return HttpResponse.json({ message: 'The selected message cannot be reported.' }, { status: 409 })
+        const existing = mockAutoCareChatReports.find((report) => report.threadId === thread.id && report.reporterId === user.id && report.messageId === message.id && report.status === 'pending')
+        if (existing) return HttpResponse.json(existing, { status: 409 })
+        const activeReports = mockAutoCareChatReports.filter((report) => report.threadId === thread.id && report.messageId !== null && report.status === 'pending')
+        const firstActiveAt = activeReports.map((report) => Date.parse(report.createdAt)).sort((a, b) => a - b)[0]
+        const isPriorIncident = Number.isFinite(firstActiveAt) && Date.parse(message.createdAt) <= firstActiveAt
+        const relatedReport = activeReports[0]
+        const description = typeof body.description === 'string' ? body.description.trim() : ''
+        const urgentLinkedThreat = Boolean(relatedReport && !isPriorIncident && body.category === 'threat')
+        if (relatedReport && !isPriorIncident && !urgentLinkedThreat) return HttpResponse.json({ message: 'A new report can only be filed for a prior incident during an active review.' }, { status: 409 })
+        if (urgentLinkedThreat && description.length < 20) return HttpResponse.json({ message: 'An urgent threat report needs at least 20 characters of context.' }, { status: 400 })
+        const reportedUserId = message.senderId
         const now = new Date().toISOString()
-        const report: MockAutoCareChatReport = { id: `chat-report-${Date.now()}`, threadId: thread.id, reporterId: user.id, reportedUserId, category: body.category, description: body.description?.trim() || null, status: 'pending', reviewedById: null, resolutionReason: null, createdAt: now, reviewedAt: null }
+        const report: MockAutoCareChatReport = { id: `chat-report-${Date.now()}`, threadId: thread.id, messageId: message.id, reporterId: user.id, reportedUserId, category: body.category, description: description || null, acknowledgeFullThreadReview: true, acknowledgedAt: now, policyVersion: 'chat-report-full-thread-v1', relatedReportId: urgentLinkedThreat ? relatedReport?.id ?? null : null, assignedModeratorId: null, accessExpiresAt: null, extensionUsed: false, status: 'pending', reviewedById: null, resolutionReason: null, createdAt: now, reviewedAt: null }
         mockAutoCareChatReports.unshift(report)
         return HttpResponse.json(report, { status: 201 })
+    }),
+
+    http.get('/api/v1/chats/:chatId/reports/mine', ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const thread = getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId)
+        if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        const query = new URL(request.url).searchParams
+        const limit = Math.max(1, Math.min(100, Number(query.get('limit')) || 50))
+        const offset = parseMockOffset(query.get('cursor'))
+        const items = mockAutoCareChatReports
+            .filter((report) => report.threadId === params.chatId && report.reporterId === user.id)
+            .sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id))
+        const page = items.slice(offset, offset + limit + 1)
+        const hasMore = page.length > limit
+        return HttpResponse.json({ items: page.slice(0, limit), nextCursor: hasMore ? `offset:${offset + limit}` : null, totalCount: items.length })
+    }),
+
+    http.delete('/api/v1/chats/:chatId/messages/:messageId', ({ params }) => {
+        const user = currentMockUser()
+        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        if (!thread || user.role === 'admin' || user.role === 'super_admin') return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        const message = mockChatMessages(thread).find((candidate) => candidate.id === params.messageId)
+        if (!message || message.senderId !== user.id || message.deletedAt) return HttpResponse.json({ message: 'Message not found.' }, { status: 404 })
+        // Keep the protected reason opaque to both participants. Server-side
+        // policy still blocks deletion, but the response must not reveal that
+        // this message is evidence in a moderation case.
+        const activeReview = mockAutoCareChatReports.some((report) => report.threadId === thread.id && report.messageId !== null && report.status === 'pending')
+        const evidenceRetained = message.evidenceRetainUntil !== null && message.evidenceRetainUntil !== undefined && Date.parse(message.evidenceRetainUntil) > Date.now()
+        if (activeReview || evidenceRetained) return HttpResponse.json({ message: 'The message can no longer be deleted.' }, { status: 409 })
+        if (Date.now() - Date.parse(message.createdAt) > 5 * 60 * 1000) return HttpResponse.json({ message: 'The message can no longer be deleted for everyone.' }, { status: 409 })
+        const deletedAt = new Date().toISOString()
+        message.body = ''
+        message.deletedAt = deletedAt
+        return HttpResponse.json({ id: message.id, deletedAt })
     }),
 
     http.post('/api/v1/chats/:chatId/blocks', async ({ params, request }) => {
@@ -3415,8 +3961,8 @@ export const handlers = [
         const now = new Date().toISOString()
         const existing = mockAutoCareChatBlocks.find((block) => block.threadId === thread.id && block.blockerId === user.id && block.blockedUserId === blockedUserId)
         const block: MockAutoCareChatBlock = existing
-            ? Object.assign(existing, { status: 'active' as const, reason: body.reason?.trim() || existing.reason, revokedAt: null })
-            : { id: `chat-block-${Date.now()}`, threadId: thread.id, blockerId: user.id, blockedUserId, status: 'active', reason: body.reason?.trim() || null, createdAt: now, revokedAt: null }
+            ? Object.assign(existing, { status: 'active' as const, reason: body.reason?.trim() || existing.reason, revokedAt: null, sourceReportId: null, expiresAt: null })
+            : { id: `chat-block-${Date.now()}`, threadId: thread.id, blockerId: user.id, blockedUserId, status: 'active', reason: body.reason?.trim() || null, sourceReportId: null, expiresAt: null, createdAt: now, revokedAt: null }
         if (!existing) mockAutoCareChatBlocks.unshift(block)
         return HttpResponse.json(block, { status: 201 })
     }),
@@ -3439,8 +3985,12 @@ export const handlers = [
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
-        const allMessages = mockChatMessages(thread)
+        const access = getMockChatReportAccess(user, thread.id)
+        if (user.role === 'admin' && !access.allowed) return HttpResponse.json({ message: 'An active moderator assignment is required.' }, { status: 403 })
         const url = new URL(request.url)
+        const emergencyReason = url.searchParams.get('emergencyReason')?.trim() ?? ''
+        if (user.role === 'super_admin' && emergencyReason.length < 10) return HttpResponse.json({ message: 'A documented emergency reason is required to read chat content.' }, { status: 403 })
+        const allMessages = mockChatMessages(thread)
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit') ?? 50) || 50, 1), 100)
         const cursorId = decodeMockChatCursor(url.searchParams.get('cursor'))
         const beforeCursorId = decodeMockChatCursor(url.searchParams.get('beforeCursor'))
@@ -3462,14 +4012,18 @@ export const handlers = [
         const hasOlder = start > 0
         const hasNewer = pageEnd < allMessages.length
         const now = new Date().toISOString()
-        messages.filter((message) => message.senderId !== user.id && !message.readAt).forEach((message) => { message.readAt = now })
+        if (user.role !== 'admin' && user.role !== 'super_admin') messages.filter((message) => message.senderId !== user.id && !message.readAt).forEach((message) => { message.readAt = now })
         const attachments = mockChatAttachments(thread).map(({ contentBase64: _contentBase64, ...attachment }) => attachment)
+        const moderationReviewActive = mockAutoCareChatReports.some((report) => report.threadId === thread.id && report.messageId !== null && report.status === 'pending')
+        const messagesProtected = moderationReviewActive || allMessages.some((message) => message.evidenceRetainUntil && Date.parse(message.evidenceRetainUntil) > Date.now())
         return HttpResponse.json({
-            thread: { ...thread, unreadCount: 0 },
+            thread: { ...thread, unreadCount: 0, moderationRestriction: getMockModerationRestriction(thread, user) },
             messages,
             attachments,
             nextCursor: hasNewer && messages.at(-1) ? encodeMockChatCursor(messages.at(-1)!) : null,
             previousCursor: hasOlder && messages.at(0) ? encodeMockChatCursor(messages.at(0)!) : null,
+            moderationReviewActive,
+            messagesProtected,
         })
     }),
 
@@ -3478,7 +4032,8 @@ export const handlers = [
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
-        const blocked = mockAutoCareChatBlocks.some((block) => block.threadId === thread.id && block.status === 'active' && (block.blockerId === user.id || block.blockedUserId === user.id))
+        if (user.role === 'admin' || user.role === 'super_admin') return HttpResponse.json({ message: 'Moderation access is read-only.' }, { status: 403 })
+        const blocked = isMockChatMessagingBlocked(thread.id, user.id)
         if (blocked) return HttpResponse.json({ message: 'Messaging is unavailable because this chat is blocked.' }, { status: 403 })
         const body = await request.json() as { body?: string }
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
@@ -3496,6 +4051,7 @@ export const handlers = [
         const user = currentMockUser()
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user || !thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        if (user.role === 'admin' || user.role === 'super_admin') return HttpResponse.json({ message: 'Moderator reads do not create participant read receipts.' }, { status: 403 })
         const now = new Date().toISOString()
         const messages = mockChatMessages(thread)
         const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
@@ -3509,6 +4065,7 @@ export const handlers = [
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
+        if (user.role === 'admin' || user.role === 'super_admin') return HttpResponse.json({ message: 'Moderation access is read-only.' }, { status: 403 })
         const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
         if (!body.fileName || !body.contentType || !body.size || !body.contentBase64 || !['image/jpeg', 'image/png', 'image/webp'].includes(body.contentType)) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
         const now = new Date().toISOString()
@@ -3521,6 +4078,21 @@ export const handlers = [
         emitMockAutoCareChatEvent({ type: 'attachment.created', threadId: thread.id, requestId: thread.requestId ?? undefined, payload: attachment })
         const { contentBase64: _contentBase64, ...response } = attachment
         return HttpResponse.json(response, { status: 201 })
+    }),
+
+    http.get('/api/v1/chats/:chatId/attachments/:attachmentId', ({ params, request }) => {
+        const user = currentMockUser()
+        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        if (!user || !thread) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })
+        const access = getMockChatReportAccess(user, thread.id)
+        if (user.role === 'admin' && !access.allowed) return HttpResponse.json({ message: 'An active moderator assignment is required.' }, { status: 403 })
+        if (user.role === 'super_admin' && (new URL(request.url).searchParams.get('emergencyReason')?.trim().length ?? 0) < 10) return HttpResponse.json({ message: 'A documented emergency reason is required to read chat attachments.' }, { status: 403 })
+        const attachment = mockChatAttachments(thread).find((candidate) => candidate.id === params.attachmentId)
+        if (!attachment) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })
+        const [, encoded] = attachment.contentBase64.split(',', 2)
+        const body = encoded ?? attachment.contentBase64
+        const bytes = Uint8Array.from(atob(body), (character) => character.charCodeAt(0))
+        return new HttpResponse(bytes, { headers: { 'Content-Type': attachment.contentType, 'Cache-Control': 'private, no-store' } })
     }),
 
     http.get('/api/v1/service-requests/:requestId', ({ params }) => {
@@ -3559,6 +4131,9 @@ export const handlers = [
         const start = hasBeforeOffset ? Math.max(0, end - limit) : isLatestPage ? Math.max(0, allMessages.length - limit) : offset
         const pageEnd = hasBeforeOffset || isLatestPage ? end : Math.min(allMessages.length, start + limit)
         const messages = allMessages.slice(start, pageEnd)
+        const chatThread = mockChatThreadFromRequest(item)
+        const moderationReviewActive = mockAutoCareChatReports.some((report) => report.threadId === chatThread.id && report.messageId !== null && report.status === 'pending')
+        const evidenceRetained = allMessages.some((message) => message.evidenceRetainUntil && Date.parse(message.evidenceRetainUntil) > Date.now())
         const unread = messages.filter((message) => message.senderId !== user.id && !message.readAt)
         unread.forEach((message) => { message.readAt = now })
         if (unread.length) emitMockServiceChatEvent({ type: 'message.read', requestId: item.id, payload: { messageIds: unread.map((message) => message.id), readAt: now } })
@@ -3570,6 +4145,8 @@ export const handlers = [
             attachments,
             nextCursor: pageEnd < allMessages.length && !isLatestPage ? String(pageEnd) : null,
             previousCursor: start > 0 && messages[0] ? String(start) : null,
+            moderationReviewActive,
+            messagesProtected: moderationReviewActive || evidenceRetained,
         })
     }),
 
@@ -3579,6 +4156,7 @@ export const handlers = [
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
         const allowed = Boolean(item && (item.clientId === user?.id || (user?.role === 'owner' && provider?.id === item.providerId && hasMockProviderPermission(user.id, item.providerId, 'chats', item.locationId))))
         if (!user || !item || !allowed) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (isMockChatMessagingBlocked(`chat-request-${item.id}`, user.id)) return HttpResponse.json({ message: 'Messaging is unavailable because this chat is blocked.' }, { status: 403 })
         const body = await request.json() as { body?: string }
         if (!body.body?.trim()) return HttpResponse.json({ message: 'Message is required.' }, { status: 400 })
         const idempotencyKey = request.headers.get('Idempotency-Key')
@@ -3603,6 +4181,7 @@ export const handlers = [
         const item = mockAutoCareServiceRequests.find((candidate) => candidate.id === params.requestId)
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
         if (!user || user.role !== 'owner' || !item || provider?.id !== item.providerId || !hasMockProviderPermission(user.id, item.providerId, 'chats', item.locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (isMockChatMessagingBlocked(`chat-request-${item.id}`, user.id)) return HttpResponse.json({ message: 'Messaging is unavailable because this chat is blocked.' }, { status: 403 })
         const body = await request.json() as { type?: 'discount' | 'alternative'; title?: string; description?: string | null; discountPercent?: number | null; couponCode?: string | null; amountMinor?: number | null; currencyCode?: string | null; expiresAt?: string | null }
         if (!body.type || !body.title?.trim() || (body.type === 'discount' && !body.discountPercent)) return HttpResponse.json({ message: 'Invalid service offer.' }, { status: 400 })
         const now = new Date().toISOString()
@@ -3644,6 +4223,7 @@ export const handlers = [
         const provider = item ? autoCareProviders.find((candidate) => candidate.id === item.providerId) : undefined
         const allowed = Boolean(user && item && (item.clientId === user.id || (user.role === 'owner' && provider?.id === item.providerId && hasMockProviderPermission(user.id, item.providerId, 'chats', item.locationId))))
         if (!allowed || !user || !item) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (isMockChatMessagingBlocked(`chat-request-${item.id}`, user.id)) return HttpResponse.json({ message: 'Messaging is unavailable because this chat is blocked.' }, { status: 403 })
         const body = await request.json() as { fileName?: string; contentType?: string; size?: number; contentBase64?: string }
         if (!body.fileName || !body.contentType || !body.size || !body.contentBase64) return HttpResponse.json({ message: 'Invalid attachment.' }, { status: 400 })
         const attachmentId = `mock-attachment-${Date.now()}`
@@ -3943,7 +4523,9 @@ export const handlers = [
         if (!currentUser) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (currentUser.role !== 'owner') return HttpResponse.json({ message: 'Only owners can manage automotive service profiles.' }, { status: 403 })
 
-        const providers = ownerAutoCareProviders.filter((provider) => hasMockProviderPermission(currentUser.id, provider.id, 'catalog', provider.location.id))
+        const providers = ownerAutoCareProviders
+            .filter((provider) => hasMockProviderPermission(currentUser.id, provider.id, 'catalog', provider.location.id))
+            .map((provider) => ({ ...provider, ...summarizeMockAutoCareReviews(getMockScopedProviderReviews(currentUser.id, provider.id, ['owner', 'manager'])) }))
         return HttpResponse.json(isMockEmpty(request) ? [] : providers)
     }),
 
@@ -4287,7 +4869,7 @@ export const handlers = [
         })
         const distribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
         for (const review of reviews) distribution[String(review.rating) as keyof typeof distribution]++
-        return HttpResponse.json({ selectedProviderId: providerId, providers: selectedProviders.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, rating: provider.rating, reviewCount: provider.reviewCount })), totalReviews: reviews.length, averageRating: reviews.length ? Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)) : 0, distribution, reviews })
+        return HttpResponse.json({ selectedProviderId: providerId, providers: selectedProviders.map((provider) => ({ id: provider.id, name: provider.name, address: provider.location.address, ...summarizeMockAutoCareReviews(reviews.filter((review) => review.providerId === provider.id)) })), totalReviews: reviews.length, averageRating: reviews.length ? Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)) : 0, distribution, reviews })
     }),
 
     http.post('/api/owner/autocare-providers/:providerId/reviews/:reviewId/promos', async ({ params, request }) => {
@@ -4666,15 +5248,17 @@ export const handlers = [
     http.get('/api/v1/reviews/featured', ({ request }) => {
         const limit = Number(new URL(request.url).searchParams.get('limit') ?? 6)
         const fixture = request.headers.get('x-autocare-review-fixture')
+        const publicReviews = [...new Set(mockFeaturedAutoCareReviews.map((review) => review.providerId))]
+            .flatMap((providerId) => getMockPublicAutoCareReviews(providerId))
         const reviews = fixture === 'empty'
             ? []
             : fixture === 'one'
-                ? mockFeaturedAutoCareReviews.slice(0, 1)
+                ? publicReviews.slice(0, 1)
                 : fixture === 'photos'
-                    ? mockFeaturedAutoCareReviews.filter((review) => review.photoUrls.length > 0).slice(0, 3)
-                    : mockFeaturedAutoCareReviews
+                    ? publicReviews.filter((review) => review.photoUrls.length > 0).slice(0, 3)
+                    : publicReviews
         return HttpResponse.json(reviews.filter((review) => (review.status ?? 'approved') === 'approved').slice(0, Number.isFinite(limit) ? limit : 6).map((review) => ({
-            ...review,
+            ...toMockPublicAutoCareReview(review),
             providerName: providerPreviews.find((provider) => `api-${provider.id}` === review.providerId)?.name ?? review.providerId,
         })))
     }),
@@ -5356,7 +5940,8 @@ export const handlers = [
     http.get('/api/admin/catalog-gap-requests', ({ request }) => {
         const user = currentMockUser()
         if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-        const status = new URL(request.url).searchParams.get('status')
+        const searchParams = new URL(request.url).searchParams
+        const status = searchParams.get('status')
         return HttpResponse.json(mockAutoCareCatalogGapRequests.filter((item) => !status || item.status === status))
     }),
 
@@ -5404,8 +5989,29 @@ export const handlers = [
     http.get('/api/admin/chat-reports', ({ request }) => {
         const user = currentMockUser()
         if (!user || !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-        const status = new URL(request.url).searchParams.get('status')
-        return HttpResponse.json(mockAutoCareChatReports.filter((report) => !status || report.status === status))
+        const query = new URL(request.url).searchParams
+        const status = query.get('status')
+        const scope = query.get('scope')
+        const search = (query.get('search') ?? '').normalize('NFKC').trim().toLocaleLowerCase().slice(0, 120)
+        const assignedModeratorId = query.get('assignedModeratorId')
+        const category = query.get('category')
+        const limit = Math.max(1, Math.min(100, Number(query.get('limit')) || 50))
+        const offset = parseMockOffset(query.get('cursor'))
+        const filtered = mockAutoCareChatReports.filter((report) => {
+            if (status && report.status !== status) return false
+            if (scope === 'active' && report.status !== 'pending') return false
+            if (scope === 'archive' && report.status === 'pending') return false
+            if (category && report.category !== category) return false
+            if (assignedModeratorId === 'me' && report.assignedModeratorId !== user.id) return false
+            if (assignedModeratorId === 'unassigned' && report.assignedModeratorId !== null) return false
+            if (assignedModeratorId && assignedModeratorId !== 'me' && assignedModeratorId !== 'unassigned' && report.assignedModeratorId !== assignedModeratorId) return false
+            return !search || report.id.toLocaleLowerCase().includes(search) || report.threadId.toLocaleLowerCase().includes(search)
+        }).sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id))
+        const items = filtered.slice(offset, offset + limit + 1).slice(0, limit).map((report) => {
+            const assignedActive = report.status === 'pending' && report.assignedModeratorId === user.id && Boolean(report.accessExpiresAt && Date.parse(report.accessExpiresAt) > Date.now())
+            return user.role === 'super_admin' || assignedActive ? report : { ...report, description: null }
+        })
+        return HttpResponse.json({ items, nextCursor: offset + limit < filtered.length ? `offset:${offset + limit}` : null, totalCount: filtered.length })
     }),
 
     http.patch('/api/admin/chat-reports/:id/decision', async ({ params, request }) => {
@@ -5413,14 +6019,64 @@ export const handlers = [
         if (!user || !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const report = mockAutoCareChatReports.find((candidate) => candidate.id === params.id)
         if (!report) return HttpResponse.json({ message: 'Chat report not found.' }, { status: 404 })
-        const body = await request.json() as { status?: 'resolved' | 'dismissed'; reason?: string | null; blockUser?: boolean }
+        if (user.role === 'admin' && (report.assignedModeratorId !== user.id || !report.accessExpiresAt || Date.parse(report.accessExpiresAt) <= Date.now() || report.status !== 'pending')) return HttpResponse.json({ message: 'Only the assigned moderator with active access can decide this report.' }, { status: 403 })
+        const body = await request.json() as { status?: 'resolved' | 'dismissed'; reason?: string | null; blockUser?: boolean; blockDurationDays?: 1 | 7 | 30 }
         if (!body.status || !['resolved', 'dismissed'].includes(body.status)) return HttpResponse.json({ message: 'Invalid decision.' }, { status: 400 })
+        if (typeof body.reason !== 'string' || body.reason.trim().length < 10 || (body.blockUser !== undefined && typeof body.blockUser !== 'boolean')
+            || (body.blockUser && body.status !== 'resolved')
+            || (body.blockDurationDays !== undefined && ![1, 7, 30].includes(body.blockDurationDays))
+            || (body.blockDurationDays !== undefined && !body.blockUser)) return HttpResponse.json({ message: 'Invalid decision.' }, { status: 400 })
+        if (body.blockDurationDays === 30 && user.role !== 'super_admin') return HttpResponse.json({ message: 'Only a super administrator can apply a 30-day chat restriction.' }, { status: 403 })
+        if (!report.messageId && (user.role !== 'super_admin' || body.reason.trim().length < 10 || body.blockUser)) return HttpResponse.json({ message: 'This unanchored legacy report can only be closed by a SuperAdmin with a reason of at least 10 characters.' }, { status: 400 })
         const now = new Date().toISOString()
         report.status = body.status
         report.reviewedById = user.id
-        report.resolutionReason = body.reason?.trim() || null
+        report.resolutionReason = body.reason.trim()
         report.reviewedAt = now
-        if (body.blockUser && report.reportedUserId) mockAutoCareChatBlocks.unshift({ id: `chat-block-${Date.now()}`, threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId, status: 'active', reason: body.reason?.trim() || 'Moderation decision', createdAt: now, revokedAt: null })
+        clearMockChatReportAssignment(report.id)
+        const reviewedThread = [...mockAutoCareChatThreads, ...mockAutoCareServiceRequests.map(mockChatThreadFromRequest)].find((thread) => thread.id === report.threadId)
+        if (reviewedThread) {
+            const retainUntil = new Date(Date.now() + 90 * 24 * 60 * 60_000).toISOString()
+            mockChatMessages(reviewedThread).forEach((message) => {
+                if (!message.evidenceRetainUntil || Date.parse(message.evidenceRetainUntil) < Date.parse(retainUntil)) message.evidenceRetainUntil = retainUntil
+            })
+        }
+        if (body.blockUser && report.reportedUserId && report.messageId) {
+            const durationDays = body.blockDurationDays ?? 1
+            mockAutoCareChatBlocks.unshift({ id: `chat-block-${Date.now()}`, threadId: report.threadId, blockerId: user.id, blockedUserId: report.reportedUserId, status: 'active', reason: body.reason.trim(), sourceReportId: report.id, expiresAt: new Date(Date.now() + durationDays * 24 * 60 * 60_000).toISOString(), createdAt: now, revokedAt: null })
+        }
+        return HttpResponse.json(report)
+    }),
+
+    http.patch('/api/admin/chat-reports/:id/assignment', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'super_admin') return HttpResponse.json({ message: 'Only a super administrator can assign moderators.' }, { status: 403 })
+        const report = mockAutoCareChatReports.find((candidate) => candidate.id === params.id)
+        if (!report) return HttpResponse.json({ message: 'Chat report not found.' }, { status: 404 })
+        if (report.status !== 'pending') return HttpResponse.json({ message: 'Only an active report can be assigned.' }, { status: 409 })
+        const targetThread = [...mockAutoCareChatThreads, ...mockAutoCareServiceRequests.map(mockChatThreadFromRequest)].find((thread) => thread.id === report.threadId)
+        if (!report.messageId || !targetThread || !mockChatMessages(targetThread).some((message) => message.id === report.messageId)) return HttpResponse.json({ message: 'A report without anchored message evidence cannot be assigned.' }, { status: 409 })
+        const body = await request.json() as { moderatorId?: unknown; reason?: unknown }
+        if ((body.moderatorId !== null && typeof body.moderatorId !== 'string') || typeof body.reason !== 'string' || body.reason.trim().length < 10) return invalidMockBodyResponse()
+        if (typeof body.moderatorId === 'string' && !mockUsers.some((candidate) => candidate.id === body.moderatorId && candidate.role === 'admin' && candidate.status === 'active')) return HttpResponse.json({ message: 'An active administrator moderator is required.' }, { status: 400 })
+        report.assignedModeratorId = typeof body.moderatorId === 'string' ? body.moderatorId : null
+        report.accessExpiresAt = report.assignedModeratorId ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
+        report.extensionUsed = false
+        persistMockChatReportAssignment(report)
+        return HttpResponse.json(report)
+    }),
+
+    http.post('/api/admin/chat-reports/:id/assignment/extend', async ({ params, request }) => {
+        const user = currentMockUser()
+        if (!user || user.role !== 'admin') return HttpResponse.json({ message: 'Only the assigned moderator can extend access.' }, { status: 403 })
+        const report = mockAutoCareChatReports.find((candidate) => candidate.id === params.id)
+        if (!report || report.status !== 'pending' || report.assignedModeratorId !== user.id || !report.accessExpiresAt || Date.parse(report.accessExpiresAt) <= Date.now()) return HttpResponse.json({ message: 'Active moderator access not found.' }, { status: 403 })
+        if (report.extensionUsed) return HttpResponse.json({ message: 'Moderator access has already been extended.' }, { status: 409 })
+        const body = await request.json() as { reason?: unknown }
+        if (typeof body.reason !== 'string' || body.reason.trim().length < 10) return invalidMockBodyResponse()
+        report.accessExpiresAt = new Date(Date.parse(report.accessExpiresAt) + 24 * 60 * 60 * 1000).toISOString()
+        report.extensionUsed = true
+        persistMockChatReportAssignment(report)
         return HttpResponse.json(report)
     }),
 
@@ -5468,6 +6124,13 @@ export const handlers = [
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         const body = await request.json() as Partial<MockAutoCareAppeal>
         if (!body.subject || !body.subjectId || typeof body.reason !== 'string' || body.reason.trim().length < 20) return HttpResponse.json({ message: 'Appeal reason must be at least 20 characters.' }, { status: 422 })
+        if (!['provider', 'review', 'suspension', 'catalog', 'chat_restriction'].includes(body.subject)) return HttpResponse.json({ message: 'Appeal subject is invalid.' }, { status: 422 })
+        if (body.subject === 'chat_restriction') {
+            const block = mockAutoCareChatBlocks.find((candidate) => candidate.id === body.subjectId && candidate.blockedUserId === user.id && candidate.sourceReportId && candidate.status === 'active')
+            if (!block?.sourceReportId) return HttpResponse.json({ message: 'You can appeal only an active chat restriction applied to your account.' }, { status: 403 })
+            const sourceReport = mockAutoCareChatReports.find((report) => report.id === block.sourceReportId && report.threadId === block.threadId && report.reportedUserId === user.id && report.status === 'resolved')
+            if (!sourceReport) return HttpResponse.json({ message: 'The moderation decision for this restriction is no longer available.' }, { status: 404 })
+        }
         const duplicate = mockAutoCareAppeals.find((appeal) => appeal.submittedById === user.id && appeal.subject === body.subject && appeal.subjectId === body.subjectId && appeal.status === 'pending')
         if (duplicate) return HttpResponse.json(duplicate)
         const appeal: MockAutoCareAppeal = { id: `appeal-${Date.now()}`, subject: body.subject as MockAutoCareAppeal['subject'], subjectId: body.subjectId, submittedById: user.id, providerId: body.providerId ?? null, reason: body.reason.trim(), evidenceIds: Array.isArray(body.evidenceIds) ? body.evidenceIds : [], status: 'pending', decidedById: null, decisionReason: null, createdAt: new Date().toISOString(), decidedAt: null }
@@ -5501,10 +6164,20 @@ export const handlers = [
         if (!appeal) return HttpResponse.json({ message: 'Appeal not found.' }, { status: 404 })
         const body = await request.json() as { status?: 'accepted' | 'rejected'; reason?: string }
         if (appeal.status !== 'pending' || !body.status || !body.reason?.trim()) return HttpResponse.json({ message: 'Appeal decision is invalid.' }, { status: 409 })
+        const chatRestrictionBlock = appeal.subject === 'chat_restriction' && body.status === 'accepted'
+            ? mockAutoCareChatBlocks.find((candidate) => candidate.id === appeal.subjectId && candidate.blockedUserId === appeal.submittedById && candidate.sourceReportId)
+            : undefined
+        if (appeal.subject === 'chat_restriction' && body.status === 'accepted' && !chatRestrictionBlock) return HttpResponse.json({ message: 'The appealed chat restriction is no longer available.' }, { status: 409 })
         appeal.status = body.status
         appeal.decisionReason = body.reason.trim()
         appeal.decidedById = user.id
         appeal.decidedAt = new Date().toISOString()
+        if (chatRestrictionBlock) {
+            chatRestrictionBlock.status = 'revoked'
+            chatRestrictionBlock.revokedAt = appeal.decidedAt
+            const sourceReport = mockAutoCareChatReports.find((report) => report.id === chatRestrictionBlock.sourceReportId)
+            if (sourceReport) sourceReport.overturnedAt = appeal.decidedAt
+        }
         return HttpResponse.json(appeal)
     }),
 

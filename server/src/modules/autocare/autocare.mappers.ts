@@ -137,6 +137,8 @@ export function toOfferResponse(entity: AutomotiveServiceOfferingEntity, definit
 
 type ProviderResponseOptions = {
     trustEnabled?: boolean
+    rating?: number
+    reviewCount?: number
 }
 
 export function toProviderResponse(
@@ -159,8 +161,8 @@ export function toProviderResponse(
         verified: provider.verified,
         yearsActive: toNumber(provider.yearsActive),
         staffCount: toNumber(provider.staffCount),
-        rating: toNumber(provider.rating),
-        reviewCount: toNumber(provider.reviewCount),
+        rating: toNumber(options.rating ?? provider.rating),
+        reviewCount: toNumber(options.reviewCount ?? provider.reviewCount),
         bonusSummary: provider.bonusSummary,
         phone: provider.phone,
         phones,
@@ -202,9 +204,11 @@ export function toDiscoveryResponse(input: {
     distanceKm: number
     nextSlot?: string | null
     trustEnabled?: boolean
+    rating?: number
+    reviewCount?: number
 }): AutoCareProviderResultResponse {
     return {
-        provider: toProviderResponse(input.provider, input.location, { trustEnabled: input.trustEnabled }),
+        provider: toProviderResponse(input.provider, input.location, { trustEnabled: input.trustEnabled, rating: input.rating, reviewCount: input.reviewCount }),
         offer: toOfferResponse(input.offer, input.definition),
         distanceKm: input.distanceKm,
         nextSlot: input.nextSlot ?? null,

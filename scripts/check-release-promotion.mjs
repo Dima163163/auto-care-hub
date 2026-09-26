@@ -25,6 +25,31 @@ function isFresh(value, now, maxAgeDays) {
     return age >= 0 && age <= maxAgeDays * 24 * 60 * 60 * 1_000
 }
 
+function matchesTrustedRun(evidenceRun, trustedRun, { workflowPath, workflowRef, event, headBranch, headSha, releaseSha = null }) {
+    return evidenceRun && trustedRun
+        && String(evidenceRun.runId) === String(trustedRun.runId)
+        && trustedRun.repository === process.env.GITHUB_REPOSITORY
+        && evidenceRun.repository === trustedRun.repository
+        && evidenceRun.workflowPath === workflowPath
+        && trustedRun.workflowPath === workflowPath
+        && evidenceRun.workflowRef === workflowRef
+        && trustedRun.workflowRef === workflowRef
+        && evidenceRun.event === event
+        && trustedRun.event === event
+        && evidenceRun.headBranch === headBranch
+        && trustedRun.headBranch === headBranch
+        && evidenceRun.headSha === headSha
+        && trustedRun.headSha === headSha
+        && (!releaseSha || evidenceRun.releaseSha === releaseSha)
+        && evidenceRun.status === 'completed'
+        && trustedRun.status === 'completed'
+        && evidenceRun.conclusion === 'success'
+        && trustedRun.conclusion === 'success'
+        && evidenceRun.runUrl === trustedRun.runUrl
+        && typeof trustedRun.runUrl === 'string'
+        && trustedRun.runUrl.startsWith('https://github.com/')
+}
+
 export function validateReleasePromotion(input, {
     now = new Date(),
     maxAgeDays = 30,
@@ -71,15 +96,7 @@ export function validateReleasePromotion(input, {
         ? result('Evidence freshness', 'pass', `evidence is no older than ${maxAgeDays} days`)
         : result('Evidence freshness', 'blocked', `executedAt/generatedAt must be a timestamp within ${maxAgeDays} days`))
 
-    const signature = evidence.signature && typeof evidence.signature === 'object' ? evidence.signature : {}
-    checks.push(typeof signature.algorithm === 'string'
-        && typeof signature.signer === 'string'
-        && typeof signature.value === 'string'
-        && signature.value.length >= 16
-        && typeof signature.verificationUri === 'string'
-        && signature.verificationUri.trim().length > 0
-        ? result('Evidence signature', 'pass', `signed by ${signature.signer} using ${signature.algorithm}`)
-        : result('Evidence signature', 'blocked', 'release evidence requires a signature, algorithm, signer and verification reference'))
+    checks.push(result('Signature display metadata', 'info', 'descriptive signature fields are not a trust decision; the promotion workflow verifies the GitHub artifact attestations'))
 
     checks.push(Array.isArray(evidence.dependencies) && evidence.dependencies.length > 0 && evidence.dependencies.every((item) => typeof item === 'string' && item.trim().length > 0)
         ? result('Evidence dependencies', 'pass', `${evidence.dependencies.length} dependency reference(s) recorded`)
@@ -143,7 +160,8 @@ async function main() {
         return
     }
 
-    const provenance = await getGitProvenance(projectRoot)
+    const sourceRoot = resolve(process.env.RELEASE_SOURCE_DIR ?? projectRoot)
+    const provenance = await getGitProvenance(sourceRoot)
     const artifactPath = process.env.RELEASE_ARTIFACT_PATH
     const expectedArtifactSha256 = artifactPath
         ? await sha256File(artifactPath).catch(() => '__unavailable__')
@@ -155,6 +173,41 @@ async function main() {
         expectedArtifactSha256,
         requiredGateIds: extractRequiredGateIds(scopeSource),
     })
+    const expectedEnvironment = process.env.EXPECTED_RELEASE_ENVIRONMENT
+    if (expectedEnvironment && evidence.environment !== expectedEnvironment) {
+        checks.push(result('Promotion environment', 'blocked', `evidence environment must be ${expectedEnvironment}`))
+    }
+
+    const sourceRunPath = process.env.RELEASE_SOURCE_RUN_FILE
+    const qualityRunPath = process.env.RELEASE_QUALITY_RUN_FILE
+    if (process.env.RELEASE_ATTESTATIONS_VERIFIED !== 'true' || !sourceRunPath || !qualityRunPath) {
+        checks.push(result('Cryptographic artifact attestations', 'blocked', 'GitHub artifact attestations for evidence, migration manifest and release bundle must be verified by the promotion workflow'))
+    } else {
+        try {
+            const trustedSourceRun = JSON.parse(await readFile(resolve(sourceRunPath), 'utf8'))
+            const trustedQualityRun = JSON.parse(await readFile(resolve(qualityRunPath), 'utf8'))
+            const sourceRunValid = matchesTrustedRun(evidence.sourceRun, trustedSourceRun, {
+                workflowPath: '.github/workflows/release-evidence.yml',
+                workflowRef: 'main',
+                event: 'workflow_dispatch',
+                headBranch: 'main',
+                headSha: trustedSourceRun.headSha,
+                releaseSha: process.env.RELEASE_SHA ?? provenance.commitSha,
+            })
+            const qualityRunValid = matchesTrustedRun(evidence.qualityRun, trustedQualityRun, {
+                workflowPath: '.github/workflows/quality.yml',
+                workflowRef: 'dev',
+                event: 'push',
+                headBranch: 'dev',
+                headSha: process.env.RELEASE_SHA ?? provenance.commitSha,
+            })
+            checks.push(sourceRunValid && qualityRunValid
+                ? result('Trusted workflow runs', 'pass', 'evidence attestation comes from protected main and the Quality run succeeded for this exact dev SHA')
+                : result('Trusted workflow runs', 'blocked', 'release evidence must match the successful evidence and quality workflow runs for this repository, dev branch and exact release SHA'))
+        } catch (error) {
+            checks.push(result('Trusted workflow runs', 'blocked', error instanceof Error ? error.message : String(error)))
+        }
+    }
 
     const manifestPath = process.env.PUBLISHED_MIGRATION_MANIFEST
     if (!manifestPath) {
@@ -162,7 +215,7 @@ async function main() {
     } else {
         try {
             const migration = await evaluateMigrationChecksumManifest({
-                migrationDirectory: resolve(projectRoot, 'server/src/database/migrations'),
+                migrationDirectory: resolve(sourceRoot, 'server/src/database/migrations'),
                 manifestPath,
             })
             checks.push(migration.pass

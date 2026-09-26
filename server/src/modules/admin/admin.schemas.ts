@@ -4,7 +4,7 @@ import { CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
 import { AutomotiveLocationZoneType, AutomotiveProviderStatus, AutomotiveReviewStatus } from '../../entities/automotive/automotive.entity.js'
 import { AutomotiveProviderChangeRequestKind, AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
-import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareChatReportCategory, AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
 import { AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { AccountDeletionRequestStatus } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { UserRole, UserStatus } from '../../entities/user/user.entity.js'
@@ -339,6 +339,12 @@ export const decideAdminCatalogGapRequestSchema = z.object({
 
 export const adminChatReportsQuerySchema = z.object({
     status: z.nativeEnum(AutoCareChatReportStatus).optional(),
+    scope: z.enum(['active', 'archive']).optional(),
+    search: z.string().trim().min(1).max(120).optional(),
+    assignedModeratorId: z.union([z.string().uuid(), z.enum(['me', 'unassigned'])]).optional(),
+    category: z.nativeEnum(AutoCareChatReportCategory).optional(),
+    cursor: z.string().trim().max(2_048).optional(),
+    limit: z.coerce.number().int().positive().max(100).default(50),
 })
 
 export const adminChatReportParamsSchema = z.object({
@@ -349,7 +355,8 @@ export const decideAdminChatReportSchema = z.object({
     status: z.enum([AutoCareChatReportStatus.Resolved, AutoCareChatReportStatus.Dismissed]),
     reason: z.string().trim().min(1).max(2_000).nullable().optional(),
     blockUser: z.boolean().default(false),
-})
+    blockDurationDays: z.union([z.literal(1), z.literal(7), z.literal(30)]).optional(),
+}).strict()
 
 export const adminAutoCareAppealsQuerySchema = z.object({
     ...cursorPaginationFields,

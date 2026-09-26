@@ -65,7 +65,7 @@ import {
     updateSuperAdminMarketCountrySchema,
     updateSuperAdminTrustPolicySchema,
 } from './admin.schemas.js'
-import { updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
+import { assignAutoCareChatModeratorSchema, extendAutoCareChatModeratorAccessSchema, updateAdminAutoCareServiceDefinitionSchema } from '../autocare/autocare.schemas.js'
 import { getAccountDeletionAdminAuditMetadata } from './account-deletion-audit.js'
 import {
     createAdmin,
@@ -127,7 +127,7 @@ import { getSuperAdminTrustPolicy, updateSuperAdminTrustPolicy } from './super-a
 import { AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { AutomotiveCatalogGapRequestStatus } from '../../entities/automotive/catalog-gap-request.entity.js'
 import { decideAdminCatalogGapRequest, listAdminCatalogGapRequests, updateAdminAutoCareServiceDefinition } from '../autocare/catalog-gap.service.js'
-import { decideAdminAutoCareChatReport, listAdminAutoCareChatReports } from '../autocare/autocare-chat.service.js'
+import { assignAdminAutoCareChatModerator, decideAdminAutoCareChatReport, extendAdminAutoCareChatModeratorAccess, listAdminAutoCareChatReports } from '../autocare/autocare-chat.service.js'
 import { AutoCareChatReportStatus } from '../../entities/automotive/chat-moderation.entity.js'
 import { env } from '../../config/env.js'
 import { getRequestLocale } from '../../shared/i18n/request-locale.js'
@@ -416,12 +416,20 @@ export async function adminRoutes(
     app.get('/admin/chat-reports', async (request) => {
         const user = await requireAuth(request)
         const query = validateQuery(adminChatReportsQuerySchema, request.query)
-        const result = await listAdminAutoCareChatReports(user, query.status)
+        const result = await listAdminAutoCareChatReports(user, query)
         await recordAuditLog({
             actorId: user.id,
             action: AuditAction.AutoCareChatReportsViewed,
             targetType: 'autocare_chat_reports',
-            metadata: { itemCount: result.length, status: query.status ?? null },
+            metadata: {
+                itemCount: result.items.length,
+                totalCount: result.totalCount,
+                status: query.status ?? null,
+                scope: query.scope ?? null,
+                category: query.category ?? null,
+                assignedModeratorId: query.assignedModeratorId ?? null,
+                hasSearch: Boolean(query.search),
+            },
             request,
         })
         return result
@@ -431,16 +439,30 @@ export async function adminRoutes(
         const user = await requireAuth(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(decideAdminChatReportSchema, request.body)
-        const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser)
+        const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser, body.blockDurationDays)
         await recordAuditLog({
             actorId: user.id,
             action: AuditAction.ChatReportModerated,
             targetId: params.id,
             targetType: 'autocare_chat_report',
-            metadata: { status: body.status, blockUser: body.blockUser, reason: body.reason ?? null },
+            metadata: { status: body.status, blockUser: body.blockUser, blockDurationDays: body.blockDurationDays ?? null, reason: body.reason ?? null },
             request,
         })
         return result
+    })
+
+    app.patch('/admin/chat-reports/:id/assignment', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminChatReportParamsSchema, request.params)
+        const body = validateBody(assignAutoCareChatModeratorSchema, request.body)
+        return assignAdminAutoCareChatModerator(user, params.id, body.moderatorId, body.reason, request)
+    })
+
+    app.post('/admin/chat-reports/:id/assignment/extend', async (request) => {
+        const user = await requireAuth(request)
+        const params = validateParams(adminChatReportParamsSchema, request.params)
+        const body = validateBody(extendAutoCareChatModeratorAccessSchema, request.body)
+        return extendAdminAutoCareChatModeratorAccess(user, params.id, body.reason, request)
     })
 
     app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {

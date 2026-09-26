@@ -2,23 +2,25 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 
 import { env } from '../../config/env.js'
 import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
-import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
+import { checkRateLimit, checkRateLimitRedis, createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
+import { isRedisEnabled } from '../../shared/redis/redis.js'
 import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
-import { acceptAutoCareProviderInvitationSchema, autoCareAppealParamsSchema, autoCareAvailabilityQuerySchema, autoCareBroadcastParamsSchema, autoCareCapacityResourceParamsSchema, autoCareCapacityResourceQuerySchema, autoCareCapacityReservationQuerySchema, autoCareChatBlockParamsSchema, autoCareChatConversationQuerySchema, autoCareChatParamsSchema, autoCareCommunicationSettingsSchema, autoCareDiscoveryQuerySchema, autoCareFairPriceQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareFavoriteParamsSchema, autoCareFleetParamsSchema, autoCareLocationZonesQuerySchema, autoCareMarketParamsSchema, autoCareOfferParamsSchema, autoCareProviderInvitationParamsSchema, autoCareProviderMembershipParamsSchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareProviderReviewsQuerySchema, autoCareReviewOnlyParamsSchema, autoCareReviewParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceConversationQuerySchema, autoCareServiceMessageParamsSchema, autoCareServiceRequestParamsSchema, autoCareQuoteDecisionSchema, cancelAutoCareServiceRequestSchema, completeAutoCareServiceRequestSchema, createAutoCareAppealSchema, createAutoCareBroadcastOfferSchema, createAutoCareBroadcastRequestSchema, createAutoCareCapacityResourceSchema, createAutoCareChatBlockSchema, createAutoCareChatReportSchema, createAutoCareChatSchema, createAutoCareExpertQuestionSchema, createAutoCareFavoriteSchema, createAutoCareFleetSchema, createAutoCareFleetVehicleSchema, createAutoCareGuaranteeClaimSchema, createAutoCareCatalogGapRequestSchema, createAutoCareProviderChangeRequestSchema, createAutoCareProviderInvitationSchema, createAutoCareReviewPromoSchema, createAutoCareReviewSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceOfferSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, createAutoCareRescheduleSchema, decideAutoCareRescheduleSchema, grantAutoCareBonusSchema, markAutoCareNoShowSchema, ownerAutoCareBonusProgramSchema, ownerAutoCareProviderChangeRequestParamsSchema, ownerAutoCareProviderSchema, ownerAutoCareReviewsQuerySchema, redeemAutoCareBonusSchema, redeemAutoCareReviewPromoSchema, serviceMessageOfferDecisionSchema, syncAutoCareFavoritesSchema, updateAutoCareCapacityResourceSchema, updateAutoCareOfferSchema, updateAutoCareReviewSchema, uploadAutoCareProviderLogoSchema, uploadAutoCareProviderMediaSchema } from './autocare.schemas.js'
+import { acceptAutoCareProviderInvitationSchema, autoCareAppealParamsSchema, autoCareAvailabilityQuerySchema, autoCareBroadcastParamsSchema, autoCareCapacityResourceParamsSchema, autoCareCapacityResourceQuerySchema, autoCareCapacityReservationQuerySchema, autoCareChatBlockParamsSchema, autoCareChatConversationQuerySchema, autoCareChatEmergencyAccessQuerySchema, autoCareChatParamsSchema, autoCareChatReportsQuerySchema, autoCareCommunicationSettingsSchema, autoCareDiscoveryQuerySchema, autoCareFairPriceQuerySchema, autoCareFeaturedReviewsQuerySchema, autoCareFavoriteParamsSchema, autoCareFleetParamsSchema, autoCareLocationZonesQuerySchema, autoCareMarketParamsSchema, autoCareOfferParamsSchema, autoCareProviderInvitationParamsSchema, autoCareProviderMembershipParamsSchema, autoCareProviderOffersQuerySchema, autoCareProviderParamsSchema, autoCareProviderReviewsQuerySchema, autoCareReviewOnlyParamsSchema, autoCareReviewParamsSchema, autoCareServiceAttachmentParamsSchema, autoCareServiceConversationQuerySchema, autoCareServiceMessageParamsSchema, autoCareServiceRequestParamsSchema, autoCareQuoteDecisionSchema, cancelAutoCareServiceRequestSchema, completeAutoCareServiceRequestSchema, createAutoCareAppealSchema, createAutoCareBroadcastOfferSchema, createAutoCareBroadcastRequestSchema, createAutoCareCapacityResourceSchema, createAutoCareChatBlockSchema, createAutoCareChatReportSchema, createAutoCareChatSchema, createAutoCareExpertQuestionSchema, createAutoCareFavoriteSchema, createAutoCareFleetSchema, createAutoCareFleetVehicleSchema, createAutoCareGuaranteeClaimSchema, createAutoCareCatalogGapRequestSchema, createAutoCareProviderChangeRequestSchema, createAutoCareProviderInvitationSchema, createAutoCareReviewPromoSchema, createAutoCareReviewSchema, createAutoCareServiceAttachmentSchema, createAutoCareServiceMessageSchema, createAutoCareServiceOfferSchema, createAutoCareServiceQuoteSchema, createAutoCareServiceRequestSchema, createAutoCareRescheduleSchema, decideAutoCareRescheduleSchema, grantAutoCareBonusSchema, markAutoCareNoShowSchema, ownerAutoCareBonusProgramSchema, ownerAutoCareProviderChangeRequestParamsSchema, ownerAutoCareProviderSchema, ownerAutoCareReviewsQuerySchema, redeemAutoCareBonusSchema, redeemAutoCareReviewPromoSchema, serviceMessageOfferDecisionSchema, syncAutoCareFavoritesSchema, updateAutoCareCapacityResourceSchema, updateAutoCareOfferSchema, updateAutoCareReviewSchema, uploadAutoCareProviderLogoSchema, uploadAutoCareProviderMediaSchema } from './autocare.schemas.js'
 import { createAutoCareReview, createOwnerAutoCareCapacityResource, createOwnerAutoCareProvider, createOwnerAutoCareReviewPromo, getAutoCareDiscovery, getAutoCareLocationZones, getAutoCareMarkets, getAutoCareProviderLogo, getAutoCareProviderOffers, getAutoCareProviderProfile, getAutoCareProviderReviews, getAutoCareServiceDefinitions, getFeaturedAutoCareReviews, getMyAutoCareReviews, getOwnerAutoCareCapacityReservations, getOwnerAutoCareCapacityResources, getOwnerAutoCareProviderReviews, getOwnerAutoCareProviders, getOwnerAutoCareReviews, redeemAutoCareReviewPromo, saveAutoCareProviderLogo, saveAutoCareProviderMedia, updateClientAutoCareReview, updateOwnerAutoCareCapacityResource, updateOwnerAutoCareCommunicationSettings, updateOwnerAutoCareOffer } from './autocare.service.js'
 import { vehicleCatalogRoutes } from './vehicle-catalog.routes.js'
 import { decodeAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { decodeAutoCareProviderMedia, readAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
 import { acceptAutoCareServiceQuote, assertAutoCareServiceRequestRealtimeAccess, cancelAutoCareServiceRequest, completeAutoCareServiceRequest, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceOffer, createAutoCareServiceQuote, createAutoCareServiceRequest, decideAutoCareServiceOffer, decideAutoCareServiceReschedule, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequests, markAutoCareServiceConversationRead, markAutoCareServiceRequestNoShow, requestAutoCareServiceReschedule } from './autocare-request.service.js'
 import { closeServiceChatGateway, sendServiceChatEvent, subscribeServiceChat } from './service-chat.gateway.js'
-import { assertAutoCareChatRealtimeAccess, createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatBlock, createAutoCareChatMessage, createAutoCareChatReport, getAutoCareChat, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, getMyAutoCareChats, markAutoCareChatRead, revokeAutoCareChatBlock } from './autocare-chat.service.js'
+import { assertAutoCareChatRealtimeAccess, createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatBlock, createAutoCareChatMessage, createAutoCareChatReport, deleteAutoCareChatMessage, getAutoCareChat, getAutoCareChatAccessContext, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, listMyAutoCareChatReports, getMyAutoCareChats, markAutoCareChatRead, revokeAutoCareChatBlock } from './autocare-chat.service.js'
 import { createAutoCareBroadcastOffer, createAutoCareBroadcastRequest, createAutoCareExpertQuestion, createAutoCareFleet, createAutoCareFleetVehicle, createAutoCareGuaranteeClaim, getAutoCareFairPrice, getAutoCareProviderTrust, getAutoCareRepairTimeline, getMyAutoCareBroadcastRequests, getMyAutoCareExpertQuestions, getMyAutoCareFleets, getMyAutoCareGuaranteeClaims, getOwnerAutoCareBroadcastRequests, getAutoCareBroadcastRequest } from './autocare-marketplace.service.js'
 import { addAutoCareFavorite, getMyAutoCareFavorites, removeAutoCareFavorite, syncAutoCareFavorites } from './autocare-favorites.service.js'
 import { getMyAutoCareBonusAccounts, getOwnerAutoCareBonusLiability, getOwnerAutoCareBonusProgram, grantAutoCareBonus, redeemAutoCareBonus, upsertOwnerAutoCareBonusProgram } from './autocare-bonus.service.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import { AutoCareChatReportCategory } from '../../entities/automotive/chat-moderation.entity.js'
+import { UserRole } from '../../entities/user/user.entity.js'
 import { getOwnerAutoCareProviderAnalytics, recordAutoCareProviderProfileOpen } from './autocare-analytics.service.js'
 import { acceptProviderInvitation, createOwnerProviderInvitation, listOwnerProviderMemberships, revokeOwnerProviderInvitation, revokeOwnerProviderMembership } from './provider-membership.service.js'
 import { cancelOwnerProviderChangeRequest, createOwnerProviderChangeRequest, listOwnerProviderChangeRequests } from './provider-change-request.service.js'
@@ -26,6 +28,7 @@ import { createAutoCareCatalogGapRequest } from './catalog-gap.service.js'
 import { createAutoCareAppeal, getMyAutoCareAppeals, withdrawAutoCareAppeal } from './appeal.service.js'
 import { listOwnerAutoCareEvidence } from './moderation-evidence.service.js'
 import { getOwnerWorkspaceAccess } from './provider-access.service.js'
+import { autoCareCommunityRoutes } from './autocare-community.routes.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:request-transition', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -34,8 +37,10 @@ const autoCareUploadRateLimit = createRateLimitPreHandler({ maxRequests: 10, sco
 const autoCareDiscoveryRateLimit = createRateLimitPreHandler({ maxRequests: 120, scope: 'autocare:discovery', windowMs: 60 * 1000 })
 const autoCareTrustRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:trust', windowMs: 60 * 1000 })
 const autoCareAvailabilityRateLimit = createRateLimitPreHandler({ maxRequests: 60, scope: 'autocare:availability', windowMs: 60 * 1000 })
+const autoCareWebSocketConnectionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:chat-ws-connect', windowMs: 60 * 1000, keyResolvers: [getWebSocketUserRateLimitIdentifier] })
 const MAX_WEBSOCKET_MESSAGE_BYTES = 64 * 1024
 const MAX_WEBSOCKET_EVENTS_PER_MINUTE = 120
+const webSocketEventRateLimit = { maxRequests: MAX_WEBSOCKET_EVENTS_PER_MINUTE, scope: 'autocare:chat-ws-event', windowMs: 60 * 1000 }
 
 function getWebSocketToken(request: FastifyRequest) {
     const rawProtocols = request.headers['sec-websocket-protocol']
@@ -46,6 +51,21 @@ function getWebSocketToken(request: FastifyRequest) {
             : []
     const bearerProtocol = protocols.find((protocol) => protocol.startsWith('bearer.'))
     return bearerProtocol?.slice('bearer.'.length) ?? ''
+}
+
+function getWebSocketUserRateLimitIdentifier(request: FastifyRequest) {
+    const token = getWebSocketToken(request)
+    if (!token) return undefined
+    const rateLimitRequest = { ...request, headers: { ...request.headers, authorization: `Bearer ${token}` } } as FastifyRequest
+    return getAuthenticatedUserRateLimitIdentifier(rateLimitRequest)
+}
+
+async function allowWebSocketUserEvent(identifier: string) {
+    const bucket = `user:${identifier}`
+    const result = isRedisEnabled()
+        ? await checkRateLimitRedis(bucket, webSocketEventRateLimit)
+        : checkRateLimit(bucket, webSocketEventRateLimit)
+    return result.allowed
 }
 
 function isAllowedWebSocketOrigin(request: FastifyRequest) {
@@ -79,6 +99,7 @@ function createWebSocketEventGuard() {
 export async function autoCareRoutes(app: FastifyInstance) {
     app.addHook('onClose', async () => closeServiceChatGateway())
     await app.register(vehicleCatalogRoutes)
+    await app.register(autoCareCommunityRoutes)
     app.get('/v1/markets', async () => getAutoCareMarkets())
     app.get('/v1/markets/:marketId/zones', async (request) => {
         const params = validateParams(autoCareMarketParamsSchema, request.params)
@@ -370,12 +391,19 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/chats', async (request) => getMyAutoCareChats(await requireAuth(request)))
     app.post('/v1/chats', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareChat(await requireVerifiedEmail(request), validateBody(createAutoCareChatSchema, request.body)))
     app.get('/v1/service-requests/:requestId/chat-thread', async (request) => getAutoCareChatThreadForRequest(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
-    app.get('/v1/chats/:chatId', async (request) => getAutoCareChat(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateQuery(autoCareChatConversationQuerySchema, request.query)))
-    app.post('/v1/chats/:chatId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareChatMessage(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceMessageSchema, request.body)))
     app.post('/v1/chats/:chatId/reports', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const user = await requireVerifiedEmail(request)
         const body = validateBody(createAutoCareChatReportSchema, request.body)
         return createAutoCareChatReport(user, validateParams(autoCareChatParamsSchema, request.params).chatId, { ...body, category: body.category as AutoCareChatReportCategory })
+    })
+    app.get('/v1/chats/:chatId/reports/mine', async (request) => {
+        const query = validateQuery(autoCareChatReportsQuerySchema, request.query)
+        return listMyAutoCareChatReports(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId, query)
+    })
+    app.delete('/v1/chats/:chatId/messages/:messageId', { preHandler: autoCareMutationRateLimit }, async (request) => {
+        const user = await requireVerifiedEmail(request)
+        const params = validateParams(autoCareChatParamsSchema.extend({ messageId: autoCareChatParamsSchema.shape.chatId }), request.params)
+        return deleteAutoCareChatMessage(user, params.chatId, params.messageId)
     })
     app.post('/v1/chats/:chatId/blocks', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const user = await requireVerifiedEmail(request)
@@ -393,15 +421,19 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/chats/:chatId/attachments/:attachmentId', async (request, reply) => {
         const user = await requireAuth(request)
         const params = validateParams(autoCareChatParamsSchema.extend({ attachmentId: autoCareServiceAttachmentParamsSchema.shape.attachmentId }), request.params)
+        const emergencyQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
+        if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+            const accessContext = await getAutoCareChatAccessContext(user, params.chatId, emergencyQuery.emergencyReason)
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.AutoCareEvidenceViewed,
+                targetId: params.attachmentId,
+                targetType: 'autocare_chat_attachment',
+                metadata: { chatId: params.chatId, accessReasonCode: accessContext.accessScope, scope: 'attachment', threadType: accessContext.threadType, requestId: accessContext.requestId, emergencyReason: accessContext.emergencyReason },
+                request,
+            })
+        }
         const attachment = await getAutoCareChatAttachment(user, params.chatId, params.attachmentId)
-        await recordAuditLog({
-            actorId: user.id,
-            action: AuditAction.AutoCareEvidenceViewed,
-            targetId: params.attachmentId,
-            targetType: 'autocare_chat_attachment',
-            metadata: { chatId: params.chatId, contentType: attachment.contentType },
-            request,
-        })
         if (attachment.signedUrl) {
             return reply
                 .header('cache-control', 'private, no-store')
@@ -416,7 +448,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
             .type(attachment.contentType)
             .send(attachment.content)
     })
-    app.get('/v1/chats/:chatId/ws', { websocket: true }, async (socket, request) => {
+    app.get('/v1/chats/:chatId/ws', { websocket: true, preHandler: autoCareWebSocketConnectionRateLimit }, async (socket, request) => {
         try {
             if (!isAllowedWebSocketOrigin(request)) {
                 socket.close(1008, 'Origin not allowed')
@@ -431,8 +463,24 @@ export async function autoCareRoutes(app: FastifyInstance) {
                 ? { ...request, headers: { ...request.headers, authorization: `Bearer ${token}` } } as FastifyRequest
                 : request
             const user = await requireAuth(authRequest)
+            const rateLimitIdentifier = getAuthenticatedUserRateLimitIdentifier(authRequest)
+            if (!rateLimitIdentifier) {
+                socket.close(4401, 'Unauthorized')
+                return
+            }
             const chatId = validateParams(autoCareChatParamsSchema, request.params).chatId
-            await getAutoCareChat(user, chatId)
+            const emergencyQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
+            const accessContext = await getAutoCareChatAccessContext(user, chatId, emergencyQuery.emergencyReason)
+            if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+                await recordAuditLog({
+                    actorId: user.id,
+                    action: AuditAction.AutoCareEvidenceViewed,
+                    targetId: chatId,
+                    targetType: 'autocare_chat_thread',
+                    metadata: { accessReasonCode: accessContext.accessScope, scope: 'websocket_session', threadType: accessContext.threadType, requestId: accessContext.requestId, emergencyReason: accessContext.emergencyReason },
+                    request,
+                })
+            }
             let unsubscribe: (() => void) | null = null
             const assertLiveAccess = async () => {
                 const currentUser = await requireAuth(authRequest)
@@ -445,23 +493,50 @@ export async function autoCareRoutes(app: FastifyInstance) {
             } })
             sendServiceChatEvent(socket, { type: 'presence', threadId: chatId, payload: { connected: true } })
             const allowEvent = createWebSocketEventGuard()
+            let authChecksInFlight = 0
             socket.on('message', (raw) => {
-                void assertLiveAccess().then((currentUser) => {
+                if (getWebSocketPayloadSize(raw) > MAX_WEBSOCKET_MESSAGE_BYTES) {
+                    socket.close(1009, 'WebSocket message limit exceeded')
+                    return
+                }
+                if (!allowEvent()) {
+                    socket.close(1008, 'WebSocket event rate limit exceeded')
+                    return
+                }
+                let event: { type?: unknown }
+                try {
+                    event = JSON.parse(raw.toString()) as { type?: unknown }
+                } catch {
+                    socket.send(JSON.stringify({ type: 'presence', threadId: chatId, payload: { error: 'Invalid chat event.' } }))
+                    return
+                }
+                if (event.type !== 'ping' && event.type !== 'read') return
+                if (authChecksInFlight >= 5) {
+                    socket.close(1008, 'Too many concurrent chat events')
+                    return
+                }
+                authChecksInFlight += 1
+                void (async () => {
+                    let allowed: boolean
                     try {
-                        if (getWebSocketPayloadSize(raw) > MAX_WEBSOCKET_MESSAGE_BYTES || !allowEvent()) {
-                            socket.close(1009, 'WebSocket message limit exceeded')
-                            return
-                        }
-                        const event = JSON.parse(raw.toString()) as { type?: unknown }
-                        if (event.type === 'ping') sendServiceChatEvent(socket, { type: 'presence', threadId: chatId, payload: { pong: true } })
-                        if (event.type === 'read') void markAutoCareChatRead(currentUser, chatId)
+                        allowed = await allowWebSocketUserEvent(rateLimitIdentifier.value)
                     } catch {
-                        socket.send(JSON.stringify({ type: 'presence', threadId: chatId, payload: { error: 'Invalid chat event.' } }))
+                        unsubscribe?.()
+                        if (socket.readyState === 1) socket.close(1013, 'Rate limiting unavailable')
+                        return
                     }
-                }).catch(() => {
+                    if (!allowed) {
+                        unsubscribe?.()
+                        if (socket.readyState === 1) socket.close(1008, 'WebSocket event rate limit exceeded')
+                        return
+                    }
+                    const currentUser = await assertLiveAccess()
+                    if (event.type === 'ping') sendServiceChatEvent(socket, { type: 'presence', threadId: chatId, payload: { pong: true } })
+                    if (event.type === 'read') await markAutoCareChatRead(currentUser, chatId)
+                })().catch(() => {
                     unsubscribe?.()
                     if (socket.readyState === 1) socket.close(4403, 'Chat access revoked')
-                })
+                }).finally(() => { authChecksInFlight -= 1 })
             })
             socket.on('close', () => unsubscribe?.())
             socket.on('error', () => unsubscribe?.())
@@ -480,12 +555,44 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/service-requests/:requestId', async (request) => {
         const user = await requireAuth(request)
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
-        const result = await getAutoCareServiceRequest(user, requestId)
-        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCarePhoneContactViewed, targetId: requestId, targetType: 'autocare_service_request', metadata: { accessorRole: user.role }, request })
+        const accessQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
+        const result = await getAutoCareServiceRequest(user, requestId, accessQuery.emergencyReason)
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AutoCarePhoneContactViewed,
+            targetId: requestId,
+            targetType: 'autocare_service_request',
+            metadata: {
+                accessorRole: user.role,
+                ...(user.role === UserRole.SuperAdmin
+                    ? { emergencyReason: accessQuery.emergencyReason?.normalize('NFKC').trim() }
+                    : {}),
+            },
+            request,
+        })
         return result
     })
     app.get('/v1/service-requests/:requestId/conversation', async (request) => getAutoCareServiceRequestConversation(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateQuery(autoCareServiceConversationQuerySchema, request.query)))
     app.post('/v1/service-requests/:requestId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceMessage(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, { ...validateBody(createAutoCareServiceMessageSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
+    app.get('/v1/chats/:chatId', async (request) => {
+        const user = await requireAuth(request)
+        const chatId = validateParams(autoCareChatParamsSchema, request.params).chatId
+        const query = validateQuery(autoCareChatConversationQuerySchema.extend({ emergencyReason: autoCareChatEmergencyAccessQuerySchema.shape.emergencyReason }), request.query)
+        if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+            const accessContext = await getAutoCareChatAccessContext(user, chatId, query.emergencyReason)
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.AutoCareEvidenceViewed,
+                targetId: chatId,
+                targetType: 'autocare_chat_thread',
+                metadata: { accessReasonCode: accessContext.accessScope, scope: 'conversation', threadType: accessContext.threadType, requestId: accessContext.requestId, emergencyReason: accessContext.emergencyReason },
+                request,
+            })
+        }
+        const pagination = { cursor: query.cursor, beforeCursor: query.beforeCursor, limit: query.limit }
+        return getAutoCareChat(user, chatId, pagination)
+    })
+    app.post('/v1/chats/:chatId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareChatMessage(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceMessageSchema, request.body), getOptionalIdempotencyKey(request.headers)))
     app.post('/v1/service-requests/:requestId/read', async (request) => markAutoCareServiceConversationRead(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/owner/service-requests/:requestId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceOffer(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceOfferSchema, request.body)))
     app.post('/v1/service-requests/:requestId/offers/:messageId/decision', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
@@ -493,7 +600,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const params = validateParams(autoCareServiceMessageParamsSchema, request.params)
         return decideAutoCareServiceOffer(user, params.requestId, params.messageId, validateBody(serviceMessageOfferDecisionSchema, request.body).decision)
     })
-    app.get('/v1/service-requests/:requestId/ws', { websocket: true }, async (socket, request) => {
+    app.get('/v1/service-requests/:requestId/ws', { websocket: true, preHandler: autoCareWebSocketConnectionRateLimit }, async (socket, request) => {
         try {
             if (!isAllowedWebSocketOrigin(request)) {
                 socket.close(1008, 'Origin not allowed')
@@ -508,7 +615,16 @@ export async function autoCareRoutes(app: FastifyInstance) {
                 ? { ...request, headers: { ...request.headers, authorization: `Bearer ${token}` } } as FastifyRequest
                 : request
             const user = await requireAuth(authRequest)
+            const rateLimitIdentifier = getAuthenticatedUserRateLimitIdentifier(authRequest)
+            if (!rateLimitIdentifier) {
+                socket.close(4401, 'Unauthorized')
+                return
+            }
             const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
+            if (user.role === UserRole.SuperAdmin) {
+                socket.close(1008, 'Use the audited chat review connection.')
+                return
+            }
             await getAutoCareServiceRequest(user, requestId)
             let unsubscribe: (() => void) | null = null
             const assertLiveAccess = async () => {
@@ -522,23 +638,50 @@ export async function autoCareRoutes(app: FastifyInstance) {
             } })
             sendServiceChatEvent(socket, { type: 'presence', requestId, payload: { connected: true } })
             const allowEvent = createWebSocketEventGuard()
+            let authChecksInFlight = 0
             socket.on('message', (raw) => {
-                void assertLiveAccess().then((currentUser) => {
+                if (getWebSocketPayloadSize(raw) > MAX_WEBSOCKET_MESSAGE_BYTES) {
+                    socket.close(1009, 'WebSocket message limit exceeded')
+                    return
+                }
+                if (!allowEvent()) {
+                    socket.close(1008, 'WebSocket event rate limit exceeded')
+                    return
+                }
+                let event: { type?: unknown }
+                try {
+                    event = JSON.parse(raw.toString()) as { type?: unknown }
+                } catch {
+                    socket.send(JSON.stringify({ type: 'presence', requestId, payload: { error: 'Invalid chat event.' } }))
+                    return
+                }
+                if (event.type !== 'ping' && event.type !== 'read') return
+                if (authChecksInFlight >= 5) {
+                    socket.close(1008, 'Too many concurrent chat events')
+                    return
+                }
+                authChecksInFlight += 1
+                void (async () => {
+                    let allowed: boolean
                     try {
-                        if (getWebSocketPayloadSize(raw) > MAX_WEBSOCKET_MESSAGE_BYTES || !allowEvent()) {
-                            socket.close(1009, 'WebSocket message limit exceeded')
-                            return
-                        }
-                        const event = JSON.parse(raw.toString()) as { type?: unknown }
-                        if (event.type === 'ping') sendServiceChatEvent(socket, { type: 'presence', requestId, payload: { pong: true } })
-                        if (event.type === 'read') void markAutoCareServiceConversationRead(currentUser, requestId)
+                        allowed = await allowWebSocketUserEvent(rateLimitIdentifier.value)
                     } catch {
-                        socket.send(JSON.stringify({ type: 'presence', requestId, payload: { error: 'Invalid chat event.' } }))
+                        unsubscribe?.()
+                        if (socket.readyState === 1) socket.close(1013, 'Rate limiting unavailable')
+                        return
                     }
-                }).catch(() => {
+                    if (!allowed) {
+                        unsubscribe?.()
+                        if (socket.readyState === 1) socket.close(1008, 'WebSocket event rate limit exceeded')
+                        return
+                    }
+                    const currentUser = await assertLiveAccess()
+                    if (event.type === 'ping') sendServiceChatEvent(socket, { type: 'presence', requestId, payload: { pong: true } })
+                    if (event.type === 'read') await markAutoCareServiceConversationRead(currentUser, requestId)
+                })().catch(() => {
                     unsubscribe?.()
                     if (socket.readyState === 1) socket.close(4403, 'Chat access revoked')
-                })
+                }).finally(() => { authChecksInFlight -= 1 })
             })
             socket.on('close', () => unsubscribe?.())
             socket.on('error', () => unsubscribe?.())
@@ -579,7 +722,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const user = await requireVerifiedEmail(request)
         const params = validateParams(autoCareServiceRequestParamsSchema, request.params)
         const body = validateBody(decideAutoCareRescheduleSchema, request.body)
-        return decideAutoCareServiceReschedule(user, params.requestId, body.decision, body.reason)
+        return decideAutoCareServiceReschedule(user, params.requestId, body.rescheduleId, body.decision, body.reason)
     })
     app.post('/v1/service-requests/:requestId/quote/accept', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
         const user = await requireVerifiedEmail(request)

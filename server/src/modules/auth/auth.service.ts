@@ -1,5 +1,6 @@
 import { compare, hash } from 'bcryptjs'
 import type { FastifyRequest } from 'fastify'
+import type { EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import { env } from '../../config/env.js'
@@ -9,6 +10,7 @@ import {
     UserRole,
     UserStatus,
 } from '../../entities/user/user.entity.js'
+import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { createAccessToken, createRefreshToken } from './auth-token.js'
@@ -25,6 +27,7 @@ import {
     revokeAllUserSessions,
     rotateUserSession,
 } from './session.service.js'
+import { normalizeSessionMetadata } from './session-metadata.js'
 import { assertCurrentSessionVersion } from './session-version.js'
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
@@ -93,7 +96,7 @@ type LoginInput = {
 type CompletePasswordSetupInput = {
     token: string
     password: string
-}
+} & Pick<SessionInfo, 'userAgent' | 'ipAddress'>
 
 type CompletePasswordResetInput = {
     token: string
@@ -497,11 +500,14 @@ export async function refreshAuth(
     }
 }
 
-export async function createPasswordSetupTokenForUser(user: UserEntity) {
+export async function createPasswordSetupTokenForUser(
+    user: UserEntity,
+    manager?: EntityManager,
+) {
     return createSecurityToken({
         user,
         purpose: SecurityTokenPurpose.PasswordSetup,
-    })
+    }, manager)
 }
 
 export async function createEmailVerificationTokenForUser(user: UserEntity) {
@@ -533,24 +539,65 @@ export async function verifyPasswordSetupToken(token: string) {
 }
 
 export async function completePasswordSetup(input: CompletePasswordSetupInput) {
-    const savedUser = await consumeUsableSecurityToken(
+    const setup = await consumeUsableSecurityToken(
         input.token,
         SecurityTokenPurpose.PasswordSetup,
         async (securityToken, manager) => {
+            // Re-read under the same transaction's row lock. The relation
+            // loaded with the token can be stale if an admin blocks the user
+            // while this one-time token is being consumed.
+            const userRepository = manager.getRepository(UserEntity)
+            const user = await userRepository
+                .createQueryBuilder('user')
+                .where('user.id = :userId', { userId: securityToken.userId })
+                .setLock('pessimistic_write')
+                .getOne()
+
+            if (!user) {
+                return null
+            }
+
+            if (user.status === UserStatus.Blocked) {
+                throw new AppError({
+                    statusCode: 403,
+                    code: ERROR_CODES.Forbidden,
+                    message: 'User is blocked.',
+                })
+            }
+
             const password = await assertPasswordSecurityPolicy(input.password, {
                 mode: env.auth.breachedPasswordCheckMode,
                 timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
             })
             const passwordHash = await hash(password, PASSWORD_SALT_ROUNDS)
 
-            securityToken.user.passwordHash = passwordHash
-            securityToken.user.status = UserStatus.Active
-            securityToken.user.tokenVersion += 1
-            return manager.getRepository(UserEntity).save(securityToken.user)
+            user.passwordHash = passwordHash
+            user.emailVerifiedAt ??= new Date()
+            user.tokenVersion += 1
+            const savedUser = await userRepository.save(user)
+
+            // Create the setup session in the same transaction while the user
+            // row remains locked. A concurrent block then either prevents this
+            // setup or revokes the just-created session after it commits.
+            const sessionRepository = manager.getRepository(UserSessionEntity)
+            const metadata = normalizeSessionMetadata(input)
+            const session = await sessionRepository.save(
+                sessionRepository.create({
+                    userId: savedUser.id,
+                    userAgent: metadata.userAgent,
+                    ipAddress: metadata.ipAddress,
+                    lastActiveAt: new Date(),
+                    expiresAt: getRefreshTokenExpiry(),
+                    revokedAt: null,
+                    revocationReason: null,
+                }),
+            )
+
+            return { user: savedUser, sessionId: session.id }
         },
     )
 
-    if (!savedUser) {
+    if (!setup) {
         throw new AppError({
             statusCode: 400,
             code: ERROR_CODES.BadRequest,
@@ -558,10 +605,10 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
         })
     }
 
-    const tokens = createAuthTokens(savedUser)
+    const tokens = createAuthTokens(setup.user, setup.sessionId)
 
     return {
-        user: toPublicUser(savedUser),
+        user: toPublicUser(setup.user),
         ...tokens,
     }
 }

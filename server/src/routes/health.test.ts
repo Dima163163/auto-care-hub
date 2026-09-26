@@ -21,6 +21,7 @@ describe('Health Route Integration', () => {
     expect(response.body.checks.outbox.status).toBe('ok')
     expect(response.body.checks.outbox.deadLetter).toBeGreaterThanOrEqual(0)
     expect(response.body.checks.storage.status).toBe('ok')
+    expect(['ok', 'failed', 'skipped', 'checking']).toContain(response.body.checks.mail.status)
     expect(['ok', 'skipped']).toContain(response.body.checks.redis.status)
     expect(response.headers['x-request-id']).toBe('health-check-123')
     

@@ -331,18 +331,24 @@ export async function authRoutes(
         },
         async (request, reply) => {
             try {
-                const refreshToken = getRefreshTokenFromCookie(request)
-                const payload = verifyRefreshTokenOrThrow(refreshToken)
+                const refreshToken = request.cookies[env.auth.refreshTokenCookieName]
+                const payload = refreshToken
+                    ? (() => {
+                        try {
+                            return verifyRefreshToken(refreshToken)
+                        } catch {
+                            return null
+                        }
+                    })()
+                    : null
 
-                if (payload.sessionId) {
+                if (payload?.sessionId) {
                     await revokeUserSession(payload.sessionId, payload.userId)
                 }
-            } catch {
-                // Ignore logout errors (e.g. invalid refresh token)
+            } finally {
+                clearRefreshTokenCookie(reply)
+                clearCsrfTokenCookie(reply)
             }
-
-            clearRefreshTokenCookie(reply)
-            clearCsrfTokenCookie(reply)
 
             return {
                 success: true,
@@ -425,7 +431,11 @@ export async function authRoutes(
         },
         async (request, reply) => {
             const body = validateBody(completePasswordSetupSchema, request.body)
-            const result = await completePasswordSetup(body)
+            const result = await completePasswordSetup({
+                ...body,
+                userAgent: request.headers['user-agent'],
+                ipAddress: request.ip,
+            })
 
             setRefreshTokenCookie(reply, result.refreshToken)
 

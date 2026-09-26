@@ -238,6 +238,8 @@ export type AutoCareApiDiscoveryItem = {
 export type AutoCareApiDiscoveryResponse = {
     items: AutoCareApiDiscoveryItem[]
     nextCursor: string | null
+    totalCount: number
+    totalCountIsLowerBound: boolean
     partial?: boolean
 }
 
@@ -378,7 +380,7 @@ export type SuperAdminTrustPolicy = {
 
 export type UpdateSuperAdminTrustPolicyInput = Omit<SuperAdminTrustPolicy, 'updatedAt'>
 
-export type AutoCareAppeal = { id: string; subject: 'provider' | 'review' | 'suspension' | 'catalog'; subjectId: string; submittedById: string; providerId: string | null; reason: string; evidenceIds: string[]; status: 'pending' | 'accepted' | 'rejected' | 'withdrawn'; decidedById: string | null; decisionReason: string | null; createdAt: string; decidedAt: string | null }
+export type AutoCareAppeal = { id: string; subject: 'provider' | 'review' | 'suspension' | 'catalog' | 'chat_restriction'; subjectId: string; submittedById: string; providerId: string | null; reason: string; evidenceIds: string[]; status: 'pending' | 'accepted' | 'rejected' | 'withdrawn'; decidedById: string | null; decisionReason: string | null; createdAt: string; decidedAt: string | null }
 export type CreateAutoCareAppealInput = { subject: AutoCareAppeal['subject']; subjectId: string; providerId?: string | null; reason: string; evidenceIds?: string[] }
 export type AdminAutoCareModerationEvidence = {
     id: string
@@ -420,8 +422,25 @@ export type AutoCareApiReview = {
     revisionUsedAt?: string | null
     canContact?: boolean
     canEdit?: boolean
+    communityProfile?: { profileId: string; badgeCodes: Array<'verified_client' | 'regular_client' | 'helpful_reviewer' | 'autocare_expert'> } | null
+    helpfulCount?: number
     providerName?: string
     providerAddress?: string
+}
+
+export type AutoCareCommunityMetrics = { confirmedVisits: number; publishedReviews: number; helpfulVoters: number }
+export type AutoCareCommunityProfile = {
+    enabled: boolean
+    displayName: string | null
+    publicProfileId: string | null
+    profileUrl: string | null
+    badgeCodes: Array<'verified_client' | 'regular_client' | 'helpful_reviewer' | 'autocare_expert'>
+    metrics: AutoCareCommunityMetrics
+}
+export type PublicAutoCareCommunityProfile = Omit<AutoCareCommunityProfile, 'enabled' | 'publicProfileId' | 'profileUrl' | 'displayName'> & {
+    profileId: string
+    displayName: string
+    avatarUrl: string | null
 }
 
 export type AdminAutoCareReview = AutoCareApiReview & {
@@ -645,7 +664,27 @@ const featuredReviewSchema = z.object({
     canContact: z.boolean().optional(),
     canEdit: z.boolean().optional(),
     providerName: z.string().optional(),
+    communityProfile: z.object({
+        profileId: z.string().uuid(),
+        badgeCodes: z.array(z.enum(['verified_client', 'regular_client', 'helpful_reviewer', 'autocare_expert'])),
+    }).nullable().optional(),
+    helpfulCount: z.number().int().nonnegative().optional(),
 }) satisfies z.ZodType<AutoCareApiReview>
+
+const autoCareCommunityMetricsSchema = z.object({
+    confirmedVisits: z.number().int().nonnegative(),
+    publishedReviews: z.number().int().nonnegative(),
+    helpfulVoters: z.number().int().nonnegative(),
+})
+const autoCareCommunityBadgesSchema = z.array(z.enum(['verified_client', 'regular_client', 'helpful_reviewer', 'autocare_expert']))
+const autoCareCommunityProfileSchema = z.object({
+    enabled: z.boolean(), displayName: z.string().nullable(), publicProfileId: z.string().uuid().nullable(),
+    profileUrl: z.string().nullable(), badgeCodes: autoCareCommunityBadgesSchema, metrics: autoCareCommunityMetricsSchema,
+}) satisfies z.ZodType<AutoCareCommunityProfile>
+const publicAutoCareCommunityProfileSchema = z.object({
+    profileId: z.string().uuid(), displayName: z.string(), avatarUrl: z.string().nullable(),
+    badgeCodes: autoCareCommunityBadgesSchema, metrics: autoCareCommunityMetricsSchema,
+}) satisfies z.ZodType<PublicAutoCareCommunityProfile>
 
 const adminAutoCareReviewSchema = featuredReviewSchema.extend({
     providerName: z.string(),
@@ -772,15 +811,15 @@ const ownerAutoCareReviewsSchema = z.object({
     reviews: z.array(featuredReviewSchema.extend({ providerName: z.string(), providerAddress: z.string() })),
 }) satisfies z.ZodType<OwnerAutoCareReviews>
 
-const autoCareOfferSchema = z.object({
+export const autoCareOfferSchema = z.object({
     id: z.string(),
     serviceDefinitionId: z.string(),
     serviceSlug: z.string().optional(),
     serviceLabels: z.record(z.string(), z.string()).optional(),
     description: z.string().nullable().optional(),
-    priceFromMinor: z.number().finite(),
-    priceToMinor: z.number().finite().nullable(),
-    currencyCode: z.string().min(3),
+    priceFromMinor: z.number().int().nonnegative().max(10_000_000_000),
+    priceToMinor: z.number().int().nonnegative().max(10_000_000_000).nullable(),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
     durationMinutes: z.number().int().nonnegative(),
     inclusions: z.array(z.string()),
     warrantyText: z.string().nullable(),
@@ -789,7 +828,10 @@ const autoCareOfferSchema = z.object({
     bookingMode: z.enum(['request', 'instant']).optional(),
     requiredResourceTypes: z.array(z.enum(['specialist', 'bay', 'lift', 'equipment'])).optional(),
     requiredResourceIds: z.array(z.string()).optional(),
-}).passthrough() satisfies z.ZodType<AutoCareApiOffer>
+}).passthrough().refine((offer) => offer.priceToMinor === null || offer.priceToMinor >= offer.priceFromMinor, {
+    message: 'priceToMinor must be greater than or equal to priceFromMinor',
+    path: ['priceToMinor'],
+}) satisfies z.ZodType<AutoCareApiOffer>
 
 const autoCareCapacityResourceSchema = z.object({
     id: z.string(),
@@ -898,6 +940,8 @@ const autoCareDiscoverySchema = z.object({
         nextSlot: z.string().nullable(),
     }).passthrough()),
     nextCursor: z.string().nullable(),
+    totalCount: z.number().int().nonnegative(),
+    totalCountIsLowerBound: z.boolean(),
 }).passthrough() satisfies z.ZodType<AutoCareApiDiscoveryResponse>
 const autoCareMarketsSchema = z.array(z.object({
     id: z.string(), countryCode: z.string(), countryName: z.string(), cityCode: z.string(), cityName: z.string(),
@@ -916,8 +960,26 @@ const superAdminMarketHierarchySchema = autoCareMarketCountrySchema.extend({
 }).passthrough() satisfies z.ZodType<SuperAdminMarketHierarchy>
 const autoCareAvailabilitySchema = z.object({ date: z.string(), timezone: z.string().optional(), durationMinutes: z.number().int().nonnegative(), slots: z.array(z.object({ startTime: z.string(), endTime: z.string(), startsAt: z.string().datetime({ offset: true }) }).passthrough()) }).passthrough() satisfies z.ZodType<AutoCareAvailability>
 
-const autoCareQuoteLineItemSchema = z.object({ kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']), title: z.string(), quantity: z.number().finite(), unitPriceMinor: z.number().finite(), totalMinor: z.number().finite() }).passthrough()
-const autoCareQuoteSchema = z.object({ amountMinor: z.number().finite(), currencyCode: z.string(), note: z.string().nullable(), createdAt: z.string(), lineItems: z.array(autoCareQuoteLineItemSchema).optional(), subtotalMinor: z.number().finite().optional(), taxMinor: z.number().finite().optional(), feesMinor: z.number().finite().optional(), validUntil: z.string().nullable().optional(), priceLocked: z.boolean().optional(), status: z.enum(['pending', 'accepted', 'declined', 'expired', 'superseded']).optional() }).passthrough()
+const autoCareQuoteLineItemSchema = z.object({
+    kind: z.enum(['part', 'labour', 'consumable', 'tax', 'fee', 'discount']),
+    title: z.string(),
+    quantity: z.number().finite(),
+    unitPriceMinor: z.number().int().min(-1_000_000_000).max(1_000_000_000),
+    totalMinor: z.number().int(),
+}).passthrough()
+export const autoCareQuoteSchema = z.object({
+    amountMinor: z.number().int().min(1).max(1_000_000_000),
+    lineItems: z.array(autoCareQuoteLineItemSchema),
+    subtotalMinor: z.number().int().nonnegative().max(1_000_000_000),
+    taxMinor: z.number().int().nonnegative().max(1_000_000_000),
+    feesMinor: z.number().int().nonnegative().max(1_000_000_000),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    note: z.string().nullable(),
+    validUntil: z.string().datetime({ offset: true }).nullable(),
+    priceLocked: z.boolean(),
+    status: z.enum(['pending', 'accepted', 'declined', 'expired', 'superseded']),
+    createdAt: z.string().datetime({ offset: true }),
+}).passthrough()
 const autoCareQuoteHistorySchema = autoCareQuoteSchema.extend({ id: z.string().min(1), version: z.number().int().positive() }).passthrough()
 const autoCareBookingSnapshotSchema = z.object({
     requestId: z.string(), quoteVersion: z.number().int().nonnegative(), amountMinor: z.number().finite(), currencyCode: z.string(),
@@ -935,20 +997,21 @@ const autoCareRescheduleSchema = z.object({
 const autoCareScalarRecordSchema = z.record(z.string(), z.union([z.string(), z.number(), z.null()]))
 const autoCareServiceRequestSchema = z.object({
     id: z.string().min(1), providerId: z.string().min(1), providerName: z.string(), locationId: z.string().min(1), address: z.string(), definitionId: z.string().min(1), serviceSlug: z.string(),
-    serviceLabels: z.record(z.string(), z.string()), serviceDescription: z.string().nullable().default(null), offeringId: z.string().nullable(), priceFromMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), preferredAt: z.string().nullable(), vehicleId: z.string().nullable().optional(),
+    serviceLabels: z.record(z.string(), z.string()), serviceDescription: z.string().nullable().default(null), offeringId: z.string().nullable(), priceFromMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), preferredAt: z.string().nullable(), timezone: z.string().nullable().optional(), vehicleId: z.string().nullable().optional(),
     vehicleSnapshot: autoCareScalarRecordSchema.nullable(), contactSnapshot: autoCareScalarRecordSchema.nullable(), note: z.string().nullable(), status: z.enum(['draft', 'open', 'awaiting_reply', 'estimate_shared', 'accepted', 'declined', 'cancelled', 'no_show', 'closed']), clientConfirmedAt: z.string().nullable(), providerConfirmedAt: z.string().nullable(), cancelledAt: z.string().nullable().optional(), cancelledById: z.string().nullable().optional(), cancellationReason: z.string().nullable().optional(), noShowAt: z.string().nullable().optional(), noShowById: z.string().nullable().optional(), noShowReason: z.string().nullable().optional(), completedAt: z.string().nullable().optional(), completedById: z.string().nullable().optional(), completionNote: z.string().nullable().optional(), acceptedQuoteVersion: z.number().int().positive().nullable().optional(), acceptedQuoteSnapshot: z.record(z.string(), z.unknown()).nullable().optional(), acceptedQuoteAt: z.string().nullable().optional(), booking: autoCareBookingSnapshotSchema.nullable().optional(), reschedule: autoCareRescheduleSchema.nullable().default(null), createdAt: z.string(), updatedAt: z.string(), quote: autoCareQuoteSchema.nullable(), quoteHistory: z.array(autoCareQuoteHistorySchema).default([]),
 }).passthrough()
 const autoCareServiceRequestsSchema = z.array(autoCareServiceRequestSchema)
-const autoCareChatThreadSchema = z.object({ id: z.string().min(1), type: z.enum(['service_request', 'provider_inquiry', 'support', 'admin_escalation']), status: z.enum(['open', 'closed']), subject: z.string(), requestId: z.string().nullable(), providerId: z.string().nullable(), providerName: z.string().nullable(), clientId: z.string().nullable(), lastMessageAt: z.string().nullable(), unreadCount: z.number().int().nonnegative(), createdAt: z.string(), updatedAt: z.string() }).passthrough()
+const autoCareChatThreadSchema = z.object({ id: z.string().min(1), type: z.enum(['service_request', 'provider_inquiry', 'support', 'admin_escalation']), status: z.enum(['open', 'closed']), subject: z.string(), requestId: z.string().nullable(), providerId: z.string().nullable(), providerName: z.string().nullable(), clientId: z.string().nullable(), lastMessageAt: z.string().nullable(), unreadCount: z.number().int().nonnegative(), moderationRestriction: z.object({ id: z.string(), reason: z.string(), expiresAt: z.string(), state: z.enum(['active', 'expired']), appealStatus: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']).nullable() }).nullable().optional(), createdAt: z.string(), updatedAt: z.string() }).passthrough()
 const autoCareChatThreadsSchema = z.array(autoCareChatThreadSchema)
 const autoCareServiceMessageOfferSchema = z.object({ type: z.enum(['discount', 'alternative']), title: z.string(), description: z.string().nullable(), discountPercent: z.number().int().nullable(), couponCode: z.string().nullable(), amountMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), expiresAt: z.string().nullable(), status: z.enum(['pending', 'accepted', 'declined']) }).passthrough()
-const autoCareServiceMessageSchema = z.object({ id: z.string().min(1), senderId: z.string().min(1), kind: z.enum(['text', 'system', 'offer']), body: z.string().nullable(), offer: autoCareServiceMessageOfferSchema.nullable(), deliveredAt: z.string().nullable(), readAt: z.string().nullable(), createdAt: z.string() }).passthrough()
-const autoCareServiceAttachmentSchema = z.object({ id: z.string().min(1), uploadedById: z.string().min(1), contentType: z.string(), bytes: z.number().int().positive(), status: z.enum(['pending', 'ready', 'rejected']), url: z.string(), createdAt: z.string() }).passthrough()
-const autoCareServiceConversationSchema = z.object({ request: autoCareServiceRequestSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null) }).passthrough()
-const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null) }).passthrough()
-const autoCareChatReportSchema = z.object({ id: z.string(), threadId: z.string(), reporterId: z.string(), reportedUserId: z.string().nullable(), category: z.enum(['spam', 'harassment', 'fraud', 'unsafe', 'other']), description: z.string().nullable(), status: z.enum(['pending', 'resolved', 'dismissed']), reviewedById: z.string().nullable(), resolutionReason: z.string().nullable(), createdAt: z.string(), reviewedAt: z.string().nullable() }).passthrough()
+const autoCareServiceMessageSchema = z.object({ id: z.string().min(1), senderId: z.string().min(1), kind: z.enum(['text', 'system', 'offer']), body: z.string().nullable(), offer: autoCareServiceMessageOfferSchema.nullable(), deliveredAt: z.string().nullable(), readAt: z.string().nullable(), deletedAt: z.string().nullable().optional(), createdAt: z.string() }).passthrough()
+export const autoCareServiceAttachmentSchema = z.object({ id: z.string().min(1), uploadedById: z.string().min(1), contentType: z.enum(['image/jpeg', 'image/png', 'image/webp']), bytes: z.number().int().positive(), status: z.enum(['pending', 'ready', 'rejected']), url: z.string(), createdAt: z.string().datetime({ offset: true }) }).passthrough()
+const autoCareServiceConversationSchema = z.object({ request: autoCareServiceRequestSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null), moderationReviewActive: z.boolean().default(false), messagesProtected: z.boolean().default(false) }).passthrough()
+const autoCareChatConversationSchema = z.object({ thread: autoCareChatThreadSchema, messages: z.array(autoCareServiceMessageSchema), attachments: z.array(autoCareServiceAttachmentSchema), nextCursor: z.string().nullable().default(null), previousCursor: z.string().nullable().default(null), moderationReviewActive: z.boolean().default(false), messagesProtected: z.boolean().default(false) }).passthrough()
+const autoCareChatReportSchema = z.object({ id: z.string(), threadId: z.string(), messageId: z.string().nullable(), reporterId: z.string(), reportedUserId: z.string().nullable(), category: z.enum(['spam', 'harassment', 'threat', 'fraud', 'unsafe', 'other']), description: z.string().nullable(), acknowledgeFullThreadReview: z.boolean().optional(), acknowledgedAt: z.string().nullable().optional(), policyVersion: z.string().nullable().optional(), assignedModeratorId: z.string().nullable(), accessExpiresAt: z.string().nullable(), extensionUsed: z.boolean(), status: z.enum(['pending', 'resolved', 'dismissed']), reviewedById: z.string().nullable(), resolutionReason: z.string().nullable(), overturnedAt: z.string().nullable().optional(), createdAt: z.string(), reviewedAt: z.string().nullable() }).passthrough()
 const autoCareChatReportsSchema = z.array(autoCareChatReportSchema)
-const autoCareChatBlockSchema = z.object({ id: z.string(), threadId: z.string(), blockerId: z.string(), blockedUserId: z.string(), status: z.enum(['active', 'revoked']), reason: z.string().nullable(), createdAt: z.string(), revokedAt: z.string().nullable() }).passthrough()
+const autoCareChatReportPageSchema = z.object({ items: autoCareChatReportsSchema, nextCursor: z.string().nullable(), totalCount: z.number().int().nonnegative().optional() })
+const autoCareChatBlockSchema = z.object({ id: z.string(), threadId: z.string(), blockerId: z.string(), blockedUserId: z.string(), status: z.enum(['active', 'revoked']), reason: z.string().nullable(), expiresAt: z.string().nullable().optional(), createdAt: z.string(), revokedAt: z.string().nullable() }).passthrough()
 const autoCarePriceBenchmarkSchema = z.object({ serviceDefinitionId: z.string(), serviceSlug: z.string(), marketId: z.string().nullable(), makeId: z.string().nullable(), modelId: z.string().nullable(), minPriceMinor: z.number().finite(), medianPriceMinor: z.number().finite(), maxPriceMinor: z.number().finite(), currencyCode: z.string(), methodology: z.record(z.string(), z.unknown()), source: z.string(), generatedAt: z.string() }).passthrough()
 const autoCareTrustEvidenceSchema = z.object({ id: z.string(), providerId: z.string(), kind: z.string(), label: z.string(), status: z.string(), expiresAt: z.string().nullable(), verifiedAt: z.string().nullable() }).passthrough()
 const autoCareTrustSnapshotSchema = z.object({
@@ -975,7 +1038,7 @@ const adminProviderSchema = autoCareProviderSchema.extend({ ownerName: z.string(
 const platformOverviewSchema = z.object({ markets: z.array(z.object({ id: z.string(), countryCode: z.string(), countryName: z.string(), cityCode: z.string(), cityName: z.string(), currencyCode: z.string(), launchReady: z.boolean(), supportedLocales: z.array(z.string()) }).passthrough()), providers: z.object({ total: z.number().int().nonnegative(), active: z.number().int().nonnegative(), draft: z.number().int().nonnegative(), suspended: z.number().int().nonnegative(), verified: z.number().int().nonnegative() }).passthrough(), users: z.object({ clients: z.number().int().nonnegative(), owners: z.number().int().nonnegative(), admins: z.number().int().nonnegative(), superAdmins: z.number().int().nonnegative() }).passthrough() }).passthrough()
 const autoCareQualityMonitoringSchema = z.object({ generatedAt: z.string(), providers: z.object({ total: z.number().int().nonnegative(), active: z.number().int().nonnegative(), verified: z.number().int().nonnegative(), trusted: z.number().int().nonnegative(), suspended: z.number().int().nonnegative() }), reviews: z.object({ approved: z.number().int().nonnegative(), pending: z.number().int().nonnegative(), rejected: z.number().int().nonnegative(), anomalyCandidates: z.number().int().nonnegative() }), requests: z.object({ total: z.number().int().nonnegative(), completed: z.number().int().nonnegative(), cancelled: z.number().int().nonnegative(), noShows: z.number().int().nonnegative() }), ranking: z.object({ trustSnapshots: z.number().int().nonnegative(), reassessedProviders: z.number().int().nonnegative(), evidenceCoveragePercent: z.number().nonnegative(), calibration: z.object({ scoredProviders: z.number().int().nonnegative(), confirmedVisits: z.number().int().nonnegative(), minimumRecommendedSample: z.number().int().nonnegative(), readyForCalibration: z.boolean(), buckets: z.array(z.object({ label: z.string(), providerCount: z.number().int().nonnegative(), confirmedVisits: z.number().int().nonnegative(), noShowRatePercent: z.number().nonnegative(), verifiedReviewAverage: z.number().nullable() })) }).optional(), rollout: z.object({ enabled: z.boolean(), marketIds: z.array(z.string()), percentage: z.number().int().min(0).max(100) }).optional() }), catalog: z.object({ activeDefinitions: z.number().int().nonnegative(), activeOffers: z.number().int().nonnegative(), providersWithOffers: z.number().int().nonnegative(), offerCoveragePercent: z.number().nonnegative(), offersWithDescription: z.number().int().nonnegative(), offersWithPrice: z.number().int().nonnegative(), priceCoveragePercent: z.number().nonnegative() }), supply: z.object({ activeMarkets: z.number().int().nonnegative(), averageLocationsPerProvider: z.number().nonnegative(), markets: z.array(z.object({ marketId: z.string(), providers: z.number().int().nonnegative(), locations: z.number().int().nonnegative(), activeOffers: z.number().int().nonnegative() })) }), reliability: z.object({ responseSamples: z.number().int().nonnegative(), averageResponseMinutes: z.number().nullable(), p95ResponseMinutes: z.number().nullable(), confirmedBookings: z.number().int().nonnegative(), confirmationSamples: z.number().int().nonnegative(), confirmationReliabilityPercent: z.number().nonnegative(), bookingConflicts: z.number().int().nonnegative() }), appeals: z.object({ available: z.literal(true), pending: z.number().int().nonnegative() }) })
 const superAdminTrustPolicySchema = z.object({ policyVersion: z.string(), trustedMinimumRating: z.number(), trustedMinimumReviews: z.number().int(), trustedMinimumCompletedVisits: z.number().int(), trustedMaxNoShowRate: z.number(), trustedMaxComplaintRate: z.number(), trustedMaxResponseTimeMinutes: z.number().int(), reassessmentIntervalHours: z.number().int(), rollout: z.object({ enabled: z.boolean(), marketIds: z.array(z.string()), percentage: z.number().int() }), updatedAt: z.string().nullable() }).passthrough() satisfies z.ZodType<SuperAdminTrustPolicy>
-const autoCareAppealSchema = z.object({ id: z.string(), subject: z.enum(['provider', 'review', 'suspension', 'catalog']), subjectId: z.string(), submittedById: z.string(), providerId: z.string().nullable(), reason: z.string(), evidenceIds: z.array(z.string()), status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']), decidedById: z.string().nullable(), decisionReason: z.string().nullable(), createdAt: z.string(), decidedAt: z.string().nullable() }).passthrough()
+const autoCareAppealSchema = z.object({ id: z.string(), subject: z.enum(['provider', 'review', 'suspension', 'catalog', 'chat_restriction']), subjectId: z.string(), submittedById: z.string(), providerId: z.string().nullable(), reason: z.string(), evidenceIds: z.array(z.string()), status: z.enum(['pending', 'accepted', 'rejected', 'withdrawn']), decidedById: z.string().nullable(), decisionReason: z.string().nullable(), createdAt: z.string(), decidedAt: z.string().nullable() }).passthrough()
 const autoCareAppealsSchema = z.array(autoCareAppealSchema)
 const adminAutoCareModerationEvidenceSchema = z.object({
     id: z.string(), providerId: z.string(), kind: z.enum(['provider_cover', 'provider_gallery', 'provider_document', 'registration_document', 'review']), label: z.string(),
@@ -1015,6 +1078,7 @@ export type AutoCareServiceRequest = {
     priceFromMinor: number | null
     currencyCode: string | null
     preferredAt: string | null
+    timezone?: string | null
     vehicleId?: string | null
     vehicleSnapshot: Record<string, string | number | null> | null
     contactSnapshot: Record<string, string | number | null> | null
@@ -1067,20 +1131,34 @@ export type AutoCareQuoteLineItem = { kind: 'part' | 'labour' | 'consumable' | '
 export type AutoCareServiceQuote = { amountMinor: number; currencyCode: string; note: string | null; createdAt: string; lineItems?: AutoCareQuoteLineItem[]; subtotalMinor?: number; taxMinor?: number; feesMinor?: number; validUntil?: string | null; priceLocked?: boolean; status?: 'pending' | 'accepted' | 'declined' | 'expired' | 'superseded' }
 export type AutoCareQuoteDecisionInput = { requestId: string; quoteId: string; quoteVersion: number }
 export type AutoCareServiceMessageOffer = { type: 'discount' | 'alternative'; title: string; description: string | null; discountPercent: number | null; couponCode: string | null; amountMinor: number | null; currencyCode: string | null; expiresAt: string | null; status: 'pending' | 'accepted' | 'declined' }
-export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; createdAt: string }
+export type AutoCareServiceMessage = { id: string; senderId: string; kind: 'text' | 'system' | 'offer'; body: string | null; offer: AutoCareServiceMessageOffer | null; deliveredAt: string | null; readAt: string | null; deletedAt?: string | null; createdAt: string }
 export type AutoCareServiceAttachment = { id: string; uploadedById: string; contentType: string; bytes: number; status: 'pending' | 'ready' | 'rejected'; url: string; createdAt: string }
-export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null; previousCursor: string | null }
+export type AutoCareServiceConversation = { request: AutoCareServiceRequest; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null; previousCursor: string | null; moderationReviewActive: boolean; messagesProtected: boolean }
 export type AutoCareChatThreadType = 'service_request' | 'provider_inquiry' | 'support' | 'admin_escalation'
-export type AutoCareChatThread = { id: string; type: AutoCareChatThreadType; status: 'open' | 'closed'; subject: string; requestId: string | null; providerId: string | null; providerName: string | null; clientId: string | null; lastMessageAt: string | null; unreadCount: number; createdAt: string; updatedAt: string }
-export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null; previousCursor: string | null }
-export type AutoCareChatReport = { id: string; threadId: string; reporterId: string; reportedUserId: string | null; category: 'spam' | 'harassment' | 'fraud' | 'unsafe' | 'other'; description: string | null; status: 'pending' | 'resolved' | 'dismissed'; reviewedById: string | null; resolutionReason: string | null; createdAt: string; reviewedAt: string | null }
+export type AutoCareChatRestriction = { id: string; reason: string; expiresAt: string; state: 'active' | 'expired'; appealStatus: AutoCareAppeal['status'] | null }
+export type AutoCareChatThread = { id: string; type: AutoCareChatThreadType; status: 'open' | 'closed'; subject: string; requestId: string | null; providerId: string | null; providerName: string | null; clientId: string | null; lastMessageAt: string | null; unreadCount: number; moderationRestriction?: AutoCareChatRestriction | null; createdAt: string; updatedAt: string }
+export type AutoCareChatConversation = { thread: AutoCareChatThread; messages: AutoCareServiceMessage[]; attachments: AutoCareServiceAttachment[]; nextCursor: string | null; previousCursor: string | null; moderationReviewActive: boolean; messagesProtected: boolean }
+export type AutoCareChatReport = { id: string; threadId: string; messageId: string | null; reporterId: string; reportedUserId: string | null; category: 'spam' | 'harassment' | 'threat' | 'fraud' | 'unsafe' | 'other'; description: string | null; acknowledgeFullThreadReview?: boolean; acknowledgedAt?: string | null; policyVersion?: string | null; relatedReportId?: string | null; assignedModeratorId: string | null; accessExpiresAt: string | null; extensionUsed: boolean; status: 'pending' | 'resolved' | 'dismissed'; reviewedById: string | null; resolutionReason: string | null; overturnedAt?: string | null; createdAt: string; reviewedAt: string | null }
+export type AutoCareChatReportPage = { items: AutoCareChatReport[]; nextCursor: string | null; totalCount?: number }
+export type AutoCareChatReportListQuery = { cursor?: string; limit?: number }
+export type AdminAutoCareChatReportQuery = AutoCareChatReportListQuery & {
+    status?: AutoCareChatReport['status']
+    scope?: 'active' | 'archive'
+    search?: string
+    assignedModeratorId?: string | 'me' | 'unassigned'
+    category?: AutoCareChatReport['category']
+}
 export type AutoCareChatBlock = { id: string; threadId: string; blockerId: string; blockedUserId: string; status: 'active' | 'revoked'; reason: string | null; createdAt: string; revokedAt: string | null }
-export type CreateAutoCareChatReportInput = { chatId: string; category: AutoCareChatReport['category']; description?: string | null }
+export type CreateAutoCareChatReportInput = { chatId: string; messageId: string; category: 'harassment' | 'threat' | 'fraud' | 'other'; description?: string | null; acknowledgeFullThreadReview: true }
+export type AssignAutoCareChatReportInput = { id: string; moderatorId: string | null; reason: string }
+export type ExtendAutoCareChatReportAccessInput = { id: string; reason: string }
+export type DeleteAutoCareChatMessageResponse = { id: string; deletedAt: string }
 export type CreateAutoCareChatBlockInput = { chatId: string; blockedUserId?: string; reason?: string | null }
 export type RevokeAutoCareChatBlockInput = { chatId: string; blockId: string }
-export type DecideAutoCareChatReportInput = { id: string; status: 'resolved' | 'dismissed'; reason?: string | null; blockUser?: boolean }
+export type DecideAutoCareChatReportInput = { id: string; status: 'resolved' | 'dismissed'; reason?: string | null; blockUser?: boolean; blockDurationDays?: 1 | 7 | 30 }
 export type CreateAutoCareChatInput = { type: Exclude<AutoCareChatThreadType, 'service_request'>; providerId?: string; requestId?: string; subject: string }
-export type CreateAutoCareChatMessageInput = { chatId: string; body: string }
+export type CreateAutoCareChatMessageInput = { chatId: string; body: string; idempotencyKey: string }
+export type GetAutoCareAttachmentObjectUrlInput = { attachmentId: string; emergencyReason?: string } & ({ channel: 'request'; requestId: string } | { channel: 'chat'; chatId: string })
 export type CreateAutoCareChatAttachmentInput = { chatId: string; fileName: string; contentType: 'image/jpeg' | 'image/png' | 'image/webp'; size: number; contentBase64: string }
 export type CreateAutoCareServiceMessageInput = { requestId: string; body: string; idempotencyKey?: string }
 export type GetAutoCareServiceConversationInput = { requestId: string; cursor?: string; beforeCursor?: string; limit?: number }
@@ -1233,6 +1311,7 @@ export type AutoCareDiscoveryQuery = {
     radiusKm?: number
     sort?: 'recommended' | 'price_asc' | 'rating_desc' | 'distance_asc'
     limit?: number
+    cursor?: string
     minPrice?: number
     maxPrice?: number
     minRating?: number
@@ -1337,15 +1416,25 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareCatalogGapRequestSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareServiceDefinition', id: 'GAP_QUEUE' }, { type: 'AutoCareServiceDefinition', id: 'LIST' }],
         }),
-        getAdminAutoCareChatReports: build.query<AutoCareChatReport[], { status?: AutoCareChatReport['status'] } | void>({
+        getAdminAutoCareChatReports: build.query<AutoCareChatReportPage, AdminAutoCareChatReportQuery | void>({
             query: (params) => ({ url: '/admin/chat-reports', params: params ?? undefined }),
-            transformResponse: (value: unknown) => autoCareChatReportsSchema.parse(value),
+            transformResponse: (value: unknown) => autoCareChatReportPageSchema.parse(value),
             providesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }],
         }),
         decideAdminAutoCareChatReport: build.mutation<AutoCareChatReport, DecideAutoCareChatReportInput>({
             query: ({ id, ...body }) => ({ url: `/admin/chat-reports/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
             transformResponse: (value: unknown) => autoCareChatReportSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }],
+        }),
+        assignAdminAutoCareChatReport: build.mutation<AutoCareChatReport, AssignAutoCareChatReportInput>({
+            query: ({ id, ...body }) => ({ url: `/admin/chat-reports/${encodeURIComponent(id)}/assignment`, method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareChatReportSchema.parse(value),
+            invalidatesTags: (_result, _error, { id }) => [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }, { type: 'AutoCareServiceRequest', id: `CHAT_REPORT_${id}` }],
+        }),
+        extendAdminAutoCareChatReportAccess: build.mutation<AutoCareChatReport, ExtendAutoCareChatReportAccessInput>({
+            query: ({ id, ...body }) => ({ url: `/admin/chat-reports/${encodeURIComponent(id)}/assignment/extend`, method: 'POST', body }),
+            transformResponse: (value: unknown) => autoCareChatReportSchema.parse(value),
+            invalidatesTags: (_result, _error, { id }) => [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }, { type: 'AutoCareServiceRequest', id: `CHAT_REPORT_${id}` }],
         }),
         getVehicleCatalog: build.query<AutoCareVehicleBrand[], string | void>({
             query: (brandId) => ({ url: '/v1/vehicle-catalog', params: brandId ? { brandId } : undefined }),
@@ -1397,6 +1486,34 @@ export const autoCareApi = baseApi.injectEndpoints({
             query: ({ providerId, limit = 20 }) => ({ url: `/v1/providers/${encodeURIComponent(providerId)}/reviews`, params: { limit } }),
             transformResponse: (value: unknown) => ownerProviderReviewsSchema.parse(value),
             providesTags: (_result, _error, { providerId }) => [{ type: 'AutoCareReview', id: `PUBLIC_${providerId}` }],
+        }),
+        getMyAutoCareCommunityProfile: build.query<AutoCareCommunityProfile, void>({
+            query: () => '/users/me/community-profile',
+            transformResponse: (value: unknown) => autoCareCommunityProfileSchema.parse(value),
+            providesTags: [{ type: 'AutoCareCommunity', id: 'MY_PROFILE' }],
+        }),
+        updateMyAutoCareCommunityProfile: build.mutation<AutoCareCommunityProfile, { enabled?: boolean; displayName?: string | null }>({
+            query: (body) => ({ url: '/users/me/community-profile', method: 'PATCH', body }),
+            transformResponse: (value: unknown) => autoCareCommunityProfileSchema.parse(value),
+            invalidatesTags: (_result) => [{ type: 'AutoCareCommunity', id: 'MY_PROFILE' }, { type: 'AutoCareCommunity', id: 'PUBLIC_PROFILE' }],
+        }),
+        getPublicAutoCareCommunityProfile: build.query<PublicAutoCareCommunityProfile, string>({
+            query: (profileId) => `/v1/community/clients/${encodeURIComponent(profileId)}`,
+            transformResponse: (value: unknown) => publicAutoCareCommunityProfileSchema.parse(value),
+            providesTags: (_result, _error, profileId) => [
+                { type: 'AutoCareCommunity', id: 'PUBLIC_PROFILE' },
+                { type: 'AutoCareCommunity', id: `PUBLIC_${profileId}` },
+            ],
+        }),
+        getMyAutoCareHelpfulReviewIds: build.query<{ reviewIds: string[]; ownReviewIds: string[] }, string>({
+            query: (providerId) => ({ url: '/v1/autocare-reviews/helpful/my', params: { providerId } }),
+            transformResponse: (value: unknown) => z.object({ reviewIds: z.array(z.string().min(1)), ownReviewIds: z.array(z.string().min(1)) }).parse(value),
+            providesTags: (_result, _error, providerId) => [{ type: 'AutoCareCommunity', id: `VOTES_${providerId}` }],
+        }),
+        voteAutoCareReviewHelpful: build.mutation<{ reviewId: string; providerId: string; helpfulCount: number; voted: boolean }, { reviewId: string; providerId: string; voted: boolean }>({
+            query: ({ reviewId, voted }) => ({ url: `/v1/autocare-reviews/${encodeURIComponent(reviewId)}/helpful`, method: voted ? 'PUT' : 'DELETE' }),
+            transformResponse: (value: unknown) => z.object({ reviewId: z.string().min(1), providerId: z.string().min(1), helpfulCount: z.number().int().nonnegative(), voted: z.boolean() }).parse(value),
+            invalidatesTags: (result) => result ? [{ type: 'AutoCareReview', id: `PUBLIC_${result.providerId}` }, { type: 'AutoCareCommunity', id: `VOTES_${result.providerId}` }] : [],
         }),
         getAutoCareFavorites: build.query<AutoCareFavorite[], void>({
             query: () => '/v1/favorites/providers',
@@ -1604,7 +1721,10 @@ export const autoCareApi = baseApi.injectEndpoints({
         createAutoCareAppeal: build.mutation<AutoCareAppeal, CreateAutoCareAppealInput>({
             query: (body) => ({ url: '/v1/autocare-appeals', method: 'POST', body }),
             transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
-            invalidatesTags: [{ type: 'AutoCareReview', id: 'APPEALS' }],
+            invalidatesTags: (_result, _error, input) => [
+                { type: 'AutoCareReview', id: 'APPEALS' },
+                ...(input.subject === 'chat_restriction' ? [{ type: 'AutoCareServiceRequest' as const, id: 'CHAT_LIST' }] : []),
+            ],
         }),
         withdrawAutoCareAppeal: build.mutation<AutoCareAppeal, string>({
             query: (appealId) => ({ url: `/v1/autocare-appeals/${encodeURIComponent(appealId)}`, method: 'DELETE' }),
@@ -1649,7 +1769,11 @@ export const autoCareApi = baseApi.injectEndpoints({
         decideAdminAutoCareAppeal: build.mutation<AutoCareAppeal, { id: string; status: 'accepted' | 'rejected'; reason: string }>({
             query: ({ id, ...body }) => ({ url: `/admin/autocare-appeals/${encodeURIComponent(id)}/decision`, method: 'PATCH', body }),
             transformResponse: (value: unknown) => autoCareAppealSchema.parse(value),
-            invalidatesTags: [{ type: 'AutoCareReview', id: 'ADMIN_APPEALS' }, { type: 'AutoCareProvider', id: 'QUALITY_MONITORING' }],
+            invalidatesTags: (result) => [
+                { type: 'AutoCareReview', id: 'ADMIN_APPEALS' },
+                { type: 'AutoCareProvider', id: 'QUALITY_MONITORING' },
+                ...(result?.subject === 'chat_restriction' ? [{ type: 'AutoCareServiceRequest' as const, id: 'CHAT_LIST' }] : []),
+            ],
         }),
         getAdminAutoCareModerationEvidence: build.query<AdminAutoCareModerationEvidence[], { status?: AdminAutoCareModerationEvidence['status'] } | void>({
             query: (params) => ({ url: '/admin/autocare-moderation-evidence', params: params ?? undefined }),
@@ -1718,28 +1842,44 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareChatThreadsSchema.parse(value),
             providesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
         }),
+        getAutoCareRequestChatThread: build.query<AutoCareChatThread, string>({
+            query: (requestId) => `/v1/service-requests/${encodeURIComponent(requestId)}/chat-thread`,
+            transformResponse: (value: unknown) => autoCareChatThreadSchema.parse(value),
+            providesTags: (_result, _error, requestId) => [{ type: 'AutoCareServiceRequest', id: `REQUEST_CHAT_${requestId}` }],
+        }),
         createAutoCareChat: build.mutation<AutoCareChatThread, CreateAutoCareChatInput>({
             query: (body) => ({ url: '/v1/chats', method: 'POST', body }),
             transformResponse: (value: unknown) => autoCareChatThreadSchema.parse(value),
             invalidatesTags: [{ type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
         }),
-        getAutoCareChat: build.query<AutoCareChatConversation, string | { chatId: string; cursor?: string; beforeCursor?: string; limit?: number }>({
+        getAutoCareChat: build.query<AutoCareChatConversation, string | { chatId: string; cursor?: string; beforeCursor?: string; limit?: number; emergencyReason?: string }>({
             query: (input) => {
                 const chatId = typeof input === 'string' ? input : input.chatId
-                const query = typeof input === 'string' ? '' : new URLSearchParams({ ...(input.cursor ? { cursor: input.cursor } : {}), ...(input.beforeCursor ? { beforeCursor: input.beforeCursor } : {}), ...(input.limit ? { limit: String(input.limit) } : {}) }).toString()
+                const query = typeof input === 'string' ? '' : new URLSearchParams({ ...(input.cursor ? { cursor: input.cursor } : {}), ...(input.beforeCursor ? { beforeCursor: input.beforeCursor } : {}), ...(input.limit ? { limit: String(input.limit) } : {}), ...(input.emergencyReason ? { emergencyReason: input.emergencyReason } : {}) }).toString()
                 return `/v1/chats/${chatId}${query ? `?${query}` : ''}`
             },
             transformResponse: (value: unknown) => autoCareChatConversationSchema.parse(value),
             providesTags: (_result, _error, input) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${typeof input === 'string' ? input : input.chatId}` }],
         }),
         createAutoCareChatMessage: build.mutation<AutoCareServiceMessage, CreateAutoCareChatMessageInput>({
-            query: ({ chatId, body }) => ({ url: `/v1/chats/${chatId}/messages`, method: 'POST', body: { body } }),
+            query: ({ chatId, body, idempotencyKey }) => ({ url: `/v1/chats/${chatId}/messages`, method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: { body } }),
             transformResponse: (value: unknown) => autoCareServiceMessageSchema.parse(value),
             invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }, { type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
         }),
         createAutoCareChatReport: build.mutation<AutoCareChatReport, CreateAutoCareChatReportInput>({
             query: ({ chatId, ...body }) => ({ url: `/v1/chats/${chatId}/reports`, method: 'POST', body }),
             transformResponse: (value: unknown) => autoCareChatReportSchema.parse(value),
+            invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: 'CHAT_REPORTS' }, { type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }, { type: 'AutoCareServiceRequest', id: `CHAT_REPORTS_MINE_${chatId}` }],
+        }),
+        getMyAutoCareChatReports: build.query<AutoCareChatReportPage, { chatId: string } & AutoCareChatReportListQuery>({
+            query: ({ chatId, ...params }) => ({ url: `/v1/chats/${encodeURIComponent(chatId)}/reports/mine`, params }),
+            transformResponse: (value: unknown) => autoCareChatReportPageSchema.parse(value),
+            providesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_REPORTS_MINE_${chatId}` }],
+        }),
+        deleteAutoCareChatMessage: build.mutation<DeleteAutoCareChatMessageResponse, { chatId: string; messageId: string }>({
+            query: ({ chatId, messageId }) => ({ url: `/v1/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}`, method: 'DELETE' }),
+            transformResponse: (value: unknown) => z.object({ id: z.string(), deletedAt: z.string() }).parse(value),
+            invalidatesTags: (_result, _error, { chatId }) => [{ type: 'AutoCareServiceRequest', id: `CHAT_${chatId}` }, { type: 'AutoCareServiceRequest', id: 'CHAT_LIST' }],
         }),
         createAutoCareChatBlock: build.mutation<AutoCareChatBlock, CreateAutoCareChatBlockInput>({
             query: ({ chatId, ...body }) => ({ url: `/v1/chats/${chatId}/blocks`, method: 'POST', body }),
@@ -1864,6 +2004,34 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareServiceAttachmentSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }],
         }),
+        getAutoCareAttachmentObjectUrl: build.query<string, GetAutoCareAttachmentObjectUrlInput>({
+            query: (input) => {
+                const path = input.channel === 'request'
+                    ? `/v1/service-requests/${encodeURIComponent(input.requestId)}/attachments/${encodeURIComponent(input.attachmentId)}`
+                    : `/v1/chats/${encodeURIComponent(input.chatId)}/attachments/${encodeURIComponent(input.attachmentId)}`
+                const query = input.channel === 'chat' && input.emergencyReason
+                    ? `?${new URLSearchParams({ emergencyReason: input.emergencyReason })}`
+                    : ''
+                return {
+                url: `${path}${query}`,
+                // The endpoint authorizes with the in-memory bearer token and may redirect to a signed object URL.
+                // Omit cookies so the cross-origin storage response only needs ordinary origin-scoped CORS.
+                credentials: 'omit',
+                responseHandler: (response) => response.blob(),
+                }
+            },
+            transformResponse: (blob: Blob) => URL.createObjectURL(blob),
+            keepUnusedDataFor: 0,
+            async onCacheEntryAdded(_arg, { cacheDataLoaded, cacheEntryRemoved }) {
+                try {
+                    const { data: objectUrl } = await cacheDataLoaded
+                    await cacheEntryRemoved
+                    URL.revokeObjectURL(objectUrl)
+                } catch {
+                    // The request may fail before a cache entry is created.
+                }
+            },
+        }),
         confirmAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({
             query: (requestId) => ({ url: `/v1/service-requests/${requestId}/confirm`, method: 'POST' }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
@@ -1874,8 +2042,8 @@ export const autoCareApi = baseApi.injectEndpoints({
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }, { type: 'AutoCareMarketplace', id: 'BONUSES_MY' }],
         }),
-        decideAutoCareServiceReschedule: build.mutation<AutoCareServiceRequest, { requestId: string; decision: 'accept' | 'reject'; reason?: string | null }>({
-            query: ({ requestId, decision, reason }) => ({ url: `/v1/service-requests/${requestId}/reschedule/decision`, method: 'POST', body: { decision, reason: reason ?? null } }),
+        decideAutoCareServiceReschedule: build.mutation<AutoCareServiceRequest, { requestId: string; rescheduleId: string; decision: 'accept' | 'reject'; reason?: string | null }>({
+            query: ({ requestId, rescheduleId, decision, reason }) => ({ url: `/v1/service-requests/${requestId}/reschedule/decision`, method: 'POST', body: { rescheduleId, decision, reason: reason ?? null } }),
             transformResponse: (value: unknown) => autoCareServiceRequestSchema.parse(value),
             invalidatesTags: (_result, _error, { requestId }) => [{ type: 'AutoCareServiceRequest', id: requestId }, { type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
@@ -1926,6 +2094,7 @@ export const autoCareApi = baseApi.injectEndpoints({
 
 export const {
     useGetAutoCareDiscoveryQuery,
+    useLazyGetAutoCareDiscoveryQuery,
     useGetAutoCareMarketsQuery,
     useUpdateSuperAdminAutoCareMarketMutation,
     useGetSuperAdminMarketHierarchyQuery,
@@ -1962,7 +2131,10 @@ export const {
     useGetAdminCatalogGapRequestsQuery,
     useDecideAdminCatalogGapRequestMutation,
     useGetAdminAutoCareChatReportsQuery,
+    useLazyGetAdminAutoCareChatReportsQuery,
     useDecideAdminAutoCareChatReportMutation,
+    useAssignAdminAutoCareChatReportMutation,
+    useExtendAdminAutoCareChatReportAccessMutation,
     useGetMyAutoCareBonusAccountsQuery,
     useGetOwnerAutoCareBonusProgramQuery,
     useUpsertOwnerAutoCareBonusProgramMutation,
@@ -1991,6 +2163,11 @@ export const {
     useUploadOwnerAutoCareProviderMediaMutation,
     useGetAutoCareProviderProfileQuery,
     useGetAutoCareProviderReviewsQuery,
+    useGetMyAutoCareCommunityProfileQuery,
+    useUpdateMyAutoCareCommunityProfileMutation,
+    useGetPublicAutoCareCommunityProfileQuery,
+    useGetMyAutoCareHelpfulReviewIdsQuery,
+    useVoteAutoCareReviewHelpfulMutation,
     useGetAutoCareFavoritesQuery,
     useAddAutoCareFavoriteMutation,
     useRemoveAutoCareFavoriteMutation,
@@ -2008,10 +2185,14 @@ export const {
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,
     useGetAutoCareChatsQuery,
+    useGetAutoCareRequestChatThreadQuery,
     useCreateAutoCareChatMutation,
     useGetAutoCareChatQuery,
     useCreateAutoCareChatMessageMutation,
     useCreateAutoCareChatReportMutation,
+    useGetMyAutoCareChatReportsQuery,
+    useLazyGetMyAutoCareChatReportsQuery,
+    useDeleteAutoCareChatMessageMutation,
     useCreateAutoCareChatBlockMutation,
     useRevokeAutoCareChatBlockMutation,
     useMarkAutoCareChatReadMutation,
@@ -2036,6 +2217,7 @@ export const {
     useDecideAutoCareServiceOfferMutation,
     useMarkAutoCareServiceConversationReadMutation,
     useCreateAutoCareServiceAttachmentMutation,
+    useGetAutoCareAttachmentObjectUrlQuery,
     useConfirmAutoCareServiceRequestMutation,
     useCancelAutoCareServiceRequestMutation,
     useDecideAutoCareServiceRescheduleMutation,

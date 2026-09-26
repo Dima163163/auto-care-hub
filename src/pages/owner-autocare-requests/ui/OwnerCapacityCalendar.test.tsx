@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AutoCareServiceRequest } from '@/entities/automotive-service'
@@ -25,6 +26,7 @@ const providerQuery = vi.hoisted(() => ({
                 id: 'location-1',
                 address: 'Москва, ул. Льва Толстого, 18',
                 appointmentCapacity: 2,
+                timezone: 'America/Los_Angeles',
             },
             offers: [],
         }],
@@ -38,10 +40,12 @@ vi.mock('@/entities/automotive-service', () => ({
 }))
 
 function makeRequest(overrides: Partial<AutoCareServiceRequest> = {}) {
+    const preferredAt = new Date()
+    preferredAt.setHours(12, 0, 0, 0)
     return {
         id: 'request-1',
         status: 'accepted',
-        preferredAt: new Date().toISOString(),
+        preferredAt: preferredAt.toISOString(),
         locationId: 'location-1',
         serviceSlug: 'oil-change',
         serviceLabels: { ru: 'Замена масла' },
@@ -50,7 +54,10 @@ function makeRequest(overrides: Partial<AutoCareServiceRequest> = {}) {
 }
 
 describe('OwnerCapacityCalendar', () => {
+    const onSelectRequest = vi.fn()
+
     beforeEach(() => {
+        onSelectRequest.mockReset()
         providerQuery.data = [{
             id: 'provider-1',
             name: 'ProService',
@@ -59,6 +66,7 @@ describe('OwnerCapacityCalendar', () => {
                     id: 'location-1',
                     address: 'Москва, ул. Льва Толстого, 18',
                     appointmentCapacity: 2,
+                    timezone: 'America/Los_Angeles',
                 },
                 offers: [],
             }],
@@ -67,8 +75,9 @@ describe('OwnerCapacityCalendar', () => {
         providerQuery.isError = false
     })
 
-    it('shows branch occupancy and appointments without the post-MVP resource editor', () => {
-        render(<OwnerCapacityCalendar requests={[makeRequest()]} />)
+    it('formats booking times in branch timezone and opens the booking from its existing control', async () => {
+        const user = userEvent.setup()
+        render(<OwnerCapacityCalendar requests={[makeRequest()]} onSelectRequest={onSelectRequest} />)
 
         const calendar = screen.getByTestId('owner-capacity-calendar')
         expect(calendar).toHaveTextContent('Календарь филиала')
@@ -76,13 +85,27 @@ describe('OwnerCapacityCalendar', () => {
         expect(calendar).toHaveTextContent('Москва, ул. Льва Толстого, 18')
         expect(calendar).toHaveTextContent('1 / 2')
         expect(calendar).toHaveTextContent('Замена масла')
+        const bookingButton = screen.getByRole('button', { name: /Замена масла/ })
+        const preferredAt = new Date()
+        preferredAt.setHours(12, 0, 0, 0)
+        const expectedBranchTime = new Intl.DateTimeFormat('ru-RU', { timeStyle: 'short', timeZone: 'America/Los_Angeles' }).format(preferredAt)
+        expect(bookingButton).toHaveTextContent(expectedBranchTime)
+        await user.click(bookingButton)
+        expect(onSelectRequest).toHaveBeenCalledWith('request-1')
         expect(screen.queryByTestId('owner-capacity-resources')).not.toBeInTheDocument()
     })
 
     it('keeps a useful empty branch state when there are no appointments', () => {
-        render(<OwnerCapacityCalendar requests={[]} />)
+        render(<OwnerCapacityCalendar requests={[]} onSelectRequest={onSelectRequest} />)
 
         expect(screen.getByTestId('owner-capacity-calendar')).toHaveTextContent('0 подтверждённых записей')
         expect(screen.getByTestId('owner-capacity-calendar')).toHaveTextContent('Подтверждённых записей нет.')
+    })
+
+    it('falls back safely when a branch timezone is missing or invalid', () => {
+        providerQuery.data[0]!.locations[0]!.location.timezone = 'Mars/Olympus'
+        render(<OwnerCapacityCalendar requests={[makeRequest()]} onSelectRequest={onSelectRequest} />)
+
+        expect(screen.getByRole('button', { name: /Замена масла/ })).toBeVisible()
     })
 })

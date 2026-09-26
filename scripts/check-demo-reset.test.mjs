@@ -50,3 +50,29 @@ test('demo reset contract requires fixture-scoped outbox cleanup', () => {
     assert.equal(evaluation.passed, false)
     assert.ok(evaluation.missing.includes('DELETE FROM "outbox_events"'))
 })
+
+test('demo reset contract requires a confirmed disposable database target', () => {
+    const evaluation = evaluateDemoResetSource([
+        'DEMO_USER_EMAILS',
+        'AUTOMOTIVE_MOCK_PROVIDERS',
+        'provider.ownerId === null',
+        "demoUserIdSet.has(provider.ownerId ?? '')",
+        'ANY($1::uuid[])',
+        'ids: string[]',
+    ].join('\n'))
+    assert.equal(evaluation.passed, false)
+    assert.ok(evaluation.missing.includes('getDemoResetTargetError'))
+    assert.ok(evaluation.missing.includes('DEMO_RESET_CONFIRM_DATABASE'))
+})
+
+test('demo reset contract checks the target before opening its deletion transaction', () => {
+    const source = [
+        'getDemoResetTargetError',
+        'DEMO_RESET_CONFIRM_DATABASE',
+        'SELECT current_database() AS database_name',
+        'if (targetError) throw new Error(targetError)',
+        'await AppDataSource.transaction(',
+    ].join('\n')
+    assert.equal(evaluateDemoResetSource(source).targetGuardBeforeTransaction, true)
+    assert.equal(evaluateDemoResetSource(source.replace('if (targetError) throw new Error(targetError)', '// moved below reset transaction')).targetGuardBeforeTransaction, false)
+})

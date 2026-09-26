@@ -21,6 +21,8 @@ export type ServiceChatMessage = {
     } | null
     deliveredAt: string | null
     readAt: string | null
+    deletedAt?: string | null
+    evidenceRetainUntil?: string | null
     createdAt: string
     idempotencyKey?: string | null
     idempotencyFingerprint?: string | null
@@ -98,8 +100,7 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
         }
     }
 
-    const token = getAccessToken()
-    if (!token || typeof window === 'undefined') return () => undefined
+    if (typeof window === 'undefined') return () => undefined
 
     const base = API_BASE_URL.startsWith('http') ? API_BASE_URL : window.location.origin + API_BASE_URL
     const url = new URL(`${base}${path}`)
@@ -123,16 +124,20 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
 
     const connect = () => {
         if (stopped || !navigator.onLine || document.visibilityState === 'hidden') return
+        const token = getAccessToken()
+        if (!token) return
         socket = new WebSocket(url, [`bearer.${token}`])
         socket.addEventListener('open', () => {
-            attempt = 0
             handleEvent(presence(true))
         })
         socket.addEventListener('message', (message) => {
             try {
                 const parsed: unknown = JSON.parse(String(message.data))
                 const result = serviceChatEventSchema.safeParse(parsed)
-                if (result.success) handleEvent(result.data)
+                if (result.success) {
+                    attempt = 0
+                    handleEvent(result.data)
+                }
                 else console.warn('Ignored invalid AutoCare chat event')
             } catch {
                 console.warn('Ignored malformed AutoCare chat event')
@@ -141,7 +146,7 @@ function connectChatSocket(channelId: string, path: string, listener: Listener) 
         socket.addEventListener('close', (event) => {
             socket = null
             handleEvent(presence(false))
-            if (event.code !== 4001 && event.code !== 4003) scheduleReconnect()
+            if (event.code !== 4403) scheduleReconnect()
         })
     }
 
@@ -166,6 +171,7 @@ export function connectServiceChat(requestId: string, listener: Listener) {
     return connectChatSocket(requestId, `/v1/service-requests/${requestId}/ws`, listener)
 }
 
-export function connectAutoCareChat(chatId: string, listener: Listener) {
-    return connectChatSocket(chatId, `/v1/chats/${chatId}/ws`, listener)
+export function connectAutoCareChat(chatId: string, listener: Listener, emergencyReason?: string) {
+    const query = emergencyReason ? `?${new URLSearchParams({ emergencyReason }).toString()}` : ''
+    return connectChatSocket(chatId, `/v1/chats/${encodeURIComponent(chatId)}/ws${query}`, listener)
 }

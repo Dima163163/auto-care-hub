@@ -65,6 +65,7 @@ const exactRoutes = [
 const dynamicRoutes = [
     /^\/services\/[^/]+$/,
     /^\/services\/[^/]+\/request$/,
+    /^\/community\/clients\/[^/]+$/,
     /^\/cabinets\/[^/]+$/,
     /^\/owner\/autocare-providers\/[^/]+$/,
     /^\/owner\/autocare-providers\/[^/]+\/reviews$/,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDistanceKm, formatDurationMinutes, formatNumber, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
+import { formatAutoCareSlot, formatCurrency, formatDateTime, formatDateTimeInTimeZone, formatDistanceKm, formatDurationMinutes, formatNumber, formatPlural, getIntlLocale, parseDistanceKm } from './locale-format'
 
 describe('locale formatting', () => {
     it('maps supported locales to stable Intl tags', () => {
@@ -24,6 +24,12 @@ describe('locale formatting', () => {
         const value = '2026-08-25T12:30:00.000Z'
         expect(formatDateTime(value, 'en', { timeZone: 'UTC', dateStyle: 'medium' })).toContain('Aug')
         expect(formatDateTime(value, 'ru', { timeZone: 'UTC', dateStyle: 'medium' })).toContain('авг')
+    })
+
+    it('includes the time zone in booking timestamps and uses explicit UTC for invalid zone data', () => {
+        const value = '2026-09-26T12:00:00.000Z'
+        expect(formatDateTimeInTimeZone(value, 'ru', 'Europe/Moscow')).toContain('GMT+3')
+        expect(formatDateTimeInTimeZone(value, 'ru', 'Mars/Olympus')).toContain('UTC')
     })
 
     it('formats distances using numeric kilometers and locale-aware units', () => {

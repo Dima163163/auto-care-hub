@@ -14,6 +14,7 @@ import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
 import { isChatNavigationVisible } from '@/shared/config/features'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { WorkspaceNavIcon } from '@/shared/ui/workspace-nav-icon/WorkspaceNavIcon'
 
 type ProfileNavigationProps = {
     desktopHidden?: boolean
@@ -58,7 +59,7 @@ export function ProfileNavigation({ desktopHidden = true }: ProfileNavigationPro
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                     >
-                        <Icon className="size-4 shrink-0" />
+                        <WorkspaceNavIcon icon={Icon} />
                         <span>{label}</span>
                     </NavLink>
                 ))}
