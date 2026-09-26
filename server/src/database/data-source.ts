@@ -6,9 +6,9 @@ import { entities } from '../entities/index.js'
 import { DatabaseLogger } from './database-logger.js'
 import { SensitiveDataSubscriber } from '../shared/security/data-encryption/sensitive-data-subscriber.js'
 
-export function getMigrationPaths(nodeEnv: 'development' | 'test' | 'production') {
+export function getMigrationPaths(nodeEnv: 'development' | 'test' | 'production', runtime: 'source' | 'compiled' = 'source') {
     return [
-        nodeEnv === 'development'
+        nodeEnv === 'development' && runtime === 'source'
             ? 'src/database/migrations/!(*.test).ts'
             : 'dist/database/migrations/*.js',
     ]
@@ -24,7 +24,7 @@ export const AppDataSource = new DataSource({
     database: env.database.name,
     entities,
     subscribers: [SensitiveDataSubscriber],
-    migrations: getMigrationPaths(env.nodeEnv),
+    migrations: getMigrationPaths(env.nodeEnv, import.meta.url.endsWith('.ts') ? 'source' : 'compiled'),
     migrationsTableName: 'migrations',
     migrationsTransactionMode: 'each',
     synchronize: false,

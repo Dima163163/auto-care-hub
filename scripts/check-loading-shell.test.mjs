@@ -7,7 +7,7 @@ const sourceMap = {
     bootShell: [
         '<BootHeader />',
         '<BootFooter />',
-        '<main className="min-h-0 flex-1" aria-busy="true" aria-label="Загрузка страницы">',
+        '<main className="min-h-0 flex-1" aria-busy={content ? undefined : \'true\'} aria-label={content ? undefined : \'Загрузка страницы\'}>',
         '<WorkspaceBootHeader role={role} />',
         '<WorkspaceBootSidebar role={role} />',
         'data-testid="workspace-boot-content"',
@@ -30,7 +30,7 @@ const sourceMap = {
     nextClientApp: [
         'Promise.all([',
         'enableMocking(),',
-        'loadTranslations(getInitialLocale()),',
+        'loadTranslations(initialPublicProviderProfile ? initialProviderLocale : getInitialLocale()),',
         'if (!ready) {',
         '<BootShell home={initialPathname === ROUTES.home}',
     ].join('\n'),
