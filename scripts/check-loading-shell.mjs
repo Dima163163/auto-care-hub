@@ -25,7 +25,7 @@ export function evaluateLoadingShell(sourceMap) {
             [
                 '<BootHeader />',
                 '<BootFooter />',
-                '<main className="min-h-0 flex-1" aria-busy="true" aria-label="Загрузка страницы">',
+                '<main className="min-h-0 flex-1" aria-busy={content ? undefined : \'true\'} aria-label={content ? undefined : \'Загрузка страницы\'}>',
             ],
             'public loading renders header, main and footer without waiting for remote data',
         ),
@@ -86,7 +86,7 @@ export function evaluateLoadingShell(sourceMap) {
             [
                 'Promise.all([',
                 'enableMocking(),',
-                'loadTranslations(getInitialLocale()),',
+                'loadTranslations(initialPublicProviderProfile ? initialProviderLocale : getInitialLocale()),',
                 'if (!ready) {',
                 '<BootShell home={initialPathname === ROUTES.home}',
             ],

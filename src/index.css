@@ -97,6 +97,15 @@
     /* Shared foundation tokens for responsive public and operational surfaces. */
     --font-display: 'Russo One', 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
     --font-body: 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
+    /* Country flag colors are data-specific; keep them centralized outside component source. */
+    --flag-es-red: #aa151b;
+    --flag-es-yellow: #f1bf00;
+    --flag-md-blue: #003da5;
+    --flag-md-yellow: #ffd900;
+    --flag-md-red: #cc092f;
+    --flag-ru-white: #ffffff;
+    --flag-ru-blue: #0039a6;
+    --flag-ru-red: #d52b1e;
     --type-label-size: 0.6875rem;
     --type-label-line: 1rem;
     --type-body-size: 1rem;
