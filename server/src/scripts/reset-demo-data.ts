@@ -3,6 +3,7 @@ import type { EntityManager } from 'typeorm'
 
 import { env } from '../config/env.js'
 import { AppDataSource } from '../database/data-source.js'
+import { createEmailBlindIndex } from '../shared/security/data-encryption/field-encryption.js'
 import { AutomotiveProviderEntity, AutomotiveServiceLocationEntity } from '../entities/automotive/automotive.entity.js'
 import { BookingEntity } from '../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../entities/cabinet/cabinet.entity.js'
@@ -71,7 +72,7 @@ async function deleteDemoOutboxEvents(manager: EntityManager, references: DemoOu
             OR "payload" ->> 'requestId' = ANY($3::text[])
             OR "payload" ->> 'email' = ANY($4::text[])
             OR "payload" ->> 'toEmail' = ANY($4::text[])`,
-        [userIds, bookingIds, requestIds, emails],
+        [userIds, bookingIds, requestIds, emails.map((email) => createEmailBlindIndex(email))],
     )
 }
 

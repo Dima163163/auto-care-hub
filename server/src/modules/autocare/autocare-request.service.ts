@@ -1,7 +1,8 @@
-import { Between, In, type EntityManager, type QueryFailedError } from 'typeorm'
+import { Between, In, MoreThan, type EntityManager, type QueryFailedError } from 'typeorm'
 import { createHash, randomUUID } from 'node:crypto'
 
 import { AppDataSource } from '../../database/data-source.js'
+import { isAutoCareCountryEnabled } from '../../config/enabled-market-countries.js'
 import {
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
@@ -12,8 +13,10 @@ import {
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
     AutoCareChatThreadEntity,
-    AutoCareChatThreadStatus,
-    AutoCareChatThreadType,
+    AutoCareChatReportEntity,
+    AutoCareChatReportStatus,
+    AutoCareChatBlockEntity,
+    AutoCareChatBlockStatus,
     AutoCareRepairEventEntity,
     AutoCareServiceQuoteEntity,
     AutoCareQuoteStatus,
@@ -65,6 +68,7 @@ import { hasAutoCareResourceAvailability, releaseAutoCareResources, reserveAutoC
 import { reassessAutoCareProviderTrust } from './trust-score.service.js'
 import { logError } from '../../shared/observability/logger.js'
 import { normalizeAutoCareServiceMessageInput } from './message-content-policy.js'
+import { isAutoCareChatBlockEffective } from './chat-moderation-policy.js'
 import { normalizeAutoCareServiceOfferDecision, normalizeAutoCareServiceOfferInput } from './offer-policy.js'
 import { normalizeAutoCareQuoteDecisionInput, normalizeAutoCareServiceQuoteInput } from './quote-input-policy.js'
 import { normalizeAutoCareRequestTransitionReason, normalizeAutoCareRescheduleInput, normalizeAutoCareRescheduleReason } from './reschedule-input-policy.js'
@@ -80,6 +84,7 @@ import {
     UserConsentType,
 } from '../../entities/user-consent/user-consent.entity.js'
 import { normalizeAutoCareRepairEventInput } from './repair-event-input-policy.js'
+import { canCreateAutoCareServiceQuote, canDecideAutoCareReschedule, isAutoCareServiceOfferExpired, isAutoCareVisitTimeBookable } from './request-lifecycle-policy.js'
 
 function clientOnly(user: UserEntity) {
     if (user.role !== UserRole.Client) {
@@ -299,6 +304,7 @@ function requestResponse(
         priceFromMinor: snapshot?.priceFromMinor ?? offering?.priceFromMinor ?? null,
         currencyCode: snapshot?.currencyCode ?? offering?.currencyCode ?? null,
         preferredAt: request.preferredAt?.toISOString() ?? null,
+        timezone: location.timezone ?? null,
         vehicleId: request.vehicleId,
         vehicleSnapshot: request.vehicleSnapshot as AutoCareServiceRequestResponse['vehicleSnapshot'],
         contactSnapshot: request.contactSnapshot as AutoCareServiceRequestResponse['contactSnapshot'],
@@ -380,6 +386,7 @@ async function getParticipantRequest(user: UserEntity, requestId: string) {
  * socket after session, membership or provider-access changes.
  */
 export async function assertAutoCareServiceRequestRealtimeAccess(user: UserEntity, requestId: string) {
+    if (user.role === UserRole.SuperAdmin) forbidden('SuperAdmin chat review must use the audited chat access route.')
     await getParticipantRequest(user, requestId)
     return true
 }
@@ -393,6 +400,7 @@ function messageResponse(message: ServiceMessageEntity): AutoCareServiceMessageR
         offer: message.offer,
         deliveredAt: message.deliveredAt?.toISOString() ?? null,
         readAt: message.readAt?.toISOString() ?? null,
+        deletedAt: message.deletedAt?.toISOString() ?? null,
         createdAt: message.createdAt.toISOString(),
     }
 }
@@ -415,8 +423,9 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
     requestId = requireAutoCareRequestUuid(requestId)
     const normalizedInput = normalizeCursorPaginationInput(input)
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service conversation pagination query is invalid.' })
+    if (user.role === UserRole.SuperAdmin) forbidden('SuperAdmin chat review must use the audited chat access route.')
     const request = await getParticipantRequest(user, requestId)
-    await ensureAutoCareRequestChatThread(request)
+    const chatThread = await ensureAutoCareRequestChatThread(request)
     const limit = getCursorLimit(normalizedInput.limit)
     const cursor = normalizedInput.cursor ? decodeCursor(normalizedInput.cursor, ['createdAt', 'id']) : null
     const beforeCursor = normalizedInput.beforeCursor ? decodeCursor(normalizedInput.beforeCursor, ['createdAt', 'id']) : null
@@ -441,10 +450,13 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
             beforeCursorId: beforeCursor.id,
         })
     }
-    const [response, messagePage, attachments] = await Promise.all([
+    const evidenceCheckAt = new Date()
+    const [response, messagePage, attachments, moderationReviewActive, messagesProtected] = await Promise.all([
         hydrateRequest(request),
         messagesQuery.getMany(),
         AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: { requestId, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(AutoCareChatReportEntity).exist({ where: { threadId: chatThread.id, status: AutoCareChatReportStatus.Pending } }),
+        AppDataSource.getRepository(ServiceMessageEntity).exist({ where: { requestId, evidenceRetainUntil: MoreThan(evidenceCheckAt) } }),
     ])
     const hasMore = messagePage.length > limit
     const messages = [...(hasMore ? messagePage.slice(0, limit) : messagePage)].reverse()
@@ -484,6 +496,8 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
         previousCursor: hasMore && firstMessage
             ? encodeCursor({ createdAt: firstMessage.createdAt.toISOString(), id: firstMessage.id })
             : null,
+        moderationReviewActive,
+        messagesProtected: moderationReviewActive || messagesProtected,
     }
 }
 
@@ -503,6 +517,8 @@ export async function createAutoCareServiceMessage(user: UserEntity, requestId: 
                 lock: { mode: 'pessimistic_write' },
             })
             if (!lockedRequest) notFound('Service request not found.')
+            await assertParticipantWithManager(manager, user, lockedRequest)
+            const thread = await lockRequestChatThreadForWrite(manager, lockedRequest, user)
             const messageRepository = manager.getRepository(ServiceMessageEntity)
             if (idempotencyKey) {
                 const existing = await messageRepository.findOneBy({ requestId: request.id, senderId: user.id, idempotencyKey })
@@ -512,7 +528,6 @@ export async function createAutoCareServiceMessage(user: UserEntity, requestId: 
                     return { message: existing, recipientId: user.id === lockedRequest.clientId ? provider?.ownerId ?? null : lockedRequest.clientId, recipientRole: user.id === lockedRequest.clientId ? 'owner' : 'client', changed: false }
                 }
             }
-            const thread = await ensureAutoCareRequestChatThread(lockedRequest, manager)
             const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
             const recipientId = user.id === lockedRequest.clientId ? provider?.ownerId ?? null : lockedRequest.clientId
             const deliveredAt = recipientId ? new Date() : null
@@ -568,6 +583,7 @@ export async function createAutoCareServiceOffer(user: UserEntity, requestId: st
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
         if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
         if (!serviceRequestOfferableStates.has(lockedRequest.status)) conflict('This service request cannot receive a new offer.')
+        const thread = await lockRequestChatThreadForWrite(manager, lockedRequest, user)
 
         const messageRepository = manager.getRepository(ServiceMessageEntity)
         const previousOffers = await messageRepository.find({ where: { requestId, senderId: user.id, kind: ServiceMessageKind.Offer }, order: { createdAt: 'DESC' } })
@@ -579,19 +595,6 @@ export async function createAutoCareServiceOffer(user: UserEntity, requestId: st
         const offer: ServiceMessageOffer = {
             ...offerInput,
             couponCode: offerInput.type === 'discount' ? offerInput.couponCode || `AC-${randomUUID().slice(0, 8).toUpperCase()}` : null,
-        }
-        let thread = await manager.getRepository(AutoCareChatThreadEntity).findOneBy({ requestId, type: AutoCareChatThreadType.ServiceRequest })
-        if (!thread) {
-            thread = await manager.getRepository(AutoCareChatThreadEntity).save(manager.getRepository(AutoCareChatThreadEntity).create({
-                type: AutoCareChatThreadType.ServiceRequest,
-                requestId,
-                providerId: lockedRequest.providerId,
-                clientId: lockedRequest.clientId,
-                createdById: lockedRequest.clientId,
-                subject: 'Заявка на услугу',
-                status: AutoCareChatThreadStatus.Open,
-                lastMessageAt: null,
-            }))
         }
         const message = await messageRepository.save(messageRepository.create({
             requestId,
@@ -629,6 +632,7 @@ export async function decideAutoCareServiceOffer(user: UserEntity, requestId: st
         const targetStatus = normalizedDecision === 'accept' ? 'accepted' : 'declined'
         if (message.offer.status === targetStatus) return { message, request, changed: false }
         if (message.offer.status !== 'pending') conflict('This service offer has already been resolved.')
+        if (normalizedDecision === 'accept' && isAutoCareServiceOfferExpired(message.offer.expiresAt)) conflict('This service offer has expired.')
         message.offer = { ...message.offer, status: targetStatus }
         const saved = await manager.getRepository(ServiceMessageEntity).save(message)
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
@@ -645,6 +649,7 @@ export async function decideAutoCareServiceOffer(user: UserEntity, requestId: st
 
 export async function markAutoCareServiceConversationRead(user: UserEntity, requestId: string) {
     requestId = requireAutoCareRequestUuid(requestId)
+    if (user.role === UserRole.SuperAdmin) return { updated: 0 }
     await getParticipantRequest(user, requestId)
     const repository = AppDataSource.getRepository(ServiceMessageEntity)
     const messages = await repository.find({ where: { requestId } })
@@ -662,6 +667,12 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
     const normalizedInput = normalizeAutoCareAttachmentInput(input)
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Attachment payload is invalid.' })
     const request = await getParticipantRequest(user, requestId)
+    await AppDataSource.transaction(async (manager) => {
+        const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
+        if (!lockedRequest) notFound('Service request not found.')
+        await assertParticipantWithManager(manager, user, lockedRequest)
+        await lockRequestChatThreadForWrite(manager, lockedRequest, user)
+    })
     const rawContent = decodeAutoCareAttachment(normalizedInput)
     const content = await normalizeAutoCareAttachment(rawContent, normalizedInput.contentType)
     const objectKey = createAutoCareAttachmentObjectKey('requests', request.id, randomUUID())
@@ -670,13 +681,8 @@ export async function createAutoCareServiceAttachment(user: UserEntity, requestI
         const attachment = await AppDataSource.transaction(async (manager) => {
             const lockedRequest = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: request.id }, lock: { mode: 'pessimistic_write' } })
             if (!lockedRequest) notFound('Service request not found.')
-            if (lockedRequest.clientId !== user.id && user.role !== UserRole.SuperAdmin) {
-                const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
-                if (!provider || !(await hasProviderWorkspacePermission(user.id, provider.id, 'requests', lockedRequest.locationId))) {
-                    forbidden('You do not have access to this service request.')
-                }
-            }
-            const thread = await ensureAutoCareRequestChatThread(lockedRequest, manager)
+            await assertParticipantWithManager(manager, user, lockedRequest)
+            const thread = await lockRequestChatThreadForWrite(manager, lockedRequest, user)
             const quota = await manager.getRepository(ServiceAttachmentEntity)
                 .createQueryBuilder('attachment')
                 .select('COUNT(DISTINCT attachment.id)', 'count')
@@ -712,6 +718,7 @@ export async function getAutoCareServiceAttachment(user: UserEntity, requestId: 
     requestId = requireAutoCareRequestUuid(requestId)
     const normalizedAttachmentId = normalizeAutoCareRequestUuid(attachmentId)
     if (!normalizedAttachmentId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service attachment id must be a valid UUID.' })
+    if (user.role === UserRole.SuperAdmin) forbidden('SuperAdmin chat review must use the audited chat attachment route.')
     await getParticipantRequest(user, requestId)
     const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: normalizedAttachmentId, requestId, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, bytes: true, checksum: true } })
     if (!attachment) notFound('Service attachment not found.')
@@ -749,7 +756,7 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
         if (!lockedRequest) notFound('Service request not found.')
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: lockedRequest.providerId })
         if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', lockedRequest.locationId))) throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not manage this service request.' })
-        if ([ServiceRequestStatus.Declined, ServiceRequestStatus.Closed, ServiceRequestStatus.Accepted].includes(lockedRequest.status)) conflict('This service request cannot receive a new estimate.')
+        if (!canCreateAutoCareServiceQuote(lockedRequest.status)) conflict('This service request cannot receive a new estimate.')
         lockedRequest.estimateSnapshot = {
             amountMinor,
             lineItems,
@@ -856,6 +863,7 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
         const acceptedAt = new Date()
         if (accepted) {
             if (!lockedRequest.preferredAt) conflict('Choose a visit time before accepting this estimate.')
+            if (!isAutoCareVisitTimeBookable(lockedRequest.preferredAt)) throw new AppError({ statusCode: 409, code: ERROR_CODES.SlotUnavailable, message: 'The selected visit time has passed or is too close to start. Choose another time.' })
             await assertAutoCareSlotCapacity(manager, {
                 locationId: lockedRequest.locationId,
                 providerId: lockedRequest.providerId,
@@ -917,6 +925,9 @@ async function resolveClientQuoteDecision(user: UserEntity, requestId: string, a
             })
             : null
         lockedRequest.bookingCreatedAt = accepted ? acceptedAt : null
+        if (!accepted) {
+            await expirePendingAutoCareReschedule(manager, requestId, user.id, 'The service request was declined before the new time was accepted.')
+        }
         const request = await manager.getRepository(ServiceRequestEntity).save(lockedRequest)
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: accepted ? 'estimate_accepted' : 'estimate_declined', title: accepted ? 'Клиент принял смету' : 'Клиент отклонил смету' })
@@ -994,6 +1005,60 @@ async function assertParticipant(user: UserEntity, request: ServiceRequestEntity
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'You do not have access to this service request.' })
 }
 
+function requireSuperAdminRequestAccessReason(user: UserEntity, emergencyReason?: string) {
+    if (user.role !== UserRole.SuperAdmin) return
+
+    const normalizedReason = typeof emergencyReason === 'string'
+        ? emergencyReason.normalize('NFKC').trim()
+        : ''
+    if (normalizedReason.length < 10 || normalizedReason.length > 2_000) {
+        throw new AppError({
+            statusCode: 400,
+            code: ERROR_CODES.ValidationError,
+            message: 'Privileged request access requires a reason of 10 to 2000 characters.',
+        })
+    }
+}
+
+async function assertParticipantWithManager(manager: EntityManager, user: UserEntity, request: ServiceRequestEntity) {
+    if (user.role === UserRole.SuperAdmin || request.clientId === user.id) return
+    const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: request.providerId })
+    if (provider && await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', request.locationId)) return
+    forbidden('You do not have access to this service request.')
+}
+
+async function lockRequestChatThreadForWrite(manager: EntityManager, request: ServiceRequestEntity, user: UserEntity) {
+    const candidate = await ensureAutoCareRequestChatThread(request, manager)
+    const thread = await manager.getRepository(AutoCareChatThreadEntity).findOne({
+        where: { id: candidate.id },
+        lock: { mode: 'pessimistic_write' },
+    })
+    if (!thread) notFound('Chat not found.')
+    const blocks = await manager.getRepository(AutoCareChatBlockEntity).find({
+        where: [
+            { threadId: thread.id, blockedUserId: user.id, status: AutoCareChatBlockStatus.Active },
+            { threadId: thread.id, blockerId: user.id, status: AutoCareChatBlockStatus.Active },
+        ],
+    })
+    const now = new Date()
+    if (blocks.some((block) => isAutoCareChatBlockEffective(block.expiresAt, now))) forbidden('Messaging is unavailable because this chat is blocked.')
+    return thread
+}
+
+async function expirePendingAutoCareReschedule(manager: EntityManager, requestId: string, actorId: string, reason: string) {
+    const repository = manager.getRepository(AutoCareRescheduleRequestEntity)
+    const pending = await repository.findOne({
+        where: { requestId, status: AutoCareRescheduleStatus.Pending },
+        lock: { mode: 'pessimistic_write' },
+    })
+    if (!pending) return
+    pending.status = AutoCareRescheduleStatus.Rejected
+    pending.resolvedById = actorId
+    pending.resolutionReason = reason
+    pending.resolvedAt = new Date()
+    await repository.save(pending)
+}
+
 export async function createAutoCareServiceRequest(user: UserEntity, input: CreateAutoCareServiceRequestInput) {
     clientOnly(user)
     const normalizedInput = normalizeAutoCareServiceRequestInput(input)
@@ -1021,7 +1086,7 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     const location = await locationRepository.findOneBy({ id: normalizedInput.locationId, providerId: provider.id })
     if (!location) notFound('Automotive service location not found.')
     const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: location.marketId, launchReady: true })
-    if (!market) notFound('Automotive service market is not available.')
+    if (!market || !isAutoCareCountryEnabled(market.countryCode)) notFound('Automotive service market is not available.')
     const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true })
     if (!country) notFound('Automotive service market is not available.')
     const offering = await offeringRepository.findOneBy({ id: normalizedInput.offeringId, locationId: location.id, active: true })
@@ -1030,6 +1095,7 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
     if (!definition) notFound('Automotive service definition not found.')
 
     const preferredAt = new Date(normalizedInput.preferredAt)
+    if (!isAutoCareVisitTimeBookable(preferredAt)) throw new AppError({ statusCode: 409, code: ERROR_CODES.SlotUnavailable, message: 'The selected visit time has passed or is too close to start. Choose another time.' })
     let savedRequest: ServiceRequestEntity
     try {
         savedRequest = await AppDataSource.transaction(async (manager) => {
@@ -1040,12 +1106,13 @@ export async function createAutoCareServiceRequest(user: UserEntity, input: Crea
                 where: { id: location.marketId, launchReady: true },
                 lock: { mode: 'pessimistic_read' },
             })
-            if (!lockedMarket) notFound('Automotive service market is not available.')
+            if (!lockedMarket || !isAutoCareCountryEnabled(lockedMarket.countryCode)) notFound('Automotive service market is not available.')
             const lockedCountry = await manager.getRepository(AutomotiveMarketCountryEntity).findOne({
                 where: { id: lockedMarket.countryId, active: true },
                 lock: { mode: 'pessimistic_read' },
             })
             if (!lockedCountry) notFound('Automotive service market is not available.')
+            if (!isAutoCareVisitTimeBookable(preferredAt)) throw new AppError({ statusCode: 409, code: ERROR_CODES.SlotUnavailable, message: 'The selected visit time has passed or is too close to start. Choose another time.' })
             const lockedLocation = await assertAutoCareSlotCapacity(manager, {
                 locationId: location.id,
                 providerId: provider.id,
@@ -1173,8 +1240,9 @@ export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
     return Promise.all(visibleRequests.map(hydrateRequest))
 }
 
-export async function getAutoCareServiceRequest(user: UserEntity, requestId: string) {
+export async function getAutoCareServiceRequest(user: UserEntity, requestId: string, emergencyReason?: string) {
     requestId = requireAutoCareRequestUuid(requestId)
+    requireSuperAdminRequestAccessReason(user, emergencyReason)
     const request = await getRequest(requestId)
     await assertParticipant(user, request)
     return hydrateRequest(request)
@@ -1243,7 +1311,7 @@ async function assertAutoCareSlotCapacity(
         candidate: { startsAtMinutes: localVisit.minutes, durationMinutes: input.durationMinutes },
         reservations: activeReservations,
     })) {
-        conflict(input.capacityMessage)
+        throw new AppError({ statusCode: 409, code: ERROR_CODES.SlotUnavailable, message: input.capacityMessage })
     }
     return { ...location, timezone }
 }
@@ -1288,7 +1356,7 @@ export async function getAutoCareAvailability(providerId: string, locationId: st
     const location = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: normalizedLocationId, providerId: normalizedProviderId })
     if (!provider || !location) notFound('Automotive availability references missing service data.')
     const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: location.marketId, launchReady: true })
-    if (!market) notFound('Automotive availability references missing service data.')
+    if (!market || !isAutoCareCountryEnabled(market.countryCode)) notFound('Automotive availability references missing service data.')
     const country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true })
     if (!country) notFound('Automotive availability references missing service data.')
     const offering = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: normalizedOfferingId, locationId: normalizedLocationId, active: true })
@@ -1328,7 +1396,7 @@ export async function getAutoCareAvailability(providerId: string, locationId: st
         }).length
         if (occupied < Math.max(1, location.appointmentCapacity)) {
             const startsAt = zonedWallTimeToUtc(normalizedDate, `${formatClock(start)}`, timezone)
-            if (!startsAt) continue
+            if (!startsAt || !isAutoCareVisitTimeBookable(startsAt)) continue
             const resourcesAvailable = await hasAutoCareResourceAvailability(AppDataSource.manager, {
                 requestId: undefined,
                 providerId: normalizedProviderId,
@@ -1378,7 +1446,8 @@ export async function confirmOwnerAutoCareServiceRequest(user: UserEntity, reque
         if (!serviceRequestConfirmableStates.has(request.status)) conflict('This service request can no longer be confirmed.')
         const changed = !request.providerConfirmedAt || request.status !== ServiceRequestStatus.Accepted
         if (changed) {
-            if (!request.preferredAt) conflict('Choose a visit time before confirming this service request.')
+        if (!request.preferredAt) conflict('Choose a visit time before confirming this service request.')
+            if (!isAutoCareVisitTimeBookable(request.preferredAt)) throw new AppError({ statusCode: 409, code: ERROR_CODES.SlotUnavailable, message: 'The selected visit time has passed or is too close to start. Choose another time.' })
             await assertAutoCareSlotCapacity(manager, {
                 locationId: request.locationId,
                 providerId: request.providerId,
@@ -1418,7 +1487,7 @@ export async function requestAutoCareServiceReschedule(user: UserEntity, request
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Reschedule request is invalid.' })
     const { proposedAt, reason } = normalizedInput
     const now = Date.now()
-    if (proposedAt.getTime() <= now) conflict('The proposed visit time must be in the future.')
+    if (!isAutoCareVisitTimeBookable(proposedAt, now)) throw new AppError({ statusCode: 409, code: ERROR_CODES.SlotUnavailable, message: 'The proposed visit time has passed or is too close to start. Choose another time.' })
     const created = await AppDataSource.transaction(async (manager) => {
         const request = await manager.getRepository(ServiceRequestEntity).findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
@@ -1447,9 +1516,11 @@ export async function requestAutoCareServiceReschedule(user: UserEntity, request
     return rescheduleResponse(created)
 }
 
-export async function decideAutoCareServiceReschedule(user: UserEntity, requestId: string, decision: 'accept' | 'reject', reason?: string | null) {
+export async function decideAutoCareServiceReschedule(user: UserEntity, requestId: string, rescheduleId: string, decision: 'accept' | 'reject', reason?: string | null) {
     clientOnly(user)
     requestId = requireAutoCareRequestUuid(requestId)
+    const normalizedRescheduleId = normalizeAutoCareRequestUuid(rescheduleId)
+    if (!normalizedRescheduleId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Reschedule request id must be a valid UUID.' })
     const normalizedReason = normalizeAutoCareRescheduleReason(reason)
     if (!normalizedReason.valid) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Reschedule reason is invalid.' })
     const transactionResult = await AppDataSource.transaction(async (manager) => {
@@ -1457,13 +1528,15 @@ export async function decideAutoCareServiceReschedule(user: UserEntity, requestI
         const request = await requestRepository.findOne({ where: { id: requestId }, lock: { mode: 'pessimistic_write' } })
         if (!request) notFound('Service request not found.')
         if (request.clientId !== user.id) forbidden('You do not have access to this service request.')
+        if (!serviceRequestReschedulableStates.has(request.status)) conflict('This service request can no longer accept a reschedule decision.')
         const rescheduleRepository = manager.getRepository(AutoCareRescheduleRequestEntity)
-        const pending = await rescheduleRepository.findOne({ where: { requestId }, order: { createdAt: 'DESC' }, lock: { mode: 'pessimistic_write' } })
-        if (!pending) notFound('Reschedule request not found.')
+        const pending = await rescheduleRepository.findOne({ where: { id: normalizedRescheduleId, requestId }, lock: { mode: 'pessimistic_write' } })
+        if (!pending) conflict('This reschedule request is no longer active.')
         if (pending.status !== AutoCareRescheduleStatus.Pending) {
             if ((decision === 'accept' && pending.status === AutoCareRescheduleStatus.Accepted) || (decision === 'reject' && pending.status === AutoCareRescheduleStatus.Rejected)) return { request, reschedule: pending, changed: false }
             conflict('This reschedule request has already been resolved.')
         }
+        if (decision === 'accept' && !canDecideAutoCareReschedule(request.status, pending.proposedAt)) conflict('The proposed visit time has passed.')
         pending.status = decision === 'accept' ? AutoCareRescheduleStatus.Accepted : AutoCareRescheduleStatus.Rejected
         pending.resolvedById = user.id
         pending.resolutionReason = normalizedReason.value
@@ -1517,6 +1590,7 @@ export async function markAutoCareServiceRequestNoShow(user: UserEntity, request
         request.noShowAt = new Date()
         request.noShowById = user.id
         request.noShowReason = normalizedReason.value
+        await expirePendingAutoCareReschedule(manager, requestId, user.id, 'The service request was marked as no-show before the new time was accepted.')
         await releaseAutoCareResources(manager, request.id)
         await manager.getRepository(ServiceRequestEntity).save(request)
         await appendRepairEventWithManager(manager, { requestId, actorId: user.id, eventType: 'no_show', title: 'Заявка отмечена как неявка клиента', notes: request.noShowReason })
@@ -1545,6 +1619,7 @@ export async function completeAutoCareServiceRequest(user: UserEntity, requestId
         request.completedAt = now
         request.completedById = user.id
         request.completionNote = normalizedNote.value
+        await expirePendingAutoCareReschedule(manager, requestId, user.id, 'The service request was completed before the new time was accepted.')
         await releaseAutoCareResources(manager, request.id)
         await manager.getRepository(ServiceRequestEntity).save(request)
         await awardAutoCareBonusForCompletedVisit(manager, request, user.id)
@@ -1580,6 +1655,7 @@ export async function cancelAutoCareServiceRequest(user: UserEntity, requestId: 
         request.cancelledAt = new Date()
         request.cancelledById = user.id
         request.cancellationReason = normalizedReason.value
+        await expirePendingAutoCareReschedule(manager, requestId, user.id, 'The service request was cancelled before the new time was accepted.')
         await releaseAutoCareResources(manager, request.id)
         await manager.getRepository(ServiceRequestEntity).save(request)
         await refundAutoCareBonusForCancelledRequest(manager, request, user.id)

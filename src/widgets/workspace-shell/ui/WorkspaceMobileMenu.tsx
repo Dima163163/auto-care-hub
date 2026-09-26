@@ -4,6 +4,7 @@ import { NavLink } from 'react-router'
 import { ROUTES } from '@/shared/constants/routes'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { WorkspaceNavIcon } from '@/shared/ui/workspace-nav-icon/WorkspaceNavIcon'
 import { LanguageSwitcher } from '@/widgets/language-switcher/ui/LanguageSwitcher'
 
 import { getWorkspaceNavigationGroups } from './workspace-navigation'
@@ -58,7 +59,7 @@ export function WorkspaceMobileMenu({ role, onClose }: WorkspaceMobileMenuProps)
                             {t(group.labelKey as TranslationKey)}
                         </p>
                         <div className="grid gap-0.5">
-                            {group.items.map(({ icon: Icon, labelKey, to, end }) => (
+                            {group.items.map(({ icon: Icon, iconDetail, labelKey, to, end }) => (
                                 <NavLink
                                     key={to}
                                     to={to}
@@ -66,7 +67,7 @@ export function WorkspaceMobileMenu({ role, onClose }: WorkspaceMobileMenuProps)
                                     onClick={onClose}
                                     className={({ isActive }) => `flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
                                 >
-                                    <Icon className="size-4 shrink-0" aria-hidden="true" />
+                                    <WorkspaceNavIcon icon={Icon} detail={iconDetail} />
                                     <span className="truncate">{t(labelKey)}</span>
                                 </NavLink>
                             ))}

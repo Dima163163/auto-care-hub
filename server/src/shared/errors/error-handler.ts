@@ -145,7 +145,7 @@ export function registerErrorHandler(app: FastifyInstance) {
                 requestId: request.id,
             }))
         }
-        if (fastifyErrorCode === 'FST_ERR_CTP_INVALID_JSON_BODY') {
+        if (fastifyErrorCode === 'FST_ERR_CTP_INVALID_JSON_BODY' || fastifyErrorCode === 'FST_ERR_CTP_EMPTY_JSON_BODY') {
             void recordSecurityActivitySafely({
                 type: SecurityEventType.MalformedRequest,
                 severity: SecurityEventSeverity.Warning,

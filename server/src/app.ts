@@ -116,6 +116,16 @@ export async function buildApp() {
         reply.header('permissions-policy', 'camera=(), geolocation=(), microphone=()')
     })
 
+    app.addHook('onSend', async (request, reply, payload) => {
+        const path = request.url.split('?', 1)[0] ?? ''
+        const privatePrefixes = ['/owner/clients', '/owner/service-requests', '/v1/service-requests', '/v1/chats']
+        if (privatePrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+            reply.header('cache-control', 'private, no-store')
+            reply.header('pragma', 'no-cache')
+        }
+        return payload
+    })
+
     app.addHook('onRequest', async (request, reply) => {
         if (request.url === '/health' || request.url.startsWith('/health/')) return
         if (!await isSecurityIpBlocked(request.ip)) return

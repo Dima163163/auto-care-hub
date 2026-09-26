@@ -70,6 +70,7 @@ import {
 } from './automotive/marketplace-enhancements.entity.js'
 import { AutoCareTrustPolicyEntity } from './automotive/trust-policy.entity.js'
 import { UserConsentEntity } from './user-consent/user-consent.entity.js'
+import { AutoCareReviewHelpfulVoteEntity } from './automotive/review-helpful-vote.entity.js'
 
 export const entities = [
     UserEntity,
@@ -105,6 +106,7 @@ export const entities = [
     AutomotiveProviderEntity,
     AutomotiveReviewEntity,
     AutomotiveReviewPromoEntity,
+    AutoCareReviewHelpfulVoteEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
     AutomotiveProviderMembershipEntity,
@@ -144,6 +146,7 @@ export const entities = [
 
 export { BookingEntity } from './booking/booking.entity.js'
 export { AutomotiveProviderFavoriteEntity } from './automotive/provider-favorite.entity.js'
+export { AutoCareReviewHelpfulVoteEntity } from './automotive/review-helpful-vote.entity.js'
 export {
     AutoCareCapacityResourceEntity,
     AutoCareCapacityResourceType,

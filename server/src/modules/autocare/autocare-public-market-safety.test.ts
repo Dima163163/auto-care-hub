@@ -6,6 +6,7 @@ vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
 import {
     AutoCarePriceBenchmarkEntity,
+    AutoCareReviewHelpfulVoteEntity,
     AutomotiveMarketEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveProviderEntity,
@@ -13,6 +14,7 @@ import {
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
+    UserEntity,
 } from '../../entities/index.js'
 import { getAutoCareFairPrice } from './autocare-marketplace.service.js'
 import { getAutoCareDiscovery, getAutoCareMarkets, getFeaturedAutoCareReviews } from './autocare.service.js'
@@ -46,6 +48,31 @@ describe('public launch-ready market boundaries', () => {
         const markets = await getAutoCareMarkets()
 
         expect(markets.map((market) => market.id)).toEqual([readyMarket.id])
+    })
+
+    it('advertises only the countries explicitly enabled for this deployment', async () => {
+        const spanishMarket = { ...readyMarket, id: 'market-alicante', countryId: 'country-es', countryCode: 'ES', cityCode: 'alicante', launchReady: true }
+        const marketRepository = { find: vi.fn().mockResolvedValue([readyMarket, spanishMarket]) }
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutomotiveMarketEntity) return marketRepository
+            if (entity === AutomotiveMarketCountryEntity) return { find: vi.fn().mockResolvedValue([{ id: 'country-1' }, { id: 'country-es' }]) }
+            return undefined
+        })
+
+        const markets = await getAutoCareMarkets()
+
+        expect(markets.map((market) => market.id)).toEqual([readyMarket.id])
+    })
+
+    it('limits the empty-database fallback catalog to enabled countries', async () => {
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveMarketEntity
+            ? { find: vi.fn().mockResolvedValue([]) }
+            : undefined)
+
+        const markets = await getAutoCareMarkets()
+
+        expect(markets.length).toBeGreaterThan(0)
+        expect(new Set(markets.map((market) => market.countryCode))).toEqual(new Set(['RU']))
     })
 
     it('does not advertise a launch-ready market while its country is inactive', async () => {
@@ -85,7 +112,20 @@ describe('public launch-ready market boundaries', () => {
         }
         const reviewRepository = { createQueryBuilder: vi.fn().mockReturnValue(queryBuilder) }
         const providerRepository = { find: vi.fn().mockResolvedValue([{ id: 'provider-1', name: 'Trusted Garage' }]) }
-        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutomotiveReviewEntity ? reviewRepository : providerRepository)
+        const emptyVoteQuery = {
+            innerJoin: vi.fn().mockReturnThis(),
+            select: vi.fn().mockReturnThis(),
+            addSelect: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            groupBy: vi.fn().mockReturnThis(),
+            getRawMany: vi.fn().mockResolvedValue([]),
+        }
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutomotiveReviewEntity) return reviewRepository
+            if (entity === UserEntity) return { find: vi.fn().mockResolvedValue([]) }
+            if (entity === AutoCareReviewHelpfulVoteEntity) return { createQueryBuilder: vi.fn().mockReturnValue(emptyVoteQuery) }
+            return providerRepository
+        })
 
         const result = await getFeaturedAutoCareReviews(6)
 
@@ -95,6 +135,13 @@ describe('public launch-ready market boundaries', () => {
             'country',
             'country.id = market.countryId AND country.active = true',
         )
+        expect(queryBuilder.innerJoin).toHaveBeenCalledWith(
+            expect.any(Function),
+            'request',
+            'request.id = review.serviceRequestId AND request.providerId = review.providerId',
+        )
+        expect(queryBuilder.andWhere).toHaveBeenCalledWith('review.verifiedVisit = true')
+        expect(queryBuilder.andWhere).toHaveBeenCalledWith('request.status = :requestStatus', { requestStatus: 'closed' })
         expect(callOrder.indexOf('limit')).toBeGreaterThan(callOrder.lastIndexOf('join'))
         expect(queryBuilder.take).toHaveBeenCalledWith(6)
     })
@@ -113,7 +160,7 @@ describe('public launch-ready market boundaries', () => {
             return { find: vi.fn().mockResolvedValue([]), findOneBy: vi.fn().mockResolvedValue(null) }
         })
 
-        await expect(getAutoCareDiscovery({ marketId: 'samara' })).resolves.toEqual({ items: [], nextCursor: null })
+        await expect(getAutoCareDiscovery({ marketId: 'samara' })).resolves.toEqual({ items: [], nextCursor: null, totalCount: 0, totalCountIsLowerBound: false })
         expect(locationRepository.createQueryBuilder).not.toHaveBeenCalled()
     })
 
@@ -130,7 +177,7 @@ describe('public launch-ready market boundaries', () => {
             return { find: vi.fn().mockResolvedValue([]), findOneBy: vi.fn().mockResolvedValue(null) }
         })
 
-        await expect(getAutoCareDiscovery({ marketId: 'missing-city' })).resolves.toEqual({ items: [], nextCursor: null })
+        await expect(getAutoCareDiscovery({ marketId: 'missing-city' })).resolves.toEqual({ items: [], nextCursor: null, totalCount: 0, totalCountIsLowerBound: false })
         expect(locationRepository.createQueryBuilder).not.toHaveBeenCalled()
     })
 
@@ -160,15 +207,16 @@ describe('public launch-ready market boundaries', () => {
         })
 
         expect(hiddenMarket.launchReady).toBe(false)
-        await expect(getAutoCareDiscovery({})).resolves.toEqual({ items: [], nextCursor: null })
+        await expect(getAutoCareDiscovery({})).resolves.toEqual({ items: [], nextCursor: null, totalCount: 0, totalCountIsLowerBound: false })
         expect(marketRepository.find).toHaveBeenCalledWith({
             where: { launchReady: true },
-            select: { id: true, countryId: true, launchReady: true },
+            select: { id: true, countryId: true, countryCode: true, launchReady: true },
         })
         expect(queryBuilder.innerJoin).toHaveBeenCalledWith(
             AutomotiveMarketEntity,
             'market',
-            'market.id = location.marketId AND market.launchReady = true',
+            'market.id = location.marketId AND market.launchReady = true AND market.countryCode = ANY(:enabledCountryCodes)',
+            { enabledCountryCodes: ['RU'] },
         )
     })
 

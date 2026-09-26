@@ -152,7 +152,8 @@ describe('Super-admin market hierarchy integration', () => {
             expect.objectContaining({ id: countryId, code: countryCode, capabilities: updatedCountryProfile.capabilities, legalLinks: profile.legalLinks, cities: expect.arrayContaining([expect.objectContaining({ id: marketId, cityName: 'Integration City', zones: expect.arrayContaining([expect.objectContaining({ id: zoneId, active: false })]) })]) }),
         ]))
         expect(publicMarkets.status).toBe(200)
-        expect(publicMarkets.body).toEqual(expect.arrayContaining([expect.objectContaining({ id: marketId, cityCode: `integration-city-${suffix}`, capabilities: profile.capabilities })]))
+        // Super-admins may configure a future market, while the public catalog remains Russia-only.
+        expect(publicMarkets.body).not.toEqual(expect.arrayContaining([expect.objectContaining({ id: marketId })]))
         expect(audits.map((audit) => audit.action)).toEqual(expect.arrayContaining([
             AuditAction.AutoCareMarketCountryCreated,
             AuditAction.AutoCareMarketCountryUpdated,

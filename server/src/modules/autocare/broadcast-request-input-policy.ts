@@ -28,7 +28,7 @@ function normalizePreferredAt(value: unknown): string | null | undefined {
     const normalized = value.normalize('NFKC').trim()
     if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(normalized)) return undefined
     const timestamp = Date.parse(normalized)
-    return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : undefined
+    return Number.isFinite(timestamp) && timestamp > Date.now() ? new Date(timestamp).toISOString() : undefined
 }
 
 export function normalizeAutoCareBroadcastRequestInput(input: unknown): NormalizedAutoCareBroadcastRequestInput | null {

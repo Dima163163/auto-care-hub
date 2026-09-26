@@ -8,10 +8,9 @@ import {
 import { BookingEntity } from '../../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../../entities/cabinet/cabinet.entity.js'
 import { ServiceRequestEntity } from '../../entities/automotive/service-request.entity.js'
-import { AutomotiveProviderEntity } from '../../entities/automotive/automotive.entity.js'
-import { AutomotiveProviderMembershipEntity, AutomotiveProviderMembershipStatus } from '../../entities/automotive/provider-membership.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { getManagedProviderPermissionScopes, isManagedProviderLocationAllowed } from '../autocare/provider-access.service.js'
 import { toOwnerClient } from './users.mappers.js'
 import { toPublicUser } from '../auth/public-user.js'
 import { assertNotificationPreferenceMutation } from '../notifications/notification-preference-mutation.js'
@@ -91,6 +90,8 @@ export async function getOwnerClients(owner: UserEntity) {
     assertOwner(owner)
 
     const userRepository = AppDataSource.getRepository(UserEntity)
+    const requestScopes = await getManagedProviderPermissionScopes(owner.id, 'requests')
+    const requestProviderIds = requestScopes.map(({ providerId }) => providerId)
 
     // Do not expose the entire client directory to an owner. A client is
     // discoverable only when they have an existing relationship with one of
@@ -107,27 +108,22 @@ export async function getOwnerClients(owner: UserEntity) {
             .select('booking.clientId', 'clientId')
             .distinct(true)
             .getRawMany<{ clientId: string }>(),
-        AppDataSource.getRepository(ServiceRequestEntity)
+        requestProviderIds.length === 0
+            ? Promise.resolve([])
+            : AppDataSource.getRepository(ServiceRequestEntity)
             .createQueryBuilder('request')
-            .innerJoin(
-                AutomotiveProviderEntity,
-                'provider',
-                'provider.id = request.providerId',
-                { ownerId: owner.id },
-            )
-            .leftJoin(
-                AutomotiveProviderMembershipEntity,
-                'membership',
-                'membership.providerId = provider.id AND membership.userId = :ownerId AND membership.status = :membershipStatus',
-                { ownerId: owner.id, membershipStatus: AutomotiveProviderMembershipStatus.Active },
-            )
-            .andWhere('(provider.ownerId = :ownerId OR membership.id IS NOT NULL)', { ownerId: owner.id })
+            .where('request.providerId IN (:...providerIds)', { providerIds: requestProviderIds })
             .select('request.clientId', 'clientId')
+            .addSelect('request.providerId', 'providerId')
+            .addSelect('request.locationId', 'locationId')
             .distinct(true)
-            .getRawMany<{ clientId: string }>(),
+            .getRawMany<{ clientId: string; providerId: string; locationId: string | null }>(),
     ])
+    const scopedServiceRequestClients = serviceRequestClients.filter(({ providerId, locationId }) =>
+        isManagedProviderLocationAllowed(requestScopes, providerId, locationId),
+    )
     const clientIds = [...new Set(
-        [...bookingClients, ...serviceRequestClients]
+        [...bookingClients, ...scopedServiceRequestClients]
             .map(({ clientId }) => clientId)
             .filter((clientId): clientId is string => Boolean(clientId)),
     )]

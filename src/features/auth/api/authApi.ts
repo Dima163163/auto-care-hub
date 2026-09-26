@@ -181,10 +181,15 @@ export const authApi = baseApi.injectEndpoints({
             }),
             transformResponse: normalizeAuthResponse,
             async onQueryStarted(_arg, { queryFulfilled, dispatch }) {
-                await queryFulfilled
-                clearSessionExpired()
-                await clearIdentityScopedPwaCaches()
-                dispatch(baseApi.util.resetApiState())
+                try {
+                    await queryFulfilled
+                    clearSessionExpired()
+                    await clearIdentityScopedPwaCaches()
+                    dispatch(baseApi.util.resetApiState())
+                } catch {
+                    // The login form handles rejected credentials via unwrap().
+                    // Consume this lifecycle rejection to avoid an unhandled promise.
+                }
             },
             invalidatesTags: [
                 {

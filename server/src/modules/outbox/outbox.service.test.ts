@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto'
+
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 import { AppDataSource } from '../../database/data-source.js'
-import { NotificationEntity } from '../../entities/notification/notification.entity.js'
+import { NotificationCategory, NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { enqueueOutboxEvent, processOutboxBatch } from './outbox.service.js'
@@ -24,18 +26,20 @@ async function processOutboxUntilCompleted(
 describe('outbox processing', () => {
     const suffix = `${Date.now()}`
     const idempotencyKey = `test-booking-reminder:${suffix}`
+    const deletedRecipientKey = `test-notification-deleted-user:${suffix}`
     let userId: string | null = null
 
     afterAll(async () => {
         if (!AppDataSource.isInitialized) return
         await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey })
+        await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey: deletedRecipientKey })
         if (userId) {
             await AppDataSource.getRepository(NotificationEntity).delete({ userId })
             await AppDataSource.getRepository(UserEntity).delete({ id: userId })
         }
     })
 
-    it('deduplicates and delivers a booking reminder once', async () => {
+    it('deduplicates a booking reminder across an outbox retry after notification creation', async () => {
         const userRepository = AppDataSource.getRepository(UserEntity)
         const user = await userRepository.save(userRepository.create({
             name: 'Outbox Client',
@@ -72,6 +76,44 @@ describe('outbox processing', () => {
         expect(notifications.filter((notification) =>
             notification.metadata.bookingId === input.payload.bookingId
         )).toHaveLength(1)
+        expect(notifications[0]?.outboxEventId).toBe(event.id)
+
+        // Simulate the worker crashing after the notification transaction
+        // commits but before the outbox event is marked completed.
+        event.status = OutboxEventStatus.Failed
+        event.attempts = 1
+        event.availableAt = new Date(Date.now() - 1)
+        await AppDataSource.getRepository(OutboxEventEntity).save(event)
+        const retriedEvent = await processOutboxUntilCompleted(idempotencyKey)
+        const notificationsAfterRetry = await AppDataSource.getRepository(NotificationEntity).findBy({ userId: user.id })
+
+        expect(retriedEvent.status).toBe(OutboxEventStatus.Completed)
+        expect(notificationsAfterRetry.filter((notification) => notification.metadata.bookingId === input.payload.bookingId)).toHaveLength(1)
+    })
+
+    it('completes a notification event when its recipient has been deleted', async () => {
+        const deletedUserId = randomUUID()
+        await enqueueOutboxEvent({
+            type: 'notification.create',
+            idempotencyKey: deletedRecipientKey,
+            payload: {
+                userId: deletedUserId,
+                category: NotificationCategory.Account,
+                title: 'Account update',
+                message: 'Your account settings were updated.',
+                link: null,
+                metadata: {},
+            },
+        })
+
+        const event = await processOutboxUntilCompleted(deletedRecipientKey)
+        const notifications = await AppDataSource.getRepository(NotificationEntity).findBy({
+            userId: deletedUserId,
+        })
+
+        expect(event.status).toBe(OutboxEventStatus.Completed)
+        expect(event.lastError).toBeNull()
+        expect(notifications).toHaveLength(0)
     })
 
     it('claims one pending event across concurrent workers', async () => {

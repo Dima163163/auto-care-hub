@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -49,5 +49,22 @@ describe('MarketSwitcher stale market normalization', () => {
             expect(window.localStorage.getItem(AUTOCARE_MARKET_STORAGE_KEY)).toBe('moscow')
         })
         expect(screen.getByRole('button', { name: 'Локация: Москва' })).toBeVisible()
+    })
+
+    it('shows one shared currency in the country heading instead of repeating it beside every city', () => {
+        render(
+            <MemoryRouter initialEntries={['/autocare']}>
+                <Routes>
+                    <Route path="/autocare" element={<MarketSwitcher />} />
+                </Routes>
+            </MemoryRouter>,
+        )
+
+        fireEvent.click(screen.getByRole('button', { name: 'Локация: Москва' }))
+
+        expect(screen.getAllByText('RUB')).toHaveLength(1)
+        expect(screen.getByRole('group', { name: 'Россия, RUB' })).toBeVisible()
+        expect(screen.getByRole('option', { name: 'Москва' })).toHaveAttribute('aria-selected', 'true')
+        expect(screen.getByRole('option', { name: 'Самара' })).toHaveAttribute('aria-selected', 'false')
     })
 })

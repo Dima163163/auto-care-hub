@@ -372,6 +372,8 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
         ])
 
         expect(requestAResponse.status).toBe(200)
+        expect(requestAResponse.headers['cache-control']).toBe('private, no-store')
+        expect(requestAResponse.headers.pragma).toBe('no-cache')
         expect(requestBResponse.status).toBe(403)
         expect(chats.body.map((item: { id: string }) => item.id)).toEqual([chatA.id])
         expect(chatBResponse.status).toBe(403)

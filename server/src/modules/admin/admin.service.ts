@@ -34,6 +34,7 @@ import type { AdminUser } from './admin.types.js'
 import {
     assertCursorDate,
     decodeCursor,
+    encodeCursor,
     getCursorLimit,
     isCursorPaginationRequested,
     toCursorPage,
@@ -247,12 +248,6 @@ export async function getAdminUsers(
     const search = normalizedInput.search
     const query = userRepository.createQueryBuilder('user')
 
-    if (search) {
-        query.andWhere('(user.name ILIKE :search OR user.email ILIKE :search)', {
-            search: `%${search}%`,
-        })
-    }
-
     if (normalizedInput.role) {
         query.andWhere('user.role = :role', { role: normalizedInput.role })
     }
@@ -261,23 +256,48 @@ export async function getAdminUsers(
         query.andWhere('user.status = :status', { status: normalizedInput.status })
     }
 
-    if (normalizedInput.cursor) {
-        const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
-        const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
-        query.andWhere(
-            '(user.createdAt < :cursorCreatedAt OR (user.createdAt = :cursorCreatedAt AND user.id < :cursorId))',
-            {
-                cursorCreatedAt,
-                cursorId: cursor.id,
-            },
-        )
-    }
-
     query.orderBy('user.createdAt', 'DESC').addOrderBy('user.id', 'DESC')
-
-    const users = await query
-        .take(isPaginated ? limit + 1 : getAdminLegacyListLimit())
-        .getMany()
+    const requestedCount = isPaginated ? limit + 1 : getAdminLegacyListLimit()
+    let users: UserEntity[]
+    if (!search) {
+        if (normalizedInput.cursor) {
+            const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
+            const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
+            query.andWhere(
+                '(user.createdAt < :cursorCreatedAt OR (user.createdAt = :cursorCreatedAt AND user.id < :cursorId))',
+                { cursorCreatedAt, cursorId: cursor.id },
+            )
+        }
+        users = await query.take(requestedCount).getMany()
+    } else {
+        // Names and email addresses are ciphertext/blind-indexed in PostgreSQL,
+        // so admin substring search must run after ORM decryption. Seek through
+        // bounded batches and stop once the requested page plus one row exists.
+        const searchTerm = search.toLocaleLowerCase('en-US')
+        let scanCursor = normalizedInput.cursor
+        const matches: UserEntity[] = []
+        while (matches.length < requestedCount) {
+            const scan = query.clone()
+            if (scanCursor) {
+                const cursor = decodeCursor(scanCursor, ['createdAt', 'id'])
+                scan.andWhere(
+                    '(user.createdAt < :cursorCreatedAt OR (user.createdAt = :cursorCreatedAt AND user.id < :cursorId))',
+                    { cursorCreatedAt: assertCursorDate(cursor, 'createdAt'), cursorId: cursor.id },
+                )
+            }
+            const batch = await scan.take(200).getMany()
+            if (batch.length === 0) break
+            for (const user of batch) {
+                if (user.name.toLocaleLowerCase('en-US').includes(searchTerm)
+                    || user.email.toLocaleLowerCase('en-US').includes(searchTerm)) matches.push(user)
+                if (matches.length >= requestedCount) break
+            }
+            const lastScanned = batch.at(-1)
+            if (!lastScanned || batch.length < 200) break
+            scanCursor = encodeCursor({ createdAt: lastScanned.createdAt.toISOString(), id: lastScanned.id })
+        }
+        users = matches
+    }
     const mappedUsers = users.map((user) => toAdminUser(user))
 
     return isPaginated

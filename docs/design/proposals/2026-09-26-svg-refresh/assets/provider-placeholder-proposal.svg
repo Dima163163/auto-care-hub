@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Автосервис</title>
+  <desc id="desc">Нейтральная фирменная иллюстрация мастерской на матовом тёмно-синем фоне.</desc>
+  <rect width="640" height="420" rx="28" fill="#eaf2ff"/>
+  <path d="M0 300c126-34 218-22 317 17 115 45 211 43 323 0v103H0Z" fill="#d6e7ff"/>
+  <rect x="112" y="117" width="416" height="201" rx="22" fill="#f4f8fe" stroke="#b8d4f2" stroke-width="3"/>
+  <path d="M112 163h416" stroke="#b8d4f2" stroke-width="3"/>
+  <path d="M151 154v-24a13 13 0 0 1 13-13h48v37m216 0v-37h48a13 13 0 0 1 13 13v24" fill="#d8e9fb" stroke="#4d9dff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M174 263v-28l39-44h169l45 44v28H174Z" fill="#0b2e56"/>
+  <path d="m224 200 18-21h112l24 21" fill="#b8dcff" stroke="#f4f9ff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M250 184v35m87-35v35" stroke="#4d9dff" stroke-width="3"/>
+  <circle cx="235" cy="266" r="22" fill="#071b32" stroke="#f4f9ff" stroke-width="5"/>
+  <circle cx="406" cy="266" r="22" fill="#071b32" stroke="#f4f9ff" stroke-width="5"/>
+  <path d="M285 281h70" stroke="#4d9dff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="319" cy="95" r="27" fill="#d6e7ff" stroke="#4d9dff" stroke-width="3"/>
+  <path d="m319 78 4.5 11.5L335 94l-11.5 4.5L319 110l-4.5-11.5L303 94l11.5-4.5Z" fill="#0b2e56"/>
+</svg>

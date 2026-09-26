@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { ChevronDown, MapPin } from 'lucide-react'
+import { Check, ChevronDown, MapPin } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 
 import { useGetAutoCareMarketsQuery, type AutoCareApiMarket } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
-import { AUTOCARE_MARKET_CHANGE_EVENT, readAutoCareMarketPreference, setAutoCareMarketPreference } from '@/shared/lib/market-preference'
+import { AUTOCARE_MARKET_CHANGE_EVENT, canonicalAutoCareMarketId, readAutoCareMarketPreference, setAutoCareMarketPreference } from '@/shared/lib/market-preference'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type MarketSwitcherProps = {
@@ -14,12 +14,17 @@ type MarketSwitcherProps = {
 }
 
 function groupMarkets(markets: readonly AutoCareApiMarket[]) {
-    return markets.reduce<Array<{ country: string; markets: AutoCareApiMarket[] }>>((groups, market) => {
-        const current = groups.find((group) => group.country === market.countryName)
+    const groups = markets.reduce<Array<{ country: string; markets: AutoCareApiMarket[] }>>((result, market) => {
+        const current = result.find((group) => group.country === market.countryName)
         if (current) current.markets.push(market)
-        else groups.push({ country: market.countryName, markets: [market] })
-        return groups
+        else result.push({ country: market.countryName, markets: [market] })
+        return result
     }, [])
+
+    return groups.map((group) => {
+        const currencies = [...new Set(group.markets.map((market) => market.currencyCode))]
+        return { ...group, currencyCode: currencies.length === 1 ? currencies[0] : null }
+    })
 }
 
 export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwitcherProps) {
@@ -33,7 +38,8 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
     const triggerRef = useRef<HTMLButtonElement | null>(null)
     const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
     const queryMarketId = new URLSearchParams(location.search).get('market')
-    const selectedMarketId = queryMarketId ?? storedMarketId
+    const canonicalQueryMarketId = canonicalAutoCareMarketId(queryMarketId)
+    const selectedMarketId = canonicalQueryMarketId || storedMarketId
     const groups = useMemo(() => groupMarkets(markets), [markets])
     const flatMarkets = useMemo(() => groups.flatMap((group) => group.markets), [groups])
     const selectedMarket = markets.find((market) => market.cityCode === selectedMarketId) ?? markets.find((market) => market.launchReady) ?? markets[0]
@@ -43,6 +49,13 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         : 'border-border bg-card text-foreground hover:border-primary hover:text-primary'
 
     useEffect(() => {
+        if (queryMarketId && canonicalQueryMarketId && queryMarketId !== canonicalQueryMarketId && markets.some((market) => market.cityCode === canonicalQueryMarketId)) {
+            const params = new URLSearchParams(location.search)
+            params.set('market', canonicalQueryMarketId)
+            navigate(`${location.pathname}?${params.toString()}`, { replace: true })
+            setAutoCareMarketPreference(canonicalQueryMarketId)
+            return
+        }
         if (isLoading || isError || markets.length === 0 || markets.some((market) => market.cityCode === selectedMarketId)) return
 
         const fallbackMarket = markets.find((market) => market.launchReady) ?? markets[0]
@@ -56,7 +69,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
         }
 
         setAutoCareMarketPreference(fallbackMarket.cityCode)
-    }, [isError, isLoading, location.pathname, location.search, markets, navigate, queryMarketId, selectedMarketId])
+    }, [canonicalQueryMarketId, isError, isLoading, location.pathname, location.search, markets, navigate, queryMarketId, selectedMarketId])
 
     useEffect(() => {
         if (!isOpen) return
@@ -136,7 +149,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
                 aria-label={`${t('autocare.locationLabel')}: ${label}`}
                 onClick={() => setIsOpen((value) => !value)}
                 onKeyDown={openWithKeyboard}
-                className={`inline-flex h-10 items-center gap-1.5 rounded-[9px] border px-2.5 text-xs font-semibold transition-colors disabled:cursor-wait disabled:opacity-70 xl:px-3 ${buttonClass}`}
+                className={`inline-flex h-[45px] items-center gap-1.5 rounded-[9px] border px-2.5 text-xs font-semibold transition-colors disabled:cursor-wait disabled:opacity-70 xl:px-3 ${buttonClass}`}
             >
                 <MapPin className="size-4" />
                 <span className={compact ? 'max-w-[8rem] truncate' : ''}>{label}</span>
@@ -156,25 +169,41 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
                             </button>
                         </div>
                     ) : groups.map((group) => (
-                        <div key={group.country} className="pb-2 last:pb-0">
-                            <p className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{group.country}</p>
+                        <div
+                            key={group.country}
+                            role="group"
+                            aria-label={group.currencyCode ? `${group.country}, ${group.currencyCode}` : group.country}
+                            className="pb-2 last:pb-0"
+                        >
+                            <div className="flex items-center justify-between gap-3 px-2 py-1.5">
+                                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{group.country}</p>
+                                {group.currencyCode && (
+                                    <span aria-hidden="true" className="rounded-md border border-border/70 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-muted-foreground">
+                                        {group.currencyCode}
+                                    </span>
+                                )}
+                            </div>
                             {group.markets.map((market) => {
                                 const optionIndex = flatMarkets.findIndex((item) => item.id === market.id)
+                                const isSelected = market.cityCode === selectedMarket?.cityCode
 
                                 return (
-                                <button
-                                    key={market.id}
-                                    ref={(node) => { optionRefs.current[optionIndex] = node }}
-                                    type="button"
-                                    role="option"
-                                    aria-selected={market.cityCode === selectedMarket?.cityCode}
-                                    onClick={() => chooseMarket(market)}
-                                    onKeyDown={(event) => handleOptionKeyDown(event, optionIndex)}
-                                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm font-semibold transition-colors ${market.cityCode === selectedMarket?.cityCode ? 'bg-primary/15 text-primary' : 'hover:bg-primary/10'}`}
-                                >
-                                    <span>{market.cityName}</span>
-                                    <span className="text-[10px] font-bold text-muted-foreground">{market.currencyCode}</span>
-                                </button>
+                                    <button
+                                        key={market.id}
+                                        ref={(node) => { optionRefs.current[optionIndex] = node }}
+                                        type="button"
+                                        role="option"
+                                        aria-selected={isSelected}
+                                        onClick={() => chooseMarket(market)}
+                                        onKeyDown={(event) => handleOptionKeyDown(event, optionIndex)}
+                                        className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm font-semibold transition-colors ${isSelected ? 'bg-primary/15 text-primary' : 'hover:bg-primary/10'}`}
+                                    >
+                                        <span>{market.cityName}</span>
+                                        <span className="flex min-w-8 items-center justify-end gap-2">
+                                            {!group.currencyCode && <span className="text-[10px] font-bold text-muted-foreground">{market.currencyCode}</span>}
+                                            {isSelected && <Check aria-hidden="true" className="size-3.5" />}
+                                        </span>
+                                    </button>
                                 )
                             })}
                         </div>

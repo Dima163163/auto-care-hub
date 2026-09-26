@@ -24,6 +24,7 @@ export default defineConfig({
             'src/modules/admin/admin-user-status-concurrency.integration.test.ts',
             'src/modules/admin/super-admin-market-hierarchy.integration.test.ts',
             'src/database/schema-contract.integration.test.ts',
+            'src/shared/security/data-encryption/field-encryption.integration.test.ts',
         ],
         fileParallelism: false,
     },

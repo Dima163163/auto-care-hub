@@ -2,14 +2,19 @@ export const AUTOCARE_MARKET_STORAGE_KEY = 'autocare.selected-market'
 export const AUTOCARE_MARKET_CHANGE_EVENT = 'autocare:market-change'
 export const DEFAULT_AUTOCARE_MARKET = 'moscow'
 
+export function canonicalAutoCareMarketId(value: string | null | undefined) {
+    const normalized = value?.trim() ?? ''
+    return normalized === 'ru-moscow' ? 'moscow' : normalized
+}
+
 export function readAutoCareMarketPreference(search = '') {
-    const queryMarket = new URLSearchParams(search).get('market')?.trim()
+    const queryMarket = canonicalAutoCareMarketId(new URLSearchParams(search).get('market'))
     if (queryMarket) return queryMarket
 
     if (typeof window === 'undefined') return DEFAULT_AUTOCARE_MARKET
 
     try {
-        return window.localStorage.getItem(AUTOCARE_MARKET_STORAGE_KEY)?.trim() || DEFAULT_AUTOCARE_MARKET
+        return canonicalAutoCareMarketId(window.localStorage.getItem(AUTOCARE_MARKET_STORAGE_KEY)) || DEFAULT_AUTOCARE_MARKET
     } catch {
         return DEFAULT_AUTOCARE_MARKET
     }

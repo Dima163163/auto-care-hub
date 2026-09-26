@@ -210,6 +210,20 @@ test.describe('public and client AutoCare states', () => {
             await page.goto('/services/api-proservice-moscow/request?service=oil-change')
 
             const form = page.locator('main form').first()
+            const appointmentPicker = form.locator('section').first()
+            const timeSlots = appointmentPicker.getByRole('button').filter({ hasText: /^\d{1,2}:\d{2}$/ })
+            let hasAvailableDate = false
+            for (let dateIndex = 0; dateIndex < 4; dateIndex += 1) {
+                if (dateIndex > 0) await appointmentPicker.getByRole('button').nth(dateIndex).click()
+                try {
+                    await expect(timeSlots.first()).toBeVisible({ timeout: 3_000 })
+                    hasAvailableDate = true
+                    break
+                } catch {
+                    // Skip closed dates; the test needs a valid slot to exercise request retry behavior.
+                }
+            }
+            expect(hasAvailableDate).toBe(true)
             const confirmations = form.locator('input[type="checkbox"]')
             await expect(confirmations).toHaveCount(2)
             for (let index = 0; index < 2; index += 1) {

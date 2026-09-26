@@ -45,6 +45,7 @@ describe('AutoCare appointment capacity integration', () => {
     let owner: UserEntity
     let client: UserEntity
     let country: AutomotiveMarketCountryEntity
+    let countryCreated = false
     let market: AutomotiveMarketEntity
     let provider: AutomotiveProviderEntity
     let location: AutomotiveServiceLocationEntity
@@ -69,34 +70,35 @@ describe('AutoCare appointment capacity integration', () => {
             passwordHash: 'hash',
             emailVerifiedAt: new Date(),
         }))
-        country = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).save(
-            AppDataSource.getRepository(AutomotiveMarketCountryEntity).create({
-                code: `ZZ-${suffix}`,
-                names: { en: 'Capacity Test' },
-                defaultLocale: 'en',
-                supportedLocales: ['en'],
-                timezone: 'UTC',
-                currencyCode: 'USD',
-                capabilities: {},
-                legalLinks: {},
-                active: true,
-            }),
-        )
+        const countryRepository = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
+        const existingRussianCountry = await countryRepository.findOneBy({ code: 'RU' })
+        country = existingRussianCountry ?? await countryRepository.save(countryRepository.create({
+            code: 'RU',
+            names: { en: 'Russia', ru: 'Россия' },
+            defaultLocale: 'ru',
+            supportedLocales: ['ru', 'en'],
+            timezone: 'Europe/Samara',
+            currencyCode: 'RUB',
+            capabilities: {},
+            legalLinks: {},
+            active: true,
+        }))
+        countryCreated = !existingRussianCountry
         market = await AppDataSource.getRepository(AutomotiveMarketEntity).save(
             AppDataSource.getRepository(AutomotiveMarketEntity).create({
                 countryId: country.id,
-                countryCode: 'ZZ',
-                countryName: 'Capacity Test',
+                countryCode: 'RU',
+                countryName: 'Россия',
                 cityCode: `capacity-${suffix}`,
                 cityName: 'Capacity Test',
                 regionCode: null,
                 regionName: null,
                 centerLatitude: null,
                 centerLongitude: null,
-                currencyCode: 'USD',
-                defaultLocale: 'en',
-                supportedLocales: ['en'],
-                timezone: 'UTC',
+                currencyCode: 'RUB',
+                defaultLocale: 'ru',
+                supportedLocales: ['ru', 'en'],
+                timezone: 'Europe/Samara',
                 launchReady: true,
             }),
         )
@@ -159,7 +161,7 @@ describe('AutoCare appointment capacity integration', () => {
                 description: null,
                 priceFromMinor: 1_000,
                 priceToMinor: null,
-                currencyCode: 'USD',
+                currencyCode: 'RUB',
                 durationMinutes: 60,
                 inclusions: [],
                 warrantyText: null,
@@ -198,7 +200,7 @@ describe('AutoCare appointment capacity integration', () => {
         if (location) await AppDataSource.getRepository(AutomotiveServiceLocationEntity).delete({ id: location.id })
         if (provider) await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider.id })
         if (market) await AppDataSource.getRepository(AutomotiveMarketEntity).delete({ id: market.id })
-        if (country) await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: country.id })
+        if (country && countryCreated) await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: country.id })
         if (owner) await AppDataSource.getRepository(UserEntity).delete({ id: owner.id })
         if (client) await AppDataSource.getRepository(UserEntity).delete({ id: client.id })
     })
@@ -420,8 +422,8 @@ describe('AutoCare appointment capacity integration', () => {
             status: AutoCareRescheduleStatus.Pending,
         })
         const decisions = await Promise.all([
-            decideAutoCareServiceReschedule(client, request.id, 'accept'),
-            decideAutoCareServiceReschedule(client, request.id, 'accept'),
+            decideAutoCareServiceReschedule(client, request.id, pending.id, 'accept'),
+            decideAutoCareServiceReschedule(client, request.id, pending.id, 'accept'),
         ])
         expect(decisions).toHaveLength(2)
         expect(new Date(decisions[0]?.preferredAt ?? '').getTime()).toBe(pending.proposedAt.getTime())
@@ -430,6 +432,21 @@ describe('AutoCare appointment capacity integration', () => {
             requestId: request.id,
             status: AutoCareRescheduleStatus.Accepted,
         })).toBe(1)
+
+        const staleProposalTime = new Date(Date.now() + 17 * 24 * 60 * 60 * 1_000)
+        staleProposalTime.setUTCHours(11, 0, 0, 0)
+        const staleProposal = await requestAutoCareServiceReschedule(owner, request.id, { proposedAt: staleProposalTime.toISOString() })
+        await decideAutoCareServiceReschedule(client, request.id, staleProposal.id, 'reject')
+        const currentProposalTime = new Date(Date.now() + 18 * 24 * 60 * 60 * 1_000)
+        currentProposalTime.setUTCHours(12, 0, 0, 0)
+        const currentProposal = await requestAutoCareServiceReschedule(owner, request.id, { proposedAt: currentProposalTime.toISOString() })
+        await expect(decideAutoCareServiceReschedule(client, request.id, staleProposal.id, 'accept')).rejects.toMatchObject({ statusCode: 409 })
+        expect(await AppDataSource.getRepository(AutoCareRescheduleRequestEntity).findOneByOrFail({ id: currentProposal.id })).toMatchObject({ status: AutoCareRescheduleStatus.Pending })
+        await cancelAutoCareServiceRequest(client, request.id)
+        expect(await AppDataSource.getRepository(AutoCareRescheduleRequestEntity).findOneByOrFail({ id: currentProposal.id })).toMatchObject({
+            status: AutoCareRescheduleStatus.Rejected,
+            resolvedById: client.id,
+        })
     })
 
     it('expires a quote, reopens the request and blocks late acceptance', async () => {
@@ -452,7 +469,7 @@ describe('AutoCare appointment capacity integration', () => {
         createdRequestIds.push(request.id)
         const quoted = await createAutoCareServiceQuote(owner, request.id, {
             amountMinor: 250_000,
-            currencyCode: 'USD',
+            currencyCode: 'RUB',
             validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
             priceLocked: true,
         })
@@ -473,7 +490,7 @@ describe('AutoCare appointment capacity integration', () => {
 
         const requoted = await createAutoCareServiceQuote(owner, request.id, {
             amountMinor: 260_000,
-            currencyCode: 'USD',
+            currencyCode: 'RUB',
             validUntil: new Date(Date.now() + 2 * 60 * 60 * 1_000).toISOString(),
             priceLocked: true,
         })
@@ -500,7 +517,7 @@ describe('AutoCare appointment capacity integration', () => {
         createdRequestIds.push(request.id)
         const quoted = await createAutoCareServiceQuote(owner, request.id, {
             amountMinor: 275_000,
-            currencyCode: 'USD',
+            currencyCode: 'RUB',
             validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
             priceLocked: true,
         })
@@ -530,7 +547,7 @@ describe('AutoCare appointment capacity integration', () => {
         createdRequestIds.push(request.id)
         await createAutoCareServiceQuote(owner, request.id, {
             amountMinor: 285_000,
-            currencyCode: 'USD',
+            currencyCode: 'RUB',
             validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
         })
         const results = await Promise.allSettled([
@@ -559,14 +576,14 @@ describe('AutoCare appointment capacity integration', () => {
         createdRequestIds.push(request.id)
         await createAutoCareServiceQuote(owner, request.id, {
             amountMinor: 295_000,
-            currencyCode: 'USD',
+            currencyCode: 'RUB',
             validUntil: new Date(Date.now() + 60 * 60 * 1_000).toISOString(),
         })
         await acceptAutoCareServiceQuote(client, request.id)
         const proposedAt = new Date(Date.now() + 24 * 24 * 60 * 60 * 1_000)
         proposedAt.setUTCHours(14, 0, 0, 0)
-        await requestAutoCareServiceReschedule(owner, request.id, { proposedAt: proposedAt.toISOString() })
-        const updated = await decideAutoCareServiceReschedule(client, request.id, 'accept')
+        const reschedule = await requestAutoCareServiceReschedule(owner, request.id, { proposedAt: proposedAt.toISOString() })
+        const updated = await decideAutoCareServiceReschedule(client, request.id, reschedule.id, 'accept')
         expect(updated.preferredAt).toBe(proposedAt.toISOString())
         expect(updated.booking?.scheduledAt).toBe(proposedAt.toISOString())
     })

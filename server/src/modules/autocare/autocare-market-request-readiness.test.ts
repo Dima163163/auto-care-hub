@@ -50,7 +50,7 @@ describe('service request market launch readiness', () => {
             providerId,
             locationId,
             offeringId,
-            preferredAt: '2026-09-24T10:00:00.000Z',
+            preferredAt: '2036-09-24T10:00:00.000Z',
             vehicleSnapshot: null,
             contactSnapshot: { name: 'Pilot Client', email: 'client@example.com', phone: '+79990000000' },
             dataProcessingConsent: true,
@@ -80,7 +80,7 @@ describe('service request market launch readiness', () => {
             providerId,
             locationId,
             offeringId,
-            preferredAt: '2026-09-24T10:00:00.000Z',
+            preferredAt: '2036-09-24T10:00:00.000Z',
             vehicleSnapshot: null,
             contactSnapshot: { name: 'Pilot Client', email: 'client@example.com', phone: '+79990000000' },
         } as never)).rejects.toMatchObject({ statusCode: 404 })
@@ -92,7 +92,7 @@ describe('service request market launch readiness', () => {
     it('rechecks and share-locks market publication inside the request transaction', async () => {
         const providerRepository = { findOneBy: vi.fn().mockResolvedValue({ id: providerId }) }
         const locationRepository = { findOneBy: vi.fn().mockResolvedValue({ id: locationId, providerId, marketId: 'market-ready' }) }
-        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-ready', countryId: 'country-1', launchReady: true }) }
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-ready', countryId: 'country-1', countryCode: 'RU', launchReady: true }) }
         const countryRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'country-1', active: true }) }
         const offeringRepository = { findOneBy: vi.fn().mockResolvedValue({ id: offeringId, definitionId, active: true, durationMinutes: 60, bookingMode: 'request' }) }
         const definitionRepository = { findOneBy: vi.fn().mockResolvedValue({ id: definitionId, slug: 'brakes', labels: { en: 'Brakes' }, active: true }) }
@@ -119,7 +119,7 @@ describe('service request market launch readiness', () => {
             providerId,
             locationId,
             offeringId,
-            preferredAt: '2026-09-24T10:00:00.000Z',
+            preferredAt: '2036-09-24T10:00:00.000Z',
             vehicleSnapshot: null,
             contactSnapshot: { name: 'Pilot Client', email: 'client@example.com', phone: '+79990000000' },
         } as never)).rejects.toMatchObject({ statusCode: 404 })

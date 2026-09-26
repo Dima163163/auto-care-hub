@@ -25,12 +25,12 @@ export function AutoCareHomePage() {
     }, [])
 
     return (
-        <>
+        <main>
             <AutoCareHero marketId={marketId} onMarketChange={handleMarketChange} />
             <ProviderPreviewSection marketId={marketId} />
             <HomeDiscoveryGrid marketId={marketId} />
             <HomeProcessSection />
             <HomeReviewsSection />
-        </>
+        </main>
     )
 }

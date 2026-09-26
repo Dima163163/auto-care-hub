@@ -612,3 +612,59 @@ Admin MFA/SSO, infrastructure, legal/privacy approval, pilot participants and
 independent security review remain external/owner-dependent. Search-mode tabs
 now have keyboard navigation and ARIA panel associations, pending human
 accessibility verification.
+
+### Discovery and review-truth follow-up (2026-09-23)
+
+The homepage now reads the live discovery result for its supply count and map
+price/rating labels; loading, error and empty results no longer borrow demo
+numbers. Discovery returns `totalCount` and `totalCountIsLowerBound`, and result
+counts use locale-aware plural forms. Public profile, discovery and favorite
+provider ratings are derived from approved `verifiedVisit` reviews linked to
+closed requests confirmed by both sides in launch-ready public locations. The
+public review list, featured-review API, map markers and provider aggregates
+share this eligibility rule; mock mode mirrors it. Review-count labels also
+pluralize correctly (including Russian 1/2/5). Owner summaries are computed
+from review rows and the locations the signed-in membership may see; approved
+but unlinked/unverified demo rows can therefore remain owner-visible while
+correctly staying out of public totals. Do not loosen this boundary to make
+the numbers match: attach demo rows only to valid, mutually confirmed visits
+before making them public.
+
+The existing AutoCare demo seed upserts the staff account's active
+ProService/location membership, and branch-scoped integration coverage is in
+the repository. This follow-up did not execute the seed or integration flow
+against the developer-configured database because its isolation was not
+established; the actual local login state still needs a safe verification.
+No database data was reset or rewritten. The last recorded local operations
+snapshot remains 126 dead-letter events and 208 open incidents (187 critical);
+it was not re-read here. Redis, antivirus and persistent object storage still
+require owner-approved infrastructure configuration. Pilot remains NO-GO; no
+legal, participant, MFA/SSO, infrastructure or release-evidence gate is waived.
+
+Final local checks for this follow-up: frontend **173 files / 539 tests** and
+backend **303 files / 1,108 tests** pass, as do frontend/backend builds, lint,
+API parity, OpenAPI structural checks and `git diff --check`. These results do
+not include live database seeding or role-login validation.
+
+### AutoCare security hardening — 2026-09-24
+
+Implemented the code changes for the 11 findings from the security audit in
+[`security-audit-2026-09-24/REPORT.md`](/Users/a1/.codex/visualizations/2026/09/24/01a0d2e0-ed2b-7d52-8dd2-f96f2d22dbc6/security-audit-2026-09-24/REPORT.md): chat block enforcement and lock ordering, restricted/read-only moderation with access audit, request/quote/reschedule lifecycle checks, private attachment fetch, WebSocket rate limiting and token refresh, expired-offer rejection, and generic chat idempotency. Production storage GET CORS still needs exact frontend origins configured. At that initial security-hardening checkpoint, the idempotency migration had not been run and PostgreSQL/browser checks remained open; the later disposable-database and real-browser validation is recorded below. Pilot remains NO-GO and external release gates stay in force.
+
+The revised AC-02 policy is now implemented locally. Only the SuperAdmin-assigned active moderator can read the complete service-request conversation and its attachments for 24 hours, with one reasoned 24-hour extension; reads are audited and read-only. SuperAdmin assignment/reassignment and emergency access require a reason and audit record. A report requires explicit notice and confirmation; cancellation creates no report or access. Reporters alone see report status, and the other participant cannot see the reporter's identity. A later counter-report is blocked while the case is active; a distinct later urgent threat can be linked only with threat category and at least 20 characters of context. Sender text can be deleted for five minutes; later hiding is local to that user/device. Legacy unanchored reports expose metadata only.
+
+Latest local verification: frontend **175 files / 553 tests**, backend **306 files / 1,139 unit tests**; Vite and Next builds, backend build, full ESLint, API parity (**236/236 mock routes; 2/2 WebSocket routes**), migration-order validation (**134 migrations**) and `git diff --check` pass. Browser checks covered client and service-owner report flows, consent/cancel, status and reporter privacy, anti-retaliation and linked urgent-threat handling, SuperAdmin assignment, and the assigned Admin's scoped read-only chat and unpunished decision. The assigned Admin opened the report conversation; the UI showed no send/upload controls and stated that moderation reads do not mark participant messages as read. A synthetic report was resolved with “violation not confirmed” and no block. For a manual attachment check, a temporary local mock image was added and removed after the assigned moderator rendered it successfully; server and UI tests also cover private attachment authorization and the image viewer. Emergency-access UI was inspected but not activated.
+
+Local real-mode validation then applied all **134 migrations** to a newly created disposable PostgreSQL database, ran the migration smoke check and the full backend integration suite (**15 files / 64 passed / 1 skipped**), and ran **26/26** Chromium E2E scenarios against the local API. The real browser checks covered discovery, request flow/idempotency, expired sessions, recoverable errors, and client, owner, branch-scoped staff, admin and super-admin route access. The first full integration attempt had one transient 401 in an admin authorization case; the isolated file and the repeated full suite passed. The live API run exposed an outbox edge case when a notification recipient had been deleted; notification insertion now locks the user row and completes as a no-op if that recipient no longer exists. Its focused integration test passes, and no failed outbox events remained after the browser run. The disposable database was dropped after verification; the original `autocarehub` database remained at 132 migrations through `1786340000000`.
+
+Production object-storage GET CORS still needs exact frontend origins. Real deployment domains/origins, production secrets and external services, legal/privacy approval, and operator acceptance remain open gates; pilot remains NO-GO. A graduated sanctions proposal is recorded in [`CHAT_REPORT_ENFORCEMENT_POLICY_DRAFT_2026-09-24.md`](docs/security/CHAT_REPORT_ENFORCEMENT_POLICY_DRAFT_2026-09-24.md); thresholds are a product-policy draft and have not been enabled as automatic enforcement.
+
+### Final moderation/UI pass — 2026-09-26
+
+The live SuperAdmin queue contained one local synthetic harassment complaint. After action-time confirmation, it was assigned to `QA Moderator` for 24 hours; the complaint remains pending and no decision or block was submitted. During the owner-path review, the mock conversation response was missing the active-review/evidence flags that the server returns. The mock contract now returns them to both participants, the owner view uses the reporter-history fallback if response flags are stale, delete is blocked thread-wide during a pending case, and mock resolution preserves thread evidence for 90 days. Regression coverage passes (**3 files / 10 tests**), as do targeted ESLint and `npm run build:vite`.
+
+Proposal **01** captures the Users page header over the detailed backdrop and a generated opaque-card concept; the after image and short review note are in [`docs/design/proposals/2026-09-26-final-pass/`](docs/design/proposals/2026-09-26-final-pass/). The concept is not implemented pending the user's choice. The final browser step—signing in as the assigned QA Moderator and opening this exact synthetic report/attachments—still needs the current QA Moderator credential, which is not in the workspace. No password reset or further credential guesses were attempted.
+
+### Product audit follow-up — 2026-09-26
+
+See [`docs/audits/PRODUCT_AUDIT_2026-09-25.md`](docs/audits/PRODUCT_AUDIT_2026-09-25.md) for the 40 findings and current disposition. The code-fixable scope is implemented locally. Fresh frontend verification: **179 files / 569 tests**, full ESLint, TypeScript, Vite and Next production builds pass; the backend remains at its earlier verified **306 files / 1150 unit tests**, and root/backend `npm audit` both reported **0 vulnerabilities**. Remaining partial findings are A21 (complete complaint-history/search/filter) and A29 (full profile HTML, gated by the three-approval design lock in `AGENTS.md`); their visual proposal and acceptance criteria are in [`docs/design/proposals/2026-09-26-a21-a29/README.md`](docs/design/proposals/2026-09-26-a21-a29/README.md). A34 shows owner-visible preferred and confirmed visit times in the service timezone. The latest browser pass verified the client booking summary, owner request inbox and moderator access boundary. A mock-only request was used; its service timezone now survives the client-to-owner mock API contract, and the owner sees Moscow local time rather than UTC. External domain/database/mail/storage checks remain pending; local readiness is not production approval.

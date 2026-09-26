@@ -9,6 +9,7 @@ import {
     PrimaryGeneratedColumn,
     type Relation,
 } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 import { CabinetEntity } from '../cabinet/cabinet.entity.js'
 import { ServiceEntity } from '../service/service.entity.js'
@@ -74,16 +75,16 @@ export class BookingEntity {
     })
     status!: BookingStatus
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('bookings', 'comment', 'text') })
     comment!: string | null
 
     @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true })
     idempotencyKey!: string | null
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('bookings', 'cancellationReason', 'text') })
     cancellationReason!: string | null
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('bookings', 'ownerNote', 'text') })
     ownerNote!: string | null
 
     @CreateDateColumn({ type: 'timestamptz' })

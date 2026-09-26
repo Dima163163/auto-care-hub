@@ -286,10 +286,32 @@ export const autoCareChatParamsSchema = z.object({
     chatId: z.string().uuid(),
 })
 
-export const createAutoCareChatReportSchema = z.object({
-    category: z.enum(['spam', 'harassment', 'fraud', 'unsafe', 'other']),
-    description: z.string().trim().max(2_000).nullable().optional(),
+export const autoCareChatReportsQuerySchema = z.object({
+    cursor: z.string().trim().max(2_048).optional(),
+    limit: z.coerce.number().int().positive().max(100).default(50),
 })
+
+export const createAutoCareChatReportSchema = z.object({
+    messageId: z.string().uuid(),
+    category: z.enum(['harassment', 'threat', 'fraud', 'other']),
+    description: z.string().trim().max(2_000).nullable().optional(),
+    acknowledgeFullThreadReview: z.literal(true),
+}).strict()
+
+export const autoCareChatReportParamsSchema = z.object({ chatId: z.string().uuid(), reportId: z.string().uuid() })
+
+export const assignAutoCareChatModeratorSchema = z.object({
+    moderatorId: z.string().uuid().nullable(),
+    reason: z.string().trim().min(10).max(2_000),
+}).strict()
+
+export const extendAutoCareChatModeratorAccessSchema = z.object({
+    reason: z.string().trim().min(10).max(2_000),
+}).strict()
+
+export const autoCareChatEmergencyAccessQuerySchema = z.object({
+    emergencyReason: z.string().trim().min(10).max(2_000).optional(),
+}).strict()
 
 export const createAutoCareChatBlockSchema = z.object({
     blockedUserId: z.string().uuid().optional(),
@@ -340,6 +362,7 @@ export const createAutoCareRescheduleSchema = z.object({
 })
 
 export const decideAutoCareRescheduleSchema = z.object({
+    rescheduleId: z.string().uuid(),
     decision: z.enum(['accept', 'reject']),
     reason: z.string().trim().max(1_000).nullable().optional(),
 })

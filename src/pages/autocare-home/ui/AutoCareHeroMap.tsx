@@ -1,25 +1,16 @@
 import { useState } from 'react'
-import { MapPin, Minus, Plus, Star, Wrench } from 'lucide-react'
+import { MapPin, Minus, Plus, Star } from 'lucide-react'
 
+import type { AutoCareApiDiscoveryItem } from '@/entities/automotive-service'
 import { formatCurrency } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
-const offers = [
-    { id: 'north', top: '9%', left: '41%', price: 3200, rating: '4.7', tone: 'green' },
-    { id: 'north-east', top: '17%', left: '79%', price: 2900, rating: '4.5', tone: 'blue' },
-    { id: 'west', top: '37%', left: '36%', price: 3500, rating: '4.8', tone: 'blue' },
-    { id: 'east', top: '61%', left: '78%', price: 2800, rating: '4.6', tone: 'green' },
-    { id: 'south-west', top: '68%', left: '36%', price: 2800, rating: '4.6', tone: 'green' },
-    { id: 'south', top: '84%', left: '69%', price: 3900, rating: '4.4', tone: 'blue' },
+const markerPositions = [
+    { top: '9%', left: '41%' }, { top: '17%', left: '79%' }, { top: '37%', left: '36%' },
+    { top: '61%', left: '78%' }, { top: '68%', left: '36%' }, { top: '84%', left: '69%' },
 ] as const
 
-const servicePins = [
-    { top: '11%', left: '25%' }, { top: '20%', left: '64%' }, { top: '34%', left: '89%' },
-    { top: '49%', left: '52%' }, { top: '55%', left: '26%' }, { top: '74%', left: '88%' },
-    { top: '90%', left: '55%' },
-] as const
-
-export function AutoCareHeroMap() {
+export function AutoCareHeroMap({ items }: { items: readonly AutoCareApiDiscoveryItem[] }) {
     const { t, locale } = useTranslation()
     const [zoom, setZoom] = useState(1)
 
@@ -35,8 +26,17 @@ export function AutoCareHeroMap() {
                     <span className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-primary-foreground bg-primary shadow-[0_0_16px_var(--primary)]" />
                 </div>
                 <div className="hidden lg:block">
-                    {servicePins.map((pin) => <ServicePin key={`${pin.top}-${pin.left}`} {...pin} />)}
-                    {offers.map((offer) => <OfferMarker key={offer.id} {...offer} priceLabel={t('autocare.fromPrice', { price: formatCurrency(offer.price, 'RUB', locale) })} />)}
+                    {items.slice(0, markerPositions.length).map((item, index) => {
+                        const position = markerPositions[index]
+                        if (!position) return null
+                        return <OfferMarker
+                            key={`${item.provider.id}-${item.provider.location.id}-${item.offer.id}`}
+                            {...position}
+                            item={item}
+                            locale={locale}
+                            priceLabel={t('autocare.fromPrice', { price: formatCurrency(item.offer.priceFromMinor / 100, item.offer.currencyCode, locale) })}
+                        />
+                    })}
                 </div>
             </div>
             <div className="absolute bottom-12 right-8 hidden flex-col overflow-hidden rounded-[9px] border border-primary-foreground/20 bg-map-overlay/90 text-primary-foreground shadow-xl lg:flex">
@@ -48,17 +48,14 @@ export function AutoCareHeroMap() {
     )
 }
 
-function ServicePin({ top, left }: { top: string; left: string }) {
-    return <span className="absolute flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-primary-foreground/30 bg-map-overlay/85 text-primary-foreground shadow-lg" style={{ top, left }}><Wrench className="size-5" /></span>
-}
-
-function OfferMarker({ top, left, priceLabel, rating, tone }: typeof offers[number] & { priceLabel: string }) {
-    const toneClass = tone === 'green' ? 'bg-map-marker-success' : 'bg-map-marker-primary'
+function OfferMarker({ top, left, priceLabel, item, locale }: { top: string; left: string; priceLabel: string; item: AutoCareApiDiscoveryItem; locale: string }) {
+    const toneClass = item.provider.verified ? 'bg-map-marker-success' : 'bg-map-marker-primary'
+    const rating = item.provider.reviewCount > 0 ? new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(item.provider.rating) : '—'
 
     return (
         <span className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-[12px] border border-primary-foreground/20 bg-map-overlay/80 px-2.5 py-2 text-primary-foreground shadow-xl backdrop-blur-sm" style={{ top, left }}>
             <span className={`flex size-9 items-center justify-center rounded-full ${toneClass}`}><MapPin className="size-5" /></span>
-            <span className="pr-1"><strong className="block whitespace-nowrap text-sm">{priceLabel}</strong><span className="flex items-center gap-1 text-xs font-semibold">{rating}<Star className="size-3 fill-map-rating text-map-rating" /></span></span>
+            <span className="pr-1"><strong className="block whitespace-nowrap text-sm">{priceLabel}</strong><span className="flex items-center gap-1 text-xs font-semibold">{rating}{item.provider.reviewCount > 0 && <Star className="size-3 fill-map-rating text-map-rating" />}</span></span>
         </span>
     )
 }

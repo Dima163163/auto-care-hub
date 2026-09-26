@@ -25,6 +25,7 @@ import {
     SuperAdminDashboardPage,
     BlogPage,
     ChatsPage,
+    CommunityClientProfilePage,
     ContactsPage,
     EmailVerificationPage,
     FavoritesPage,
@@ -77,6 +78,7 @@ export function renderPublicRoutes() {
             <Route path={ROUTES.cabinets} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
             <Route path={ROUTES.serviceDiscovery} element={<AutoCareResultsPage />} />
             <Route path={ROUTES.serviceProviderDetails} element={<AutoCareProviderPage />} />
+            <Route path={ROUTES.communityClientProfile} element={<CommunityClientProfilePage />} />
             <Route path={ROUTES.cabinetDetails} element={<Navigate replace to={ROUTES.serviceDiscovery} />} />
         </Route>
     )

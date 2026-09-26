@@ -85,7 +85,7 @@ describe('AutoCare broadcast ownership', () => {
         mocks.getRepository.mockImplementation((entity: unknown) => {
             if (entity === AutomotiveProviderEntity) return { findOneBy: vi.fn().mockResolvedValue(provider) }
             if (entity === AutomotiveServiceLocationEntity) return { find: vi.fn().mockResolvedValue([location]) }
-            if (entity === AutomotiveMarketEntity) return { find: vi.fn().mockResolvedValue([{ id: 'market-1', countryId: 'country-1', launchReady: true }]) }
+            if (entity === AutomotiveMarketEntity) return { find: vi.fn().mockResolvedValue([{ id: 'market-1', countryId: 'country-1', countryCode: 'RU', launchReady: true }]) }
             if (entity === AutomotiveMarketCountryEntity) return { find: vi.fn().mockResolvedValue([{ id: 'country-1' }]) }
             if (entity === AutoCareTrustEvidenceEntity) return evidenceRepository
             if (entity === AutoCareTrustSnapshotEntity) return snapshotRepository

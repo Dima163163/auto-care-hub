@@ -14,6 +14,7 @@ import {
     ServiceMessageEntity,
     ServiceRequestEntity,
     AutoCareAppealEntity,
+    AutoCareReviewHelpfulVoteEntity,
 } from '../../entities/index.js'
 import { AutoCareServiceQuoteEntity } from '../../entities/index.js'
 import { toPublicUser } from '../auth/public-user.js'
@@ -40,6 +41,7 @@ export type UserDataExportCollections = {
     quotes?: AutoCareServiceQuoteEntity[]
     appeals?: AutoCareAppealEntity[]
     consents?: UserConsentEntity[]
+    helpfulVotes?: AutoCareReviewHelpfulVoteEntity[]
 }
 
 function serializeDate(value: Date | null | undefined) {
@@ -68,10 +70,11 @@ export function serializeUserDataExport(
         quotes = [],
         appeals = [],
         consents = [],
+        helpfulVotes = [],
     } = collections
 
     const exportPayload = {
-        schemaVersion: 1,
+        schemaVersion: 2,
         generatedAt,
         limits: {
             maxRecordsPerCollection: MAX_EXPORT_RECORDS,
@@ -93,6 +96,7 @@ export function serializeUserDataExport(
             quotes: quotes.length > MAX_EXPORT_RECORDS,
             appeals: appeals.length > MAX_EXPORT_RECORDS,
             consents: consents.length > MAX_EXPORT_RECORDS,
+            helpfulReviewVotes: helpfulVotes.length > MAX_EXPORT_RECORDS,
         },
         user: {
             ...toPublicUser(user),
@@ -107,6 +111,15 @@ export function serializeUserDataExport(
             source: consent.source,
             resourceId: consent.resourceId,
             createdAt: serializeDate(consent.createdAt),
+        })),
+        communityProfile: {
+            enabled: user.communityProfileEnabled ?? false,
+            displayName: user.communityDisplayName ?? null,
+            publicProfileId: user.communityProfileId ?? null,
+        },
+        helpfulReviewVotes: helpfulVotes.slice(0, MAX_EXPORT_RECORDS).map((vote) => ({
+            reviewId: vote.reviewId,
+            createdAt: serializeDate(vote.createdAt),
         })),
         favorites: favorites.slice(0, MAX_EXPORT_RECORDS).map((favorite) => ({
             id: favorite.id,

@@ -19,6 +19,7 @@ import {
     AutoCareTrustEvidenceEntity,
 } from '../entities/index.js'
 import { UserEntity } from '../entities/user/user.entity.js'
+import { isAutoCareCountryEnabled } from '../config/enabled-market-countries.js'
 import {
     AUTOMOTIVE_MOCK_LOCATION_ZONES,
     AUTOMOTIVE_MOCK_MARKETS,
@@ -69,7 +70,7 @@ async function seedAutoCareMockData() {
                     currencyCode: marketInput.currencyCode,
                     capabilities: existingCountry?.capabilities ?? {},
                     legalLinks: existingCountry?.legalLinks ?? {},
-                    active: true,
+                    active: isAutoCareCountryEnabled(marketInput.countryCode),
                 }))
                 countries.set(marketInput.countryCode, country)
             }
@@ -83,6 +84,7 @@ async function seedAutoCareMockData() {
                 const market = marketRepository.create({
                     ...existingMarket,
                     ...marketInput,
+                    launchReady: marketInput.launchReady && isAutoCareCountryEnabled(marketInput.countryCode),
                     countryId: country.id,
                     supportedLocales: [...marketInput.supportedLocales],
                     capabilities: existingMarket?.capabilities ?? {},

@@ -10,11 +10,12 @@ type BootShellProps = {
     home?: boolean
     services?: boolean
     workspaceRole?: BootWorkspaceRole
+    content?: ReactNode
 }
 
 export type BootWorkspaceRole = 'client' | 'owner' | 'admin' | 'super_admin'
 
-export function BootShell({ home = false, services = false, workspaceRole }: BootShellProps) {
+export function BootShell({ home = false, services = false, workspaceRole, content }: BootShellProps) {
     if (workspaceRole) {
         return <WorkspaceBootShell role={workspaceRole} />
     }
@@ -22,8 +23,8 @@ export function BootShell({ home = false, services = false, workspaceRole }: Boo
     return (
         <div className="autocare-app-surface flex min-h-screen flex-col overflow-x-clip bg-background text-foreground">
             <BootHeader />
-            <main className="min-h-0 flex-1" aria-busy="true" aria-label="Загрузка страницы">
-                {home ? <HomeBootContent /> : services ? <ServicesBootContent /> : <GenericBootContent />}
+            <main className="min-h-0 flex-1" aria-busy={content ? undefined : 'true'} aria-label={content ? undefined : 'Загрузка страницы'}>
+                {content ?? (home ? <HomeBootContent /> : services ? <ServicesBootContent /> : <GenericBootContent />)}
             </main>
             <BootFooter />
         </div>
@@ -360,7 +361,7 @@ function HomeBootSearchForm() {
                     <BootSearchSelect label="Радиус поиска" value="10 км" />
                 </div>
                 <button type="button" disabled className="mt-3 flex h-[48px] w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary text-base font-black text-primary-foreground opacity-80"><Search className="size-[18px]" />Найти рядом</button>
-                <p className="mt-3 text-sm font-semibold text-muted-foreground">3 216 автосервисов рядом готовы помочь</p>
+                <p className="mt-3 text-sm font-semibold text-muted-foreground">Ищите автосервисы поблизости</p>
             </div>
         </form>
     )

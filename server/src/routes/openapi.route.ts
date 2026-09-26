@@ -238,7 +238,7 @@ export function getOpenApiDocument() {
                         { name: 'brandId', in: 'query', required: false, schema: { type: 'string' } },
                         ...cursorParameters,
                     ],
-                    responses: { '200': { description: 'Stable, comparable AutoCare provider results.' } },
+                    responses: { '200': { description: 'Stable, comparable AutoCare provider results. totalCount is the filtered result count; totalCountIsLowerBound is true when the bounded candidate scan may have omitted additional matches.', content: { 'application/json': { schema: { type: 'object', required: ['items', 'nextCursor', 'totalCount', 'totalCountIsLowerBound'], properties: { items: { type: 'array', items: { type: 'object' } }, nextCursor: { type: ['string', 'null'] }, totalCount: { type: 'integer', minimum: 0 }, totalCountIsLowerBound: { type: 'boolean' }, partial: { type: 'boolean' } } } } } } },
                 },
             },
             '/v1/providers/{providerId}': {
@@ -246,6 +246,16 @@ export function getOpenApiDocument() {
             },
             '/v1/providers/{providerId}/reviews': {
                 get: { operationId: 'getAutoCareProviderReviews', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } }], responses: { '200': { description: 'Approved provider reviews with aggregate rating distribution.' } } },
+            },
+            '/v1/community/clients/{profileId}': {
+                get: { operationId: 'getPublicAutoCareCommunityProfile', security: [], parameters: [{ name: 'profileId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Opt-in public client profile with earned badges and aggregate activity counts. Response is no-store and noindex.' } } },
+            },
+            '/v1/autocare-reviews/helpful/my': {
+                get: { operationId: 'getMyAutoCareHelpfulReviewIds', parameters: [{ name: 'providerId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Review helpful votes and the authenticated client’s own review IDs for one provider.' } } },
+            },
+            '/v1/autocare-reviews/{reviewId}/helpful': {
+                put: { operationId: 'markAutoCareReviewHelpful', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marks an eligible verified review as helpful. Self-votes are rejected.' } } },
+                delete: { operationId: 'removeAutoCareReviewHelpfulVote', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Removes the authenticated client’s helpful vote.' } } },
             },
             '/v1/providers/{providerId}/trust': {
                 get: { operationId: 'getAutoCareProviderTrust', security: [], parameters: [{ name: 'providerId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Trust score and evidence used for the verified-service badge.' } } },
@@ -391,10 +401,16 @@ export function getOpenApiDocument() {
                 patch: { operationId: 'decideAdminCatalogGapRequest', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['approved', 'rejected'] }, reason: { type: ['string', 'null'] } }, additionalProperties: false } } } }, responses: { '200': { description: 'Approved request creates an active standardized service definition.' } } },
             },
             '/admin/chat-reports': {
-                get: { operationId: 'listAdminAutoCareChatReports', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'resolved', 'dismissed'] } }], responses: { '200': { description: 'Admin moderation metadata for reported chats; private message bodies are not returned.' } } },
+                get: { operationId: 'listAdminAutoCareChatReports', parameters: [{ name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['pending', 'resolved', 'dismissed'] } }, { name: 'cursor', in: 'query', required: false, schema: { type: 'string' } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } }], responses: { '200': { description: 'Cursor-paginated admin moderation metadata for reported chats; private message bodies are not returned.' } } },
             },
             '/admin/chat-reports/{id}/decision': {
-                patch: { operationId: 'decideAdminAutoCareChatReport', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['resolved', 'dismissed'] }, reason: { type: ['string', 'null'], maxLength: 2000 }, blockUser: { type: 'boolean' } }, additionalProperties: false } } } }, responses: { '200': { description: 'Resolved or dismissed a chat report and optionally blocked the reported participant.' } } },
+                patch: { operationId: 'decideAdminAutoCareChatReport', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['resolved', 'dismissed'] }, reason: { type: ['string', 'null'], maxLength: 2000 }, blockUser: { type: 'boolean' }, blockDurationDays: { type: 'integer', enum: [1, 7, 30] } }, additionalProperties: false } } } }, responses: { '200': { description: 'Resolve or dismiss a report. A substantiated report may receive a chat-scoped restriction with an explicit expiry and appeal path.' } } },
+            },
+            '/admin/chat-reports/{id}/assignment': {
+                patch: { operationId: 'assignAutoCareChatModerator', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['moderatorId', 'reason'], properties: { moderatorId: { type: ['string', 'null'], format: 'uuid' }, reason: { type: 'string', minLength: 10, maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Assigns or unassigns one moderator for all pending reports in the service-request thread; access expires after 24 hours.' } } },
+            },
+            '/admin/chat-reports/{id}/assignment/extend': {
+                post: { operationId: 'extendAutoCareChatModeratorAccess', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['reason'], properties: { reason: { type: 'string', minLength: 10, maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Extends the current moderator access once for another 24 hours.' } } },
             },
             '/owner/autocare-reviews': {
                 get: { operationId: 'getOwnerAutoCareReviews', parameters: [{ name: 'providerId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Aggregated approved reviews for all owner-managed service locations or one selected location.' } } },
@@ -512,7 +528,7 @@ export function getOpenApiDocument() {
                 patch: { operationId: 'updateAutoCareReview', parameters: [{ name: 'reviewId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['rating', 'text'], properties: { rating: { type: 'integer', minimum: 1, maximum: 5 }, text: { type: 'string', minLength: 10, maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '200': { description: 'Updated automotive review queued for moderation.' } } },
             },
             '/v1/service-requests/{requestId}': {
-                get: { operationId: 'getAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Service request visible to its client or provider owner.' } } },
+                get: { operationId: 'getAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'emergencyReason', in: 'query', required: false, schema: { type: 'string', minLength: 10, maxLength: 2000 }, description: 'Required for SuperAdmin access to private request details and recorded in the audit log.' }], responses: { '200': { description: 'Service request visible to its client or provider workspace; privileged access requires an audited reason.' } } },
             },
             '/v1/service-requests/{requestId}/conversation': {
                 get: { operationId: 'getAutoCareServiceConversation', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'cursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'beforeCursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } }], responses: { '200': { description: 'Bounded messages and attachments. The latest page is returned in chronological order; previousCursor loads older messages and nextCursor loads newer messages.' } } },
@@ -570,13 +586,19 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareChat', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'subject'], properties: { type: { type: 'string', enum: ['provider_inquiry', 'support', 'admin_escalation'] }, providerId: { type: 'string', format: 'uuid' }, requestId: { type: 'string', format: 'uuid' }, subject: { type: 'string', minLength: 2, maxLength: 160 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a general question, support or escalation chat.' } } },
             },
             '/v1/chats/{chatId}': {
-                get: { operationId: 'getAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'cursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'beforeCursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } }], responses: { '200': { description: 'Bounded messages and attachments. The latest page is returned in chronological order; previousCursor loads older messages and nextCursor loads newer messages.' } } },
+                get: { operationId: 'getAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'cursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'beforeCursor', in: 'query', required: false, schema: { type: 'string', maxLength: 2048 } }, { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } }, { name: 'emergencyReason', in: 'query', required: false, schema: { type: 'string', minLength: 10, maxLength: 2000 }, description: 'Required for SuperAdmin content access; audited before the conversation is returned.' }], responses: { '200': { description: 'Bounded messages and attachments. The latest page is returned in chronological order; previousCursor loads older messages and nextCursor loads newer messages.' } } },
             },
             '/v1/chats/{chatId}/messages': {
                 post: { operationId: 'createAutoCareChatMessage', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: 4_000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Created a message in a general chat thread.' } } },
             },
             '/v1/chats/{chatId}/reports': {
-                post: { operationId: 'createAutoCareChatReport', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['category'], properties: { category: { type: 'string', enum: ['spam', 'harassment', 'fraud', 'unsafe', 'other'] }, description: { type: ['string', 'null'], maxLength: 2000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Submitted a report without exposing message content to moderators.' } } },
+                post: { operationId: 'createAutoCareChatReport', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['messageId', 'category', 'acknowledgeFullThreadReview'], properties: { messageId: { type: 'string', format: 'uuid' }, category: { type: 'string', enum: ['harassment', 'threat', 'fraud', 'other'] }, description: { type: ['string', 'null'], maxLength: 2000, description: 'Required and at least 20 characters for a distinct urgent threat filed during an active case.' }, acknowledgeFullThreadReview: { type: 'boolean', const: true } }, additionalProperties: false } } } }, responses: { '201': { description: 'Reports one visible text message after recording acknowledgment that an assigned moderator can review this exact service-request thread.' } } },
+            },
+            '/v1/chats/{chatId}/reports/mine': {
+                get: { operationId: 'listMyAutoCareChatReports', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Current user’s own report status metadata for this thread.' } } },
+            },
+            '/v1/chats/{chatId}/messages/{messageId}': {
+                delete: { operationId: 'deleteAutoCareChatMessage', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'messageId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Soft-deletes the caller’s own text message within five minutes unless it is under active review.' } } },
             },
             '/v1/chats/{chatId}/blocks': {
                 post: { operationId: 'createAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: false, content: { 'application/json': { schema: { type: 'object', properties: { blockedUserId: { type: 'string', format: 'uuid' }, reason: { type: ['string', 'null'], maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Blocked another participant in the chat.' } } },
@@ -591,10 +613,10 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '201': { description: 'Stored a photo in a general chat thread.' } } },
             },
             '/v1/chats/{chatId}/attachments/{attachmentId}': {
-                get: { operationId: 'getAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Private general chat attachment bytes.' } } },
+                get: { operationId: 'getAutoCareChatAttachment', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'attachmentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'emergencyReason', in: 'query', required: false, schema: { type: 'string', minLength: 10, maxLength: 2000 }, description: 'Required for SuperAdmin content access; audited before the attachment is returned.' }], responses: { '200': { description: 'Private general chat attachment bytes.' } } },
             },
             '/v1/chats/{chatId}/ws': {
-                get: { operationId: 'connectAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], description: 'WebSocket upgrade. Authenticate with the bearer.<access-token> subprotocol; access tokens are never accepted in the URL.', responses: { '101': { description: 'WebSocket upgrade for a general chat thread.' } } },
+                get: { operationId: 'connectAutoCareChat', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'emergencyReason', in: 'query', required: false, schema: { type: 'string', minLength: 10, maxLength: 2000 }, description: 'Required for SuperAdmin content access; audited before the connection is authorized.' }], description: 'WebSocket upgrade. Authenticate with the bearer.<access-token> subprotocol; access tokens are never accepted in the URL.', responses: { '101': { description: 'WebSocket upgrade for a general chat thread.' } } },
             },
             '/cabinets': {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },
@@ -752,6 +774,14 @@ export function getOpenApiDocument() {
                             content: { 'application/json': { schema: { $ref: '#/components/schemas/UserDataExport' } } },
                         },
                     },
+                },
+            },
+            '/users/me/community-profile': {
+                get: { operationId: 'getMyAutoCareCommunityProfile', responses: { '200': { description: 'Private community settings and the authenticated client’s earned-badge progress.' } } },
+                patch: {
+                    operationId: 'updateMyAutoCareCommunityProfile',
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', minProperties: 1, properties: { enabled: { type: 'boolean' }, displayName: { type: ['string', 'null'], maxLength: 40 } }, additionalProperties: false } } } },
+                    responses: { '200': { description: 'Updated opt-in profile settings. Enabling or disabling sharing is recorded in the consent ledger.' } },
                 },
             },
             '/users/me/consents': {
@@ -1340,9 +1370,9 @@ export function getOpenApiDocument() {
                 },
                 UserDataExport: {
                     type: 'object',
-                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets', 'vehicles', 'consents'],
+                    required: ['schemaVersion', 'generatedAt', 'limits', 'truncated', 'user', 'favorites', 'bookings', 'notifications', 'cabinets', 'vehicles', 'consents', 'communityProfile', 'helpfulReviewVotes'],
                     properties: {
-                        schemaVersion: { type: 'integer', enum: [1] },
+                        schemaVersion: { type: 'integer', enum: [2] },
                         generatedAt: { type: 'string', format: 'date-time' },
                         limits: {
                             type: 'object',
@@ -1353,7 +1383,7 @@ export function getOpenApiDocument() {
                         },
                         truncated: {
                             type: 'object',
-                            required: ['favorites', 'bookings', 'notifications', 'cabinets', 'vehicles', 'consents'],
+                            required: ['favorites', 'bookings', 'notifications', 'cabinets', 'vehicles', 'consents', 'helpfulReviewVotes'],
                             properties: {
                                 favorites: { type: 'boolean' },
                                 bookings: { type: 'boolean' },
@@ -1362,6 +1392,7 @@ export function getOpenApiDocument() {
                                 vehicles: { type: 'boolean' },
                                 appeals: { type: 'boolean' },
                                 consents: { type: 'boolean' },
+                                helpfulReviewVotes: { type: 'boolean' },
                             },
                         },
                         user: { $ref: '#/components/schemas/PublicUser' },
@@ -1372,6 +1403,16 @@ export function getOpenApiDocument() {
                         vehicles: { type: 'array', items: { $ref: '#/components/schemas/ClientVehicle' } },
                         appeals: { type: 'array', items: { type: 'object' } },
                         consents: { type: 'array', items: { type: 'object' } },
+                        communityProfile: {
+                            type: 'object',
+                            required: ['enabled', 'displayName', 'publicProfileId'],
+                            properties: {
+                                enabled: { type: 'boolean' },
+                                displayName: { type: ['string', 'null'] },
+                                publicProfileId: { type: ['string', 'null'], format: 'uuid' },
+                            },
+                        },
+                        helpfulReviewVotes: { type: 'array', items: { type: 'object' } },
                     },
                 },
                 UserConsentState: {
@@ -1388,12 +1429,13 @@ export function getOpenApiDocument() {
                         },
                         consents: {
                             type: 'object',
-                            required: ['terms', 'privacy', 'analytics', 'marketing'],
+                            required: ['terms', 'privacy', 'analytics', 'marketing', 'communityProfile'],
                             properties: {
                                 terms: { $ref: '#/components/schemas/ConsentStatus' },
                                 privacy: { $ref: '#/components/schemas/ConsentStatus' },
                                 analytics: { $ref: '#/components/schemas/ConsentStatus' },
                                 marketing: { $ref: '#/components/schemas/ConsentStatus' },
+                                communityProfile: { $ref: '#/components/schemas/ConsentStatus' },
                             },
                         },
                     },

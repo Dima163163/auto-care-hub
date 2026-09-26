@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { autoCareDiscoveryQuerySchema, createAutoCareBroadcastRequestSchema, createAutoCareGuaranteeClaimSchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
+import { autoCareDiscoveryQuerySchema, createAutoCareBroadcastRequestSchema, createAutoCareGuaranteeClaimSchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, decideAutoCareRescheduleSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
 
 const validRequest = {
     providerId: '11111111-1111-4111-8111-111111111111',
@@ -55,6 +55,13 @@ describe('AutoCare service request schema', () => {
         expect(offer.success).toBe(true)
         expect(createAutoCareServiceOfferSchema.safeParse({ type: 'discount', title: 'Без процента' }).success).toBe(false)
         expect(serviceMessageOfferDecisionSchema.parse({ decision: 'accept' })).toEqual({ decision: 'accept' })
+    })
+
+    it('requires the exact reschedule proposal id when a client decides', () => {
+        const decision = { rescheduleId: '11111111-1111-4111-8111-111111111111', decision: 'accept' }
+        expect(decideAutoCareRescheduleSchema.parse(decision)).toEqual(decision)
+        expect(decideAutoCareRescheduleSchema.safeParse({ decision: 'accept' }).success).toBe(false)
+        expect(decideAutoCareRescheduleSchema.safeParse({ ...decision, rescheduleId: 'latest' }).success).toBe(false)
     })
 
     it('accepts only the two supported booking modes for provider offerings', () => {

@@ -1,6 +1,7 @@
 import { In, type EntityManager, type QueryFailedError } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
+import { isAutoCareCountryEnabled } from '../../config/enabled-market-countries.js'
 import {
     AutoCareBroadcastOfferEntity,
     AutoCareBroadcastRequestEntity,
@@ -119,7 +120,7 @@ async function findMarket(value?: string | null) {
 }
 
 async function isPublicMarket(market: AutomotiveMarketEntity | null | undefined) {
-    if (!market?.launchReady) return false
+    if (!market?.launchReady || !isAutoCareCountryEnabled(market.countryCode)) return false
     return Boolean(await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true }))
 }
 
@@ -127,15 +128,16 @@ async function getPublicMarketIds(marketIds: string[]) {
     if (marketIds.length === 0) return new Set<string>()
     const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
         where: { id: In([...new Set(marketIds)]), launchReady: true },
-        select: { id: true, countryId: true },
+        select: { id: true, countryId: true, countryCode: true },
     })
-    if (markets.length === 0) return new Set<string>()
+    const enabledMarkets = markets.filter((market) => isAutoCareCountryEnabled(market.countryCode))
+    if (enabledMarkets.length === 0) return new Set<string>()
     const countries = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).find({
-        where: { id: In([...new Set(markets.map((market) => market.countryId))]), active: true },
+        where: { id: In([...new Set(enabledMarkets.map((market) => market.countryId))]), active: true },
         select: { id: true },
     })
     const activeCountryIds = new Set(countries.map((country) => country.id))
-    return new Set(markets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
+    return new Set(enabledMarkets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
 }
 
 async function lockAndRequirePublicMarket(manager: EntityManager, marketId: string) {
@@ -144,6 +146,7 @@ async function lockAndRequirePublicMarket(manager: EntityManager, marketId: stri
         lock: { mode: 'pessimistic_read' },
     })
     if (!market) notFound('Automotive service market is not available.')
+    if (!isAutoCareCountryEnabled(market.countryCode)) notFound('Automotive service market is not available.')
     const country = await manager.getRepository(AutomotiveMarketCountryEntity).findOne({
         where: { id: market.countryId, active: true },
         lock: { mode: 'pessimistic_read' },
@@ -160,15 +163,16 @@ async function getLaunchReadyProviderLocations(providerId: string) {
     if (locations.length === 0) return []
     const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
         where: { id: In([...new Set(locations.map((location) => location.marketId))]), launchReady: true },
-        select: { id: true, countryId: true },
+        select: { id: true, countryId: true, countryCode: true },
     })
-    if (markets.length === 0) return []
+    const enabledMarkets = markets.filter((market) => isAutoCareCountryEnabled(market.countryCode))
+    if (enabledMarkets.length === 0) return []
     const countries = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).find({
-        where: { id: In([...new Set(markets.map((market) => market.countryId))]), active: true },
+        where: { id: In([...new Set(enabledMarkets.map((market) => market.countryId))]), active: true },
         select: { id: true },
     })
     const activeCountryIds = new Set(countries.map((country) => country.id))
-    const publicMarketIds = new Set(markets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
+    const publicMarketIds = new Set(enabledMarkets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
     return locations.filter((location) => publicMarketIds.has(location.marketId))
 }
 

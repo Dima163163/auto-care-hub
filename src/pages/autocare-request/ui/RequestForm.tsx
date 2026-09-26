@@ -26,6 +26,7 @@ type RequestFormProps = {
     initialVehicle?: RequestFormPayload['vehicleSnapshot']
     initialContact?: RequestFormPayload['contactSnapshot']
     onSubmit: (payload: RequestFormPayload) => void | boolean | Promise<void | boolean>
+    onAppointmentSelectionChange?: (selection: { date: string; time: string }) => void
     isSubmitting?: boolean
     errorMessage?: string
 }
@@ -55,7 +56,7 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, onAppointmentSelectionChange, isSubmitting = false, errorMessage }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
@@ -79,6 +80,13 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
     const currentAvailability = availability?.date === availabilityDate ? availability : undefined
     const availableTimes = isAvailabilityError ? [] : currentAvailability?.slots.map((slot) => slot.startTime) ?? []
     const effectiveSelectedTime = availableTimes.includes(selectedTime) ? selectedTime : availableTimes[0] ?? ''
+
+    useEffect(() => {
+        if (isAvailabilityLoading) return
+
+        const date = customDate || getRequestDateInputValue(Math.max(appointmentDates.indexOf(selectedDate), 0), serviceTimezone)
+        onAppointmentSelectionChange?.({ date, time: isAvailabilityError ? '' : effectiveSelectedTime })
+    }, [customDate, effectiveSelectedTime, isAvailabilityError, isAvailabilityLoading, onAppointmentSelectionChange, selectedDate, serviceTimezone])
 
     useEffect(() => {
         if (rawInitialDate === null || rawInitialDate === initialDate) return

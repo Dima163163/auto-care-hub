@@ -35,7 +35,7 @@ const owner = { id: 'owner-1', role: UserRole.Owner } as never
 const client = { id: 'client-1', role: UserRole.Client } as never
 const provider = { id: '11111111-1111-4111-8111-111111111111', status: AutomotiveProviderStatus.Active }
 const location = { id: '22222222-2222-4222-8222-222222222222', providerId: provider.id, marketId: 'market-1', address: 'Branch 1' }
-const readyMarket = { id: 'market-1', countryId: 'country-1', launchReady: true }
+const readyMarket = { id: 'market-1', countryId: 'country-1', countryCode: 'RU', launchReady: true }
 const activeCountry = { id: 'country-1', active: true }
 const scope = { providerId: provider.id, locationIds: [location.id], roles: ['owner'] }
 

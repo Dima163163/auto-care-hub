@@ -16,7 +16,7 @@ function toMinutes(value: string) {
 }
 
 export function getDiscoverySlot(
-    location: Pick<AutomotiveServiceLocationEntity, 'timezone' | 'hours' | 'weeklySchedule'>,
+    location: Pick<AutomotiveServiceLocationEntity, 'timezone' | 'hours' | 'weeklySchedule' | 'blackoutDates'>,
     market: Pick<AutomotiveMarketEntity, 'timezone'> | null,
     now = new Date(),
 ): DiscoverySlot {
@@ -25,9 +25,11 @@ export function getDiscoverySlot(
     const schedule = getScheduleForDate(local.date, location.hours, location.weeklySchedule)
     const closeMinutes = toMinutes(schedule.close)
 
-    if (schedule.closed || closeMinutes === null || local.minutes > closeMinutes) {
+    if (schedule.closed || location.blackoutDates.includes(local.date) || closeMinutes === null || local.minutes >= closeMinutes) {
         return { availableToday: false, nextSlot: null }
     }
 
-    return { availableToday: true, nextSlot: `Today, ${schedule.open}` }
+    // Business hours do not prove that a booking slot is free. The booking
+    // endpoint calculates capacity and duration-specific availability.
+    return { availableToday: true, nextSlot: null }
 }

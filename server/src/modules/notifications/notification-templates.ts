@@ -19,8 +19,13 @@ export const NOTIFICATION_TEMPLATE_KEYS = [
     'booking.reschedule.rejected.owner',
     'booking.reminder',
     'autocare.visit_reminder',
+    'autocare.chat_report_received',
+    'autocare.chat_report_assigned',
     'moderation.review_updated',
     'moderation.appeal_decided',
+    'autocare.chat_report_resolved',
+    'autocare.chat_report_dismissed',
+    'autocare.chat_report_overturned',
 ] as const
 
 export type NotificationTemplateKey = (typeof NOTIFICATION_TEMPLATE_KEYS)[number]

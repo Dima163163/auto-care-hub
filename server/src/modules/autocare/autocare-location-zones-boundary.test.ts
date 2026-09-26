@@ -39,7 +39,7 @@ describe('public location zones input boundary', () => {
     })
 
     it('uses canonical parent UUID in the database zone query', async () => {
-        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-1', cityCode: 'unknown-market', launchReady: true }) }
+        const marketRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'market-1', cityCode: 'unknown-market', countryCode: 'RU', launchReady: true }) }
         const countryRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'country-1', active: true }) }
         const zoneRepository = { find: vi.fn().mockResolvedValue([]) }
         mocks.getRepository.mockImplementation((entity: unknown) => {

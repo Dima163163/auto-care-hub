@@ -6,7 +6,7 @@ import { useGetOwnerAutoCareWorkspaceAccessQuery } from '@/entities/automotive-s
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { BottomNav } from '@/widgets/bottom-nav'
-import { WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { WorkspaceHeader, WorkspaceIconDefinitions, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
 import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 
 export function OwnerLayout() {
@@ -21,7 +21,8 @@ export function OwnerLayout() {
             : 'staff'
 
     return (
-        <div className="autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden md:pb-0">
+        <div className="autocare-app-surface mobile-bottom-safe flex h-dvh min-h-0 flex-col overflow-hidden md:pb-0" data-workspace-icon-theme="true">
+            <WorkspaceIconDefinitions />
             <WorkspaceHeader role={workspaceRole} showCreateProvider={workspaceRole === 'owner'} />
             <div className="flex min-h-0 flex-1 overflow-hidden">
                 <WorkspaceSidebar role={workspaceRole} />

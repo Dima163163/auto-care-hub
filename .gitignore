@@ -14,6 +14,7 @@ dist-ssr
 .next-real-*
 .next-mock-*
 *.local
+**/.local-keys/
 
 # Editor directories and files
 .vscode/*

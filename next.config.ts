@@ -3,7 +3,23 @@ import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
 
 const apiOrigin = process.env.NEXT_PUBLIC_API_ORIGIN ?? 'http://127.0.0.1:4000'
+const apiConnectionOrigin = new URL(apiOrigin).origin
 const repoRoot = path.dirname(fileURLToPath(import.meta.url))
+const scriptSources = process.env.NODE_ENV === 'production'
+    ? "'self' 'unsafe-inline'"
+    : "'self' 'unsafe-inline' 'unsafe-eval'"
+const contentSecurityPolicy = [
+    "default-src 'self'",
+    `script-src ${scriptSources}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: blob: https:",
+    `connect-src 'self' ${apiConnectionOrigin} ws: wss:`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+].join('; ')
 
 const nextConfig: NextConfig = {
     reactStrictMode: true,
@@ -24,6 +40,18 @@ const nextConfig: NextConfig = {
                 destination: `${apiOrigin}/:path*`,
             },
         ]
+    },
+    async headers() {
+        return [{
+            source: '/:path*',
+            headers: [
+                { key: 'Content-Security-Policy', value: contentSecurityPolicy },
+                { key: 'X-Content-Type-Options', value: 'nosniff' },
+                { key: 'X-Frame-Options', value: 'DENY' },
+                { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+                { key: 'Permissions-Policy', value: 'camera=(self), geolocation=(self), microphone=()' },
+            ],
+        }]
     },
 }
 
