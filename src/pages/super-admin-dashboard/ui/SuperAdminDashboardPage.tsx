@@ -89,9 +89,9 @@ type CountryFlagDefinition = {
 }
 
 const countryFlagDefinitions: Partial<Record<string, CountryFlagDefinition>> = {
-    ES: { orientation: 'horizontal', bands: [{ color: '#AA151B', weight: 1 }, { color: '#F1BF00', weight: 2 }, { color: '#AA151B', weight: 1 }] },
-    MD: { orientation: 'vertical', bands: [{ color: '#003DA5', weight: 1 }, { color: '#FFD900', weight: 1 }, { color: '#CC092F', weight: 1 }] },
-    RU: { orientation: 'horizontal', bands: [{ color: '#FFFFFF', weight: 1 }, { color: '#0039A6', weight: 1 }, { color: '#D52B1E', weight: 1 }] },
+    ES: { orientation: 'horizontal', bands: [{ color: 'var(--flag-es-red)', weight: 1 }, { color: 'var(--flag-es-yellow)', weight: 2 }, { color: 'var(--flag-es-red)', weight: 1 }] },
+    MD: { orientation: 'vertical', bands: [{ color: 'var(--flag-md-blue)', weight: 1 }, { color: 'var(--flag-md-yellow)', weight: 1 }, { color: 'var(--flag-md-red)', weight: 1 }] },
+    RU: { orientation: 'horizontal', bands: [{ color: 'var(--flag-ru-white)', weight: 1 }, { color: 'var(--flag-ru-blue)', weight: 1 }, { color: 'var(--flag-ru-red)', weight: 1 }] },
 }
 
 function CountryFlag({ countryCode }: { countryCode: string }) {
