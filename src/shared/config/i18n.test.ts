@@ -4,12 +4,15 @@ import {
     DEFAULT_LOCALE,
     LOCALE_OPTIONS,
     SUPPORTED_LOCALES,
+    VISIBLE_LOCALE_OPTIONS,
+    VISIBLE_LOCALES,
     normalizeLocale,
 } from './i18n'
 
 describe('frontend locale registry', () => {
-    it('exposes the same supported locale set as the language menu', () => {
-        expect(LOCALE_OPTIONS.map((option) => option.value)).toEqual([...SUPPORTED_LOCALES])
+    it('exposes only Russian and English in the language menu', () => {
+        expect(VISIBLE_LOCALE_OPTIONS.map((option) => option.value)).toEqual([...VISIBLE_LOCALES])
+        expect(SUPPORTED_LOCALES).toContain('es')
         expect(LOCALE_OPTIONS.find((option) => option.value === 'ar')?.direction).toBe('rtl')
     })
 

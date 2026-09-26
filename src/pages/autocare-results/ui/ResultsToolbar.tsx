@@ -5,10 +5,13 @@ import { Check, ChevronDown } from 'lucide-react'
 import { AutoCareDiscoveryControls } from '@/features/autocare-search/ui/AutoCareDiscoveryControls'
 import type { ActiveDiscoveryFilter } from '@/features/autocare-search/ui/AutoCareDiscoveryControls'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { formatAutoCareCount } from '@/shared/lib/formatAutoCareCount'
+import { MarketSwitcher } from '@/widgets/market-switcher/ui/MarketSwitcher'
 
 type ResultsToolbarProps = {
     selectedCount: number
     providerCount: number
+    providerCountIsLowerBound?: boolean
     isLoading?: boolean
     serviceId: string
     serviceLabel: string
@@ -42,12 +45,19 @@ type ResultsToolbarProps = {
 
 export type ActiveFilter = ActiveDiscoveryFilter
 
-export function ResultsToolbar({ selectedCount, providerCount, isLoading = false, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
-    const { t } = useTranslation()
+export function ResultsToolbar({ selectedCount, providerCount, providerCountIsLowerBound = false, isLoading = false, serviceId, serviceLabel, providerName, brandId, vehicleModel, vehicleYear, radiusKm, filterPanel, onClear, onStartSearch, onRadiusChange, onServiceChange, onVehicleChange, sort, onSortChange, onResetFilters, activeFilters, onRemoveFilter, quickFilters }: ResultsToolbarProps) {
+    const { t, locale } = useTranslation()
+    const providerCountLabel = formatAutoCareCount(providerCount, locale, t, {
+        one: 'autocare.resultCountOne',
+        few: 'autocare.resultCountFew',
+        many: 'autocare.resultCountMany',
+        other: 'autocare.resultCountOther',
+    }, providerCountIsLowerBound)
 
     return <div className="-mx-[var(--layout-public-gutter)] -mt-6 sm:-mt-10">
         <section className="relative left-1/2 w-screen -translate-x-1/2 bg-hero-overlay text-primary-foreground">
             <div className="mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-5 sm:py-6">
+                <div className="mb-3"><MarketSwitcher variant="dark" compact /></div>
                 <AutoCareDiscoveryControls
                     activeFilters={activeFilters}
                     brandId={brandId}
@@ -73,7 +83,7 @@ export function ResultsToolbar({ selectedCount, providerCount, isLoading = false
                 <div>
                     <p className="text-sm font-semibold text-muted-foreground">{t('autocare.resultsEyebrow')}</p>
                     <h1 className="autocare-results-heading mt-1 text-2xl font-black text-foreground sm:text-3xl">{t('autocare.resultsTitle')}</h1>
-                    <p className="mt-2 text-sm font-medium text-muted-foreground">{providerName ? `${t('autocare.providerLabel')}: ${providerName}` : serviceLabel} <span className="px-1 text-border">·</span> {t('autocare.resultCount', { count: providerCount })} <span className="px-1 text-border">·</span> {vehicleModel || vehicleYear ? [vehicleModel, vehicleYear].filter(Boolean).join(', ') : t('autocare.anyBrand')}</p>
+                    <p className="mt-2 text-sm font-medium text-muted-foreground">{providerName ? `${t('autocare.providerLabel')}: ${providerName}` : serviceLabel} <span className="px-1 text-border">·</span> {providerCountLabel} <span className="px-1 text-border">·</span> {vehicleModel || vehicleYear ? [vehicleModel, vehicleYear].filter(Boolean).join(', ') : t('autocare.anyBrand')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {selectedCount > 0 && <button type="button" onClick={onClear} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary"><Check className="size-4" />{t('autocare.compareSelected', { count: selectedCount })}</button>}

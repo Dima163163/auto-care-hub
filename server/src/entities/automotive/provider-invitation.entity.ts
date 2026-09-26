@@ -1,5 +1,4 @@
 import {
-    Check,
     Column,
     CreateDateColumn,
     Entity,
@@ -7,6 +6,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm'
+import { emailBlindIndexTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum AutomotiveProviderInvitationRole {
     Manager = 'manager',
@@ -24,11 +24,11 @@ export enum AutomotiveProviderInvitationStatus {
 @Index(['providerId', 'status', 'createdAt'])
 @Index(['email', 'status'])
 @Index(['tokenHash'], { unique: true })
-@Check('CHK_autocare_provider_invitations_email', 'char_length("email") BETWEEN 3 AND 320')
 export class AutomotiveProviderInvitationEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) providerId!: string
-    @Column({ type: 'text' }) email!: string
+    @Column({ type: 'text', transformer: emailBlindIndexTransformer }) email!: string
+    @Column({ type: 'text' }) emailCiphertext!: string
     @Column({ type: 'uuid', nullable: true }) locationId!: string | null
     @Column({ type: 'enum', enum: AutomotiveProviderInvitationRole, enumName: 'autocare_provider_invitation_role' }) role!: AutomotiveProviderInvitationRole
     @Column({ type: 'enum', enum: AutomotiveProviderInvitationStatus, enumName: 'autocare_provider_invitation_status', default: AutomotiveProviderInvitationStatus.Pending }) status!: AutomotiveProviderInvitationStatus

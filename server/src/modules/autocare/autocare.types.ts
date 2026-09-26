@@ -177,6 +177,8 @@ export type AutoCareProviderResultResponse = {
 export type AutoCareDiscoveryResponse = {
     items: AutoCareProviderResultResponse[]
     nextCursor: string | null
+    totalCount: number
+    totalCountIsLowerBound: boolean
 }
 
 export type AutoCarePriceBenchmarkResponse = {
@@ -301,12 +303,14 @@ export type AutoCareReviewResponse = {
     avatarUrl: string | null
     photoUrls: string[]
     createdAt: string
-    serviceRequestId: string | null
-    serviceSlug: string | null
-    revisionAllowedUntil: string | null
-    revisionUsedAt: string | null
-    canContact: boolean
-    canEdit: boolean
+    serviceRequestId?: string | null
+    serviceSlug?: string | null
+    revisionAllowedUntil?: string | null
+    revisionUsedAt?: string | null
+    canContact?: boolean
+    canEdit?: boolean
+    communityProfile?: { profileId: string; badgeCodes: Array<'verified_client' | 'regular_client' | 'helpful_reviewer' | 'autocare_expert'> } | null
+    helpfulCount?: number
 }
 
 export type AdminAutoCareReviewResponse = AutoCareReviewResponse & {
@@ -432,7 +436,11 @@ export type AutoCareAvailabilityResponse = {
 export type OwnerAutoCareProviderInput = {
     name: string
     description?: string | null
-    marketId: string
+    marketId?: string
+    countryCode?: string
+    countryName?: string
+    cityName?: string
+    currencyCode?: string
     zoneId?: string | null
     address: string
     hours: string
@@ -565,6 +573,7 @@ export type AutoCareServiceRequestResponse = {
     priceFromMinor: number | null
     currencyCode: string | null
     preferredAt: string | null
+    timezone?: string | null
     vehicleId: string | null
     vehicleSnapshot: AutoCareRequestSnapshot | null
     contactSnapshot: AutoCareRequestSnapshot | null
@@ -810,6 +819,7 @@ export type AutoCareServiceMessageResponse = {
     offer: ServiceMessageOffer | null
     deliveredAt: string | null
     readAt: string | null
+    deletedAt: string | null
     createdAt: string
 }
 
@@ -834,6 +844,13 @@ export type AutoCareChatThreadResponse = {
     clientId: string | null
     lastMessageAt: string | null
     unreadCount: number
+    moderationRestriction?: {
+        id: string
+        reason: string
+        expiresAt: string
+        state: 'active' | 'expired'
+        appealStatus: AutoCareAppealStatus | null
+    } | null
     createdAt: string
     updatedAt: string
 }
@@ -861,6 +878,8 @@ export type AutoCareServiceRequestConversationResponse = {
     attachments: AutoCareServiceAttachmentResponse[]
     nextCursor: string | null
     previousCursor: string | null
+    moderationReviewActive: boolean
+    messagesProtected: boolean
 }
 
 export type CreateAutoCareServiceMessageInput = {

@@ -28,6 +28,7 @@ import { registerNotFoundHandler } from './shared/errors/not-found-handler.js'
 import { getSecurityHeadersOptions } from './shared/security/security-headers.js'
 import { getCorsOptions } from './shared/security/cors.js'
 import { createMailer } from './shared/mail/create-mailer.js'
+import { mailReadiness, verifyMailerInBackground } from './shared/mail/mail-readiness.js'
 import { enqueuePasswordSetupEmailSafely } from './modules/outbox/password-setup-outbox.service.js'
 import { createTrustedProxyPolicy } from './shared/security/trusted-proxy.js'
 import { setApplicationLogger } from './shared/observability/logger.js'
@@ -68,8 +69,15 @@ export async function buildApp() {
         logger: {
             level: env.nodeEnv === 'production' ? 'info' : 'debug',
             redact: {
-                censor: '[REDACTED]',
+                censor: (value, path) => {
+                    if (path.length === 2 && path[0] === 'req' && path[1] === 'url' && typeof value === 'string') {
+                        return value.split('?', 1)[0]
+                    }
+
+                    return '[REDACTED]'
+                },
                 paths: [
+                    'req.url',
                     'req.headers.authorization',
                     'req.headers.cookie',
                     'req.headers.sec-websocket-protocol',
@@ -106,6 +114,16 @@ export async function buildApp() {
         reply.header('x-request-id', request.id)
         reply.header('x-content-type-options', 'nosniff')
         reply.header('permissions-policy', 'camera=(), geolocation=(), microphone=()')
+    })
+
+    app.addHook('onSend', async (request, reply, payload) => {
+        const path = request.url.split('?', 1)[0] ?? ''
+        const privatePrefixes = ['/owner/clients', '/owner/service-requests', '/v1/service-requests', '/v1/chats']
+        if (privatePrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+            reply.header('cache-control', 'private, no-store')
+            reply.header('pragma', 'no-cache')
+        }
+        return payload
     })
 
     app.addHook('onRequest', async (request, reply) => {
@@ -162,8 +180,9 @@ export async function buildApp() {
     app.decorate('mailer', mailer)
 
     if (env.mail.mode === 'smtp') {
-        await mailer.verify()
-        app.log.info('SMTP transport verified')
+        verifyMailerInBackground(mailer, mailReadiness, app.log)
+    } else {
+        mailReadiness.markNotConfigured()
     }
 
     await connectDatabase()

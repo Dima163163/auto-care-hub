@@ -12,7 +12,7 @@ radius, focus, or motion values.
 
 - Typography: `--font-display`, `--font-body`, `--type-*`, and
   `--measure-readable` define the readable hierarchy and copy measure. The
-  approved Option A pairing is Commissioner for display text and IBM Plex Sans
+  approved Option B pairing is Russo One for display text and Onest
   for body/form text; see `font-license-contract.md` for the source and
   license record. Both families include Latin and Cyrillic coverage, so a
   heading does not change its typeface between English and Russian.
@@ -34,6 +34,10 @@ rating presentation uses the `--rating-fill` and `--rating-foreground` roles
 in both themes. Shared UI and inspectable product surfaces use semantic color
 roles from the theme; raw color values are limited to the token definitions
 themselves and are rejected in TypeScript/TSX source by the contract check.
+Controls that place text on the brighter primary action surface use
+`--primary-strong-foreground`; its light/dark values keep selected calendar
+days and similarly high-emphasis controls readable without component-level
+color literals.
 
 Run `npm run check:design-tokens` after changing the foundation or semantic
 theme. The check verifies required light/dark semantic roles, foundation

@@ -1,6 +1,7 @@
-import { In, type QueryFailedError } from 'typeorm'
+import { In, type EntityManager, type QueryFailedError } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
+import { isAutoCareCountryEnabled } from '../../config/enabled-market-countries.js'
 import {
     AutoCareBroadcastOfferEntity,
     AutoCareBroadcastRequestEntity,
@@ -12,6 +13,7 @@ import {
     AutoCareRepairEventEntity,
     AutoCareTrustEvidenceEntity,
     AutoCareTrustSnapshotEntity,
+    AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
@@ -117,6 +119,63 @@ async function findMarket(value?: string | null) {
     return /^[0-9a-f-]{36}$/i.test(value) ? repository.findOneBy({ id: value }) : null
 }
 
+async function isPublicMarket(market: AutomotiveMarketEntity | null | undefined) {
+    if (!market?.launchReady || !isAutoCareCountryEnabled(market.countryCode)) return false
+    return Boolean(await AppDataSource.getRepository(AutomotiveMarketCountryEntity).findOneBy({ id: market.countryId, active: true }))
+}
+
+async function getPublicMarketIds(marketIds: string[]) {
+    if (marketIds.length === 0) return new Set<string>()
+    const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
+        where: { id: In([...new Set(marketIds)]), launchReady: true },
+        select: { id: true, countryId: true, countryCode: true },
+    })
+    const enabledMarkets = markets.filter((market) => isAutoCareCountryEnabled(market.countryCode))
+    if (enabledMarkets.length === 0) return new Set<string>()
+    const countries = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).find({
+        where: { id: In([...new Set(enabledMarkets.map((market) => market.countryId))]), active: true },
+        select: { id: true },
+    })
+    const activeCountryIds = new Set(countries.map((country) => country.id))
+    return new Set(enabledMarkets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
+}
+
+async function lockAndRequirePublicMarket(manager: EntityManager, marketId: string) {
+    const market = await manager.getRepository(AutomotiveMarketEntity).findOne({
+        where: { id: marketId, launchReady: true },
+        lock: { mode: 'pessimistic_read' },
+    })
+    if (!market) notFound('Automotive service market is not available.')
+    if (!isAutoCareCountryEnabled(market.countryCode)) notFound('Automotive service market is not available.')
+    const country = await manager.getRepository(AutomotiveMarketCountryEntity).findOne({
+        where: { id: market.countryId, active: true },
+        lock: { mode: 'pessimistic_read' },
+    })
+    if (!country) notFound('Automotive service market is not available.')
+    return market
+}
+
+async function getLaunchReadyProviderLocations(providerId: string) {
+    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({
+        where: { providerId },
+        order: { id: 'ASC' },
+    })
+    if (locations.length === 0) return []
+    const markets = await AppDataSource.getRepository(AutomotiveMarketEntity).find({
+        where: { id: In([...new Set(locations.map((location) => location.marketId))]), launchReady: true },
+        select: { id: true, countryId: true, countryCode: true },
+    })
+    const enabledMarkets = markets.filter((market) => isAutoCareCountryEnabled(market.countryCode))
+    if (enabledMarkets.length === 0) return []
+    const countries = await AppDataSource.getRepository(AutomotiveMarketCountryEntity).find({
+        where: { id: In([...new Set(enabledMarkets.map((market) => market.countryId))]), active: true },
+        select: { id: true },
+    })
+    const activeCountryIds = new Set(countries.map((country) => country.id))
+    const publicMarketIds = new Set(enabledMarkets.filter((market) => activeCountryIds.has(market.countryId)).map((market) => market.id))
+    return locations.filter((location) => publicMarketIds.has(location.marketId))
+}
+
 function toBenchmarkResponse(entity: AutoCarePriceBenchmarkEntity, definition: AutomotiveServiceDefinitionEntity): AutoCarePriceBenchmarkResponse {
     return {
         serviceDefinitionId: definition.id,
@@ -148,10 +207,12 @@ export async function getAutoCareFairPrice(input: { serviceId: string; marketId?
     const definition = await findDefinition(serviceId)
     if (!definition) return null
     const market = await findMarket(marketId)
+    if (marketId && !(await isPublicMarket(market))) return null
     const benchmarkRepository = AppDataSource.getRepository(AutoCarePriceBenchmarkEntity)
     const benchmarks = await benchmarkRepository.find({ where: { serviceDefinitionId: definition.id, active: true } })
     const exact = benchmarks.find((item) =>
         (item.marketId === (market?.id ?? null)) &&
+        (!market || item.currencyCode.toUpperCase() === market.currencyCode.toUpperCase()) &&
         (item.makeId === (makeId ?? null)) &&
         (item.modelId === (modelId ?? null)) &&
         (item.fuelType === (fuelType ?? null)) &&
@@ -159,11 +220,19 @@ export async function getAutoCareFairPrice(input: { serviceId: string; marketId?
     )
     if (exact) return toBenchmarkResponse(exact, definition)
 
+    // A provider-derived comparison has one explicit market and therefore one
+    // authoritative currency. Never turn an omitted/unknown market into a
+    // cross-market aggregate.
+    if (!market) return null
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
-    const locations = await locationRepository.find({ where: market ? { marketId: market.id } : undefined })
-    const offers = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({
-        where: { definitionId: definition.id, active: true, ...(locations.length > 0 ? { locationId: In(locations.map((location) => location.id)) } : {}) },
-    })
+    const locations = (await locationRepository.find({ where: { marketId: market.id } }))
+        .filter((location) => location.marketId === market.id)
+    if (locations.length === 0) return null
+    const locationIds = new Set(locations.map((location) => location.id))
+    const marketCurrency = market.currencyCode.toUpperCase()
+    const offers = (await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({
+        where: { definitionId: definition.id, active: true, locationId: In([...locationIds]) },
+    })).filter((offer) => locationIds.has(offer.locationId) && offer.currencyCode.toUpperCase() === marketCurrency)
     if (offers.length === 0) return null
     const prices = offers.map((offer) => offer.priceFromMinor).sort((left, right) => left - right)
     const minPriceMinor = prices[0]!
@@ -172,13 +241,13 @@ export async function getAutoCareFairPrice(input: { serviceId: string; marketId?
     return {
         serviceDefinitionId: definition.id,
         serviceSlug: definition.slug,
-        marketId: market?.id ?? null,
+        marketId: market.id,
         makeId: makeId ?? null,
         modelId: modelId ?? null,
         minPriceMinor,
         medianPriceMinor,
         maxPriceMinor,
-        currencyCode: offers[0]!.currencyCode,
+        currencyCode: marketCurrency,
         methodology: {
             kind: 'provider-offer-derived',
             sampleSize: offers.length,
@@ -197,6 +266,9 @@ export async function getAutoCareProviderTrust(providerId: string) {
     if (!normalizedProviderId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Provider id must be a valid UUID.' })
     const provider = await AppDataSource.getRepository(AutomotiveProviderEntity).findOneBy({ id: normalizedProviderId })
     if (!provider || provider.status !== AutomotiveProviderStatus.Active) notFound('Automotive provider not found.')
+    const locations = await getLaunchReadyProviderLocations(provider.id)
+    if (locations.length === 0) notFound('Automotive provider not found.')
+    const locationIds = locations.map((location) => location.id)
     const evidence = await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).find({
         where: { providerId: normalizedProviderId },
         order: { createdAt: 'DESC' },
@@ -211,7 +283,7 @@ export async function getAutoCareProviderTrust(providerId: string) {
         && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
     )
     const snapshots = await AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({
-        where: { providerId: normalizedProviderId },
+        where: { providerId: normalizedProviderId, locationId: In(locationIds) },
         order: { computedAt: 'DESC' },
         take: 100,
     })
@@ -316,18 +388,23 @@ export async function createAutoCareBroadcastRequest(user: UserEntity, input: un
     const definition = await findDefinition(normalizedInput.serviceDefinitionId)
     if (!definition) notFound('Service definition not found.')
     const market = await findMarket(normalizedInput.marketId)
-    const request = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).save(AppDataSource.getRepository(AutoCareBroadcastRequestEntity).create({
-        clientId: user.id,
-        serviceDefinitionId: definition.id,
-        marketId: market?.id ?? null,
-        issueDescription: normalizedInput.issueDescription,
-        vehicleSnapshot: normalizedInput.vehicleSnapshot,
-        photoUrls: normalizedInput.photoUrls,
-        preferredAt: normalizedInput.preferredAt ? new Date(normalizedInput.preferredAt) : null,
-        maxProviders: normalizedInput.maxProviders,
-        expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
-        status: 'open',
-    }))
+    if (!market || !(await isPublicMarket(market))) notFound('Automotive service market is not available.')
+    const request = await AppDataSource.transaction(async (manager) => {
+        await lockAndRequirePublicMarket(manager, market.id)
+        const repository = manager.getRepository(AutoCareBroadcastRequestEntity)
+        return repository.save(repository.create({
+            clientId: user.id,
+            serviceDefinitionId: definition.id,
+            marketId: market.id,
+            issueDescription: normalizedInput.issueDescription,
+            vehicleSnapshot: normalizedInput.vehicleSnapshot,
+            photoUrls: normalizedInput.photoUrls,
+            preferredAt: normalizedInput.preferredAt ? new Date(normalizedInput.preferredAt) : null,
+            maxProviders: normalizedInput.maxProviders,
+            expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+            status: 'open',
+        }))
+    })
     return getAutoCareBroadcastRequest(user, request.id)
 }
 
@@ -352,23 +429,39 @@ export async function assertOwnerBroadcastAccess(user: UserEntity, request: Auto
     const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({
         where: { providerId: In(providerIds) },
     })
-    const locationIds = locations
-        .filter((location) => isManagedProviderLocationAllowed(managedScopes, location.providerId, location.id))
-        .map((location) => location.id)
-    if (locationIds.length === 0) forbidden('You do not have access to this broadcast request.')
+    const authorizedLocations = locations.filter((location) => isManagedProviderLocationAllowed(managedScopes, location.providerId, location.id))
+    if (authorizedLocations.length === 0) forbidden('You do not have access to this broadcast request.')
 
     // An owner may inspect a request only if their provider already submitted
     // an offer, or while it is open and they publish the requested service at
     // one of their own locations. This keeps the direct-ID endpoint from
     // becoming a client/vehicle/offer directory.
-    const existingOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).findOne({
-        where: { broadcastRequestId: request.id, providerId: In(providerIds) },
+    const existingOffers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
+        where: {
+            broadcastRequestId: request.id,
+            providerId: In(providerIds),
+            locationId: In(authorizedLocations.map((location) => location.id)),
+        },
     })
-    if (existingOffer) return
+    const authorizedLocationById = new Map(authorizedLocations.map((location) => [location.id, location]))
+    const hasPriorOfferAtAuthorizedLocation = existingOffers.some((offer) => {
+        const location = authorizedLocationById.get(offer.locationId)
+        return Boolean(location && location.providerId === offer.providerId && (!request.marketId || location.marketId === request.marketId))
+    })
+    if (hasPriorOfferAtAuthorizedLocation) return
     if (request.status !== 'open' || request.expiresAt <= new Date()) forbidden('You do not have access to this broadcast request.')
 
+    // Before an offer exists, an owner sees only a public request for the
+    // exact market where one of their authorized branches publishes the
+    // requested service. Legacy market-less rows remain participant-only.
+    if (!request.marketId) forbidden('You do not have access to this broadcast request.')
+    const matchingLocations = authorizedLocations.filter((location) => location.marketId === request.marketId)
+    if (matchingLocations.length === 0) forbidden('You do not have access to this broadcast request.')
+    const market = await AppDataSource.getRepository(AutomotiveMarketEntity).findOneBy({ id: request.marketId })
+    if (!(await isPublicMarket(market))) forbidden('You do not have access to this broadcast request.')
+
     const matchingOffering = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOne({
-        where: { definitionId: request.serviceDefinitionId, locationId: In(locationIds), active: true },
+        where: { definitionId: request.serviceDefinitionId, locationId: In(matchingLocations.map((location) => location.id)), active: true },
     })
     if (!matchingOffering) forbidden('You do not have access to this broadcast request.')
 }
@@ -386,11 +479,23 @@ export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId:
         where: ownedProviderIds ? { broadcastRequestId: request.id, providerId: In(ownedProviderIds) } : { broadcastRequestId: request.id },
         order: { createdAt: 'ASC' },
     })
-    const visibleOffers = ownedScopes
-        ? offers.filter((offer) => isManagedProviderLocationAllowed(ownedScopes, offer.providerId, offer.locationId))
-        : offers
-    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(visibleOffers.map((offer) => offer.providerId)) } })
-    const locations = await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { id: In(visibleOffers.map((offer) => offer.locationId)) } })
+    const offeredLocations = offers.length > 0
+        ? await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { id: In(offers.map((offer) => offer.locationId)) } })
+        : []
+    const offeredLocationById = new Map(offeredLocations.map((location) => [location.id, location]))
+    const visibleOffers = offers.filter((offer) => {
+        const location = offeredLocationById.get(offer.locationId)
+        if (!location || location.providerId !== offer.providerId || (request.marketId && location.marketId !== request.marketId)) return false
+        return !ownedScopes || isManagedProviderLocationAllowed(ownedScopes, offer.providerId, offer.locationId)
+    })
+    const visibleProviderIds = [...new Set(visibleOffers.map((offer) => offer.providerId))]
+    const visibleLocationIds = [...new Set(visibleOffers.map((offer) => offer.locationId))]
+    const providers = visibleProviderIds.length > 0
+        ? await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(visibleProviderIds) } })
+        : []
+    const locations = visibleLocationIds.length > 0
+        ? offeredLocations.filter((location) => visibleLocationIds.includes(location.id))
+        : []
     const providerById = new Map(providers.map((provider) => [provider.id, provider]))
     const locationById = new Map(locations.map((location) => [location.id, location]))
     return {
@@ -425,17 +530,40 @@ export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
-        : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
-    const locations = (await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) } }))
+        : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds), status: AutomotiveProviderStatus.Active } })
+    const locations = (providers.length === 0 ? [] : await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) } }))
         .filter((location) => isManagedProviderLocationAllowed(scopes, location.providerId, location.id))
     const requests = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).find({ where: { status: 'open' }, order: { createdAt: 'DESC' }, take: 100 })
     if (locations.length === 0 || requests.length === 0) return []
-    const definitionIds = new Set(requests.map((request) => request.serviceDefinitionId))
-    const offers = await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({ where: { definitionId: In([...definitionIds]), locationId: In(locations.map((location) => location.id)), active: true } })
-    const eligibleDefinitions = new Set(offers.map((offer) => offer.definitionId))
-    return Promise.all(requests
-        .filter((request) => (!request.expiresAt || request.expiresAt > new Date()) && eligibleDefinitions.has(request.serviceDefinitionId))
-        .map((request) => getAutoCareBroadcastRequest(user, request.id)))
+    const requestIds = requests.map((request) => request.id)
+    const locationIds = locations.map((location) => location.id)
+    const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
+        where: { broadcastRequestId: In(requestIds), locationId: In(locationIds) },
+    })
+    const offersByRequestId = new Map<string, AutoCareBroadcastOfferEntity[]>()
+    for (const offer of offers) offersByRequestId.set(offer.broadcastRequestId, [...(offersByRequestId.get(offer.broadcastRequestId) ?? []), offer])
+    const publicMarketIds = await getPublicMarketIds(locations.map((location) => location.marketId))
+    const marketMatchedLocations = locations.filter((location) => publicMarketIds.has(location.marketId))
+    const definitionIds = [...new Set(requests.map((request) => request.serviceDefinitionId))]
+    const matchingOfferings = marketMatchedLocations.length === 0
+        ? []
+        : await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({
+            where: { definitionId: In(definitionIds), locationId: In(marketMatchedLocations.map((location) => location.id)), active: true },
+        })
+    const activeDefinitionByLocation = new Set(matchingOfferings.map((offer) => `${offer.definitionId}:${offer.locationId}`))
+    const locationById = new Map(locations.map((location) => [location.id, location]))
+    const now = new Date()
+    const visibleRequests = requests.filter((request) => {
+        if (request.expiresAt && request.expiresAt <= now) return false
+        const participantOffer = (offersByRequestId.get(request.id) ?? []).some((offer) => {
+            const location = locationById.get(offer.locationId)
+            return Boolean(location && location.providerId === offer.providerId && isManagedProviderLocationAllowed(scopes, offer.providerId, offer.locationId) && (!request.marketId || location.marketId === request.marketId))
+        })
+        if (participantOffer) return true
+        if (!request.marketId) return false
+        return marketMatchedLocations.some((location) => location.marketId === request.marketId && activeDefinitionByLocation.has(`${request.serviceDefinitionId}:${location.id}`))
+    })
+    return Promise.all(visibleRequests.map((request) => getAutoCareBroadcastRequest(user, request.id)))
 }
 
 export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId: string, input: CreateAutoCareBroadcastOfferInput) {
@@ -454,6 +582,8 @@ export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId
 
             const location = await manager.getRepository(AutomotiveServiceLocationEntity).findOneBy({ id: normalizedInput.locationId })
             if (!location) notFound('Provider location not found.')
+            if (!request.marketId || request.marketId !== location.marketId) conflict('This provider location is outside the requested market.')
+            await lockAndRequirePublicMarket(manager, location.marketId)
             const provider = await manager.getRepository(AutomotiveProviderEntity).findOneBy({ id: location.providerId, status: AutomotiveProviderStatus.Active })
             if (!provider || !(await hasProviderWorkspacePermissionWithManager(manager, user.id, provider.id, 'requests', location.id))) forbidden('This location is not managed by the current owner.')
             const definitionOffer = await manager.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ locationId: location.id, definitionId: request.serviceDefinitionId, active: true })

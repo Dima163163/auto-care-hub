@@ -5,7 +5,7 @@ import {
     NotificationCategory,
     NotificationEntity,
 } from '../../entities/notification/notification.entity.js'
-import type { UserEntity } from '../../entities/user/user.entity.js'
+import { UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { logError } from '../../shared/observability/logger.js'
@@ -38,6 +38,7 @@ type CreateNotificationInput = {
     metadata?: Record<string, unknown>
     title: string
     userId: string
+    outboxEventId?: string
 }
 
 export async function createNotificationSafely(input: CreateNotificationInput) {
@@ -52,18 +53,34 @@ export async function createNotificationSafely(input: CreateNotificationInput) {
 }
 
 export async function createNotification(input: CreateNotificationInput) {
-    const notificationRepository = AppDataSource.getRepository(NotificationEntity)
     const category = assertNotificationCategory(input.category)
-    const notification = notificationRepository.create({
+    const notificationInput = {
         userId: input.userId,
         category,
         title: normalizeNotificationContent(input.title, MAX_NOTIFICATION_TITLE_LENGTH, 'title'),
         message: normalizeNotificationContent(input.message, MAX_NOTIFICATION_MESSAGE_LENGTH, 'message'),
         link: normalizeNotificationLink(input.link),
         metadata: assertNotificationMetadataWithinBounds(input.metadata ?? {}),
-    })
+    }
 
-    return notificationRepository.save(notification)
+    return AppDataSource.transaction(async (manager) => {
+        const user = await manager.getRepository(UserEntity).findOne({
+            where: { id: input.userId },
+            select: { id: true },
+            lock: { mode: 'pessimistic_read' },
+        })
+        if (!user) return null
+
+        const notifications = manager.getRepository(NotificationEntity)
+        if (input.outboxEventId) {
+            const existing = await notifications.findOneBy({ outboxEventId: input.outboxEventId })
+            if (existing) return existing
+        }
+
+        return notifications.save(
+            notifications.create({ ...notificationInput, outboxEventId: input.outboxEventId ?? null }),
+        )
+    })
 }
 
 export async function listNotifications(

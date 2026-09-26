@@ -7,7 +7,7 @@ import {
     AutoCareCapacityResourceType,
 } from '../../entities/index.js'
 import { AppError } from '../../shared/errors/app-error.js'
-import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { ERROR_CODES, type ErrorCode } from '../../shared/errors/error-codes.js'
 import { normalizeAppointmentCapacity } from './capacity-reservation.js'
 
 export type AutoCareResourceRequirement = {
@@ -74,8 +74,8 @@ export async function hasAutoCareResourceAvailability(manager: EntityManager, in
     return true
 }
 
-function conflict(message: string): never {
-    throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message })
+function conflict(message: string, code: ErrorCode = ERROR_CODES.Conflict): never {
+    throw new AppError({ statusCode: 409, code, message })
 }
 
 function normalizeTypes(types: readonly string[] | null | undefined) {
@@ -122,7 +122,7 @@ export async function reserveAutoCareResources(manager: EntityManager, input: Re
                 break
             }
         }
-        if (!candidate) conflict(`The selected visit time is no longer available for the requested ${requiredType} resource.`)
+        if (!candidate) conflict(`The selected visit time is no longer available for the requested ${requiredType} resource.`, ERROR_CODES.SlotUnavailable)
         selected.push(candidate)
         usedIds.add(candidate.id)
     }
@@ -140,7 +140,7 @@ export async function reserveAutoCareResources(manager: EntityManager, input: Re
             .andWhere('reservation.startsAt < :endsAt AND reservation.endsAt > :startsAt', { startsAt: input.startsAt, endsAt })
             .andWhere('reservation.requestId <> :requestId', { requestId: input.excludeRequestId ?? input.requestId })
             .getMany()
-        if (overlaps.length >= normalizeAppointmentCapacity(resource.capacity)) conflict('The selected visit time is no longer available for the requested resource.')
+        if (overlaps.length >= normalizeAppointmentCapacity(resource.capacity)) conflict('The selected visit time is no longer available for the requested resource.', ERROR_CODES.SlotUnavailable)
         await reservationRepository.save(reservationRepository.create({
             requestId: input.requestId,
             resourceId: resource.id,

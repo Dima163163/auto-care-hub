@@ -55,6 +55,42 @@ describe('auto care communication settings', () => {
         expect(ownerAutoCareProviderSchema.parse({ ...provider, chatEnabled: false, communicationMode: 'phone_only', responseWindowMinutes: null }).communicationMode).toBe('phone_only')
     })
 
+    it('accepts a provider in an arbitrary country and city without a market id', () => {
+        const parsed = ownerAutoCareProviderSchema.parse({
+            ...base,
+            name: 'Berlin Garage',
+            countryCode: 'DE',
+            countryName: 'Germany',
+            cityName: 'Berlin',
+            currencyCode: 'EUR',
+            timezone: 'Europe/Berlin',
+            address: 'Berlin, Test street 1',
+            hours: 'Mon-Sun 09:00-20:00',
+            yearsActive: 1,
+            staffCount: 1,
+            isMultibrand: true,
+            brandSpecializations: [],
+            amenityIds: [],
+        })
+
+        expect(parsed.marketId).toBeUndefined()
+        expect(parsed.cityName).toBe('Berlin')
+    })
+
+    it('requires a market id or a complete free-form location', () => {
+        expect(() => ownerAutoCareProviderSchema.parse({
+            ...base,
+            name: 'Unlocated Garage',
+            address: 'Test street 1',
+            hours: 'Mon-Sun 09:00-20:00',
+            yearsActive: 1,
+            staffCount: 1,
+            isMultibrand: true,
+            brandSpecializations: [],
+            amenityIds: [],
+        })).toThrow()
+    })
+
     it('accepts opaque private document references and rejects public document URLs', () => {
         const provider = {
             ...base,

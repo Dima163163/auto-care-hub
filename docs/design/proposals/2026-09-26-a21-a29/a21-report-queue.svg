@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="940" viewBox="0 0 1360 940" role="img" aria-labelledby="title desc">
+  <title id="title">A21 — очередь жалоб с поиском и фильтрами</title>
+  <desc id="desc">Предложение интерфейса суперадминистратора. Видны только метаданные жалоб, текст сообщений скрыт.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="5" stdDeviation="12" flood-color="#0b1d32" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="1360" height="940" fill="#eef2f7"/>
+  <text x="44" y="42" fill="#41546a" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="1.2">ПРЕДЛОЖЕНИЕ · A21 · МОДЕРАЦИЯ ЖАЛОБ</text>
+  <rect x="40" y="62" width="1280" height="830" rx="20" fill="#f8fafc" filter="url(#shadow)"/>
+  <path d="M60 62h1240a20 20 0 0 1 20 20v54H40V82a20 20 0 0 1 20-20Z" fill="#071b31"/>
+  <circle cx="70" cy="91" r="6" fill="#5aa7ff"/><text x="88" y="98" fill="#f4f8ff" font-family="Onest, Arial, sans-serif" font-size="17" font-weight="800">AutoCare Hub</text>
+  <text x="1115" y="98" fill="#d9e7f6" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="600">Суперадминистратор</text>
+  <rect x="40" y="136" width="225" height="756" fill="#10243a"/>
+  <text x="68" y="182" fill="#a9bfd4" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing="1.2">УПРАВЛЕНИЕ</text>
+  <text x="68" y="224" fill="#d7e4f1" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="600">Обзор</text>
+  <text x="68" y="269" fill="#d7e4f1" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="600">Пользователи</text>
+  <rect x="54" y="292" width="197" height="44" rx="9" fill="#1c3a58"/>
+  <rect x="54" y="302" width="3" height="24" rx="2" fill="#55a6ff"/>
+  <text x="68" y="320" fill="#ffffff" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="800">Жалобы на сообщения</text>
+  <text x="68" y="367" fill="#d7e4f1" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="600">Аудит доступа</text>
+  <text x="68" y="412" fill="#d7e4f1" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="600">Системные события</text>
+  <rect x="266" y="136" width="1054" height="756" fill="#f5f7fa"/>
+  <text x="310" y="191" fill="#172536" font-family="Russo One, Onest, Arial, sans-serif" font-size="29">Жалобы на сообщения</text>
+  <text x="310" y="220" fill="#5b6b7d" font-family="Onest, Arial, sans-serif" font-size="14">Найдите дело, проверьте назначение и откройте только разрешённый материал.</text>
+  <rect x="1117" y="166" width="154" height="38" rx="10" fill="#e6edf5"/>
+  <text x="1136" y="190" fill="#35475a" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="700">Очередь: 284 дела</text>
+  <rect x="300" y="246" width="986" height="126" rx="15" fill="#ffffff" stroke="#d8e0e9"/>
+  <text x="324" y="273" fill="#405268" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="800">ПОИСК ПО ID ЖАЛОБЫ ИЛИ ЧАТА</text>
+  <rect x="324" y="286" width="402" height="44" rx="9" fill="#ffffff" stroke="#cbd5e1"/>
+  <circle cx="347" cy="307" r="7" fill="none" stroke="#66809a" stroke-width="2"/><path d="m352 312 6 6" stroke="#66809a" stroke-width="2"/>
+  <text x="370" y="312" fill="#728296" font-family="Onest, Arial, sans-serif" font-size="13">Например, CR-1048 или chat-7821</text>
+  <rect x="744" y="286" width="210" height="44" rx="9" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="762" y="312" fill="#26384b" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="600">Все модераторы</text><path d="m928 303 6 6 6-6" fill="none" stroke="#566b80" stroke-width="2"/>
+  <rect x="970" y="286" width="137" height="44" rx="9" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="988" y="312" fill="#26384b" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="600">Все категории</text><path d="m1080 303 6 6 6-6" fill="none" stroke="#566b80" stroke-width="2"/>
+  <rect x="1121" y="286" width="141" height="44" rx="9" fill="#0057b8"/>
+  <text x="1152" y="312" fill="#ffffff" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Найти дела</text>
+  <rect x="324" y="342" width="174" height="30" rx="15" fill="#e5f0ff"/>
+  <text x="347" y="362" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="800">Активные · 18</text>
+  <text x="525" y="362" fill="#586b7e" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="700">Архив · 266</text>
+  <text x="1094" y="362" fill="#627488" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="600">Сначала новые</text>
+  <rect x="300" y="390" width="986" height="55" rx="12" fill="#eaf0f6"/>
+  <text x="322" y="423" fill="#52657a" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".5">ДЕЛО</text>
+  <text x="492" y="423" fill="#52657a" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".5">УЧАСТНИКИ</text>
+  <text x="746" y="423" fill="#52657a" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".5">НАЗНАЧЕНО</text>
+  <text x="962" y="423" fill="#52657a" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".5">СТАТУС / СРОК</text>
+  <text x="1150" y="423" fill="#52657a" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".5">ДЕЙСТВИЕ</text>
+  <rect x="300" y="457" width="986" height="116" rx="12" fill="#ffffff" stroke="#d8e0e9"/>
+  <text x="322" y="487" fill="#172536" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="800">CR-1048</text>
+  <rect x="322" y="500" width="104" height="24" rx="12" fill="#fff1db"/><text x="336" y="516" fill="#8b4b00" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">Оскорбления</text>
+  <text x="492" y="486" fill="#223448" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">Клиент → сервис</text>
+  <text x="492" y="507" fill="#697b8e" font-family="Onest, Arial, sans-serif" font-size="11">Чат chat-7821</text>
+  <text x="746" y="486" fill="#223448" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">Ирина Петрова</text>
+  <text x="746" y="507" fill="#697b8e" font-family="Onest, Arial, sans-serif" font-size="11">Назначено 2 ч назад</text>
+  <rect x="962" y="474" width="83" height="23" rx="12" fill="#fff1db"/><text x="979" y="490" fill="#8b4b00" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">Ожидает</text>
+  <text x="962" y="522" fill="#697b8e" font-family="Onest, Arial, sans-serif" font-size="11">До 27 сен., 15:00</text>
+  <text x="1150" y="500" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="800">Открыть дело →</text>
+  <rect x="300" y="584" width="986" height="116" rx="12" fill="#ffffff" stroke="#d8e0e9"/>
+  <text x="322" y="614" fill="#172536" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="800">CR-1047</text>
+  <rect x="322" y="627" width="104" height="24" rx="12" fill="#e7eef7"/><text x="337" y="643" fill="#445a70" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">Спам</text>
+  <text x="492" y="613" fill="#223448" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">Сервис → клиент</text>
+  <text x="492" y="634" fill="#697b8e" font-family="Onest, Arial, sans-serif" font-size="11">Чат chat-7790</text>
+  <text x="746" y="613" fill="#223448" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">Не назначено</text>
+  <text x="746" y="634" fill="#697b8e" font-family="Onest, Arial, sans-serif" font-size="11">Нужно назначение</text>
+  <rect x="962" y="601" width="83" height="23" rx="12" fill="#fff1db"/><text x="979" y="617" fill="#8b4b00" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">Ожидает</text>
+  <text x="962" y="649" fill="#697b8e" font-family="Onest, Arial, sans-serif" font-size="11">Сегодня, 11:42</text>
+  <text x="1150" y="627" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="800">Открыть дело →</text>
+  <rect x="300" y="726" width="986" height="94" rx="12" fill="#edf5ff" stroke="#c7def8"/>
+  <circle cx="326" cy="755" r="10" fill="#d7eaff"/><path d="M326 749v7m0 4v1" stroke="#0057b8" stroke-width="2" stroke-linecap="round"/>
+  <text x="348" y="756" fill="#163450" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Переписка не показывается в очереди</text>
+  <text x="348" y="779" fill="#4c647c" font-family="Onest, Arial, sans-serif" font-size="12">Текст чата доступен только уполномоченному участнику отдельного дела, в пределах срока доступа.</text>
+  <text x="322" y="856" fill="#596d80" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="600">Показано 50 из 284</text>
+  <rect x="1085" y="836" width="177" height="40" rx="9" fill="#ffffff" stroke="#b8c8d8"/>
+  <text x="1123" y="861" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="800">Загрузить ещё</text>
+</svg>

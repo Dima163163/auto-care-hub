@@ -12,6 +12,7 @@ export type SchemaIndex = {
     indexName: string
     unique?: boolean
     columns?: readonly string[]
+    predicate?: string
 }
 
 export type SchemaConstraint = {
@@ -75,11 +76,16 @@ export const REQUIRED_SCHEMA_COLUMNS: readonly SchemaColumn[] = [
     { tableName: 'outbox_events', columnName: 'attempts' },
     { tableName: 'outbox_events', columnName: 'availableAt' },
     { tableName: 'outbox_events', columnName: 'createdAt' },
+    { tableName: 'notifications', columnName: 'outboxEventId' },
+    { tableName: 'autocare_service_messages', columnName: 'evidenceRetainUntil' },
     { tableName: 'autocare_service_requests', columnName: 'bookingSnapshot' },
     { tableName: 'autocare_service_requests', columnName: 'bookingCreatedAt' },
     { tableName: 'autocare_service_requests', columnName: 'vehicleId' },
     { tableName: 'client_vehicles', columnName: 'licensePlate' },
     { tableName: 'client_vehicles', columnName: 'internalNumber' },
+    { tableName: 'users', columnName: 'emailCiphertext' },
+    { tableName: 'autocare_provider_invitations', columnName: 'emailCiphertext' },
+    { tableName: 'oauth_identities', columnName: 'provider_subject_ciphertext' },
     { tableName: 'autocare_service_offerings', columnName: 'bookingMode' },
     { tableName: 'autocare_service_offerings', columnName: 'requiredResourceTypes' },
     { tableName: 'autocare_service_offerings', columnName: 'requiredResourceIds' },
@@ -191,6 +197,7 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
         tableName: 'outbox_events',
         indexName: 'IDX_outbox_status_available',
     },
+    { tableName: 'notifications', indexName: 'UQ_notifications_outbox_event', unique: true, columns: ['outboxEventId'] },
     {
         tableName: 'autocare_bonus_programs',
         indexName: 'UQ_autocare_bonus_programs_provider',
@@ -222,10 +229,29 @@ export const REQUIRED_SCHEMA_INDEXES: readonly SchemaIndex[] = [
     { tableName: 'autocare_catalog_gap_requests', indexName: 'UQ_autocare_catalog_gap_requests_pending_slug', unique: true },
     { tableName: 'autocare_chat_reports', indexName: 'IDX_autocare_chat_reports_status_created' },
     { tableName: 'autocare_chat_reports', indexName: 'IDX_autocare_chat_reports_thread_created' },
-    { tableName: 'autocare_chat_reports', indexName: 'UQ_autocare_chat_reports_reporter_thread', unique: true },
+    {
+        tableName: 'autocare_chat_reports',
+        indexName: 'UQ_autocare_chat_reports_thread_reporter_message',
+        unique: true,
+        columns: ['threadId', 'reporterId', 'reportedMessageId'],
+        predicate: '("reportedMessageId" IS NOT NULL)',
+    },
     { tableName: 'autocare_chat_blocks', indexName: 'IDX_autocare_chat_blocks_thread_status' },
     { tableName: 'autocare_chat_blocks', indexName: 'IDX_autocare_chat_blocks_blocked_status' },
-    { tableName: 'autocare_chat_blocks', indexName: 'UQ_autocare_chat_blocks_scope', unique: true },
+    {
+        tableName: 'autocare_chat_blocks',
+        indexName: 'UQ_autocare_chat_blocks_user_scope',
+        unique: true,
+        columns: ['threadId', 'blockerId', 'blockedUserId'],
+        predicate: '("sourceReportId" IS NULL AND "status" = \'active\')',
+    },
+    {
+        tableName: 'autocare_chat_blocks',
+        indexName: 'UQ_autocare_chat_blocks_report',
+        unique: true,
+        columns: ['sourceReportId'],
+        predicate: '("sourceReportId" IS NOT NULL)',
+    },
     { tableName: 'autocare_appeals', indexName: 'UQ_autocare_appeals_pending_subject', unique: true, columns: ['submittedById', 'subject', 'subjectId'] },
     { tableName: 'autocare_market_countries', indexName: 'UQ_autocare_market_countries_code', unique: true, columns: ['code'] },
     { tableName: 'autocare_markets', indexName: 'IDX_autocare_markets_country', columns: ['countryId', 'cityName'] },
@@ -316,10 +342,6 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
         constraintName: 'CHK_autocare_bonus_accounts_balance',
     },
     {
-        tableName: 'autocare_provider_invitations',
-        constraintName: 'CHK_autocare_provider_invitations_email',
-    },
-    {
         tableName: 'autocare_provider_change_requests',
         constraintName: 'CHK_autocare_provider_change_requests_reason',
     },
@@ -352,8 +374,6 @@ export const REQUIRED_SCHEMA_CONSTRAINTS: readonly SchemaConstraint[] = [
     },
     { tableName: 'autocare_provider_daily_metrics', constraintName: 'CHK_autocare_provider_daily_metrics_nonnegative' },
     { tableName: 'autocare_provider_daily_metrics', constraintName: 'FK_autocare_provider_daily_metrics_provider', onDelete: 'CASCADE' },
-    { tableName: 'autocare_chat_reports', constraintName: 'CHK_autocare_chat_reports_description' },
-    { tableName: 'autocare_chat_reports', constraintName: 'CHK_autocare_chat_reports_reason' },
     { tableName: 'autocare_chat_blocks', constraintName: 'CHK_autocare_chat_blocks_distinct_users' },
     { tableName: 'autocare_chat_reports', constraintName: 'FK_autocare_chat_reports_thread', onDelete: 'CASCADE' },
     { tableName: 'autocare_chat_reports', constraintName: 'FK_autocare_chat_reports_reporter', onDelete: 'RESTRICT' },
@@ -394,6 +414,7 @@ export function getMissingSchemaIndexes(
         indexname: string
         indisunique?: boolean
         columns?: readonly (string | null)[] | null
+        predicate?: string | null
     }[],
     required = REQUIRED_SCHEMA_INDEXES,
 ) {
@@ -414,15 +435,30 @@ export function getMissingSchemaIndexes(
             }
 
             if (requiredIndex.columns !== undefined) {
-                return (
+                const columnsMatch = (
                     row.columns?.length === requiredIndex.columns.length
                     && row.columns.every((column, index) => column === requiredIndex.columns?.[index])
                 )
+                if (!columnsMatch) return false
+            }
+
+            if (
+                requiredIndex.predicate !== undefined
+                && normalizeIndexPredicate(row.predicate) !== normalizeIndexPredicate(requiredIndex.predicate)
+            ) {
+                return false
             }
 
             return true
         }))
         .map((index) => `${index.tableName}.${index.indexName}`)
+}
+
+function normalizeIndexPredicate(predicate: string | null | undefined) {
+    return predicate
+        ?.replaceAll('"', '')
+        .replace(/::[a-z_][a-z0-9_.]*/gi, '')
+        .replace(/[\s()]/g, '') ?? null
 }
 
 export function getMissingSchemaConstraints(

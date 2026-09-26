@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title">
+  <title id="title">Светлая тема</title>
+  <circle cx="12" cy="12" r="4.3" fill="#ffd166" stroke="#f4b942" stroke-width="1.4"/>
+  <path d="M12 2.5v2.1m0 14.8v2.1m9.5-9.5h-2.1M4.6 12H2.5m16.2-6.7-1.5 1.5M6.8 17.2l-1.5 1.5m13.4 0-1.5-1.5M6.8 6.8 5.3 5.3" stroke="#f4b942" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

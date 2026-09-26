@@ -1,14 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/commissioner";
-@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource/russo-one";
+@import "@fontsource-variable/onest";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: 'Commissioner Variable', 'Commissioner', 'Avenir Next', ui-sans-serif, sans-serif;
-    --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-heading: 'Russo One', 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-sans: 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -76,6 +76,7 @@
     --color-secondary-foreground: var(--secondary-foreground);
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-strong-foreground: var(--primary-strong-foreground);
     --color-primary: var(--primary);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
@@ -94,8 +95,8 @@
 
 :root {
     /* Shared foundation tokens for responsive public and operational surfaces. */
-    --font-display: 'Commissioner Variable', 'Commissioner', 'Avenir Next', ui-sans-serif, sans-serif;
-    --font-body: 'IBM Plex Sans Variable', 'IBM Plex Sans', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-display: 'Russo One', 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
+    --font-body: 'Onest Variable', 'Onest', 'Avenir Next', ui-sans-serif, sans-serif;
     --type-label-size: 0.6875rem;
     --type-label-line: 1rem;
     --type-body-size: 1rem;
@@ -120,6 +121,9 @@
     --radius-pill: 999px;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
+    --workspace-icon-start: #0878df;
+    /* A deeper cyan keeps the gradient legible on light card surfaces. */
+    --workspace-icon-end: #147f9f;
     --motion-duration-fast: 150ms;
     --motion-duration-standard: 300ms;
     --motion-duration-slow: 600ms;
@@ -135,6 +139,7 @@
     /* 7.1:1 against white for buttons and links that carry meaning. */
     --primary: #0057b8;
     --primary-foreground: oklch(0.99 0 0);
+    --primary-strong-foreground: #ffffff;
     --secondary: oklch(0.95 0.025 245);
     --secondary-foreground: oklch(0.35 0.15 265);
     --muted: oklch(0.96 0.01 260);
@@ -205,6 +210,7 @@
     --popover-foreground: #edf6ff;
     --primary: #4d9dff;
     --primary-foreground: #edf6ff;
+    --primary-strong-foreground: #041322;
     --secondary: #1b344d;
     --secondary-foreground: #dcecff;
     --muted: #152b42;
@@ -216,6 +222,8 @@
     --border: #2b4863;
     --input: #2b4863;
     --ring: rgb(77 157 255 / 0.65);
+    --workspace-icon-start: #83c5ff;
+    --workspace-icon-end: #78d8e3;
     --hero-overlay: #061a31;
     --hero-glow: rgb(77 157 255 / 0.36);
     --map-surface: #103257;
@@ -389,6 +397,93 @@
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-size: cover;
+}
+
+/* Internal account and operations SVGs share one blue-to-cyan treatment. The
+   theme attribute is only set on private workspace routes so public-page icons
+   keep their existing colors and semantics. */
+.workspace-icon-definitions {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+[data-workspace-icon-theme="true"] svg.lucide:not([class*="text-status-"]):not([class*="text-severity-"]):not([class*="text-destructive"]) {
+    stroke: url(#autocare-workspace-icon-gradient);
+    stroke-width: 1.85;
+    filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--workspace-icon-start) 15%, transparent));
+    transition: filter var(--motion-duration-fast) ease, transform var(--motion-duration-fast) ease;
+}
+
+/* Status colors carry meaning, so error, warning and success marks keep their
+   semantic stroke instead of inheriting the decorative brand gradient. */
+[data-workspace-icon-theme="true"] [class*="bg-status-"] svg.lucide,
+[data-workspace-icon-theme="true"] [class*="text-status-"] svg.lucide,
+[data-workspace-icon-theme="true"] [class*="text-severity-"] svg.lucide,
+[data-workspace-icon-theme="true"] [class*="text-destructive"] svg.lucide,
+[data-workspace-icon-theme="true"] svg.lucide[class*="text-status-"],
+[data-workspace-icon-theme="true"] svg.lucide[class*="text-severity-"],
+[data-workspace-icon-theme="true"] svg.lucide[class*="text-destructive"] {
+    stroke: currentColor !important;
+    filter: none;
+}
+
+.workspace-nav-icon {
+    position: relative;
+    display: inline-grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: 0 0 1.75rem;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--workspace-icon-start) 14%, transparent);
+    border-radius: 0.65rem;
+    background: linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--workspace-icon-start) 9%, transparent),
+        color-mix(in srgb, var(--workspace-icon-end) 11%, transparent)
+    );
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 65%, transparent);
+    transition: background var(--motion-duration-fast) ease, border-color var(--motion-duration-fast) ease, box-shadow var(--motion-duration-fast) ease, transform var(--motion-duration-fast) ease;
+}
+
+.workspace-nav-icon > svg.lucide {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Lucide's question-mark dot is a nearly zero-length path and disappears at
+   navigation size, so give the help symbol a crisp, visible dot of its own. */
+.workspace-nav-icon[data-icon-detail="help"]::after {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    width: 2.5px;
+    height: 2.5px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--workspace-icon-start), var(--workspace-icon-end));
+    content: "";
+    transform: translateX(-50%);
+}
+
+[data-workspace-icon-theme="true"] a:hover .workspace-nav-icon,
+[data-workspace-icon-theme="true"] a[aria-current="page"] .workspace-nav-icon {
+    border-color: color-mix(in srgb, var(--workspace-icon-start) 34%, transparent);
+    background: linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--workspace-icon-start) 18%, transparent),
+        color-mix(in srgb, var(--workspace-icon-end) 22%, transparent)
+    );
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 72%, transparent), 0 3px 10px color-mix(in srgb, var(--workspace-icon-start) 12%, transparent);
+    transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .workspace-nav-icon,
+    [data-workspace-icon-theme="true"] svg.lucide {
+        transition: none;
+    }
 }
 
 /* Keep the generated automotive texture visible around workspace cards and pages. */

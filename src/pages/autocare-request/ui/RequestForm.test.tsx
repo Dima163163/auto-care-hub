@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,7 +19,7 @@ vi.mock('@/shared/lib/useTranslation', () => ({
     }),
 }))
 
-function renderForm(initialEntry: string, onSubmit = vi.fn()) {
+function renderForm(initialEntry: string, onSubmit = vi.fn(), onAppointmentSelectionChange = vi.fn()) {
     return {
         onSubmit,
         ...render(
@@ -30,6 +30,7 @@ function renderForm(initialEntry: string, onSubmit = vi.fn()) {
                     offeringId="offering-1"
                     serviceTimezone="Europe/Moscow"
                     onSubmit={onSubmit}
+                    onAppointmentSelectionChange={onAppointmentSelectionChange}
                 />
             </MemoryRouter>,
         ),
@@ -43,7 +44,10 @@ describe('RequestForm appointment slot contract', () => {
                 date,
                 timezone: 'Europe/Moscow',
                 durationMinutes: 60,
-                slots: [{ startTime: '10:00', endTime: '11:00', startsAt: `${date}T07:00:00.000Z` }],
+                slots: [
+                    { startTime: '10:00', endTime: '11:00', startsAt: `${date}T07:00:00.000Z` },
+                    { startTime: '10:30', endTime: '11:30', startsAt: `${date}T07:30:00.000Z` },
+                ],
             },
             isError: false,
             isFetching: false,
@@ -56,6 +60,27 @@ describe('RequestForm appointment slot contract', () => {
         fireEvent.submit(container.querySelector('form')!)
 
         expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ preferredAt: '2026-09-05T07:00:00.000Z' }))
+    })
+
+    it('reports the URL-selected date and time to the booking summary', async () => {
+        const onAppointmentSelectionChange = vi.fn()
+
+        renderForm('/services/provider-1/request?date=2026-09-05&time=10:30', vi.fn(), onAppointmentSelectionChange)
+
+        await waitFor(() => {
+            expect(onAppointmentSelectionChange).toHaveBeenLastCalledWith({ date: '2026-09-05', time: '10:30' })
+        })
+    })
+
+    it('reports a changed appointment time to the booking summary', async () => {
+        const onAppointmentSelectionChange = vi.fn()
+
+        renderForm('/services/provider-1/request?date=2026-09-05&time=10:00', vi.fn(), onAppointmentSelectionChange)
+        fireEvent.click(await screen.findByRole('button', { name: '10:30' }))
+
+        await waitFor(() => {
+            expect(onAppointmentSelectionChange).toHaveBeenLastCalledWith({ date: '2026-09-05', time: '10:30' })
+        })
     })
 
     it('keeps the Moscow service date when the browser is in New York', () => {

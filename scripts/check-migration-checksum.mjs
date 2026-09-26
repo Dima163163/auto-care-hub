@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildMigrationInventory } from './check-migration-inventory.mjs'
-import { evaluatePublishedMigrationImmutability } from './migration-inventory.mjs'
+import { evaluatePublishedMigrationImmutability, getMigrationInventoryChecksum } from './migration-inventory.mjs'
 
 const projectRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 
@@ -30,10 +30,16 @@ export async function evaluateMigrationChecksumManifest({ migrationDirectory, ma
     // forward migrations, so its full inventory checksum is expected to differ;
     // immutable per-file hashes below remain the authoritative comparison.
     const currentInventory = await buildMigrationInventory(migrationDirectory)
-    const manifestChecksumValid = typeof manifest.inventoryChecksum === 'string'
+    const publishedSources = await Promise.all(manifest.migrations.map(async ({ fileName }) => ({
+        fileName,
+        source: await readFile(resolve(migrationDirectory, fileName), 'utf8'),
+    })))
+    const expectedManifestChecksum = getMigrationInventoryChecksum(publishedSources)
+    const manifestChecksumValid = manifest.inventoryChecksum === expectedManifestChecksum
     return {
         manifest,
         currentInventory,
+        expectedManifestChecksum,
         ...result,
         manifestChecksumValid,
         pass: result.pass && manifestChecksumValid,
@@ -50,6 +56,7 @@ function formatResult(result) {
     if (result.mismatches.length > 0) lines.push(`Mismatches: ${result.mismatches.map((item) => `${item.fileName} expected=${item.expected} actual=${item.actual}`).join('; ')}`)
     if (result.missing.length > 0) lines.push(`Missing published files: ${result.missing.join(', ')}`)
     if (result.additions.length > 0) lines.push(`Unpublished additions: ${result.additions.join(', ')}`)
+    if (!result.manifestChecksumValid) lines.push('The published inventory checksum does not match its listed migration sources.')
     return lines.join('\n')
 }
 

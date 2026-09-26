@@ -17,6 +17,7 @@ import { ProfilePreferences } from './ProfilePreferences'
 import { OAuthConnectionsCard } from './OAuthConnectionsCard'
 import { ProfilePrivacy } from './ProfilePrivacy'
 import { OwnerCommunicationProfileSettings } from './OwnerCommunicationProfileSettings'
+import { CommunityProfileSettings } from './CommunityProfileSettings'
 
 export function ProfilePage() {
     const { t } = useTranslation()
@@ -95,6 +96,7 @@ export function ProfilePage() {
                         {activeTab === 'general' && (
                             <div className="grid gap-6">
                                 <GeneralInfoSection user={user} />
+                                {user.role === 'client' && <CommunityProfileSettings />}
                                 {user.role === 'owner' && <OwnerCommunicationProfileSettings />}
                                 {user.role !== 'client' && <ProfilePreferences user={user} />}
                             </div>

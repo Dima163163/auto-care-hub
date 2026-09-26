@@ -15,15 +15,19 @@ import { Link } from 'react-router'
 import { ProviderLogo, type ProviderProfile } from '@/entities/automotive-service'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { formatAutoCareCount } from '@/shared/lib/formatAutoCareCount'
+import { normalizeLocale } from '@/shared/config/i18n'
+import { formatAutoCareReviewCount } from '@/shared/lib/formatAutoCareCount'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
 
 import { ProviderGallery } from './ProviderGallery'
 import { getProviderContactPresentation } from '../lib/providerAvailability'
 
-type ProviderHeroProps = { provider: ProviderProfile }
+type ProviderHeroProps = { provider: ProviderProfile; selectedServiceId?: string }
 
-export function ProviderHero({ provider }: ProviderHeroProps) {
-    const { t } = useTranslation()
+export function ProviderHero({ provider, selectedServiceId }: ProviderHeroProps) {
+    const { t, locale } = useTranslation()
+    const countLocale = normalizeLocale(locale) ?? 'en'
     const contact = getProviderContactPresentation(provider)
     const phone = provider.phones[0] ?? provider.phone
 
@@ -32,7 +36,7 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
             <AutoCareImage src={provider.image} alt="" loading="eager" className="absolute inset-0 h-full w-full object-cover opacity-45" />
             <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/86 to-hero-overlay/30" aria-hidden="true" />
             <div data-testid="provider-hero-container" className="relative mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-4 sm:py-5">
-                <Link to={ROUTES.serviceDiscovery} className="inline-flex items-center gap-2 text-xs font-bold text-primary-foreground/65 transition hover:text-primary-foreground"><ArrowLeft className="size-3.5" />{t('autocare.providerBackToResults')}</Link>
+                <Link to={routePaths.serviceDiscovery({ service: selectedServiceId, market: provider.marketId })} className="inline-flex items-center gap-2 text-xs font-bold text-primary-foreground/65 transition hover:text-primary-foreground"><ArrowLeft className="size-3.5" />{t('autocare.providerBackToResults')}</Link>
                 <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(380px,0.64fr)] lg:items-center">
                     <div className="min-w-0">
                         <div className="flex items-start gap-4">
@@ -40,16 +44,16 @@ export function ProviderHero({ provider }: ProviderHeroProps) {
                             <div className="min-w-0">
                                 {provider.verified && <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] bg-status-success-surface px-2.5 py-1 text-xs font-black text-status-success-foreground"><BadgeCheck className="size-3.5" />{t('autocare.trustedBadge')}</span>}
                                 <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{provider.name}</h1>
-                                <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-black text-rating-fill"><Star className="size-4 fill-rating-fill" />{provider.rating} <span className="font-semibold text-primary-foreground/75">{t('autocare.reviews', { count: provider.reviewCount })}</span></p>
+                                {provider.reviewCount > 0 ? <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-black text-rating-fill"><Star className="size-4 fill-rating-fill" />{provider.rating} <span className="font-semibold text-primary-foreground/75">{formatAutoCareReviewCount(provider.reviewCount, locale, t)}</span></p> : <p className="mt-2 text-xs font-semibold text-primary-foreground/75">{t('autocare.providerNoReviews')}</p>}
                                 <div className="mt-3 grid gap-2 text-sm font-semibold text-primary-foreground/85"><span className="inline-flex items-center gap-2"><MapPin className="size-4" />{provider.address}</span><span className="inline-flex items-center gap-2"><Clock3 className="size-4" />{provider.hours}</span></div>
                             </div>
                         </div>
                         <div className="mt-5 flex flex-wrap gap-3">
-                            {contact.allowsRequest ? <Link to={routePaths.serviceRequest(provider.id)} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><CalendarDays className="size-4" />{contact.communicationMode === 'request_then_confirm' ? t('autocare.requestAction') : t('autocare.bookAction')}</Link> : phone ? <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><Phone className="size-4" />{t('autocare.callAction')}</a> : <span className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary/60 px-4 text-sm font-black text-primary-foreground"><Phone className="size-4" />{t('common.notProvided')}</span>}
+                            {contact.allowsRequest ? <Link to={routePaths.serviceRequest(provider.id, selectedServiceId, provider.marketId)} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><CalendarDays className="size-4" />{contact.communicationMode === 'request_then_confirm' ? t('autocare.requestAction') : t('autocare.bookAction')}</Link> : phone ? <a href={`tel:${phone.replace(/[^+\d]/g, '')}`} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><Phone className="size-4" />{t('autocare.callAction')}</a> : <span className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] bg-primary/60 px-4 text-sm font-black text-primary-foreground"><Phone className="size-4" />{t('common.notProvided')}</span>}
                             {contact.showChat && <Link to={`${ROUTES.chats}?providerId=${encodeURIComponent(provider.id)}`} className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-control)] border border-primary-foreground/30 bg-primary-foreground/10 px-4 text-sm font-black text-primary-foreground transition hover:bg-primary-foreground/15"><MessageCircle className="size-4" />{t('autocare.messageAction')}</Link>}
                         </div>
                         {provider.publicContactNote && <p className="mt-3 text-xs font-semibold text-primary-foreground/75">{provider.publicContactNote}</p>}
-                        <div className="mt-5 flex flex-wrap gap-x-7 gap-y-3 border-t border-primary-foreground/20 pt-4 text-xs font-bold text-primary-foreground/80"><HeroFact icon={<CalendarDays className="size-4" />} label={t('autocare.providerYears', { count: provider.yearsActive })} /><HeroFact icon={<UsersRound className="size-4" />} label={t('autocare.providerStaff', { count: provider.staffCount })} />{provider.workstationCount > 0 && <HeroFact icon={<BadgeCheck className="size-4" />} label={t('autocare.providerWorkstations', { count: provider.workstationCount })} />}<HeroFact icon={<BadgeCheck className="size-4" />} label={provider.warrantyText || t('autocare.providerWarranty')} /></div>
+                        <div className="mt-5 flex flex-wrap gap-x-7 gap-y-3 border-t border-primary-foreground/20 pt-4 text-xs font-bold text-primary-foreground/80"><HeroFact icon={<CalendarDays className="size-4" />} label={formatAutoCareCount(provider.yearsActive, countLocale, t, { one: 'autocare.providerYearsOne', few: 'autocare.providerYearsFew', many: 'autocare.providerYearsMany', other: 'autocare.providerYearsOther' })} /><HeroFact icon={<UsersRound className="size-4" />} label={formatAutoCareCount(provider.staffCount, countLocale, t, { one: 'autocare.providerStaffOne', few: 'autocare.providerStaffFew', many: 'autocare.providerStaffMany', other: 'autocare.providerStaffOther' })} />{provider.workstationCount > 0 && <HeroFact icon={<BadgeCheck className="size-4" />} label={formatAutoCareCount(provider.workstationCount, countLocale, t, { one: 'autocare.providerWorkstationsOne', few: 'autocare.providerWorkstationsFew', many: 'autocare.providerWorkstationsMany', other: 'autocare.providerWorkstationsOther' })} />}{provider.warrantyText && <HeroFact icon={<BadgeCheck className="size-4" />} label={provider.warrantyText} />}</div>
                     </div>
                     <ProviderGallery provider={provider} />
                 </div>

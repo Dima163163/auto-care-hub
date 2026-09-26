@@ -1,11 +1,13 @@
 import type { FastifyRequest } from 'fastify'
 import type { EntityManager } from 'typeorm'
+import type { SelectQueryBuilder } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
 import { AuditAction, AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { UserEntity } from '../../entities/user/user.entity.js'
 import {
     assertCursorDate,
     decodeCursor,
+    encodeCursor,
     getCursorLimit,
     isCursorPaginationRequested,
     toCursorPage,
@@ -62,6 +64,48 @@ export async function recordAuditLog(input: RecordAuditLogInput) {
     return auditLogRepository.save(auditLog)
 }
 
+async function findAuditLogsByDecryptedSearch(
+    query: SelectQueryBuilder<AuditLogEntity>,
+    rawSearch: string,
+    requestedCount: number,
+) {
+    const term = rawSearch.toLocaleLowerCase('en-US')
+    const matching: AuditLogEntity[] = []
+    let cursor: string | null = null
+    while (matching.length < requestedCount) {
+        const batchQuery = query.clone()
+        if (cursor) {
+            const decoded = decodeCursor(cursor, ['createdAt', 'id'])
+            batchQuery.andWhere(
+                '(audit.createdAt < :searchCursorCreatedAt OR (audit.createdAt = :searchCursorCreatedAt AND audit.id < :searchCursorId))',
+                { searchCursorCreatedAt: assertCursorDate(decoded, 'createdAt'), searchCursorId: decoded.id },
+            )
+        }
+        const batch = await batchQuery
+            .orderBy('audit.createdAt', 'DESC')
+            .addOrderBy('audit.id', 'DESC')
+            .take(100)
+            .getMany()
+        for (const log of batch) {
+            const searchable = [
+                log.action,
+                log.targetType,
+                log.targetId,
+                log.actor?.name,
+                JSON.stringify(log.metadata ?? {}),
+            ]
+            if (searchable.some((value) => typeof value === 'string' && value.toLocaleLowerCase('en-US').includes(term))) {
+                matching.push(log)
+            }
+            if (matching.length >= requestedCount) break
+        }
+        const last = batch.at(-1)
+        if (!last || batch.length < 100) break
+        cursor = encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id })
+    }
+    return matching
+}
+
 export async function getAuditLogs(
     admin: UserEntity,
     input: unknown = {},
@@ -85,16 +129,6 @@ export async function getAuditLogs(
     const query = auditLogRepository
         .createQueryBuilder('audit')
         .leftJoinAndSelect('audit.actor', 'actor')
-
-    if (search) {
-        query.andWhere(`(
-            audit.action ILIKE :auditSearch OR
-            audit.targetType ILIKE :auditSearch OR
-            audit.targetId ILIKE :auditSearch OR
-            actor.name ILIKE :auditSearch OR
-            audit.metadata::text ILIKE :auditSearch
-        )`, { auditSearch: `%${search}%` })
-    }
 
     if (action) {
         query.andWhere('audit.action = :action', { action })
@@ -122,11 +156,14 @@ export async function getAuditLogs(
         )
     }
 
-    const logs = await query
-        .orderBy('audit.createdAt', 'DESC')
-        .addOrderBy('audit.id', 'DESC')
-        .take(isPaginated ? limit + 1 : 100)
-        .getMany()
+    const requestedCount = isPaginated ? limit + 1 : 100
+    const logs = search
+        ? await findAuditLogsByDecryptedSearch(query, search, requestedCount)
+        : await query
+            .orderBy('audit.createdAt', 'DESC')
+            .addOrderBy('audit.id', 'DESC')
+            .take(requestedCount)
+            .getMany()
 
     return isPaginated
         ? toCursorPage(logs, limit, (log) => ({
@@ -166,16 +203,6 @@ export async function getAuditLogsForExport(
         .leftJoinAndSelect('audit.actor', 'actor')
 
     const search = normalizedInput.search
-    if (search) {
-        query.andWhere(`(
-            audit.action ILIKE :auditSearch OR
-            audit.targetType ILIKE :auditSearch OR
-            audit.targetId ILIKE :auditSearch OR
-            actor.name ILIKE :auditSearch OR
-            audit.metadata::text ILIKE :auditSearch
-        )`, { auditSearch: `%${search}%` })
-    }
-
     const action = normalizedInput.action
     const targetType = normalizedInput.targetType
 
@@ -193,11 +220,14 @@ export async function getAuditLogsForExport(
         query.andWhere('audit.actorId = :actorId', { actorId: normalizedInput.actorId })
     }
 
-    return query
-        .orderBy('audit.createdAt', 'DESC')
-        .addOrderBy('audit.id', 'DESC')
-        .take(getAuditExportRowLimit(normalizedInput.limit))
-        .getMany()
+    const limit = getAuditExportRowLimit(normalizedInput.limit)
+    return search
+        ? findAuditLogsByDecryptedSearch(query, search, limit)
+        : query
+            .orderBy('audit.createdAt', 'DESC')
+            .addOrderBy('audit.id', 'DESC')
+            .take(limit)
+            .getMany()
 }
 
 function toCsvCell(value: unknown) {

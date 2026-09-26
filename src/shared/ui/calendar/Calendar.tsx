@@ -35,7 +35,10 @@ function Calendar({
         week: 'grid grid-cols-7',
         day: 'relative flex aspect-square items-center justify-center p-0 text-center',
         day_button: 'inline-flex size-10 items-center justify-center rounded-xl text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:size-11 sm:text-base',
-        selected: '[&>button]:bg-primary [&>button]:font-semibold [&>button]:text-primary-foreground [&>button]:shadow-md [&>button]:shadow-primary/20 [&>button]:hover:bg-primary',
+        // The dark theme uses a brighter primary surface. Keep selected-day
+        // text on the semantic strong-contrast token so the calendar remains
+        // WCAG AA readable without leaking a raw color into the component.
+        selected: '[&>button]:bg-primary [&>button]:font-semibold [&>button]:text-primary-strong-foreground [&>button]:shadow-md [&>button]:shadow-primary/20 [&>button]:hover:bg-primary',
         today: '[&>button]:border [&>button]:border-primary/40 [&>button]:font-semibold [&>button]:text-primary',
         outside: 'text-muted-foreground opacity-35',
         disabled: 'pointer-events-none text-muted-foreground opacity-30',

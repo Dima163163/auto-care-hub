@@ -15,6 +15,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { toOfferResponse, toProviderResponse } from './autocare.mappers.js'
 import { normalizeAutoCareFavoriteLocationUuid, normalizeAutoCareFavoriteProviderIds, normalizeAutoCareFavoriteProviderUuid } from './autocare-favorites-input-policy.js'
+import { getPublicAutoCareReviewSummaries, type AutoCareReviewSummary } from './autocare-review-summary.js'
 
 export type AutoCareFavoriteResponse = {
     id: string
@@ -31,7 +32,7 @@ function assertClient(user: UserEntity) {
     }
 }
 
-async function getFavoriteResponse(favorite: AutomotiveProviderFavoriteEntity): Promise<AutoCareFavoriteResponse | null> {
+async function getFavoriteResponse(favorite: AutomotiveProviderFavoriteEntity, reviewSummary: AutoCareReviewSummary = { rating: 0, reviewCount: 0 }): Promise<AutoCareFavoriteResponse | null> {
     const providerRepository = AppDataSource.getRepository(AutomotiveProviderEntity)
     const locationRepository = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
     const definitionRepository = AppDataSource.getRepository(AutomotiveServiceDefinitionEntity)
@@ -52,7 +53,7 @@ async function getFavoriteResponse(favorite: AutomotiveProviderFavoriteEntity): 
         providerId: provider.id,
         locationId: location.id,
         createdAt: favorite.createdAt.toISOString(),
-        provider: toProviderResponse(provider, location),
+        provider: toProviderResponse(provider, location, reviewSummary),
         offer: offering ? toOfferResponse(offering, definition ?? undefined) : null,
     }
 }
@@ -63,7 +64,8 @@ export async function getMyAutoCareFavorites(user: UserEntity) {
         where: { userId: user.id },
         order: { createdAt: 'DESC', id: 'DESC' },
     })
-    const responses = await Promise.all(favorites.map(getFavoriteResponse))
+    const reviewSummaries = await getPublicAutoCareReviewSummaries(favorites.map((favorite) => favorite.providerId))
+    const responses = await Promise.all(favorites.map((favorite) => getFavoriteResponse(favorite, reviewSummaries.get(favorite.providerId))))
     const staleIds = favorites.filter((_favorite, index) => responses[index] === null).map((favorite) => favorite.id)
     if (staleIds.length > 0) await AppDataSource.getRepository(AutomotiveProviderFavoriteEntity).delete({ id: In(staleIds) })
     return responses.filter((item): item is AutoCareFavoriteResponse => item !== null)
@@ -89,7 +91,8 @@ export async function addAutoCareFavorite(user: UserEntity, providerId: string, 
         { conflictPaths: ['userId', 'providerId'] },
     )
     const saved = await repository.findOneBy({ userId: user.id, providerId: provider.id })
-    const response = saved ? await getFavoriteResponse(saved) : null
+    const reviewSummary = (await getPublicAutoCareReviewSummaries([provider.id])).get(provider.id)
+    const response = saved ? await getFavoriteResponse(saved, reviewSummary) : null
     if (!response) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive provider favorite could not be loaded.' })
     return response
 }

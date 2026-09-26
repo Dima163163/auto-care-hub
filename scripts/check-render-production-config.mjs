@@ -5,6 +5,7 @@ const REQUIRED_FRAGMENTS = [
     ['production runtime', 'key: NODE_ENV\n        value: production'],
     ['one-shot migration job', 'preDeployCommand: "npm run release:migrate"'],
     ['migration-free web start', 'startCommand: "npm run start:server"'],
+    ['HTTP readiness health check', 'healthCheckPath: /health/ready'],
     ['SMTP delivery', 'key: MAIL_MODE\n        value: smtp'],
     ['explicit bootstrap email', 'key: BOOTSTRAP_SUPER_ADMIN_EMAIL\n        sync: false'],
     ['outbox encryption key', 'key: OUTBOX_TOKEN_ENCRYPTION_KEY\n        sync: false'],

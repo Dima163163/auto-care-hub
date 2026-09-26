@@ -46,6 +46,7 @@ import {
     resolveRedisRateLimitFailureMode,
     type RedisRateLimitFailureMode,
 } from './redis-rate-limit-policy.js'
+import { assertProductionDatabaseTlsPolicy, assertProductionJwtSecretPolicy, getDefaultBindHost } from './secure-production-config.js'
 
 const NODE_ENVS = ['development', 'test', 'production'] as const
 
@@ -363,6 +364,9 @@ function getDatabaseConfig(): EnvConfig['database'] {
         throw new Error('DATABASE_POOL_MIN cannot be greater than DATABASE_POOL_SIZE.')
     }
 
+    const sslRejectUnauthorized = getBooleanEnv('DATABASE_SSL_REJECT_UNAUTHORIZED', true)
+    assertProductionDatabaseTlsPolicy(nodeEnv, sslRejectUnauthorized)
+
     const runtimeConfig = {
         poolSize,
         poolMin,
@@ -373,7 +377,7 @@ function getDatabaseConfig(): EnvConfig['database'] {
         slowQueryThresholdMs: getBoundedPositiveNumberEnv('DATABASE_SLOW_QUERY_THRESHOLD_MS', 750, 120_000),
         maxActiveRatio: getBoundedRatioEnv('DATABASE_MAX_ACTIVE_RATIO', 0.9, 1),
         maxWaitingRequests: getBoundedNonNegativeNumberEnv('DATABASE_MAX_WAITING_REQUESTS', 10, 10_000),
-        sslRejectUnauthorized: getBooleanEnv('DATABASE_SSL_REJECT_UNAUTHORIZED', true),
+        sslRejectUnauthorized,
     }
 
     if (!isValidEnvString(databaseUrl)) {
@@ -544,6 +548,11 @@ export function getCorsOrigins(nodeEnv: NodeEnv, defaultOrigin: string) {
 }
 
 const nodeEnv = getNodeEnv()
+assertProductionJwtSecretPolicy({
+    nodeEnv,
+    accessSecret: process.env.JWT_ACCESS_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET,
+})
 const configuredDeploymentMarket = process.env.DEPLOYMENT_MARKET ?? process.env.VITE_DEPLOYMENT_MARKET
 const resolvedDeploymentMarket = resolveDeploymentMarket(configuredDeploymentMarket)
 
@@ -597,7 +606,7 @@ export const env: EnvConfig = {
     nodeEnv,
     runtimeMode: normalizeRuntimeMode(process.env.RUNTIME_MODE),
     port: getNumberEnv('PORT', 4000),
-    host: getOptionalEnv('HOST', '0.0.0.0'),
+    host: getOptionalEnv('HOST', getDefaultBindHost(nodeEnv)),
     trustedProxy: getTrustedProxyConfig(nodeEnv),
     cabinetPhotoAllowedHosts: getListEnv('CABINET_PHOTO_ALLOWED_HOSTS', []),
     cabinetImageStorageProvider: resolveCabinetImageStorageProvider(

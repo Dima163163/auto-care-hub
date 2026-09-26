@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { createReadStream } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
@@ -78,5 +79,7 @@ export async function getGitProvenance(root) {
 }
 
 export async function sha256File(filePath) {
-    return sha256(await readFile(resolve(filePath)))
+    const hash = createHash('sha256')
+    for await (const chunk of createReadStream(resolve(filePath))) hash.update(chunk)
+    return hash.digest('hex')
 }

@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm'
 import { env } from '../config/env.js'
 import { entities } from '../entities/index.js'
 import { DatabaseLogger } from './database-logger.js'
+import { SensitiveDataSubscriber } from '../shared/security/data-encryption/sensitive-data-subscriber.js'
 
 export function getMigrationPaths(nodeEnv: 'development' | 'test' | 'production') {
     return [
@@ -22,6 +23,7 @@ export const AppDataSource = new DataSource({
     password: env.database.password,
     database: env.database.name,
     entities,
+    subscribers: [SensitiveDataSubscriber],
     migrations: getMigrationPaths(env.nodeEnv),
     migrationsTableName: 'migrations',
     migrationsTransactionMode: 'each',

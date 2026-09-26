@@ -1,5 +1,5 @@
 import { CalendarDays, Camera, ChevronDown, Clock3, LockKeyhole, Phone, Send, ShieldCheck } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
@@ -42,9 +42,10 @@ function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {
     const [selectedTime, setSelectedTime] = useState('')
     const [selectedDayIndex, setSelectedDayIndex] = useState(0)
     const [customDate, setCustomDate] = useState('')
+    const [showMoreDays, setShowMoreDays] = useState(false)
     const serviceTimezone = provider.timezone
     const service = automotiveServices.find((item) => item.id === offering.serviceId)
-    const days = Array.from({ length: 4 }, (_, index) => {
+    const days = Array.from({ length: showMoreDays ? 14 : 4 }, (_, index) => {
         const date = getProviderDateInputValue(index, serviceTimezone)
         return { id: date, label: index === 0 ? t('autocare.providerToday') : index === 1 ? t('autocare.providerTomorrow') : new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(`${date}T12:00:00`)), date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(new Date(`${date}T12:00:00`)) }
     })
@@ -70,7 +71,7 @@ function BookingPanel({ provider, offering }: ProviderRequestPanelProps) {
 
     const canChooseTime = (availabilityState === 'success' || availabilityState === 'refreshing' || availabilityState === 'stale-error') && times.length > 0
     const price = formatProviderOfferingPrice(offering, locale, { from: (value) => t('autocare.fromPrice', { price: value }), quoteRequired: t('autocare.quoteRequiredPrice') })
-    return <section className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><div className="border-b border-border px-5 py-4"><h2 className="text-lg font-black tracking-tight text-foreground">{t('autocare.providerBookingTitle')}</h2><p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.providerBookingStep')}</p></div><div className="grid gap-5 p-5"><BookingService label={t('autocare.requestSelectedService')} value={service ? getServiceLabel(service, locale) : offering.serviceId} price={price} /><BookingVehicle vehicle={vehicle} /><div><p className="text-xs font-black text-foreground">{t('autocare.providerNextAvailability')}</p><div className="mt-3 grid grid-cols-4 gap-1.5">{days.map((day, index) => { const isAvailable = isProviderDateAvailable(day.id, provider); return <button key={day.date} type="button" disabled={!isAvailable} onClick={() => { setSelectedDayIndex(index); setCustomDate('') }} className={`${selectedDayIndex === index && !customDate ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'} min-h-12 rounded-[var(--radius-control)] border px-1 text-[10px] font-bold ${isAvailable ? 'hover:border-primary' : 'cursor-not-allowed opacity-45'}`}><span className="block">{day.label}</span><span className="mt-0.5 block text-[9px] font-medium">{day.date}</span></button> })}</div><div className="mt-4 grid gap-1.5">{availabilityState === 'loading' ? <div role="status" aria-label={t('common.loading')} className="grid gap-1.5">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-9 w-full rounded-[var(--radius-control)]" />)}</div> : null}{!canChooseTime && availabilityState !== 'loading' ? <QueryStateCard state={availabilityState} emptyTitle={t('booking.noAvailableTimes')} error={availability.error} onRetry={availability.refetch} /> : null}{canChooseTime && availabilityState === 'stale-error' ? <QueryStateCard state="stale-error" error={availability.error} onRetry={availability.refetch} /> : null}{canChooseTime ? times.map((time, index) => <button key={time} type="button" onClick={() => setSelectedTime(time)} className={effectiveTime === time ? 'flex h-9 items-center justify-between rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary' : 'flex h-9 items-center justify-between rounded-[var(--radius-control)] border border-border px-3 text-xs font-bold text-foreground hover:border-primary'}><span>{time}</span><span className="text-[10px] font-medium text-muted-foreground">{t('autocare.providerSeatCount', { count: index === 2 ? 1 : 2 })}</span></button>) : null}</div><button type="button" onClick={() => setCustomDate(customDate ? '' : getProviderDateInputValue(4, serviceTimezone))} className="mt-3 inline-flex w-full items-center justify-center gap-1 text-xs font-bold text-primary"><span>{t('autocare.providerShowMoreTimes')}</span><ChevronDown className="size-3.5" /></button><DateInputTrigger className="mt-2" label={t('autocare.providerOtherDateTime')} min={getProviderDateInputValue(0, serviceTimezone)} value={customDate} onChange={(value) => { setCustomDate(value); setSelectedDayIndex(-1) }} />{customDate ? <p className="mt-2 text-center text-[10px] font-semibold text-primary">{t('autocare.providerCustomDateSelected', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${customDate}T12:00:00`)), time: effectiveTime })}</p> : null}</div></div><div className="border-t border-border p-5 pt-4">{canChooseTime ? <Link to={`${routePaths.serviceRequest(provider.id, offering.serviceId)}&date=${encodeURIComponent(selectedDate)}&time=${encodeURIComponent(effectiveTime)}${vehicleQuery}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><CalendarDays className="size-4" />{t('autocare.providerContinue')}</Link> : <button type="button" disabled className="inline-flex h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 py-0 text-sm font-black text-primary-foreground opacity-50"><CalendarDays className="size-4" />{t('autocare.providerContinue')}</button>}</div></section>
+    return <section className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm"><div className="border-b border-border px-5 py-4"><h2 className="text-lg font-black tracking-tight text-foreground">{t('autocare.providerBookingTitle')}</h2><p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.providerBookingStep')}</p></div><div className="grid gap-5 p-5"><BookingService label={t('autocare.requestSelectedService')} value={service ? getServiceLabel(service, locale) : offering.serviceId} price={price} /><BookingVehicle vehicle={vehicle} /><div><p className="text-xs font-black text-foreground">{t('autocare.providerNextAvailability')}</p><div className="mt-3 grid grid-cols-4 gap-1.5">{days.map((day, index) => { const isAvailable = isProviderDateAvailable(day.id, provider); return <button key={day.date} type="button" disabled={!isAvailable} onClick={() => { setSelectedDayIndex(index); setCustomDate('') }} className={`${selectedDayIndex === index && !customDate ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'} min-h-12 rounded-[var(--radius-control)] border px-1 text-[10px] font-bold ${isAvailable ? 'hover:border-primary' : 'cursor-not-allowed opacity-45'}`}><span className="block">{day.label}</span><span className="mt-0.5 block text-[9px] font-medium">{day.date}</span></button> })}</div><div className="mt-4 grid gap-1.5">{availabilityState === 'loading' ? <div role="status" aria-label={t('common.loading')} className="grid gap-1.5">{Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-9 w-full rounded-[var(--radius-control)]" />)}</div> : null}{!canChooseTime && availabilityState !== 'loading' ? <QueryStateCard state={availabilityState} emptyTitle={t('booking.noAvailableTimes')} error={availability.error} onRetry={availability.refetch} /> : null}{canChooseTime && availabilityState === 'stale-error' ? <QueryStateCard state="stale-error" error={availability.error} onRetry={availability.refetch} /> : null}{canChooseTime ? times.map((time) => <button key={time} type="button" onClick={() => setSelectedTime(time)} className={effectiveTime === time ? 'flex h-9 items-center justify-between rounded-[var(--radius-control)] border border-primary bg-primary/10 px-3 text-xs font-black text-primary' : 'flex h-9 items-center justify-between rounded-[var(--radius-control)] border border-border px-3 text-xs font-bold text-foreground hover:border-primary'}>{time}</button>) : null}</div><button type="button" aria-expanded={showMoreDays} onClick={() => setShowMoreDays((showing) => !showing)} className="mt-3 inline-flex w-full items-center justify-center gap-1 text-xs font-bold text-primary"><span>{t(showMoreDays ? 'autocare.providerShowFewerDates' : 'autocare.providerShowMoreTimes')}</span><ChevronDown className={`size-3.5 ${showMoreDays ? 'rotate-180' : ''}`} /></button><DateInputTrigger className="mt-2" label={t('autocare.providerOtherDateTime')} min={getProviderDateInputValue(0, serviceTimezone)} value={customDate} onChange={(value) => { setCustomDate(value); setSelectedDayIndex(-1) }} />{customDate ? <p className="mt-2 text-center text-[10px] font-semibold text-primary">{t('autocare.providerCustomDateSelected', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${customDate}T12:00:00`)), time: effectiveTime })}</p> : null}</div></div><div className="border-t border-border p-5 pt-4">{canChooseTime ? <Link to={`${routePaths.serviceRequest(provider.id, offering.serviceId, provider.marketId)}&date=${encodeURIComponent(selectedDate)}&time=${encodeURIComponent(effectiveTime)}${vehicleQuery}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"><CalendarDays className="size-4" />{t('autocare.providerContinue')}</Link> : <button type="button" disabled className="inline-flex h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 py-0 text-sm font-black text-primary-foreground opacity-50"><CalendarDays className="size-4" />{t('autocare.providerContinue')}</button>}</div></section>
 }
 
 function BookingService({ label, value, price }: { label: string; value: string; price: string }) {
@@ -84,8 +85,8 @@ function BookingVehicle({ vehicle }: { vehicle?: { id: string; vehicleSnapshot: 
     const model = String(snapshot?.modelLabel ?? snapshot?.model ?? '').trim()
     const year = String(snapshot?.year ?? '').trim()
     const title = [make, model].filter(Boolean).join(' ') || t('autocare.providerVehicleValue')
-    const details = [year, snapshot?.fuelType].filter(Boolean).join(' · ') || t('autocare.providerVehicleDetails')
-    return <div className="border-y border-border py-4"><p className="text-xs font-black text-foreground">{t('autocare.providerVehicleLabel')}</p><div className="mt-2 flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hero-overlay text-xs font-black text-primary-foreground">{make.slice(0, 3).toUpperCase() || 'AUTO'}</span><p className="min-w-0 flex-1 text-xs font-bold leading-5"><span className="block text-foreground">{title}</span><span className="text-muted-foreground">{details}</span></p><Link to={ROUTES.profileVehicles} className="text-xs font-bold text-primary">{t('autocare.providerChangeVehicle')}</Link></div></div>
+    const details = [year, snapshot?.fuelType].filter(Boolean).join(' · ')
+    return <div className="border-y border-border py-4"><p className="text-xs font-black text-foreground">{t('autocare.providerVehicleLabel')}</p><div className="mt-2 flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hero-overlay text-xs font-black text-primary-foreground">{make.slice(0, 3).toUpperCase() || 'AUTO'}</span><p className="min-w-0 flex-1 text-xs font-bold leading-5"><span className="block text-foreground">{title}</span>{details && <span className="text-muted-foreground">{details}</span>}</p><Link to={ROUTES.profileVehicles} className="text-xs font-bold text-primary">{t(vehicle ? 'autocare.providerChangeVehicle' : 'autocare.providerSelectVehicle')}</Link></div></div>
 }
 
 function EstimatePanel({ provider, offering }: ProviderRequestPanelProps) {
@@ -117,6 +118,7 @@ function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) 
     const [message, setMessage] = useState('')
     const [files, setFiles] = useState<File[]>([])
     const [attachmentUploadErrorCount, setAttachmentUploadErrorCount] = useState(0)
+    const pendingMessageRef = useRef<{ body: string; idempotencyKey: string; chatId: string | null; messageSent: boolean } | null>(null)
     const [createChat, chatState] = useCreateAutoCareChatMutation()
     const [sendMessage, messageState] = useCreateAutoCareChatMessageMutation()
     const [uploadAttachment, uploadState] = useCreateAutoCareChatAttachmentMutation()
@@ -131,6 +133,7 @@ function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) 
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         if (!message.trim()) return
+        if (isSending) return
         if (!user) {
             navigate(ROUTES.login, { state: { from: location } })
             return
@@ -139,23 +142,47 @@ function EstimateRequestForm({ provider, offering }: ProviderRequestPanelProps) 
             navigate(ROUTES.verifyEmail, { state: { from: location } })
             return
         }
+        const body = message.trim()
+        const pending = pendingMessageRef.current?.body === body
+            ? pendingMessageRef.current
+            : { body, idempotencyKey: crypto.randomUUID(), chatId: null, messageSent: false }
+        pendingMessageRef.current = pending
         try {
-            const thread = await createChat({ type: 'provider_inquiry', providerId: provider.id, subject: `${t('autocare.providerRequestTitle')}: ${offering.serviceId}` }).unwrap()
-            await sendMessage({ chatId: thread.id, body: message.trim() }).unwrap()
+            const thread = pending.chatId
+                ? { id: pending.chatId }
+                : await createChat({ type: 'provider_inquiry', providerId: provider.id, subject: `${t('autocare.providerRequestTitle')}: ${offering.serviceId}` }).unwrap()
+            pending.chatId = thread.id
+            if (!pending.messageSent) {
+                await sendMessage({ chatId: thread.id, body, idempotencyKey: pending.idempotencyKey }).unwrap()
+                pending.messageSent = true
+            }
             const uploadResults = await Promise.allSettled(files.map(async (file) => {
                 const contentType = getSupportedImageMimeType(file)
                 if (!contentType) throw new Error(`Unsupported image: ${file.name}`)
 
                 return uploadAttachment({ chatId: thread.id, fileName: file.name, contentType, size: file.size, contentBase64: await readFileAsBase64(file) }).unwrap()
             }))
-            setAttachmentUploadErrorCount(uploadResults.filter((item) => item.status === 'rejected').length)
+            const failedFiles = files.filter((_file, index) => uploadResults[index]?.status === 'rejected')
+            setAttachmentUploadErrorCount(failedFiles.length)
+            if (failedFiles.length > 0) {
+                setFiles(failedFiles)
+                return
+            }
+            pendingMessageRef.current = null
             navigate(`${ROUTES.chats}?chat=${encodeURIComponent(thread.id)}`)
         } catch {
             // Keep the form available so the client can retry.
         }
     }
 
-    return <form className="mt-5 grid gap-3" onSubmit={(event) => void submit(event)}><textarea required rows={3} value={message} onChange={(event) => setMessage(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.providerMessagePlaceholder')} /><label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{t('autocare.providerAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>{files.length > 0 ? <p className="text-[11px] font-semibold text-muted-foreground">{files.length} {t('autocare.providerAttachPhoto')}</p> : null}<button type="submit" disabled={isSending || !message.trim()} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"><Send className="size-4" />{t('autocare.providerSendRequest')}</button>{attachmentUploadErrorCount > 0 ? <p role="status" className="text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}{chatState.isError || messageState.isError || uploadState.isError ? <p role="alert" className="text-xs font-bold text-destructive">{t('autocare.providerRequestError')}</p> : null}</form>
+    return <form className="mt-5 grid gap-3" onSubmit={(event) => void submit(event)}>
+        <textarea required rows={3} value={message} onChange={(event) => setMessage(event.target.value)} disabled={attachmentUploadErrorCount > 0} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60" placeholder={t('autocare.providerMessagePlaceholder')} />
+        <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed border-border px-3 text-xs font-bold text-muted-foreground transition hover:border-primary hover:text-primary"><Camera className="size-4 text-primary" />{t('autocare.providerAttachPhoto')}<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectFiles} className="sr-only" /></label>
+        {files.length > 0 ? <p className="text-[11px] font-semibold text-muted-foreground">{files.length} {t('autocare.providerAttachPhoto')}</p> : null}
+        <button type="submit" disabled={isSending || !message.trim()} className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"><Send className="size-4" />{t(attachmentUploadErrorCount > 0 ? 'autocare.providerRetryAttachments' : 'autocare.providerSendRequest')}</button>
+        {attachmentUploadErrorCount > 0 ? <p role="status" className="text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}
+        {chatState.isError || messageState.isError || uploadState.isError ? <p role="alert" className="text-xs font-bold text-destructive">{t('autocare.providerRequestError')}</p> : null}
+    </form>
 }
 
 function readFileAsBase64(file: File) {

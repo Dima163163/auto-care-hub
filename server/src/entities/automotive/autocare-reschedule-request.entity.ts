@@ -5,6 +5,7 @@ import {
     Index,
     PrimaryGeneratedColumn,
 } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum AutoCareRescheduleStatus {
     Pending = 'pending',
@@ -24,9 +25,9 @@ export class AutoCareRescheduleRequestEntity {
     @Column({ type: 'uuid' }) requestedById!: string
     @Column({ type: 'timestamptz' }) proposedAt!: Date
     @Column({ type: 'enum', enum: AutoCareRescheduleStatus, enumName: 'autocare_reschedule_status', default: AutoCareRescheduleStatus.Pending }) status!: AutoCareRescheduleStatus
-    @Column({ type: 'text', nullable: true }) reason!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_reschedule_requests', 'reason', 'text') }) reason!: string | null
     @Column({ type: 'uuid', nullable: true }) resolvedById!: string | null
-    @Column({ type: 'text', nullable: true }) resolutionReason!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_reschedule_requests', 'resolutionReason', 'text') }) resolutionReason!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @Column({ type: 'timestamptz', nullable: true }) resolvedAt!: Date | null
 }

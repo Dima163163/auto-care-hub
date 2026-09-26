@@ -169,6 +169,11 @@ describe('translation coverage', () => {
         }
     })
 
+    it('translates account role and status labels in Russian', () => {
+        expect(translations.ru.profile.role).toBe('Роль')
+        expect(translations.ru.profile.status).toBe('Статус')
+    })
+
     it('translates the public automotive journey for every supported language', () => {
         const keys = ['heroTitle', 'heroDescription', 'byService', 'byProvider', 'searchAction', 'resultsTitle', 'bookAction', 'detailsAction', 'providerMobileService', 'providerMobileServiceWithRadius', 'providerPickupDelivery', 'heroMapLabel', 'heroMapZoomLevel'] as const
 
@@ -185,6 +190,11 @@ describe('translation coverage', () => {
         expect(translations.es.autocare.resultCount).toBe('{{count}} talleres encontrados')
         expect(translations.ro.autocare.resultCount).toBe('{{count}} service-uri găsite')
         expect(translations.ru.autocare.resultCount).toBe('{{count}} сервисов найдено')
+        expect(translations.ru.autocare.resultCountOne).toBe('Найден {{count}} сервис')
+        expect(translations.ru.autocare.resultCountFew).toBe('Найдено {{count}} сервиса')
+        expect(translations.ru.autocare.resultCountMany).toBe('Найдено {{count}} сервисов')
+        expect(translations.ru.autocare.readyNearbyLoading).toContain('Ищем')
+        expect(translations.ru.autocare.readyNearbyUnavailable).toContain('Не удалось')
     })
 
     it('keeps Russian supplemental bundles connected after lazy splitting', () => {
