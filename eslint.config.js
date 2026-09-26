@@ -12,6 +12,8 @@ export default defineConfig([
     '**/dist',
     '.next',
     '.next/**',
+    '.next-*',
+    '.next-*/**',
     '.next-real-*',
     '.next-real-*/**',
     '.next-mock-*',

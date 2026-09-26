@@ -85,13 +85,13 @@ function groupMarkets(markets: SuperAdminPlatformOverview['markets']) {
 
 type CountryFlagDefinition = {
     orientation: 'horizontal' | 'vertical'
-    stripes: { color: string; weight: number }[]
+    bands: { color: string; weight: number }[]
 }
 
 const countryFlagDefinitions: Partial<Record<string, CountryFlagDefinition>> = {
-    ES: { orientation: 'horizontal', stripes: [{ color: '#AA151B', weight: 1 }, { color: '#F1BF00', weight: 2 }, { color: '#AA151B', weight: 1 }] },
-    MD: { orientation: 'vertical', stripes: [{ color: '#003DA5', weight: 1 }, { color: '#FFD900', weight: 1 }, { color: '#CC092F', weight: 1 }] },
-    RU: { orientation: 'horizontal', stripes: [{ color: '#FFFFFF', weight: 1 }, { color: '#0039A6', weight: 1 }, { color: '#D52B1E', weight: 1 }] },
+    ES: { orientation: 'horizontal', bands: [{ color: '#AA151B', weight: 1 }, { color: '#F1BF00', weight: 2 }, { color: '#AA151B', weight: 1 }] },
+    MD: { orientation: 'vertical', bands: [{ color: '#003DA5', weight: 1 }, { color: '#FFD900', weight: 1 }, { color: '#CC092F', weight: 1 }] },
+    RU: { orientation: 'horizontal', bands: [{ color: '#FFFFFF', weight: 1 }, { color: '#0039A6', weight: 1 }, { color: '#D52B1E', weight: 1 }] },
 }
 
 function CountryFlag({ countryCode }: { countryCode: string }) {
@@ -102,7 +102,7 @@ function CountryFlag({ countryCode }: { countryCode: string }) {
 
     return <span data-country-flag={normalizedCode} aria-hidden="true" className="size-6 shrink-0 overflow-hidden rounded-full border border-border bg-background shadow-sm">
         <span className={`flex h-full w-full ${flag.orientation === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
-            {flag.stripes.map((stripe, index) => <span key={`${stripe.color}-${index}`} className="min-h-0 min-w-0" style={{ backgroundColor: stripe.color, flex: stripe.weight }} />)}
+            {flag.bands.map((band, index) => <span key={`${band.color}-${index}`} className="min-h-0 min-w-0" style={{ backgroundColor: band.color, flex: band.weight }} />)}
         </span>
     </span>
 }
