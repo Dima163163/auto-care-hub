@@ -92,7 +92,7 @@ function loadLocalKeyProvider(): DataEncryptionKeyProvider {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
         const runtime = process.env.NODE_ENV ?? 'development'
         if (runtime === 'production') {
-            throw new Error('Production field encryption requires an external KMS key provider.')
+            throw new Error('Production field encryption requires an external KMS key provider.', { cause: error })
         }
         const keyring: LocalKeyring = {
             version: 1,

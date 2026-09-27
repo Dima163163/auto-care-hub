@@ -9,7 +9,6 @@ describe('sensitive field encryption ORM integration', () => {
     const email = `field-encryption-${suffix}@example.test`
     const providerSubject = `oauth-private-subject-${suffix}`
     let userId: string | undefined
-    let oauthIdentityId: string | undefined
     let outboxEventId: string | undefined
 
     afterAll(async () => {
@@ -56,7 +55,6 @@ describe('sensitive field encryption ORM integration', () => {
             providerSubject,
             userId: user.id,
         }))
-        oauthIdentityId = identity.id
         const rawIdentity = await AppDataSource.query(
             'SELECT "provider_subject", "provider_subject_ciphertext" FROM "oauth_identities" WHERE "id" = $1',
             [identity.id],

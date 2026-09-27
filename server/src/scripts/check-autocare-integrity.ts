@@ -37,6 +37,7 @@ const AUTOCARE_CRITICAL_TABLE_GROUPS = {
     ],
     reviews: [
         'autocare_reviews',
+        'autocare_review_helpful_votes',
         'autocare_review_promos',
         'platform_reviews',
         'reviews',
