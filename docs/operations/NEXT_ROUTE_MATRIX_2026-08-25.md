@@ -99,6 +99,7 @@ mean that Vite is involved in production.
 | --- | --- | --- |
 | `/services/:id` | `/services/api-proservice-moscow` and terminal-slash/query normalization | `PublicLayout` |
 | `/services/:id/request` | base path and `?service=oil-change` | `PublicLayout` + client booking guard |
+| `/community/clients/:profileId` | `/community/clients/client-1` | `PublicLayout` public profile only when the client opts in |
 | `/cabinets/:id` | `/cabinets/cabinet-1` | `PublicLayout` legacy redirect |
 | `/owner/autocare-providers/:id` | `/owner/autocare-providers/provider-1` | `OwnerLayout` + branch scope |
 | `/owner/autocare-providers/:id/reviews` | `/owner/autocare-providers/provider-1/reviews` | `OwnerLayout` + branch scope |

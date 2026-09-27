@@ -3,6 +3,7 @@ import { assertProductionAutoCareAttachmentPolicy } from '../modules/autocare/at
 import { AUTOCARE_DELETION_INVARIANTS } from '../modules/users/account-deletion-invariants.js'
 import { assertSafeAutoCareAttachmentObjectKey } from '../modules/autocare/autocare-attachment-storage.js'
 import { resolveRedisRateLimitFailureMode } from '../config/redis-rate-limit-policy.js'
+import { assertProductionDatabaseTlsPolicy, assertProductionJwtSecretPolicy } from '../config/secure-production-config.js'
 
 type SecurityCheck = {
     name: string
@@ -10,6 +11,29 @@ type SecurityCheck = {
 }
 
 const checks: SecurityCheck[] = [
+    {
+        name: 'production PostgreSQL connections require certificate verification',
+        run: () => {
+            try {
+                assertProductionDatabaseTlsPolicy('production', false)
+            } catch {
+                return
+            }
+            throw new Error('Production PostgreSQL TLS accepted disabled certificate verification.')
+        },
+    },
+    {
+        name: 'production access and refresh JWT secrets are separate and strong',
+        run: () => {
+            const sharedSecret = 'production-secret-0123456789-abcdefghijkl'
+            try {
+                assertProductionJwtSecretPolicy({ nodeEnv: 'production', accessSecret: sharedSecret, refreshSecret: sharedSecret })
+            } catch {
+                return
+            }
+            throw new Error('Production JWT policy accepted a shared access and refresh secret.')
+        },
+    },
     {
         name: 'production Redis rate limit policy is fail-closed',
         run: () => {

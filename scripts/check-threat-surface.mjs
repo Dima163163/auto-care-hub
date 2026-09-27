@@ -63,8 +63,8 @@ export function evaluateThreatSurface(sourceMap) {
             'WebSocket authentication and origin controls',
             sourceMap.autocare,
             [
-                "app.get('/v1/chats/:chatId/ws', { websocket: true }",
-                "app.get('/v1/service-requests/:requestId/ws', { websocket: true }",
+                "app.get('/v1/chats/:chatId/ws', { websocket: true, preHandler: autoCareWebSocketConnectionRateLimit }",
+                "app.get('/v1/service-requests/:requestId/ws', { websocket: true, preHandler: autoCareWebSocketConnectionRateLimit }",
                 'isAllowedWebSocketOrigin(request)',
                 'getWebSocketToken(request)',
                 'await requireAuth(authRequest)',

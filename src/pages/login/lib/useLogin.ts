@@ -7,9 +7,9 @@ import { toast } from 'sonner'
 
 import { getDefaultRouteByRole, useLoginMutation } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
-import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import type { I18nContextValue } from '@/shared/lib/i18n-context'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { getLoginErrorMessage } from './get-login-error-message'
 import {
     parseLoginLocationState,
     type LoginRedirectLocation,
@@ -67,7 +67,7 @@ export function useLogin() {
                 replace: true
             })
         } catch (error) {
-            const message = getApiErrorMessage(
+            const message = getLoginErrorMessage(
                 error,
                 t('auth.failedToSignIn'),
             )

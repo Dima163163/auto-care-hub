@@ -41,7 +41,7 @@ export function getAutoCareResultFilters(params: URLSearchParams): AutoCareResul
         // silently narrowing the first page to oil change.
         serviceId: params.get('service') ?? '',
         providerName: params.get('provider') ?? '',
-        marketId: params.get('market') ?? 'ru-moscow',
+        marketId: params.get('market') === 'ru-moscow' ? 'moscow' : params.get('market') ?? '',
         zoneId: params.get('zone') ?? '',
         radiusKm: Number.isFinite(radiusValue) && radiusValue > 0 ? radiusValue : 25,
         sort: sort && SORTS.has(sort as AutoCareResultSort) ? sort as AutoCareResultSort : 'recommended',

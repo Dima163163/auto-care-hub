@@ -52,7 +52,7 @@ describe('service request identifier boundary', () => {
             createAutoCareServiceAttachment(client, 'request-1', { contentType: 'image/jpeg', bytes: 'AQ==' } as never),
             getAutoCareServiceAttachment(client, 'request-1', 'attachment-1'),
             requestAutoCareServiceReschedule(owner, 'request-1', { proposedAt: '2026-09-01T10:00:00.000Z' }),
-            decideAutoCareServiceReschedule(client, 'request-1', 'accept'),
+            decideAutoCareServiceReschedule(client, 'request-1', '11111111-1111-4111-8111-111111111111', 'accept'),
             markAutoCareServiceRequestNoShow(owner, 'request-1'),
             completeAutoCareServiceRequest(owner, 'request-1'),
             cancelAutoCareServiceRequest(client, 'request-1'),
@@ -62,21 +62,19 @@ describe('service request identifier boundary', () => {
         expect(mocks.transaction).not.toHaveBeenCalled()
     })
 
-    it('allows super admins through service-request participant checks', async () => {
+    it('keeps SuperAdmin chat reads on the audited route and never marks legacy chat messages read', async () => {
         const requestId = '11111111-1111-4111-8111-111111111111'
-        const requestRepository = {
-            findOneBy: vi.fn().mockResolvedValue({
-                id: requestId,
-                clientId: 'client-1',
-                providerId: 'provider-1',
-                locationId: 'location-1',
-            }),
-        }
-        mocks.getRepository.mockReturnValue(requestRepository)
+        await expect(assertAutoCareServiceRequestRealtimeAccess(superAdmin, requestId)).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getAutoCareServiceRequestConversation(superAdmin, requestId)).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getAutoCareServiceAttachment(superAdmin, requestId, '22222222-2222-4222-8222-222222222222')).rejects.toMatchObject({ statusCode: 403 })
+        await expect(markAutoCareServiceConversationRead(superAdmin, requestId)).resolves.toEqual({ updated: 0 })
+        expect(mocks.getRepository).not.toHaveBeenCalled()
+    })
 
-        await expect(assertAutoCareServiceRequestRealtimeAccess(superAdmin, requestId)).resolves.toBe(true)
-        expect(requestRepository.findOneBy).toHaveBeenCalledWith({ id: requestId })
-        expect(mocks.getRepository).toHaveBeenCalledTimes(1)
+    it('requires a reason before SuperAdmin can load private request contact data', async () => {
+        await expect(getAutoCareServiceRequest(superAdmin, '11111111-1111-4111-8111-111111111111')).rejects.toMatchObject({ statusCode: 400 })
+        await expect(getAutoCareServiceRequest(superAdmin, '11111111-1111-4111-8111-111111111111', '   short   ')).rejects.toMatchObject({ statusCode: 400 })
+        expect(mocks.getRepository).not.toHaveBeenCalled()
     })
 
     it('rejects malformed quote decision request ids before opening a transaction', async () => {
@@ -116,7 +114,7 @@ describe('service request identifier boundary', () => {
     it('keeps client-only authorization ahead of request-id validation', async () => {
         await expect(confirmAutoCareServiceRequest(owner, 'request-1')).rejects.toMatchObject({ statusCode: 403 })
         await expect(decideAutoCareServiceOffer(owner, 'request-1', 'message-1', 'accept')).rejects.toMatchObject({ statusCode: 403 })
-        await expect(decideAutoCareServiceReschedule(owner, 'request-1', 'accept')).rejects.toMatchObject({ statusCode: 403 })
+        await expect(decideAutoCareServiceReschedule(owner, 'request-1', '11111111-1111-4111-8111-111111111111', 'accept')).rejects.toMatchObject({ statusCode: 403 })
         await expect(cancelAutoCareServiceRequest(owner, 'request-1')).rejects.toMatchObject({ statusCode: 403 })
         expect(mocks.getRepository).not.toHaveBeenCalled()
         expect(mocks.transaction).not.toHaveBeenCalled()

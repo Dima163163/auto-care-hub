@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       source_run_id:
-        description: GitHub Actions run containing the reviewed build/evidence artifacts
+        description: Successful protected-main Release evidence workflow run containing attested artifacts
         required: true
         type: string
       release_sha:
@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       evidence_artifact:
-        description: Artifact name containing the signed release evidence JSON
+        description: Artifact name containing the encrypted, attested release evidence
         required: true
         default: release-evidence
         type: string
@@ -30,27 +30,44 @@ on:
 permissions:
   contents: read
   actions: read
+  attestations: read
 
 jobs:
   promote:
-    name: Verify signed release evidence
+    name: Verify attested release evidence
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 20
 
     steps:
-      - name: Checkout immutable release SHA
+      - name: Checkout protected promotion policy from main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify protected policy checkout identity
+        env:
+          POLICY_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$POLICY_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Checkout immutable release source
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.release_sha }}
+          path: release-source
           fetch-depth: 0
 
-      - name: Verify checkout identity
+      - name: Verify immutable release source checkout
         env:
           RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_SOURCE_DIR: ${{ github.workspace }}/release-source
         run: |
-          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
-          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          test "$(git -C "$RELEASE_SOURCE_DIR" rev-parse HEAD)" = "$RELEASE_SHA"
+          test -z "$(git -C "$RELEASE_SOURCE_DIR" status --porcelain=v1 --untracked-files=all)"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -61,7 +78,46 @@ jobs:
       - name: Install release checker
         run: npm ci
 
-      - name: Download reviewed release artifacts
+      - name: Verify trusted release evidence workflow run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          if [[ ! "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "source_run_id must be a numeric GitHub Actions run ID."
+            exit 1
+          fi
+
+          source_run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")"
+          printf '%s' "$source_run" | jq -e \
+            --arg repository "$GITHUB_REPOSITORY" \
+            '
+              .repository.full_name == $repository and
+              (.path | split("@")[0]) == ".github/workflows/release-evidence.yml" and
+              ((.path | split("@")[1]) == "main" or (.path | split("@")[1]) == "refs/heads/main") and
+              .event == "workflow_dispatch" and
+              .head_branch == "main" and
+              (.head_sha | test("^[a-f0-9]{40}$")) and
+              .status == "completed" and
+              .conclusion == "success"
+            ' >/dev/null
+
+          printf '%s' "$source_run" | jq -c '
+            {
+              runId: .id,
+              repository: .repository.full_name,
+              workflowPath: (.path | split("@")[0]),
+              workflowRef: (.path | split("@")[1] | sub("^refs/heads/"; "")),
+              event: .event,
+              headBranch: .head_branch,
+              headSha: .head_sha,
+              status: .status,
+              conclusion: .conclusion,
+              runUrl: .html_url
+            }
+          ' > "$RUNNER_TEMP/release-source-run.json"
+
+      - name: Download release artifacts from the trusted run
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
@@ -73,18 +129,91 @@ jobs:
           gh run download "$SOURCE_RUN_ID" --name "$EVIDENCE_ARTIFACT" --dir "$RUNNER_TEMP/release-evidence"
           gh run download "$SOURCE_RUN_ID" --name "$MIGRATION_MANIFEST_ARTIFACT" --dir "$RUNNER_TEMP/migration-manifest"
           gh run download "$SOURCE_RUN_ID" --name "$RELEASE_ARTIFACT" --dir "$RUNNER_TEMP/release-artifact"
-          evidence_file="$(find "$RUNNER_TEMP/release-evidence" -type f -name '*.json' | head -n 1)"
-          manifest_file="$(find "$RUNNER_TEMP/migration-manifest" -type f -name '*.json' | head -n 1)"
-          artifact_file="$(find "$RUNNER_TEMP/release-artifact" -type f | head -n 1)"
-          test -n "$evidence_file" && test -n "$manifest_file" && test -n "$artifact_file"
+          evidence_file="$RUNNER_TEMP/release-evidence/release-evidence.enc.json"
+          manifest_file="$RUNNER_TEMP/migration-manifest/published-migration-manifest.json"
+          artifact_file="$RUNNER_TEMP/release-artifact/release-artifact.tgz"
+          test -f "$evidence_file" && test -f "$manifest_file" && test -f "$artifact_file"
           printf '%s\n' "$evidence_file" > "$RUNNER_TEMP/evidence.path"
           printf '%s\n' "$manifest_file" > "$RUNNER_TEMP/manifest.path"
           printf '%s\n' "$artifact_file" > "$RUNNER_TEMP/artifact.path"
+
+      - name: Verify GitHub artifact attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          policy_sha="$(jq -er '.headSha' "$RUNNER_TEMP/release-source-run.json")"
+          gh attestation verify "$RUNNER_TEMP/release-evidence/release-evidence.enc.json" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release-evidence.yml" \
+            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --source-digest "$policy_sha" \
+            --deny-self-hosted-runners
+          gh attestation verify "$RUNNER_TEMP/migration-manifest/published-migration-manifest.json" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release-evidence.yml" \
+            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --source-digest "$policy_sha" \
+            --deny-self-hosted-runners
+          gh attestation verify "$RUNNER_TEMP/release-artifact/release-artifact.tgz" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release-evidence.yml" \
+            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+            --source-digest "$policy_sha" \
+            --deny-self-hosted-runners
+
+      - name: Decrypt attested release evidence in the protected environment
+        env:
+          RELEASE_EVIDENCE_ENCRYPTION_KEY: ${{ secrets.RELEASE_EVIDENCE_ENCRYPTION_KEY }}
+        run: |
+          node scripts/protect-release-evidence.mjs decrypt \
+            "$RUNNER_TEMP/release-evidence/release-evidence.enc.json" \
+            "$RUNNER_TEMP/release-evidence/release-evidence.json"
+
+      - name: Verify successful quality run bound into release evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          EVIDENCE_FILE: ${{ runner.temp }}/release-evidence/release-evidence.json
+        run: |
+          quality_run_id="$(jq -er '.qualityRun.runId | numbers' "$EVIDENCE_FILE")"
+          quality_run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${quality_run_id}")"
+          printf '%s' "$quality_run" | jq -e \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg release_sha "$RELEASE_SHA" '
+              .repository.full_name == $repository and
+              (.path | split("@")[0]) == ".github/workflows/quality.yml" and
+              ((.path | split("@")[1]) == "dev" or (.path | split("@")[1]) == "refs/heads/dev") and
+              .event == "push" and
+              .head_branch == "dev" and
+              .head_sha == $release_sha and
+              .status == "completed" and
+              .conclusion == "success"
+            ' >/dev/null
+          printf '%s' "$quality_run" | jq -c '
+            {
+              runId: .id,
+              repository: .repository.full_name,
+              workflowPath: (.path | split("@")[0]),
+              workflowRef: (.path | split("@")[1] | sub("^refs/heads/"; "")),
+              event: .event,
+              headBranch: .head_branch,
+              headSha: .head_sha,
+              status: .status,
+              conclusion: .conclusion,
+              runUrl: .html_url
+            }
+          ' > "$RUNNER_TEMP/release-quality-run.json"
 
       - name: Run mandatory release promotion gate
         env:
           RELEASE_SHA: ${{ inputs.release_sha }}
           RELEASE_EVIDENCE_FILE: ${{ runner.temp }}/evidence.path
+          RELEASE_SOURCE_RUN_FILE: ${{ runner.temp }}/release-source-run.json
+          RELEASE_QUALITY_RUN_FILE: ${{ runner.temp }}/release-quality-run.json
+          RELEASE_ATTESTATIONS_VERIFIED: 'true'
+          EXPECTED_RELEASE_ENVIRONMENT: production
+          RELEASE_SOURCE_DIR: ${{ github.workspace }}/release-source
           PUBLISHED_MIGRATION_MANIFEST: ${{ runner.temp }}/manifest.path
           RELEASE_ARTIFACT_PATH: ${{ runner.temp }}/artifact.path
         run: |

@@ -5,6 +5,10 @@ import {
     AutoCareAppealEntity,
     AutoCareAppealStatus,
     AutoCareAppealSubject,
+    AutoCareChatBlockEntity,
+    AutoCareChatBlockStatus,
+    AutoCareChatReportEntity,
+    AutoCareChatReportStatus,
     AutoCareTrustEvidenceEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
@@ -45,6 +49,20 @@ function toResponse(appeal: AutoCareAppealEntity): AutoCareAppealResponse {
 }
 
 async function assertSubjectAccess(user: User, subject: AutoCareAppealSubject, subjectId: string, providerId: string | null) {
+    if (subject === AutoCareAppealSubject.ChatRestriction) {
+        const block = await AppDataSource.getRepository(AutoCareChatBlockEntity).findOneBy({ id: subjectId })
+        if (!block || block.blockedUserId !== user.id || !block.sourceReportId || block.status !== AutoCareChatBlockStatus.Active) {
+            error(403, 'You can appeal only an active chat restriction applied to your account.')
+        }
+        const report = await AppDataSource.getRepository(AutoCareChatReportEntity).findOneBy({
+            id: block.sourceReportId,
+            threadId: block.threadId,
+            reportedUserId: user.id,
+            status: AutoCareChatReportStatus.Resolved,
+        })
+        if (!report) error(404, 'The moderation decision for this restriction is no longer available.')
+        return null
+    }
     if (subject === AutoCareAppealSubject.Review) {
         const review = await AppDataSource.getRepository(AutomotiveReviewEntity).findOneBy({ id: subjectId })
         if (!review) error(404, 'Review not found.')
@@ -93,7 +111,10 @@ export async function createAutoCareAppeal(user: User, input: unknown) {
         throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Appeal subject references are invalid.' })
     }
     const providerId = await assertSubjectAccess(user, parsed.value.subject, subjectId, providerIdInput)
-    await assertEvidenceAccess(providerId, parsed.value.evidenceIds)
+    if (providerId) await assertEvidenceAccess(providerId, parsed.value.evidenceIds)
+    else if (parsed.value.evidenceIds.length > 0) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Evidence attachments are not supported for chat-restriction appeals.' })
+    }
     const repository = AppDataSource.getRepository(AutoCareAppealEntity)
     const duplicate = await repository.findOne({ where: { submittedById: user.id, subject: parsed.value.subject, subjectId, status: AutoCareAppealStatus.Pending } })
     if (duplicate) return toResponse(duplicate)
@@ -180,6 +201,31 @@ export async function decideAdminAutoCareAppeal(user: User, appealId: string, in
             if (provider && saved.subject === AutoCareAppealSubject.Suspension && provider.status === AutomotiveProviderStatus.Suspended) {
                 provider.status = AutomotiveProviderStatus.Active
                 await providerRepository.save(provider)
+            }
+        }
+        if (parsed.value.status === AutoCareAppealStatus.Accepted && saved.subject === AutoCareAppealSubject.ChatRestriction) {
+            const blockRepository = manager.getRepository(AutoCareChatBlockEntity)
+            const block = await blockRepository.findOne({ where: { id: saved.subjectId }, lock: { mode: 'pessimistic_write' } })
+            if (!block || block.blockedUserId !== saved.submittedById || !block.sourceReportId) {
+                throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'The appealed chat restriction is no longer available.' })
+            }
+            if (block.status === AutoCareChatBlockStatus.Active) {
+                block.status = AutoCareChatBlockStatus.Revoked
+                block.revokedAt = new Date()
+                await blockRepository.save(block)
+            }
+            const reportRepository = manager.getRepository(AutoCareChatReportEntity)
+            const sourceReport = await reportRepository.findOne({ where: { id: block.sourceReportId }, lock: { mode: 'pessimistic_write' } })
+            if (sourceReport) {
+                sourceReport.overturnedAt = new Date()
+                await reportRepository.save(sourceReport)
+                await enqueueNotificationSafely({
+                    userId: sourceReport.reporterId,
+                    category: NotificationCategory.Moderation,
+                    template: { key: 'autocare.chat_report_overturned' },
+                    link: `/chats?chat=${encodeURIComponent(sourceReport.threadId)}`,
+                    metadata: { reportId: sourceReport.id, outcome: 'overturned' },
+                }, `autocare-chat-report-overturned:${saved.id}`, manager)
             }
         }
         await enqueueNotificationSafely({

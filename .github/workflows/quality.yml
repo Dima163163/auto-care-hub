@@ -246,6 +246,10 @@ jobs:
         run: npm run demo:seed && npm run autocare:seed
         working-directory: server
 
+      - name: Validate release migration integrity gate
+        run: npm run release:migrate
+        working-directory: server
+
       - name: Run PostgreSQL integration and concurrency profile
         run: npm run test:integration
         working-directory: server
@@ -294,7 +298,11 @@ jobs:
         run: npm ci
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # The hosted Ubuntu image already contains the libraries required by
+        # Playwright. Avoid --with-deps here: it refreshes the Google Chrome
+        # apt repository, whose metadata can briefly be inconsistent and make
+        # an otherwise healthy CI run fail with Hash Sum mismatch.
+        run: npx playwright install chromium
 
       - name: Verify Chromium
         run: npm run check:e2e:browser
@@ -425,9 +433,13 @@ jobs:
       - name: Reset and seed demo data
         run: npm run demo:reset && npm run demo:seed && npm run autocare:seed
         working-directory: server
+        env:
+          DEMO_RESET_CONFIRM_DATABASE: autocarehub_real_e2e
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # Keep the real-mode smoke independent from transient apt metadata
+        # issues in the external Google Chrome repository.
+        run: npx playwright install chromium
 
       - name: Verify Chromium
         run: npm run check:e2e:browser

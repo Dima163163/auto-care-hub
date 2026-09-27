@@ -27,6 +27,7 @@ export type WorkspaceSidebarItem = {
     labelKey: TranslationKey
     to: string
     icon: ComponentType<{ className?: string }>
+    iconDetail?: 'help'
     end?: boolean
 }
 
@@ -50,7 +51,7 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
                 { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
             ],
         },
-        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle, iconDetail: 'help' }] },
     ],
     owner: [
         { labelKey: 'workspace.overview', items: [{ labelKey: 'navigation.ownerDashboard', to: ROUTES.ownerDashboard, icon: LayoutDashboard, end: true }] },
@@ -72,7 +73,7 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
                 { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
             ],
         },
-        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle, iconDetail: 'help' }] },
     ],
     manager: [
         { labelKey: 'workspace.overview', items: [{ labelKey: 'navigation.ownerDashboard', to: ROUTES.ownerDashboard, icon: LayoutDashboard, end: true }] },
@@ -87,7 +88,7 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
             ],
         },
         { labelKey: 'workspace.configure', items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }, { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell }] },
-        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle, iconDetail: 'help' }] },
     ],
     staff: [
         {
@@ -99,7 +100,7 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
             ],
         },
         { labelKey: 'workspace.configure', items: [{ labelKey: 'navigation.profile', to: ROUTES.profile, icon: Settings }, { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell }] },
-        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle, iconDetail: 'help' }] },
     ],
     admin: [
         {
@@ -128,7 +129,7 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
                 { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
             ],
         },
-        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle, iconDetail: 'help' }] },
     ],
     super_admin: [
         {
@@ -156,7 +157,7 @@ const groupsByRole: Record<WorkspaceRole, WorkspaceSidebarGroup[]> = {
                 { labelKey: 'navigation.notifications', to: ROUTES.notifications, icon: Bell },
             ],
         },
-        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle }] },
+        { labelKey: 'workspace.support', items: [{ labelKey: 'landing.footerHelpCenter', to: ROUTES.help, icon: HelpCircle, iconDetail: 'help' }] },
     ],
 }
 

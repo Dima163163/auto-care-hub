@@ -6,6 +6,7 @@ import {
 import { NavLink } from 'react-router'
 
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { WorkspaceNavIcon } from '@/shared/ui/workspace-nav-icon/WorkspaceNavIcon'
 import type { WorkspaceRole } from './WorkspaceHeader'
 import { getWorkspaceNavigationGroups } from './workspace-navigation'
 
@@ -31,7 +32,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
                                 </p>
                             )}
                             <div className="space-y-1">
-                                {group.items.map(({ icon: Icon, labelKey, to, end }) => (
+                                {group.items.map(({ icon: Icon, iconDetail, labelKey, to, end }) => (
                                     <NavLink
                                         key={to}
                                         to={to}
@@ -43,7 +44,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
                                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                         }`}
                                     >
-                                        <Icon className="size-4 shrink-0" />
+                                        <WorkspaceNavIcon icon={Icon} detail={iconDetail} />
                                         {!isCollapsed && <span className="truncate">{t(labelKey)}</span>}
                                     </NavLink>
                                 ))}

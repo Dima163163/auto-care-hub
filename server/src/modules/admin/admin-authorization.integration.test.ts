@@ -8,8 +8,11 @@ import { AuditAction, AuditLogEntity } from '../../entities/audit-log/audit-log.
 import { CabinetEntity, CabinetStatus } from '../../entities/cabinet/cabinet.entity.js'
 import {
     AutoCareAppealEntity,
+    AutomotiveMarketCountryEntity,
+    AutomotiveMarketEntity,
     AutomotiveProviderEntity,
     AutomotiveProviderStatus,
+    AutomotiveServiceLocationEntity,
     AutoCareTrustEvidenceEntity,
     OutboxEventEntity,
 } from '../../entities/index.js'
@@ -27,6 +30,10 @@ describe('Admin and workspace authorization integration', () => {
     const suffix = `${Date.now()}`
     let app: FastifyInstance
     let provider: AutomotiveProviderEntity
+    let marketCountry: AutomotiveMarketCountryEntity
+    let marketCountryCreated = false
+    let market: AutomotiveMarketEntity
+    let location: AutomotiveServiceLocationEntity
     let cabinet: CabinetEntity
     let evidence: AutoCareTrustEvidenceEntity
     let moderationEvidence: AutoCareTrustEvidenceEntity
@@ -69,6 +76,49 @@ describe('Admin and workspace authorization integration', () => {
             rating: 0,
             reviewCount: 0,
             workstationCount: 1,
+        }))
+
+        const countries = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
+        const existingRussianCountry = await countries.findOneBy({ code: 'RU' })
+        marketCountry = existingRussianCountry ?? await countries.save(countries.create({
+            code: 'RU',
+            names: { en: 'Russia', ru: 'Россия' },
+            defaultLocale: 'ru',
+            supportedLocales: ['ru', 'en'],
+            timezone: 'Europe/Samara',
+            currencyCode: 'RUB',
+            capabilities: {},
+            legalLinks: {},
+            active: true,
+        }))
+        marketCountryCreated = !existingRussianCountry
+        const markets = AppDataSource.getRepository(AutomotiveMarketEntity)
+        market = await markets.save(markets.create({
+            countryId: marketCountry.id,
+            countryCode: marketCountry.code,
+            countryName: 'Россия',
+            cityCode: `authorization-${suffix}`,
+            cityName: 'Authorization City',
+            regionCode: null,
+            regionName: null,
+            centerLatitude: null,
+            centerLongitude: null,
+            currencyCode: 'RUB',
+            defaultLocale: 'ru',
+            supportedLocales: ['ru', 'en'],
+            timezone: 'Europe/Samara',
+            capabilities: {},
+            legalLinks: {},
+            launchReady: true,
+        }))
+        const locations = AppDataSource.getRepository(AutomotiveServiceLocationEntity)
+        location = await locations.save(locations.create({
+            providerId: provider.id,
+            marketId: market.id,
+            zoneId: null,
+            address: '1 Authorization Street',
+            hours: 'Mon-Sun 08:00-21:00',
+            timezone: 'UTC',
         }))
 
         const cabinets = AppDataSource.getRepository(CabinetEntity)
@@ -143,6 +193,9 @@ describe('Admin and workspace authorization integration', () => {
         if (moderationEvidence) await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).delete({ id: moderationEvidence.id })
         if (evidence) await AppDataSource.getRepository(AutoCareTrustEvidenceEntity).delete({ id: evidence.id })
         if (cabinet) await AppDataSource.getRepository(CabinetEntity).delete({ id: cabinet.id })
+        if (location) await AppDataSource.getRepository(AutomotiveServiceLocationEntity).delete({ id: location.id })
+        if (market) await AppDataSource.getRepository(AutomotiveMarketEntity).delete({ id: market.id })
+        if (marketCountry && marketCountryCreated) await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: marketCountry.id })
         if (provider) await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider.id })
         await AppDataSource.getRepository(UserEntity).delete([
             providerOwner?.id,

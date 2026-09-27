@@ -17,7 +17,10 @@ DB_PORT=${DATABASE_PORT:-5433}
 DB_NAME=${DATABASE_NAME:-autocarehub}
 DB_USER=${DATABASE_USER:-autocarehub}
 DB_PASS=${DATABASE_PASSWORD:-autocarehub}
-BACKUP_DIR=${BACKUP_DIR:-./backups}
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+REPOSITORY_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd -P)
+DEFAULT_STATE_DIR=${XDG_STATE_HOME:-"${HOME:?HOME must be set}/.local/state"}
+BACKUP_DIR=${BACKUP_DIR:-"$DEFAULT_STATE_DIR/autocarehub/backups"}
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 RUN_SUFFIX="${TIMESTAMP}_$$_${RANDOM}"
 ENCRYPTION_PASSWORD_FILE=${BACKUP_ENCRYPTION_PASSWORD_FILE:-}
@@ -37,6 +40,13 @@ if [ -L "$BACKUP_DIR" ]; then
   exit 64
 fi
 BACKUP_DIR=$(cd "$BACKUP_DIR" && pwd -P)
+case "$BACKUP_DIR/" in
+  "$REPOSITORY_ROOT/"*)
+    echo "BACKUP_DIR must be outside the application repository." >&2
+    exit 64
+    ;;
+esac
+chmod 700 "$BACKUP_DIR"
 BACKUP_MARKER_FILE="$BACKUP_DIR/.autocare-backup-directory"
 if [ -L "$BACKUP_MARKER_FILE" ]; then
   echo "Backup directory marker must not be a symbolic link." >&2
@@ -65,7 +75,7 @@ for required_command in date mkdir mktemp gzip shasum find; do
 done
 
 if [ -z "$ENCRYPTION_PASSWORD_FILE" ] || [ ! -r "$ENCRYPTION_PASSWORD_FILE" ]; then
-  if [ "${ALLOW_UNENCRYPTED_LOCAL_BACKUP:-false}" != "true" ]; then
+  if [ "${NODE_ENV:-development}" = "production" ] || [ "${ALLOW_UNENCRYPTED_LOCAL_BACKUP:-false}" != "true" ]; then
     echo "BACKUP_ENCRYPTION_PASSWORD_FILE must reference a readable secret file." >&2
     echo "Set ALLOW_UNENCRYPTED_LOCAL_BACKUP=true only for an explicitly non-production local exercise." >&2
     exit 78

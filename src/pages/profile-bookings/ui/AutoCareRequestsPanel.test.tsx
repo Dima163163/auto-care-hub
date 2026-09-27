@@ -25,7 +25,7 @@ const request = {
     quote: { amountMinor: 250000, currencyCode: 'RUB', status: 'pending', lineItems: [], note: null },
     quoteHistory: [],
     booking: null,
-    reschedule: { status: 'pending', proposedAt: '2026-09-01T12:00:00.000Z', reason: null },
+    reschedule: { id: 'reschedule-1', status: 'pending', proposedAt: '2026-09-01T12:00:00.000Z', reason: null },
 } as unknown as AutoCareServiceRequest
 
 vi.mock('@/entities/automotive-service', () => ({
@@ -93,5 +93,14 @@ describe('AutoCareRequestsPanel quote decisions', () => {
         } finally {
             process.off('unhandledRejection', onUnhandled)
         }
+    })
+
+    it('sends the exact reschedule proposal shown to the client', async () => {
+        const user = userEvent.setup()
+        render(<AutoCareRequestsPanel />)
+        await user.click(screen.getByRole('button', { name: /Открыть переписку/ }))
+        await user.click(screen.getByRole('button', { name: 'Принять новое время' }))
+
+        expect(mocks.decideReschedule).toHaveBeenCalledWith({ requestId: 'request-1', rescheduleId: 'reschedule-1', decision: 'accept' })
     })
 })

@@ -10,6 +10,7 @@ import {
 import {
     getInitialLocale,
     getLocaleOption,
+    isVisibleLocale,
     LOCALE_STORAGE_KEY,
     type SupportedLocale,
 } from '@/shared/config/i18n'
@@ -26,6 +27,8 @@ export function I18nProvider({ children }: I18nProviderProps) {
     const localeRequestRef = useRef(0)
 
     const setLocale = useCallback((nextLocale: SupportedLocale) => {
+        if (!isVisibleLocale(nextLocale)) return
+
         const requestId = localeRequestRef.current + 1
         localeRequestRef.current = requestId
 
@@ -52,6 +55,8 @@ export function I18nProvider({ children }: I18nProviderProps) {
 
     useEffect(() => {
         window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+        const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+        document.cookie = `${LOCALE_STORAGE_KEY}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
         document.documentElement.lang = locale
         document.documentElement.dir = getLocaleOption(locale).direction
     }, [locale])

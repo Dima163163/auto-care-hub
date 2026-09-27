@@ -18,7 +18,7 @@
 }
 
 .autocare-results-heading {
-    font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', Arial, sans-serif;
+    font-family: var(--font-heading);
     letter-spacing: -0.035em;
 }
 

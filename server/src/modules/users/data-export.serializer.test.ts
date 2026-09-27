@@ -4,6 +4,7 @@ import { ServiceAttachmentEntity, ServiceAttachmentStatus } from '../../entities
 import { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { UserProvider, UserRole, UserStatus, UserEntity } from '../../entities/user/user.entity.js'
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
+import { AutoCareReviewHelpfulVoteEntity } from '../../entities/automotive/review-helpful-vote.entity.js'
 import { UserConsentAction, UserConsentSource, UserConsentType, UserConsentEntity } from '../../entities/user-consent/user-consent.entity.js'
 import {
     MAX_EXPORT_RECORDS,
@@ -72,8 +73,28 @@ describe('serializeUserDataExport', () => {
             quotes: false,
             appeals: false,
             consents: false,
+            helpfulReviewVotes: false,
         })
         expect(result.user).not.toHaveProperty('passwordHash')
+        expect(result.communityProfile).toEqual({ enabled: false, displayName: null, publicProfileId: null })
+    })
+
+    it('exports only the client’s own helpful review votes without voter identity', () => {
+        const vote = {
+            id: '00000000-0000-0000-0000-000000000011',
+            reviewId: '00000000-0000-0000-0000-000000000012',
+            voterUserId: user.id,
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        } as AutoCareReviewHelpfulVoteEntity
+
+        const result = serializeUserDataExport(user, {
+            favorites: [], bookings: [], notifications: [], cabinets: [], vehicles: [], serviceRequests: [],
+            broadcasts: [], claims: [], questions: [], chats: [], messages: [], attachments: [], fleets: [], helpfulVotes: [vote],
+        })
+
+        expect(result.schemaVersion).toBe(2)
+        expect(result.helpfulReviewVotes).toEqual([{ reviewId: vote.reviewId, createdAt: '2026-01-01T00:00:00.000Z' }])
+        expect(JSON.stringify(result.helpfulReviewVotes)).not.toContain(user.id)
     })
 
     it('does not export private attachment storage keys or content hashes', () => {

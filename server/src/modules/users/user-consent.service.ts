@@ -145,6 +145,7 @@ export async function getUserConsentState(userId: string) {
             privacy: toState(UserConsentType.Privacy),
             analytics: toState(UserConsentType.Analytics),
             marketing: toState(UserConsentType.Marketing),
+            communityProfile: toState(UserConsentType.CommunityProfile),
         },
     }
 }

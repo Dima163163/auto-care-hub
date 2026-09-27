@@ -8,6 +8,7 @@ import {
     PrimaryGeneratedColumn,
     type Relation,
 } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 import { UserEntity } from '../user/user.entity.js'
 import { BookingEntity } from './booking.entity.js'
@@ -61,7 +62,7 @@ export class BookingRescheduleRequestEntity {
     @Column({ type: 'uuid', nullable: true })
     resolvedById!: string | null
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('booking_reschedule_requests', 'resolutionReason', 'text') })
     resolutionReason!: string | null
 
     @CreateDateColumn({ type: 'timestamptz' })

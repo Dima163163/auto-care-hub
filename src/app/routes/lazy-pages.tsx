@@ -18,6 +18,12 @@ export const AutoCareProviderPage = lazy(() =>
     })),
 )
 
+export const CommunityClientProfilePage = lazy(() =>
+    import('@/pages/community-client-profile').then((module) => ({
+        default: module.CommunityClientProfilePage,
+    })),
+)
+
 export const AutoCareRequestPage = lazy(() =>
     import('@/pages/autocare-request').then((module) => ({
         default: module.AutoCareRequestPage,

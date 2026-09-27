@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
-import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { automotiveServices, automotiveVehicleBrands, getServiceLabel, getVehicleBrandLabel, mapAutoCareDiscoveryItem, useGetAutoCareDiscoveryQuery, useLazyGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import type { AutoCareApiDiscoveryItem, AutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { getApiErrorState } from '@/shared/api/getApiErrorMessage'
 import { resolveQueryViewState } from '@/shared/api/query-view-state'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { readAutoCareMarketPreference } from '@/shared/lib/market-preference'
+import { formatAutoCareCount } from '@/shared/lib/formatAutoCareCount'
 import { AutoCareResultsDataSkeleton } from '@/shared/ui/loading-skeleton'
 import { StateCard } from '@/shared/ui/state-card'
 import { QueryRefreshStatus } from '@/shared/ui/query-refresh-status'
@@ -28,10 +31,13 @@ const RESULTS_PAGE_SIZE = 8
 export function AutoCareResultsPage() {
     const { t, locale } = useTranslation()
     const [searchParams, setSearchParams] = useSearchParams()
-    const filters = useMemo(() => getAutoCareResultFilters(searchParams), [searchParams])
+    const filters = useMemo(() => {
+        const parsed = getAutoCareResultFilters(searchParams)
+        return { ...parsed, marketId: parsed.marketId || readAutoCareMarketPreference(searchParams.toString()) }
+    }, [searchParams])
     const [draftState, setDraftState] = useState(() => ({ key: searchParams.toString(), filters }))
     const draftFilters = draftState.key === searchParams.toString() ? draftState.filters : filters
-    const { data, error, isLoading, isFetching, isError, refetch } = useGetAutoCareDiscoveryQuery({
+    const queryArgs: AutoCareDiscoveryQuery = {
         serviceId: filters.serviceId || undefined,
         providerName: filters.providerName || undefined,
         marketId: filters.marketId,
@@ -48,8 +54,17 @@ export function AutoCareResultsPage() {
         hasBonus: filters.hasBonus,
         inclusion: filters.inclusion || undefined,
         brandId: filters.brandId || undefined,
-    })
-    const providers = useMemo(() => data?.items.map(mapAutoCareDiscoveryItem) ?? [], [data])
+    }
+    const discoveryKey = JSON.stringify(queryArgs)
+    const { data, error, isLoading, isFetching, isError, refetch } = useGetAutoCareDiscoveryQuery(queryArgs)
+    const [fetchDiscoveryPage, { isFetching: isLoadingMore }] = useLazyGetAutoCareDiscoveryQuery()
+    const [additionalPages, setAdditionalPages] = useState<{ key: string; items: AutoCareApiDiscoveryItem[]; nextCursor: string | null }>({ key: '', items: [], nextCursor: null })
+    const hasAdditionalPages = additionalPages.key === discoveryKey
+    const activeAdditionalPages = hasAdditionalPages ? additionalPages : { key: discoveryKey, items: [], nextCursor: null }
+    const nextCursor = hasAdditionalPages ? activeAdditionalPages.nextCursor : data?.nextCursor ?? null
+    const providers = useMemo(() => [...(data?.items ?? []), ...activeAdditionalPages.items].map(mapAutoCareDiscoveryItem), [activeAdditionalPages.items, data?.items])
+    const providerCount = data?.totalCount ?? providers.length
+    const providerCountIsLowerBound = data?.totalCountIsLowerBound ?? false
     const discoveryErrorState = getApiErrorState(error)
     const discoveryState = resolveQueryViewState({
         isLoading,
@@ -67,6 +82,20 @@ export function AutoCareResultsPage() {
     const [selectedIds, setSelectedIds] = useState<readonly string[]>([])
     const [focusedProviderId, setFocusedProviderId] = useState<string | null>(null)
     const [page, setPage] = useState(1)
+    const loadMoreProviders = async () => {
+        if (!nextCursor || isLoadingMore) return
+        try {
+            const nextPage = await fetchDiscoveryPage({ ...queryArgs, cursor: nextCursor }, true).unwrap()
+            setAdditionalPages((current) => {
+                const existing = current.key === discoveryKey ? current.items : []
+                const existingIds = new Set(existing.map((item) => `${item.provider.id}:${item.provider.location.id}`))
+                const newItems = nextPage.items.filter((item) => !existingIds.has(`${item.provider.id}:${item.provider.location.id}`))
+                return { key: discoveryKey, items: [...existing, ...newItems], nextCursor: nextPage.nextCursor }
+            })
+        } catch {
+            // Keep the already loaded results visible; a retry uses the same cursor.
+        }
+    }
     const comparedServiceId = useRef(filters.serviceId)
     const selectedProviders = useMemo(
         () => providers.filter((provider) => selectedIds.includes(provider.id)),
@@ -154,7 +183,8 @@ export function AutoCareResultsPage() {
                 <div className="shrink-0">
                     <ResultsToolbar
                         selectedCount={selectedIds.length}
-                        providerCount={providers.length}
+                        providerCount={providerCount}
+                        providerCountIsLowerBound={providerCountIsLowerBound}
                         isLoading={isLoading}
                         serviceId={draftFilters.serviceId}
                         serviceLabel={serviceLabel}
@@ -194,7 +224,7 @@ export function AutoCareResultsPage() {
                 </div> : <div id="search-results" className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.76fr)]">
                     <section className="order-2 flex flex-col gap-4 lg:order-1">
                         <div className="flex shrink-0 items-center justify-between gap-3">
-                            <p className="text-sm font-bold text-foreground">{t('autocare.resultCount', { count: providers.length })}</p>
+                            <p className="text-sm font-bold text-foreground">{formatAutoCareCount(providerCount, locale, t, { one: 'autocare.resultCountOne', few: 'autocare.resultCountFew', many: 'autocare.resultCountMany', other: 'autocare.resultCountOther' }, providerCountIsLowerBound)}</p>
                             <span className="text-xs font-semibold text-muted-foreground">{t('autocare.compareDescription')}</span>
                         </div>
                         {discoveryState === 'stale-error' && <QueryStateCard state="stale-error" error={error} onRetry={refetch} />}
@@ -211,6 +241,7 @@ export function AutoCareResultsPage() {
                             />
                         )}
                         <ResultsPagination page={currentPage} totalPages={totalPages} onChange={changePage} />
+                        {nextCursor && <button type="button" onClick={() => void loadMoreProviders()} disabled={isLoadingMore} className="self-center rounded-[var(--radius-control)] border border-border px-4 py-2 text-sm font-bold text-primary disabled:cursor-wait disabled:opacity-60">{isLoadingMore ? t('common.loading') : t('autocare.loadMoreProviders')}</button>}
                         <ComparisonTray providers={selectedProviders} onRemove={toggleProvider} onCompare={compareSelected} />
                         <ComparisonTable providers={selectedProviders} />
                     </section>

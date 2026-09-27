@@ -1,0 +1,209 @@
+name: Release evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full dev commit SHA to build; trusted workflow policy is loaded from main
+        required: true
+        type: string
+      quality_run_id:
+        description: Successful Quality workflow run for this exact dev commit
+        required: true
+        type: string
+      release_evidence_encrypted:
+        description: AES-256-GCM encrypted evidence JSON from protect-release-evidence.mjs; plaintext is not accepted
+        required: true
+        type: string
+      migration_manifest_json:
+        description: Applied migration checksum manifest JSON for the target environment
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  attest-release:
+    name: Build and attest release evidence
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      actions: read
+
+    steps:
+      - name: Require exact dev release SHA
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          if [[ ! "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]] || [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Run this protected workflow from main and provide a full dev release SHA."
+            exit 1
+          fi
+
+      - name: Checkout protected workflow policy commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Checkout immutable release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          path: release-source
+          fetch-depth: 0
+
+      - name: Validate protected evidence encryption key
+        env:
+          RELEASE_EVIDENCE_ENCRYPTION_KEY: ${{ secrets.RELEASE_EVIDENCE_ENCRYPTION_KEY }}
+        run: |
+          node --input-type=module -e 'import { encryptReleaseEvidence } from "./scripts/release-evidence-encryption.mjs"; encryptReleaseEvidence("protected-key-check");'
+
+      - name: Capture clean release source provenance
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_SOURCE_DIR: ${{ github.workspace }}/release-source
+        run: |
+          test "$(git -C "$RELEASE_SOURCE_DIR" rev-parse HEAD)" = "$RELEASE_SHA"
+          test -z "$(git -C "$RELEASE_SOURCE_DIR" status --porcelain=v1 --untracked-files=all)"
+          node --input-type=module -e 'import { resolve } from "node:path"; import { writeFile } from "node:fs/promises"; import { getGitProvenance } from "./scripts/release-provenance.mjs"; const value = await getGitProvenance(resolve(process.env.RELEASE_SOURCE_DIR)); await writeFile(process.env.RUNNER_TEMP + "/source-provenance.json", JSON.stringify(value), { mode: 0o600 });'
+
+      - name: Verify successful quality run for the candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+        run: |
+          if [[ ! "$QUALITY_RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "quality_run_id must be a numeric GitHub Actions run ID."
+            exit 1
+          fi
+          quality_run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${QUALITY_RUN_ID}")"
+          printf '%s' "$quality_run" | jq -e \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg release_sha "$RELEASE_SHA" '
+              .repository.full_name == $repository and
+              (.path | split("@")[0]) == ".github/workflows/quality.yml" and
+              ((.path | split("@")[1]) == "dev" or (.path | split("@")[1]) == "refs/heads/dev") and
+              .event == "push" and
+              .head_branch == "dev" and
+              .head_sha == $release_sha and
+              .status == "completed" and
+              .conclusion == "success"
+            ' >/dev/null
+          printf '%s' "$quality_run" | jq -c '
+            {
+              runId: .id,
+              repository: .repository.full_name,
+              workflowPath: (.path | split("@")[0]),
+              workflowRef: (.path | split("@")[1] | sub("^refs/heads/"; "")),
+              event: .event,
+              headBranch: .head_branch,
+              headSha: .head_sha,
+              status: .status,
+              conclusion: .conclusion,
+              runUrl: .html_url
+            }
+          ' > "$RUNNER_TEMP/quality-run.json"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            release-source/package-lock.json
+            release-source/server/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: release-source
+
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_API_MODE: real
+          NEXT_PUBLIC_API_BASE_URL: /api
+          NEXT_PUBLIC_API_ORIGIN: https://autocare-hub-api.onrender.com
+          NEXT_PUBLIC_SITE_URL: https://autocarehub.app
+        run: npm run build
+        working-directory: release-source
+
+      - name: Build API
+        run: npm ci && npm run build
+        working-directory: release-source/server
+
+      - name: Assemble release snapshot
+        env:
+          NEXT_PUBLIC_API_MODE: real
+          NEXT_PUBLIC_API_BASE_URL: /api
+          NEXT_PUBLIC_API_ORIGIN: https://autocare-hub-api.onrender.com
+          NEXT_PUBLIC_SITE_URL: https://autocarehub.app
+        run: |
+          bundle="$RUNNER_TEMP/release-bundle"
+          mkdir -p "$bundle/server"
+          cp -R release-source/.next release-source/public "$bundle/"
+          cp release-source/package.json release-source/package-lock.json "$bundle/"
+          cp -R release-source/server/dist "$bundle/server/"
+          cp release-source/server/package.json release-source/server/package-lock.json "$bundle/server/"
+          tar -czf "$RUNNER_TEMP/release-artifact.tgz" --exclude='.next/cache' -C "$bundle" .
+
+      - name: Prepare and validate release evidence
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          RELEASE_SOURCE_DIR: ${{ github.workspace }}/release-source
+          RELEASE_EVIDENCE_ENCRYPTED: ${{ inputs.release_evidence_encrypted }}
+          MIGRATION_MANIFEST_JSON: ${{ inputs.migration_manifest_json }}
+          RELEASE_EVIDENCE_ENCRYPTION_KEY: ${{ secrets.RELEASE_EVIDENCE_ENCRYPTION_KEY }}
+          QUALITY_RUN_FILE: ${{ runner.temp }}/quality-run.json
+          SOURCE_PROVENANCE_FILE: ${{ runner.temp }}/source-provenance.json
+          RELEASE_ARTIFACT_PATH: ${{ runner.temp }}/release-artifact.tgz
+          NEXT_PUBLIC_API_MODE: real
+          NEXT_PUBLIC_API_BASE_URL: /api
+          NEXT_PUBLIC_API_ORIGIN: https://autocare-hub-api.onrender.com
+          NEXT_PUBLIC_SITE_URL: https://autocarehub.app
+        run: node scripts/prepare-release-evidence.mjs
+
+      - name: Upload release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: ${{ runner.temp }}/release-evidence.enc.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload applied migration manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-migration-manifest
+          path: ${{ runner.temp }}/published-migration-manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload release snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact
+          path: ${{ runner.temp }}/release-artifact.tgz
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attest release evidence
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ runner.temp }}/release-evidence.enc.json
+
+      - name: Attest applied migration manifest
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ runner.temp }}/published-migration-manifest.json
+
+      - name: Attest release snapshot
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ runner.temp }}/release-artifact.tgz

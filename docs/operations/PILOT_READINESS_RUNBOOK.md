@@ -34,6 +34,15 @@ providers, customers and production infrastructure.
    `PILOT_METRICS_CSV=/secure/path/pilot-metrics.csv PILOT_EVIDENCE_FILE=/secure/path/pilot-evidence.json npm run check:pilot-metrics`.
 7. Hold a go/no-go review with product, support, security and the legal entity.
 
+## Local real-mode E2E safety
+
+`npm run test:e2e:real` runs the fixture-scoped demo reset before seeding data.
+The reset refuses production mode and requires PostgreSQL's actual database
+name to match the configured name, end in `_test`, `_e2e` or `_disposable`,
+and exactly match `DEMO_RESET_CONFIRM_DATABASE`. Point it only at a dedicated
+throwaway database, for example `autocarehub_real_e2e`; do not use a developer,
+staging or production database containing records you need to preserve.
+
 ## Minimum evidence
 
 | Area | Pass condition | Owner |

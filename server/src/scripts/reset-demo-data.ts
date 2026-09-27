@@ -1,7 +1,9 @@
 import { In } from 'typeorm'
 import type { EntityManager } from 'typeorm'
 
+import { env } from '../config/env.js'
 import { AppDataSource } from '../database/data-source.js'
+import { createEmailBlindIndex } from '../shared/security/data-encryption/field-encryption.js'
 import { AutomotiveProviderEntity, AutomotiveServiceLocationEntity } from '../entities/automotive/automotive.entity.js'
 import { BookingEntity } from '../entities/booking/booking.entity.js'
 import { CabinetEntity } from '../entities/cabinet/cabinet.entity.js'
@@ -16,6 +18,7 @@ import {
     DEMO_CABINET_TITLE,
     DEMO_USER_EMAILS,
 } from './demo-fixtures.js'
+import { getDemoResetTargetError } from './demo-reset-target-policy.js'
 
 function idsOf(records: Array<{ id: string }>) {
     return records.map(({ id }) => id)
@@ -69,7 +72,7 @@ async function deleteDemoOutboxEvents(manager: EntityManager, references: DemoOu
             OR "payload" ->> 'requestId' = ANY($3::text[])
             OR "payload" ->> 'email' = ANY($4::text[])
             OR "payload" ->> 'toEmail' = ANY($4::text[])`,
-        [userIds, bookingIds, requestIds, emails],
+        [userIds, bookingIds, requestIds, emails.map((email) => createEmailBlindIndex(email))],
     )
 }
 
@@ -77,6 +80,18 @@ async function resetDemoData() {
     await AppDataSource.initialize()
 
     try {
+        const databaseRows = await AppDataSource.query(
+            'SELECT current_database() AS database_name',
+        ) as Array<{ database_name: string }>
+        const connectedDatabaseName = databaseRows[0]?.database_name ?? ''
+        const targetError = getDemoResetTargetError({
+            nodeEnv: env.nodeEnv,
+            configuredDatabaseName: env.database.name,
+            connectedDatabaseName,
+            confirmation: process.env.DEMO_RESET_CONFIRM_DATABASE,
+        })
+        if (targetError) throw new Error(targetError)
+
         await AppDataSource.transaction(async (manager) => {
             const userRepository = manager.getRepository(UserEntity)
             const cabinetRepository = manager.getRepository(CabinetEntity)

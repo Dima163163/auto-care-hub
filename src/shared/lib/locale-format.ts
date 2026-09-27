@@ -42,6 +42,25 @@ export function formatDateTime(value: string | number | Date, locale: string | S
     return new Intl.DateTimeFormat(getIntlLocale(locale), options).format(new Date(value))
 }
 
+export function formatDateTimeInTimeZone(value: string | number | Date, locale: string | SupportedLocale, timeZone: string): string {
+    const date = new Date(value)
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone,
+        timeZoneName: 'short',
+    }
+
+    try {
+        return new Intl.DateTimeFormat(getIntlLocale(locale), options).format(date)
+    } catch {
+        return new Intl.DateTimeFormat(getIntlLocale(locale), { ...options, timeZone: 'UTC' }).format(date)
+    }
+}
+
 export function formatAutoCareSlot(slot: string, locale: string | SupportedLocale): string {
     const match = /^(Today|Tomorrow|Сегодня|Завтра),\s*(.+)$/.exec(slot)
     if (!match) return slot

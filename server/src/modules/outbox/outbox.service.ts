@@ -235,13 +235,14 @@ async function dispatchOutboxEvent(event: OutboxEventEntity, mailer?: Mailer) {
                 templateKey: 'booking.reminder',
                 templateParams,
             },
+            outboxEventId: event.id,
         })
         return
     }
 
     if (event.type === 'notification.create') {
         const payload = notificationPayloadSchema.parse(event.payload)
-        await createNotification(payload)
+        await createNotification({ ...payload, outboxEventId: event.id })
         return
     }
 

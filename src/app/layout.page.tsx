@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import type { Metadata } from 'next'
 
-import { appMetadata } from './metadata'
+import { getAppMetadata, getRequestLocale } from './metadata'
 import '../index.css'
 
 const themeBootstrap = `(() => {
@@ -17,13 +18,15 @@ const themeBootstrap = `(() => {
     }
 })()`
 
-// Next.js requires metadata to be exported from the layout module.
 // eslint-disable-next-line react-refresh/only-export-components
-export const metadata = appMetadata
+export async function generateMetadata(): Promise<Metadata> {
+    return getAppMetadata(await getRequestLocale())
+}
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+    const initialLanguage = await getRequestLocale()
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang={initialLanguage} suppressHydrationWarning>
             <head>
                 {/*
                     This is deliberately a parser-blocking inline script, rather

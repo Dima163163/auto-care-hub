@@ -110,7 +110,7 @@ function normalizePreferredAt(value: unknown): string | null {
     const normalized = value.normalize('NFKC').trim()
     if (!datetimeWithOffsetPattern.test(normalized)) return null
     const timestamp = Date.parse(normalized)
-    return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null
+    return Number.isFinite(timestamp) && timestamp > Date.now() ? new Date(timestamp).toISOString() : null
 }
 
 /**

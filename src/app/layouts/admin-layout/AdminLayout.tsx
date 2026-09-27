@@ -3,7 +3,7 @@ import { Outlet } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { BottomNav } from '@/widgets/bottom-nav'
-import { WorkspaceHeader, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
+import { WorkspaceHeader, WorkspaceIconDefinitions, WorkspaceMobileHeader, WorkspaceSidebar } from '@/widgets/workspace-shell'
 import { PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { SuperAdminOperationsRail } from '@/widgets/super-admin-operations'
@@ -14,8 +14,10 @@ export function AdminLayout() {
     const role = user?.role === 'super_admin' ? 'super_admin' : 'admin'
 
     return (
-        <div className="autocare-app-surface flex h-dvh min-h-0 flex-col overflow-hidden">
+        <div className="autocare-app-surface flex h-dvh min-h-0 flex-col overflow-hidden" data-workspace-icon-theme="true">
+            <WorkspaceIconDefinitions />
             <WorkspaceHeader role={role} />
+            <SuperAdminOperationsRail />
             <div className="mobile-admin-bottom-safe flex min-h-0 flex-1 overflow-hidden md:pb-0">
                 <WorkspaceSidebar role={role} />
                 <div data-workspace-scroll-container className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
@@ -25,7 +27,6 @@ export function AdminLayout() {
                 </div>
             </div>
             <BottomNav />
-            <SuperAdminOperationsRail />
         </div>
     )
 }

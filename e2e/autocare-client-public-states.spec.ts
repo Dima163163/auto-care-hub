@@ -166,6 +166,11 @@ test.describe('public and client AutoCare states', () => {
     })
 
     test('renders the public booking surface for every communication mode', async ({ page }) => {
+        // Each provider route is a dynamic Next page. On a cold dev server the
+        // first navigation can spend several seconds compiling the route, so
+        // wait for the provider-specific main instead of the generic loading
+        // shell (which also contains a <main> element).
+        test.setTimeout(90_000)
         const modes = [
             { providerId: 'api-proservice-moscow', heading: /your booking|ваша запись/i },
             { providerId: 'api-autolux-moscow', heading: /request first, confirm next|сначала заявка, затем подтверждение/i },
@@ -174,7 +179,7 @@ test.describe('public and client AutoCare states', () => {
 
         for (const { providerId, heading } of modes) {
             await page.goto(`/services/${providerId}`)
-            await expect(page.getByRole('main')).toBeVisible()
+            await expect(page.getByTestId('provider-page-main')).toBeVisible({ timeout: 30_000 })
             await expect(page.getByRole('heading', { name: heading })).toBeVisible()
         }
 
@@ -205,6 +210,20 @@ test.describe('public and client AutoCare states', () => {
             await page.goto('/services/api-proservice-moscow/request?service=oil-change')
 
             const form = page.locator('main form').first()
+            const appointmentPicker = form.locator('section').first()
+            const timeSlots = appointmentPicker.getByRole('button').filter({ hasText: /^\d{1,2}:\d{2}$/ })
+            let hasAvailableDate = false
+            for (let dateIndex = 0; dateIndex < 4; dateIndex += 1) {
+                if (dateIndex > 0) await appointmentPicker.getByRole('button').nth(dateIndex).click()
+                try {
+                    await expect(timeSlots.first()).toBeVisible({ timeout: 3_000 })
+                    hasAvailableDate = true
+                    break
+                } catch {
+                    // Skip closed dates; the test needs a valid slot to exercise request retry behavior.
+                }
+            }
+            expect(hasAvailableDate).toBe(true)
             const confirmations = form.locator('input[type="checkbox"]')
             await expect(confirmations).toHaveCount(2)
             for (let index = 0; index < 2; index += 1) {

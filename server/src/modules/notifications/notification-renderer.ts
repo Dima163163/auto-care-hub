@@ -120,6 +120,31 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, NotificationTemplate
         messageKey: 'notifications.autocare.visitReminder.message',
         link: '/profile/bookings',
     },
+    'autocare.chat_report_received': {
+        titleKey: 'notifications.autocare.chatReportReceived.title',
+        messageKey: 'notifications.autocare.chatReportReceived.message',
+        link: '/admin/dashboard',
+    },
+    'autocare.chat_report_assigned': {
+        titleKey: 'notifications.autocare.chatReportAssigned.title',
+        messageKey: 'notifications.autocare.chatReportAssigned.message',
+        link: '/admin/dashboard',
+    },
+    'autocare.chat_report_resolved': {
+        titleKey: 'notifications.autocare.chatReportResolved.title',
+        messageKey: 'notifications.autocare.chatReportResolved.message',
+        link: '/chats',
+    },
+    'autocare.chat_report_dismissed': {
+        titleKey: 'notifications.autocare.chatReportDismissed.title',
+        messageKey: 'notifications.autocare.chatReportDismissed.message',
+        link: '/chats',
+    },
+    'autocare.chat_report_overturned': {
+        titleKey: 'notifications.autocare.chatReportOverturned.title',
+        messageKey: 'notifications.autocare.chatReportOverturned.message',
+        link: '/chats',
+    },
     'moderation.review_updated': {
         titleKey: 'notifications.moderation.reviewUpdated.title',
         messageKey: 'notifications.moderation.reviewUpdated.message',

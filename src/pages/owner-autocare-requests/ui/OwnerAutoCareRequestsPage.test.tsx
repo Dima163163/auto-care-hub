@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
             providerConfirmedAt: '2026-08-29T12:00:00.000Z',
             clientConfirmedAt: '2026-08-29T12:00:00.000Z',
             locationId: 'location-1',
+            timezone: 'Europe/Moscow',
             providerName: 'ProService',
             address: 'Москва, ул. Льва Толстого, 18',
             serviceSlug: 'oil-change',
@@ -109,5 +110,12 @@ describe('OwnerAutoCareRequestsPage', () => {
         await user.click(screen.getByRole('button', { name: 'autocare.ownerCapacityResourcesManage' }))
 
         expect(screen.getByTestId('owner-capacity-resources')).toBeInTheDocument()
+    })
+
+    it('shows the preferred visit time in the service location timezone', () => {
+        renderPage()
+
+        expect(screen.getByText(/15:00 GMT\+3/)).toBeInTheDocument()
+        expect(screen.queryByText(/12:00 UTC/)).not.toBeInTheDocument()
     })
 })

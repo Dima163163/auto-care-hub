@@ -1,4 +1,9 @@
 export type OwnerProviderTextDraft = {
+    countryCode: string
+    countryName: string
+    cityName: string
+    currencyCode: string
+    timezone: string
     name: string
     description: string
     address: string
@@ -25,6 +30,11 @@ export type OwnerProviderDraft = {
 // excluded: browser drafts must not persist PII or private evidence.
 
 export const EMPTY_OWNER_PROVIDER_TEXT_DRAFT: OwnerProviderTextDraft = {
+    countryCode: 'RU',
+    countryName: 'Россия',
+    cityName: 'Москва',
+    currencyCode: 'RUB',
+    timezone: 'Europe/Moscow',
     name: '',
     description: '',
     address: '',
@@ -77,6 +87,11 @@ export function parseOwnerProviderDraft(value: unknown): OwnerProviderDraft | nu
     return {
         text: {
             name: readString(text, 'name', ''),
+            countryCode: readString(text, 'countryCode', EMPTY_OWNER_PROVIDER_TEXT_DRAFT.countryCode).toUpperCase(),
+            countryName: readString(text, 'countryName', EMPTY_OWNER_PROVIDER_TEXT_DRAFT.countryName),
+            cityName: readString(text, 'cityName', EMPTY_OWNER_PROVIDER_TEXT_DRAFT.cityName),
+            currencyCode: readString(text, 'currencyCode', EMPTY_OWNER_PROVIDER_TEXT_DRAFT.currencyCode).toUpperCase(),
+            timezone: readString(text, 'timezone', EMPTY_OWNER_PROVIDER_TEXT_DRAFT.timezone),
             description: readString(text, 'description', ''),
             address: readString(text, 'address', ''),
             hours: readString(text, 'hours', ''),

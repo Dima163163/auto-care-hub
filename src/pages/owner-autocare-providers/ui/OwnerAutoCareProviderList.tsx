@@ -10,6 +10,7 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import { routePaths } from '@/shared/constants/routes'
 import { CommunicationSwitch } from '@/shared/ui/communication-switch'
 import { formatCurrency } from '@/shared/lib/locale-format'
+import { formatAutoCareReviewCount } from '@/shared/lib/formatAutoCareCount'
 
 type CommunicationSettings = Omit<UpdateAutoCareCommunicationSettingsInput, 'providerId'>
 
@@ -80,7 +81,7 @@ function OwnerAutoCareProviderCard({ provider, locale, t }: { provider: AutoCare
                     </div>
                     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${provider.status === 'active' ? 'bg-status-success-surface text-status-success-foreground' : 'bg-primary-foreground/10 text-primary-foreground/80'}`}><CheckCircle2 className="size-3" />{provider.status === 'active' ? t('autocare.ownerProviderPublished') : t('autocare.ownerProviderDraft')}</span>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"><span className="inline-flex items-center gap-1 font-black text-rating-foreground"><Star className="size-3.5 fill-rating-fill" />{provider.rating.toFixed(1)}</span><span className="text-primary-foreground/60">·</span><span className="text-primary-foreground/75">{t('autocare.reviews', { count: provider.reviewCount })}</span><span className="text-primary-foreground/60">·</span><span className="text-primary-foreground/75">{provider.location.hours}</span></div>
+                <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"><span className="inline-flex items-center gap-1 font-black text-rating-foreground"><Star className="size-3.5 fill-rating-fill" />{provider.rating.toFixed(1)}</span><span className="text-primary-foreground/60">·</span><span className="text-primary-foreground/75">{formatAutoCareReviewCount(provider.reviewCount, locale, t)}</span><span className="text-primary-foreground/60">·</span><span className="text-primary-foreground/75">{provider.location.hours}</span></div>
             </header>
             <div className="flex flex-1 flex-col px-4 py-4 md:px-5 md:py-5">
                 <p className="min-h-[72px] max-h-[72px] max-w-4xl overflow-hidden text-sm leading-6 text-foreground">{provider.description || t('common.notProvided')}</p>

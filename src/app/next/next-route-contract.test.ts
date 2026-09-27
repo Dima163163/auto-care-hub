@@ -18,6 +18,7 @@ describe('Next route contract', () => {
     it('accepts dynamic provider and legacy cabinet redirect routes', () => {
         expect(isNextRoutePath('/services/provider-1')).toBe(true)
         expect(isNextRoutePath('/services/provider-1/request')).toBe(true)
+        expect(isNextRoutePath('/community/clients/10000000-0000-4000-8000-000000000001')).toBe(true)
         expect(isNextRoutePath('/cabinets/cabinet-1')).toBe(true)
         expect(isNextRoutePath('/owner/cabinets/provider-1/edit')).toBe(true)
     })
@@ -40,6 +41,7 @@ describe('Next route contract', () => {
         const routeExamples = [
             [ROUTES.serviceProviderDetails, '/services/provider-1'],
             [ROUTES.serviceRequest, '/services/provider-1/request'],
+            [ROUTES.communityClientProfile, '/community/clients/10000000-0000-4000-8000-000000000001'],
             [ROUTES.cabinetDetails, '/cabinets/cabinet-1'],
             [ROUTES.ownerAutoCareProviderDetails, '/owner/autocare-providers/provider-1'],
             [ROUTES.ownerAutoCareProviderReviews, '/owner/autocare-providers/provider-1/reviews'],
@@ -47,7 +49,7 @@ describe('Next route contract', () => {
         ] as const
 
         for (const [routePattern, example] of routeExamples) {
-            expect(routePattern).toContain(':id')
+            expect(routePattern).toMatch(/:[a-zA-Z][a-zA-Z0-9]*/)
             expect(isNextRoutePath(example), routePattern).toBe(true)
         }
     })

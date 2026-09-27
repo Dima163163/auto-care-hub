@@ -2,13 +2,14 @@ import type { EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import { ANONYMIZED_REVIEW_TEXT } from './account-anonymization-policy.js'
+import { createEmailBlindIndex } from '../../shared/security/data-encryption/field-encryption.js'
 
 type QueryExecutor = Pick<EntityManager, 'query'>
 
 export type AccountDeletionInvariant = {
     name: string
     sql: string
-    parameterMode?: 'user' | 'user_and_email' | 'anonymized'
+    parameterMode?: 'user' | 'user_and_email' | 'anonymized' | 'none'
 }
 
 export type AccountDeletionInvariantResult = AccountDeletionInvariant & {
@@ -82,19 +83,19 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
         name: 'broadcast requests are redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "autocare_broadcast_requests"
             WHERE "clientId" = $1
-              AND ("issueDescription" <> $2 OR "vehicleSnapshot" IS NOT NULL OR cardinality("photoUrls") > 0)`,
+              AND ("issueDescription" NOT LIKE '%"redacted":true%' OR "vehicleSnapshot" IS NOT NULL OR cardinality("photoUrls") > 0)`,
     },
     {
         name: 'guarantee claims are redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "autocare_guarantee_claims"
             WHERE "clientId" = $1
-              AND ("summary" <> $2 OR cardinality("evidenceUrls") > 0 OR "resolution" IS NOT NULL OR "resolvedById" = $1)`,
+              AND ("summary" NOT LIKE '%"redacted":true%' OR cardinality("evidenceUrls") > 0 OR "resolution" IS NOT NULL OR "resolvedById" = $1)`,
     },
     {
         name: 'expert questions are redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "autocare_expert_questions"
             WHERE "clientId" = $1
-              AND ("symptoms" <> $2 OR "vehicleSnapshot" IS NOT NULL OR "answer" IS NOT NULL OR "answeredById" = $1)`,
+              AND ("symptoms" NOT LIKE '%"redacted":true%' OR "vehicleSnapshot" IS NOT NULL OR "answer" IS NOT NULL OR "answeredById" = $1)`,
     },
     {
         name: 'fleet notes and vehicles are redacted',
@@ -102,7 +103,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_fleet_accounts" fleet
             LEFT JOIN "autocare_fleet_vehicles" vehicle ON vehicle."fleetId" = fleet."id"
             WHERE fleet."ownerId" = $1
-              AND (fleet."notes" IS NOT NULL OR vehicle."label" <> $2 OR vehicle."vehicleSnapshot" <> '{}'::jsonb OR vehicle."approvalPolicy" IS NOT NULL)`,
+              AND (fleet."notes" IS NOT NULL OR vehicle."label" NOT LIKE '%"redacted":true%' OR COALESCE(vehicle."vehicleSnapshot" ->> 'redacted', 'false') <> 'true' OR vehicle."approvalPolicy" IS NOT NULL)`,
     },
     {
         name: 'account-related service message bodies and offers are redacted',
@@ -113,18 +114,18 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             WHERE (message."senderId" = $1 OR request."clientId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
               AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
     },
-    { name: 'repair event payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" event JOIN "autocare_service_requests" request ON request."id" = event."requestId" WHERE request."clientId" = $1 AND (event."title" <> $2 OR event."notes" IS NOT NULL OR event."metadata" <> \'{}\'::jsonb)' },
+    { name: 'repair event payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" event JOIN "autocare_service_requests" request ON request."id" = event."requestId" WHERE request."clientId" = $1 AND (event."title" NOT LIKE \'%"redacted":true%\' OR event."notes" IS NOT NULL OR COALESCE(event."metadata" ->> \'redacted\', \'false\') <> \'true\')' },
     { name: 'repair event actor references are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" WHERE "actorId" = $1' },
     { name: 'provider change reviewers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "reviewedById" = $1' },
-    { name: 'provider change request payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 AND ("payload" <> \'{"redacted": true}\'::jsonb OR "reviewedById" = $1 OR "reviewReason" IS NOT NULL)' },
+    { name: 'provider change request payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 AND (COALESCE("payload" ->> \'redacted\', \'false\') <> \'true\' OR "reviewedById" = $1 OR "reviewReason" IS NOT NULL)' },
     {
         name: 'catalog gap request payloads are redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "autocare_catalog_gap_requests"
             WHERE "requestedById" = $1
-              AND ("labels" <> '{}'::jsonb OR "comparisonAttributes" <> '[]'::jsonb OR "rationale" <> $2 OR "reviewedById" = $1 OR "reviewReason" IS NOT NULL)`,
+              AND (COALESCE("labels" ->> 'redacted', 'false') <> 'true' OR COALESCE("comparisonAttributes" ->> 'redacted', 'false') <> 'true' OR "rationale" NOT LIKE '%"redacted":true%' OR "reviewedById" = $1 OR "reviewReason" IS NOT NULL)`,
     },
     { name: 'catalog gap reviewers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_catalog_gap_requests" WHERE "reviewedById" = $1' },
-    { name: 'appeal evidence is redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_appeals" WHERE "submittedById" = $1 AND ("reason" <> $2 OR cardinality("evidenceIds") > 0 OR "decidedById" = $1 OR "decisionReason" IS NOT NULL)' },
+    { name: 'appeal evidence is redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_appeals" WHERE "submittedById" = $1 AND ("reason" NOT LIKE \'%"redacted":true%\' OR cardinality("evidenceIds") > 0 OR "decidedById" = $1 OR "decisionReason" IS NOT NULL)' },
     { name: 'appeal deciders are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_appeals" WHERE "decidedById" = $1' },
     {
         name: 'AutoCare reschedule references are detached',
@@ -180,35 +181,35 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_service_attachments" attachment
             JOIN "autocare_chat_threads" thread ON thread."id" = attachment."threadId"
-            WHERE thread."subject" = $1`,
-        parameterMode: 'anonymized',
+            WHERE thread."subject" LIKE '%"redacted":true%'`,
+        parameterMode: 'none',
     },
     {
         name: 'anonymized chat message payloads are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_service_messages" message
             JOIN "autocare_chat_threads" thread ON thread."id" = message."threadId"
-            WHERE thread."subject" = $1
+            WHERE thread."subject" LIKE '%"redacted":true%'
               AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
-        parameterMode: 'anonymized',
+        parameterMode: 'none',
     },
     {
         name: 'anonymized chat report payloads are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_chat_reports" report
             JOIN "autocare_chat_threads" thread ON thread."id" = report."threadId"
-            WHERE thread."subject" = $1
+            WHERE thread."subject" LIKE '%"redacted":true%'
               AND (report."description" IS NOT NULL OR report."reportedUserId" IS NOT NULL OR report."reviewedById" IS NOT NULL OR report."resolutionReason" IS NOT NULL)`,
-        parameterMode: 'anonymized',
+        parameterMode: 'none',
     },
     {
         name: 'anonymized chat block reasons are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_chat_blocks" block
             JOIN "autocare_chat_threads" thread ON thread."id" = block."threadId"
-            WHERE thread."subject" = $1
+            WHERE thread."subject" LIKE '%"redacted":true%'
               AND block."reason" IS NOT NULL`,
-        parameterMode: 'anonymized',
+        parameterMode: 'none',
     },
 ]
 
@@ -225,10 +226,10 @@ export async function checkAutoCareDeletionInvariants(
 ): Promise<AccountDeletionInvariantResult[]> {
     const results: AccountDeletionInvariantResult[] = []
     for (const invariant of AUTOCARE_DELETION_INVARIANTS) {
-        const parameters = invariant.parameterMode === 'anonymized'
-            ? [ANONYMIZED_REVIEW_TEXT]
+        const parameters = invariant.parameterMode === 'none'
+            ? []
             : invariant.parameterMode === 'user_and_email'
-                ? [userId, originalEmail ?? null]
+                ? [userId, originalEmail ? createEmailBlindIndex(originalEmail) : null]
                 : invariant.sql.includes('$2')
                     ? [userId, ANONYMIZED_REVIEW_TEXT]
                     : [userId]

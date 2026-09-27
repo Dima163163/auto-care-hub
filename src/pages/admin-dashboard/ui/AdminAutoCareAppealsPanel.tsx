@@ -45,6 +45,7 @@ export function AdminAutoCareAppealsPanel() {
             review: t('adminAppeals.subjectReview'),
             suspension: t('adminAppeals.subjectSuspension'),
             catalog: t('adminAppeals.subjectCatalog'),
+            chat_restriction: t('adminAppeals.subjectChatRestriction'),
         },
         decided: t('adminAppeals.decided'),
     }

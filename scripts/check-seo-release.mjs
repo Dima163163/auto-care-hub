@@ -139,6 +139,7 @@ function checkPrerenderContract() {
     const pageSource = readFileSync(resolve(projectRoot, 'src/app/[[...slug]]/page.page.tsx'), 'utf8')
     const discoverySource = readFileSync(resolve(projectRoot, 'src/app/services/page.page.tsx'), 'utf8')
     const providerSource = readFileSync(resolve(projectRoot, 'src/app/services/[providerId]/page.page.tsx'), 'utf8')
+    const rootLayoutSource = readFileSync(resolve(projectRoot, 'src/app/layout.page.tsx'), 'utf8')
     const metadataSource = readFileSync(resolve(projectRoot, 'src/app/metadata.ts'), 'utf8')
     const requiredFragments = ['generateStaticParams', 'dynamicParams = true', 'revalidate = 300']
     const missing = requiredFragments.filter((fragment) => !pageSource.includes(fragment))
@@ -146,9 +147,11 @@ function checkPrerenderContract() {
     if (!providerSource.includes('generateStaticParams') || !providerSource.includes('NEXT_PUBLIC_PRERENDER_PROVIDER_IDS')) missing.push('services/[providerId]/page.page.tsx: provider static params')
     const metadataFragments = ['openGraph:', 'alternates:', 'robots:']
     missing.push(...metadataFragments.filter((fragment) => !metadataSource.includes(fragment)).map((fragment) => `metadata.ts: ${fragment}`))
-    return missing.length === 0
-        ? [check('Dynamic provider prerender', 'pass', `selected public routes and ${PROVIDER_ROUTES.length} provider variants are configured for ISR/static generation`)]
-        : [check('Dynamic provider prerender', 'blocked', `missing contract fragments: ${missing.join(', ')}`)]
+    if (missing.length > 0) return [check('Dynamic provider prerender', 'blocked', `missing contract fragments: ${missing.join(', ')}`)]
+    if (rootLayoutSource.includes('getRequestLocale()')) {
+        return [check('Dynamic provider prerender', 'manual', `selected routes declare revalidation and ${PROVIDER_ROUTES.length} provider variants, while request-header locale selection keeps the root layout request-rendered`)]
+    }
+    return [check('Dynamic provider prerender', 'pass', `selected public routes and ${PROVIDER_ROUTES.length} provider variants are configured for ISR/static generation`)]
 }
 
 function resolvePublicAssetPath(assetPath) {
@@ -287,6 +290,15 @@ export async function readBoundedSeoResponse(response, maxBytes = MAX_SEO_HTML_R
 export function checkLocalHtmlMetadataReport() {
     if (!existsSync(nextServerAppRoot)) {
         return check('Local HTML metadata report', 'manual', 'run npm run build before inspecting rendered .next/server/app HTML')
+    }
+
+    const rootLayout = readFileSync(resolve(projectRoot, 'src/app/layout.page.tsx'), 'utf8')
+    if (rootLayout.includes('getRequestLocale()')) {
+        return check(
+            'Local HTML metadata report',
+            'manual',
+            'the root layout selects locale from request headers, so public HTML is rendered per request; pass --url to verify metadata from a running production server',
+        )
     }
 
     const missingRoutes = []

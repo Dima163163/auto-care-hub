@@ -19,6 +19,7 @@ import {
     UserConsentEntity,
 } from '../../entities/index.js'
 import { In } from 'typeorm'
+import { AutoCareReviewHelpfulVoteEntity } from '../../entities/automotive/review-helpful-vote.entity.js'
 import { AppDataSource } from '../../database/data-source.js'
 import {
     MAX_EXPORT_RECORDS,
@@ -26,7 +27,7 @@ import {
 } from './data-export.serializer.js'
 
 export async function getUserDataExport(user: UserEntity) {
-    const [favorites, bookings, notifications, cabinets, vehicles, serviceRequests, broadcasts, claims, questions, chats, fleets, appeals, consents] = await Promise.all([
+    const [favorites, bookings, notifications, cabinets, vehicles, serviceRequests, broadcasts, claims, questions, chats, fleets, appeals, consents, helpfulVotes] = await Promise.all([
         AppDataSource.getRepository(FavoriteCabinetEntity).find({
             where: { userId: user.id },
             order: { createdAt: 'ASC' },
@@ -98,6 +99,11 @@ export async function getUserDataExport(user: UserEntity) {
             order: { createdAt: 'ASC' },
             take: MAX_EXPORT_RECORDS + 1,
         }),
+        AppDataSource.getRepository(AutoCareReviewHelpfulVoteEntity).find({
+            where: { voterUserId: user.id },
+            order: { createdAt: 'ASC' },
+            take: MAX_EXPORT_RECORDS + 1,
+        }),
     ])
 
     const requestIds = serviceRequests.slice(0, MAX_EXPORT_RECORDS).map(({ id }) => id)
@@ -150,5 +156,6 @@ export async function getUserDataExport(user: UserEntity) {
         quotes,
         appeals,
         consents,
+        helpfulVotes,
     })
 }

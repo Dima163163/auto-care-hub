@@ -113,7 +113,7 @@ export async function listOwnerProviderMemberships(user: UserEntity, providerId:
     const users = memberships.length
         ? await AppDataSource.getRepository(UserEntity).find({
             where: { id: In(memberships.map((membership) => membership.userId)) },
-            select: { id: true, name: true, email: true, avatarUrl: true },
+            select: { id: true, name: true, email: true, emailCiphertext: true, avatarUrl: true },
         })
         : []
     const usersById = new Map(users.map((member) => [member.id, member]))
@@ -211,7 +211,7 @@ export async function revokeOwnerProviderMembership(user: UserEntity, providerId
     if (!membership) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider membership not found.' })
     const member = await AppDataSource.getRepository(UserEntity).findOne({
         where: { id: membership.userId },
-        select: { id: true, name: true, email: true, avatarUrl: true },
+        select: { id: true, name: true, email: true, emailCiphertext: true, avatarUrl: true },
     })
     if (membership.status === AutomotiveProviderMembershipStatus.Revoked) return toMembershipResponse(membership, member ?? undefined)
     membership.status = AutomotiveProviderMembershipStatus.Revoked

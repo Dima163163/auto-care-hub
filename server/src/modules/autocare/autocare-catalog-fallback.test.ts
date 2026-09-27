@@ -7,6 +7,8 @@ describe('AutoCare catalog fallback', () => {
     it('resolves city codes and API-style market ids', () => {
         expect(findFallbackMarket('samara')?.cityName).toBe('Самара')
         expect(findFallbackMarket('market-samara')?.cityCode).toBe('samara')
+        expect(findFallbackMarket('alicante')).toBeNull()
+        expect(findFallbackMarket('chisinau')).toBeNull()
         expect(findFallbackMarket('unknown-city')).toBeNull()
     })
 

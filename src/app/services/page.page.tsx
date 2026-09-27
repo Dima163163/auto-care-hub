@@ -1,5 +1,5 @@
 import { NextClientApp } from '@/app/next/NextClientApp'
-import { getRouteMetadata } from '@/app/metadata'
+import { getRequestLocale, getRouteMetadata } from '@/app/metadata'
 import type { Metadata } from 'next'
 
 type ServiceDiscoveryPageProps = {
@@ -13,7 +13,7 @@ export const revalidate = 300
 // eslint-disable-next-line react-refresh/only-export-components
 export async function generateMetadata({ searchParams }: ServiceDiscoveryPageProps): Promise<Metadata> {
     const query = await searchParams
-    return getRouteMetadata('/services', { hasSearchParams: Object.keys(query).length > 0 })
+    return getRouteMetadata('/services', { hasSearchParams: Object.keys(query).length > 0, locale: await getRequestLocale() })
 }
 
 export default function ServiceDiscoveryPage() {

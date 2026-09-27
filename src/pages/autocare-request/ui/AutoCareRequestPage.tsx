@@ -18,6 +18,7 @@ import { RequestOrderSummary, RequestSummary } from './RequestSummary'
 import { RequestSteps } from './RequestSteps'
 import { GuaranteeClaimCard } from './GuaranteeClaimCard'
 import { toRequestVehicleSnapshot } from './request-vehicle-snapshot'
+import { parseRequestDate } from './request-date'
 
 export function AutoCareRequestPage() {
     const { id = '' } = useParams()
@@ -32,6 +33,10 @@ export function AutoCareRequestPage() {
     const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
     const [attachmentUploadErrorCount, setAttachmentUploadErrorCount] = useState(0)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
+    const [appointmentSelection, setAppointmentSelection] = useState(() => ({
+        date: parseRequestDate(searchParams.get('date')) ?? '',
+        time: searchParams.get('time') ?? '',
+    }))
     const [createRequest, { isLoading: isSubmitting, error: submitError }] = useCreateAutoCareServiceRequestMutation()
     const [createAttachment] = useCreateAutoCareServiceAttachmentMutation()
     const provider = data ? mapAutoCareProviderProfile(data) : undefined
@@ -52,7 +57,7 @@ export function AutoCareRequestPage() {
 
     if (isLoading) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !offering || !data) {
-        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{t('autocare.providerNotFound')}</h1></main>
+        return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{isError ? t('common.failedToLoad') : t('autocare.providerNotFound')}</h1></main>
     }
 
     if (requestedVehicleId && !isUserLoading && user?.role === 'client' && !isFleetsFetching && !isVehiclesFetching && !selectedSavedVehicle && !selectedVehicle) {
@@ -118,7 +123,7 @@ export function AutoCareRequestPage() {
         <main className="min-h-full bg-background">
             <section className="bg-hero-overlay pb-7 pt-5 text-primary-foreground sm:pb-9">
                 <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)]">
-                    <Link to={routePaths.serviceProviderDetails(provider.id)} className="inline-flex items-center gap-2 text-xs font-bold text-primary-foreground/70 hover:text-primary-foreground"><ArrowLeft className="size-3.5" />{t('autocare.providerBackToResults')}</Link>
+                    <Link to={routePaths.serviceProviderDetails(provider.id, offering.serviceId, provider.marketId)} className="inline-flex items-center gap-2 text-xs font-bold text-primary-foreground/70 hover:text-primary-foreground"><ArrowLeft className="size-3.5" />{t('autocare.providerBackToResults')}</Link>
                     <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{t('autocare.requestTitle')}</h1>
                     <p className="mt-2 text-sm font-medium text-primary-foreground/70">{t('autocare.requestProviderConfirmation')}</p>
                     <div className="mt-6"><RequestSteps submitted={Boolean(submittedRequestId)} /></div>
@@ -127,8 +132,8 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && (isFleetsFetching || isVehiclesFetching) ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm key={`${requestContextKey}:${location.search}`} draftKey={user?.id && data ? `autocare-request:${requestContextKey}` : null} providerId={data.id} locationId={data.location.id} offeringId={offering.id} serviceTimezone={data.location.timezone} initialVehicle={initialVehicle} initialVehicleId={selectedSavedVehicle?.id ?? null} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} isSubmitting={isSubmitting} errorMessage={submitError ? t('autocare.requestSubmitError') : undefined} />}</div>
-                    <RequestOrderSummary provider={provider} offering={offering} />
+                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && (isFleetsFetching || isVehiclesFetching) ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm key={`${requestContextKey}:${location.search}`} draftKey={user?.id && data ? `autocare-request:${requestContextKey}` : null} providerId={data.id} locationId={data.location.id} offeringId={offering.id} serviceTimezone={data.location.timezone} initialVehicle={initialVehicle} initialVehicleId={selectedSavedVehicle?.id ?? null} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} onAppointmentSelectionChange={setAppointmentSelection} isSubmitting={isSubmitting} errorMessage={submitError ? t('autocare.requestSubmitError') : undefined} />}</div>
+                <RequestOrderSummary provider={provider} offering={offering} appointmentDate={appointmentSelection.date} appointmentTime={appointmentSelection.time} serviceTimezone={data.location.timezone} />
                 </div>
             </div>
         </main>

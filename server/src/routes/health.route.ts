@@ -16,6 +16,7 @@ import { recordSystemIncidentSafely } from '../modules/admin/system-incidents.se
 import { CABINET_UPLOADS_DIR } from '../modules/cabinets/cabinet-image-storage.js'
 import { getOutboxHealthSummary } from '../modules/outbox/outbox-health.service.js'
 import { getRedisClient, isRedisEnabled } from '../shared/redis/redis.js'
+import { mailReadiness, type MailReadinessProbe } from '../shared/mail/mail-readiness.js'
 import { metrics } from '../shared/observability/metrics.js'
 import {
     DEFAULT_HEALTH_INCIDENT_COOLDOWN_MS,
@@ -27,7 +28,7 @@ import {
     type OutboxReadinessResult,
 } from './outbox-readiness.js'
 import { assertHealthProbeTimeout } from './health-probe-policy.js'
-import { getHealthStatus } from './health-status-policy.js'
+import { getHealthStatus, getReadinessHttpStatus } from './health-status-policy.js'
 import {
     assertSchemaContract,
     getSchemaContractReasonCodes,
@@ -67,6 +68,7 @@ export type HealthResponse = {
         redis: Probe
         outbox: OutboxProbe
         storage: Probe
+        mail: MailReadinessProbe
     }
 }
 
@@ -222,7 +224,9 @@ async function getReadiness(request: FastifyRequest, reply: FastifyReply) {
     const outbox = database.status === 'ok'
         ? await runProbe('outbox', probeOutbox)
         : skippedOutboxProbe()
-    const checks = { database, redis, outbox, storage }
+    const coreChecks = { database, redis, outbox, storage }
+    const mail = mailReadiness.getProbe()
+    const checks = { ...coreChecks, mail }
     const outboxThresholds: OutboxReadinessResult = outbox.status === 'ok'
         ? evaluateOutboxReadiness(outbox, {
             maxPending: env.outboxMaxPending,
@@ -238,9 +242,10 @@ async function getReadiness(request: FastifyRequest, reply: FastifyReply) {
         })
         : null
     const isPoolPressureFailure = poolPressure !== null && !poolPressure.ok
-    const hasFailure = Object.values(checks).some((check) => check.status === 'failed')
+    const hasRequiredDependencyFailure = Object.values(coreChecks).some((check) => check.status === 'failed')
         || !outboxThresholds.ok
         || isPoolPressureFailure
+    const hasMailDegradation = mail.status === 'failed' || mail.status === 'checking'
 
     if (pool) {
         metrics.setGauge('database_pool_total_connections', pool.total)
@@ -309,7 +314,7 @@ async function getReadiness(request: FastifyRequest, reply: FastifyReply) {
         })
     }
 
-    if (hasFailure) {
+    if (hasRequiredDependencyFailure) {
         await recordHealthIncidentWithCooldown({
             type: SystemIncidentType.HealthCheck,
             severity: SystemIncidentSeverity.Critical,
@@ -320,19 +325,22 @@ async function getReadiness(request: FastifyRequest, reply: FastifyReply) {
                 redis: redis.status,
                 outbox: outbox.status,
                 storage: storage.status,
+                mail: mail.status,
                 statusCode: 503,
             },
         })
     }
 
     const response: HealthResponse = {
-        status: getHealthStatus(hasFailure),
+        status: getHealthStatus(hasRequiredDependencyFailure, hasMailDegradation),
         service: 'autocare-hub-api',
         database: database.status === 'ok' ? 'connected' : 'disconnected',
         checks,
     }
 
-    return reply.status(hasFailure ? 503 : 200).send(response)
+    // SMTP is optional for core API traffic: report its degradation in the
+    // response/metrics, but only fail readiness for operation-critical checks.
+    return reply.status(getReadinessHttpStatus(hasRequiredDependencyFailure)).send(response)
 }
 
 export async function healthRoutes(app: FastifyInstance) {

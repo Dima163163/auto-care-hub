@@ -16,6 +16,7 @@ describe('AutoCare message content policy', () => {
     it('normalizes chat message payloads and rejects unknown fields', () => {
         expect(normalizeAutoCareChatMessageInput({ body: '  Привет  ' })).toEqual({ body: 'Привет' })
         expect(normalizeAutoCareChatMessageInput({ body: 'Привет', metadata: true })).toBeNull()
+        expect(normalizeAutoCareChatMessageInput({ body: 'Привет', idempotencyKey: 'msg-key-123' })).toBeNull()
         expect(normalizeAutoCareChatMessageInput(null)).toBeNull()
     })
 

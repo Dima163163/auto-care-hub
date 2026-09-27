@@ -408,6 +408,7 @@ export const baseApi = createApi({
         'AutoCareServiceRequest',
         'AutoCareVehicleCatalog',
         'AutoCareMarketplace',
+        'AutoCareCommunity',
         'PlatformReview',
     ],
     endpoints: () => ({}),

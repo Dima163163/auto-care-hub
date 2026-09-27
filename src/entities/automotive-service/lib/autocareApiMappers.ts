@@ -19,6 +19,7 @@ function formatPrice(priceFromMinor: number, currencyCode: string) {
 export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): ProviderPreview {
     return {
         id: item.provider.id,
+        marketId: item.provider.location.marketId,
         name: item.provider.name,
         rating: item.provider.rating,
         reviewCount: item.provider.reviewCount,
@@ -27,7 +28,7 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         price: item.offer.priceFromMinor / 100,
         priceTo: item.offer.priceToMinor === null ? null : item.offer.priceToMinor / 100,
         currency: item.offer.currencyCode,
-        nextSlot: item.nextSlot ?? '—',
+        nextSlot: item.nextSlot ?? '',
         image: item.provider.coverImageUrl,
         logoUrl: item.provider.logoUrl,
         bonus: item.provider.bonusSummary ?? undefined,
@@ -36,7 +37,9 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         trustBadge: item.provider.trustBadge,
         priceType: item.offer.priceType ?? (item.offer.priceToMinor === null ? 'from' : 'range'),
         inclusions: item.offer.inclusions,
-        warrantyMonths: item.offer.warrantyText ? 12 : null,
+        warrantyText: item.offer.warrantyText,
+        serviceIds: [item.offer.serviceSlug ?? item.offer.serviceDefinitionId],
+        address: item.provider.location.address,
         brandSpecializations: item.provider.brandSpecializations,
         isMultibrand: item.provider.isMultibrand,
         mapPosition: item.provider.location.latitude !== null && item.provider.location.longitude !== null
@@ -58,6 +61,7 @@ function mapOffer(offer: AutoCareApiOffer): ProviderOffering {
         durationMinutes: offer.durationMinutes,
         availability: 'Available on request',
         includes: offer.inclusions,
+        warrantyText: offer.warrantyText,
     }
 }
 
@@ -65,8 +69,10 @@ function mapReview(review: AutoCareApiProviderReviews['reviews'][number]): Provi
     return {
         id: review.id,
         author: review.authorName,
-        vehicleLabel: review.vehicleLabel,
+        vehicleLabel: review.vehicleLabel || undefined,
         avatarUrl: review.avatarUrl,
+        communityProfile: review.communityProfile ?? null,
+        helpfulCount: review.helpfulCount ?? 0,
         rating: review.rating,
         date: formatReviewDate(review.createdAt),
         text: review.text,
@@ -83,6 +89,7 @@ function formatReviewDate(value: string) {
 export function mapAutoCareProviderProfile(profile: AutoCareApiProviderProfile, reviewSummary?: AutoCareApiProviderReviews): ProviderProfile {
     return {
         id: profile.id,
+        marketId: profile.location.marketId,
         status: profile.status,
         locationId: profile.location.id,
         name: profile.name,

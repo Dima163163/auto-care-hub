@@ -1,10 +1,12 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum AutoCareAppealSubject {
     Provider = 'provider',
     Review = 'review',
     Suspension = 'suspension',
     Catalog = 'catalog',
+    ChatRestriction = 'chat_restriction',
 }
 
 export enum AutoCareAppealStatus {
@@ -25,11 +27,11 @@ export class AutoCareAppealEntity {
     @Column({ type: 'uuid' }) subjectId!: string
     @Column({ type: 'uuid' }) submittedById!: string
     @Column({ type: 'uuid', nullable: true }) providerId!: string | null
-    @Column({ type: 'text' }) reason!: string
+    @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_appeals', 'reason', 'text') }) reason!: string
     @Column('text', { array: true, default: () => "'{}'" }) evidenceIds!: string[]
     @Column({ type: 'enum', enum: AutoCareAppealStatus, enumName: 'autocare_appeal_status', default: AutoCareAppealStatus.Pending }) status!: AutoCareAppealStatus
     @Column({ type: 'uuid', nullable: true }) decidedById!: string | null
-    @Column({ type: 'text', nullable: true }) decisionReason!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_appeals', 'decisionReason', 'text') }) decisionReason!: string | null
     @Column({ type: 'timestamptz', nullable: true }) decidedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

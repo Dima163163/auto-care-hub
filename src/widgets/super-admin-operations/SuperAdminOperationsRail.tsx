@@ -17,6 +17,7 @@ import {
     useGetAdminOperationsOverviewQuery,
     type AdminOperationsOverview,
 } from '@/features/admin/api/adminApi'
+import { IS_MOCK_API } from '@/shared/config/api'
 import { ROUTES } from '@/shared/constants/routes'
 import { formatDateTime } from '@/shared/lib/formatDateTime'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -94,62 +95,71 @@ export function SuperAdminOperationsRail() {
     if (!isAdmin) return null
 
     const status = overview.data?.overallStatus ?? 'unavailable'
+    const displayedStatus = IS_MOCK_API ? 'degraded' : status
     const schema = overview.data?.database.schema
     const schemaObjectCount = schema ? getSchemaObjectCount(schema) : 0
-    const shouldShowDetails = !collapsed && (expanded || status === 'degraded' || (status === 'unavailable' && !overview.isLoading))
-    const statusText = status === 'healthy'
-        ? t('adminDashboard.operationsRail.healthy')
-        : status === 'degraded'
-            ? t('adminDashboard.operationsRail.degraded')
-            : overview.isLoading
-                ? t('adminDashboard.operationsRail.loading')
-                : t('adminDashboard.operationsRail.unavailable')
+    // Keep the status strip compact by default; admins can open the full
+    // snapshot in the normal page flow when they need it.
+    const shouldShowDetails = !collapsed && expanded
+    const statusText = IS_MOCK_API
+        ? t('adminDashboard.operationsRail.mockMode')
+        : status === 'healthy'
+            ? t('adminDashboard.operationsRail.healthy')
+            : status === 'degraded'
+                ? t('adminDashboard.operationsRail.degraded')
+                : overview.isLoading
+                    ? t('adminDashboard.operationsRail.loading')
+                    : t('adminDashboard.operationsRail.unavailable')
     const databaseStatus = overview.data?.database.status
     const redisStatus = overview.data?.backend.redis.status
     const outbox = overview.data?.backend.outbox
     const signals = overview.data?.backend.signals
 
     return (
-        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex justify-end px-3 md:inset-x-auto md:bottom-4 md:right-5 md:w-[24rem] md:px-0">
+        <div data-testid="admin-operations-status-strip" className="relative z-10 shrink-0 border-b border-border/80 bg-card text-card-foreground shadow-sm">
             <aside
-                className="pointer-events-auto ml-auto w-[min(24rem,100%)] overflow-hidden rounded-2xl border border-border/80 bg-card/95 text-card-foreground shadow-2xl shadow-black/10 backdrop-blur supports-[backdrop-filter]:bg-card/85"
+                className="mx-auto w-full max-w-screen-2xl overflow-hidden"
                 aria-label={t('adminDashboard.operationsRail.title')}
             >
-                <div className={`h-1 ${status === 'healthy' ? 'bg-status-success-foreground' : status === 'degraded' ? 'bg-status-warning-foreground' : 'bg-status-danger-foreground'}`} />
-                <div className="flex items-start gap-3 p-3.5">
-                    <div className={`mt-0.5 rounded-full bg-muted p-2 ${statusTone(status)}`}>
-                        <StatusIcon status={status} />
+                <div className={`h-0.5 ${displayedStatus === 'healthy' ? 'bg-status-success-foreground' : displayedStatus === 'degraded' ? 'bg-status-warning-foreground' : 'bg-status-danger-foreground'}`} />
+                <div className="flex items-center gap-3 px-3 py-2 md:px-5">
+                    <div className={`shrink-0 rounded-full bg-muted p-1.5 ${statusTone(displayedStatus)}`}>
+                        <StatusIcon status={displayedStatus} />
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
                             {t('adminDashboard.operationsRail.eyebrow')}
                         </p>
-                        <div className="mt-0.5 flex items-center justify-between gap-2">
-                            <h2 className="truncate text-sm font-bold">{t('adminDashboard.operationsRail.title')}</h2>
-                            <button
-                                type="button"
-                                className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                onClick={() => {
-                                    if (shouldShowDetails) {
-                                        setCollapsed(true)
-                                        setExpanded(false)
-                                    } else {
-                                        setCollapsed(false)
-                                        setExpanded(true)
-                                    }
-                                }}
-                                aria-expanded={shouldShowDetails}
-                                aria-label={shouldShowDetails ? t('adminDashboard.operationsRail.hideDetails') : t('adminDashboard.operationsRail.details')}
-                            >
-                                {shouldShowDetails ? <ChevronDown className="size-4" aria-hidden="true" /> : <ChevronUp className="size-4" aria-hidden="true" />}
-                            </button>
-                        </div>
-                        <p className={`mt-1 text-xs font-medium ${statusTone(status)}`} aria-live="polite">{statusText}</p>
+                        <h2 className="truncate text-xs font-bold">{t('adminDashboard.operationsRail.title')}</h2>
+                        <p className={`text-xs font-semibold ${statusTone(displayedStatus)}`} aria-live="polite">{statusText}</p>
+                        {IS_MOCK_API && <span className="rounded-full border border-status-warning-border bg-status-warning-surface px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-status-warning-foreground">Mock</span>}
                     </div>
+                    <button
+                        type="button"
+                        className="shrink-0 rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => {
+                            if (shouldShowDetails) {
+                                setCollapsed(true)
+                                setExpanded(false)
+                            } else {
+                                setCollapsed(false)
+                                setExpanded(true)
+                            }
+                        }}
+                        aria-expanded={shouldShowDetails}
+                        aria-label={shouldShowDetails ? t('adminDashboard.operationsRail.hideDetails') : t('adminDashboard.operationsRail.details')}
+                    >
+                        {shouldShowDetails ? <ChevronDown className="size-4" aria-hidden="true" /> : <ChevronUp className="size-4" aria-hidden="true" />}
+                    </button>
                 </div>
 
                 {shouldShowDetails && (
-                    <div className="max-h-[min(68dvh,34rem)] space-y-3 overflow-y-auto border-t border-border/70 px-3.5 pb-3.5 pt-3">
+                    <div className="max-h-[min(48dvh,24rem)] space-y-3 overflow-y-auto border-t border-border/70 bg-card px-3 pb-3 pt-3 md:px-5">
+                        {IS_MOCK_API && (
+                            <p className="rounded-lg border border-status-warning-border bg-status-warning-surface p-3 text-xs font-medium text-status-warning-foreground">
+                                {t('adminDashboard.operationsRail.mockModeDetails')}
+                            </p>
+                        )}
                         {!overview.data && overview.isError && (
                             <div className="rounded-xl border border-status-danger-border bg-status-danger-surface p-3 text-xs text-status-danger-foreground">
                                 <div className="flex items-center justify-between gap-3">

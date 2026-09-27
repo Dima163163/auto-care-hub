@@ -225,7 +225,7 @@ test.describe('AutoCare real API smoke', () => {
             expect(provider?.id).toBeTruthy()
 
             await page.goto(`/services/${provider!.id}`)
-            await expect(page.getByRole('main')).toBeVisible()
+            await expect(page.getByTestId('provider-page-main')).toBeVisible()
 
             if (mode === 'online') {
                 await expect(page.getByRole('heading', { name: /your booking|ваша запись/i })).toBeVisible()

@@ -13,6 +13,7 @@ import {
     REQUIRED_SCHEMA_COLUMNS,
     REQUIRED_SCHEMA_CONSTRAINTS,
     REQUIRED_SCHEMA_INDEXES,
+    getMissingSchemaIndexes,
 } from './schema-contract-policy.js'
 
 describe('database schema contract gate', () => {
@@ -30,6 +31,7 @@ describe('database schema contract gate', () => {
                 indexname: index.indexName,
                 indisunique: index.unique ?? false,
                 columns: index.columns ? [...index.columns] : [],
+                predicate: index.predicate ?? null,
             })))
             .mockResolvedValueOnce(REQUIRED_SCHEMA_CONSTRAINTS.map((constraint) => ({
                 table_name: constraint.tableName,
@@ -82,6 +84,54 @@ describe('database schema contract gate', () => {
         } finally {
             query.mockRestore()
         }
+    })
+
+    it('requires the anchored-message partial uniqueness index for chat reports', () => {
+        const requiredIndex = {
+            tableName: 'autocare_chat_reports',
+            indexName: 'UQ_autocare_chat_reports_thread_reporter_message',
+            unique: true,
+            columns: ['threadId', 'reporterId', 'reportedMessageId'],
+            predicate: '("reportedMessageId" IS NOT NULL)',
+        } as const
+        const actualIndex = {
+            tablename: requiredIndex.tableName,
+            indexname: requiredIndex.indexName,
+            indisunique: true,
+            columns: [...requiredIndex.columns],
+            predicate: requiredIndex.predicate,
+        }
+
+        expect(getMissingSchemaIndexes([actualIndex], [requiredIndex])).toEqual([])
+        expect(getMissingSchemaIndexes([{ ...actualIndex, predicate: null }], [requiredIndex])).toEqual([
+            'autocare_chat_reports.UQ_autocare_chat_reports_thread_reporter_message',
+        ])
+    })
+
+    it('requires report-linked and manual chat-block uniqueness scopes', () => {
+        const requiredIndexes = REQUIRED_SCHEMA_INDEXES.filter((index) => (
+            index.tableName === 'autocare_chat_blocks'
+            && index.unique
+        ))
+        const actualIndexes = requiredIndexes.map((index) => ({
+            tablename: index.tableName,
+            indexname: index.indexName,
+            indisunique: true,
+            columns: [...(index.columns ?? [])],
+            predicate: index.indexName === 'UQ_autocare_chat_blocks_user_scope'
+                ? '(("sourceReportId" IS NULL) AND (status = \'active\'::autocare_chat_block_status))'
+                : index.predicate ?? null,
+        }))
+
+        expect(requiredIndexes.map((index) => index.indexName)).toEqual([
+            'UQ_autocare_chat_blocks_user_scope',
+            'UQ_autocare_chat_blocks_report',
+        ])
+        expect(getMissingSchemaIndexes(actualIndexes, requiredIndexes)).toEqual([])
+        expect(getMissingSchemaIndexes(
+            actualIndexes.filter((index) => index.indexname !== 'UQ_autocare_chat_blocks_report'),
+            requiredIndexes,
+        )).toEqual(['autocare_chat_blocks.UQ_autocare_chat_blocks_report'])
     })
 
     it('returns no error for a complete contract', () => {

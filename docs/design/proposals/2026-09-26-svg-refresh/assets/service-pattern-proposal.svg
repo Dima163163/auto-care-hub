@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" fill="none" aria-hidden="true">
+  <defs>
+    <pattern id="p" width="240" height="240" patternUnits="userSpaceOnUse">
+      <g stroke="#4d9dff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".12">
+        <circle cx="42" cy="42" r="18"/><circle cx="42" cy="42" r="7"/>
+        <path d="M35 26v12m14 4-12 5m-3 13V48m-14-6 12-4"/>
+        <path d="M145 132h44l12 15v25h-68v-25l12-15Zm-2 0 10-17h22l10 17"/>
+        <circle cx="149" cy="174" r="7"/><circle cx="186" cy="174" r="7"/>
+        <path d="m57 148 24-24m-13-7 20 20m-31 4 22 22"/>
+      </g>
+      <circle cx="112" cy="69" r="2" fill="#4d9dff" opacity=".12"/>
+      <circle cx="219" cy="211" r="2" fill="#4d9dff" opacity=".12"/>
+    </pattern>
+  </defs>
+  <rect width="960" height="720" fill="url(#p)"/>
+</svg>

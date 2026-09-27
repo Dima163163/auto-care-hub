@@ -47,6 +47,19 @@ describe('AutoCare service chat gateway', () => {
         expect(JSON.parse(socket.send.mock.calls[0]?.[0] as string)).toMatchObject({ eventId })
     })
 
+    it('delivers a deletion tombstone event without including removed message content', () => {
+        const socket = createSocket()
+        const threadId = '99999999-9999-4999-8999-999999999999'
+        subscribeServiceChat(threadId, socket as never)
+
+        broadcastServiceChat(threadId, { type: 'message.deleted', threadId, payload: { id: '88888888-8888-4888-8888-888888888888', deletedAt: '2026-09-24T12:00:00.000Z' } })
+
+        expect(socket.send).toHaveBeenCalledTimes(1)
+        const event = JSON.parse(socket.send.mock.calls[0]?.[0] as string) as { type: string; payload: Record<string, unknown> }
+        expect(event.type).toBe('message.deleted')
+        expect(event.payload).not.toHaveProperty('body')
+    })
+
     it('does not emit oversized realtime payloads', () => {
         const socket = createSocket()
         const threadId = '22222222-2222-4222-8222-222222222222'

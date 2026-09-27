@@ -4,19 +4,21 @@ import { useState } from 'react'
 
 import type { AutoCareApiOffer, AutoCareApiProvider, AutoCareApiServiceDefinition } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
+import type { SupportedLocale } from '@/shared/config/i18n'
 import { formatCurrency } from '@/shared/lib/locale-format'
+import { formatAutoCareReviewCount } from '@/shared/lib/formatAutoCareCount'
+import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { EditOfferButton, OwnerOfferDialog } from './OwnerOfferEditor'
 
 type OwnerBranchServicesProps = {
     provider: AutoCareApiProvider
     definitions: AutoCareApiServiceDefinition[]
-    locale: string
+    locale: SupportedLocale
     labels: {
         branchServices: string
         address: string
         hours: string
-        reviews: string
         from: string
         estimate: string
         noPublished: string
@@ -40,6 +42,7 @@ type OwnerBranchServicesProps = {
 }
 
 export function OwnerBranchServices({ provider, definitions, locale, labels, isOpen, onToggle }: OwnerBranchServicesProps) {
+    const { t } = useTranslation()
     const offers = provider.offers ?? []
 
     return (
@@ -62,7 +65,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
                     </span>
                 </button>
                 <span className="flex items-center gap-3 text-xs font-black text-muted-foreground">
-                    <Link to={routePaths.ownerAutoCareProviderReviews(provider.id)} className="inline-flex items-center gap-1 text-status-warning-foreground hover:text-primary hover:underline"><Star className="size-3.5 fill-current" />{provider.rating.toFixed(1)} ({provider.reviewCount} {labels.reviews})</Link>
+                    <Link to={routePaths.ownerAutoCareProviderReviews(provider.id)} className="inline-flex items-center gap-1 text-status-warning-foreground hover:text-primary hover:underline"><Star className="size-3.5 fill-current" />{provider.rating.toFixed(1)} ({formatAutoCareReviewCount(provider.reviewCount, locale, t)})</Link>
                     <span>{offers.length} {labels.branchServices}</span>
                     <ChevronDown className={`size-5 transition-transform ${isOpen ? 'rotate-180 text-primary' : ''}`} aria-hidden="true" />
                 </span>
@@ -87,7 +90,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
     )
 }
 
-function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { providerId: string; offer: AutoCareApiOffer; definitions: AutoCareApiServiceDefinition[]; locale: string; labels: OwnerBranchServicesProps['labels'] }) {
+function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { providerId: string; offer: AutoCareApiOffer; definitions: AutoCareApiServiceDefinition[]; locale: SupportedLocale; labels: OwnerBranchServicesProps['labels'] }) {
     const [isEditing, setIsEditing] = useState(false)
     const definition = definitions.find((item) => item.id === offer.serviceDefinitionId || item.slug === offer.serviceSlug)
     const title = offer.serviceLabels?.[locale] ?? definition?.labels[locale] ?? offer.serviceLabels?.en ?? definition?.labels.en ?? offer.serviceSlug ?? labels.serviceFallback

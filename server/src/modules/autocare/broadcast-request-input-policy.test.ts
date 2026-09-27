@@ -8,7 +8,7 @@ const base = {
     issueDescription: '  Скрипят тормоза при остановке  ',
     vehicleSnapshot: { make: ' BMW ', model: ' X5 ', year: 2021, vin: ' wba1234567890abcd ' },
     photoUrls: [' private://autocare/requests/request-1/photo-1 '],
-    preferredAt: '  2026-09-04T10:30:00.000+03:00  ',
+    preferredAt: '  2036-09-04T10:30:00.000+03:00  ',
     maxProviders: 3,
 }
 
@@ -20,21 +20,16 @@ describe('AutoCare broadcast request input policy', () => {
             issueDescription: 'Скрипят тормоза при остановке',
             vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, vin: 'WBA1234567890ABCD' },
             photoUrls: ['private://autocare/requests/request-1/photo-1'],
-            preferredAt: '2026-09-04T07:30:00.000Z',
+            preferredAt: '2036-09-04T07:30:00.000Z',
             maxProviders: 3,
         })
     })
 
-    it('applies stable defaults for optional fields', () => {
-        expect(normalizeAutoCareBroadcastRequestInput({ serviceDefinitionId: 'brake-pads', issueDescription: 'Нужно проверить тормозную систему' })).toEqual({
-            serviceDefinitionId: 'brake-pads',
-            marketId: null,
-            issueDescription: 'Нужно проверить тормозную систему',
-            vehicleSnapshot: null,
-            photoUrls: [],
-            preferredAt: null,
-            maxProviders: 5,
-        })
+    it('requires an explicit market for every broadcast request', () => {
+        const payload = { serviceDefinitionId: 'brake-pads', issueDescription: 'Нужно проверить тормозную систему' }
+        expect(normalizeAutoCareBroadcastRequestInput(payload)).toBeNull()
+        expect(normalizeAutoCareBroadcastRequestInput({ ...payload, marketId: null })).toBeNull()
+        expect(normalizeAutoCareBroadcastRequestInput({ ...payload, marketId: 'samara' })).toMatchObject({ marketId: 'samara' })
     })
 
     it('rejects malformed descriptions, references, snapshots and dates', () => {
@@ -42,6 +37,7 @@ describe('AutoCare broadcast request input policy', () => {
         expect(normalizeAutoCareBroadcastRequestInput({ ...base, photoUrls: ['https://evil.example/photo.webp'] })).toBeNull()
         expect(normalizeAutoCareBroadcastRequestInput({ ...base, vehicleSnapshot: { make: 'BMW', model: 'X5', year: 2021, extra: true } })).toBeNull()
         expect(normalizeAutoCareBroadcastRequestInput({ ...base, preferredAt: 'tomorrow' })).toBeNull()
+        expect(normalizeAutoCareBroadcastRequestInput({ ...base, preferredAt: '2020-01-01T10:30:00.000Z' })).toBeNull()
     })
 
     it('bounds provider count and service/market references', () => {

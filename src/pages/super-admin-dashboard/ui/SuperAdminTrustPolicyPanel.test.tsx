@@ -23,7 +23,10 @@ const policy = {
 
 vi.mock('@/entities/automotive-service', () => ({
     useGetSuperAdminTrustPolicyQuery: () => ({ data: policy, isLoading: false, error: null, refetch: vi.fn() }),
-    useGetAutoCareMarketsQuery: () => ({ data: [{ id: 'market-1', cityName: 'Moscow', countryCode: 'RU' }], isLoading: false, error: null }),
+    useGetSuperAdminMarketHierarchyQuery: () => ({ data: [{ id: 'country-ru', code: 'RU', cities: [
+        { id: 'market-1', cityName: 'Moscow', countryCode: 'RU', launchReady: true },
+        { id: 'market-prelaunch', cityName: 'Kazan', countryCode: 'RU', launchReady: false },
+    ] }], isLoading: false, error: null }),
     useUpdateSuperAdminTrustPolicyMutation: () => [mocks.update, { isLoading: false }],
 }))
 
@@ -91,5 +94,19 @@ describe('SuperAdminTrustPolicyPanel', () => {
 
         expect(screen.getByRole('alert')).toHaveTextContent('Введите корректные значения.')
         expect(mocks.update).not.toHaveBeenCalled()
+    })
+
+    it('keeps non-launch-ready markets available for super-admin rollout selection', async () => {
+        const user = userEvent.setup()
+        render(<SuperAdminTrustPolicyPanel />)
+
+        const prelaunchMarket = screen.getByRole('checkbox', { name: 'Kazan (RU)' })
+        expect(prelaunchMarket).toBeVisible()
+        await user.click(prelaunchMarket)
+        await user.click(screen.getByRole('button', { name: 'Сохранить правила' }))
+
+        expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+            rollout: expect.objectContaining({ marketIds: ['market-1', 'market-prelaunch'] }),
+        }))
     })
 })

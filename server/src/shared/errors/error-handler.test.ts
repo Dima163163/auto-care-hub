@@ -34,6 +34,27 @@ describe('request parsing error contract', () => {
         }))
     })
 
+    it('returns a localized 400 envelope for an empty JSON request body', async () => {
+        const app = Fastify()
+        apps.push(app)
+        registerErrorHandler(app)
+        app.post('/', async () => ({ ok: true }))
+        await app.ready()
+
+        const response = await app.inject({
+            method: 'POST',
+            url: '/',
+            headers: {
+                'accept-language': 'en',
+                'content-type': 'application/json',
+            },
+            payload: '',
+        })
+
+        expect(response.statusCode).toBe(400)
+        expect(response.json()).toEqual(expect.objectContaining({ code: 'BAD_REQUEST' }))
+    })
+
     it('returns a localized 413 envelope when the JSON body exceeds the limit', async () => {
         const app = Fastify({ bodyLimit: 32 })
         apps.push(app)

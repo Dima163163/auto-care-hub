@@ -1,7 +1,7 @@
 import { useEffect, type ComponentType, type SVGProps } from 'react'
 import { CalendarCheck2, ShieldCheck } from 'lucide-react'
 
-import { useGetAutoCareMarketsQuery } from '@/entities/automotive-service'
+import { useGetAutoCareDiscoveryQuery, useGetAutoCareMarketsQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 import { AutoCareHeroMap } from './AutoCareHeroMap'
@@ -10,6 +10,7 @@ import { AutoCareSearchForm } from './AutoCareSearchForm'
 export function AutoCareHero({ marketId, onMarketChange }: { marketId: string; onMarketChange: (marketId: string) => void }) {
     const { t } = useTranslation()
     const { data: markets = [] } = useGetAutoCareMarketsQuery()
+    const discovery = useGetAutoCareDiscoveryQuery({ marketId, radiusKm: 10, limit: 16 }, { skip: !marketId })
 
     useEffect(() => {
         if (markets.length === 0 || markets.some((market) => market.cityCode === marketId)) return
@@ -18,7 +19,7 @@ export function AutoCareHero({ marketId, onMarketChange }: { marketId: string; o
 
     return (
         <section className="relative isolate min-h-[650px] overflow-hidden bg-hero-overlay text-primary-foreground lg:h-[735px]">
-            <AutoCareHeroMap />
+            <AutoCareHeroMap items={discovery.data?.items ?? []} />
             <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-hero-overlay via-hero-overlay/85 to-hero-overlay/5 lg:via-[41%] lg:to-[68%]" aria-hidden="true" />
             <div className="relative z-10 mx-auto h-full max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] pt-11 lg:pt-[46px]">
                 <div className="max-w-[545px]">
@@ -29,7 +30,7 @@ export function AutoCareHero({ marketId, onMarketChange }: { marketId: string; o
                         <TrustItem icon={VerifiedReviewIcon} label={t('autocare.realReviewsTrust')} />
                         <TrustItem icon={CalendarCheck2} label={t('autocare.fastBookingTrust')} />
                     </div>
-                    <div className="mt-6"><AutoCareSearchForm marketId={marketId} markets={markets} onMarketChange={onMarketChange} /></div>
+                    <div className="mt-6"><AutoCareSearchForm marketId={marketId} markets={markets} nearbyCount={discovery.data?.totalCount ?? null} nearbyCountIsLowerBound={discovery.data?.totalCountIsLowerBound ?? false} isNearbyLoading={discovery.isLoading} isNearbyError={discovery.isError && !discovery.data} onMarketChange={onMarketChange} /></div>
                 </div>
             </div>
         </section>

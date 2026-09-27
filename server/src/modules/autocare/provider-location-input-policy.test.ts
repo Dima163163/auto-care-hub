@@ -9,6 +9,7 @@ describe('owner provider location input policy', () => {
         expect(normalizeAutoCareProviderLocationIds({ marketId: `  ${marketId.toUpperCase()} `, zoneId: ` ${zoneId.toUpperCase()} ` })).toEqual({ marketId, zoneId })
         expect(normalizeAutoCareProviderLocationIds({ marketId, zoneId: null })).toEqual({ marketId, zoneId: null })
         expect(normalizeAutoCareProviderLocationIds({ marketId })).toEqual({ marketId, zoneId: null })
+        expect(normalizeAutoCareProviderLocationIds({ countryCode: 'DE', countryName: 'Germany', cityName: 'Berlin' })).toEqual({ marketId: null, zoneId: null })
     })
 
     it('rejects malformed or non-object references before repository lookup', () => {

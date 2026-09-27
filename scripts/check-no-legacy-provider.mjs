@@ -13,10 +13,11 @@ const ignoredDirectories = new Set([
     'dist',
     'e2e',
     'node_modules',
+    'output',
     'playwright-report',
     'test-results',
 ])
-const generatedNextDirectoryPattern = /^\.next-(?:real|mock)(?:-|$)/
+const generatedNextDirectoryPattern = /^\.next-/
 const historicalMigrationDirectory = join('server', 'src', 'database', 'migrations')
 const prohibitedProvider = ['st', 'ri', 'pe'].join('')
 const prohibitedFlag = ['PAYMENTS', 'ENABLED'].join('_').toLowerCase()

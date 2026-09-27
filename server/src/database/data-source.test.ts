@@ -7,6 +7,9 @@ describe('database migration discovery', () => {
         expect(getMigrationPaths('development')).toEqual([
             'src/database/migrations/!(*.test).ts',
         ])
+        expect(getMigrationPaths('development', 'compiled')).toEqual([
+            'dist/database/migrations/*.js',
+        ])
         expect(getMigrationPaths('test')).toEqual([
             'dist/database/migrations/*.js',
         ])

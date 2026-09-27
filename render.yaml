@@ -3,6 +3,7 @@ services:
     name: autocare-hub-api
     env: node
     rootDir: server
+    healthCheckPath: /health/ready
     buildCommand: "npm install --include=dev && npm run build"
     preDeployCommand: "npm run release:migrate"
     startCommand: "npm run start:server"

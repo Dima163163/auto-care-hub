@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { autoCareDiscoveryQuerySchema, createAutoCareBroadcastRequestSchema, createAutoCareGuaranteeClaimSchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
+import { autoCareDiscoveryQuerySchema, createAutoCareBroadcastRequestSchema, createAutoCareGuaranteeClaimSchema, createAutoCareServiceOfferSchema, createAutoCareServiceRequestSchema, decideAutoCareRescheduleSchema, serviceMessageOfferDecisionSchema, updateAutoCareOfferSchema } from './autocare.schemas.js'
 
 const validRequest = {
     providerId: '11111111-1111-4111-8111-111111111111',
@@ -57,6 +57,13 @@ describe('AutoCare service request schema', () => {
         expect(serviceMessageOfferDecisionSchema.parse({ decision: 'accept' })).toEqual({ decision: 'accept' })
     })
 
+    it('requires the exact reschedule proposal id when a client decides', () => {
+        const decision = { rescheduleId: '11111111-1111-4111-8111-111111111111', decision: 'accept' }
+        expect(decideAutoCareRescheduleSchema.parse(decision)).toEqual(decision)
+        expect(decideAutoCareRescheduleSchema.safeParse({ decision: 'accept' }).success).toBe(false)
+        expect(decideAutoCareRescheduleSchema.safeParse({ ...decision, rescheduleId: 'latest' }).success).toBe(false)
+    })
+
     it('accepts only the two supported booking modes for provider offerings', () => {
         expect(updateAutoCareOfferSchema.parse({ description: null, priceFromMinor: 2_900_00, bookingMode: 'instant' }).bookingMode).toBe('instant')
         expect(updateAutoCareOfferSchema.safeParse({ description: null, priceFromMinor: 2_900_00, bookingMode: 'manual' }).success).toBe(false)
@@ -82,7 +89,8 @@ describe('AutoCare service request schema', () => {
     })
 
     it('rejects public broadcast photo URLs until private media storage is available', () => {
-        const base = { serviceDefinitionId: 'oil-change', issueDescription: 'Нужна диагностика двигателя' }
+        const base = { serviceDefinitionId: 'oil-change', marketId: 'samara', issueDescription: 'Нужна диагностика двигателя' }
+        expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, marketId: undefined }).success).toBe(false)
         expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, photoUrls: ['https://evil.example/photo.webp'] }).success).toBe(false)
         expect(createAutoCareBroadcastRequestSchema.safeParse({ ...base, photoUrls: ['private://autocare/requests/../photo'] }).success).toBe(false)
         expect(createAutoCareBroadcastRequestSchema.parse({ ...base, photoUrls: ['private://autocare/requests/request-1/photo-1'] }).photoUrls).toEqual(['private://autocare/requests/request-1/photo-1'])

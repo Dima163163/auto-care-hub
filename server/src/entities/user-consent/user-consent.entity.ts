@@ -13,6 +13,7 @@ export enum UserConsentType {
     Analytics = 'analytics',
     Marketing = 'marketing',
     ServiceRequest = 'service_request',
+    CommunityProfile = 'community_profile',
 }
 
 export enum UserConsentAction {

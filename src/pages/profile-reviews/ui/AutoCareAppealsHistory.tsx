@@ -13,8 +13,8 @@ import { StateCard } from '@/shared/ui/state-card'
 import { Button } from '@/components/ui/button'
 
 const copy = {
-    ru: { title: 'Мои обращения и апелляции', description: 'Здесь сохраняются обращения по профилям сервисов, отзывам и решениям модерации.', empty: 'Обращений пока нет.', withdraw: 'Отозвать обращение', withdrawing: 'Отзываем…', failedWithdraw: 'Не удалось отозвать обращение.', subject: { provider: 'Профиль сервиса', review: 'Отзыв', suspension: 'Блокировка', catalog: 'Каталог' }, status: { pending: 'На проверке', accepted: 'Принято', rejected: 'Отклонено', withdrawn: 'Отозвано' } },
-    en: { title: 'My appeals', description: 'Appeals about service profiles, reviews and moderation decisions stay here.', empty: 'No appeals yet.', withdraw: 'Withdraw appeal', withdrawing: 'Withdrawing…', failedWithdraw: 'Could not withdraw the appeal.', subject: { provider: 'Provider profile', review: 'Review', suspension: 'Suspension', catalog: 'Catalog' }, status: { pending: 'Pending', accepted: 'Accepted', rejected: 'Rejected', withdrawn: 'Withdrawn' } },
+    ru: { title: 'Мои обращения и апелляции', description: 'Здесь сохраняются обращения по профилям сервисов, отзывам и решениям модерации.', empty: 'Обращений пока нет.', withdraw: 'Отозвать обращение', withdrawing: 'Отзываем…', failedWithdraw: 'Не удалось отозвать обращение.', subject: { provider: 'Профиль сервиса', review: 'Отзыв', suspension: 'Блокировка', catalog: 'Каталог', chat_restriction: 'Ограничение в чате' }, status: { pending: 'На проверке', accepted: 'Принято', rejected: 'Отклонено', withdrawn: 'Отозвано' } },
+    en: { title: 'My appeals', description: 'Appeals about service profiles, reviews and moderation decisions stay here.', empty: 'No appeals yet.', withdraw: 'Withdraw appeal', withdrawing: 'Withdrawing…', failedWithdraw: 'Could not withdraw the appeal.', subject: { provider: 'Provider profile', review: 'Review', suspension: 'Suspension', catalog: 'Catalog', chat_restriction: 'Chat restriction' }, status: { pending: 'Pending', accepted: 'Accepted', rejected: 'Rejected', withdrawn: 'Withdrawn' } },
 }
 
 type AppealCopy = (typeof copy)[keyof typeof copy]

@@ -8,7 +8,7 @@ import { logError } from '../../shared/observability/logger.js'
 type ChatEvent = {
     /** Stable id used to de-duplicate a Redis redelivery after reconnect. */
     eventId?: string
-    type: 'message.created' | 'message.read' | 'offer.updated' | 'attachment.created' | 'presence'
+    type: 'message.created' | 'message.read' | 'message.deleted' | 'offer.updated' | 'attachment.created' | 'presence'
     requestId?: string
     threadId?: string
     payload: Record<string, unknown>
@@ -35,7 +35,7 @@ type ServiceChatSubscription = {
 
 const chatEventSchema = z.object({
     eventId: z.string().uuid().optional(),
-    type: z.enum(['message.created', 'message.read', 'offer.updated', 'attachment.created', 'presence']),
+    type: z.enum(['message.created', 'message.read', 'message.deleted', 'offer.updated', 'attachment.created', 'presence']),
     requestId: z.string().uuid().optional(),
     threadId: z.string().uuid().optional(),
     payload: z.record(z.string(), z.unknown()),

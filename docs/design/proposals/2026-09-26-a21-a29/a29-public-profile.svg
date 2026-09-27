@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="940" viewBox="0 0 1360 940" role="img" aria-labelledby="title desc">
+  <title id="title">A29 — публичный профиль сервиса</title>
+  <desc id="desc">Предложение сохраняет текущую композицию страницы, но профиль, адрес и опубликованные услуги доступны в первом HTML-ответе.</desc>
+  <defs><filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="5" stdDeviation="12" flood-color="#0b1d32" flood-opacity=".12"/></filter></defs>
+  <rect width="1360" height="940" fill="#eef2f7"/>
+  <text x="44" y="42" fill="#41546a" font-family="Onest, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="1.2">ПРЕДЛОЖЕНИЕ · A29 · ПУБЛИЧНЫЙ ПРОФИЛЬ · БЕЗ ИЗМЕНЕНИЯ КОМПОЗИЦИИ</text>
+  <rect x="40" y="62" width="1280" height="830" rx="20" fill="#f8fafc" filter="url(#shadow)"/>
+  <path d="M60 62h1240a20 20 0 0 1 20 20v54H40V82a20 20 0 0 1 20-20Z" fill="#071b31"/>
+  <circle cx="70" cy="91" r="6" fill="#5aa7ff"/><text x="88" y="98" fill="#f4f8ff" font-family="Onest, Arial, sans-serif" font-size="17" font-weight="800">AutoCare Hub</text>
+  <text x="1115" y="98" fill="#d9e7f6" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="600">Москва · RU</text>
+  <rect x="40" y="136" width="1280" height="366" fill="#10243a"/>
+  <rect x="40" y="136" width="1280" height="366" fill="#06182b" opacity=".34"/>
+  <path d="M675 136h645v366H785c106-96 120-210-110-366Z" fill="#143b5d" opacity=".58"/>
+  <text x="86" y="174" fill="#c5d6e6" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="700">← К результатам поиска</text>
+  <rect x="86" y="205" width="82" height="82" rx="14" fill="#ffffff"/>
+  <circle cx="127" cy="246" r="25" fill="#e8f1fb"/><path d="M111 254h32m-27-6 11-16 12 16" fill="none" stroke="#0057b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="187" y="205" width="122" height="24" rx="8" fill="#d7f3e3"/><text x="202" y="222" fill="#14633b" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">✓ Проверенный</text>
+  <text x="187" y="271" fill="#ffffff" font-family="Russo One, Onest, Arial, sans-serif" font-size="35">ProService</text>
+  <text x="187" y="300" fill="#ffd77a" font-family="Onest, Arial, sans-serif" font-size="15" font-weight="800">★ 3,6</text><text x="243" y="300" fill="#d8e5f0" font-family="Onest, Arial, sans-serif" font-size="13">· 12 отзывов</text>
+  <circle cx="194" cy="328" r="4" fill="#77b7ff"/><text x="208" y="333" fill="#edf5fd" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="600">Москва, ул. Льва Толстого, 18</text>
+  <circle cx="194" cy="353" r="4" fill="#77b7ff"/><text x="208" y="358" fill="#edf5fd" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="600">Сегодня открыто · 08:00–21:00</text>
+  <rect x="187" y="377" width="189" height="42" rx="9" fill="#0057b8"/><text x="214" y="403" fill="#ffffff" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Выбрать время</text>
+  <rect x="389" y="377" width="137" height="42" rx="9" fill="#ffffff" opacity=".12" stroke="#ffffff" stroke-opacity=".45"/><text x="419" y="403" fill="#ffffff" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Написать</text>
+  <path d="M778 205h492v214H778z" fill="#1f4666" opacity=".9"/>
+  <rect x="793" y="220" width="225" height="184" rx="12" fill="#254f70"/>
+  <path d="M800 357l73-77 47 46 39-37 52 72H800Z" fill="#396786"/>
+  <rect x="1029" y="220" width="225" height="88" rx="12" fill="#224968"/>
+  <path d="M1030 283l57-45 46 26 43-33 77 65h-223Z" fill="#416d89"/>
+  <rect x="1029" y="320" width="225" height="84" rx="12" fill="#193d5b"/>
+  <path d="M1030 382l53-39 44 22 45-38 82 61h-224Z" fill="#315d7c"/>
+  <text x="1130" y="445" fill="#d7e6f3" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="700">Фотографии сервиса · 1 из 6</text>
+  <rect x="40" y="502" width="1280" height="52" fill="#ffffff" stroke="#d8e0e9"/>
+  <text x="90" y="534" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Услуги</text><text x="184" y="534" fill="#455b70" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">О сервисе</text><text x="291" y="534" fill="#455b70" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">Расположение</text><text x="427" y="534" fill="#455b70" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="700">Отзывы</text>
+  <rect x="80" y="575" width="700" height="104" rx="14" fill="#ffffff" stroke="#d8e0e9"/>
+  <text x="105" y="609" fill="#172536" font-family="Russo One, Onest, Arial, sans-serif" font-size="20">Услуги автосервиса</text>
+  <rect x="655" y="590" width="100" height="28" rx="8" fill="#e9f0f8"/><text x="668" y="609" fill="#475b70" font-family="Onest, Arial, sans-serif" font-size="10" font-weight="800">Каталог сервиса</text>
+  <line x1="80" y1="631" x2="780" y2="631" stroke="#e0e7ef"/>
+  <text x="105" y="659" fill="#283b4f" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Замена масла</text><text x="565" y="659" fill="#172536" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">от 2 900 ₽</text><text x="680" y="659" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">Выбрать →</text>
+  <rect x="80" y="695" width="700" height="108" rx="14" fill="#ffffff" stroke="#d8e0e9"/>
+  <text x="105" y="729" fill="#172536" font-family="Russo One, Onest, Arial, sans-serif" font-size="20">О сервисе</text>
+  <text x="105" y="756" fill="#566a7f" font-family="Onest, Arial, sans-serif" font-size="12">Понятные цены, фотоотчёт и гарантия на выполненные работы.</text>
+  <text x="105" y="778" fill="#14633b" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="700">✓ Гарантия на работы 12 месяцев</text>
+  <rect x="815" y="575" width="425" height="228" rx="14" fill="#ffffff" stroke="#d8e0e9" filter="url(#shadow)"/>
+  <text x="840" y="611" fill="#172536" font-family="Russo One, Onest, Arial, sans-serif" font-size="20">Записаться в сервис</text>
+  <text x="840" y="637" fill="#66788b" font-family="Onest, Arial, sans-serif" font-size="12">Замена масла · от 2 900 ₽</text>
+  <text x="840" y="675" fill="#26384b" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="800">Ближайшая дата</text>
+  <rect x="840" y="689" width="82" height="38" rx="8" fill="#e8f2ff" stroke="#0057b8"/><text x="859" y="705" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="10" font-weight="800">СЕГОДНЯ</text><text x="862" y="719" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="10">26 сен.</text>
+  <rect x="932" y="689" width="82" height="38" rx="8" fill="#ffffff" stroke="#d8e0e9"/><text x="949" y="705" fill="#5d7185" font-family="Onest, Arial, sans-serif" font-size="10" font-weight="800">ЗАВТРА</text><text x="954" y="719" fill="#5d7185" font-family="Onest, Arial, sans-serif" font-size="10">27 сен.</text>
+  <rect x="1024" y="689" width="82" height="38" rx="8" fill="#ffffff" stroke="#d8e0e9"/><text x="1042" y="705" fill="#5d7185" font-family="Onest, Arial, sans-serif" font-size="10" font-weight="800">ПН</text><text x="1046" y="719" fill="#5d7185" font-family="Onest, Arial, sans-serif" font-size="10">28 сен.</text>
+  <rect x="1116" y="689" width="98" height="38" rx="8" fill="#ffffff" stroke="#d8e0e9"/><text x="1136" y="713" fill="#0057b8" font-family="Onest, Arial, sans-serif" font-size="11" font-weight="800">Другая дата</text>
+  <rect x="840" y="744" width="374" height="40" rx="9" fill="#0057b8"/><text x="963" y="770" fill="#ffffff" font-family="Onest, Arial, sans-serif" font-size="13" font-weight="800">Продолжить</text>
+  <text x="80" y="849" fill="#536a80" font-family="Onest, Arial, sans-serif" font-size="12" font-weight="700">Ниже расположены действующие разделы адреса, карты и отзывов.</text>
+</svg>

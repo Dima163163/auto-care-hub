@@ -1,19 +1,19 @@
 # AutoCare Hub font license contract
 
-This is the approved Option A typography pairing for the product UI:
+This is the approved Option B typography pairing for the product UI:
 
-- **Display / brand accents:** `@fontsource-variable/commissioner@5.3.0`
-- **Body / forms / data:** `@fontsource-variable/ibm-plex-sans@5.3.0`
+- **Display / brand accents:** `@fontsource/russo-one@5.3.0`
+- **Body / forms / data:** `@fontsource-variable/onest@5.3.1`
 
 Both packages are bundled locally and declare the SIL Open Font License 1.1
 (`OFL-1.1`). Local bundling keeps the UI independent from a remote font CDN.
 The package license files remain in the installed distribution and must be
 preserved when dependencies are upgraded.
 
-Commissioner preserves the geometric, technical display character from
-Option A while shipping both Cyrillic and Latin glyphs. IBM Plex Sans remains
-the body/form face, also with both scripts, so English and Russian do not
-silently switch to a visibly different fallback face.
+Russo One provides the automotive/motorsport display character while shipping
+both Cyrillic and Latin glyphs. Onest remains the body/form face, also with
+both scripts, so English and Russian do not silently switch to a visibly
+different fallback face.
 
 ## Change rules
 

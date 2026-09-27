@@ -42,6 +42,30 @@ describe('validateOwnerProviderForm', () => {
         expect(validateOwnerProviderForm({ ...validDraft, staffCount: '10001' })).toEqual({ valid: false, reason: 'staffCount' })
     })
 
+    it('accepts a new country and city without a predefined market id', () => {
+        const result = validateOwnerProviderForm({
+            ...validDraft,
+            marketId: undefined,
+            countryCode: ' de ',
+            countryName: ' Deutschland ',
+            cityName: ' Berlin ',
+            currencyCode: ' eur ',
+            timezone: 'Europe/Berlin',
+        })
+
+        expect(result).toEqual(expect.objectContaining({
+            valid: true,
+            countryCode: 'DE',
+            countryName: 'Deutschland',
+            cityName: 'Berlin',
+            currencyCode: 'EUR',
+        }))
+    })
+
+    it('requires free-form country and city when no market id is selected', () => {
+        expect(validateOwnerProviderForm({ ...validDraft, marketId: undefined, countryCode: '', countryName: '', cityName: '' })).toEqual({ valid: false, reason: 'market' })
+    })
+
     it('rejects invalid optional contacts, incomplete evidence and impossible dates', () => {
         expect(validateOwnerProviderForm({ ...validDraft, email: 'not-an-email' })).toEqual({ valid: false, reason: 'email' })
         expect(validateOwnerProviderForm({ ...validDraft, websiteUrl: 'not-a-url' })).toEqual({ valid: false, reason: 'websiteUrl' })

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
+import { useGetAutoCareProviderProfileQuery, type AutoCareApiProviderProfile } from '@/entities/automotive-service'
 import { LOCALE_OPTIONS, type SupportedLocale } from '@/shared/config/i18n'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -30,15 +31,40 @@ const homeCopy: Record<SupportedLocale, SeoCopy> = {
     hi: { title: 'AutoCare Hub — अपने पास की ऑटो सेवाओं की तुलना करें', description: 'सत्यापित ऑटो सेवाओं की कीमतों, रेटिंग और उपलब्ध समय की तुलना करें।' },
 }
 
-function getSeoCopy(pathname: string, locale: SupportedLocale): SeoCopy {
-    const home = homeCopy[locale]
+const sectionLabels: Record<SupportedLocale, { search: string; provider: string; owners: string }> = {
+    en: { search: 'Search', provider: 'Auto service', owners: 'For businesses' },
+    ru: { search: 'Поиск', provider: 'Автосервис', owners: 'Для компаний' },
+    ro: { search: 'Caută', provider: 'Service auto', owners: 'Pentru companii' },
+    es: { search: 'Buscar', provider: 'Taller', owners: 'Para empresas' },
+    de: { search: 'Suche', provider: 'Werkstatt', owners: 'Für Unternehmen' },
+    fr: { search: 'Recherche', provider: 'Garage', owners: 'Pour les professionnels' },
+    pt: { search: 'Buscar', provider: 'Oficina', owners: 'Para empresas' },
+    it: { search: 'Cerca', provider: 'Officina', owners: 'Per le aziende' },
+    pl: { search: 'Szukaj', provider: 'Serwis samochodowy', owners: 'Dla firm' },
+    nl: { search: 'Zoeken', provider: 'Garage', owners: 'Voor bedrijven' },
+    uk: { search: 'Пошук', provider: 'Автосервіс', owners: 'Для компаній' },
+    cs: { search: 'Hledat', provider: 'Autoservis', owners: 'Pro firmy' },
+    el: { search: 'Αναζήτηση', provider: 'Συνεργείο', owners: 'Για επιχειρήσεις' },
+    sv: { search: 'Sök', provider: 'Bilverkstad', owners: 'För företag' },
+    zh: { search: '搜索', provider: '汽车服务', owners: '面向企业' },
+    ja: { search: '検索', provider: '自動車整備工場', owners: '事業者向け' },
+    ko: { search: '검색', provider: '자동차 정비소', owners: '업체용' },
+    ar: { search: 'بحث', provider: 'خدمة سيارات', owners: 'للشركات' },
+    tr: { search: 'Ara', provider: 'Oto servis', owners: 'İşletmeler için' },
+    hi: { search: 'खोजें', provider: 'ऑटो सर्विस', owners: 'व्यवसायों के लिए' },
+}
 
-    if (pathname === ROUTES.serviceDiscovery) return { ...home, title: `${home.title} | ${locale === 'ru' ? 'Поиск' : 'Search'}` }
-    if (pathname.startsWith('/services/')) return { ...home, title: `${home.title} | Auto service` }
+// eslint-disable-next-line react-refresh/only-export-components -- Export the pure copy resolver for focused tests.
+export function getSeoCopy(pathname: string, locale: SupportedLocale): SeoCopy {
+    const home = homeCopy[locale]
+    const labels = sectionLabels[locale]
+
+    if (pathname === ROUTES.serviceDiscovery) return { ...home, title: `${home.title} | ${labels.search}` }
+    if (pathname.startsWith('/services/')) return { ...home, title: `${home.title} | ${labels.provider}` }
     if (pathname === ROUTES.about) return locale === 'ru'
         ? { title: 'О сервисе AutoCare Hub — сравнение автосервисов', description: 'Узнайте, как AutoCare Hub помогает водителям сравнивать автосервисы, общаться с мастерскими и записываться на обслуживание.' }
         : { title: 'About AutoCare Hub — Compare automotive services', description: 'Learn how AutoCare Hub helps drivers compare automotive services, message providers and book visits.' }
-    if (pathname === ROUTES.owners) return { ...home, title: `${home.title} | For businesses` }
+    if (pathname === ROUTES.owners) return { ...home, title: `${home.title} | ${labels.owners}` }
     if (pathname === ROUTES.agreement) return locale === 'ru'
         ? { title: 'Пользовательское соглашение AutoCare Hub', description: 'Правила регистрации, поиска автосервисов, заявок, сообщений и взаимодействия клиентов и владельцев на AutoCare Hub.' }
         : { title: 'AutoCare Hub User Agreement', description: 'Rules for accounts, service discovery, requests, messages and interactions between drivers and automotive service providers.' }
@@ -49,6 +75,28 @@ function getSeoCopy(pathname: string, locale: SupportedLocale): SeoCopy {
         ? { title: 'Политика конфиденциальности AutoCare Hub', description: 'Как AutoCare Hub обрабатывает данные аккаунта, автомобиля, заявок, сообщений, фотографий и отзывов.' }
         : { title: 'AutoCare Hub Privacy Policy', description: 'How AutoCare Hub handles account, vehicle, request, message, photo and review data.' }
     return home
+}
+
+// eslint-disable-next-line react-refresh/only-export-components -- Export the pure SEO copy resolver for focused tests.
+export function getProviderSeoCopy(provider: Pick<AutoCareApiProviderProfile, 'name' | 'description'>, locale: SupportedLocale): SeoCopy {
+    return {
+        title: `${provider.name} | AutoCare Hub`,
+        description: provider.description?.trim() || (locale === 'ru'
+            ? `Услуги, цены и варианты записи в автосервисе «${provider.name}».`
+            : `Compare published service offers, customer reviews and appointment options from ${provider.name}.`),
+    }
+}
+
+function getPublicImageUrl(value: string | null | undefined, fallback: string) {
+    if (!value) return fallback
+    const candidate = value.trim()
+    if (candidate.startsWith('/') && !candidate.startsWith('//')) return new URL(candidate, window.location.origin).href
+    try {
+        const url = new URL(candidate)
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : fallback
+    } catch {
+        return fallback
+    }
 }
 
 function setMeta(attribute: 'name' | 'property', key: string, content: string) {
@@ -69,13 +117,22 @@ function setLink(rel: string, href: string, hrefLang?: string) {
 export function SeoHead() {
     const { pathname } = useLocation()
     const { locale } = useTranslation()
+    const providerId = pathname.match(/^\/services\/([^/]+)$/)?.[1]
+    const providerQuery = useGetAutoCareProviderProfileQuery(providerId ?? '', { skip: !providerId })
 
     useEffect(() => {
-        const copy = getSeoCopy(pathname, locale)
+        // Keep the title and description generated by Next.js until the
+        // client-side provider query resolves. On direct visits that public
+        // DTO is already hydrated into RTK Query, so this preserves the same
+        // provider-specific metadata after hydration.
+        if (providerId && providerQuery.isFetching && !providerQuery.data) return
+        const copy = providerQuery.data && providerId
+            ? getProviderSeoCopy(providerQuery.data, locale)
+            : getSeoCopy(pathname, locale)
         const canonical = new URL(pathname, window.location.origin)
         if (locale !== 'en') canonical.searchParams.set('lang', locale)
         const canonicalUrl = canonical.href
-        const isPrivate = pathname.startsWith('/profile') || pathname.startsWith('/owner') || pathname.startsWith('/admin') || pathname.startsWith('/chats') || pathname.startsWith('/onboarding') || pathname === ROUTES.notifications
+        const isPrivate = pathname.startsWith('/profile') || pathname.startsWith('/owner') || pathname.startsWith('/admin') || pathname.startsWith('/chats') || pathname.startsWith('/onboarding') || pathname === ROUTES.notifications || pathname.startsWith('/community/clients/')
         // The canonical discovery landing page is indexable; only filtered
         // result states carry query parameters and should be noindex.
         const isSearch = pathname === ROUTES.serviceDiscovery && window.location.search.length > 0
@@ -88,11 +145,14 @@ export function SeoHead() {
         setMeta('property', 'og:title', copy.title)
         setMeta('property', 'og:description', copy.description)
         setMeta('property', 'og:url', canonicalUrl)
-        setMeta('property', 'og:image', new URL('/images/autocare/hero-map-generated.webp', window.location.origin).href)
+        const defaultImage = new URL('/images/autocare/hero-map-generated.webp', window.location.origin).href
+        const imageUrl = getPublicImageUrl(providerQuery.data?.coverImageUrl, defaultImage)
+        setMeta('property', 'og:image', imageUrl)
         setMeta('property', 'og:locale', LOCALE_OPTIONS.find((item) => item.value === locale)?.intlTag.replace('-', '_') ?? 'en_US')
         setMeta('name', 'twitter:card', 'summary_large_image')
         setMeta('name', 'twitter:title', copy.title)
         setMeta('name', 'twitter:description', copy.description)
+        setMeta('name', 'twitter:image', imageUrl)
         setLink('canonical', canonicalUrl)
 
         for (const option of LOCALE_OPTIONS) {
@@ -112,7 +172,7 @@ export function SeoHead() {
                 { '@type': 'WebSite', name: 'AutoCare Hub', url: window.location.origin, inLanguage: locale, potentialAction: { '@type': 'SearchAction', target: `${window.location.origin}${ROUTES.serviceDiscovery}?service={search_term_string}`, 'query-input': 'required name=search_term_string' } },
             ],
         })
-    }, [locale, pathname])
+    }, [locale, pathname, providerId, providerQuery.data, providerQuery.isFetching])
 
     return null
 }

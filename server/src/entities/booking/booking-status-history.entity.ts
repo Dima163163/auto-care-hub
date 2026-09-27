@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 import { BookingStatus } from './booking.entity.js'
 
@@ -17,7 +18,7 @@ export class BookingStatusHistoryEntity {
     @Column({ type: 'uuid', nullable: true })
     changedById!: string | null
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('booking_status_history', 'reason', 'text') })
     reason!: string | null
 
     @CreateDateColumn({ type: 'timestamptz' })

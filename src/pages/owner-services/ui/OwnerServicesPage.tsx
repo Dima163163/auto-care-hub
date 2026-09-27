@@ -27,7 +27,6 @@ export function OwnerServicesPage() {
         branchServices: t('autocare.ownerServicesPageBranchServices'),
         address: t('autocare.ownerServicesPageAddress'),
         hours: t('autocare.ownerServicesPageHours'),
-        reviews: t('autocare.ownerServicesPageReviews'),
         from: t('autocare.ownerServicesPageFrom'),
         estimate: t('autocare.ownerServicesPageEstimate'),
         noPublished: t('autocare.ownerServicesPageNoPublished'),

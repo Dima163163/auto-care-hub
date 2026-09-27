@@ -4,7 +4,7 @@ import {
     AUTOCARE_DELETION_INVARIANTS,
     checkAutoCareDeletionInvariants,
 } from './account-deletion-invariants.js'
-import { ANONYMIZED_REVIEW_TEXT } from './account-anonymization-policy.js'
+import { createEmailBlindIndex } from '../../shared/security/data-encryption/field-encryption.js'
 
 const chatScopedInvariantNames = [
     'account-related attachment metadata is removed',
@@ -32,12 +32,12 @@ describe('AutoCare account deletion chat scope', () => {
         expect(invariant?.sql).toContain("'userId'")
         expect(invariant?.sql).toContain("'email'")
         expect(invariant?.sql).toContain("'toEmail'")
-        expect(invariant?.sql).toContain('LOWER(TRIM')
+        expect(invariant?.sql).toContain("event.\"payload\" ->> 'email'")
         expect(invariant?.sql).toContain("'redacted'")
         expect(invariant?.parameterMode).toBe('user_and_email')
     })
 
-    it('passes the original email to outbox retention checks', async () => {
+    it('passes only the keyed email index to outbox retention checks', async () => {
         const calls: Array<{ sql: string; parameters: unknown[] }> = []
         const executor = {
             query: async (sql: string, parameters: unknown[] = []) => {
@@ -51,7 +51,7 @@ describe('AutoCare account deletion chat scope', () => {
         const invariant = AUTOCARE_DELETION_INVARIANTS.find(({ name }) => name === 'account-related outbox user payloads are redacted')
         expect(calls.find(({ sql }) => sql === invariant?.sql)?.parameters).toEqual([
             'user-42',
-            'deleted@example.com',
+            createEmailBlindIndex('deleted@example.com'),
         ])
     })
 
@@ -101,7 +101,7 @@ describe('AutoCare account deletion chat scope', () => {
         }
     })
 
-    it('binds anonymized thread checks to the redaction marker parameter', async () => {
+    it('binds anonymized thread checks to the encrypted redaction marker', async () => {
         const calls: Array<{ sql: string; parameters: unknown[] }> = []
         const executor = {
             query: async (sql: string, parameters: unknown[] = []) => {
@@ -112,11 +112,11 @@ describe('AutoCare account deletion chat scope', () => {
 
         await checkAutoCareDeletionInvariants(executor, 'user-42')
 
-        const anonymizedChecks = AUTOCARE_DELETION_INVARIANTS.filter(({ parameterMode }) => parameterMode === 'anonymized')
+        const anonymizedChecks = AUTOCARE_DELETION_INVARIANTS.filter(({ parameterMode }) => parameterMode === 'none')
         expect(anonymizedChecks.length).toBeGreaterThan(0)
         for (const invariant of anonymizedChecks) {
-            expect(invariant.sql).toContain('thread."subject" = $1')
-            expect(calls.find(({ sql }) => sql === invariant.sql)?.parameters).toEqual([ANONYMIZED_REVIEW_TEXT])
+            expect(invariant.sql).toContain('"redacted":true')
+            expect(calls.find(({ sql }) => sql === invariant.sql)?.parameters).toEqual([])
         }
     })
 })

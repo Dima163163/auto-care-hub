@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum AutomotiveProviderChangeRequestKind {
     Verification = 'verification',
@@ -21,9 +22,9 @@ export class AutomotiveProviderChangeRequestEntity {
     @Column({ type: 'uuid' }) requestedById!: string
     @Column({ type: 'enum', enum: AutomotiveProviderChangeRequestKind, enumName: 'autocare_provider_change_request_kind' }) kind!: AutomotiveProviderChangeRequestKind
     @Column({ type: 'enum', enum: AutomotiveProviderChangeRequestStatus, enumName: 'autocare_provider_change_request_status', default: AutomotiveProviderChangeRequestStatus.Pending }) status!: AutomotiveProviderChangeRequestStatus
-    @Column({ type: 'jsonb', default: () => "'{}'" }) payload!: Record<string, unknown>
+    @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_provider_change_requests', 'payload', 'jsonb') }) payload: Record<string, unknown> = {}
     @Column({ type: 'uuid', nullable: true }) reviewedById!: string | null
-    @Column({ type: 'text', nullable: true }) reviewReason!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_provider_change_requests', 'reviewReason', 'text') }) reviewReason!: string | null
     @Column({ type: 'timestamptz', nullable: true }) reviewedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

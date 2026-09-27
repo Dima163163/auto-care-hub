@@ -1,4 +1,5 @@
 import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
+import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum AutoCareQuoteStatus {
     Pending = 'pending',
@@ -20,7 +21,7 @@ export class AutoCareServiceQuoteEntity {
     @Column({ type: 'integer' }) version!: number
     @Column({ type: 'integer' }) amountMinor!: number
     @Column({ type: 'text' }) currencyCode!: string
-    @Column({ type: 'jsonb' }) snapshot!: Record<string, unknown>
+    @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_service_quotes', 'snapshot', 'jsonb') }) snapshot!: Record<string, unknown>
     @Column({ type: 'timestamptz', nullable: true }) validUntil!: Date | null
     @Column({ type: 'enum', enum: AutoCareQuoteStatus, enumName: 'autocare_quote_status', default: AutoCareQuoteStatus.Pending }) status!: AutoCareQuoteStatus
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date

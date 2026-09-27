@@ -55,6 +55,14 @@ describe('OwnerAutoCareProviderForm', () => {
         mocks.prepareProviderMedia.mockReset().mockResolvedValue({ fileName: 'service.webp', mimeType: 'image/webp', size: 1, contentBase64: 'image' })
     })
 
+    it('keeps location entry available when the market catalog is unavailable', () => {
+        render(<OwnerAutoCareProviderForm />)
+
+        expect(screen.getByLabelText('autocare.ownerProviderCountryCodeLabel')).toBeEnabled()
+        expect(screen.getByLabelText('autocare.ownerProviderCountryNameLabel')).toBeEnabled()
+        expect(screen.getByLabelText('autocare.ownerProviderCityLabel')).toBeEnabled()
+    })
+
     it('blocks media uploads when trimmed required data is invalid', async () => {
         const user = userEvent.setup()
         const { container } = render(<OwnerAutoCareProviderForm market={{ id: 'market-samara', cityName: 'Samara' }} />)

@@ -21,12 +21,16 @@ export enum NotificationCategory {
 @Entity('notifications')
 @Index(['userId', 'createdAt'])
 @Index(['userId', 'readAt'])
+@Index('UQ_notifications_outbox_event', ['outboxEventId'], { unique: true })
 export class NotificationEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string
 
     @Column({ type: 'uuid' })
     userId!: string
+
+    @Column({ type: 'uuid', nullable: true })
+    outboxEventId!: string | null
 
     @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'userId' })

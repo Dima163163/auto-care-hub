@@ -37,6 +37,7 @@ export const ROUTES = {
     profileVehicles: '/profile/vehicles',
     profileBookings: '/profile/bookings',
     profileReviews: '/profile/reviews',
+    communityClientProfile: '/community/clients/:profileId',
 
     ownerDashboard: '/owner/dashboard',
     ownerAutoCareProviders: '/owner/autocare-providers',
@@ -85,8 +86,20 @@ export const routePaths = {
         const query = searchParams.toString()
         return query ? `${ROUTES.serviceDiscovery}?${query}` : ROUTES.serviceDiscovery
     },
-    serviceProviderDetails: (id: EntityId) => `/services/${id}`,
-    serviceRequest: (id: EntityId, serviceId?: string) => serviceId ? `/services/${id}/request?service=${encodeURIComponent(serviceId)}` : `/services/${id}/request`,
+    serviceProviderDetails: (id: EntityId, serviceId?: string, marketId?: string) => {
+        const params = new URLSearchParams()
+        if (serviceId?.trim()) params.set('service', serviceId.trim())
+        if (marketId?.trim()) params.set('market', marketId.trim())
+        const query = params.toString()
+        return `/services/${id}${query ? `?${query}` : ''}`
+    },
+    serviceRequest: (id: EntityId, serviceId?: string, marketId?: string) => {
+        const params = new URLSearchParams()
+        if (serviceId?.trim()) params.set('service', serviceId.trim())
+        if (marketId?.trim()) params.set('market', marketId.trim())
+        const query = params.toString()
+        return `/services/${id}/request${query ? `?${query}` : ''}`
+    },
     cabinets: (params?: {
         search?: string | undefined
         sortBy?: string | undefined
@@ -162,4 +175,5 @@ export const routePaths = {
     ownerCabinetEdit: (id: string) => `/owner/cabinets/${id}/edit`,
     ownerAutoCareProviderDetails: (id: EntityId) => `/owner/autocare-providers/${id}`,
     ownerAutoCareProviderReviews: (id: EntityId) => `${ROUTES.ownerReviews}?provider=${encodeURIComponent(id)}`,
+    communityClientProfile: (profileId: EntityId) => `/community/clients/${encodeURIComponent(profileId)}`,
 } as const

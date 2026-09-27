@@ -4,7 +4,8 @@ import { StrictMode, useEffect, useLayoutEffect, useState } from 'react'
 import { BrowserRouter } from 'react-router'
 
 import { NextApp } from '@/app/next/NextApp'
-import { StoreProvider } from '@/app/store'
+import { StoreProvider, store } from '@/app/store'
+import { autoCareApi } from '@/entities/automotive-service/api/autocareApi'
 import { getInitialLocale, getLocaleOption } from '@/shared/config/i18n'
 import { ROUTES } from '@/shared/constants/routes'
 import { loadTranslations } from '@/shared/config/translations'
@@ -12,6 +13,8 @@ import { IS_MOCK_API } from '@/shared/config/api'
 import { readPublicEnv } from '@/shared/config/runtime-env'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
 import { BootShell, type BootWorkspaceRole } from '@/shared/ui/boot-shell/BootShell'
+import { PublicProviderFirstPaint } from './PublicProviderFirstPaint'
+import type { AutoCareApiProviderProfile } from '@/entities/automotive-service'
 import {
     applyTheme,
     getInitialTheme,
@@ -60,6 +63,9 @@ async function enableMocking() {
 
 type NextClientAppProps = {
     initialPathname?: string
+    initialPublicProviderProfile?: AutoCareApiProviderProfile
+    initialProviderLocale?: 'en' | 'ru'
+    initialProviderSelectedServiceId?: string
 }
 
 function getBootWorkspaceRole(pathname: string): BootWorkspaceRole | undefined {
@@ -74,7 +80,7 @@ function getBootWorkspaceRole(pathname: string): BootWorkspaceRole | undefined {
     return undefined
 }
 
-export function NextClientApp({ initialPathname = '/' }: NextClientAppProps) {
+export function NextClientApp({ initialPathname = '/', initialPublicProviderProfile, initialProviderLocale = 'en', initialProviderSelectedServiceId }: NextClientAppProps) {
     const [ready, setReady] = useState(false)
 
     useLayoutEffect(() => {
@@ -96,16 +102,28 @@ export function NextClientApp({ initialPathname = '/' }: NextClientAppProps) {
         // prepared. In mock mode the worker must be ready before RTK Query
         // mounts: otherwise the first request can reach the real API and
         // return a UUID validation error before MSW takes control.
-        void Promise.all([
-            enableMocking(),
-            loadTranslations(getInitialLocale()),
-        ]).finally(() => {
-            setReady(true)
-        })
-    }, [])
+        void (async () => {
+            try {
+                await Promise.all([
+                    enableMocking(),
+                    loadTranslations(initialPublicProviderProfile ? initialProviderLocale : getInitialLocale()),
+                ])
+                if (initialPublicProviderProfile) {
+                    await store.dispatch(autoCareApi.util.upsertQueryData('getAutoCareProviderProfile', initialPublicProviderProfile.id, initialPublicProviderProfile))
+                }
+            } catch (error) {
+                console.warn('[AutoCare Hub] page bootstrap failed', error)
+            } finally {
+                setReady(true)
+            }
+        })()
+    }, [initialProviderLocale, initialPublicProviderProfile])
 
     if (!ready) {
-        return <BootShell home={initialPathname === ROUTES.home} services={initialPathname === ROUTES.serviceDiscovery} workspaceRole={getBootWorkspaceRole(initialPathname)} />
+        const providerContent = initialPublicProviderProfile
+            ? <PublicProviderFirstPaint profile={initialPublicProviderProfile} locale={initialProviderLocale} selectedServiceId={initialProviderSelectedServiceId} />
+            : undefined
+        return <BootShell home={initialPathname === ROUTES.home} services={initialPathname === ROUTES.serviceDiscovery} workspaceRole={getBootWorkspaceRole(initialPathname)} content={providerContent} />
     }
 
     return (

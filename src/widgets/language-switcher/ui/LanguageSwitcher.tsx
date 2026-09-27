@@ -6,7 +6,7 @@ import { useGetMeQuery } from '@/features/auth'
 import { useUpdateUserPreferencesMutation } from '@/entities/user'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { I18nContext } from '@/shared/lib/i18n-context'
-import { LOCALE_OPTIONS, type SupportedLocale } from '@/shared/config/i18n'
+import { VISIBLE_LOCALE_OPTIONS, type SupportedLocale } from '@/shared/config/i18n'
 
 type LanguageSwitcherProps = {
     compact?: boolean
@@ -20,7 +20,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
     if (!context) return null
 
     const { locale, setLocale, t } = context
-    const selectedOption = LOCALE_OPTIONS.find((option) => option.value === locale) ?? LOCALE_OPTIONS[0]
+    const selectedOption = VISIBLE_LOCALE_OPTIONS.find((option) => option.value === locale) ?? VISIBLE_LOCALE_OPTIONS[0]
 
     const handleSelect = (value: SupportedLocale) => {
         const nextLocale = value
@@ -51,7 +51,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
                 onChange={(event) => handleSelect(event.target.value as SupportedLocale)}
                 className="language-switcher__select absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none opacity-0 outline-none"
             >
-                {LOCALE_OPTIONS.map((option) => (
+                {VISIBLE_LOCALE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value} className="bg-background text-foreground">
                         {option.nativeLabel}
                     </option>

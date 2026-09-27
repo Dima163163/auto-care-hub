@@ -87,20 +87,20 @@ const foundationTokens = [
 
 const typographyContract = [
     {
-        label: 'Commissioner font import',
-        value: '@import "@fontsource-variable/commissioner";',
+        label: 'Russo One font import',
+        value: '@import "@fontsource/russo-one";',
     },
     {
-        label: 'IBM Plex Sans font import',
-        value: '@import "@fontsource-variable/ibm-plex-sans";',
+        label: 'Onest font import',
+        value: '@import "@fontsource-variable/onest";',
     },
     {
         label: 'display font token',
-        value: "--font-display: 'Commissioner Variable'",
+        value: "--font-display: 'Russo One'",
     },
     {
         label: 'body font token',
-        value: "--font-body: 'IBM Plex Sans Variable'",
+        value: "--font-body: 'Onest Variable'",
     },
 ]
 
@@ -124,8 +124,8 @@ const failures = [
 ]
 
 const fontDependencies = [
-    '@fontsource-variable/commissioner',
-    '@fontsource-variable/ibm-plex-sans',
+    '@fontsource/russo-one',
+    '@fontsource-variable/onest',
 ]
 const declaredDependencies = {
     ...(packageManifest.dependencies ?? {}),

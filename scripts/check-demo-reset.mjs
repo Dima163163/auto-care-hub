@@ -6,6 +6,9 @@ const PROJECT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const RESET_PATH = resolve(PROJECT_ROOT, 'server/src/scripts/reset-demo-data.ts')
 
 const REQUIRED_FIXTURE_GUARDS = [
+    'getDemoResetTargetError',
+    'DEMO_RESET_CONFIRM_DATABASE',
+    'SELECT current_database() AS database_name',
     'DEMO_USER_EMAILS',
     'AUTOMOTIVE_MOCK_PROVIDERS',
     'provider.ownerId === null',
@@ -37,12 +40,16 @@ export function evaluateDemoResetSource(source) {
     const missing = REQUIRED_FIXTURE_GUARDS.filter((fragment) => !source.includes(fragment))
     const forbidden = FORBIDDEN_BROAD_OPERATIONS.filter((fragment) => source.includes(fragment))
     const usesParameterizedIds = source.includes('ANY($1::uuid[])') && source.includes('ids: string[]')
+    const targetGuardBeforeTransaction = source.indexOf('if (targetError) throw new Error(targetError)') >= 0
+        && source.indexOf('await AppDataSource.transaction(') >= 0
+        && source.indexOf('if (targetError) throw new Error(targetError)') < source.indexOf('await AppDataSource.transaction(')
 
     return {
         missing,
         forbidden,
         usesParameterizedIds,
-        passed: missing.length === 0 && forbidden.length === 0 && usesParameterizedIds,
+        targetGuardBeforeTransaction,
+        passed: missing.length === 0 && forbidden.length === 0 && usesParameterizedIds && targetGuardBeforeTransaction,
     }
 }
 
@@ -63,6 +70,13 @@ export function runDemoResetChecks(root = PROJECT_ROOT) {
             detail: evaluation.usesParameterizedIds
                 ? 'UUID ids are passed as PostgreSQL parameters; no interpolated identifiers'
                 : 'all scoped deletes must use parameterized uuid arrays',
+        },
+        {
+            name: 'Disposable target preflight',
+            status: evaluation.targetGuardBeforeTransaction ? 'pass' : 'blocked',
+            detail: evaluation.targetGuardBeforeTransaction
+                ? 'actual database identity and explicit disposable target are checked before the deletion transaction'
+                : 'the disposable-target guard must run before the first reset transaction',
         },
         {
             name: 'Shared catalog protection',

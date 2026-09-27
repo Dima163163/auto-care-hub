@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Save, ShieldCheck, SlidersHorizontal } from 'lucide-react'
 
-import { useGetAutoCareMarketsQuery, useGetSuperAdminTrustPolicyQuery, useUpdateSuperAdminTrustPolicyMutation } from '@/entities/automotive-service'
+import { useGetSuperAdminMarketHierarchyQuery, useGetSuperAdminTrustPolicyQuery, useUpdateSuperAdminTrustPolicyMutation } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
@@ -66,13 +66,13 @@ export function SuperAdminTrustPolicyPanel() {
         invalid: t('superAdminTrustPolicy.invalid'),
     }
     const policyQuery = useGetSuperAdminTrustPolicyQuery()
-    const marketsQuery = useGetAutoCareMarketsQuery()
+    const marketsQuery = useGetSuperAdminMarketHierarchyQuery()
     const [updatePolicy, updateState] = useUpdateSuperAdminTrustPolicyMutation()
     const [draft, setDraft] = useState<Draft | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [saved, setSaved] = useState(false)
 
-    const markets = marketsQuery.data ?? []
+    const markets = marketsQuery.data?.flatMap((country) => country.cities) ?? []
     const formDraft = draft ?? (policyQuery.data ? toDraft(policyQuery.data) : null)
     if (policyQuery.isLoading) return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div role="status" className="h-28 animate-pulse rounded-[var(--radius-card)] bg-muted"><span className="sr-only">{text.loading}</span></div></section>
     if (policyQuery.error) return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div role="alert" className="rounded-[var(--radius-card)] border border-destructive/30 bg-destructive/5 p-4"><p className="text-sm font-semibold text-destructive">{getApiErrorMessage(policyQuery.error, text.failed)}</p><RetryButton className="mt-3" onRetry={policyQuery.refetch} label={text.retry} /></div></section>

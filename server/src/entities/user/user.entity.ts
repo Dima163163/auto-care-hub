@@ -7,6 +7,7 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm'
 import type { SupportedLocale } from '../../config/i18n.js'
+import { createEncryptedFieldTransformer, emailBlindIndexTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum UserRole {
     Client = 'client',
@@ -27,12 +28,9 @@ export enum UserProvider {
 }
 
 @Entity('users')
+@Index('UQ_users_community_profile_id', ['communityProfileId'], { unique: true })
 @Index('IDX_users_created_at_id', ['createdAt', 'id'])
 @Index('IDX_users_role_status_created_at', ['role', 'status', 'createdAt', 'id'])
-@Check(
-    'CHK_users_input_bounds',
-    'char_length("name") BETWEEN 2 AND 120 AND char_length("email") BETWEEN 3 AND 320 AND ("phone" IS NULL OR char_length("phone") <= 32) AND ("avatarUrl" IS NULL OR char_length("avatarUrl") <= 2048) AND ("preferredCity" IS NULL OR char_length("preferredCity") <= 120) AND cardinality("preferredCategories") <= 12',
-)
 @Check(
     'CHK_users_locale_supported',
     '"locale" IS NULL OR "locale" IN (\'en\', \'ru\', \'ro\', \'es\', \'de\', \'fr\', \'pt\', \'it\', \'pl\', \'nl\', \'uk\', \'cs\', \'el\', \'sv\', \'zh\', \'ja\', \'ko\', \'ar\', \'tr\', \'hi\')',
@@ -41,16 +39,20 @@ export class UserEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text', transformer: createEncryptedFieldTransformer('users', 'name', 'text') })
     name!: string
 
-    @Column({ type: 'text', unique: true })
+    @Column({ type: 'text', unique: true, transformer: emailBlindIndexTransformer })
     email!: string
+
+    /** Ciphertext paired with the unique HMAC lookup index stored in `email`. */
+    @Column({ type: 'text' })
+    emailCiphertext!: string
 
     @Column({ type: 'text', nullable: true })
     passwordHash!: string | null
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'phone', 'text') })
     phone!: string | null
 
     @Column({
@@ -68,8 +70,18 @@ export class UserEntity {
     })
     status!: UserStatus
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'avatarUrl', 'text') })
     avatarUrl!: string | null
+
+    /** Opaque public identifier, rotated whenever the client re-enables sharing. */
+    @Column({ type: 'uuid', default: () => 'gen_random_uuid()' })
+    communityProfileId!: string
+
+    @Column({ type: 'boolean', default: false })
+    communityProfileEnabled!: boolean
+
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'communityDisplayName', 'text') })
+    communityDisplayName!: string | null
 
     @Column({ type: 'text', nullable: true })
     locale!: SupportedLocale | null
@@ -103,7 +115,7 @@ export class UserEntity {
     @Column({ type: 'boolean', default: true })
     bookingEmailNotifications!: boolean
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'preferredCity', 'text') })
     preferredCity!: string | null
 
     @Column({ type: 'text', array: true, default: () => "'{}'" })

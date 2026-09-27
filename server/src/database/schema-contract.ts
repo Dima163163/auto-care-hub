@@ -53,6 +53,11 @@ const REQUIRED_COLUMNS_QUERY = `
         OR (table_name = 'security_events' AND column_name IN ('type', 'correlation_id', 'createdAt', 'severity', 'route', 'status_code', 'metadata', 'actor_role', 'auth_outcome', 'rate_limit_result', 'request_size_bytes', 'reason_code', 'proxy_provenance'))
         OR (table_name = 'security_event_actions' AND column_name IN ('security_event_id', 'actor_id', 'assignee_id', 'status', 'created_at'))
         OR (table_name = 'outbox_events' AND column_name IN ('idempotencyKey', 'status', 'attempts', 'availableAt', 'createdAt'))
+        OR (table_name = 'users' AND column_name = 'emailCiphertext')
+        OR (table_name = 'autocare_provider_invitations' AND column_name = 'emailCiphertext')
+        OR (table_name = 'oauth_identities' AND column_name = 'provider_subject_ciphertext')
+        OR (table_name = 'notifications' AND column_name = 'outboxEventId')
+        OR (table_name = 'autocare_service_messages' AND column_name = 'evidenceRetainUntil')
         OR (table_name = 'autocare_service_requests' AND column_name IN ('bookingSnapshot', 'bookingCreatedAt', 'vehicleId'))
         OR (table_name = 'client_vehicles' AND column_name IN ('licensePlate', 'internalNumber'))
         OR (table_name = 'autocare_service_offerings' AND column_name IN ('bookingMode', 'requiredResourceTypes', 'requiredResourceIds'))
@@ -78,6 +83,7 @@ const REQUIRED_INDEXES_QUERY = `
         table_info.relname AS tablename,
         index_table.relname AS indexname,
         index_info.indisunique,
+        pg_get_expr(index_info.indpred, index_info.indrelid) AS predicate,
         COALESCE(
             json_agg(attribute.attname ORDER BY indexed_column.ordinality)
                 FILTER (WHERE attribute.attname IS NOT NULL),
@@ -97,8 +103,12 @@ const REQUIRED_INDEXES_QUERY = `
       ON attribute.attrelid = table_info.oid
      AND attribute.attnum = indexed_column.attnum
     WHERE table_namespace.nspname = 'public'
-      AND table_info.relname IN ('bookings', 'autocare_reviews', 'security_events', 'security_event_actions', 'outbox_events', 'autocare_bonus_programs', 'autocare_bonus_accounts', 'autocare_bonus_ledger', 'autocare_provider_invitations', 'autocare_provider_daily_metrics', 'autocare_provider_change_requests', 'autocare_catalog_gap_requests', 'autocare_chat_reports', 'autocare_chat_blocks', 'autocare_appeals', 'autocare_market_countries', 'autocare_markets', 'autocare_service_requests', 'autocare_service_attachments', 'autocare_capacity_resources', 'autocare_capacity_reservations', 'client_vehicles')
-    GROUP BY table_info.relname, index_table.relname, index_info.indisunique
+      AND table_info.relname IN ('bookings', 'autocare_reviews', 'security_events', 'security_event_actions', 'outbox_events', 'notifications', 'autocare_bonus_programs', 'autocare_bonus_accounts', 'autocare_bonus_ledger', 'autocare_provider_invitations', 'autocare_provider_daily_metrics', 'autocare_provider_change_requests', 'autocare_catalog_gap_requests', 'autocare_chat_reports', 'autocare_chat_blocks', 'autocare_appeals', 'autocare_market_countries', 'autocare_markets', 'autocare_service_requests', 'autocare_service_attachments', 'autocare_capacity_resources', 'autocare_capacity_reservations', 'client_vehicles')
+    GROUP BY
+        table_info.relname,
+        index_table.relname,
+        index_info.indisunique,
+        pg_get_expr(index_info.indpred, index_info.indrelid)
 `
 
 const REQUIRED_CONSTRAINTS_QUERY = `

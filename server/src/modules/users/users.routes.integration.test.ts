@@ -51,7 +51,7 @@ describe('private user routes integration', () => {
         expect(response.headers['cache-control']).toBe('no-store')
         expect(response.headers.pragma).toBe('no-cache')
         expect(response.body).toMatchObject({
-            schemaVersion: 1,
+            schemaVersion: 2,
             user: { id: userId },
             limits: { maxRecordsPerCollection: 5_000 },
             integrity: { algorithm: 'sha256' },

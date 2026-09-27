@@ -11,6 +11,7 @@ import {
 } from 'typeorm'
 
 import { UserEntity } from '../user/user.entity.js'
+import { createBlindIndexTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum OAuthIdentityProvider {
     Google = 'google',
@@ -38,8 +39,11 @@ export class OAuthIdentityEntity {
     })
     provider!: OAuthIdentityProvider
 
-    @Column({ type: 'text', name: 'provider_subject' })
+    @Column({ type: 'text', name: 'provider_subject', transformer: createBlindIndexTransformer('oauth-provider-subject') })
     providerSubject!: string
+
+    @Column({ type: 'text', name: 'provider_subject_ciphertext' })
+    providerSubjectCiphertext!: string
 
     @Column({ type: 'uuid', name: 'user_id' })
     userId!: string

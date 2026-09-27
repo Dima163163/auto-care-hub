@@ -88,6 +88,7 @@ export const userConsentStateSchema = z.object({
         privacy: consentStateSchema,
         analytics: consentStateSchema,
         marketing: consentStateSchema,
+        communityProfile: consentStateSchema.optional(),
     }),
 })
 

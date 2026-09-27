@@ -8,6 +8,10 @@ import { SuperAdminOperationsRail } from './SuperAdminOperationsRail'
 
 const mocks = vi.hoisted(() => ({
     role: 'super_admin' as 'super_admin' | 'admin',
+    mockApi: true,
+    status: 'healthy' as 'healthy' | 'degraded' | 'unavailable',
+    hasData: true,
+    isError: false,
     getOverview: vi.fn(),
 }))
 
@@ -15,13 +19,19 @@ vi.mock('@/features/auth', () => ({
     useGetMeQuery: () => ({ data: { role: mocks.role } }),
 }))
 
+vi.mock('@/shared/config/api', () => {
+    const config: Record<string, unknown> = {}
+    Object.defineProperty(config, 'IS_MOCK_API', { get: () => mocks.mockApi })
+    return config
+})
+
 vi.mock('@/features/admin/api/adminApi', () => ({
     useGetAdminOperationsOverviewQuery: (...args: unknown[]) => {
         mocks.getOverview(...args)
         return {
-            data: {
+            data: mocks.hasData ? {
                 generatedAt: '2026-09-08T10:00:00.000Z',
-                overallStatus: 'healthy',
+                overallStatus: mocks.status,
                 database: {
                     status: 'connected',
                     latencyMs: 8,
@@ -82,9 +92,9 @@ vi.mock('@/features/admin/api/adminApi', () => ({
                     },
                     metrics: { gauges: [], counters: [], histograms: [], seriesCount: 0 },
                 },
-            },
+            } : undefined,
             isLoading: false,
-            isError: false,
+            isError: mocks.isError,
             refetch: vi.fn(),
         }
     },
@@ -103,20 +113,36 @@ function renderRail() {
 describe('SuperAdminOperationsRail', () => {
     beforeEach(() => {
         mocks.role = 'super_admin'
+        mocks.mockApi = true
+        mocks.status = 'healthy'
+        mocks.hasData = true
+        mocks.isError = false
         mocks.getOverview.mockClear()
     })
 
-    it('keeps a compact operational status visible and expands details on demand', () => {
+    it('keeps a non-overlapping mock status visible and warns that backend health is unverified', () => {
         renderRail()
 
         expect(screen.getByLabelText('System operations')).toBeVisible()
-        expect(screen.getByText('Critical dependencies are healthy')).toBeVisible()
+        expect(screen.getByText('Mock mode · real backend not checked')).toBeVisible()
+        expect(screen.queryByText('Critical dependencies are healthy')).not.toBeInTheDocument()
+        expect(screen.getByTestId('admin-operations-status-strip')).not.toHaveClass('fixed')
         expect(screen.queryByText('Connection pool')).not.toBeInTheDocument()
 
         fireEvent.click(screen.getByRole('button', { name: 'Show details' }))
 
+        expect(screen.getByText('This is synthetic mock data. The API, database, and worker have not been checked.')).toBeVisible()
         expect(screen.getByText('Connection pool')).toBeVisible()
         expect(screen.getByText('Database')).toBeVisible()
+    })
+
+    it('shows the live health result only in real API mode', () => {
+        mocks.mockApi = false
+
+        renderRail()
+
+        expect(screen.getByText('Critical dependencies are healthy')).toBeVisible()
+        expect(screen.queryByText('Mock mode · real backend not checked')).not.toBeInTheDocument()
     })
 
     it('renders the safe operational snapshot for an ordinary admin', () => {
@@ -126,5 +152,20 @@ describe('SuperAdminOperationsRail', () => {
 
         expect(screen.getByLabelText('System operations')).toBeVisible()
         expect(mocks.getOverview).toHaveBeenCalledWith(undefined, expect.objectContaining({ skip: false }))
+    })
+
+    it('keeps an outage compact until an admin opens its details', () => {
+        mocks.status = 'unavailable'
+        mocks.hasData = false
+        mocks.isError = true
+
+        renderRail()
+
+        expect(screen.getByText('Mock mode · real backend not checked')).toBeVisible()
+        expect(screen.queryByText('Retry check')).not.toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show details' }))
+
+        expect(screen.getByText('Retry check')).toBeVisible()
     })
 })

@@ -8,6 +8,7 @@ export type AutomotivePriceType = 'fixed' | 'from' | 'range' | 'quote_required'
 
 export type ProviderPreview = {
     id: string
+    marketId?: string
     name: string
     rating: number
     reviewCount: number
@@ -28,6 +29,7 @@ export type ProviderPreview = {
     priceType?: AutomotivePriceType
     inclusions?: readonly string[]
     warrantyMonths?: number | null
+    warrantyText?: string | null
     brandSpecializations: readonly string[]
     isMultibrand: boolean
     trustScore?: number
@@ -53,6 +55,7 @@ export type ProviderOffering = {
     durationMinutesTo?: number | null
     availability: string
     includes: readonly string[]
+    warrantyText?: string | null
 }
 
 export type ProviderScheduleDay = {
@@ -66,6 +69,8 @@ export type ProviderReview = {
     author: string
     vehicleLabel?: string
     avatarUrl?: string | null
+    communityProfile?: { profileId: string; badgeCodes: Array<'verified_client' | 'regular_client' | 'helpful_reviewer' | 'autocare_expert'> } | null
+    helpfulCount?: number
     rating: number
     date: string
     text: string

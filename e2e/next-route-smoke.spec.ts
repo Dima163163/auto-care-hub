@@ -62,6 +62,7 @@ const dynamicRoutes = [
     '/services/api-proservice-moscow/request/',
     '/services/api-proservice-moscow/request?service=oil-change',
     '/services/api-proservice-moscow/request/?service=oil-change',
+    '/community/clients/10000000-0000-4000-8000-000000000001',
     '/cabinets/cabinet-1',
     '/cabinets/cabinet-1/?from=filtered-catalog',
     '/owner/autocare-providers/provider-1',
