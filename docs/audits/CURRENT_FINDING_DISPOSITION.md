@@ -11,7 +11,7 @@ canonical; neither source presence nor local PASS changes external pilot readine
 | CHANGE-C002, stale quote consent | `autocare-request.service.ts` compares quoteId/version under transaction before acceptance; frozen-price integration exists | Current candidate real-stack regression and production acceptance |
 | CHANGE-C003, cancel/complete deletion | `account-deletion.service.ts` uses pessimistic row locks and an idempotent cancelled row; account-deletion integration exists | Recovery/retention/legal and staging concurrency evidence |
 | CHANGE-C008, wrong frontend runtime in CI | Required real-full-stack runs production Next artifact; previous published Quality runs PASS | New candidate Quality and deployed URL evidence |
-| CHANGE-C009, failed logout/late refresh | Identity invalidation and refresh epoch checks exist in auth/baseApi; existing browser/unit regressions | Candidate browser replay; A→B/offline production acceptance |
+| CHANGE-C009, failed logout/late refresh | Identity invalidation and refresh epoch checks exist in auth/baseApi; current 171 mock/26 existing real-API cases PASS, including failed/offline logout | A→B and deployed production acceptance |
 | Product A21, chat report queue truncation | `listAdminAutoCareChatReports` implements cursor/totalCount/search/assignment/category/scope. `AdminChatReportsPanel` includes page continuation and filters; boundary/UI tests exist | Fresh UI regression and 101+ real queue acceptance; source proof alone does not close the entire historical criterion |
 | Product A29, generic empty provider HTML | Provider route server-loads a public profile, generates provider title/description and renders `PublicProviderFirstPaint` with profile H1/content; missing provider is noindex | Fresh candidate HTTP/body checks and deployed SEO/Lighthouse; do not call ISR static when route is force-dynamic |
 | Security 26 Sep, fields “not encrypted” | Versioned AES-GCM field envelopes/HMAC indexes are implemented. U05 stable index-key KEK rotation, U06 invitation transformer and U09 log redaction are published and verified | U01 external KMS wiring; U02 row/parent scope integrity; N09 production migration/retirement |
@@ -22,5 +22,7 @@ canonical; neither source presence nor local PASS changes external pilot readine
 
 No report here claims there is no encryption or that server-side encryption hides
 all data from a fully compromised authorized backend. Historical archives and
-unrelated dirty files were neither opened nor changed. Latest published urgent
-baseline is main `a29b361`; the nonurgent candidate is still unpushed.
+unrelated dirty files were neither edited nor committed; their hashes were
+verified. Urgent baseline is main `a29b361`. The nonurgent packet's local results
+and remaining N09/N11 scope are in the current working registry. Publication and
+hosted acceptance are verified through the exact-candidate dev→main PR/Actions.

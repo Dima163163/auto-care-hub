@@ -22,6 +22,28 @@
   legacy array/explicit page/invalid limit/branch HTTP regressions PASS (23/88 integration).
 - [x] N05 browser regression: parser-inserted inline payload и foreign WebSocket
   заблокированы на production Next после hydration; 26 existing real cases + 1 CSP PASS.
+- [x] N01/N02: portable canonical rules, актуальная disposition исторических audits.
+- [x] N03: неподтверждённый production Next PWA claim снят; compatibility 12 PASS.
+- [x] N07/N08: whole-frontend strict; HMAC exact email и bounded partial search.
+- [x] N10: отсутствие public contacts подтверждено владельцем; footer/year и
+  automotive copy launch locales исправлены без изменения дизайна.
+- [x] N13/N14: manifest-aware SEO, automatic test profiles и собственный admin
+  concurrency fixture; disposable PostgreSQL integration 23/88 PASS без skip.
+- [x] N16/N17: полный root/server audit 0; идентичный MIT CSS сохранён; mock privacy parity.
+- [x] N20: 171 mock E2E first-attempt PASS; отдельно 9 strict-MSW city repeats PASS.
+- [ ] N09: engine/runbook готовы, production DB adapter и масштабный rollout
+  ожидают U01/U02 key/envelope решения и recovery evidence.
+- [ ] N11: chat read model и mock access policy выделены; дальнейшие
+  request/provider/frontend API вертикальные refactors остаются в реестре.
+
+Итог локальной приёмки пакета: frontend 189/609; backend unit 387/1406;
+backend full с isolated DB 410/1494; integration 23/88 без skip; migrations,
+seed/integrity и PostgreSQL multi-process smoke PASS. Next mock/real, Vite,
+ESLint/strict types/server build и contracts PASS; 17 HTTP metadata + 17 initial
+JS budgets PASS; 26 existing real-API + 1 CSP case и 12 PWA compatibility PASS.
+Primary dirty hashes 3/3 unchanged. Одно общее отправление feature/dev, затем
+protected dev→main PR по exact-candidate Quality; remote evidence фиксируется
+в PR/Actions. External NO-GO/54-gate denominator сохраняются.
 
 > Status: historical implementation roadmap
 >
