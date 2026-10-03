@@ -416,7 +416,9 @@ async function getBroadcastOrThrow(id: string) {
 }
 
 export async function assertOwnerBroadcastAccess(user: UserEntity, request: AutoCareBroadcastRequestEntity) {
-    if (request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) return
+    // Privileged roles do not grant access to client repair details. A
+    // non-client caller needs the same provider/branch scope as any participant.
+    if (request.clientId === user.id) return
     const managedScopes = await getManagedProviderPermissionScopes(user.id, 'requests')
     if (managedScopes.length === 0) forbidden('You do not have access to this broadcast request.')
     const managedProviderIds = managedScopes.map(({ providerId }) => providerId)
@@ -471,7 +473,7 @@ export async function getAutoCareBroadcastRequest(user: UserEntity, broadcastId:
     await assertOwnerBroadcastAccess(user, request)
     const definition = await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).findOneBy({ id: request.serviceDefinitionId })
     if (!definition) notFound('Service definition not found.')
-    const ownedScopes = request.clientId === user.id || user.role === UserRole.Admin || user.role === UserRole.SuperAdmin
+    const ownedScopes = request.clientId === user.id
         ? null
         : await getManagedProviderPermissionScopes(user.id, 'requests')
     const ownedProviderIds = ownedScopes?.map(({ providerId }) => providerId) ?? null

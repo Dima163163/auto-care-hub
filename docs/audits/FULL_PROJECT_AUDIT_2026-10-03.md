@@ -2,7 +2,7 @@
 
 Рабочий реестр: пополняется сразу после подтверждения каждой находки. Анализ текущей рабочей копии, а не только исторических аудитов. После завершения аудита пользователь разрешил выполнять срочные исправления партиями по 1–2, каждое отдельным коммитом; результаты записываются рядом с исходными находками.
 
-Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09 остаются **12 срочных / 16 несрочных**; локально исправлен 1 пункт.
+Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09/U11 остаются **11 срочных / 17 несрочных**; локально исправлены 2 пункта, добавлен N17 о mock parity.
 
 ## Основание и границы
 
@@ -125,9 +125,13 @@
 
 **Последствия:** знание ID даёт рядовому admin доступ к клиентскому описанию и снимку автомобиля независимо от ограниченного moderation-access, реализованного для обычной заявки/переписки. Массовое получение чужих ID или факт чтения реальных данных в этом аудите не заявляются.
 
-**Улучшение:** отдельное scoped moderation/support permission с назначением, причиной, сроком и audit; обычный admin вне дела получает отказ или минимальный redacted projection. Super-admin sensitive read также проходит break-glass/step-up policy.
+**Улучшение:** убрать доступ по одной роли; новые moderation/support permissions, если они потребуются продукту, должны иметь назначение, причину, срок и audit. Super-admin sensitive read также требует согласованной break-glass/step-up policy.
 
-**Приёмка:** unassigned admin получает 403 без private payload; assigned actor читает только согласованный scope с audit и expiry. Статус: открыто, новая находка.
+**Приёмка:** admin/super-admin без participant scope получает 403 без private payload; роль не расширяет доступ. Клиент читает свою заявку, provider participant видит только свои разрешённые филиалы/предложения. Нового административного sensitive read без назначения/audit не появляется.
+
+**Исправление 03.10:** удалены обе role-only ветки: из `assertOwnerBroadcastAccess` и из выбора полного offers projection. Admin/super-admin теперь проходят обычную проверку provider `requests` permission, активного сервиса, branch и market; при наличии такой membership их offers ограничены её филиалами. Client-ID ownership сохраняет доступ к собственному запросу и всем допустимым предложениям. Отдельного scoped broadcast moderation workflow сейчас нет; этот коммит не создаёт administrative bypass или новый support endpoint.
+
+**Статус:** исправлено локально, отдельный коммит U11. До исправления 4 новых regression cases падали; после — admin/super-admin denial, их branch projection, обычный owner и клиент проходят. Mock-режим имеет отдельное расхождение N17; actual PostgreSQL/authenticated browser replay не выполнялся.
 
 ### U12 · P1 · Обновить Next.js с critical advisory в production-зависимости
 
@@ -311,16 +315,26 @@
 
 **Приёмка:** полный audit закрыт либо каждое оставшееся исключение имеет проверенную достижимость, срок и владельца; lint/build/generation работают. Статус: открыто, новое dependency evidence.
 
+### N17 · P2 · Согласовать mock broadcast access с backend permissions
+
+**Подтверждение:** при исправлении U11 повторно проверен `src/app/mocks/handlers.ts`, GET `/api/v1/broadcast-requests/:broadcastId`: чужая заявка скрывается только от роли `client`; любой иной mock user получает полную response без provider/branch permission и offers filtering. Это отличается от backend participant policy после U11 и от его прежних owner scope checks.
+
+**Последствия:** демонстрация и frontend mock tests могут показывать доступ, которого real API не разрешает, и скрывать authorization regressions. Это не сохранённый bypass в production backend: исправленный backend отклоняет роль без действующего participant scope.
+
+**Улучшение:** mock current user/membership/branch projections должны повторять правила backend и его 403/404 contract; добавить негативные mock cases для admin, super-admin и чужого филиала. Frontend/mock work выполнять отдельным ограниченным шагом с требуемой ownership; UI composition не менять.
+
+**Приёмка:** те же actor/request fixtures дают одинаковую доступность и видимые offers в mock/real contracts, клиент сохраняет полный доступ к собственной заявке. Статус: открыто, новая несрочная находка при U11.
+
 ## Рекомендуемый порядок работ
 
 | Очередь | Пункты | Результат следующего шага |
 | --- | --- | --- |
-| 1 | U01, U11, U12, U13 | Работающий production key adapter, закрытый admin bypass и исправленные production dependencies; U09 выполнен локально |
+| 1 | U01, U12, U13 | Работающий production key adapter и исправленные production dependencies; U09/U11 выполнены локально |
 | 2 | U02, U05, N09 | Согласованная схема AAD/индексов/ротации и проверяемый rollout шифрования на реальном объёме |
 | 3 | U03, U04, U07 | MFA/step-up, проверка backup до SQL и защита integration от обычной БД |
 | 4 | U06, U08, U10, N03, N13, N14 | Исправленные invitation lookup, Next artifact checks, private caching, PWA/SEO и тестовые suites |
 | 5 | N04, N06, N08, N12 | Ограниченные queries, полноценная очередь owner и измеренный production performance |
-| 6 | N01, N02, N05, N07, N10, N11, N15, N16 | Актуальные инструкции/реестры, CSP/type safety, тексты, модульность и supply-chain hygiene |
+| 6 | N01, N02, N05, N07, N10, N11, N15, N16, N17 | Актуальные инструкции/реестры, CSP/type safety, тексты, модульность, supply-chain hygiene и mock authorization parity |
 
 Пункты одной очереди можно выполнять независимо, если они не затрагивают общий data contract. U02/U05/N09 нужно проектировать вместе: несогласованное изменение индексов/формата может лишить доступа к существующим данным. Закрытие пункта требует его приёмки; один зелёный unit suite не закрывает production/integration evidence.
 
@@ -349,5 +363,7 @@
 **Не выполнено:** запуск API с изолированной PostgreSQL/Redis, применение миграций и DB integration/E2E, проверки настоящих ролей/учётных записей, реальный KMS, object storage/antivirus/SMTP/OAuth providers, production load/Lighthouse, восстановление backup, внешние юридические/операторские согласования. Docker daemon недоступен, безопасность обычной developer DB для тестов не установлена; она не использовалась и не очищалась. Исторические успешные DB проверки не выдаются за свежие.
 
 **Что уже есть:** unit/build/type/lint и API parity проходят; в проекте реализованы scoped chat moderation, private attachment access, session/WS controls, booking/bonus invariants и часть предыдущих product fixes. Старая формулировка «нет шифрования» больше не точна: реализация есть, но её production wiring и свойства требуют U01/U02/U05. A21/A29 нужно перепроверить и обновить disposition по текущей реализации, а не автоматически возвращать весь старый scope в open.
+
+**Проверки партии U09/U11:** финальный backend suite — **309 files / 1177 tests PASS**, backend build PASS; full lint для U09 и targeted lint после последних изменений PASS. U09 capture проверяет Pino/HTTP/external-report границы, U11 focused suite — **4 files / 31 tests PASS**; API contract/parity/snapshot/threat-surface PASS, `git diff --check` PASS. U09 до исправления воспроизведён 5 падающими regression cases, U11 — 4. U09 коммит `a9fa608`; U11 фиксируется отдельным коммитом `fix(security): restrict broadcast reads to participants (U11)`. Existing integrity-script/manifest files проверены по SHA-256 и не изменены. DB/production ограничения исходного аудита сохраняются.
 
 **Итог исходного аудита:** локальные PASS не снимают production блокеры и внешние ворота. Pilot остаётся **NO-GO**; проценты 54 канонических ворот не пересчитывались. Сам аудит не менял runtime-код, зависимости и БД; последующие разрешённые исправления описаны выше. Ранее существовавшие локальные изменения сохранены. Временные Next servers/браузерный tab остановлены после проверки.

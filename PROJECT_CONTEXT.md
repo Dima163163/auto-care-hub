@@ -714,3 +714,24 @@ VIN, arbitrary repair text and password do not appear in logs, reporter payload
 or the 500 response. No live DB or production logs were used. The audit register
 has **12 urgent / 16 nonurgent** remaining; U11 is next. Pre-existing integrity
 script/manifest edits remain outside this fix. No push/merge or deployment.
+
+### Urgent fix U11 — 2026-10-03
+
+U11 is fixed in the backend: admin/super-admin roles no longer authorize
+broadcast reads or select the complete offers projection. Every non-client
+caller must pass ordinary active provider/request/branch/market permissions,
+and gets only offers in that scope. The request's client retains all eligible
+offers. There is no new unscoped support endpoint; a future broadcast moderation
+workflow must define assignment/reason/expiry/audit before granting such reads.
+Fresh PASS: backend **309 files / 1177 tests**, focused permissions **4 files /
+31 tests**, backend build, targeted lint, API contract/parity/route snapshot and
+threat-surface checks. New admin/super-admin denial and branch-projection cases
+failed before the fix; owner/client cases preserve legitimate access. No live
+PostgreSQL/authenticated browser replay was performed.
+
+The register now has **11 urgent / 17 nonurgent** remaining. N17 captures the
+pre-existing mock GET broadcast handler's broader non-client access; it needs
+separate frontend/mock ownership and is not a production backend bypass after
+U11. This batch changes no frontend or database data. Integrity-script/manifest
+files remain byte-for-byte unchanged and excluded from both requested commits.
+Pilot remains NO-GO; no push, merge or deployment was performed.

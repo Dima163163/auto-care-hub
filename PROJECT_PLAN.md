@@ -1797,5 +1797,15 @@ production acceptance or design-approval requirements.
   full lint plus final targeted lint and `git diff --check` pass. Added regression
   tests first reproduced the unsafe logs/SQL diagnostics and now pass, including
   actual Fastify/Pino output, external reports, HTTP 500 envelopes and cycles.
-- [ ] Remaining urgent items: 12. Next bounded fix: U11 broadcast role bypass.
-  Live DB/production evidence and external pilot gates remain open.
+- [x] U11: removed role-only admin/super-admin access from broadcast authorization
+  and complete-offer projection. Privileged callers need an ordinary active
+  provider request scope and receive only its authorized branch offers; the
+  request's client retains all eligible offers. No new support/moderation access
+  was added without a scoped workflow.
+- [x] U11 verification: backend **309 files / 1177 tests**, focused authorization
+  **4 files / 31 tests**, backend build, targeted lint, API contract/parity/route
+  snapshot and threat-surface source checks pass. Four new regression cases
+  reproduced the bypass before the fix. Existing owner/client behavior passes.
+- [ ] Remaining: **11 urgent / 17 nonurgent**. Added N17 for existing overly broad
+  mock broadcast access; production backend access is fixed. Live DB/production
+  evidence and external pilot gates remain open.
