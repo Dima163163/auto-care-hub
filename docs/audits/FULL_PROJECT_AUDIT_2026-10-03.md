@@ -287,6 +287,8 @@
 
 **Приёмка:** все предлагаемые языки описывают AutoCare; публичные каналы подтверждены владельцем; недоступная функция не выглядит действующей. Статус: открыто, связано с V2-MVP-10.
 
+**Исправление 04.10:** N10: по подтверждению владельца публичных контактных каналов пока нет. В существующих footer slots заменены вымышленные телефон/email на честные локализованные статусы; copyright использует текущий год. ES/RO launch landing copy исправлен на автосервисы. Native app уже обозначено In development, store badges не являются download links; это состояние сохранено. Translation contract: 12 PASS, TypeScript и targeted lint PASS; visual layout/style не менялись.
+
 ### N11 · P2 · Разделить крупные production-модули по ответственностям
 
 **Подтверждение:** request service — 1670 строк, provider/discovery service — 1388, chat service — 1112, frontend `autocareApi.ts` — 2235, mock handlers — 6924. В них совмещены несколько workflow и DTO/authorization/storage concerns.

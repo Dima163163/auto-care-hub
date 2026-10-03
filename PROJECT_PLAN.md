@@ -1999,3 +1999,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N13: исправлен manifest-aware SEO runner и custom Next distDir; 7 синтетических тестов PASS. HTTP/static ошибки остаются blocking; финальный runtime replay ещё впереди. Отдельный коммит, общего push пока нет.
+
+
+04 Oct — N10: по подтверждению владельца публичных контактных каналов пока нет. В существующих footer slots заменены вымышленные телефон/email на честные локализованные статусы; copyright использует текущий год. ES/RO launch landing copy исправлен на автосервисы. Native app уже обозначено In development, store badges не являются download links; это состояние сохранено. Translation contract: 12 PASS, TypeScript и targeted lint PASS; visual layout/style не менялись. Отдельный коммит; общий push ещё впереди.

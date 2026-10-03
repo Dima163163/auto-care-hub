@@ -17,9 +17,17 @@ const autocareOverrides = {
     hi: { heroTitle: 'अपने पास की सर्वश्रेष्ठ ऑटो सेवा खोजें', heroDescription: 'कुछ क्लिक में कीमतों, रेटिंग और उपलब्ध समय की तुलना करें', byService: 'सेवा के अनुसार', byProvider: 'सर्विस सेंटर के अनुसार', searchAction: 'सेवाएं खोजें', resultsTitle: 'ऑटो सेवाओं की तुलना करें', bookAction: 'चुनें और बुक करें', detailsAction: 'विवरण', chatSend: 'भेजें', radiusOption: '{{value}} किमी', providerMobileService: 'मोबाइल सेवा', providerMobileServiceWithRadius: 'मोबाइल सेवा · {{radius}} किमी तक', providerPickupDelivery: 'वाहन पिकअप और डिलीवरी', heroMapLabel: 'ऑटो सेवा खोज मानचित्र', heroMapZoomLevel: 'मानचित्र ज़ूम: {{percent}} प्रतिशत', locationServiceOne: 'सर्विस सेंटर', locationServicePlural: 'सर्विस सेंटर' },
 } as const satisfies Record<AutoCareLocale, Partial<typeof enTranslations.autocare>>
 
+const launchLandingOverrides = {
+    ru: { footerPhoneUnavailable: 'Телефон поддержки пока недоступен', footerEmailUnavailable: 'Email поддержки пока недоступен', footerAddress: 'Публичных контактных каналов пока нет' },
+    es: { eyebrow: 'Servicios de automoción', title: 'Encuentra un taller y gestiona tus citas.', description: 'Compara talleres, servicios y precios y envía una solicitud para tu vehículo.', footerDescription: 'Ayudamos a encontrar talleres cercanos, comparar precios y reservar servicios para tu vehículo.', footerRights: '© {{year}} AutoCare Hub. Todos los derechos reservados.', footerPhoneUnavailable: 'La atención telefónica aún no está disponible', footerEmailUnavailable: 'La atención por email aún no está disponible', footerAddress: 'Aún no hay canales de contacto públicos' },
+    ro: { eyebrow: 'Servicii auto', title: 'Găsește un service auto și gestionează programările.', description: 'Compară service-uri, servicii și prețuri și trimite o cerere pentru vehiculul tău.', footerDescription: 'Ajutăm șoferii să găsească service-uri auto în apropiere, să compare prețuri și să se programeze online.', footerRights: '© {{year}} AutoCare Hub. Toate drepturile rezervate.', footerPhoneUnavailable: 'Asistența telefonică nu este încă disponibilă', footerEmailUnavailable: 'Asistența prin email nu este încă disponibilă', footerAddress: 'Nu există încă canale publice de contact' },
+} satisfies Partial<Record<AutoCareLocale, Partial<typeof enTranslations.landing>>>
+
 export function withAutoCareTranslations<T extends typeof enTranslations>(locale: AutoCareLocale, translations: T): T {
+    const landing = locale === 'ru' || locale === 'es' || locale === 'ro' ? launchLandingOverrides[locale] : {}
     return {
         ...translations,
+        landing: { ...translations.landing, footerRights: translations.landing.footerRights.replace('2024', '{{year}}'), ...landing },
         autocare: { ...translations.autocare, ...autocareOverrides[locale] },
     }
 }
