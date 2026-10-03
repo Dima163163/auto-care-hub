@@ -241,6 +241,8 @@
 
 **Приёмка:** production HTML запрещает произвольный inline script/посторонний WS, штатные bootstrap/theme/chats продолжают работать. Статус: открыто.
 
+**Исправление 04.10:** N05: Next proxy.page.ts выдаёт новый CSPRNG nonce на каждый HTML request, заменяет caller nonce/CSP headers и передаёт policy в SSR. Next framework scripts и theme bootstrap получают nonce; production script-src больше не содержит unsafe-inline/eval. Connect-src ограничен точными frontend/API HTTP/Ws origins; HTML private/no-store не переиспользует nonce. Inline CSS пока разрешён для существующих UI style props. 3 policy negative/positive cases, TypeScript/lint PASS; enforced policy runtime/theme/hydration/WebSocket replay ожидает финальный Next artifact.
+
 ### N06 · P2 · Измерять производительность production Next
 
 **Подтверждение:** `check-performance-budget.mjs` и `check-bundle-splitting.mjs` читают Vite `dist/assets`. `check-seo-release.mjs` действительно имеет Next total/max budgets (5.5 MB / 600 kB), но всегда читает фиксированный `.next/static`, игнорируя `NEXT_DIST_DIR`, и не ограничивает initial route JS. В свежем real Next artifact 86 JS chunks, всего 4 231 090 bytes raw; крупнейший `3035-...js` — 562 959 bytes и включён в начальный HTML. Существующий общий SEO-бюджет он не превышает.

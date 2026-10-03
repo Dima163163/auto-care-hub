@@ -2023,3 +2023,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N04: chat thread list фильтрует роль/assigned moderation/branch scope в SQL до bounded limit (legacy ≤100; optional cursor pages ≤100). Unread count агрегируется SQL без body/offer decryption; providers, latest sanctions и pending appeals грузятся batches вместо N+1. Attachment read ограничен существующей квотой 20+1; сверхлимитная legacy беседа явно отклоняется для review, а не читается целиком/молча обрезается. 36 focused cases PASS, включая synthetic 10000 unread aggregate, cursor и branch predicate; backend build/lint/API contract/parity PASS. Cursor UI и legacy attachment cleanup не внедрялись; production нагрузочная приёмка остаётся внешней. Отдельный коммит N04.
+
+
+04 Oct — N05: Next proxy.page.ts выдаёт новый CSPRNG nonce на каждый HTML request, заменяет caller nonce/CSP headers и передаёт policy в SSR. Next framework scripts и theme bootstrap получают nonce; production script-src больше не содержит unsafe-inline/eval. Connect-src ограничен точными frontend/API HTTP/Ws origins; HTML private/no-store не переиспользует nonce. Inline CSS пока разрешён для существующих UI style props. 3 policy negative/positive cases, TypeScript/lint PASS; enforced policy runtime/theme/hydration/WebSocket replay ожидает финальный Next artifact. Отдельный коммит N05.
