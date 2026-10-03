@@ -1,6 +1,6 @@
 import { createSecurityTokenValue, hashSecurityTokenValue } from '../auth/security-token-value.js'
 import { AppDataSource } from '../../database/data-source.js'
-import { In } from 'typeorm'
+import { In, IsNull } from 'typeorm'
 import {
     AutomotiveProviderEntity,
     AutomotiveProviderInvitationEntity,
@@ -25,6 +25,18 @@ import {
 } from './provider-membership-policy.js'
 
 const INVITATION_TTL_DAYS = 7
+
+function pendingInvitationConflict() {
+    return new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A pending invitation already exists for this scope.' })
+}
+
+function isPendingInvitationUniqueError(error: unknown) {
+    if (!error || typeof error !== 'object') return false
+    const diagnostic = 'driverError' in error ? error.driverError : error
+    return !!diagnostic && typeof diagnostic === 'object'
+        && 'code' in diagnostic && diagnostic.code === '23505'
+        && 'constraint' in diagnostic && diagnostic.constraint === 'UQ_autocare_provider_invitations_pending_scope'
+}
 
 function normalizeEmail(email: string) {
     return email.trim().toLowerCase()
@@ -139,29 +151,40 @@ export async function createOwnerProviderInvitation(user: UserEntity, providerId
     }
     const email = normalizedInput.email
     const role = normalizedInput.role === AutomotiveProviderInvitationRole.Manager ? AutomotiveProviderInvitationRole.Manager : AutomotiveProviderInvitationRole.Staff
-    const invitationRepository = AppDataSource.getRepository(AutomotiveProviderInvitationEntity)
-    const existing = await invitationRepository.createQueryBuilder('invitation')
-        .where('invitation.providerId = :providerId', { providerId: normalizedProviderId })
-        .andWhere('invitation.email = :email', { email })
-        .andWhere('invitation.role = :role', { role })
-        .andWhere('invitation.status = :status', { status: AutomotiveProviderInvitationStatus.Pending })
-        .andWhere(normalizedInput.locationId ? 'invitation.locationId = :locationId' : 'invitation.locationId IS NULL', { locationId: normalizedInput.locationId })
-        .getOne()
-    if (existing && existing.expiresAt > new Date()) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A pending invitation already exists for this scope.' })
-
     const token = createSecurityTokenValue()
-    const invitation = await invitationRepository.save(invitationRepository.create({
-        providerId: normalizedProviderId,
-        email,
-        locationId: normalizedInput.locationId,
-        role,
-        status: AutomotiveProviderInvitationStatus.Pending,
-        tokenHash: hashSecurityTokenValue(token),
-        invitedById: user.id,
-        expiresAt: new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000),
-        acceptedAt: null,
-        revokedAt: null,
-    }))
+    let invitation: AutomotiveProviderInvitationEntity
+    try {
+        invitation = await AppDataSource.transaction(async (manager) => {
+            const invitationRepository = manager.getRepository(AutomotiveProviderInvitationEntity)
+            // Object conditions apply the email blind-index transformer.
+            const existing = await invitationRepository.findOne({
+                where: {
+                    providerId: normalizedProviderId, email, role,
+                    status: AutomotiveProviderInvitationStatus.Pending,
+                    locationId: normalizedInput.locationId ?? IsNull(),
+                },
+                lock: { mode: 'pessimistic_write' },
+            })
+            const now = new Date()
+            if (existing && existing.expiresAt > now) throw pendingInvitationConflict()
+            if (existing) {
+                existing.status = AutomotiveProviderInvitationStatus.Expired
+                await invitationRepository.save(existing)
+            }
+            return invitationRepository.save(invitationRepository.create({
+                providerId: normalizedProviderId, email,
+                locationId: normalizedInput.locationId, role,
+                status: AutomotiveProviderInvitationStatus.Pending,
+                tokenHash: hashSecurityTokenValue(token), invitedById: user.id,
+                expiresAt: new Date(now.getTime() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000),
+                acceptedAt: null, revokedAt: null,
+            }))
+        })
+    } catch (error) {
+        // A missing-row race is arbitrated by the partial unique index.
+        if (isPendingInvitationUniqueError(error)) throw pendingInvitationConflict()
+        throw error
+    }
     await notifyExistingInvitee(invitation)
     return toInvitationResponse(invitation, process.env.NODE_ENV === 'production' ? null : token)
 }

@@ -186,11 +186,20 @@ npm run start:server
 
 Для локального convenience-запуска с миграциями используй `npm run start:with-migrations`.
 
-Перед PostgreSQL/Redis integration suite проверь переменные подключения и
-обязательные auth secrets:
+PostgreSQL/Redis integration suite и полный `npm test` требуют явные disposable
+test targets до импорта конфигурации или подключения. Рабочие `DATABASE_URL` и
+`REDIS_URL` для этих команд не используются. Подготовь отдельную локальную БД с
+именем `*_test` / `*_test_<id>` и отдельную Redis database 1–15, которую можно
+очищать. Remote hosts, Redis DB 0, query/fragment в URL и NODE_ENV ≠ test запрещены.
+Тесты могут менять данные PostgreSQL и удалять `ratelimit:*` в выбранной Redis DB.
+CI использует свои ephemeral PostgreSQL/Redis services. Пример для уже созданных
+disposable сервисов и настроенных обязательных auth secrets:
 
 ```bash
-npm run check:integration-prerequisites
+export NODE_ENV=test
+export TEST_DATABASE_URL=postgresql://test_user:test_password@127.0.0.1:5432/autocarehub_test
+export TEST_REDIS_URL=redis://127.0.0.1:6379/15
+DATABASE_URL="$TEST_DATABASE_URL" REDIS_URL="$TEST_REDIS_URL" npm run check:integration-prerequisites
 npm run test:integration
 ```
 

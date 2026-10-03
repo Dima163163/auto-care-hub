@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: [
+      'src/test/integration-target-policy.test.ts',
       'src/shared/**/*.test.ts',
       'src/shared/observability/metrics-snapshot.test.ts',
       'src/shared/http/content-type-guard.test.ts',
@@ -203,6 +204,7 @@ export default defineConfig({
       'src/modules/autocare/autocare-chat.service-boundary.test.ts',
       'src/modules/autocare/autocare-bonus.service-boundary.test.ts',
       'src/modules/autocare/provider-membership.service-boundary.test.ts',
+      'src/modules/autocare/provider-invitation-deduplication.test.ts',
       'src/modules/autocare/provider-change-request.service-boundary.test.ts',
       'src/modules/autocare/catalog-gap.service-boundary.test.ts',
       'src/modules/bookings/bookings.service-boundary.test.ts',

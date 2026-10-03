@@ -784,3 +784,63 @@ to `abb7dfb` before this documentation update. No runtime or frontend changes
 were introduced by the synchronization. All four urgent commits are preserved.
 CI must rerun on the merge candidate. GitHub also displays a required approving
 review; that gate must be satisfied without bypassing branch protection.
+
+### Urgent fix U07, next batch — 2026-10-03
+
+PR #6 remains on dev `14c04ba` while a separate `codex/urgent-audit-batch-3`
+branch holds subsequent fixes in the same isolated worktree. U07 now rejects
+integration/full backend test startup unless NODE_ENV=test and explicit local
+disposable TEST_DATABASE_URL / TEST_REDIS_URL are set. URLs are validated before
+dotenv/data-source/Redis modules are imported; safe URLs then replace ordinary
+connection settings. PostgreSQL names must end in _test / _test_<id> without
+production labels; Redis selects DB 1–15. Remote hosts and query overrides are
+rejected. The existing ratelimit:* Redis cleanup was confirmed and recorded as
+additional U07 evidence; the guard isolates that service too. CI uses its own
+ephemeral PostgreSQL/Redis and DB 15, and README documents the explicit targets.
+
+Fresh PASS: 24 target-policy cases, strict setup/policy types, full lint, backend
+311 files / 1208 unit tests. A real invocation without targets exits before
+configuration/test import or service connection. No local live DB/Redis was
+used; this batch still needs its own isolated CI. U06 is next. The register has
+8 urgent / 17 nonurgent open findings. Main still requires the independent
+approving review displayed by GitHub; no protection was bypassed.
+
+### Urgent fix U06 and green promotion candidate — 2026-10-03
+
+U07 is committed as `6845517`. U06 replaces raw invitation email SQL with
+TypeORM object conditions, so the HMAC transformer applies. Lookup and expired
+pending replacement run in one transaction with a row lock. The existing partial
+unique index resolves missing-row races; only its 23505 becomes a controlled
+409. Unrelated database errors remain visible through the safe error handler,
+and notification runs after successful commit. No schema change is needed.
+
+Four regression cases failed before the fix. Five new unit cases now pass,
+including real TypeORM metadata/SQL proving HMAC binding, NULL scope and FOR
+UPDATE without connecting. Three HTTP/PostgreSQL cases cover uppercase repeat,
+expired scope replacement and concurrent sends. Fresh backend PASS: 312 files /
+1213 tests, build, full lint, new unit types with noUncheckedIndexedAccess and
+integration file types under ordinary strict. The stronger integration type
+check exposes pre-existing array fixture narrowing errors, recorded under N14.
+Live DB/Redis cases await this branch's CI; no ordinary developer DB was used.
+
+Both push and pull-request Quality runs are fully green on PR #6 candidate
+`14c04ba`, including browser E2E, real full-stack and aggregate Application CI.
+There is no approving review yet; GitHub's independent review gate still blocks
+main. U07/U06 remain separate local commits on `codex/urgent-audit-batch-3`,
+keeping the green promotion candidate stable. Remaining findings: 7 urgent /
+17 nonurgent. The primary checkout is preserved; pilot remains NO-GO.
+
+### Main promotion and next dev candidate — 2026-10-03
+
+The owner removed only Require approvals from the main branch rule. Browser
+verification confirms PR and Application CI requirements, up-to-date branches,
+conversation resolution, linear history, no bypass, no force push and no
+deletion are preserved. PR #6 merged normally as `a81749b`; fetched main's tree
+exactly equals Quality-tested dev `14c04ba` (both workflows passed).
+
+U07 `6845517` and U06 `676f22a` are separate commits on the next batch branch.
+Synchronizing the new main squash caused only three documentation conflicts;
+preserving this branch's audit/handoff documents yielded an index identical to
+`676f22a` before this status update. Runtime and each urgent commit are intact.
+The next dev candidate must pass its own isolated PostgreSQL/Redis and full
+Quality checks before main. The primary checkout remains untouched.
