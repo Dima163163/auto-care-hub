@@ -29,7 +29,7 @@ if [ ! -f "$BACKUP_FILE" ] || [ -L "$BACKUP_FILE" ]; then
 fi
 
 ENCRYPTION_PASSWORD_FILE=${BACKUP_ENCRYPTION_PASSWORD_FILE:-}
-ENCRYPTION_ITERATIONS=${BACKUP_ENCRYPTION_ITERATIONS:-600000}
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 CHECKSUM_FILE="$BACKUP_FILE.sha256"
 
 if [ ! -f "$CHECKSUM_FILE" ] || [ -L "$CHECKSUM_FILE" ]; then
@@ -57,8 +57,8 @@ for required_command in gzip shasum; do
     exit 69
   fi
 done
-if [[ "$BACKUP_FILE" == *.enc ]] && ! command -v openssl >/dev/null 2>&1; then
-  echo "Required command is unavailable: openssl" >&2
+if [[ "$BACKUP_FILE" == *.enc ]] && ! command -v node >/dev/null 2>&1; then
+  echo "Required command is unavailable: node" >&2
   exit 69
 fi
 
@@ -74,38 +74,51 @@ if [ "$TARGET_DATABASE" = "$CURRENT_DATABASE" ] && [ "${ALLOW_SAME_DATABASE_REST
   exit 77
 fi
 
-restore_encrypted_backup() {
+RESTORE_TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/autocare-restore.XXXXXX")
+chmod 700 "$RESTORE_TEMP_DIR"
+RESTORE_GZIP_FILE="$RESTORE_TEMP_DIR/verified.sql.gz"
+RESTORE_SQL_FILE="$RESTORE_TEMP_DIR/verified.sql"
+cleanup_restore() {
+  rm -f "$RESTORE_GZIP_FILE" "$RESTORE_SQL_FILE"
+  rmdir "$RESTORE_TEMP_DIR"
+}
+trap cleanup_restore EXIT
+
+prepare_encrypted_backup() {
   if [ -z "$ENCRYPTION_PASSWORD_FILE" ] || [ ! -r "$ENCRYPTION_PASSWORD_FILE" ]; then
     echo "BACKUP_ENCRYPTION_PASSWORD_FILE must reference the secret used to create this backup." >&2
     exit 78
   fi
-  openssl enc -d -aes-256-cbc -pbkdf2 -iter "$ENCRYPTION_ITERATIONS" \
-    -pass "file:$ENCRYPTION_PASSWORD_FILE" \
-    -in "$BACKUP_FILE" | gzip -dc
+  BACKUP_ENCRYPTION_PASSWORD_FILE="$ENCRYPTION_PASSWORD_FILE" \
+    node "$SCRIPT_DIR/backup-crypto.mjs" decrypt "$BACKUP_FILE" "$RESTORE_GZIP_FILE"
 }
 
-restore_unencrypted_backup() {
-  if [ "${ALLOW_UNENCRYPTED_LOCAL_RESTORE:-false}" != "true" ]; then
+prepare_unencrypted_backup() {
+  if [ "${NODE_ENV:-development}" = "production" ] || [ "${ALLOW_UNENCRYPTED_LOCAL_RESTORE:-false}" != "true" ]; then
     echo "Refusing unencrypted restore. Set ALLOW_UNENCRYPTED_LOCAL_RESTORE=true only for a local exercise." >&2
     exit 78
   fi
-  gzip -t "$BACKUP_FILE"
-  gzip -dc "$BACKUP_FILE"
+  cp "$BACKUP_FILE" "$RESTORE_GZIP_FILE"
 }
 
 echo "Restoring $BACKUP_BASENAME into $DB_HOST:$DB_PORT/$TARGET_DATABASE..."
 
 if [[ "$BACKUP_FILE" == *.enc ]]; then
-  restore_encrypted_backup
+  prepare_encrypted_backup
 else
-  restore_unencrypted_backup
-fi | PGPASSWORD="$DB_PASS" psql \
+  prepare_unencrypted_backup
+fi
+
+# No database process starts until authentication and the entire gzip stream pass.
+gzip -t "$RESTORE_GZIP_FILE"
+gzip -dc "$RESTORE_GZIP_FILE" > "$RESTORE_SQL_FILE"
+PGPASSWORD="$DB_PASS" psql \
   --no-psqlrc \
   --set ON_ERROR_STOP=1 \
   --single-transaction \
   --host "$DB_HOST" \
   --port "$DB_PORT" \
   --username "$DB_USER" \
-  --dbname "$TARGET_DATABASE"
+  --dbname "$TARGET_DATABASE" < "$RESTORE_SQL_FILE"
 
 echo "Restore completed successfully."

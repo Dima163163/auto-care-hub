@@ -1864,3 +1864,64 @@ production acceptance or design-approval requirements.
   The only conflicts were handoff/audit documents; before this status update,
   the resolved index exactly matched the verified U06 tree. Publish to dev and
   require this batch's own CI before its next main promotion.
+
+- [x] Published this pair to dev `fde2d05` and created promotion PR
+  [#7](https://github.com/Dima163163/auto-care-hub/pull/7). Its backend job passes:
+  unit **312/1213**, integration **16 files / 68 pass / 1 skipped**, full suite
+  **403 files / 1435 pass / 1 skipped**. Three new invitation HTTP cases pass;
+  positive U07 service isolation is exercised. The old skipped admin race is N14.
+- [ ] Browser E2E and aggregate Quality checks must complete before main.
+
+### Urgent audit fixes, batch 4 — 2026-10-03
+
+- [x] U10: default all API responses to private/no-store, with only four explicit
+  anonymous public GET/HEAD exceptions. Preserve their TTL/304/ETag; deny public
+  caching for credentials, Set-Cookie, errors or mutations. Register after cookie
+  serialization; keep redirect/download headers intact.
+- [x] U10 verification: 18 cases failed before the fix; **28 actual Fastify
+  cases PASS**, backend **313 files / 1241 tests**, build, full lint and focused
+  strict test types PASS. Added real HTTP error and owner projection assertions.
+- [ ] U10 live replay awaits its own future candidate; keep PR #7 unchanged.
+- [ ] Remaining after U10: **6 urgent / 17 nonurgent**; no pilot gates recounted.
+
+
+### U04 completion and PR #7 publication — 2026-10-03
+
+- [x] PR #7 merged normally into main as `2f99bf1`. Both exact-head Quality
+  workflows passed on `fde2d05`; fetched main's tree exactly matches it.
+- [x] U04: authenticated ACHBKP01 AES-256-GCM backups, complete authentication,
+  gzip validation and private SQL staging before psql. Clean staging on exit;
+  refuse existing outputs, legacy CBC and production plaintext restore.
+- [x] A corrupt gzip started fake psql before the fix. All **13 new offline
+  regressions PASS**, server tooling **18 PASS**, root backup/ops tests **7 PASS**,
+  contracts, shell syntax and lint PASS. Synthetic SQL/fake commands only.
+- [ ] U10/U04 exact-candidate CI, then dev-to-main publication. U10 already has
+  its own commit `977f927`; U04 receives a separate commit.
+- [ ] Existing CBC archives require fresh trusted-source backups or controlled
+  offline recovery. Live PostgreSQL/RPO/RTO restore evidence remains external.
+- [x] Added N18: backup dotenv word splitting loses quoted spaces; N19: promotion
+  waits for its own check. Both have evidence, improvements and acceptance.
+- [ ] Remaining: **5 urgent / 19 nonurgent**. No pilot gates recounted; NO-GO.
+
+
+Main synchronization before U10/U04 publication: origin/main `2f99bf1` is a
+squash of tested dev `fde2d05` with exactly the same tree. The merge conflicts
+were only audit/handoff documents; after resolving them, the index exactly
+matched U04 `3abded7` before this note. Runtime changes and both urgent commits
+are preserved. Publish dev normally, run complete candidate CI, then merge main.
+
+
+PR #8 CI correction: backend on `0b0defc` failed the old production operations
+source contract, which still demanded AES-CBC. Updated the contract to require
+ACHBKP01/GCM/AAD/tag and completed SQL staging, preserving all restore guards.
+Both failed preflight cases reproduced locally; all 15 ops harness tests and
+complete `quality:backend` now PASS (18 tooling, 313/1241 unit, build). Publish
+this follow-up and require complete CI on the new exact head before main.
+
+
+U10 CI contract correction: `ba8d843` passes all backend quality, migration and
+new cache cases; integration is 74 pass / 1 fail / 1 old skip. The one failure
+is an old exact `no-store` expectation for private user export; final HTTP now
+correctly returns `private, no-store`. Align user export and admin revoke HTTP
+assertions, keeping cache denial intact. Both updated files pass lint. U04
+crypto/tooling passes in CI (18 tests). Repeat full Quality on the new head.

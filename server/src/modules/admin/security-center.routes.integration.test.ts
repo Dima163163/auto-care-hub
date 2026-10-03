@@ -59,7 +59,7 @@ describe('Security Center session revocation route', () => {
                 .set('Authorization', `Bearer ${token}`)
 
             expect(response.status).toBe(200)
-            expect(response.headers['cache-control']).toBe('no-store')
+            expect(response.headers['cache-control']).toBe('private, no-store')
             expect(response.body).toMatchObject({
                 userId: target.id,
                 revokedAt: expect.any(String),

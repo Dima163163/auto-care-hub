@@ -48,7 +48,7 @@ describe('private user routes integration', () => {
             .set('Authorization', `Bearer ${accessToken}`)
 
         expect(response.status).toBe(200)
-        expect(response.headers['cache-control']).toBe('no-store')
+        expect(response.headers['cache-control']).toBe('private, no-store')
         expect(response.headers.pragma).toBe('no-cache')
         expect(response.body).toMatchObject({
             schemaVersion: 2,

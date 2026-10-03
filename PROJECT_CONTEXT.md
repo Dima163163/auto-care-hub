@@ -844,3 +844,76 @@ preserving this branch's audit/handoff documents yielded an index identical to
 `676f22a` before this status update. Runtime and each urgent commit are intact.
 The next dev candidate must pass its own isolated PostgreSQL/Redis and full
 Quality checks before main. The primary checkout remains untouched.
+
+### Published U07/U06 and local U10 — 2026-10-03
+
+Dev `fde2d05` and PR #7 publish U07/U06. PR Quality run `37122629168` backend
+job `111201602299` passes unit 312/1213, integration 16 files / 68 pass / 1
+skipped and full suite 403 files / 1435 pass / 1 skipped. All three new invitation
+HTTP cases pass in the 11-case branch access suite. Ephemeral PostgreSQL/Redis
+also verify positive U07 targets. The pre-existing admin race skips on both the
+old and new candidates due to undisclosed fixture prerequisites; N14 records
+the limitation. Browser/aggregate Quality checks still precede main merge.
+
+`codex/urgent-audit-batch-4` holds U10 while PR #7 remains stable. A common
+response cache hook now defaults to private/no-store. Only anonymous successful
+GET/HEAD discovery and public image routes with explicit public policy may
+cache; credentials, Set-Cookie, errors and all other routes fail closed. Register
+after cookie serialization. Public TTL/304/ETag and attachment delivery headers
+remain intact. Eighteen cases failed before; 28 actual Fastify cases now pass.
+Backend 313 files / 1241 tests, build, full lint and strict focused types PASS.
+HTTP suites now assert unauthenticated errors and authenticated owner catalog,
+reviews/analytics and permission denial headers. This new live replay remains
+pending. Remaining audit: 6 urgent / 17 nonurgent. No frontend/design changes.
+
+
+### U04 completed locally; PR #7 merged — 2026-10-03
+
+PR #7 merged as `2f99bf1`; both Quality runs on `fde2d05` passed. Fetched main
+and tested dev have exactly the same tree `10bc2362e0019448ddd58caccaaaf4235da2944a`.
+No reviewer requirement remains; all other protection constraints are preserved.
+
+U04 uses ACHBKP01 AES-256-GCM with authenticated header, bounded PBKDF2 and
+private staging. Restore authenticates and validates the entire gzip, prepares
+complete SQL, then invokes psql. All failures clean temporary files and do not
+start the SQL consumer. Existing outputs, legacy CBC and production plaintext
+restore are rejected. Old archives are retained; a fresh trusted-source backup
+or controlled offline legacy recovery is required. Node.js and enough private
+staging disk space are needed. No production DB/archive was touched.
+
+The old pipeline reproduced a corrupt gzip reaching fake psql. Thirteen new
+actual subprocess/crypto cases pass, including tampering with recomputed sums,
+wrong key, truncation, invalid gzip, legacy rejection, output preservation and
+shell-script round-trip. Server tooling 18 PASS; root backup/ops tests 7 PASS;
+contracts, syntax and lint PASS. Real PostgreSQL restore/RPO/RTO remains external.
+U10/U04 still need their own exact-head Quality CI and publication dev then main.
+
+N18 records dotenv quoted-space loss proven synthetically without reading .env.
+N19 records promotion self-wait: both Quality runs pass while the workflow waits
+on all PR checks, including its own pending check; it ultimately cancelled.
+These are separate nonurgent items, not bundled into the two urgent fixes.
+Remaining audit: **5 urgent / 19 nonurgent**. Primary dirty files and UI are
+preserved; pilot remains NO-GO. No skills installed and no subagents spawned.
+
+
+Main synchronization before U10/U04 publication: origin/main `2f99bf1` is a
+squash of tested dev `fde2d05` with exactly the same tree. The merge conflicts
+were only audit/handoff documents; after resolving them, the index exactly
+matched U04 `3abded7` before this note. Runtime changes and both urgent commits
+are preserved. Publish dev normally, run complete candidate CI, then merge main.
+
+
+PR #8 CI correction: backend on `0b0defc` failed the old production operations
+source contract, which still demanded AES-CBC. Updated the contract to require
+ACHBKP01/GCM/AAD/tag and completed SQL staging, preserving all restore guards.
+Both failed preflight cases reproduced locally; all 15 ops harness tests and
+complete `quality:backend` now PASS (18 tooling, 313/1241 unit, build). Publish
+this follow-up and require complete CI on the new exact head before main.
+
+
+U10 CI contract correction: `ba8d843` passes all backend quality, migration and
+new cache cases; integration is 74 pass / 1 fail / 1 old skip. The one failure
+is an old exact `no-store` expectation for private user export; final HTTP now
+correctly returns `private, no-store`. Align user export and admin revoke HTTP
+assertions, keeping cache denial intact. Both updated files pass lint. U04
+crypto/tooling passes in CI (18 tests). Repeat full Quality on the new head.

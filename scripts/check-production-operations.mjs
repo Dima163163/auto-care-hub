@@ -150,11 +150,12 @@ const OPERATIONAL_CONTRACTS = [
     {
         name: 'Encrypted backup/restore harness',
         files: {
-            'server/scripts/backup.sh': ['openssl enc -aes-256-cbc', 'shasum -a 256', 'BACKUP_ENCRYPTION_PASSWORD_FILE'],
-            'server/scripts/restore.sh': ['shasum -a 256 -c', 'ALLOW_SAME_DATABASE_RESTORE', '--set ON_ERROR_STOP=1'],
+            'server/scripts/backup.sh': ['backup-crypto.mjs" encrypt', 'shasum -a 256', 'BACKUP_ENCRYPTION_PASSWORD_FILE'],
+            'server/scripts/backup-crypto.mjs': ['ACHBKP01', 'aes-256-gcm', 'cipher.setAAD(header)', 'decipher.setAuthTag(tag)'],
+            'server/scripts/restore.sh': ['shasum -a 256 -c', 'ALLOW_SAME_DATABASE_RESTORE', '--set ON_ERROR_STOP=1', 'backup-crypto.mjs" decrypt', 'gzip -t "$RESTORE_GZIP_FILE"', '< "$RESTORE_SQL_FILE"'],
             'docs/operations/BACKUP_RESTORE_RUNBOOK.md': ['Restore rehearsal', 'encrypted daily full backup'],
         },
-        detail: 'backup encryption, checksum verification, isolated restore guard and runbook are present',
+        detail: 'authenticated backup encryption, complete private SQL staging, checksum verification, isolated restore guard and runbook are present',
     },
     {
         name: 'Alert configuration',

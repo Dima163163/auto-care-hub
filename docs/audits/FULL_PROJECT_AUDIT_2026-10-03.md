@@ -2,7 +2,7 @@
 
 Рабочий реестр: пополняется сразу после подтверждения каждой находки. Анализ текущей рабочей копии, а не только исторических аудитов. После завершения аудита пользователь разрешил выполнять срочные исправления партиями по 1–2, каждое отдельным коммитом; результаты записываются рядом с исходными находками.
 
-Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09/U11/U12/U13/U07/U06 остаются **7 срочных / 17 несрочных**; исправлены 6 пунктов, добавлен N17 о mock parity. U09/U11/U12/U13 опубликованы в `main` через PR #6 (`a81749b`), обе Quality-проверки PASS на `14c04ba`, дерево main совпадает с проверенным dev. Владелец снял только обязательный approval; PR, Application CI и остальные ограничения сохранены. U07/U06 выполнены отдельными коммитами `6845517` / `676f22a`; следующая партия ожидает собственного live CI перед main.
+Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. После U09/U11/U12/U13/U07/U06/U10/U04 остаются **5 срочных / 19 несрочных**; исправлены 8 пунктов, добавлены N17–N19. U09/U11/U12/U13 опубликованы в `main` через PR #6 (`a81749b`). U07/U06 — отдельные коммиты `6845517` / `676f22a`, обе Quality-проверки PASS на `fde2d05`, PR #7 слит в `main` (`2f99bf1`); fetched main tree точно совпадает с проверенным dev. Владелец снял только обязательный approval; PR, Application CI и остальные ограничения сохранены. U10 (`977f927`) и U04 исправлены локально следующей отдельной партией; их собственный live CI и публикация ещё впереди. В реестре теперь 32 исторических пункта; открытые production/pilot evidence не считаются закрытыми локальными тестами.
 
 ## Основание и границы
 
@@ -47,13 +47,19 @@
 
 ### U04 · P1 · Аутентифицировать backup до передачи SQL на исполнение
 
-**Подтверждение:** `server/scripts/backup.sh` всё ещё использует AES-256-CBC и соседнюю SHA-256 сумму. `restore.sh:89-95` расшифровывает напрямую в `gzip`, затем `psql --single-transaction`. Неподписанная сумма не защищает от подмены архива и checksum вместе. Финальная ошибка upstream может возникнуть уже после получения SQL процессом psql.
+**Подтверждение до исправления:** `server/scripts/backup.sh` использовал AES-256-CBC и соседнюю SHA-256 сумму. `restore.sh:89-95` расшифровывает напрямую в `gzip`, затем `psql --single-transaction`. Неподписанная сумма не защищает от подмены архива и checksum вместе. Финальная ошибка upstream может возникнуть уже после получения SQL процессом psql.
 
 **Последствия:** целостность архива не подтверждается криптографически; single transaction у psql не связывает commit с успешным завершением всех upstream-процессов. Не утверждается, что старый архив уже был подменён.
 
 **Улучшение:** аутентифицированный формат (AEAD или зрелое backup-решение), полная проверка и распаковка в защищённый временный файл до запуска SQL, удаление временного файла; репетиция повреждённого/подменённого/неполного архива.
 
-**Приёмка:** неверный тег/ключ/усечённый gzip не запускает psql и не изменяет тестовую БД; корректный backup восстанавливается. Статус: открыто, повтор security audit 26.09.
+**Приёмка:** неверный тег/ключ/усечённый gzip не запускает psql и не изменяет тестовую БД; корректный backup восстанавливается.
+
+**Исправление 03.10:** новый формат `ACHBKP01` использует AES-256-GCM с 16-byte tag, случайными salt/nonce и полным header в AAD. PBKDF2-SHA256: 600000 iterations по умолчанию, принимаемый диапазон 600000–2000000. Restore сначала завершает аутентификацию, проверяет весь gzip и распаковывает полный SQL в private temp directory (700, файлы 600); только затем запускает psql. Stage удаляется при любом исходе, существующий output не перезаписывается. Production plaintext restore и старый CBC формат отклоняются. Старые архивы не изменяются: до перехода нужен свежий backup из доверенного источника; legacy recovery требует отдельного контролируемого offline процесса. Нужны Node.js и место для gzip + полного SQL.
+
+**Доказательство:** до исправления испорченный gzip запускал fake psql; regression воспроизведён. После — **13 новых offline cases PASS**, включая header/ciphertext/tag с пересчитанным checksum, неверный ключ, truncation, legacy CBC, valid AEAD с неверным gzip, production plaintext denial и round-trip реальных shell scripts на synthetic SQL. Ни один негативный case не запускает SQL consumer; успешный получает полный точный SQL, stage очищен. Server tooling **18 PASS**, root backup/ops contract tests **7 PASS**, contract checks, shell syntax и lint PASS. Это тесты процесса с fake pg_dump/psql, без подключения к обычной БД. Внешняя PostgreSQL restore rehearsal и RPO/RTO evidence остаются открытыми. Статус: программное исправление выполнено локально отдельным коммитом; повтор security audit 26.09.
+
+**Первый CI и коррекция контракта:** backend на `0b0defc` остановился до DB smoke: прежний operations preflight требовал строку `openssl enc -aes-256-cbc`. Контракт обновлён на ACHBKP01/GCM/AAD/tag и полное SQL staging, защита не отключена. Локально воспроизведены оба failed preflight cases; после исправления все **15 ops harness tests PASS** и весь `quality:backend` PASS, включая 18 tooling, 313 files / 1241 unit tests и build. PR #8 получает обновлённый candidate и повторный полный CI. U10/U04 пока не опубликованы в main.
 
 ### U05 · P2 · Не терять идентификаторы при ротации ключей
 
@@ -77,6 +83,8 @@
 
 **Исправление 03.10:** поиск использует object where TypeORM с email transformer внутри транзакции и row lock. Истёкший pending объект переводится в expired перед сохранением замены; partial unique index разрешает гонку отсутствующей строки, только его `23505` классифицируется как 409. Уведомление выполняется после успешного commit. Четыре regression cases падали до исправления; после него **5 новых unit cases PASS**, включая фактическую генерацию SQL TypeORM с HMAC вместо открытого email, NULL scope и FOR UPDATE без подключения к БД. Три HTTP/PostgreSQL cases проверяют повтор с uppercase email, перевыпуск истёкшего scope и две конкурентные отправки. Backend **312 files / 1213 tests**, build, full lint, строгие типы нового unit-теста и типы integration-файла в обычном strict режиме PASS. HTTP/PostgreSQL cases локально не запускались: disposable DB/Redis отсутствуют. Статус: исправлено локально отдельным U06 коммитом; live replay ожидает CI этой партии.
 
+**Live CI 03.10:** PR #7 `fde2d05`, Quality run `37122629168`, backend job `111201602299` PASS. Все 11 branch-access HTTP cases, включая три новых invitation cases, прошли. Integration: **16 files / 68 tests PASS, 1 skipped**; полный backend suite: **403 files / 1435 tests PASS, 1 skipped**. Пропущенный прежний admin concurrency case также пропускался на `14c04ba` и записан в N14; он не заменяет доказательство трёх новых U06 cases.
+
 ### U07 · P1 · Изолировать интеграционные тесты от рабочей БД и Redis
 
 **Подтверждение:** `server/src/test/setup.ts:7-12` открывает общий `AppDataSource` из обычной конфигурации, комментарий допускает ту же БД «with care». `test:integration` вызывает Vitest напрямую, setup не требует отдельной test DB или подтверждения; отдельная команда prerequisite-check не вызывается автоматически.
@@ -90,6 +98,8 @@
 **Приёмка:** команда без разрешённых test targets завершается до подключения; production URL/name, shared Redis DB и remote hosts отвергаются; тесты проходят на disposable services.
 
 **Исправление 03.10:** общий setup для integration и полного backend `npm test` требует `NODE_ENV=test`, явные `TEST_DATABASE_URL` и `TEST_REDIS_URL`. PostgreSQL — только loopback, имя `*_test` / `*_test_<id>` без prod/production labels; Redis — loopback и явно выбранная DB 1–15. Query/fragment запрещены, чтобы параметры URL не могли изменить уже проверенный host/database. До динамических импортов конфигурации устанавливаются только разрешённые test URLs; обычные dotenv URL не выбирают сервисы для тестов. CI backend использует свои ephemeral services и Redis DB 15; README описывает disposable targets. Политика **24 cases PASS**, строгая проверка типов setup/policy, full lint и backend unit **311 files / 1208 tests PASS**. Фактический integration command без targets завершился до импорта теста/конфигурации, без подключения. Валидный live PostgreSQL/Redis replay локально не выполнялся; новая партия пока не опубликована и ожидает отдельной CI-проверки. Статус: исправлено локально в отдельном U07 коммите.
+
+**Live CI 03.10:** та же новая конфигурация PR #7 `fde2d05` прошла schema/migration smoke, integration профиль и полный backend suite на ephemeral PostgreSQL и Redis DB 15. Положительный запуск разрешённых targets подтверждён CI; обычный developer env не использовался.
 
 ### U08 · P2 · Удалить mock-профили из реальной Next-сборки
 
@@ -123,7 +133,11 @@
 
 **Улучшение:** общий no-store contract для authenticated/private routes, публичное кэширование только через явный allowlist; проверить 401/403 и attachment redirects/downloads.
 
-**Приёмка:** route-level проверка каждого private GET подтверждает `Cache-Control: private, no-store`, public discovery сохраняет согласованный cache. Статус: открыто, расширение прежней cache-находки.
+**Приёмка:** route-level проверка каждого private GET подтверждает `Cache-Control: private, no-store`, public discovery сохраняет согласованный cache.
+
+**Исправление 03.10:** общий onSend устанавливает `private, no-store` / `Pragma: no-cache` по умолчанию, включая ошибки, redirects, downloads и новые пути. Исключения только для GET/HEAD discovery и трёх публичных image routes по зарегистрированному route pattern, с явной public cache policy и успешным/304 статусом; credentials или Set-Cookie запрещают public cache. Hook зарегистрирован после cookie plugin, поэтому видит фактический Set-Cookie. Публичные TTL/ETag сохраняются для анонимных запросов. 18 regression cases падали на прежней политике; после исправления **28 actual Fastify cases PASS**. Backend **313 files / 1241 tests**, build, full lint, строгие типы новых tests PASS. В HTTP suites добавлены семь 401 probes и cache assertions для уже существующих authenticated catalog/reviews/analytics и permission-denied responses. Новый live replay пока не выполнялся; PR #7 предыдущей партии уже слит в main. Статус: исправлено локально, отдельная партия U10.
+
+**CI replay на `ba8d843`:** backend quality, schema/migrations и все новые cache probes PASS. Integration профиль: 74 PASS / 1 failed / 1 skipped; единственный отказ — старое буквальное ожидание `no-store` у private user export, тогда как ответ теперь `private, no-store`. Согласованы именно final HTTP assertions для user export и admin session revoke; их source header helpers по-прежнему корректно содержат `no-store`. Security policy не ослаблена. Полный integration/full replay повторяется на новом head.
 
 ### U11 · P1 · Убрать безусловный admin-доступ к содержимому broadcast-заявки
 
@@ -301,6 +315,8 @@
 
 **Дополнительное подтверждение 03.10:** test-файлы исключены из production backend build. Отдельная проверка существующего `provider-branch-access.integration.test.ts` с `strict` проходит, но добавление `noUncheckedIndexedAccess` выявляет прежние nullable array-destructuring fixtures (users, locations, offerings, requests, chats, reviews до новых U06 cases). Это ограничение покрытия типов тестов, а не ошибка новой service-сборки; новый U06 unit-файл проходит и этот усиленный режим.
 
+**Дополнительное подтверждение CI 03.10:** admin-user-status-concurrency integration case пропускается и на `14c04ba`, и на `fde2d05`. У теста есть safe-CI/pristine-fixture/session prerequisites с silent skip; конкретный невыполненный prerequisite не записан в logs. Общий green нельзя выдавать за доказательство этого admin race. В дальнейшем сделать изолированный fixture и явную диагностику prerequisites, не разрешая запись в обычную БД.
+
 **Последствия:** локальный `test:unit` PASS не проверяет эти политики. CI также запускает общий `npm test`, который включает все файлы с DB setup: это **не доказанный пропуск всех этих тестов в CI**, а несогласованность быстрых локальных проверок и специализированных suites. Часть исключённых файлов действительно требует БД или относится к legacy; не следует включать всё в unit автоматически. Один из 76 файлов — заранее существовавшая незавершённая локальная работа, это отдельно не считается дефектом.
 
 **Улучшение:** явно разделить pure/unit/integration/legacy tests; автоматически обнаруживать unit tests по соглашению, проверять необъяснимые исключения и сохранять DB isolation guard. Не присоединять DB setup к чистым тестам.
@@ -337,16 +353,36 @@
 
 **Приёмка:** те же actor/request fixtures дают одинаковую доступность и видимые offers в mock/real contracts, клиент сохраняет полный доступ к собственной заявке. Статус: открыто, новая несрочная находка при U11.
 
+### N18 · P3 · Сохранить значения с пробелами при чтении backup-конфига
+
+**Подтверждение:** `server/scripts/backup.sh` загружает `.env` через `export $(grep -v '^#' .env | xargs)`. Изолированная синтетическая строка `DATABASE_PASSWORD="synthetic password"` теряет часть значения после shell word splitting; настоящий `.env` не читался.
+
+**Последствия:** quoted password или path с пробелом может стать другим значением и сорвать backup. Наличие таких значений в production не проверялось; это отдельная проблема конфигурации, не изменение криптографического контракта U04.
+
+**Улучшение:** безопасный dotenv parser с явно разрешёнными переменными и передачей значений без shell splitting; не исполнять произвольный `.env` как shell code и не выводить secrets.
+
+**Приёмка:** quoted spaces, comments и empty values сохраняют ожидаемое значение; отказ не раскрывает пароль. Статус: открыто, новая несрочная находка при U04.
+
+### N19 · P2 · Устранить ожидание workflow публикации собственной проверки
+
+**Подтверждение:** `.github/workflows/promote-dev-to-main.yml` запускает `gh pr checks --watch --fail-fast` без фильтра required checks. PR #7 содержит check самого `Promote verified dev` на том же head. После завершения обеих Quality проверок на `fde2d05` promotion оставался в шаге ожидания PR CI; run `37122587540` в итоге cancelled. Причина self-wait следует из команды и check graph: шаг ждёт завершения workflow, в котором сам выполняется. [Официальные CLI options](https://cli.github.com/manual/gh_pr_checks) подтверждают отдельный `--required` фильтр и ожидание завершения checks через `--watch`.
+
+**Последствия:** автоматическая публикация может зависать до timeout/cancellation при зелёном Application CI; ручное обычное слияние после проверок работает. Не является основанием обходить branch protection.
+
+**Улучшение:** ждать только требуемый Application CI с ограниченным timeout и сверкой точного head SHA; проверить поддерживаемый способ merge с текущими настройками репозитория. Сохранить PR, required checks и запрет bypass.
+
+**Приёмка:** после зелёных required checks promotion завершается без ожидания самого себя; failed/stale candidate не сливается. Статус: открыто, новая несрочная находка при публикации PR #7.
+
 ## Рекомендуемый порядок работ
 
 | Очередь | Пункты | Результат следующего шага |
 | --- | --- | --- |
-| 1 | U01, U12, U13 | Работающий production key adapter и исправленные production dependencies; U09/U11 выполнены локально |
+| 1 | U01 | Работающий production key adapter; U09/U11/U12/U13 опубликованы |
 | 2 | U02, U05, N09 | Согласованная схема AAD/индексов/ротации и проверяемый rollout шифрования на реальном объёме |
-| 3 | U03, U04, U07 | MFA/step-up, проверка backup до SQL и защита integration от обычной БД |
-| 4 | U06, U08, U10, N03, N13, N14 | Исправленные invitation lookup, Next artifact checks, private caching, PWA/SEO и тестовые suites |
+| 3 | U03 | MFA/step-up; U07 опубликован, U04 исправлен программно, external restore rehearsal открыта |
+| 4 | U08, N03, N13, N14 | Next artifact checks, PWA/SEO и тестовые suites; U06 опубликован, U10 исправлен локально |
 | 5 | N04, N06, N08, N12 | Ограниченные queries, полноценная очередь owner и измеренный production performance |
-| 6 | N01, N02, N05, N07, N10, N11, N15, N16, N17 | Актуальные инструкции/реестры, CSP/type safety, тексты, модульность, supply-chain hygiene и mock authorization parity |
+| 6 | N01, N02, N05, N07, N10, N11, N15, N16, N17, N18, N19 | Актуальные инструкции/реестры, CSP/type safety, тексты, модульность, supply-chain hygiene и mock authorization parity |
 
 Пункты одной очереди можно выполнять независимо, если они не затрагивают общий data contract. U02/U05/N09 нужно проектировать вместе: несогласованное изменение индексов/формата может лишить доступа к существующим данным. Закрытие пункта требует его приёмки; один зелёный unit suite не закрывает production/integration evidence.
 

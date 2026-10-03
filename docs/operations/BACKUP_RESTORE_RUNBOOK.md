@@ -38,22 +38,38 @@ provider alert routing and the restore rehearsal remain deployment work.
 
 `npm --prefix server run db:backup` now requires
 `BACKUP_ENCRYPTION_PASSWORD_FILE` by default. It produces an encrypted
-`*.sql.gz.enc` archive using AES-256-CBC with PBKDF2 and a separate SHA-256
-checksum. Keep the password in the deployment secret manager, separate from
-the archive storage and with an audited recovery owner. Store the checksum in
-an access-controlled, immutable backup manifest; an archive and its checksum
-must never be modifiable by the same untrusted principal.
+`*.sql.gz.enc` archive in versioned ACHBKP01 format: AES-256-GCM, PBKDF2-SHA256
+(600000–2000000 iterations), random 16-byte salt, 12-byte nonce, authenticated
+header and 16-byte tag. Node.js is required. Keep the password in the deployment
+secret manager, separate from archive storage and with an audited recovery owner.
+A separate SHA-256 checksum detects transfer errors; it is not the authentication
+boundary. The AEAD tag prevents an attacker from authorizing altered ciphertext
+by rewriting the checksum.
 
 `npm --prefix server run db:restore -- <archive> <isolated-db>` verifies the
 checksum first and requires the same password file. It refuses restoring a
 plain gzip archive unless `ALLOW_UNENCRYPTED_LOCAL_RESTORE=true` is supplied
 for a deliberately local-only exercise. Likewise, an unencrypted backup needs
 the explicit `ALLOW_UNENCRYPTED_LOCAL_BACKUP=true` opt-out. Neither opt-out is
-allowed in staging or production.
+allowed in production. Use encrypted archives for staging as well.
 
 Each backup archive receives a per-run suffix, so concurrent jobs cannot
 overwrite the same timestamped file. The checksum records only the archive
 basename and restore verifies it from the archive directory, allowing an
 approved operator to move the archive and checksum together before an
-isolated restore. The restore pipeline uses `ON_ERROR_STOP=1` and a single
-transaction so a failed import cannot leave a partially restored database.
+isolated restore. Authentication completes before gzip validation and complete
+decompression into a mode-0700 temporary directory with mode-0600 files. Only
+then is psql started with `ON_ERROR_STOP=1` and a single transaction; no decrypt
+or gzip producer runs concurrently with SQL consumption. Temporary files are
+removed on exit. Reserve space for both compressed and full SQL copies; protect
+the temporary filesystem as private data storage.
+
+Legacy AES-CBC archives are rejected; they have no cryptographic authenticity
+proof. Create fresh authenticated backups from a trusted source database. Keep
+existing archives for a separately approved offline recovery investigation;
+never automatically convert or execute them. Existing archives are not modified
+by this code change. A live isolated PostgreSQL restore and timed RPO/RTO/media
+rehearsal remain external evidence; offline synthetic psql tests do not close it.
+
+The tag is accepted only after decipher finalization, as required by the
+[Node.js crypto API](https://nodejs.org/api/crypto.html#deciphersetauthtagbuffer-encoding).

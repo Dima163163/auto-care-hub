@@ -349,6 +349,10 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
         expect(ownerCatalog.body[0].locations.map((item: { location: { id: string } }) => item.location.id)).toEqual(expect.arrayContaining([locationA.id, locationB.id]))
         expect(managerRequests.body.map((item: { id: string }) => item.id)).toEqual([requestA.id])
         expect(staffRequests.body.map((item: { id: string }) => item.id)).toEqual([requestA.id])
+        for (const response of [managerCatalog, staffCatalog, ownerCatalog, managerRequests, staffRequests]) {
+            expect(response.headers['cache-control']).toBe('private, no-store')
+            expect(response.headers.pragma).toBe('no-cache')
+        }
     })
 
     it('denies direct request, chat and mutation access to another branch', async () => {
@@ -399,6 +403,10 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
         expect(managerAnalytics.status).toBe(200)
         expect(managerAnalytics.body).toMatchObject({ inquiries: 1, reviewCount: 1, averageRating: 5 })
         expect(staffAnalytics.status).toBe(403)
+        for (const response of [managerReviews, staffReviews, managerAnalytics, staffAnalytics]) {
+            expect(response.headers['cache-control']).toBe('private, no-store')
+            expect(response.headers.pragma).toBe('no-cache')
+        }
     })
 
     it('keeps review discounts branch-scoped and bonus liability owner-only', async () => {

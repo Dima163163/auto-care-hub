@@ -21,6 +21,7 @@ const CONTRACT_FILES = {
             'shasum -a 256',
             'BACKUP_MARKER_FILE',
             'find "$BACKUP_DIR" -type f',
+            'backup-crypto.mjs" encrypt',
         ],
     },
     restore: {
@@ -31,7 +32,14 @@ const CONTRACT_FILES = {
             '--set ON_ERROR_STOP=1',
             '--single-transaction',
             'ALLOW_UNENCRYPTED_LOCAL_RESTORE',
+            'backup-crypto.mjs" decrypt',
+            'gzip -t "$RESTORE_GZIP_FILE"',
+            '< "$RESTORE_SQL_FILE"',
         ],
+    },
+    crypto: {
+        path: 'server/scripts/backup-crypto.mjs',
+        fragments: ['ACHBKP01', 'aes-256-gcm', 'cipher.setAAD(header)', 'decipher.setAuthTag(tag)', "flag: 'wx'"],
     },
     runbook: {
         path: 'docs/operations/BACKUP_RESTORE_RUNBOOK.md',
