@@ -1955,3 +1955,31 @@ acceptance is pending CI. Never delete historical keys; HMAC migration and
 backup-key retirement remain N09. Cross-restart external HMAC identity must be
 pinned by the future U01 adapter. Audit remains 5 open urgent / 20 nonurgent.
 Primary dirty-file hashes remain unchanged. No subagents or skill installs.
+
+
+U05 live backend acceptance on immutable `14afc34`: PR Quality `37143037677`,
+backend `111261237103` PASS. Both field-encryption integration cases pass in
+integration and full suite, including actual password login, OAuth, uniqueness,
+invitation lookup/conflict and writes with the new KEK. Integration 16/76 PASS
+with 1 old skip; full 405/1479 PASS with 1 old skip; unit 314/1249 PASS.
+Push backend is also green, as are both frontend/real-stack/scanning jobs.
+Wait for browser and Application CI before main; do not change candidate SHA.
+U05 functional acceptance of stable-HMAC rotation is complete; audit now has
+4 remaining urgent / 20 nonurgent, publication still pending. These evidence
+notes stay local until publication. U01 service selection, U03 MFA approach,
+and U08 frontend ownership questions are pending; no answer/approval inferred.
+
+
+03 Oct — U05 published and next-batch decisions:
+PR #9 merged into main `0830e40d360fe5799026a55a8a637156c24d9a74`.
+Fetched main tree exactly equals candidate `14afc34`
+(`e612e882e5763b43d4d075fdf2056e2d0563bc6b`). Both Quality runs PASS:
+PR `37143037677`, push `37142990185`; 171 E2E / 12 PWA first-run PASS.
+U05 is published; remaining audit is 4 urgent / 20 nonurgent. Original primary
+dirty-file hashes are unchanged (3/3). The next implementation batch needs:
+external KMS selection for U01/U02 and its sync-cache/async encryption boundary;
+MFA/SSO and recovery choice for U03; explicit frontend ownership decision for
+U08 under the local role rule and user's no-subagents-by-default instruction.
+All three questions remain unanswered. No subagent or skill installation is
+authorized by silence. Final status-only publication records verified work;
+it does not introduce another runtime fix or claim pilot readiness.
