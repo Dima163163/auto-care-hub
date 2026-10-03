@@ -317,6 +317,8 @@
 
 **Приёмка:** корректный dynamic route с нужными metadata проходит; missing title/robots/canonical и неверный status на HTTP по-прежнему блокируют. Статус: открыто, новая находка. Повтор через HTTP: все 17 metadata probes PASS, итоговый exit 1 остаётся из-за проверки отсутствующих локальных HTML.
 
+**Исправление 04.10, N13:** SEO runner использует `NEXT_DIST_DIR` и фактический prerender manifest. Только объявленные static routes требуют локальный HTML; динамические маршруты требуют HTTP evidence через `--url`. Missing/invalid static HTML, noindex и неуспешный HTTP по-прежнему блокируют проверку. 7 synthetic runner tests PASS; свежая проверка конечного Next artifact/HTTP ожидает завершения пакета.
+
 ### N14 · P2 · Согласовать состав локальных unit и integration suites
 
 **Подтверждение:** из 401 backend test files текущей рабочей копии `vitest.unit.config.ts` включает 309, `vitest.integration.config.ts` — 16; 76 не входят ни в один специализированный список. Среди них чистые `secure-production-config`, `redis-rate-limit-policy`, OAuth callback/identity, email/password/session-version и outbox retry/idempotency/payload policies. В отдельной конфигурации без DB setup 12 таких файлов / 26 тестов прошли.

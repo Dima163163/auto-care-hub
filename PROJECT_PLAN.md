@@ -1996,3 +1996,6 @@ U08 under the local role rule and user's no-subagents-by-default instruction.
 All three questions remain unanswered. No subagent or skill installation is
 authorized by silence. Final status-only publication records verified work;
 it does not introduce another runtime fix or claim pilot readiness.
+
+
+04 Oct — N13: исправлен manifest-aware SEO runner и custom Next distDir; 7 синтетических тестов PASS. HTTP/static ошибки остаются blocking; финальный runtime replay ещё впереди. Отдельный коммит, общего push пока нет.
