@@ -383,6 +383,8 @@
 
 **Приёмка:** после зелёных required checks promotion завершается без ожидания самого себя; failed/stale candidate не сливается. Статус: открыто, новая несрочная находка при публикации PR #7.
 
+**Исправление несрочной порции:** отдельный bounded runner читает только required checks и требует зарегистрированные успешные Application CI для push и pull_request. Сам promotion check не выбирается. До каждого опроса и после успеха проверяются head SHA, dev→main и OPEN; merge использует `--match-head-commit`, обычный squash/auto и сохраняет ветки. Предел первого Quality wait — 45 минут, PR wait — 45 минут, полный job — 100 минут. Missing/failed/skipped/cancelled/stale checks отклоняются. **12 runner/CI-policy tests PASS**, `check:ci-cd-policy` PASS. N19: код исправлен; реальная публикация проверяется после единственного push всей порции.
+
 ### N20 · P2 · Стабилизировать ожидание готовности mock frontend в release E2E
 
 **Подтверждение:** неизменный head `0969405` прошёл весь push Quality run `37137798572`, включая Browser/PWA. PR run `37137801742` на том же SHA завершился: 169 passed, 1 flaky, 1 failed. Tablet city listbox case (`e2e/autocare-release-audit.spec.ts:443`, assertion 448) трижды получил disabled trigger за 5 seconds. Галерея/comparison case (строка 125) проходил только после retry. `gotoStable()` ждёт domcontentloaded, а не завершение hydration/API readiness. Logs также содержат mock-request proxy ECONNREFUSED; точный механизм race не доказан. Frontend tree этой порцией не менялся.

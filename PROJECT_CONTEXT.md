@@ -8,7 +8,9 @@ push, явно разрешил основному агенту прямую fro
 субагенты не запрошены, design lock сохраняется. Рабочая ветка
 `codex/nonurgent-audit-fixes-2026-10-03` от `main a29b361` с no-content sync dev.
 Основная dirty-копия не изменяется. N18 реализован и проверен 17 синтетическими
-тестами; остальные пункты в работе, единый push ещё не выполнен.
+тестами. N19 runner/policy проверен 12 тестами: required-only checks, оба Quality
+events, bounded wait и exact-head merge guard; live replay ожидает push.
+Остальные пункты в работе, единый push ещё не выполнен.
 
 This is the compact handoff for future Codex sessions. Read `AGENTS.md`, this
 file, `ARCHITECTURE.md`, and

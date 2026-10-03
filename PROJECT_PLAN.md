@@ -8,6 +8,8 @@
 
 - [x] N18: безопасная загрузка backup dotenv с allowlist и сохранением пробелов;
   17 synthetic parser/backup/restore tests PASS. Публикация ожидает весь пакет.
+- [x] N19: required-only bounded promotion wait с обоими Quality events и
+  точным head SHA; 12 runner/policy tests PASS. Live replay ожидает общий push.
 
 > Status: historical implementation roadmap
 >

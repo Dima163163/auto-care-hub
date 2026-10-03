@@ -16,7 +16,7 @@ test('rejects a promotion workflow without an explicit CI wait', async () => {
     const sources = await readCiCdPolicySources()
     const checks = validateCiCdPolicy({
         ...sources,
-        promotion: sources.promotion.replace('gh pr checks', 'gh pr status'),
+        promotionWait: sources.promotionWait.replace("'pr', 'checks'", "'pr', 'status'"),
     })
 
     assert.ok(checks.some(({ name, passed }) => name === 'Promotion requires successful CI' && !passed))
