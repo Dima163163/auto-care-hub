@@ -341,6 +341,8 @@
 
 **Приёмка:** внешние actions используют immutable refs, обновление проходит review и CI, release attestation сохраняет рабочий контракт. Статус: открыто.
 
+**Исправление несрочной порции:** все external uses в четырёх active workflows закреплены полными 40-character commit SHA, разрешёнными из официальных прежних major refs (`dependency-review-action v4` — branch, остальные — tags). Версии отмечены комментариями; job permissions/secrets не расширялись. Новая CI-проверка отклоняет tags/branches/short SHA/dynamic refs, а локальные actions и Docker digest допускает. **3 tests и check:action-pins PASS**. Provenance и процедура контролируемого обновления: `docs/operations/GITHUB_ACTION_PINS.md`. N15: immutable-ref исправление завершено; actual release attestation остаётся отдельным внешним evidence.
+
 ### N16 · P2 · Отдельно устранить проблемы development toolchain
 
 **Подтверждение:** полный npm audit, включая dev dependencies, показывает frontend **7 entries (6 high, 1 critical)**, backend **8 (3 high, 5 moderate)**. Production subset учтён в U12/U13. Дополнительная frontend-цепочка включает `shadcn → ts-morph/@ts-morph/common → fast-glob/micromatch/braces`; у backend добавляются development paths и зависимые entries. Число entries не равно числу независимых эксплойтов.

@@ -10,6 +10,8 @@
   17 synthetic parser/backup/restore tests PASS. Публикация ожидает весь пакет.
 - [x] N19: required-only bounded promotion wait с обоими Quality events и
   точным head SHA; 12 runner/policy tests PASS. Live replay ожидает общий push.
+- [x] N15: официальные action refs закреплены полными SHA, CI mutable-ref guard
+  и 3 tests PASS; provenance/update procedure записаны, permissions сохранены.
 
 > Status: historical implementation roadmap
 >
