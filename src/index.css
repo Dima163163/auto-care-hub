@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import "./shared/styles/vendor/shadcn-tailwind.css";
 @import "@fontsource/russo-one";
 @import "@fontsource-variable/onest";
 
