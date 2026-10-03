@@ -917,3 +917,33 @@ is an old exact `no-store` expectation for private user export; final HTTP now
 correctly returns `private, no-store`. Align user export and admin revoke HTTP
 assertions, keeping cache denial intact. Both updated files pass lint. U04
 crypto/tooling passes in CI (18 tests). Repeat full Quality on the new head.
+
+
+PR #8 exact-head evidence `0969405`: push Quality `37137798572` fully PASS.
+Both backend jobs pass: unit 313/1241, integration 16 files / 75 pass / 1 old
+skip, full 404 files / 1470 pass / 1 old skip; crypto/tooling 18 PASS and real
+production Next smoke PASS. PR Quality `37137801742` fails only the tablet
+city-listbox 5-second disabled-trigger assertion after all retries (169 pass,
+1 flaky, 1 fail). Same frontend SHA passes push; N20 records nondeterminism,
+not a proven production defect. One failed-jobs rerun, attempt 2, started on
+the unchanged head. Do not merge main until this required run is green.
+Remaining audit: 5 urgent / 20 nonurgent. These documentation edits stay local
+until the current immutable candidate is published; no new push yet.
+
+
+03 Oct — U10/U04 published; U05 next urgent batch:
+PR #8 is merged into main `5b6d36e`; fetched tree exactly equals tested dev
+`0969405` (tree `430a920bc9515c01c1f3606a311abc18ae85ec36`). Both Quality
+runs PASS. PR rerun attempt 2 passes 171 E2E and 12 PWA without source changes;
+N20 remains open because passing a rerun does not resolve its earlier race.
+Batch 5 starts from this main, with a no-content merge of origin/dev to preserve
+normal push ancestry. U05 separates stable HMAC getIndexKey() from rotating
+KEKs, rejects inconsistent keyrings/provider replacement, and captures envelope
+keyId once. Existing h1/keyring/envelope formats are preserved. Local focused
+17 tests, strict test types, full lint and complete quality:backend PASS
+(314 files / 1249 unit, 18 tooling, build). One new live PostgreSQL case covers
+password login/OAuth/email uniqueness/invitation conflict/new KEK writes; its
+acceptance is pending CI. Never delete historical keys; HMAC migration and
+backup-key retirement remain N09. Cross-restart external HMAC identity must be
+pinned by the future U01 adapter. Audit remains 5 open urgent / 20 nonurgent.
+Primary dirty-file hashes remain unchanged. No subagents or skill installs.

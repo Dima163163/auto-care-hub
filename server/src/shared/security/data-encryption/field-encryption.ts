@@ -27,7 +27,9 @@ export type EncryptedFieldEnvelope = {
 
 export type DataEncryptionKeyProvider = {
     activeKeyId: string
-    getKey(keyId: string): { kek: Buffer; indexKey: Buffer }
+    getKey(keyId: string): { kek: Buffer }
+    /** A stable lookup key, independent of active and historical encryption KEKs. */
+    getIndexKey(): Buffer
 }
 
 type LocalKeyring = {
@@ -64,14 +66,22 @@ function parseKeyring(text: string): DataEncryptionKeyProvider {
     if (parsed.version !== 1 || typeof parsed.activeKeyId !== 'string' || !parsed.keys?.[parsed.activeKeyId]) {
         throw new Error('Local data encryption keyring is invalid.')
     }
-    const keys = new Map<string, { kek: Buffer; indexKey: Buffer }>()
+    const keys = new Map<string, { kek: Buffer }>()
+    let stableIndexKey: Buffer | undefined
     for (const [keyId, value] of Object.entries(parsed.keys)) {
         const kek = decode(value.kek, KEY_BYTES)
         const indexKey = decode(value.indexKey, KEY_BYTES)
-        keys.set(keyId, { kek, indexKey })
+        if (stableIndexKey && !timingSafeEqual(stableIndexKey, indexKey)) {
+            throw new Error('Blind-index key rotation requires an explicit index migration.')
+        }
+        stableIndexKey ??= indexKey
+        keys.set(keyId, { kek })
     }
+    if (!stableIndexKey) throw new Error('Local data encryption keyring is invalid.')
+    const indexKey = stableIndexKey
     return {
         activeKeyId: parsed.activeKeyId,
+        getIndexKey: () => Buffer.from(indexKey),
         getKey(keyId) {
             const key = keys.get(keyId)
             if (!key) throw new Error('Data encryption key is unavailable.')
@@ -115,13 +125,31 @@ function loadLocalKeyProvider(): DataEncryptionKeyProvider {
     }
 }
 
+function withStableIndexKey(provider: DataEncryptionKeyProvider): DataEncryptionKeyProvider {
+    const key = provider.getIndexKey()
+    if (!Buffer.isBuffer(key) || key.length !== KEY_BYTES) {
+        throw new Error('Blind-index key must contain 32 bytes.')
+    }
+    const indexKey = Buffer.from(key)
+    return {
+        get activeKeyId() { return provider.activeKeyId },
+        getKey: (keyId) => provider.getKey(keyId),
+        getIndexKey: () => Buffer.from(indexKey),
+    }
+}
+
 export function setDataEncryptionKeyProviderForTests(provider: DataEncryptionKeyProvider | null) {
-    testKeyProvider = provider
+    testKeyProvider = provider ? withStableIndexKey(provider) : null
 }
 
 /** Installs an application-owned key provider before the first encrypted ORM operation. */
 export function configureDataEncryptionKeyProvider(provider: DataEncryptionKeyProvider) {
-    configuredKeyProvider = provider
+    const candidate = withStableIndexKey(provider)
+    const installed = configuredKeyProvider ?? localProvider
+    if (installed && !timingSafeEqual(installed.getIndexKey(), candidate.getIndexKey())) {
+        throw new Error('Blind-index key rotation requires an explicit index migration.')
+    }
+    configuredKeyProvider = candidate
     localProvider = null
 }
 
@@ -160,7 +188,8 @@ export function isEncryptedFieldEnvelope(value: unknown): value is EncryptedFiel
 
 export function encryptFieldValue(table: string, column: string, value: unknown): EncryptedFieldEnvelope {
     const provider = getDataEncryptionKeyProvider()
-    const { kek } = provider.getKey(provider.activeKeyId)
+    const keyId = provider.activeKeyId
+    const { kek } = provider.getKey(keyId)
     const aad = fieldAad(table, column)
     const dek = randomBytes(KEY_BYTES)
     const nonce = randomBytes(NONCE_BYTES)
@@ -175,7 +204,7 @@ export function encryptFieldValue(table: string, column: string, value: unknown)
     return {
         $encrypted: ENVELOPE_VERSION,
         algorithm: ENVELOPE_ALGORITHM,
-        keyId: provider.activeKeyId,
+        keyId,
         nonce: encode(nonce),
         tag: encode(cipher.getAuthTag()),
         ciphertext: encode(ciphertext),
@@ -223,7 +252,7 @@ export function createBlindIndex(value: string, domain: string): string {
         : value.normalize('NFKC')
     if (normalized.length < 1 || normalized.length > 320) throw new Error('Blind-index value is invalid.')
     const provider = getDataEncryptionKeyProvider()
-    const { indexKey } = provider.getKey(provider.activeKeyId)
+    const indexKey = provider.getIndexKey()
     const digest = createHmac('sha256', indexKey).update(`autocarehub:${domain}:v1:${normalized}`, 'utf8').digest('base64url')
     return `${INDEX_VERSION}_${digest}`
 }

@@ -6,7 +6,7 @@ This document describes the application-layer encryption currently implemented f
 
 - Each non-null value is JSON-encoded and encrypted with a fresh random 256-bit data-encryption key (DEK) using AES-256-GCM.
 - The DEK is separately wrapped with an AES-256-GCM key-encryption key (KEK). The database stores the authenticated envelope, key ID, nonce, tag, ciphertext, and wrapped DEK.
-- Email and OAuth subject lookups use a separate HMAC-SHA-256 blind index. This keeps login, uniqueness checks, and OAuth matching functional without storing those values in clear text. Equal values produce equal indexes within one key domain, so an attacker with a database can still observe equality and frequency.
+- Email and OAuth subject lookups use a separate HMAC-SHA-256 blind index. The provider exposes its stable 32-byte lookup key through `getIndexKey()`, separately from `activeKeyId` and `getKey(keyId)` used for encryption KEKs. Rotating the active KEK preserves email/OAuth/invitation lookup and uniqueness. Equal values produce equal indexes within one key domain, so an attacker with a database can still observe equality and frequency.
 - TypeORM transformers preserve the application-facing entity shape for ordinary reads and writes. Raw SQL, exports, search, and background workers need explicit handling; the regression test covers the core ORM path.
 
 ## Encrypted fields
@@ -31,6 +31,14 @@ In non-production, the first use creates `server/.local-keys/data-encryption.jso
 
 The server refuses to boot in `NODE_ENV=production` until the process has an explicitly configured key provider. No production KMS adapter is included yet.
 
+## Key rotation contract
+
+Routine KEK rotation must retain the existing HMAC lookup key and every historical KEK required by current rows or retained backups. Local keyring v1 remains readable without conversion: each KEK entry must contain the same `indexKey`. Adding a new KEK with the existing `indexKey` and switching `activeKeyId` preserves the existing `h1_` indexes and allows old envelopes to decrypt. A keyring containing different HMAC keys is rejected when the provider is loaded; do not remove historical entries to hide this mismatch.
+
+Configured providers receive an immutable copy of their lookup key. Replacing an already installed configured or local provider with a different HMAC key is rejected before it becomes active. An external adapter must retrieve a stable, environment-specific HMAC key independently of its active KEK. These process-level guards cannot detect replacement of the entire external key source between restarts; the future production adapter and deployment checks must pin that key identity and validate it against existing data before accepting writes.
+
+Rotating the HMAC key itself is not supported by this change. It requires a separately versioned index migration with dual lookup/backfill, uniqueness reconciliation, writer coordination and rollback verification. Never substitute a newly generated HMAC key when restarting an application that owns encrypted data. Remove an old KEK only after all affected rows have been re-encrypted, the key IDs have been reconciled, and recovery of retained backups no longer requires it; this change does not retire any key.
+
 ## Migration and rollback
 
 Migration `1786410000000-EncryptSensitivePersonalData` adds ciphertext columns for identity lookup fields and encrypts existing values in place. It preflights duplicate normalized email values and duplicate pending invitation keys. The migration uses the same key provider as the application and must run with the intended keyring available. It runs transactionally, but transforms existing rows one by one; for large production tables it needs a staged, batched migration with progress, monitoring, and a tested maintenance/dual-read strategy.
@@ -47,7 +55,7 @@ AES-GCM authenticates the field and its table/column context. The current envelo
 
 1. Implement and test a cloud KMS/HSM-backed key provider with distinct keys per environment and market. The current provider interface exposes KEK bytes to the process and TypeORM transformers are synchronous, so this needs an explicit design decision: a carefully controlled in-process key cache, or moving encryption/decryption to an asynchronous repository/service boundary. Do not wire a cloud KMS by fetching a permanent plaintext key into environment variables.
 2. Add row/tenant/market binding to authenticated data, key rotation and blind-index rotation procedures, and key availability/restore drills.
-3. Replace backup AES-CBC with authenticated encryption (for example AES-256-GCM or age with recipient keys), keep backup keys separate from database and storage credentials, and prove a restore using only the documented recovery path.
+3. Backup scripts now use authenticated ACHBKP01 AES-256-GCM archives and fully validated private SQL staging before restore; legacy CBC and production plaintext archives are rejected. Keep backup keys separate from database and storage credentials, and prove a PostgreSQL restore using only the documented recovery path. See the [backup/restore runbook](../../../docs/operations/BACKUP_RESTORE_RUNBOOK.md); the offline crypto/process tests do not replace production recovery rehearsal.
 4. Apply the migration only after a full encrypted backup and a rehearsal against a recent sanitized copy; inspect raw rows, API behavior, search/login, admin access, chat/moderation, data export/deletion, and background notifications.
 5. Encrypt private attachments and all other object storage, remove public access, and verify lifecycle deletion and backup behavior.
 6. Review logs, traces, error reporting, analytics, and exports for decrypted PII; restrict and audit data reads; establish retention/deletion and incident-response procedures.
