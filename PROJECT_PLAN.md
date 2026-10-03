@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## Несрочный пакет аудита — 2026-10-03, один итоговый push
+
+Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
+отправить пакет одним push. Основной агент явно допущен к frontend work;
+публичных контактных каналов пока нет. Design lock и внешние pilot gates сохраняются.
+
+- [x] N18: безопасная загрузка backup dotenv с allowlist и сохранением пробелов;
+  17 synthetic parser/backup/restore tests PASS. Публикация ожидает весь пакет.
+
 > Status: historical implementation roadmap
 >
 > Updated: 2026-09-05 (historical roadmap; final audit completed)

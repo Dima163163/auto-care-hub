@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { access, chmod, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -125,6 +125,25 @@ test('backup script creates an authenticated archive that restore can consume', 
     assert.equal((await readFile(path)).subarray(0, 8).toString(), 'ACHBKP01')
     await context.restore(path)
     assert.equal(await readFile(context.marker, 'utf8'), sql)
+}))
+
+test('backup loads quoted dotenv values without executing shell substitutions', async () => fixture(async (context) => {
+    const backupDir = join(context.directory, 'backups with spaces')
+    const key = join(context.directory, 'key with spaces')
+    await writeFile(key, 'synthetic password with spaces\n')
+    const dumpMarker = join(context.directory, 'dump-password')
+    const bin = join(context.directory, 'bin', 'pg_dump')
+    await writeFile(bin, `#!/usr/bin/env node\nrequire('node:fs').writeFileSync(${JSON.stringify(dumpMarker)}, process.env.PGPASSWORD); process.stdout.write(${JSON.stringify(sql)});\n`)
+    await writeFile(join(context.directory, '.env'), `DATABASE_PASSWORD="synthetic password $(do-not-execute)" # comment\nBACKUP_DIR="${backupDir}"\nBACKUP_ENCRYPTION_PASSWORD_FILE="${key}"\nPATH=/must-not-load\n`)
+    const environment = { ...context.environment }
+    delete environment.DATABASE_PASSWORD
+    delete environment.BACKUP_ENCRYPTION_PASSWORD_FILE
+    const result = await exec('bash', [backupScript], { cwd: context.directory, env: environment })
+    const path = result.stdout.match(/Backup successful: (.+)\n/)?.[1]
+    assert.ok(path?.startsWith(await realpath(backupDir)))
+    assert.equal(await readFile(dumpMarker, 'utf8'), 'synthetic password $(do-not-execute)')
+    assert.equal((await readFile(path)).subarray(0, 8).toString(), 'ACHBKP01')
+    assert.ok(!result.stdout.includes('synthetic password'))
 }))
 
 test('encrypt refuses an existing output without altering it', async () => fixture(async (context) => {

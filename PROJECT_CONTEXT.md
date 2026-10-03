@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## Текущая работа — несрочный пакет 2026-10-03
+
+Пользователь попросил исправить N01–N20 отдельными коммитами с одним итоговым
+push, явно разрешил основному агенту прямую frontend-работу и подтвердил отсутствие
+публичных контактных каналов. Это разрешение относится к текущему пакету;
+субагенты не запрошены, design lock сохраняется. Рабочая ветка
+`codex/nonurgent-audit-fixes-2026-10-03` от `main a29b361` с no-content sync dev.
+Основная dirty-копия не изменяется. N18 реализован и проверен 17 синтетическими
+тестами; остальные пункты в работе, единый push ещё не выполнен.
+
 This is the compact handoff for future Codex sessions. Read `AGENTS.md`, this
 file, `ARCHITECTURE.md`, and
 `docs/operations/PILOT_SCOPE_FREEZE.md` before changing the project.

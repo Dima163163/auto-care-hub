@@ -371,6 +371,8 @@
 
 **Приёмка:** quoted spaces, comments и empty values сохраняют ожидаемое значение; отказ не раскрывает пароль. Статус: открыто, новая несрочная находка при U04.
 
+**Исправление несрочной порции:** backup использует Node dotenv parser с allowlist переменных; shell splitting и исполнение `.env` исключены. Явные process values (включая production и пустой пароль) имеют приоритет. Три parser cases и настоящий subprocess backup с synthetic pg_dump, quoted password/path и инертной shell substitution проходят; вместе с U04 regression suite — **17 tests PASS**. Настоящий `.env` не читался, реальная БД не использовалась. N18: программное исправление завершено, общий push ещё не выполнен.
+
 ### N19 · P2 · Устранить ожидание workflow публикации собственной проверки
 
 **Подтверждение:** `.github/workflows/promote-dev-to-main.yml` запускает `gh pr checks --watch --fail-fast` без фильтра required checks. PR #7 содержит check самого `Promote verified dev` на том же head. После завершения обеих Quality проверок на `fde2d05` promotion оставался в шаге ожидания PR CI; run `37122587540` в итоге cancelled. Причина self-wait следует из команды и check graph: шаг ждёт завершения workflow, в котором сам выполняется. [Официальные CLI options](https://cli.github.com/manual/gh_pr_checks) подтверждают отдельный `--required` фильтр и ожидание завершения checks через `--watch`.
