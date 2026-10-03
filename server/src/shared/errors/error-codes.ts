@@ -1,4 +1,5 @@
 export const ERROR_CODES = {
+    AdminSearchTooBroad: 'ADMIN_SEARCH_TOO_BROAD',
     ValidationError: 'VALIDATION_ERROR',
     NotFound: 'NOT_FOUND',
     InternalServerError: 'INTERNAL_SERVER_ERROR',

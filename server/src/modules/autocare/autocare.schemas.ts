@@ -414,6 +414,14 @@ export const autoCareServiceConversationQuerySchema = z.object({
 // can progressively load older messages without knowing the thread type.
 export const autoCareChatConversationQuerySchema = autoCareServiceConversationQuerySchema
 
+// Listing threads preserves the legacy array unless the caller explicitly
+// opts into a cursor page. A conversation's default limit would opt in every
+// HTTP caller and silently change the existing response contract.
+export const autoCareChatThreadListQuerySchema = z.object({
+    cursor: z.string().trim().max(2_048).optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+}).strict()
+
 export const serviceMessageOfferDecisionSchema = z.object({
     decision: z.enum(['accept', 'decline']),
 })

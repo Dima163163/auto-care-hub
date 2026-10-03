@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../database/data-source.js'
+import { emailBlindIndexTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 import { In, IsNull } from 'typeorm'
 import {
     CabinetEntity,
@@ -58,6 +59,9 @@ import {
 } from './super-admin-market-hierarchy-policy.js'
 import type { z } from 'zod'
 import type { updateSuperAdminAutoCareMarketSchema } from './admin.schemas.js'
+
+const ADMIN_SEARCH_SCAN_ROWS = 1000
+const ADMIN_SEARCH_SCAN_MS = 1000
 
 const ADMINISTRATOR_MUTATION_LOCK_KEY = 'autocare-admin:active-super-admin-invariant'
 
@@ -259,7 +263,9 @@ export async function getAdminUsers(
     query.orderBy('user.createdAt', 'DESC').addOrderBy('user.id', 'DESC')
     const requestedCount = isPaginated ? limit + 1 : getAdminLegacyListLimit()
     let users: UserEntity[]
-    if (!search) {
+    const exactEmail = search && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(search) ? search.trim().toLowerCase() : null
+    if (exactEmail) query.andWhere('user.email = :emailIndex', { emailIndex: emailBlindIndexTransformer.to(exactEmail) })
+    if (!search || exactEmail) {
         if (normalizedInput.cursor) {
             const cursor = decodeCursor(normalizedInput.cursor, ['createdAt', 'id'])
             const cursorCreatedAt = assertCursorDate(cursor, 'createdAt')
@@ -276,7 +282,12 @@ export async function getAdminUsers(
         const searchTerm = search.toLocaleLowerCase('en-US')
         let scanCursor = normalizedInput.cursor
         const matches: UserEntity[] = []
+        let scanned = 0
+        const started = performance.now()
         while (matches.length < requestedCount) {
+            if (scanned >= ADMIN_SEARCH_SCAN_ROWS || performance.now() - started >= ADMIN_SEARCH_SCAN_MS) {
+                throw new AppError({ statusCode: 422, code: ERROR_CODES.AdminSearchTooBroad, message: 'Search exceeded its scan budget. Use a full email address or refine the search and filters.' })
+            }
             const scan = query.clone()
             if (scanCursor) {
                 const cursor = decodeCursor(scanCursor, ['createdAt', 'id'])
@@ -285,7 +296,8 @@ export async function getAdminUsers(
                     { cursorCreatedAt: assertCursorDate(cursor, 'createdAt'), cursorId: cursor.id },
                 )
             }
-            const batch = await scan.take(200).getMany()
+            const batch = await scan.take(Math.min(200, ADMIN_SEARCH_SCAN_ROWS - scanned)).getMany()
+            scanned += batch.length
             if (batch.length === 0) break
             for (const user of batch) {
                 if (user.name.toLocaleLowerCase('en-US').includes(searchTerm)

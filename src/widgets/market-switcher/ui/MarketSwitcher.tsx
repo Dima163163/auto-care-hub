@@ -139,7 +139,7 @@ export function MarketSwitcher({ variant = 'dark', compact = false }: MarketSwit
     }
 
     return (
-        <div ref={rootRef} data-market-switcher className="relative shrink-0">
+        <div ref={rootRef} data-market-switcher data-state={isLoading ? 'loading' : isError ? 'error' : markets.length ? 'ready' : 'empty'} className="relative shrink-0">
             <button
                 ref={triggerRef}
                 type="button"

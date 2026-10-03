@@ -175,6 +175,47 @@ test.describe('AutoCare real API smoke', () => {
     // deterministic, so give every case enough time to honour that response.
     test.describe.configure({ timeout: 120_000 })
 
+    if (process.env.REAL_E2E_NEXT_PRODUCTION === 'true') {
+        test('production CSP blocks untrusted inline scripts and foreign WebSockets after hydration', async ({ page }) => {
+            await page.addInitScript(() => {
+                document.addEventListener('securitypolicyviolation', (event) => {
+                    if (event.effectiveDirective === 'script-src-elem') document.documentElement.dataset.cspScriptBlocked = 'true'
+                    if (event.effectiveDirective === 'connect-src') document.documentElement.dataset.cspConnectionBlocked = 'true'
+                })
+            })
+            // Inject into the HTML parser, as an XSS payload would arrive.
+            // strict-dynamic intentionally trusts scripts created by trusted
+            // code, so appending a script from page.evaluate is not this test.
+            await page.route('**/', async (route) => {
+                if (route.request().resourceType() !== 'document') return route.continue()
+                const original = await route.fetch()
+                const html = await original.text()
+                expect(html).toContain('</head>')
+                await route.fulfill({ response: original, body: html.replace('</head>', '<script id="autocare-csp-untrusted">document.documentElement.dataset.cspInlineProbe = "executed"</script></head>') })
+            })
+            const response = await page.goto('/')
+            const policy = response?.headers()['content-security-policy'] ?? ''
+            const scriptPolicy = policy.split(';').find((value) => value.trim().startsWith('script-src ')) ?? ''
+            expect(scriptPolicy).toContain("'strict-dynamic'")
+            expect(scriptPolicy).toMatch(/'nonce-[A-Za-z0-9+/=_-]+'/)
+            expect(scriptPolicy).not.toContain("'unsafe-inline'")
+            expect(scriptPolicy).not.toContain("'unsafe-eval'")
+            await expect(page.locator('html')).toHaveAttribute('data-autocare-ready', 'ready')
+            await expect(page.locator('#autocare-csp-untrusted')).toHaveCount(1)
+            await expect(page.locator('html')).not.toHaveAttribute('data-csp-inline-probe', 'executed')
+            await expect(page.locator('html')).toHaveAttribute('data-csp-script-blocked', 'true')
+            await page.evaluate(() => {
+                try {
+                    const connection = new WebSocket('wss://csp-blocked.example.test')
+                    connection.addEventListener('error', () => connection.close())
+                } catch (error) {
+                    if (!(error instanceof DOMException && error.name === 'SecurityError')) throw error
+                }
+            })
+            await expect(page.locator('html')).toHaveAttribute('data-csp-connection-blocked', 'true')
+        })
+    }
+
     test('health, market catalog and discovery are available without MSW', async ({ page, request }) => {
         const liveness = await request.get(`${apiBaseUrl}/health/live`)
         expect(liveness.ok()).toBe(true)

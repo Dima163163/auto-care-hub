@@ -1,5 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { resolve } from 'node:path'
+import { randomBytes } from 'node:crypto'
 
 import {
     checkCanonicalRobotsConsistency,
@@ -10,10 +14,17 @@ import {
     normalizeSeoBaseUrl,
     readBoundedSeoResponse,
     runSeoReleaseChecks,
+    resolveNextBuildRoot,
+    measureInitialRouteJavaScript,
+    checkInitialRouteJavaScript,
+    INITIAL_ROUTE_JAVASCRIPT_BUDGETS,
 } from './check-seo-release.mjs'
 
-test('SEO release check always reports repository budgets and prerender contract', async () => {
-    const checks = await runSeoReleaseChecks()
+test('SEO release check always reports repository budgets and prerender contract', async (t) => {
+    const buildRoot = fixture(t)
+    mkdirSync(resolve(buildRoot, 'static'))
+    writeFileSync(resolve(buildRoot, 'static/test.js'), 'console.log(1)')
+    const checks = await runSeoReleaseChecks({ buildRoot })
     const names = new Set(checks.map((item) => item.name))
 
     assert.ok(names.has('JavaScript budget'))
@@ -43,8 +54,38 @@ test('local SEO source contracts pass without a production URL', () => {
     assert.equal(checkLocaleCoverage().status, 'pass')
 })
 
-test('request-aware root locale reports HTML verification as manual until a server URL is available', () => {
-    assert.equal(checkLocalHtmlMetadataReport().status, 'manual')
+function fixture(t, routes = {}) {
+    const directory = mkdtempSync(resolve(tmpdir(), 'autocare-seo-'))
+    t.after(() => rmSync(directory, { recursive: true, force: true }))
+    writeFileSync(resolve(directory, 'prerender-manifest.json'), JSON.stringify({ version: 4, routes, dynamicRoutes: {} }))
+    mkdirSync(resolve(directory, 'server/app'), { recursive: true })
+    return directory
+}
+const validHtml = '<title>AutoCare</title><meta name="description" content="Service"><link rel="canonical" href="https://example.test/"><meta property="og:title" content="AutoCare"><meta property="og:url" content="https://example.test/"><meta property="og:image" content="https://example.test/image.webp"><meta name="twitter:card" content="summary_large_image">'
+
+test('request-rendered routes need HTTP evidence rather than nonexistent static HTML', (t) => {
+    const buildRoot = fixture(t)
+    assert.equal(checkLocalHtmlMetadataReport({ buildRoot, routes: ['/'] }).status, 'manual')
+    assert.equal(checkLocalHtmlMetadataReport({ buildRoot, routes: ['/'], baseUrl: 'https://example.test' }).status, 'pass')
+})
+
+test('declared static routes still block on missing or invalid metadata', (t) => {
+    const buildRoot = fixture(t, { '/': {} })
+    const options = { buildRoot, routes: ['/'], baseUrl: 'https://example.test' }
+    assert.equal(checkLocalHtmlMetadataReport(options).status, 'blocked')
+    writeFileSync(resolve(buildRoot, 'server/app/index.html'), '<title>Incomplete</title>')
+    assert.equal(checkLocalHtmlMetadataReport(options).status, 'blocked')
+    writeFileSync(resolve(buildRoot, 'server/app/index.html'), validHtml)
+    assert.equal(checkLocalHtmlMetadataReport(options).status, 'pass')
+    writeFileSync(resolve(buildRoot, 'server/app/index.html'), validHtml + '<meta name="robots" content="noindex">')
+    assert.equal(checkLocalHtmlMetadataReport(options).status, 'blocked')
+})
+
+test('custom build directory is respected and outside/root directories are rejected', () => {
+    assert.equal(resolveNextBuildRoot('.next-release', '/project'), '/project/.next-release')
+    for (const directory of ['..', '../other', '.', '/outside']) {
+        assert.throws(() => resolveNextBuildRoot(directory, '/project'), /inside the project/)
+    }
 })
 
 test('bounded SEO response reader accepts UTF-8 bodies and rejects oversized headers or streams', async () => {
@@ -57,4 +98,39 @@ test('bounded SEO response reader accepts UTF-8 bodies and rejects oversized hea
         () => readBoundedSeoResponse(new Response('0123456789abcdef'), 8),
         /SEO_HTML_RESPONSE_TOO_LARGE:8/,
     )
+})
+
+
+test('route JS measurement deduplicates hashed entries in the selected build and reports raw/gzip bytes', (t) => {
+    const buildRoot = fixture(t)
+    mkdirSync(resolve(buildRoot, 'static/chunks'), { recursive: true })
+    writeFileSync(resolve(buildRoot, 'static/chunks/candidate.js'), 'console.log("candidate")')
+    const html = '<script src="/_next/static/chunks/candidate.js"></script><script src="/_next/static/chunks/candidate.js?x=1"></script>'
+    const sizes = measureInitialRouteJavaScript(html, { buildRoot, baseUrl: 'https://example.test' })
+    assert.equal(sizes.entries, 1)
+    assert.equal(sizes.rawBytes, 24)
+    assert.ok(sizes.gzipBytes > 0)
+    assert.equal(checkInitialRouteJavaScript(html, { buildRoot, baseUrl: 'https://example.test' }).status, 'pass')
+})
+
+test('route budgets fail closed on missing/mismatched/external initial artifacts', (t) => {
+    const buildRoot = fixture(t)
+    for (const html of ['<script src="/_next/static/missing.js"></script>', '<script src="https://other.test/entry.js"></script>', '<script src="/_next/static/../../../outside.js"></script>', '<title>No entries</title>']) {
+        assert.equal(checkInitialRouteJavaScript(html, { buildRoot, baseUrl: 'https://example.test' }).status, 'blocked')
+    }
+})
+
+test('initial route regression blocks independently on raw and gzip budgets', (t) => {
+    const buildRoot = fixture(t)
+    mkdirSync(resolve(buildRoot, 'static/chunks'), { recursive: true })
+    const asset = resolve(buildRoot, 'static/chunks/oversized.js')
+    const html = '<script src="/_next/static/chunks/oversized.js"></script>'
+    const options = { buildRoot, baseUrl: 'https://example.test' }
+    writeFileSync(asset, 'x'.repeat(INITIAL_ROUTE_JAVASCRIPT_BUDGETS.rawBytes + 1))
+    assert.equal(checkInitialRouteJavaScript(html, options).status, 'blocked')
+    writeFileSync(asset, randomBytes(500_000))
+    const size = measureInitialRouteJavaScript(html, options)
+    assert.ok(size.rawBytes < INITIAL_ROUTE_JAVASCRIPT_BUDGETS.rawBytes)
+    assert.ok(size.gzipBytes > INITIAL_ROUTE_JAVASCRIPT_BUDGETS.gzipBytes)
+    assert.equal(checkInitialRouteJavaScript(html, options).status, 'blocked')
 })

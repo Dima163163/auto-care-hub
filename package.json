@@ -128,7 +128,8 @@
     "check:real-api": "node scripts/check-real-api.mjs",
     "test:e2e:pwa": "playwright test -c playwright.pwa.config.ts",
     "test:e2e:visual": "playwright test -c playwright.visual.config.ts",
-    "test:e2e:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots"
+    "test:e2e:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",
+    "check:action-pins": "node scripts/check-action-pins.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -178,7 +179,6 @@
     "lucide-react": "^1.18.0",
     "msw": "^2.14.2",
     "postcss": "^8.5.28",
-    "shadcn": "^4.21.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",

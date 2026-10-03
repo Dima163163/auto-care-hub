@@ -1,5 +1,59 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## Текущее состояние несрочной порции — 4 октября 2026
+
+N01–N20 получили отдельные implementation commits. **18 программных пунктов
+реализованы и локально проверены; N09 и N11 выполнены частично.** Это не закрытие
+внешней production приёмки. Ниже исходные формулировки/статусы сохранены как
+история; актуальное состояние задают эта таблица и исправления возле каждого ID.
+Срочные U01/U02/U03/U08 остаются открытыми, 54 pilot gates и NO-GO не изменялись.
+
+| ID | Программный результат | Остаток |
+| --- | --- | --- |
+| N01 | Portable tracked agent/git rules, явный user ownership override | Нет |
+| N02 | Исторические отчёты отделены от текущей disposition/evidence | Внешние критерии отдельных исторических findings сохраняются |
+| N03 | Снято неподтверждённое production Next PWA обещание | Реализация Next PWA — отдельный будущий scope |
+| N04 | SQL-scoped bounded chats, unread aggregates, batch summaries; legacy DTO сохранён | Production load / legacy attachment cleanup |
+| N05 | Fresh nonce, строгий script/connect CSP, SSR/theme parity, HTTP и browser CI guards | Deployed proxy/real identity/realtime acceptance |
+| N06 | Initial-route raw/gzip budgets того же Next artifact и HTTP CI guard | Device/network LCP/INP/CLS и deployed Lighthouse |
+| N07 | Strict frontend compilation | Нет |
+| N08 | Exact HMAC email lookup; bounded partial scan с явным 422 | Production load / query latency |
+| N09 | **Частично:** bounded restartable engine и rollout runbook | U01/U02 решение, production DB adapter, scale/restore |
+| N10 | Подтверждённое отсутствие контактов, current year, automotive launch copy | Публичные каналы ещё не существуют |
+| N11 | **Частично:** отдельный chat read model и mock access policy | Последующие вертикальные request/provider/frontend API refactors |
+| N12 | Broadcast scope до SQL LIMIT; older match за 120 чужими строками PASS | Полная cursor queue/UI — отдельное улучшение |
+| N13 | Prerender-manifest-aware SEO; custom build directory; dynamic HTTP checks | Deployed SEO evidence |
+| N14 | Automatic unit/integration discovery, собственная admin race fixture | Exact-candidate hosted CI на PostgreSQL 16 |
+| N15 | Immutable action SHAs + mutable-ref CI guard | Actual release attestation — внешний evidence |
+| N16 | Полный dependency audit, vulnerable generator удалён, CSS сохранён byte-identically | Нет |
+| N17 | Mock broadcast participant/branch/offer privacy parity | Нет |
+| N18 | Inert allowlisted dotenv parser для backup | External backup/restore rehearsal остаётся U04 evidence |
+| N19 | Required-only bounded exact-head promotion, оба Quality events | Live promotion после единого push |
+| N20 | Bootstrap/market readiness перед исходными keyboard assertions | First-attempt hosted browser replay |
+
+**Локальная финальная приёмка:** frontend **189 files / 609 PASS**; backend unit
+**387 / 1406 PASS**, весь backend с DB setup **410 / 1494 PASS**, integration
+**23 / 88 PASS без skip**, в том числе собственный admin concurrency case.
+Fresh migrations/seed/integrity и двухпроцессный PostgreSQL smoke PASS. Использованы
+только собственные ephemeral PostgreSQL **17** / Redis **7** containers на
+loopback 29432/29379, отдельные synthetic test/real-E2E databases и keyring;
+обычная DB и primary worktree не использовались для mutations.
+
+Mock E2E **171 PASS с первого запуска**, отдельно правильный
+`NEXT_PUBLIC_MSW_STRICT=true` city replay **9 PASS** на трёх viewport profiles.
+Production Next real API: **26 existing cases + 1 новый parser CSP case PASS**;
+Vite PWA compatibility **12 PASS**. Next mock/real и Vite builds, full ESLint,
+`tsc -b`, backend build, CI/promotion/SEO/CSP/action-pin contracts PASS.
+Все **17 metadata + 17 initial JS** probes PASS; production Core Web Vitals
+не измерялись. Fresh full root/server npm audit — **0 vulnerabilities**.
+Три исходных dirty-файла primary копии повторно сверены по SHA-256: **3/3 unchanged**.
+
+Публикация пакета проводится одним git push в feature/dev, затем обычным
+protected dev→main PR с двумя exact-candidate Quality events. Статус удалённой
+приёмки проверяется в PR/Actions, а не выводится из локального PASS; дополнительный
+status-only push не требуется. Каждый runtime finding и его коррекция имеют
+отдельный коммит; proof/ограничения не смешиваются с исходным историческим аудитом.
+
 Рабочий реестр: пополняется сразу после подтверждения каждой находки. Анализ текущей рабочей копии, а не только исторических аудитов. После завершения аудита пользователь разрешил выполнять срочные исправления партиями по 1–2, каждое отдельным коммитом; результаты записываются рядом с исходными находками.
 
 Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. После U09/U11/U12/U13/U07/U06/U10/U04 и PostgreSQL-приёмки U05 остаются **4 срочных / 20 несрочных**; выполнены 9 программных исправлений, добавлены N17–N20. U05 опубликован через PR #9 в `main` (`0830e40`), обе Quality-проверки PASS на `14afc34`; fetched main tree совпадает точно. U09/U11/U12/U13 опубликованы в `main` через PR #6 (`a81749b`). U07/U06 — отдельные коммиты `6845517` / `676f22a`, обе Quality-проверки PASS на `fde2d05`, PR #7 слит в `main` (`2f99bf1`); fetched main tree точно совпадает с проверенным dev. Владелец снял только обязательный approval; PR, Application CI и остальные ограничения сохранены. U10 (`977f927`) и U04 (`3abded7`) опубликованы через PR #8 в `main` (`5b6d36e`): обе Quality-проверки PASS на `0969405`, fetched main tree совпадает точно. В реестре теперь 33 исторических пункта; открытые production/pilot evidence не считаются закрытыми локальными тестами.
@@ -197,6 +251,8 @@
 
 **Приёмка:** все активные инструкции называют одинаковые базовую ветку, способ promotion и production runtime; `check:ci-cd-policy` проходит. Статус: открыто, новая находка.
 
+**Исправление 04.10:** N01: AGENTS и tracked docs/agent-rules теперь описывают одну политику feature/dev → protected dev/main PR с exact-candidate Quality, сохранением branches/dirty files и существующего разрешения пользователя. Устранены ссылки на отсутствующие в clean checkout ignored rules и старое Bookly/Vite-only описание. Agent profiles/skills и primary ignored rules не изменялись; explicit human frontend ownership/no-subagents policy закреплены по приоритету. Проверены tracked links и diff; docs-only изменение.
+
 ### N02 · P2 · Актуализировать состояние старых аудитов и security baseline
 
 **Подтверждение:** `SECURITY.md` всё ещё перечисляет исправленные WS/quote/deletion-ошибки как open; security audit 26.09 описывает отсутствие шифрования полей, хотя сейчас есть migration `1786410000000`, transformer/subscriber. Product audit отмечает A21/A29 partial, но текущий chat service уже имеет cursor/search/filter, а provider route использует `PublicProviderFirstPaint`.
@@ -206,6 +262,8 @@
 **Улучшение:** сохранить исторические отчёты, добавить краткую таблицу актуального disposition с датой/SHA/доказательством и ссылкой на этот реестр. Отдельно подтвердить поведение A21/A29; наличие реализации не равно свежему end-to-end PASS.
 
 **Приёмка:** новый участник за один переход находит действующие open/fixed/external статусы без чтения сотен строк хронологии. Статус: открыто.
+
+**Исправление 04.10:** N02: добавлена текущая disposition table с source/evidence/pending acceptance для WS/quote/deletion/runtime/logout, A21/A29, field/backup encryption, cache и MFA. Исторические отчёты сохранены и помечены ссылкой на актуальное состояние; security baseline больше не требует трактовать старое «нет шифрования» как текущий факт. Source presence не выдаётся за свежую production/browser приёмку и не меняет 54 pilot gates. Docs diff/links reviewed.
 
 ### N03 · P2 · Перенести PWA-контур на production runtime
 
@@ -217,6 +275,8 @@
 
 **Приёмка:** проверка install/offline/update/logout cache выполняется против production Next artifact. Статус: открыто, новая находка. Любые видимые изменения требуют соблюдения design lock; реализация не выполнялась.
 
+**Исправление 04.10:** N03: выбран явно разрешённый аудитом вариант снятия неподтверждённого PWA обещания. README и runtime status теперь прямо говорят: production Next не поддерживает install/offline/update PWA; Vite Workbox/12 preview tests — только compatibility evidence. Новая UI-композиция/SW/private cache не добавлялись. Будущий Next PWA остаётся отдельной задачей с собственной artifact/browser приёмкой; pilot gates не закрываются Vite evidence.
+
 ### N04 · P2 · Ограничить объём чтения чатов и вложений
 
 **Подтверждение:** `autocare-chat.service.ts:298-325` загружает все доступные threads без cursor; `toThreadResponse:253-291` на каждый thread читает все messages с расшифровкой ради unreadCount и отдельные provider/sanction/appeal queries. `getAutoCareChatMessages:405-406` ограничивает сообщения, но получает все attachments thread.
@@ -226,6 +286,8 @@
 **Улучшение:** cursor для threads, SQL aggregation unread counts, batch provider/sanction lookup, attachments только для текущей страницы сообщений; не расшифровывать message body для счётчика.
 
 **Приёмка:** фиксированный верхний предел строк/queries на страницу, стабильная память на 10k+ сообщений при сохранении permissions/read receipts. Статус: открыто, новая находка.
+
+**Исправление 04.10:** N04: chat thread list фильтрует роль/assigned moderation/branch scope в SQL до bounded limit (legacy ≤100; optional cursor pages ≤100). Unread count агрегируется SQL без body/offer decryption; providers, latest sanctions и pending appeals грузятся batches вместо N+1. Attachment read ограничен существующей квотой 20+1; сверхлимитная legacy беседа явно отклоняется для review, а не читается целиком/молча обрезается. 36 focused cases PASS, включая synthetic 10000 unread aggregate, cursor и branch predicate. Настоящий HTTP/DB replay выявил default limit conversation-schema, превращавший legacy array в page object; thread-list получил отдельную optional-limit schema. Regression проверяет array без query, explicit limit=1 page, invalid limit=101 (400) и branch exclusion. Весь disposable PostgreSQL integration **23 files / 88 PASS без skip**, backend build/lint PASS. Cursor UI и legacy attachment cleanup не внедрялись; production нагрузочная приёмка остаётся внешней.
 
 ### N05 · P2 · Ужесточить CSP именно web HTML
 
@@ -237,6 +299,8 @@
 
 **Приёмка:** production HTML запрещает произвольный inline script/посторонний WS, штатные bootstrap/theme/chats продолжают работать. Статус: открыто.
 
+**Исправление 04.10:** N05: Next `src/proxy.js` выдаёт новый CSPRNG nonce на каждый HTML request, заменяет caller nonce/CSP headers и передаёт policy в SSR. Next framework scripts и theme bootstrap получают nonce; production script-src больше не содержит unsafe-inline/eval. Connect-src ограничен точными frontend/API HTTP/Ws origins; HTML private/no-store не переиспользует nonce. Inline CSS пока разрешён для существующих UI style props. Runtime проверка обнаружила, что Next 16.3.6 молча игнорирует `proxy.page.ts` при composite pageExtensions: root discovery использует только последнее расширение. Узкий JS adapter и расширение `js` исправляют обнаружение, не включая legacy TSX Pages Router. Финальная production build содержит Proxy; 7 HTTP samples public/services/provider/client/owner/admin PASS, включая fresh nonce, caller override и все executable SSR/theme scripts. 3 policy tests и 3 runtime-checker negative/positive tests PASS. CI проверяет реальные headers/HTML собранного Next, а не только source fragments. Browser hydration/theme/reload работают без CSP errors; live chat WebSocket остаётся real-full-stack/external приёмкой.
+
 ### N06 · P2 · Измерять производительность production Next
 
 **Подтверждение:** `check-performance-budget.mjs` и `check-bundle-splitting.mjs` читают Vite `dist/assets`. `check-seo-release.mjs` действительно имеет Next total/max budgets (5.5 MB / 600 kB), но всегда читает фиксированный `.next/static`, игнорируя `NEXT_DIST_DIR`, и не ограничивает initial route JS. В свежем real Next artifact 86 JS chunks, всего 4 231 090 bytes raw; крупнейший `3035-...js` — 562 959 bytes и включён в начальный HTML. Существующий общий SEO-бюджет он не превышает.
@@ -246,6 +310,8 @@
 **Улучшение:** согласовать initial JS/gzip/route budgets для Next, анализ общих chunks и lazy boundaries, измерить LCP/INP/CLS на устройстве/сети пилота. Проверять тот же артефакт, который публикуется.
 
 **Приёмка:** CI обнаруживает ухудшение начальной загрузки Next; до/после есть измерения, разделённые на public/client/owner/admin routes. Статус: открыто.
+
+**Исправление 04.10:** N06: initial JavaScript измеряется по distinct script entries каждого HTTP route и только выбранному NEXT_DIST_DIR; missing/external/mismatched artifacts блокируются. Raw/gzip budgets 1600000/460000 bytes действуют независимо и проверяются на живом CI production Next. Локальные 17 metadata + 17 initial-route checks PASS: 1398858 raw / 403302 gzip, 9 entries на public/provider/client/owner/admin. SEO checker 10 tests PASS, включая обе oversized regressions. Измеренный baseline и ограничения — docs/operations/NEXT_INITIAL_JAVASCRIPT_BASELINE.md. Payload не уменьшался; production real-mode Lighthouse/LCP/INP/CLS остаются внешней приёмкой.
 
 ### N07 · P2 · Включать strict-проверки frontend постепенно
 
@@ -257,6 +323,8 @@
 
 **Приёмка:** строгий отдельный профиль покрывает чувствительные границы и постепенно становится основным; malformed/null DTO дают управляемые ошибки UI. Статус: открыто.
 
+**Исправление 04.10:** N07: strict включён для всего frontend tsconfig.app.json, а не только нового пилотного профиля. Полный tsc -b PASS; existing CI/build type gate автоматически применяет strict nullability/function checks. Sensitive response-schema, refresh lifecycle и automotive DTO malformed/null regressions: 3 files / 14 PASS. any/assertion suppressions и osлабление validators не добавлялись.
+
 ### N08 · P2 · Убрать неограниченный перебор пользователей при admin search
 
 **Подтверждение:** `admin.service.ts:273-300` ищет substring имени/email после расшифровки, перебирая батчи по 200 до полного конца или заполнения страницы. Есть предел батча, но нет предела всего запроса.
@@ -266,6 +334,8 @@
 **Улучшение:** для email отдельный exact HMAC lookup; для partial search — согласованный защищённый индекс либо bounded async/search job с лимитом времени и честной индикацией неполного результата.
 
 **Приёмка:** поиск отсутствующего значения на большой выборке ограничен по времени/строкам, privacy leakage выбранного индекса описан. Статус: открыто.
+
+**Исправление 04.10:** N08: полный email ищется одним SQL запросом по stable HMAC blind index с сохранением role/status/cursor filters. Частичный поиск ограничен 1000 расшифрованных строк и проверкой elapsed budget между batches; при неполном сканировании возвращается явный ADMIN_SEARCH_TOO_BROAD (422), а не ложный пустой/полный список. UI error translation объясняет, как уточнить поиск. 4 tests PASS (index, 5-batch bound, exhausted empty, page+one/cursor), backend build, frontend types, lint PASS. Hard database statement timeout не заменяется elapsed check; production load evidence остаётся внешним.
 
 ### N09 · P2 · Сделать migration шифрования управляемой на большом объёме
 
@@ -277,6 +347,8 @@
 
 **Приёмка:** повторяемый прогон на размере целевой БД, измеренные окно/RAM/lock time и восстановление; неизвестное состояние не помечается complete. Статус: открыто.
 
+**Частичное исправление 04.10:** N09: опубликованная migration/checksum сохранена. Подготовлен bounded keyset backfill engine с budgets ≤500 rows/batch, atomic compare-write/checkpoint adapter contract, failure/restart semantics и UUID/progress validation. 3 tests PASS, включая 5000 rows по 25 и interrupted commit; build/lint PASS. Runbook задаёт expand/dual write/backfill/verify/switch/rollback/restore/HMAC-retirement. Production DB adapter и фактический масштабный rollout остаются открытыми до U01 KMS/U02 envelope решения и scale/recovery приёмки; real DB/keys/backups не менялись.
+
 ### N10 · P2 · Согласовать публичные контакты и локализацию с текущим продуктом
 
 **Подтверждение:** `Footer.tsx:24` содержит фиксированные `8 (800) 550-35-35` / `support@autocarehub.ru`; в браузере и переводах footer © 2024. `translations/landing-popular.ts` для ES/RO и других языков всё ещё описывает аренду кабинетов/помещений; приложение предлагает эти locales.
@@ -286,6 +358,8 @@
 **Улучшение:** утверждённая public contact config, актуальный год, вычитка доступных locales по автомобильным сценариям и статусам доступности mobile apps.
 
 **Приёмка:** все предлагаемые языки описывают AutoCare; публичные каналы подтверждены владельцем; недоступная функция не выглядит действующей. Статус: открыто, связано с V2-MVP-10.
+
+**Исправление 04.10:** N10: по подтверждению владельца публичных контактных каналов пока нет. В существующих footer slots заменены вымышленные телефон/email на честные локализованные статусы; copyright использует текущий год. ES/RO launch landing copy исправлен на автосервисы. Native app уже обозначено In development, store badges не являются download links; это состояние сохранено. Translation contract: 12 PASS, TypeScript и targeted lint PASS; visual layout/style не менялись.
 
 ### N11 · P2 · Разделить крупные production-модули по ответственностям
 
@@ -297,6 +371,8 @@
 
 **Приёмка:** критичный workflow прослеживается от route до transaction/DTO без поиска по нескольким мегамодулям; контракт и поведение не меняются. Статус: открыто.
 
+**Частичное исправление 04.10:** N11: выделен самостоятельный chat-read.service (permissions/cursor SQL, bounded batch read model, DTO), mutations/moderation остаются в facade без изменения публичных imports. Mock broadcast authorization/offer visibility вынесены в pure broadcast-access-policy, handler отвечает за fixtures/HTTP. Trace route→read use-case→SQL→DTO теперь отдельный; tests 36 backend + 3 MSW PASS, types/build PASS, targeted lint PASS. Это ответственная постепенная декомпозиция; прочие крупные request/provider/API модули остаются дальнейшим refactor scope, без косметического дробления по числу строк.
+
 ### N12 · P2 · Фильтровать очередь broadcast до ограничения количества строк
 
 **Подтверждение:** `getOwnerAutoCareBroadcastRequests:536-557` берёт 100 последних открытых заявок по всем рынкам, затем фильтрует рынок/филиал/услугу и expiry в памяти.
@@ -307,6 +383,8 @@
 
 **Приёмка:** релевантная заявка находится при 100+ более новых нерелевантных; другой филиал/рынок не попадает в результат. Статус: открыто.
 
+**Исправление 04.10:** N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; PostgreSQL replay с session-local temp shadow tables проверяет 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Disposable PostgreSQL 17 выявил непроставленные quotes у camelCase колонок внутри SQL EXISTS; они исправлены явно, без зависимости от автоматической property replacement TypeORM. После коррекции весь integration profile **23 files / 88 PASS, без skip**. DB только этого тестового пакета; ordinary DB не использовалась. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API.
+
 ### N13 · P2 · Исправить SEO-проверку для динамических Next routes
 
 **Подтверждение:** успешная свежая Next-сборка показывает динамические public routes; root layout читает request headers, provider route задаёт `force-dynamic`. `checkLocalHtmlMetadataReport()` требует файлы `.next/server/app/*.html` для этих маршрутов, включается даже при переданном HTTP URL. Локальная `npm run check:seo` завершилась blocked на missing routes при успешно собранном frontend.
@@ -316,6 +394,8 @@
 **Улучшение:** проверять статические файлы только для реально prerendered routes из build manifest; для dynamic routes использовать HTTP candidate server. Учитывать `NEXT_DIST_DIR` и exact artifact.
 
 **Приёмка:** корректный dynamic route с нужными metadata проходит; missing title/robots/canonical и неверный status на HTTP по-прежнему блокируют. Статус: открыто, новая находка. Повтор через HTTP: все 17 metadata probes PASS, итоговый exit 1 остаётся из-за проверки отсутствующих локальных HTML.
+
+**Исправление 04.10, N13:** SEO runner использует `NEXT_DIST_DIR` и фактический prerender manifest. Только объявленные static routes требуют локальный HTML; динамические маршруты требуют HTTP evidence через `--url`. Missing/invalid static HTML, noindex и неуспешный HTTP по-прежнему блокируют проверку. Финальный SEO checker: 10 tests PASS; 17 HTTP metadata и 17 initial-JS checks того же production candidate PASS. Dynamic routes не требуют несуществующего static HTML; production Lighthouse остаётся внешним evidence.
 
 ### N14 · P2 · Согласовать состав локальных unit и integration suites
 
@@ -331,6 +411,8 @@
 
 **Приёмка:** критичные pure policies запускаются обычной локальной unit-командой; новый тест не требует ручного добавления в огромный whitelist; остальные исключения документированы и проверяются подходящим suite. Статус: открыто, новая находка.
 
+**Исправление 04.10:** N14: backend unit/integration profiles используют auto-discovery вместо 300+ whitelist. Все pure *.test/*.spec включаются; 18 *.integration.test плюс 5 именованных DB fixtures идут в integration с обязательным isolated setup. Известный старый maintenance lease test исправлен на dual-lock mock. Финальный unit: 387 files / 1406 PASS без DB setup. Admin concurrency создаёт собственные 2 CI fixtures, временно приостанавливает и восстанавливает остальные synthetic CI admins; прежние seed/session prerequisites больше не вызывают silent skip. Собственный disposable PostgreSQL 17 replay: 23 files / 88 PASS без skip, full с DB setup 410/1494 PASS. Admin race выполнился. Hosted PostgreSQL 16 replay ожидает итогового CI; обычная developer DB не использовалась.
+
 ### N15 · P2 · Закрепить GitHub Actions по неизменяемым ревизиям
 
 **Подтверждение:** quality, promotion и release-evidence workflows используют `actions/checkout@v4`, `setup-node@v4`, `dependency-review-action@v4`, `upload-artifact@v4`, `actions/attest@v4` и `gitleaks/gitleaks-action@v2` вместо полного commit SHA.
@@ -340,6 +422,8 @@
 **Улучшение:** закрепить проверенные полные SHA с читаемыми комментариями версий, завести контролируемое обновление и review permissions/secrets по jobs.
 
 **Приёмка:** внешние actions используют immutable refs, обновление проходит review и CI, release attestation сохраняет рабочий контракт. Статус: открыто.
+
+**Исправление несрочной порции:** все external uses в четырёх active workflows закреплены полными 40-character commit SHA, разрешёнными из официальных прежних major refs (`dependency-review-action v4` — branch, остальные — tags). Версии отмечены комментариями; job permissions/secrets не расширялись. Новая CI-проверка отклоняет tags/branches/short SHA/dynamic refs, а локальные actions и Docker digest допускает. **3 tests и check:action-pins PASS**. Provenance и процедура контролируемого обновления: `docs/operations/GITHUB_ACTION_PINS.md`. N15: immutable-ref исправление завершено; actual release attestation остаётся отдельным внешним evidence.
 
 ### N16 · P2 · Отдельно устранить проблемы development toolchain
 
@@ -351,6 +435,10 @@
 
 **Приёмка:** полный audit закрыт либо каждое оставшееся исключение имеет проверенную достижимость, срок и владельца; lint/build/generation работают. Статус: открыто, новое dependency evidence.
 
+**Исправление 04.10:** N16: fresh full npm audit показал 6 frontend high entries только через неиспользуемый shadcn generator; backend уже 0. Generator удалён из devDependencies, вместе с 197 исключительно его transitive packages; остальные версии не изменились. После изменения полный root/server audit: 0 vulnerabilities. CI audit включает dev-зависимости с high threshold; force/downgrade/blanket overrides не применялись. Fresh npm ci конечного lockfile и финальные Next/Vite/PWA проверки PASS. Оставшийся CSS import shadcn/tailwind.css заменён byte-identical MIT stylesheet из shadcn 4.21.0 (SHA-256 bc7d83425702955b4cb67cb14ede9d603f9d912376d57a2d81d661094d2a782a), provenance/license сохранены в src/shared/styles/vendor. Vulnerable CLI не возвращён, visual styles не изменены.
+
+**Коррекция после clean install:** N16 follow-up: clean npm ci выявил реальный CSS import shadcn/tailwind.css. Статическая MIT CSS 4.21.0 сохранена byte-identical в src/shared/styles/vendor с license/provenance/SHA; import перенаправлен локально. CLI dependency graph не возвращён, визуальные utilities не изменены. Fresh audit остаётся 0; повтор Next build/CSS comparison обязателен перед push.
+
 ### N17 · P2 · Согласовать mock broadcast access с backend permissions
 
 **Подтверждение:** при исправлении U11 повторно проверен `src/app/mocks/handlers.ts`, GET `/api/v1/broadcast-requests/:broadcastId`: чужая заявка скрывается только от роли `client`; любой иной mock user получает полную response без provider/branch permission и offers filtering. Это отличается от backend participant policy после U11 и от его прежних owner scope checks.
@@ -360,6 +448,8 @@
 **Улучшение:** mock current user/membership/branch projections должны повторять правила backend и его 403/404 contract; добавить негативные mock cases для admin, super-admin и чужого филиала. Frontend/mock work выполнять отдельным ограниченным шагом с требуемой ownership; UI composition не менять.
 
 **Приёмка:** те же actor/request fixtures дают одинаковую доступность и видимые offers в mock/real contracts, клиент сохраняет полный доступ к собственной заявке. Статус: открыто, новая несрочная находка при U11.
+
+**Исправление 04.10:** N17: mock broadcast detail/inbox применяют active provider, requests permission, branch/market/service scope, expiry и prior-offer participant policy. Offers скрываются вне разрешённых филиалов; admin/super-admin без membership доступа не имеют. Offer creation больше не зависит от отсутствующих providerId/locationId на broadcast-заявке и проверяет выбранный филиал. 3 MSW HTTP сценария PASS (guest/foreign/privileged denial, scope/inbox, competing offers/prior participant); TypeScript и lint PASS.
 
 ### N18 · P3 · Сохранить значения с пробелами при чтении backup-конфига
 
@@ -371,6 +461,8 @@
 
 **Приёмка:** quoted spaces, comments и empty values сохраняют ожидаемое значение; отказ не раскрывает пароль. Статус: открыто, новая несрочная находка при U04.
 
+**Исправление несрочной порции:** backup использует Node dotenv parser с allowlist переменных; shell splitting и исполнение `.env` исключены. Явные process values (включая production и пустой пароль) имеют приоритет. Три parser cases и настоящий subprocess backup с synthetic pg_dump, quoted password/path и инертной shell substitution проходят; вместе с U04 regression suite — **17 tests PASS**. Настоящий `.env` не читался, реальная БД не использовалась. N18: программное исправление завершено, общий push ещё не выполнен.
+
 ### N19 · P2 · Устранить ожидание workflow публикации собственной проверки
 
 **Подтверждение:** `.github/workflows/promote-dev-to-main.yml` запускает `gh pr checks --watch --fail-fast` без фильтра required checks. PR #7 содержит check самого `Promote verified dev` на том же head. После завершения обеих Quality проверок на `fde2d05` promotion оставался в шаге ожидания PR CI; run `37122587540` в итоге cancelled. Причина self-wait следует из команды и check graph: шаг ждёт завершения workflow, в котором сам выполняется. [Официальные CLI options](https://cli.github.com/manual/gh_pr_checks) подтверждают отдельный `--required` фильтр и ожидание завершения checks через `--watch`.
@@ -380,6 +472,8 @@
 **Улучшение:** ждать только требуемый Application CI с ограниченным timeout и сверкой точного head SHA; проверить поддерживаемый способ merge с текущими настройками репозитория. Сохранить PR, required checks и запрет bypass.
 
 **Приёмка:** после зелёных required checks promotion завершается без ожидания самого себя; failed/stale candidate не сливается. Статус: открыто, новая несрочная находка при публикации PR #7.
+
+**Исправление несрочной порции:** отдельный bounded runner читает только required checks и требует зарегистрированные успешные Application CI для push и pull_request. Сам promotion check не выбирается. До каждого опроса и после успеха проверяются head SHA, dev→main и OPEN; merge использует `--match-head-commit`, обычный squash/auto и сохраняет ветки. Предел первого Quality wait — 45 минут, PR wait — 45 минут, полный job — 100 минут. Missing/failed/skipped/cancelled/stale checks отклоняются. **12 runner/CI-policy tests PASS**, `check:ci-cd-policy` PASS. N19: код исправлен; реальная публикация проверяется после единственного push всей порции.
 
 ### N20 · P2 · Стабилизировать ожидание готовности mock frontend в release E2E
 
@@ -391,7 +485,11 @@
 
 **Приёмка:** cold/warm runs во всех трёх viewport profiles воспроизводимо проходят на одном SHA; реальные disabled/error состояния дают диагностический отказ. Статус: открыто, новая несрочная CI-находка. Один rerun только failed jobs запущен на том же candidate (attempt 2), без изменения source/tests или branch protection.
 
+**Исправление 04.10:** N20: gotoStable теперь ждёт nonvisual Next bootstrap readiness (после MSW/locale initialization), city keyboard case — actual markets data-state=ready до исходных keyboard/assertions. Layout не изменён, global timeouts/retries/skip не увеличены. Локальный изолированный Next dev + strict MSW: 9 повторов до и 9 после PASS на desktop/mobile/tablet, cold/warm. Прежний CI failure локально не воспроизведён; proxy ECONNREFUSED не объявляется доказанной причиной. Полный локальный mock browser 171 first-attempt PASS; дополнительный NEXT_PUBLIC_MSW_STRICT=true city replay 9 PASS. Hosted first-attempt CI приёмка ожидает общий push.
+
 ## Рекомендуемый порядок работ
+
+**Дополнительная N05 browser-приёмка 04.10:** существующие **26 real-API cases PASS** на production Next и свежей собственной PostgreSQL/Redis fixture. Новый production-only CSP regression вставляет ненонсированный payload в исходный HTML parser, сохраняет настоящие response headers и подтверждает `script-src-elem` violation без исполнения; после hydration посторонний `wss://csp-blocked.example.test` даёт `connect-src` violation. **1 CSP browser case PASS**; normal HTML/nonce header guard остаётся отдельным CI шагом. Динамическая вставка из доверенного test script не используется как XSS-доказательство: strict-dynamic разрешает эту доверенную цепочку. Backend использовал development/test wiring и synthetic keyring; это не приёмка внешнего production KMS.
 
 | Очередь | Пункты | Результат следующего шага |
 | --- | --- | --- |

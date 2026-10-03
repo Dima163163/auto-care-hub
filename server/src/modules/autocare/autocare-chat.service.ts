@@ -1,4 +1,4 @@
-import { In, IsNull, type EntityManager, type QueryFailedError } from 'typeorm'
+import { IsNull, type EntityManager, type QueryFailedError } from 'typeorm'
 import { createHash, randomUUID } from 'node:crypto'
 import type { FastifyRequest } from 'fastify'
 
@@ -9,9 +9,6 @@ import {
     AutoCareChatThreadType,
     AutoCareChatBlockEntity,
     AutoCareChatBlockStatus,
-    AutoCareAppealEntity,
-    AutoCareAppealStatus,
-    AutoCareAppealSubject,
     AutoCareChatReportCategory,
     AutoCareChatReportEntity,
     AutoCareChatReportStatus,
@@ -31,20 +28,21 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES, type ErrorCode } from '../../shared/errors/error-codes.js'
 import type {
     AutoCareChatConversationResponse,
-    AutoCareChatThreadResponse,
     AutoCareServiceAttachmentResponse,
     AutoCareServiceMessageResponse,
     CreateAutoCareChatInput,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
+import { MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD, assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
 import { assertAutoCareAttachmentObjectKeyOwnedBy, createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
-import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission } from './provider-access.service.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit, normalizeCursorPaginationInput } from '../../shared/http/cursor-pagination.js'
 import { normalizeAutoCareChatMessageInput } from './message-content-policy.js'
 import { normalizeIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { calculateAutoCareChatExtendedExpiry, isAutoCareChatBlockEffective, normalizeAutoCareChatBlockInput, normalizeAutoCareChatModeratorAssignment, normalizeAutoCareChatModeratorExtension, normalizeAutoCareChatReportDecision, normalizeAutoCareChatReportInput, normalizeAutoCareChatReportStatus, normalizeAutoCareChatReportUuid, resolveAutoCareChatReportConflict } from './chat-moderation-policy.js'
 import { normalizeAutoCareChatInput, normalizeAutoCareChatUuid } from './chat-input-policy.js'
+import { toThreadResponse } from './chat-read.service.js'
+export { getMyAutoCareChats } from './chat-read.service.js'
 import { shouldUpdateAutoCareChatReadReceipt } from './chat-read-policy.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
 import { enqueueNotification } from '../outbox/notification-outbox.service.js'
@@ -250,83 +248,6 @@ function chatMessageIdempotencyConflict(): never {
     fail(409, 'Idempotency key was already used for a different message.')
 }
 
-async function toThreadResponse(user: UserEntity, thread: AutoCareChatThreadEntity): Promise<AutoCareChatThreadResponse> {
-    const provider = await providerForThread(thread)
-    const messages = await AppDataSource.getRepository(ServiceMessageEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id } })
-    const sanctions = await AppDataSource.getRepository(AutoCareChatBlockEntity).find({
-        where: { threadId: thread.id, blockedUserId: user.id, status: AutoCareChatBlockStatus.Active },
-        order: { createdAt: 'DESC' },
-        take: 20,
-    })
-    const sanction = sanctions.find((item) => item.sourceReportId)
-    const sanctionAppeal = sanction ? await AppDataSource.getRepository(AutoCareAppealEntity).findOneBy({
-        subject: AutoCareAppealSubject.ChatRestriction,
-        subjectId: sanction.id,
-        submittedById: user.id,
-        status: AutoCareAppealStatus.Pending,
-    }) : null
-    return {
-        id: thread.id,
-        type: thread.type,
-        status: thread.status,
-        subject: thread.subject,
-        requestId: thread.requestId,
-        providerId: thread.providerId,
-        providerName: provider?.name ?? null,
-        clientId: thread.clientId,
-        lastMessageAt: thread.lastMessageAt?.toISOString() ?? null,
-        unreadCount: messages.filter((message) => message.senderId !== user.id && !message.readAt).length,
-        moderationRestriction: sanction?.sourceReportId && sanction.reason && sanction.expiresAt
-            ? {
-                id: sanction.id,
-                reason: sanction.reason,
-                expiresAt: sanction.expiresAt.toISOString(),
-                state: sanction.expiresAt.getTime() > Date.now() ? 'active' : 'expired',
-                appealStatus: sanctionAppeal?.status ?? null,
-            }
-            : null,
-        createdAt: thread.createdAt.toISOString(),
-        updatedAt: thread.updatedAt.toISOString(),
-    }
-}
-
-export async function getMyAutoCareChats(user: UserEntity) {
-    const repository = AppDataSource.getRepository(AutoCareChatThreadEntity)
-    let threads: AutoCareChatThreadEntity[] = []
-    const scopes = await getManagedProviderPermissionScopes(user.id, 'chats')
-    if (user.role === UserRole.Client) {
-        threads = await repository.find({ where: { clientId: user.id }, order: { updatedAt: 'DESC' } })
-    }
-    if (scopes.length > 0) {
-        const providerIds = scopes.map(({ providerId }) => providerId)
-        const providerThreads = providerIds.length
-            ? await repository.find({ where: [{ providerId: In(providerIds) }, { createdById: user.id }], order: { updatedAt: 'DESC' } })
-            : await repository.find({ where: { createdById: user.id }, order: { updatedAt: 'DESC' } })
-        const requestIds = providerThreads.flatMap((thread) => thread.requestId ? [thread.requestId] : [])
-        const requests = requestIds.length
-            ? await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { id: In(requestIds) }, select: { id: true, providerId: true, locationId: true } })
-            : []
-        const requestById = new Map(requests.map((request) => [request.id, request]))
-        const visibleProviderThreads = providerThreads.filter((thread) => {
-            if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return true
-            if (!thread.providerId) return false
-            const request = thread.requestId ? requestById.get(thread.requestId) : null
-            return isManagedProviderLocationAllowed(scopes, thread.providerId, request?.locationId ?? null)
-        })
-        threads = [...new Map([...threads, ...visibleProviderThreads].map((thread) => [thread.id, thread])).values()]
-    } else if (user.role === UserRole.SuperAdmin) {
-        threads = await repository.find({ order: { updatedAt: 'DESC' } })
-    } else if (user.role === UserRole.Admin) {
-        const moderationReports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({ where: { status: AutoCareChatReportStatus.Pending, assignedModeratorId: user.id }, order: { createdAt: 'DESC' }, take: 100 })
-        const now = Date.now()
-        const activeReports = moderationReports.filter((report) => report.accessExpiresAt && report.accessExpiresAt.getTime() > now)
-        const reportedThreadIds = [...new Set(activeReports.map((report) => report.threadId))]
-        const reportedThreads = reportedThreadIds.length ? await repository.find({ where: { id: In(reportedThreadIds) }, order: { updatedAt: 'DESC' } }) : []
-        const operationalThreads = await repository.find({ where: [{ type: AutoCareChatThreadType.Support }, { type: AutoCareChatThreadType.AdminEscalation }], order: { updatedAt: 'DESC' } })
-        threads = [...new Map([...operationalThreads, ...reportedThreads].map((thread) => [thread.id, thread])).values()]
-    }
-    return Promise.all(threads.map((thread) => toThreadResponse(user, thread)))
-}
 
 export async function createAutoCareChat(user: UserEntity, input: CreateAutoCareChatInput) {
     const normalizedInput = normalizeAutoCareChatInput(input)
@@ -403,8 +324,9 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
     }
     const [messages, attachments] = await Promise.all([
         messageQuery.getMany(),
-        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { threadId: thread.id, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { threadId: thread.id, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' }, take: MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD + 1 }),
     ])
+    if (attachments.length > MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Legacy conversation exceeds its attachment quota; attachments require review before loading.' })
     const hasMore = messages.length > limit
     const page = [...(hasMore ? messages.slice(0, limit) : messages)].reverse()
     const firstMessage = page.at(0)

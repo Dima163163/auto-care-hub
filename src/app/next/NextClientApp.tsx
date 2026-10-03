@@ -119,6 +119,13 @@ export function NextClientApp({ initialPathname = '/', initialPublicProviderProf
         })()
     }, [initialProviderLocale, initialPublicProviderProfile])
 
+    useEffect(() => {
+        // Nonvisual lifecycle signal: DOMContentLoaded may still show BootShell
+        // while MSW and locale initialization are pending.
+        document.documentElement.dataset.autocareReady = ready ? 'ready' : 'loading'
+        return () => { delete document.documentElement.dataset.autocareReady }
+    }, [ready])
+
     if (!ready) {
         const providerContent = initialPublicProviderProfile
             ? <PublicProviderFirstPaint profile={initialPublicProviderProfile} locale={initialProviderLocale} selectedServiceId={initialProviderSelectedServiceId} />

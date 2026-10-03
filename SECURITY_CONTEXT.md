@@ -1,5 +1,9 @@
 # AutoCare Hub Security Context
 
+Current dated finding status: [disposition](docs/audits/CURRENT_FINDING_DISPOSITION.md).
+Implemented field/backup encryption does not close external KMS, row-scope integrity,
+MFA or recovery acceptance. Preserve the distinction between code and live evidence.
+
 Read this file before AutoCare work involving authentication, authorization,
 providers, messages, private media, bonuses, deletion/export, deployment or
 operational security. Current mandatory gates are in

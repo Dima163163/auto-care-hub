@@ -5,11 +5,10 @@ import { dirname, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const nextStaticRoot = resolve(projectRoot, '.next/static')
-const nextServerAppRoot = resolve(projectRoot, '.next/server/app')
 const publicRoot = resolve(projectRoot, 'public')
 
 export const MAX_SEO_HTML_RESPONSE_BYTES = 2 * 1024 * 1024
+export const INITIAL_ROUTE_JAVASCRIPT_BUDGETS = Object.freeze({ rawBytes: 1_600_000, gzipBytes: 460_000 })
 const SEO_METADATA_IMAGE_PATHS = [
     '/images/autocare/hero-map-generated.webp',
 ]
@@ -93,8 +92,8 @@ function parseArgs(args) {
     }
 }
 
-function checkBuildBudgets() {
-    const assets = walk(nextStaticRoot).filter((filePath) => /\.(?:js|css)$/i.test(filePath))
+function checkBuildBudgets(buildRoot) {
+    const assets = walk(resolve(buildRoot, 'static')).filter((filePath) => /\.(?:js|css)$/i.test(filePath))
     if (assets.length === 0) {
         return [check('Next.js production assets', 'blocked', 'run npm run build before checking JS/CSS budgets')]
     }
@@ -240,10 +239,10 @@ export function checkLocaleCoverage() {
         : check('Launch locale coverage', 'blocked', `missing locale coverage: ${missing.join(', ')}`)
 }
 
-function generatedHtmlPath(routePath) {
+function generatedHtmlPath(routePath, serverAppRoot) {
     const normalized = routePath === '/' ? 'index' : routePath.replace(/^\/+/, '')
     if (!normalized || normalized.includes('..') || normalized.includes('?') || normalized.includes('#')) return null
-    return resolve(nextServerAppRoot, `${normalized}.html`)
+    return resolve(serverAppRoot, `${normalized}.html`)
 }
 
 function staticMetadataRoutes() {
@@ -287,43 +286,54 @@ export async function readBoundedSeoResponse(response, maxBytes = MAX_SEO_HTML_R
     return Buffer.concat(chunks).toString('utf8')
 }
 
-export function checkLocalHtmlMetadataReport() {
-    if (!existsSync(nextServerAppRoot)) {
-        return check('Local HTML metadata report', 'manual', 'run npm run build before inspecting rendered .next/server/app HTML')
+export function resolveNextBuildRoot(distDir = process.env.NEXT_DIST_DIR || '.next', root = projectRoot) {
+    const buildRoot = resolve(root, distDir)
+    const local = relative(root, buildRoot)
+    if (!local || local === '..' || local.startsWith('../') || local.startsWith('..\\') || resolve(distDir) === distDir) {
+        throw new Error('NEXT_DIST_DIR must name a build directory inside the project.')
     }
+    return buildRoot
+}
 
-    const rootLayout = readFileSync(resolve(projectRoot, 'src/app/layout.page.tsx'), 'utf8')
-    if (rootLayout.includes('getRequestLocale()')) {
-        return check(
-            'Local HTML metadata report',
-            'manual',
-            'the root layout selects locale from request headers, so public HTML is rendered per request; pass --url to verify metadata from a running production server',
-        )
+export function checkLocalHtmlMetadataReport({ buildRoot = resolveNextBuildRoot(), baseUrl, routes = staticMetadataRoutes() } = {}) {
+    const manifestPath = resolve(buildRoot, 'prerender-manifest.json')
+    if (!existsSync(manifestPath)) {
+        return check('Local HTML metadata report', existsSync(buildRoot) ? 'blocked' : 'manual',
+            `build ${relative(projectRoot, buildRoot)} before inspecting its prerender manifest`)
     }
-
-    const missingRoutes = []
-    const invalidRoutes = []
-    for (const routePath of staticMetadataRoutes()) {
-        const htmlPath = generatedHtmlPath(routePath)
+    let manifest
+    try {
+        manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+        if (!manifest.routes || typeof manifest.routes !== 'object' || Array.isArray(manifest.routes)) throw new Error('invalid routes')
+    } catch {
+        return check('Local HTML metadata report', 'blocked', 'invalid prerender manifest')
+    }
+    const serverAppRoot = resolve(buildRoot, 'server/app')
+    const invalid = []
+    const dynamic = []
+    let inspected = 0
+    for (const routePath of routes) {
+        if (!Object.hasOwn(manifest.routes, routePath)) {
+            dynamic.push(routePath)
+            continue
+        }
+        const htmlPath = generatedHtmlPath(routePath, serverAppRoot)
         if (!htmlPath || !existsSync(htmlPath)) {
-            missingRoutes.push(routePath)
+            invalid.push(`${routePath}: declared static HTML missing`)
             continue
         }
         const html = readFileSync(htmlPath, 'utf8')
         const metadata = extractHtmlMetadata(html)
-        const required = ['title', 'description', 'canonical', 'ogTitle', 'ogUrl', 'ogImage', 'twitterCard']
-        const missing = required.filter((key) => !metadata[key])
+        const missing = ['title', 'description', 'canonical', 'ogTitle', 'ogUrl', 'ogImage', 'twitterCard'].filter((key) => !metadata[key])
         const noindex = /<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(html)
-        if (missing.length > 0 || noindex) invalidRoutes.push(`${routePath}: ${[...missing, ...(noindex ? ['robots unexpectedly noindex'] : [])].join(', ')}`)
+        if (missing.length || noindex) invalid.push(`${routePath}: ${[...missing, ...(noindex ? ['robots unexpectedly noindex'] : [])].join(', ')}`)
+        inspected += 1
     }
-
-    const serviceSource = readFileSync(resolve(projectRoot, 'src/app/services/page.page.tsx'), 'utf8')
-    if (!serviceSource.includes('getRouteMetadata') || !serviceSource.includes('hasSearchParams')) invalidRoutes.push('/services: query-aware metadata source')
-
-    if (missingRoutes.length > 0 || invalidRoutes.length > 0) {
-        return check('Local HTML metadata report', 'blocked', `missing routes: ${missingRoutes.join(', ') || 'none'}; invalid routes: ${invalidRoutes.join('; ') || 'none'}`)
+    if (invalid.length) return check('Local HTML metadata report', 'blocked', invalid.join('; '))
+    if (dynamic.length && !baseUrl) {
+        return check('Local HTML metadata report', 'manual', `${inspected} static routes inspected; ${dynamic.length} request-rendered routes require --url HTTP verification`)
     }
-    return check('Local HTML metadata report', 'pass', `${staticMetadataRoutes().length} generated public/provider HTML routes contain title, description, canonical, OG and Twitter metadata`)
+    return check('Local HTML metadata report', 'pass', `${inspected} manifest-declared static routes inspected; ${dynamic.length} request-rendered routes covered by the separate HTTP checks`)
 }
 
 function extractHtmlMetadata(html) {
@@ -339,7 +349,40 @@ function extractHtmlMetadata(html) {
     }
 }
 
-async function checkHttpMetadata(baseUrl) {
+export function measureInitialRouteJavaScript(html, { baseUrl, buildRoot = resolveNextBuildRoot() }) {
+    const base = new URL(baseUrl)
+    const paths = new Set()
+    for (const match of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+        const asset = new URL(match[1].replaceAll('&amp;', '&'), base)
+        if (asset.origin !== base.origin || asset.username || asset.password) throw new Error('Initial script points outside the candidate origin.')
+        if (!asset.pathname.startsWith('/_next/static/') || !asset.pathname.endsWith('.js')) throw new Error('Initial script is not a Next static artifact.')
+        const pathname = decodeURIComponent(asset.pathname.slice('/_next/'.length))
+        const file = resolve(buildRoot, pathname)
+        if (relative(buildRoot, file).startsWith('..') || !existsSync(file)) throw new Error('Initial script is missing from the selected candidate artifact.')
+        paths.add(file)
+    }
+    if (!paths.size) throw new Error('No initial Next JavaScript entries found.')
+    let rawBytes = 0, gzipBytes = 0
+    for (const file of paths) {
+        const contents = readFileSync(file)
+        rawBytes += contents.length
+        gzipBytes += gzipSync(contents).length
+    }
+    return { entries: paths.size, rawBytes, gzipBytes }
+}
+
+export function checkInitialRouteJavaScript(html, options) {
+    try {
+        const size = measureInitialRouteJavaScript(html, options)
+        const { rawBytes: rawBudget, gzipBytes: gzipBudget } = INITIAL_ROUTE_JAVASCRIPT_BUDGETS
+        return check('Initial JavaScript', size.rawBytes <= rawBudget && size.gzipBytes <= gzipBudget ? 'pass' : 'blocked',
+            `${size.entries} entries; ${(size.rawBytes / 1000).toFixed(1)} kB raw, ${(size.gzipBytes / 1000).toFixed(1)} kB gzip; budgets ${rawBudget / 1000}/${gzipBudget / 1000} kB`)
+    } catch (error) {
+        return check('Initial JavaScript', 'blocked', error instanceof Error ? error.message : 'candidate asset inspection failed')
+    }
+}
+
+async function checkHttpMetadata(baseUrl, buildRoot) {
     if (!baseUrl) {
         return [check('Production HTML metadata', 'manual', 'set SEO_BASE_URL or pass --url to validate rendered title, canonical and Open Graph tags')]
     }
@@ -365,6 +408,8 @@ async function checkHttpMetadata(baseUrl) {
             checks.push(check(`HTML ${pathname}`, 'blocked', `HTTP ${response.status}; ${detail}`))
             continue
         }
+        const initialJavaScript = checkInitialRouteJavaScript(html, { baseUrl, buildRoot })
+        checks.push({ ...initialJavaScript, name: `Initial JavaScript ${pathname}` })
         const metadata = extractHtmlMetadata(html)
         const isPrivate = routePath.startsWith('/admin') || routePath.startsWith('/owner') || routePath.startsWith('/profile')
         const isSearchResult = routePath === '/services' && hasSearchParams
@@ -401,16 +446,16 @@ function checkLighthouseAvailability(baseUrl) {
 export async function runSeoReleaseChecks(options = {}) {
     const baseUrl = options.baseUrl ? normalizeSeoBaseUrl(options.baseUrl) : undefined
     return [
-        ...checkBuildBudgets(),
+        ...checkBuildBudgets(options.buildRoot ?? resolveNextBuildRoot()),
         ...checkMediaBudgets(),
         ...checkPrerenderContract(),
         checkOgImageExistence(),
         checkCanonicalRobotsConsistency(),
         checkProductionUrlSafety(),
         checkLocaleCoverage(),
-        checkLocalHtmlMetadataReport(),
+        checkLocalHtmlMetadataReport({ buildRoot: options.buildRoot ?? resolveNextBuildRoot(), baseUrl }),
         checkLighthouseAvailability(baseUrl),
-        ...(await checkHttpMetadata(baseUrl)),
+        ...(await checkHttpMetadata(baseUrl, options.buildRoot ?? resolveNextBuildRoot())),
     ]
 }
 

@@ -6,9 +6,10 @@ umask 077
 # AutoCare Hub Database Backup Script
 # This script creates a compressed SQL dump of the PostgreSQL database.
 
-# Load environment variables from .env file if it exists
-if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+# Parse data, never shell code. Explicit process configuration takes precedence.
+if [ -f .env ] && [ "${AUTOCARE_BACKUP_ENV_LOADED:-false}" != "true" ]; then
+  exec node "$SCRIPT_DIR/backup-env.mjs" "$SCRIPT_DIR/backup.sh" "$@"
 fi
 
 # Configuration
@@ -16,8 +17,7 @@ DB_HOST=${DATABASE_HOST:-localhost}
 DB_PORT=${DATABASE_PORT:-5433}
 DB_NAME=${DATABASE_NAME:-autocarehub}
 DB_USER=${DATABASE_USER:-autocarehub}
-DB_PASS=${DATABASE_PASSWORD:-autocarehub}
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+DB_PASS=${DATABASE_PASSWORD-autocarehub}
 REPOSITORY_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd -P)
 DEFAULT_STATE_DIR=${XDG_STATE_HOME:-"${HOME:?HOME must be set}/.local/state"}
 BACKUP_DIR=${BACKUP_DIR:-"$DEFAULT_STATE_DIR/autocarehub/backups"}

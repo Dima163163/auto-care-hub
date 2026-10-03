@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 
 import { getAppMetadata, getRequestLocale } from './metadata'
 import '../index.css'
@@ -25,6 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
     const initialLanguage = await getRequestLocale()
+    const nonce = (await headers()).get('x-nonce') ?? undefined
     return (
         <html lang={initialLanguage} suppressHydrationWarning>
             <head>
@@ -34,7 +36,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                     theme before the body (and its loading skeletons) can paint,
                     so dark mode never flashes a light skeleton surface.
                 */}
-                <script id="autocare-theme-bootstrap" dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+                <script nonce={nonce} id="autocare-theme-bootstrap" dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
             </head>
             <body>{children}</body>
         </html>

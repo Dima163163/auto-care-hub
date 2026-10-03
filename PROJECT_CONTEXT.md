@@ -1,5 +1,41 @@
 # AutoCare Hub Project Context
 
+## Текущая работа — несрочный пакет 2026-10-03
+
+Пользователь попросил исправить N01–N20 отдельными коммитами с одним итоговым
+push, явно разрешил основному агенту прямую frontend-работу и подтвердил отсутствие
+публичных контактных каналов. Это разрешение относится к текущему пакету;
+субагенты не запрошены, design lock сохраняется. Рабочая ветка
+`codex/nonurgent-audit-fixes-2026-10-03` от `main a29b361` с no-content sync dev.
+Основная dirty-копия сохранена по SHA-256 (3/3). N01–N20 получили отдельные
+implementation commits: 18 программных пунктов реализованы, N09 backfill DB
+adapter/rollout и N11 дальнейшая вертикальная декомпозиция остаются частичными.
+Полная таблица текущих статусов/evidence —
+`docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`; исторические open-формулировки
+ниже неё не являются новым backlog. U01/U02/U03/U08 и external pilot NO-GO открыты.
+
+Локальная приёмка: frontend 189/609; backend unit 387/1406; backend full с
+isolated DB 410/1494; integration 23/88 без skip; migration/seed/integrity и
+двухпроцессный transition smoke PASS. Docker Desktop удалось запустить;
+использованы только собственные temporary PostgreSQL 17/Redis 7 containers,
+fresh synthetic DB/keyring, не developer DB. Hosted CI использует PostgreSQL 16.
+Mock E2E 171 first-attempt PASS; strict-MSW city 9 PASS; production Next real API
+26 existing cases + 1 parser-inserted CSP case PASS; Vite PWA compatibility 12 PASS.
+Next mock/real, Vite, strict types, lint, backend build и contract checks PASS;
+17 metadata + 17 initial-route JS probes PASS; полный root/server audit 0.
+
+N05 uses `src/proxy.js`: Next 16.3.6 silently ignores composite `proxy.page.ts`
+despite its local docs; production HTTP guard catches missing Proxy/CSP. N16
+vendors identical MIT shadcn CSS without its vulnerable CLI graph. N04's list
+schema has no default limit, preserving the legacy array unless pagination is
+requested; N12 explicitly quotes camelCase SQL references (real DB regressions).
+
+Пакет публикуется одним push в feature/dev, затем protected dev→main PR. N19 live
+required-only promotion и оба exact-candidate Quality events нужно проверять по
+PR/Actions; не принимать локальные PASS за hosted/pilot acceptance. Отдельный
+status-only push не нужен. Tracked docs/agent-rules — canonical; ignored старые
+правила не требуют повторного ownership approval. Проценты 54 gates не менялись.
+
 This is the compact handoff for future Codex sessions. Read `AGENTS.md`, this
 file, `ARCHITECTURE.md`, and
 `docs/operations/PILOT_SCOPE_FREEZE.md` before changing the project.

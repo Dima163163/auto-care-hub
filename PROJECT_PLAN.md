@@ -1,5 +1,50 @@
 # AutoCare Hub — Project Plan
 
+## Несрочный пакет аудита — 2026-10-03, один итоговый push
+
+Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
+отправить пакет одним push. Основной агент явно допущен к frontend work;
+публичных контактных каналов пока нет. Design lock и внешние pilot gates сохраняются.
+
+- [x] N18: безопасная загрузка backup dotenv с allowlist и сохранением пробелов;
+  17 synthetic parser/backup/restore tests PASS. Публикация ожидает весь пакет.
+- [x] N19: required-only bounded promotion wait с обоими Quality events и
+  точным head SHA; 12 runner/policy tests PASS. Live replay ожидает общий push.
+- [x] N15: официальные action refs закреплены полными SHA, CI mutable-ref guard
+  и 3 tests PASS; provenance/update procedure записаны, permissions сохранены.
+- [x] N05: nonce CSP в production Next; исправлена composite-extension detection
+  Next 16.3.6, 7 runtime samples и 6 policy/checker tests PASS, CI HTTP guard.
+- [x] N06: Next initial-route raw/gzip budgets на выбранном artifact; 17 HTTP
+  metadata + 17 JS checks и 10 checker tests PASS. Device Core Web Vitals открыты.
+- [x] N12: SQL scope до LIMIT; реальный PostgreSQL regression older-match за 120
+  чужими requests PASS. Quotes исправлены после воспроизведения; integration 23/88 PASS.
+- [x] N04: bounded scoped chats, SQL unread aggregation и batch summaries;
+  legacy array/explicit page/invalid limit/branch HTTP regressions PASS (23/88 integration).
+- [x] N05 browser regression: parser-inserted inline payload и foreign WebSocket
+  заблокированы на production Next после hydration; 26 existing real cases + 1 CSP PASS.
+- [x] N01/N02: portable canonical rules, актуальная disposition исторических audits.
+- [x] N03: неподтверждённый production Next PWA claim снят; compatibility 12 PASS.
+- [x] N07/N08: whole-frontend strict; HMAC exact email и bounded partial search.
+- [x] N10: отсутствие public contacts подтверждено владельцем; footer/year и
+  automotive copy launch locales исправлены без изменения дизайна.
+- [x] N13/N14: manifest-aware SEO, automatic test profiles и собственный admin
+  concurrency fixture; disposable PostgreSQL integration 23/88 PASS без skip.
+- [x] N16/N17: полный root/server audit 0; идентичный MIT CSS сохранён; mock privacy parity.
+- [x] N20: 171 mock E2E first-attempt PASS; отдельно 9 strict-MSW city repeats PASS.
+- [ ] N09: engine/runbook готовы, production DB adapter и масштабный rollout
+  ожидают U01/U02 key/envelope решения и recovery evidence.
+- [ ] N11: chat read model и mock access policy выделены; дальнейшие
+  request/provider/frontend API вертикальные refactors остаются в реестре.
+
+Итог локальной приёмки пакета: frontend 189/609; backend unit 387/1406;
+backend full с isolated DB 410/1494; integration 23/88 без skip; migrations,
+seed/integrity и PostgreSQL multi-process smoke PASS. Next mock/real, Vite,
+ESLint/strict types/server build и contracts PASS; 17 HTTP metadata + 17 initial
+JS budgets PASS; 26 existing real-API + 1 CSP case и 12 PWA compatibility PASS.
+Primary dirty hashes 3/3 unchanged. Одно общее отправление feature/dev, затем
+protected dev→main PR по exact-candidate Quality; remote evidence фиксируется
+в PR/Actions. External NO-GO/54-gate denominator сохраняются.
+
 > Status: historical implementation roadmap
 >
 > Updated: 2026-09-05 (historical roadmap; final audit completed)
@@ -1983,3 +2028,54 @@ U08 under the local role rule and user's no-subagents-by-default instruction.
 All three questions remain unanswered. No subagent or skill installation is
 authorized by silence. Final status-only publication records verified work;
 it does not introduce another runtime fix or claim pilot readiness.
+
+
+04 Oct — N13: исправлен manifest-aware SEO runner и custom Next distDir; 7 синтетических тестов PASS. HTTP/static ошибки остаются blocking; финальный runtime replay ещё впереди. Отдельный коммит, общего push пока нет.
+
+
+04 Oct — N10: по подтверждению владельца публичных контактных каналов пока нет. В существующих footer slots заменены вымышленные телефон/email на честные локализованные статусы; copyright использует текущий год. ES/RO launch landing copy исправлен на автосервисы. Native app уже обозначено In development, store badges не являются download links; это состояние сохранено. Translation contract: 12 PASS, TypeScript и targeted lint PASS; visual layout/style не менялись. Отдельный коммит; общий push ещё впереди.
+
+
+04 Oct — N17: mock broadcast detail/inbox применяют active provider, requests permission, branch/market/service scope, expiry и prior-offer participant policy. Offers скрываются вне разрешённых филиалов; admin/super-admin без membership доступа не имеют. Offer creation больше не зависит от отсутствующих providerId/locationId на broadcast-заявке и проверяет выбранный филиал. 3 MSW HTTP сценария PASS (guest/foreign/privileged denial, scope/inbox, competing offers/prior participant); TypeScript и lint PASS. Отдельный коммит; общий push ожидает остальные исправления.
+
+
+04 Oct — N14: backend unit/integration profiles используют auto-discovery вместо 300+ whitelist. Все pure *.test/*.spec включаются; 17 *.integration.test плюс 5 именованных DB fixtures идут в integration с обязательным isolated setup. Известный старый maintenance lease test исправлен на dual-lock mock. Unit: 384 files / 1396 PASS без DB setup (loopback port 9). Admin concurrency создаёт собственные 2 CI fixtures, временно приостанавливает и восстанавливает остальные synthetic CI admins; прежние seed/session prerequisites больше не вызывают silent skip. Свежий PostgreSQL replay расширенных 22 integration files ожидает итогового CI; обычная developer DB не использовалась. Отдельный коммит N14, общий push ещё не выполнен.
+
+
+04 Oct — N08: полный email ищется одним SQL запросом по stable HMAC blind index с сохранением role/status/cursor filters. Частичный поиск ограничен 1000 расшифрованных строк и проверкой elapsed budget между batches; при неполном сканировании возвращается явный ADMIN_SEARCH_TOO_BROAD (422), а не ложный пустой/полный список. UI error translation объясняет, как уточнить поиск. 4 tests PASS (index, 5-batch bound, exhausted empty, page+one/cursor), backend build, frontend types, lint PASS. Hard database statement timeout не заменяется elapsed check; production load evidence остаётся внешним. Отдельный коммит; общий push ещё впереди.
+
+
+04 Oct — N16: fresh full npm audit показал 6 frontend high entries только через неиспользуемый shadcn generator; backend уже 0. Generator удалён из devDependencies, вместе с 197 исключительно его transitive packages; остальные версии не изменились. После изменения полный root/server audit: 0 vulnerabilities. CI audit включает dev-зависимости с high threshold; force/downgrade/blanket overrides не применялись. Проверка npm ci конечного lockfile и полный candidate suite впереди. Отдельный коммит N16.
+
+
+04 Oct — N01: AGENTS и tracked docs/agent-rules теперь описывают одну политику feature/dev → protected dev/main PR с exact-candidate Quality, сохранением branches/dirty files и существующего разрешения пользователя. Устранены ссылки на отсутствующие в clean checkout ignored rules и старое Bookly/Vite-only описание. Agent profiles/skills и primary ignored rules не изменялись; explicit human frontend ownership/no-subagents policy закреплены по приоритету. Проверены tracked links и diff; docs-only изменение. Отдельный коммит N01.
+
+
+04 Oct — N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; добавлен PostgreSQL replay с session-local temp shadow tables: 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Его запуск ожидает isolated CI. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API. Отдельный коммит N12.
+
+
+04 Oct — N04: chat thread list фильтрует роль/assigned moderation/branch scope в SQL до bounded limit (legacy ≤100; optional cursor pages ≤100). Unread count агрегируется SQL без body/offer decryption; providers, latest sanctions и pending appeals грузятся batches вместо N+1. Attachment read ограничен существующей квотой 20+1; сверхлимитная legacy беседа явно отклоняется для review, а не читается целиком/молча обрезается. 36 focused cases PASS, включая synthetic 10000 unread aggregate, cursor и branch predicate; backend build/lint/API contract/parity PASS. Cursor UI и legacy attachment cleanup не внедрялись; production нагрузочная приёмка остаётся внешней. Отдельный коммит N04.
+
+
+04 Oct — N05: Next proxy.page.ts выдаёт новый CSPRNG nonce на каждый HTML request, заменяет caller nonce/CSP headers и передаёт policy в SSR. Next framework scripts и theme bootstrap получают nonce; production script-src больше не содержит unsafe-inline/eval. Connect-src ограничен точными frontend/API HTTP/Ws origins; HTML private/no-store не переиспользует nonce. Inline CSS пока разрешён для существующих UI style props. 3 policy negative/positive cases, TypeScript/lint PASS; enforced policy runtime/theme/hydration/WebSocket replay ожидает финальный Next artifact. Отдельный коммит N05.
+
+
+04 Oct — N03: выбран явно разрешённый аудитом вариант снятия неподтверждённого PWA обещания. README и runtime status теперь прямо говорят: production Next не поддерживает install/offline/update PWA; Vite Workbox/12 preview tests — только compatibility evidence. Новая UI-композиция/SW/private cache не добавлялись. Будущий Next PWA остаётся отдельной задачей с собственной artifact/browser приёмкой; pilot gates не закрываются Vite evidence. Отдельный коммит N03.
+
+
+04 Oct — N07: strict включён для всего frontend tsconfig.app.json, а не только нового пилотного профиля. Полный tsc -b PASS; existing CI/build type gate автоматически применяет strict nullability/function checks. Sensitive response-schema, refresh lifecycle и automotive DTO malformed/null regressions: 3 files / 14 PASS. any/assertion suppressions и osлабление validators не добавлялись. Отдельный коммит N07.
+
+
+04 Oct — N09: опубликованная migration/checksum сохранена. Подготовлен bounded keyset backfill engine с budgets ≤500 rows/batch, atomic compare-write/checkpoint adapter contract, failure/restart semantics и UUID/progress validation. 3 tests PASS, включая 5000 rows по 25 и interrupted commit; build/lint PASS. Runbook задаёт expand/dual write/backfill/verify/switch/rollback/restore/HMAC-retirement. Production DB adapter и фактический масштабный rollout остаются открытыми до U01 KMS/U02 envelope решения и scale/recovery приёмки; real DB/keys/backups не менялись. Отдельный коммит N09.
+
+
+04 Oct — N11: выделен самостоятельный chat-read.service (permissions/cursor SQL, bounded batch read model, DTO), mutations/moderation остаются в facade без изменения публичных imports. Mock broadcast authorization/offer visibility вынесены в pure broadcast-access-policy, handler отвечает за fixtures/HTTP. Trace route→read use-case→SQL→DTO теперь отдельный; tests 36 backend + 3 MSW PASS, types/build PASS, targeted lint PASS. Это ответственная постепенная декомпозиция; прочие крупные request/provider/API модули остаются дальнейшим refactor scope, без косметического дробления по числу строк. Отдельный коммит N11.
+
+
+04 Oct — N02: добавлена текущая disposition table с source/evidence/pending acceptance для WS/quote/deletion/runtime/logout, A21/A29, field/backup encryption, cache и MFA. Исторические отчёты сохранены и помечены ссылкой на актуальное состояние; security baseline больше не требует трактовать старое «нет шифрования» как текущий факт. Source presence не выдаётся за свежую production/browser приёмку и не меняет 54 pilot gates. Docs diff/links reviewed. Отдельный коммит N02.
+
+
+04 Oct — N20: gotoStable теперь ждёт nonvisual Next bootstrap readiness (после MSW/locale initialization), city keyboard case — actual markets data-state=ready до исходных keyboard/assertions. Layout не изменён, global timeouts/retries/skip не увеличены. Локальный изолированный Next dev + strict MSW: 9 повторов до и 9 после PASS на desktop/mobile/tablet, cold/warm. Прежний CI failure локально не воспроизведён; proxy ECONNREFUSED не объявляется доказанной причиной. Финальная first-attempt CI/browser приёмка впереди. Отдельный коммит N20.
+
+
+04 Oct — N16 follow-up: clean npm ci выявил реальный CSS import shadcn/tailwind.css. Статическая MIT CSS 4.21.0 сохранена byte-identical в src/shared/styles/vendor с license/provenance/SHA; import перенаправлен локально. CLI dependency graph не возвращён, визуальные utilities не изменены. Fresh audit остаётся 0; повтор Next build/CSS comparison обязателен перед push.
