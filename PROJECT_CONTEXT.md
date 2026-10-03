@@ -909,3 +909,11 @@ ACHBKP01/GCM/AAD/tag and completed SQL staging, preserving all restore guards.
 Both failed preflight cases reproduced locally; all 15 ops harness tests and
 complete `quality:backend` now PASS (18 tooling, 313/1241 unit, build). Publish
 this follow-up and require complete CI on the new exact head before main.
+
+
+U10 CI contract correction: `ba8d843` passes all backend quality, migration and
+new cache cases; integration is 74 pass / 1 fail / 1 old skip. The one failure
+is an old exact `no-store` expectation for private user export; final HTTP now
+correctly returns `private, no-store`. Align user export and admin revoke HTTP
+assertions, keeping cache denial intact. Both updated files pass lint. U04
+crypto/tooling passes in CI (18 tests). Repeat full Quality on the new head.
