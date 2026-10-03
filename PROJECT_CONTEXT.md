@@ -829,3 +829,18 @@ There is no approving review yet; GitHub's independent review gate still blocks
 main. U07/U06 remain separate local commits on `codex/urgent-audit-batch-3`,
 keeping the green promotion candidate stable. Remaining findings: 7 urgent /
 17 nonurgent. The primary checkout is preserved; pilot remains NO-GO.
+
+### Main promotion and next dev candidate — 2026-10-03
+
+The owner removed only Require approvals from the main branch rule. Browser
+verification confirms PR and Application CI requirements, up-to-date branches,
+conversation resolution, linear history, no bypass, no force push and no
+deletion are preserved. PR #6 merged normally as `a81749b`; fetched main's tree
+exactly equals Quality-tested dev `14c04ba` (both workflows passed).
+
+U07 `6845517` and U06 `676f22a` are separate commits on the next batch branch.
+Synchronizing the new main squash caused only three documentation conflicts;
+preserving this branch's audit/handoff documents yielded an index identical to
+`676f22a` before this status update. Runtime and each urgent commit are intact.
+The next dev candidate must pass its own isolated PostgreSQL/Redis and full
+Quality checks before main. The primary checkout remains untouched.

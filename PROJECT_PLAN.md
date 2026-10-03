@@ -1836,7 +1836,9 @@ production acceptance or design-approval requirements.
 - [x] Both push and PR Quality workflows PASS on exact candidate `14c04ba`,
   including dependency/secret scanning, backend migrations/tests, browser E2E,
   real full-stack production smoke and aggregate Application CI.
-- [ ] Required independent approving review still blocks main merge in GitHub.
+- [x] Owner removed the approval requirement for this solo repository; PR,
+  Application CI, up-to-date branches and other protection settings remain.
+  PR #6 merged into main as `a81749b`; its tree exactly matches tested `14c04ba`.
 
 ### Urgent audit fixes, batch 3 — 2026-10-03
 
@@ -1858,3 +1860,7 @@ production acceptance or design-approval requirements.
 - [ ] U06 HTTP cases and valid U07 targets await this batch's isolated CI.
 - [ ] Remaining after U07/U06: **7 urgent / 17 nonurgent**. Each has its own
   commit on `codex/urgent-audit-batch-3`; PR #6 keeps candidate `14c04ba`.
+- [x] U07/U06 commits `6845517` / `676f22a` synchronized with published main.
+  The only conflicts were handoff/audit documents; before this status update,
+  the resolved index exactly matched the verified U06 tree. Publish to dev and
+  require this batch's own CI before its next main promotion.
