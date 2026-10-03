@@ -1909,3 +1909,11 @@ squash of tested dev `fde2d05` with exactly the same tree. The merge conflicts
 were only audit/handoff documents; after resolving them, the index exactly
 matched U04 `3abded7` before this note. Runtime changes and both urgent commits
 are preserved. Publish dev normally, run complete candidate CI, then merge main.
+
+
+PR #8 CI correction: backend on `0b0defc` failed the old production operations
+source contract, which still demanded AES-CBC. Updated the contract to require
+ACHBKP01/GCM/AAD/tag and completed SQL staging, preserving all restore guards.
+Both failed preflight cases reproduced locally; all 15 ops harness tests and
+complete `quality:backend` now PASS (18 tooling, 313/1241 unit, build). Publish
+this follow-up and require complete CI on the new exact head before main.

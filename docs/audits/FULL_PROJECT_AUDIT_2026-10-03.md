@@ -59,6 +59,8 @@
 
 **Доказательство:** до исправления испорченный gzip запускал fake psql; regression воспроизведён. После — **13 новых offline cases PASS**, включая header/ciphertext/tag с пересчитанным checksum, неверный ключ, truncation, legacy CBC, valid AEAD с неверным gzip, production plaintext denial и round-trip реальных shell scripts на synthetic SQL. Ни один негативный case не запускает SQL consumer; успешный получает полный точный SQL, stage очищен. Server tooling **18 PASS**, root backup/ops contract tests **7 PASS**, contract checks, shell syntax и lint PASS. Это тесты процесса с fake pg_dump/psql, без подключения к обычной БД. Внешняя PostgreSQL restore rehearsal и RPO/RTO evidence остаются открытыми. Статус: программное исправление выполнено локально отдельным коммитом; повтор security audit 26.09.
 
+**Первый CI и коррекция контракта:** backend на `0b0defc` остановился до DB smoke: прежний operations preflight требовал строку `openssl enc -aes-256-cbc`. Контракт обновлён на ACHBKP01/GCM/AAD/tag и полное SQL staging, защита не отключена. Локально воспроизведены оба failed preflight cases; после исправления все **15 ops harness tests PASS** и весь `quality:backend` PASS, включая 18 tooling, 313 files / 1241 unit tests и build. PR #8 получает обновлённый candidate и повторный полный CI. U10/U04 пока не опубликованы в main.
+
 ### U05 · P2 · Не терять идентификаторы при ротации ключей
 
 **Подтверждение:** `field-encryption.ts:219-228` вычисляет blind index ключом текущего `activeKeyId`, но индекс `h1_...` не содержит key ID и поиск не пробует старые ключи. При переключении на ключ с другим `indexKey` синтетическая проверка получает другой индекс для того же email. `openProviderSubject` дополнительно сверяет старую OAuth-запись текущим ключом.
