@@ -844,3 +844,24 @@ preserving this branch's audit/handoff documents yielded an index identical to
 `676f22a` before this status update. Runtime and each urgent commit are intact.
 The next dev candidate must pass its own isolated PostgreSQL/Redis and full
 Quality checks before main. The primary checkout remains untouched.
+
+### Published U07/U06 and local U10 — 2026-10-03
+
+Dev `fde2d05` and PR #7 publish U07/U06. PR Quality run `37122629168` backend
+job `111201602299` passes unit 312/1213, integration 16 files / 68 pass / 1
+skipped and full suite 403 files / 1435 pass / 1 skipped. All three new invitation
+HTTP cases pass in the 11-case branch access suite. Ephemeral PostgreSQL/Redis
+also verify positive U07 targets. The pre-existing admin race skips on both the
+old and new candidates due to undisclosed fixture prerequisites; N14 records
+the limitation. Browser/aggregate Quality checks still precede main merge.
+
+`codex/urgent-audit-batch-4` holds U10 while PR #7 remains stable. A common
+response cache hook now defaults to private/no-store. Only anonymous successful
+GET/HEAD discovery and public image routes with explicit public policy may
+cache; credentials, Set-Cookie, errors and all other routes fail closed. Register
+after cookie serialization. Public TTL/304/ETag and attachment delivery headers
+remain intact. Eighteen cases failed before; 28 actual Fastify cases now pass.
+Backend 313 files / 1241 tests, build, full lint and strict focused types PASS.
+HTTP suites now assert unauthenticated errors and authenticated owner catalog,
+reviews/analytics and permission denial headers. This new live replay remains
+pending. Remaining audit: 6 urgent / 17 nonurgent. No frontend/design changes.

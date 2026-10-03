@@ -2,7 +2,7 @@
 
 Рабочий реестр: пополняется сразу после подтверждения каждой находки. Анализ текущей рабочей копии, а не только исторических аудитов. После завершения аудита пользователь разрешил выполнять срочные исправления партиями по 1–2, каждое отдельным коммитом; результаты записываются рядом с исходными находками.
 
-Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09/U11/U12/U13/U07/U06 остаются **7 срочных / 17 несрочных**; исправлены 6 пунктов, добавлен N17 о mock parity. U09/U11/U12/U13 опубликованы в `main` через PR #6 (`a81749b`), обе Quality-проверки PASS на `14c04ba`, дерево main совпадает с проверенным dev. Владелец снял только обязательный approval; PR, Application CI и остальные ограничения сохранены. U07/U06 выполнены отдельными коммитами `6845517` / `676f22a`; следующая партия ожидает собственного live CI перед main.
+Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09/U11/U12/U13/U07/U06/U10 остаются **6 срочных / 17 несрочных**; исправлены 7 пунктов, добавлен N17 о mock parity. U09/U11/U12/U13 опубликованы в `main` через PR #6 (`a81749b`), обе Quality-проверки PASS на `14c04ba`, дерево main совпадает с проверенным dev. Владелец снял только обязательный approval; PR, Application CI и остальные ограничения сохранены. U07/U06 опубликованы в `dev` отдельными коммитами `6845517` / `676f22a`, PR #7 на `fde2d05` прошёл backend/live integration и ожидает полного Quality CI перед main. U10 исправлен локально следующей отдельной партией.
 
 ## Основание и границы
 
@@ -77,6 +77,8 @@
 
 **Исправление 03.10:** поиск использует object where TypeORM с email transformer внутри транзакции и row lock. Истёкший pending объект переводится в expired перед сохранением замены; partial unique index разрешает гонку отсутствующей строки, только его `23505` классифицируется как 409. Уведомление выполняется после успешного commit. Четыре regression cases падали до исправления; после него **5 новых unit cases PASS**, включая фактическую генерацию SQL TypeORM с HMAC вместо открытого email, NULL scope и FOR UPDATE без подключения к БД. Три HTTP/PostgreSQL cases проверяют повтор с uppercase email, перевыпуск истёкшего scope и две конкурентные отправки. Backend **312 files / 1213 tests**, build, full lint, строгие типы нового unit-теста и типы integration-файла в обычном strict режиме PASS. HTTP/PostgreSQL cases локально не запускались: disposable DB/Redis отсутствуют. Статус: исправлено локально отдельным U06 коммитом; live replay ожидает CI этой партии.
 
+**Live CI 03.10:** PR #7 `fde2d05`, Quality run `37122629168`, backend job `111201602299` PASS. Все 11 branch-access HTTP cases, включая три новых invitation cases, прошли. Integration: **16 files / 68 tests PASS, 1 skipped**; полный backend suite: **403 files / 1435 tests PASS, 1 skipped**. Пропущенный прежний admin concurrency case также пропускался на `14c04ba` и записан в N14; он не заменяет доказательство трёх новых U06 cases.
+
 ### U07 · P1 · Изолировать интеграционные тесты от рабочей БД и Redis
 
 **Подтверждение:** `server/src/test/setup.ts:7-12` открывает общий `AppDataSource` из обычной конфигурации, комментарий допускает ту же БД «with care». `test:integration` вызывает Vitest напрямую, setup не требует отдельной test DB или подтверждения; отдельная команда prerequisite-check не вызывается автоматически.
@@ -90,6 +92,8 @@
 **Приёмка:** команда без разрешённых test targets завершается до подключения; production URL/name, shared Redis DB и remote hosts отвергаются; тесты проходят на disposable services.
 
 **Исправление 03.10:** общий setup для integration и полного backend `npm test` требует `NODE_ENV=test`, явные `TEST_DATABASE_URL` и `TEST_REDIS_URL`. PostgreSQL — только loopback, имя `*_test` / `*_test_<id>` без prod/production labels; Redis — loopback и явно выбранная DB 1–15. Query/fragment запрещены, чтобы параметры URL не могли изменить уже проверенный host/database. До динамических импортов конфигурации устанавливаются только разрешённые test URLs; обычные dotenv URL не выбирают сервисы для тестов. CI backend использует свои ephemeral services и Redis DB 15; README описывает disposable targets. Политика **24 cases PASS**, строгая проверка типов setup/policy, full lint и backend unit **311 files / 1208 tests PASS**. Фактический integration command без targets завершился до импорта теста/конфигурации, без подключения. Валидный live PostgreSQL/Redis replay локально не выполнялся; новая партия пока не опубликована и ожидает отдельной CI-проверки. Статус: исправлено локально в отдельном U07 коммите.
+
+**Live CI 03.10:** та же новая конфигурация PR #7 `fde2d05` прошла schema/migration smoke, integration профиль и полный backend suite на ephemeral PostgreSQL и Redis DB 15. Положительный запуск разрешённых targets подтверждён CI; обычный developer env не использовался.
 
 ### U08 · P2 · Удалить mock-профили из реальной Next-сборки
 
@@ -123,7 +127,9 @@
 
 **Улучшение:** общий no-store contract для authenticated/private routes, публичное кэширование только через явный allowlist; проверить 401/403 и attachment redirects/downloads.
 
-**Приёмка:** route-level проверка каждого private GET подтверждает `Cache-Control: private, no-store`, public discovery сохраняет согласованный cache. Статус: открыто, расширение прежней cache-находки.
+**Приёмка:** route-level проверка каждого private GET подтверждает `Cache-Control: private, no-store`, public discovery сохраняет согласованный cache.
+
+**Исправление 03.10:** общий onSend устанавливает `private, no-store` / `Pragma: no-cache` по умолчанию, включая ошибки, redirects, downloads и новые пути. Исключения только для GET/HEAD discovery и трёх публичных image routes по зарегистрированному route pattern, с явной public cache policy и успешным/304 статусом; credentials или Set-Cookie запрещают public cache. Hook зарегистрирован после cookie plugin, поэтому видит фактический Set-Cookie. Публичные TTL/ETag сохраняются для анонимных запросов. 18 regression cases падали на прежней политике; после исправления **28 actual Fastify cases PASS**. Backend **313 files / 1241 tests**, build, full lint, строгие типы новых tests PASS. В HTTP suites добавлены семь 401 probes и cache assertions для уже существующих authenticated catalog/reviews/analytics и permission-denied responses. Новый live replay пока не выполнялся; PR #7 остаётся на предыдущем кандидате. Статус: исправлено локально, отдельная партия U10.
 
 ### U11 · P1 · Убрать безусловный admin-доступ к содержимому broadcast-заявки
 
@@ -300,6 +306,8 @@
 **Подтверждение:** из 401 backend test files текущей рабочей копии `vitest.unit.config.ts` включает 309, `vitest.integration.config.ts` — 16; 76 не входят ни в один специализированный список. Среди них чистые `secure-production-config`, `redis-rate-limit-policy`, OAuth callback/identity, email/password/session-version и outbox retry/idempotency/payload policies. В отдельной конфигурации без DB setup 12 таких файлов / 26 тестов прошли.
 
 **Дополнительное подтверждение 03.10:** test-файлы исключены из production backend build. Отдельная проверка существующего `provider-branch-access.integration.test.ts` с `strict` проходит, но добавление `noUncheckedIndexedAccess` выявляет прежние nullable array-destructuring fixtures (users, locations, offerings, requests, chats, reviews до новых U06 cases). Это ограничение покрытия типов тестов, а не ошибка новой service-сборки; новый U06 unit-файл проходит и этот усиленный режим.
+
+**Дополнительное подтверждение CI 03.10:** admin-user-status-concurrency integration case пропускается и на `14c04ba`, и на `fde2d05`. У теста есть safe-CI/pristine-fixture/session prerequisites с silent skip; конкретный невыполненный prerequisite не записан в logs. Общий green нельзя выдавать за доказательство этого admin race. В дальнейшем сделать изолированный fixture и явную диагностику prerequisites, не разрешая запись в обычную БД.
 
 **Последствия:** локальный `test:unit` PASS не проверяет эти политики. CI также запускает общий `npm test`, который включает все файлы с DB setup: это **не доказанный пропуск всех этих тестов в CI**, а несогласованность быстрых локальных проверок и специализированных suites. Часть исключённых файлов действительно требует БД или относится к legacy; не следует включать всё в unit автоматически. Один из 76 файлов — заранее существовавшая незавершённая локальная работа, это отдельно не считается дефектом.
 

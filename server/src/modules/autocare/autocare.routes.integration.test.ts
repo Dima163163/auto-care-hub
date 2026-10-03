@@ -43,6 +43,17 @@ describe('AutoCare public catalog and request route integration', () => {
         expect(response.headers['cache-control']).toContain('max-age=5')
     })
 
+    it.each([
+        '/v1/broadcast-requests/my', '/v1/guarantee-claims/my',
+        '/v1/expert-questions/my', '/v1/bonuses/my', '/v1/favorites/providers',
+        '/owner/fleets', '/auth/me',
+    ])('protects unauthenticated private GET errors from caching at %s', async (path) => {
+        const response = await request(app.server).get(path)
+        expect(response.status).toBe(401)
+        expect(response.headers['cache-control']).toBe('private, no-store')
+        expect(response.headers.pragma).toBe('no-cache')
+    })
+
     it('filters real seeded providers by the requested service catalog', async () => {
         const [tireService, airConditioning] = await Promise.all([
             request(app.server)

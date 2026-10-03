@@ -36,6 +36,7 @@ import { metrics } from './shared/observability/metrics.js'
 import { metricsRoutes } from './routes/metrics.route.js'
 import { openApiRoutes } from './routes/openapi.route.js'
 import { sanitizeIncomingRequestId } from './shared/http/request-id.js'
+import { registerResponseCachePolicy } from './shared/http/response-cache-policy.js'
 import { MAX_FASTIFY_JSON_BODY_BYTES } from './shared/security/request-limits.js'
 import { getBoundedApiLatencyMs } from './shared/observability/api-latency.js'
 import { deploymentCapabilitiesRoutes } from './routes/deployment-capabilities.route.js'
@@ -115,16 +116,6 @@ export async function buildApp() {
         reply.header('x-request-id', request.id)
         reply.header('x-content-type-options', 'nosniff')
         reply.header('permissions-policy', 'camera=(), geolocation=(), microphone=()')
-    })
-
-    app.addHook('onSend', async (request, reply, payload) => {
-        const path = request.url.split('?', 1)[0] ?? ''
-        const privatePrefixes = ['/owner/clients', '/owner/service-requests', '/v1/service-requests', '/v1/chats']
-        if (privatePrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
-            reply.header('cache-control', 'private, no-store')
-            reply.header('pragma', 'no-cache')
-        }
-        return payload
     })
 
     app.addHook('onRequest', async (request, reply) => {
@@ -214,6 +205,7 @@ export async function buildApp() {
     }
 
     await app.register(cookie)
+    registerResponseCachePolicy(app)
     app.addHook('preHandler', async (request) => {
         if (env.nodeEnv !== 'production') return
         if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return
