@@ -1809,3 +1809,19 @@ production acceptance or design-approval requirements.
 - [ ] Remaining: **11 urgent / 17 nonurgent**. Added N17 for existing overly broad
   mock broadcast access; production backend access is fixed. Live DB/production
   evidence and external pilot gates remain open.
+
+### Urgent audit fixes, batch 2 — 2026-10-03
+
+- [x] Published U09/U11 to `dev` as separate commits `6ebd62e` / `de701c6`,
+  cherry-picked onto current remote dev in an isolated worktree. Preserved the
+  primary checkout's unrelated integrity-script/manifest changes.
+- [x] U12: pinned Next to `16.3.6` and refreshed its lock entries. Production
+  npm audit reports **0 vulnerabilities**. Frontend **187 files / 603 tests**,
+  TypeScript, full lint and isolated real/mock production builds pass.
+- [x] U12 browser verification: production mock catalog/provider/login redirect
+  and real production login hydration pass. Full live API/DB flows await CI.
+- [ ] U13: update backend advisories with major-compatible URI resolution and
+  verify Nodemailer templates against the actual SDK before its own commit.
+- [ ] Promotion: main requires green Quality and dev-to-main PR checks. The
+  U09/U11 CI dependency gate fails on the known Next advisory; U12/U13 address it.
+- [ ] Remaining after U12: **10 urgent / 17 nonurgent**; pilot stays NO-GO.

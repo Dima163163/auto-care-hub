@@ -735,3 +735,21 @@ separate frontend/mock ownership and is not a production backend bypass after
 U11. This batch changes no frontend or database data. Integrity-script/manifest
 files remain byte-for-byte unchanged and excluded from both requested commits.
 Pilot remains NO-GO; no push, merge or deployment was performed.
+
+### Dev publication and urgent fix U12 — 2026-10-03
+
+User authorized pushing to dev, then main, then continuing urgent batches.
+Current remote dev had newer CI fixes and squash history, so U09/U11 were
+cherry-picked cleanly onto it in `/private/tmp/autocare-hub-urgent-audit-batch-2`
+and pushed as `6ebd62e` / `de701c6`. The primary checkout remains untouched,
+including its three unrelated integrity-script/manifest files. Main promotion
+must follow the current README/workflow's protected dev-to-main PR process;
+the older local workflow instructions are tracked by N01.
+
+The dependency gate on that dev SHA fails on the known Next advisory. The next
+pair is U12/U13 to unblock it. U12 pins Next to `16.3.6`; production audit is
+zero, frontend **187 files / 603 tests**, TypeScript, full lint and real/mock
+Next production builds pass. Production mock browser catalog/provider/login
+redirect and real login hydration pass; authenticated live API/DB replay awaits
+isolated CI. U13 is in progress and will receive a separate commit. The register
+has **10 urgent / 17 nonurgent** remaining after U12; pilot remains NO-GO.
