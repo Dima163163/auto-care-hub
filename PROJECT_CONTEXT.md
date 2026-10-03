@@ -894,3 +894,10 @@ on all PR checks, including its own pending check; it ultimately cancelled.
 These are separate nonurgent items, not bundled into the two urgent fixes.
 Remaining audit: **5 urgent / 19 nonurgent**. Primary dirty files and UI are
 preserved; pilot remains NO-GO. No skills installed and no subagents spawned.
+
+
+Main synchronization before U10/U04 publication: origin/main `2f99bf1` is a
+squash of tested dev `fde2d05` with exactly the same tree. The merge conflicts
+were only audit/handoff documents; after resolving them, the index exactly
+matched U04 `3abded7` before this note. Runtime changes and both urgent commits
+are preserved. Publish dev normally, run complete candidate CI, then merge main.

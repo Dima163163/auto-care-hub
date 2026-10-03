@@ -1902,3 +1902,10 @@ production acceptance or design-approval requirements.
 - [x] Added N18: backup dotenv word splitting loses quoted spaces; N19: promotion
   waits for its own check. Both have evidence, improvements and acceptance.
 - [ ] Remaining: **5 urgent / 19 nonurgent**. No pilot gates recounted; NO-GO.
+
+
+Main synchronization before U10/U04 publication: origin/main `2f99bf1` is a
+squash of tested dev `fde2d05` with exactly the same tree. The merge conflicts
+were only audit/handoff documents; after resolving them, the index exactly
+matched U04 `3abded7` before this note. Runtime changes and both urgent commits
+are preserved. Publish dev normally, run complete candidate CI, then merge main.
