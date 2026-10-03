@@ -1,9 +1,8 @@
 import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 import { createContentSecurityPolicy } from './shared/config/content-security-policy'
 
-export function proxy(request: NextRequest) {
+export function proxy(request) {
     const nonce = randomBytes(24).toString('base64')
     const policy = createContentSecurityPolicy({ nonce,
         apiOrigin: process.env.NEXT_PUBLIC_API_ORIGIN ?? 'http://127.0.0.1:4000',

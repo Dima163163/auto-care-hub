@@ -130,6 +130,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Test production CSP checker
+        run: node --test scripts/check-next-csp.test.mjs
+
+      - name: Verify CSP on the production Next artifact
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 4197 > "$RUNNER_TEMP/next-csp.log" 2>&1 &
+          NEXT_CSP_PID=$!
+          trap 'kill "$NEXT_CSP_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail http://127.0.0.1:4197/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/check-next-csp.mjs --url http://127.0.0.1:4197
+
       - name: Build real-mode Vite compatibility artifact
         run: VITE_API_MODE=real npm run build:vite
 

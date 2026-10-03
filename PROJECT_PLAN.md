@@ -12,6 +12,8 @@
   точным head SHA; 12 runner/policy tests PASS. Live replay ожидает общий push.
 - [x] N15: официальные action refs закреплены полными SHA, CI mutable-ref guard
   и 3 tests PASS; provenance/update procedure записаны, permissions сохранены.
+- [x] N05: nonce CSP в production Next; исправлена composite-extension detection
+  Next 16.3.6, 7 runtime samples и 6 policy/checker tests PASS, CI HTTP guard.
 
 > Status: historical implementation roadmap
 >
