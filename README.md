@@ -67,7 +67,9 @@ Read before making changes:
 - MSW mock mode;
 - custom i18n and theme support;
 - Vitest, Testing Library and Playwright;
-- PWA support.
+- PWA safeguards in the Vite compatibility build only; production Next.js is
+  currently a browser application without install/offline PWA support. See
+  [runtime status](docs/operations/PWA_RUNTIME_STATUS.md).
 
 ### Backend
 

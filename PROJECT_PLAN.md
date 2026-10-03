@@ -2026,3 +2026,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N05: Next proxy.page.ts выдаёт новый CSPRNG nonce на каждый HTML request, заменяет caller nonce/CSP headers и передаёт policy в SSR. Next framework scripts и theme bootstrap получают nonce; production script-src больше не содержит unsafe-inline/eval. Connect-src ограничен точными frontend/API HTTP/Ws origins; HTML private/no-store не переиспользует nonce. Inline CSS пока разрешён для существующих UI style props. 3 policy negative/positive cases, TypeScript/lint PASS; enforced policy runtime/theme/hydration/WebSocket replay ожидает финальный Next artifact. Отдельный коммит N05.
+
+
+04 Oct — N03: выбран явно разрешённый аудитом вариант снятия неподтверждённого PWA обещания. README и runtime status теперь прямо говорят: production Next не поддерживает install/offline/update PWA; Vite Workbox/12 preview tests — только compatibility evidence. Новая UI-композиция/SW/private cache не добавлялись. Будущий Next PWA остаётся отдельной задачей с собственной artifact/browser приёмкой; pilot gates не закрываются Vite evidence. Отдельный коммит N03.

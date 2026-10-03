@@ -219,6 +219,8 @@
 
 **Приёмка:** проверка install/offline/update/logout cache выполняется против production Next artifact. Статус: открыто, новая находка. Любые видимые изменения требуют соблюдения design lock; реализация не выполнялась.
 
+**Исправление 04.10:** N03: выбран явно разрешённый аудитом вариант снятия неподтверждённого PWA обещания. README и runtime status теперь прямо говорят: production Next не поддерживает install/offline/update PWA; Vite Workbox/12 preview tests — только compatibility evidence. Новая UI-композиция/SW/private cache не добавлялись. Будущий Next PWA остаётся отдельной задачей с собственной artifact/browser приёмкой; pilot gates не закрываются Vite evidence.
+
 ### N04 · P2 · Ограничить объём чтения чатов и вложений
 
 **Подтверждение:** `autocare-chat.service.ts:298-325` загружает все доступные threads без cursor; `toThreadResponse:253-291` на каждый thread читает все messages с расшифровкой ради unreadCount и отдельные provider/sanction/appeal queries. `getAutoCareChatMessages:405-406` ограничивает сообщения, но получает все attachments thread.
