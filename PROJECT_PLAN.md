@@ -1883,3 +1883,22 @@ production acceptance or design-approval requirements.
   strict test types PASS. Added real HTTP error and owner projection assertions.
 - [ ] U10 live replay awaits its own future candidate; keep PR #7 unchanged.
 - [ ] Remaining after U10: **6 urgent / 17 nonurgent**; no pilot gates recounted.
+
+
+### U04 completion and PR #7 publication — 2026-10-03
+
+- [x] PR #7 merged normally into main as `2f99bf1`. Both exact-head Quality
+  workflows passed on `fde2d05`; fetched main's tree exactly matches it.
+- [x] U04: authenticated ACHBKP01 AES-256-GCM backups, complete authentication,
+  gzip validation and private SQL staging before psql. Clean staging on exit;
+  refuse existing outputs, legacy CBC and production plaintext restore.
+- [x] A corrupt gzip started fake psql before the fix. All **13 new offline
+  regressions PASS**, server tooling **18 PASS**, root backup/ops tests **7 PASS**,
+  contracts, shell syntax and lint PASS. Synthetic SQL/fake commands only.
+- [ ] U10/U04 exact-candidate CI, then dev-to-main publication. U10 already has
+  its own commit `977f927`; U04 receives a separate commit.
+- [ ] Existing CBC archives require fresh trusted-source backups or controlled
+  offline recovery. Live PostgreSQL/RPO/RTO restore evidence remains external.
+- [x] Added N18: backup dotenv word splitting loses quoted spaces; N19: promotion
+  waits for its own check. Both have evidence, improvements and acceptance.
+- [ ] Remaining: **5 urgent / 19 nonurgent**. No pilot gates recounted; NO-GO.

@@ -865,3 +865,32 @@ Backend 313 files / 1241 tests, build, full lint and strict focused types PASS.
 HTTP suites now assert unauthenticated errors and authenticated owner catalog,
 reviews/analytics and permission denial headers. This new live replay remains
 pending. Remaining audit: 6 urgent / 17 nonurgent. No frontend/design changes.
+
+
+### U04 completed locally; PR #7 merged — 2026-10-03
+
+PR #7 merged as `2f99bf1`; both Quality runs on `fde2d05` passed. Fetched main
+and tested dev have exactly the same tree `10bc2362e0019448ddd58caccaaaf4235da2944a`.
+No reviewer requirement remains; all other protection constraints are preserved.
+
+U04 uses ACHBKP01 AES-256-GCM with authenticated header, bounded PBKDF2 and
+private staging. Restore authenticates and validates the entire gzip, prepares
+complete SQL, then invokes psql. All failures clean temporary files and do not
+start the SQL consumer. Existing outputs, legacy CBC and production plaintext
+restore are rejected. Old archives are retained; a fresh trusted-source backup
+or controlled offline legacy recovery is required. Node.js and enough private
+staging disk space are needed. No production DB/archive was touched.
+
+The old pipeline reproduced a corrupt gzip reaching fake psql. Thirteen new
+actual subprocess/crypto cases pass, including tampering with recomputed sums,
+wrong key, truncation, invalid gzip, legacy rejection, output preservation and
+shell-script round-trip. Server tooling 18 PASS; root backup/ops tests 7 PASS;
+contracts, syntax and lint PASS. Real PostgreSQL restore/RPO/RTO remains external.
+U10/U04 still need their own exact-head Quality CI and publication dev then main.
+
+N18 records dotenv quoted-space loss proven synthetically without reading .env.
+N19 records promotion self-wait: both Quality runs pass while the workflow waits
+on all PR checks, including its own pending check; it ultimately cancelled.
+These are separate nonurgent items, not bundled into the two urgent fixes.
+Remaining audit: **5 urgent / 19 nonurgent**. Primary dirty files and UI are
+preserved; pilot remains NO-GO. No skills installed and no subagents spawned.

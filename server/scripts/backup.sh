@@ -84,8 +84,8 @@ if [ -z "$ENCRYPTION_PASSWORD_FILE" ] || [ ! -r "$ENCRYPTION_PASSWORD_FILE" ]; t
   CHECKSUM_FILE="$BACKUP_FILE.sha256"
 fi
 
-if [ -n "$ENCRYPTION_PASSWORD_FILE" ] && [ -r "$ENCRYPTION_PASSWORD_FILE" ] && ! command -v openssl >/dev/null 2>&1; then
-  echo "Required command is unavailable: openssl" >&2
+if [ -n "$ENCRYPTION_PASSWORD_FILE" ] && [ -r "$ENCRYPTION_PASSWORD_FILE" ] && ! command -v node >/dev/null 2>&1; then
+  echo "Required command is unavailable: node" >&2
   exit 69
 fi
 
@@ -107,11 +107,10 @@ fi
 gzip -t "$RAW_BACKUP_FILE"
 
 if [ -n "$ENCRYPTION_PASSWORD_FILE" ] && [ -r "$ENCRYPTION_PASSWORD_FILE" ]; then
-  STAGED_BACKUP_FILE=$(mktemp "$BACKUP_DIR/.db_backup_$RUN_SUFFIX.XXXXXX")
-  openssl enc -aes-256-cbc -salt -pbkdf2 -iter "$ENCRYPTION_ITERATIONS" \
-    -pass "file:$ENCRYPTION_PASSWORD_FILE" \
-    -in "$RAW_BACKUP_FILE" \
-    -out "$STAGED_BACKUP_FILE"
+  STAGED_BACKUP_FILE="$RAW_BACKUP_FILE.enc"
+  BACKUP_ENCRYPTION_PASSWORD_FILE="$ENCRYPTION_PASSWORD_FILE" \
+  BACKUP_ENCRYPTION_ITERATIONS="$ENCRYPTION_ITERATIONS" \
+    node "$SCRIPT_DIR/backup-crypto.mjs" encrypt "$RAW_BACKUP_FILE" "$STAGED_BACKUP_FILE"
   mv "$STAGED_BACKUP_FILE" "$BACKUP_FILE"
 else
   mv "$RAW_BACKUP_FILE" "$BACKUP_FILE"
