@@ -2002,3 +2002,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N10: по подтверждению владельца публичных контактных каналов пока нет. В существующих footer slots заменены вымышленные телефон/email на честные локализованные статусы; copyright использует текущий год. ES/RO launch landing copy исправлен на автосервисы. Native app уже обозначено In development, store badges не являются download links; это состояние сохранено. Translation contract: 12 PASS, TypeScript и targeted lint PASS; visual layout/style не менялись. Отдельный коммит; общий push ещё впереди.
+
+
+04 Oct — N17: mock broadcast detail/inbox применяют active provider, requests permission, branch/market/service scope, expiry и prior-offer participant policy. Offers скрываются вне разрешённых филиалов; admin/super-admin без membership доступа не имеют. Offer creation больше не зависит от отсутствующих providerId/locationId на broadcast-заявке и проверяет выбранный филиал. 3 MSW HTTP сценария PASS (guest/foreign/privileged denial, scope/inbox, competing offers/prior participant); TypeScript и lint PASS. Отдельный коммит; общий push ожидает остальные исправления.

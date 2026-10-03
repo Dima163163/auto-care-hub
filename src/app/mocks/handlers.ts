@@ -1380,6 +1380,28 @@ function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
 }
 
+function isMockBroadcastOffer(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function getMockBroadcastResponse(user: User, item: Record<string, unknown>) {
+    const { clientId: _clientId, ...response } = item
+    const offers = Array.isArray(item.offers) ? item.offers.filter(isMockBroadcastOffer) : []
+    if (item.clientId === user.id) return response
+    const providers = ownerAutoCareProviders.filter((provider) => provider.status === 'active'
+        && hasMockProviderPermission(user.id, provider.id, 'requests', provider.location.id))
+    if (!providers.length) return null
+    const ownOffers = offers.filter((offer) => providers.some((provider) => offer.providerId === provider.id
+        && offer.locationId === provider.location.id
+        && (!item.marketId || item.marketId === provider.location.marketId)))
+    const market = autoCareMarkets.find((candidate) => candidate.id === item.marketId)
+    const publicMarket = market?.launchReady && superAdminMarketCountries.some((country) => country.code === market.countryCode && country.active)
+    const matchingService = providers.some((provider) => provider.location.marketId === item.marketId
+        && provider.offers?.some((offering) => offering.active && offering.serviceDefinitionId === item.serviceDefinitionId))
+    if (!ownOffers.length && !(item.status === 'open' && Date.parse(String(item.expiresAt)) > Date.now() && publicMarket && matchingService)) return null
+    return { ...response, offers: ownOffers }
+}
+
 function getMockUserConsentState(userId: string) {
     const emptyOptionalConsent = { granted: false, version: null, recordedAt: null }
     const optional = mockOptionalConsents.get(userId) ?? {
@@ -1425,11 +1447,6 @@ function getMockManagedProviderScopes(userId: string) {
         locationIds: scope.locations === null ? null : [...scope.locations],
         roles: [...scope.roles],
     }))
-}
-
-function hasMockProviderLocationAccess(userId: string, providerId: string, locationId: string | null | undefined) {
-    return getMockManagedProviderScopes(userId).some((scope) => scope.providerId === providerId
-        && (scope.locationIds === null || (locationId !== null && locationId !== undefined && scope.locationIds.includes(locationId))))
 }
 
 function hasMockProviderRole(userId: string, providerId: string, allowedRoles: readonly MockAutoCareProviderMembership['role'][], locationId?: string | null) {
@@ -3579,28 +3596,38 @@ export const handlers = [
 
     http.get('/api/v1/broadcast-requests/:broadcastId', ({ params }) => {
         const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         const item = mockAutoCareBroadcastRequests.find((candidate) => candidate.id === params.broadcastId)
-        if (!user || !item || (item.clientId !== user.id && user.role === 'client')) return HttpResponse.json({ message: 'Broadcast request not found.' }, { status: 404 })
-        const { clientId: _clientId, ...response } = item
+        if (!item) return HttpResponse.json({ message: 'Broadcast request not found.' }, { status: 404 })
+        const response = getMockBroadcastResponse(user, item)
+        if (!response) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         return HttpResponse.json(response)
     }),
 
     http.get('/api/owner/broadcast-requests', () => {
         const user = currentMockUser()
-        if (!user || user.role !== 'owner') return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-        return HttpResponse.json(mockAutoCareBroadcastRequests.filter((item) => item.status === 'open' && new Date(String(item.expiresAt)) > new Date()))
+        if (!user || !getMockManagedProviderAssignments(user.id).length) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        return HttpResponse.json(mockAutoCareBroadcastRequests
+            .filter((item) => item.status === 'open' && Date.parse(String(item.expiresAt)) > Date.now())
+            .flatMap((item) => { const response = getMockBroadcastResponse(user, item); return response ? [response] : [] }))
     }),
 
     http.post('/api/owner/broadcast-requests/:broadcastId/offers', async ({ params, request }) => {
         const user = currentMockUser()
+        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         const item = mockAutoCareBroadcastRequests.find((candidate) => candidate.id === params.broadcastId)
-        const providerId = item?.providerId
-        const locationId = item?.locationId
-        if (!user || user.role !== 'owner' || !item || typeof providerId !== 'string' || typeof locationId !== 'string' || !hasMockProviderLocationAccess(user.id, providerId, locationId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
-        const body = await request.json() as Record<string, unknown>
-        const provider = ownerAutoCareProviders[0]
+        const body: unknown = await request.json()
+        if (!isMockBroadcastOffer(body) || typeof body.locationId !== 'string') return invalidMockBodyResponse()
+        const provider = ownerAutoCareProviders.find((candidate) => candidate.location.id === body.locationId)
+        if (!item || !provider || !getMockBroadcastResponse(user, item)
+            || !hasMockProviderPermission(user.id, provider.id, 'requests', provider.location.id)
+            || provider.location.marketId !== item.marketId
+            || !provider.offers?.some((offering) => offering.active && offering.serviceDefinitionId === item.serviceDefinitionId)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (item.status !== 'open' || Date.parse(String(item.expiresAt)) <= Date.now()) return HttpResponse.json({ message: 'Broadcast request is closed.' }, { status: 409 })
         const offer = { id: `broadcast-offer-${Date.now()}`, broadcastRequestId: item.id, providerId: provider.id, providerName: provider.name, locationId: provider.location.id, address: provider.location.address, offerSnapshot: body, status: 'pending', createdAt: new Date().toISOString() }
-        ;(item.offers as Array<unknown>).push(offer)
+        const offers = Array.isArray(item.offers) ? item.offers : []
+        offers.push(offer)
+        item.offers = offers
         return HttpResponse.json(offer, { status: 201 })
     }),
 

@@ -367,6 +367,8 @@
 
 **Приёмка:** те же actor/request fixtures дают одинаковую доступность и видимые offers в mock/real contracts, клиент сохраняет полный доступ к собственной заявке. Статус: открыто, новая несрочная находка при U11.
 
+**Исправление 04.10:** N17: mock broadcast detail/inbox применяют active provider, requests permission, branch/market/service scope, expiry и prior-offer participant policy. Offers скрываются вне разрешённых филиалов; admin/super-admin без membership доступа не имеют. Offer creation больше не зависит от отсутствующих providerId/locationId на broadcast-заявке и проверяет выбранный филиал. 3 MSW HTTP сценария PASS (guest/foreign/privileged denial, scope/inbox, competing offers/prior participant); TypeScript и lint PASS.
+
 ### N18 · P3 · Сохранить значения с пробелами при чтении backup-конфига
 
 **Подтверждение:** `server/scripts/backup.sh` загружает `.env` через `export $(grep -v '^#' .env | xargs)`. Изолированная синтетическая строка `DATABASE_PASSWORD="synthetic password"` теряет часть значения после shell word splitting; настоящий `.env` не читался.
