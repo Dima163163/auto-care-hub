@@ -2005,3 +2005,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N17: mock broadcast detail/inbox применяют active provider, requests permission, branch/market/service scope, expiry и prior-offer participant policy. Offers скрываются вне разрешённых филиалов; admin/super-admin без membership доступа не имеют. Offer creation больше не зависит от отсутствующих providerId/locationId на broadcast-заявке и проверяет выбранный филиал. 3 MSW HTTP сценария PASS (guest/foreign/privileged denial, scope/inbox, competing offers/prior participant); TypeScript и lint PASS. Отдельный коммит; общий push ожидает остальные исправления.
+
+
+04 Oct — N14: backend unit/integration profiles используют auto-discovery вместо 300+ whitelist. Все pure *.test/*.spec включаются; 17 *.integration.test плюс 5 именованных DB fixtures идут в integration с обязательным isolated setup. Известный старый maintenance lease test исправлен на dual-lock mock. Unit: 384 files / 1396 PASS без DB setup (loopback port 9). Admin concurrency создаёт собственные 2 CI fixtures, временно приостанавливает и восстанавливает остальные synthetic CI admins; прежние seed/session prerequisites больше не вызывают silent skip. Свежий PostgreSQL replay расширенных 22 integration files ожидает итогового CI; обычная developer DB не использовалась. Отдельный коммит N14, общий push ещё не выполнен.

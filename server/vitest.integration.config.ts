@@ -1,31 +1,13 @@
 import { defineConfig } from 'vitest/config'
+import { INTEGRATION_GLOBS } from './src/test/test-profile-policy.js'
 
 export default defineConfig({
-    resolve: {
-        tsconfigPaths: true,
-    },
+    resolve: { tsconfigPaths: true },
     test: {
         globals: true,
         environment: 'node',
         setupFiles: ['src/test/setup.ts'],
-        include: [
-            'src/modules/outbox/outbox.service.test.ts',
-            'src/modules/admin/system-incidents.test.ts',
-            'src/modules/auth/session.service.integration.test.ts',
-            'src/modules/jobs/maintenance-lease.integration.test.ts',
-            'src/modules/oauth/oauth-link-callback.integration.test.ts',
-            'src/modules/users/account-deletion.service.integration.test.ts',
-            'src/modules/admin/account-deletion-autocare.integration.test.ts',
-            'src/modules/users/users.routes.integration.test.ts',
-            'src/modules/autocare/autocare.routes.integration.test.ts',
-            'src/modules/autocare/autocare-capacity.integration.test.ts',
-            'src/modules/autocare/provider-branch-access.integration.test.ts',
-            'src/modules/admin/admin-authorization.integration.test.ts',
-            'src/modules/admin/admin-user-status-concurrency.integration.test.ts',
-            'src/modules/admin/super-admin-market-hierarchy.integration.test.ts',
-            'src/database/schema-contract.integration.test.ts',
-            'src/shared/security/data-encryption/field-encryption.integration.test.ts',
-        ],
+        include: INTEGRATION_GLOBS,
         fileParallelism: false,
     },
 })

@@ -335,6 +335,8 @@
 
 **Приёмка:** критичные pure policies запускаются обычной локальной unit-командой; новый тест не требует ручного добавления в огромный whitelist; остальные исключения документированы и проверяются подходящим suite. Статус: открыто, новая находка.
 
+**Исправление 04.10:** N14: backend unit/integration profiles используют auto-discovery вместо 300+ whitelist. Все pure *.test/*.spec включаются; 17 *.integration.test плюс 5 именованных DB fixtures идут в integration с обязательным isolated setup. Известный старый maintenance lease test исправлен на dual-lock mock. Unit: 384 files / 1396 PASS без DB setup (loopback port 9). Admin concurrency создаёт собственные 2 CI fixtures, временно приостанавливает и восстанавливает остальные synthetic CI admins; прежние seed/session prerequisites больше не вызывают silent skip. Свежий PostgreSQL replay расширенных 22 integration files ожидает итогового CI; обычная developer DB не использовалась.
+
 ### N15 · P2 · Закрепить GitHub Actions по неизменяемым ревизиям
 
 **Подтверждение:** quality, promotion и release-evidence workflows используют `actions/checkout@v4`, `setup-node@v4`, `dependency-review-action@v4`, `upload-artifact@v4`, `actions/attest@v4` и `gitleaks/gitleaks-action@v2` вместо полного commit SHA.
