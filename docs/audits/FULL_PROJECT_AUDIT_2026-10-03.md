@@ -361,6 +361,8 @@
 
 **Приёмка:** полный audit закрыт либо каждое оставшееся исключение имеет проверенную достижимость, срок и владельца; lint/build/generation работают. Статус: открыто, новое dependency evidence.
 
+**Исправление 04.10:** N16: fresh full npm audit показал 6 frontend high entries только через неиспользуемый shadcn generator; backend уже 0. Generator удалён из devDependencies, вместе с 197 исключительно его transitive packages; остальные версии не изменились. После изменения полный root/server audit: 0 vulnerabilities. CI audit включает dev-зависимости с high threshold; force/downgrade/blanket overrides не применялись. Проверка npm ci конечного lockfile и полный candidate suite впереди.
+
 ### N17 · P2 · Согласовать mock broadcast access с backend permissions
 
 **Подтверждение:** при исправлении U11 повторно проверен `src/app/mocks/handlers.ts`, GET `/api/v1/broadcast-requests/:broadcastId`: чужая заявка скрывается только от роли `client`; любой иной mock user получает полную response без provider/branch permission и offers filtering. Это отличается от backend participant policy после U11 и от его прежних owner scope checks.

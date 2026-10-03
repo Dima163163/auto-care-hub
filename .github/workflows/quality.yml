@@ -63,15 +63,15 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Audit frontend production dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit frontend dependencies including tooling
+        run: npm audit --audit-level=high
 
       - name: Install backend dependencies
         run: npm ci --no-audit --no-fund --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=30000
         working-directory: server
 
-      - name: Audit backend production dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit backend dependencies including tooling
+        run: npm audit --audit-level=high
         working-directory: server
 
       - name: Scan repository for secrets

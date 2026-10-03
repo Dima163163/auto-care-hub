@@ -2011,3 +2011,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N08: полный email ищется одним SQL запросом по stable HMAC blind index с сохранением role/status/cursor filters. Частичный поиск ограничен 1000 расшифрованных строк и проверкой elapsed budget между batches; при неполном сканировании возвращается явный ADMIN_SEARCH_TOO_BROAD (422), а не ложный пустой/полный список. UI error translation объясняет, как уточнить поиск. 4 tests PASS (index, 5-batch bound, exhausted empty, page+one/cursor), backend build, frontend types, lint PASS. Hard database statement timeout не заменяется elapsed check; production load evidence остаётся внешним. Отдельный коммит; общий push ещё впереди.
+
+
+04 Oct — N16: fresh full npm audit показал 6 frontend high entries только через неиспользуемый shadcn generator; backend уже 0. Generator удалён из devDependencies, вместе с 197 исключительно его transitive packages; остальные версии не изменились. После изменения полный root/server audit: 0 vulnerabilities. CI audit включает dev-зависимости с high threshold; force/downgrade/blanket overrides не применялись. Проверка npm ci конечного lockfile и полный candidate suite впереди. Отдельный коммит N16.
