@@ -229,6 +229,8 @@
 
 **Приёмка:** фиксированный верхний предел строк/queries на страницу, стабильная память на 10k+ сообщений при сохранении permissions/read receipts. Статус: открыто, новая находка.
 
+**Исправление 04.10:** N04: chat thread list фильтрует роль/assigned moderation/branch scope в SQL до bounded limit (legacy ≤100; optional cursor pages ≤100). Unread count агрегируется SQL без body/offer decryption; providers, latest sanctions и pending appeals грузятся batches вместо N+1. Attachment read ограничен существующей квотой 20+1; сверхлимитная legacy беседа явно отклоняется для review, а не читается целиком/молча обрезается. 36 focused cases PASS, включая synthetic 10000 unread aggregate, cursor и branch predicate; backend build/lint/API contract/parity PASS. Cursor UI и legacy attachment cleanup не внедрялись; production нагрузочная приёмка остаётся внешней.
+
 ### N05 · P2 · Ужесточить CSP именно web HTML
 
 **Подтверждение:** `next.config.ts:8-22` и проверенный production HTTP разрешают `script-src 'unsafe-inline'` и `connect-src ws: wss:` для любых WebSocket origins. API Helmet имеет более строгую политику, но не защищает HTML Next.

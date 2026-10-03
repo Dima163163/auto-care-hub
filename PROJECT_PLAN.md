@@ -2020,3 +2020,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; добавлен PostgreSQL replay с session-local temp shadow tables: 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Его запуск ожидает isolated CI. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API. Отдельный коммит N12.
+
+
+04 Oct — N04: chat thread list фильтрует роль/assigned moderation/branch scope в SQL до bounded limit (legacy ≤100; optional cursor pages ≤100). Unread count агрегируется SQL без body/offer decryption; providers, latest sanctions и pending appeals грузятся batches вместо N+1. Attachment read ограничен существующей квотой 20+1; сверхлимитная legacy беседа явно отклоняется для review, а не читается целиком/молча обрезается. 36 focused cases PASS, включая synthetic 10000 unread aggregate, cursor и branch predicate; backend build/lint/API contract/parity PASS. Cursor UI и legacy attachment cleanup не внедрялись; production нагрузочная приёмка остаётся внешней. Отдельный коммит N04.

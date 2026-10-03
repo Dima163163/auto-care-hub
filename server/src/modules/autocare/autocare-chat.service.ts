@@ -37,10 +37,10 @@ import type {
     CreateAutoCareChatInput,
 } from './autocare.types.js'
 import { broadcastServiceChat } from './service-chat.gateway.js'
-import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
+import { MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD, assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
 import { assertAutoCareAttachmentObjectKeyOwnedBy, createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
-import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, isManagedProviderLocationAllowed } from './provider-access.service.js'
-import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit, normalizeCursorPaginationInput } from '../../shared/http/cursor-pagination.js'
+import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission } from './provider-access.service.js'
+import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit, isCursorPaginationRequested, normalizeCursorPaginationInput } from '../../shared/http/cursor-pagination.js'
 import { normalizeAutoCareChatMessageInput } from './message-content-policy.js'
 import { normalizeIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { calculateAutoCareChatExtendedExpiry, isAutoCareChatBlockEffective, normalizeAutoCareChatBlockInput, normalizeAutoCareChatModeratorAssignment, normalizeAutoCareChatModeratorExtension, normalizeAutoCareChatReportDecision, normalizeAutoCareChatReportInput, normalizeAutoCareChatReportStatus, normalizeAutoCareChatReportUuid, resolveAutoCareChatReportConflict } from './chat-moderation-policy.js'
@@ -250,82 +250,91 @@ function chatMessageIdempotencyConflict(): never {
     fail(409, 'Idempotency key was already used for a different message.')
 }
 
-async function toThreadResponse(user: UserEntity, thread: AutoCareChatThreadEntity): Promise<AutoCareChatThreadResponse> {
-    const provider = await providerForThread(thread)
-    const messages = await AppDataSource.getRepository(ServiceMessageEntity).find({ where: thread.requestId ? [{ threadId: thread.id }, { requestId: thread.requestId }] : { threadId: thread.id } })
-    const sanctions = await AppDataSource.getRepository(AutoCareChatBlockEntity).find({
-        where: { threadId: thread.id, blockedUserId: user.id, status: AutoCareChatBlockStatus.Active },
-        order: { createdAt: 'DESC' },
-        take: 20,
-    })
-    const sanction = sanctions.find((item) => item.sourceReportId)
-    const sanctionAppeal = sanction ? await AppDataSource.getRepository(AutoCareAppealEntity).findOneBy({
-        subject: AutoCareAppealSubject.ChatRestriction,
-        subjectId: sanction.id,
-        submittedById: user.id,
-        status: AutoCareAppealStatus.Pending,
-    }) : null
+async function loadThreadSummaries(user: UserEntity, threads: AutoCareChatThreadEntity[]) {
+    const ids = threads.map((thread) => thread.id)
+    const providerIds = [...new Set(threads.flatMap((thread) => thread.providerId ? [thread.providerId] : []))]
+    const [providers, counts, sanctions] = await Promise.all([
+        providerIds.length ? AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } }) : [],
+        AppDataSource.getRepository(ServiceMessageEntity).createQueryBuilder('message')
+            .innerJoin(AutoCareChatThreadEntity, 'thread', '(message.threadId = thread.id OR message.requestId = thread.requestId)')
+            .select('thread.id', 'threadId').addSelect('COUNT(message.id)', 'count')
+            .where('thread.id IN (:...ids)', { ids }).andWhere('message.senderId <> :userId', { userId: user.id })
+            .andWhere('message.readAt IS NULL').groupBy('thread.id').getRawMany<{ threadId: string; count: string }>(),
+        AppDataSource.getRepository(AutoCareChatBlockEntity).createQueryBuilder('block')
+            .distinctOn(['block.threadId']).where('block.threadId IN (:...ids)', { ids })
+            .andWhere('block.blockedUserId = :userId', { userId: user.id })
+            .andWhere('block.status = :status', { status: AutoCareChatBlockStatus.Active })
+            .andWhere('block.sourceReportId IS NOT NULL').orderBy('block.threadId', 'ASC').addOrderBy('block.createdAt', 'DESC').getMany(),
+    ])
+    const appeals = sanctions.length ? await AppDataSource.getRepository(AutoCareAppealEntity).find({
+        where: { subject: AutoCareAppealSubject.ChatRestriction, subjectId: In(sanctions.map((item) => item.id)), submittedById: user.id, status: AutoCareAppealStatus.Pending },
+    }) : []
     return {
-        id: thread.id,
-        type: thread.type,
-        status: thread.status,
-        subject: thread.subject,
-        requestId: thread.requestId,
-        providerId: thread.providerId,
-        providerName: provider?.name ?? null,
-        clientId: thread.clientId,
-        lastMessageAt: thread.lastMessageAt?.toISOString() ?? null,
-        unreadCount: messages.filter((message) => message.senderId !== user.id && !message.readAt).length,
-        moderationRestriction: sanction?.sourceReportId && sanction.reason && sanction.expiresAt
-            ? {
-                id: sanction.id,
-                reason: sanction.reason,
-                expiresAt: sanction.expiresAt.toISOString(),
-                state: sanction.expiresAt.getTime() > Date.now() ? 'active' : 'expired',
-                appealStatus: sanctionAppeal?.status ?? null,
-            }
-            : null,
-        createdAt: thread.createdAt.toISOString(),
-        updatedAt: thread.updatedAt.toISOString(),
+        providerById: new Map(providers.map((provider) => [provider.id, provider])),
+        unreadByThreadId: new Map(counts.map((row) => [row.threadId, Number(row.count)])),
+        sanctionByThreadId: new Map(sanctions.map((sanction) => [sanction.threadId, sanction])),
+        appealBySubjectId: new Map(appeals.map((appeal) => [appeal.subjectId, appeal])),
     }
 }
 
-export async function getMyAutoCareChats(user: UserEntity) {
-    const repository = AppDataSource.getRepository(AutoCareChatThreadEntity)
-    let threads: AutoCareChatThreadEntity[] = []
+async function toThreadResponse(user: UserEntity, thread: AutoCareChatThreadEntity, summary?: Awaited<ReturnType<typeof loadThreadSummaries>>): Promise<AutoCareChatThreadResponse> {
+    const context = summary ?? await loadThreadSummaries(user, [thread])
+    const provider = thread.providerId ? context.providerById.get(thread.providerId) : null
+    const sanction = context.sanctionByThreadId.get(thread.id)
+    const sanctionAppeal = sanction ? context.appealBySubjectId.get(sanction.id) : null
+    return {
+        id: thread.id, type: thread.type, status: thread.status, subject: thread.subject,
+        requestId: thread.requestId, providerId: thread.providerId, providerName: provider?.name ?? null,
+        clientId: thread.clientId, lastMessageAt: thread.lastMessageAt?.toISOString() ?? null,
+        unreadCount: context.unreadByThreadId.get(thread.id) ?? 0,
+        moderationRestriction: sanction?.sourceReportId && sanction.reason && sanction.expiresAt ? {
+            id: sanction.id, reason: sanction.reason, expiresAt: sanction.expiresAt.toISOString(),
+            state: sanction.expiresAt.getTime() > Date.now() ? 'active' : 'expired', appealStatus: sanctionAppeal?.status ?? null,
+        } : null,
+        createdAt: thread.createdAt.toISOString(), updatedAt: thread.updatedAt.toISOString(),
+    }
+}
+
+export async function getMyAutoCareChats(user: UserEntity, input: unknown = {}) {
+    const normalized = normalizeCursorPaginationInput(input)
+    if (!normalized || normalized.beforeCursor) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Thread pagination is invalid.' })
     const scopes = await getManagedProviderPermissionScopes(user.id, 'chats')
-    if (user.role === UserRole.Client) {
-        threads = await repository.find({ where: { clientId: user.id }, order: { updatedAt: 'DESC' } })
+    if (user.role === UserRole.Owner && !scopes.length) return isCursorPaginationRequested(normalized) ? { items: [], nextCursor: null } : []
+    const query = AppDataSource.getRepository(AutoCareChatThreadEntity).createQueryBuilder('thread')
+        .leftJoin(ServiceRequestEntity, 'request', 'request.id = thread.requestId AND request.providerId = thread.providerId')
+    const clauses: string[] = []
+    const parameters: Record<string, unknown> = { userId: user.id }
+    if (user.role === UserRole.Client) clauses.push('thread.clientId = :userId')
+    if (scopes.length) {
+        clauses.push("(thread.createdById = :userId AND thread.type = 'support')")
+        for (const [index, scope] of scopes.entries()) {
+            if (scope.locationIds?.length === 0) continue
+            parameters[`provider${index}`] = scope.providerId
+            if (scope.locationIds) parameters[`locations${index}`] = scope.locationIds
+            clauses.push(`(thread.providerId = :provider${index}${scope.locationIds ? ` AND request.locationId IN (:...locations${index})` : ''})`)
+        }
+    } else if (user.role === UserRole.SuperAdmin) clauses.push('TRUE')
+    else if (user.role === UserRole.Admin) {
+        clauses.push("thread.type IN ('support', 'admin_escalation')")
+        clauses.push(`thread.type = 'service_request' AND thread.requestId IS NOT NULL AND EXISTS (SELECT 1 FROM autocare_chat_reports report WHERE report."threadId" = thread.id
+            AND report.status = 'pending' AND report."assignedModeratorId" = :userId AND report."accessExpiresAt" > :now
+            AND report."reportedMessageId" IS NOT NULL AND report."acknowledgedAt" IS NOT NULL AND report."policyVersion" IS NOT NULL)`)
+        parameters.now = new Date()
     }
-    if (scopes.length > 0) {
-        const providerIds = scopes.map(({ providerId }) => providerId)
-        const providerThreads = providerIds.length
-            ? await repository.find({ where: [{ providerId: In(providerIds) }, { createdById: user.id }], order: { updatedAt: 'DESC' } })
-            : await repository.find({ where: { createdById: user.id }, order: { updatedAt: 'DESC' } })
-        const requestIds = providerThreads.flatMap((thread) => thread.requestId ? [thread.requestId] : [])
-        const requests = requestIds.length
-            ? await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { id: In(requestIds) }, select: { id: true, providerId: true, locationId: true } })
-            : []
-        const requestById = new Map(requests.map((request) => [request.id, request]))
-        const visibleProviderThreads = providerThreads.filter((thread) => {
-            if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return true
-            if (!thread.providerId) return false
-            const request = thread.requestId ? requestById.get(thread.requestId) : null
-            return isManagedProviderLocationAllowed(scopes, thread.providerId, request?.locationId ?? null)
-        })
-        threads = [...new Map([...threads, ...visibleProviderThreads].map((thread) => [thread.id, thread])).values()]
-    } else if (user.role === UserRole.SuperAdmin) {
-        threads = await repository.find({ order: { updatedAt: 'DESC' } })
-    } else if (user.role === UserRole.Admin) {
-        const moderationReports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({ where: { status: AutoCareChatReportStatus.Pending, assignedModeratorId: user.id }, order: { createdAt: 'DESC' }, take: 100 })
-        const now = Date.now()
-        const activeReports = moderationReports.filter((report) => report.accessExpiresAt && report.accessExpiresAt.getTime() > now)
-        const reportedThreadIds = [...new Set(activeReports.map((report) => report.threadId))]
-        const reportedThreads = reportedThreadIds.length ? await repository.find({ where: { id: In(reportedThreadIds) }, order: { updatedAt: 'DESC' } }) : []
-        const operationalThreads = await repository.find({ where: [{ type: AutoCareChatThreadType.Support }, { type: AutoCareChatThreadType.AdminEscalation }], order: { updatedAt: 'DESC' } })
-        threads = [...new Map([...operationalThreads, ...reportedThreads].map((thread) => [thread.id, thread])).values()]
+    if (!clauses.length) return isCursorPaginationRequested(normalized) ? { items: [], nextCursor: null } : []
+    query.where(`(${clauses.join(' OR ')})`, parameters)
+    if (normalized.cursor) {
+        const cursor = decodeCursor(normalized.cursor, ['updatedAt', 'id'])
+        query.andWhere('(thread.updatedAt < :updatedAt OR (thread.updatedAt = :updatedAt AND thread.id < :id))', { updatedAt: assertCursorDate(cursor, 'updatedAt'), id: cursor.id })
     }
-    return Promise.all(threads.map((thread) => toThreadResponse(user, thread)))
+    const limit = getCursorLimit(normalized.limit ?? 100)
+    const threads = await query.orderBy('thread.updatedAt', 'DESC').addOrderBy('thread.id', 'DESC').take(limit + 1).getMany()
+    const page = threads.slice(0, limit)
+    const summary = page.length ? await loadThreadSummaries(user, page) : null
+    const items = summary ? await Promise.all(page.map((thread) => toThreadResponse(user, thread, summary))) : []
+    if (!isCursorPaginationRequested(normalized)) return items
+    const last = page.at(-1)
+    return { items, nextCursor: threads.length > limit && last ? encodeCursor({ updatedAt: last.updatedAt.toISOString(), id: last.id }) : null }
 }
 
 export async function createAutoCareChat(user: UserEntity, input: CreateAutoCareChatInput) {
@@ -403,8 +412,9 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
     }
     const [messages, attachments] = await Promise.all([
         messageQuery.getMany(),
-        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { threadId: thread.id, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' } }),
+        AppDataSource.getRepository(ServiceAttachmentEntity).find({ where: thread.requestId ? [{ threadId: thread.id, status: ServiceAttachmentStatus.Ready }, { requestId: thread.requestId, status: ServiceAttachmentStatus.Ready }] : { threadId: thread.id, status: ServiceAttachmentStatus.Ready }, order: { createdAt: 'ASC' }, take: MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD + 1 }),
     ])
+    if (attachments.length > MAX_AUTOMOTIVE_ATTACHMENTS_PER_THREAD) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Legacy conversation exceeds its attachment quota; attachments require review before loading.' })
     const hasMore = messages.length > limit
     const page = [...(hasMore ? messages.slice(0, limit) : messages)].reverse()
     const firstMessage = page.at(0)

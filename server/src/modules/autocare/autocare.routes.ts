@@ -388,7 +388,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/owner/fleets', async (request) => getMyAutoCareFleets(await requireAuth(request)))
     app.post('/owner/fleets', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareFleet(await requireVerifiedEmail(request), validateBody(createAutoCareFleetSchema, request.body)))
     app.post('/owner/fleets/:fleetId/vehicles', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareFleetVehicle(await requireVerifiedEmail(request), validateParams(autoCareFleetParamsSchema, request.params).fleetId, validateBody(createAutoCareFleetVehicleSchema, request.body)))
-    app.get('/v1/chats', async (request) => getMyAutoCareChats(await requireAuth(request)))
+    app.get('/v1/chats', async (request) => getMyAutoCareChats(await requireAuth(request), validateQuery(autoCareChatConversationQuerySchema, request.query)))
     app.post('/v1/chats', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareChat(await requireVerifiedEmail(request), validateBody(createAutoCareChatSchema, request.body)))
     app.get('/v1/service-requests/:requestId/chat-thread', async (request) => getAutoCareChatThreadForRequest(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/chats/:chatId/reports', { preHandler: autoCareMutationRateLimit }, async (request) => {
