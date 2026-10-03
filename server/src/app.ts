@@ -31,7 +31,7 @@ import { createMailer } from './shared/mail/create-mailer.js'
 import { mailReadiness, verifyMailerInBackground } from './shared/mail/mail-readiness.js'
 import { enqueuePasswordSetupEmailSafely } from './modules/outbox/password-setup-outbox.service.js'
 import { createTrustedProxyPolicy } from './shared/security/trusted-proxy.js'
-import { setApplicationLogger } from './shared/observability/logger.js'
+import { serializeFastifyError, setApplicationLogger } from './shared/observability/logger.js'
 import { metrics } from './shared/observability/metrics.js'
 import { metricsRoutes } from './routes/metrics.route.js'
 import { openApiRoutes } from './routes/openapi.route.js'
@@ -68,6 +68,7 @@ export async function buildApp() {
         },
         logger: {
             level: env.nodeEnv === 'production' ? 'info' : 'debug',
+            serializers: { err: serializeFastifyError },
             redact: {
                 censor: (value, path) => {
                     if (path.length === 2 && path[0] === 'req' && path[1] === 'url' && typeof value === 'string') {

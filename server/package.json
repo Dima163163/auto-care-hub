@@ -61,10 +61,10 @@
     "@fastify/websocket": "^11.3.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "fastify": "5.12.3",
+    "fastify": "5.12.5",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "9.1.1",
+    "nodemailer": "10.0.13",
     "pg": "^8.21.0",
     "reflect-metadata": "^0.2.2",
     "sharp": "0.35.4",
@@ -78,7 +78,6 @@
     "@types/ioredis": "^4.28.10",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.8.0",
-    "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.0",
     "@types/ws": "^8.18.1",
@@ -92,8 +91,7 @@
     "vitest-tsconfig-paths": "^3.4.1"
   },
   "overrides": {
-    "brace-expansion": "2.1.4",
-    "fast-uri": "3.1.7",
+    "brace-expansion": "2.1.7",
     "find-my-way": "9.9.0"
   }
 }

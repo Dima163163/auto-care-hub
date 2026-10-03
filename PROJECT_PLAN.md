@@ -1765,3 +1765,72 @@ production acceptance or design-approval requirements.
   inventory/order checks pass.
 - [ ] The new migration has not been applied to the developer database, and
   the feature has not yet been rehearsed against a running PostgreSQL API.
+
+### Additional full project audit — 2026-10-03
+
+- [x] Maintained an incremental urgent/nonurgent register in
+  [`docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`](docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md):
+  13 urgent and 16 nonurgent open items, with evidence, limitations, proposed
+  improvements, acceptance criteria and implementation order. No runtime fixes
+  or dependency updates were requested or performed.
+- [x] Fresh verification: frontend 187 files / 603 tests, backend unit 309 files /
+  1165 tests, plus 12 omitted pure-policy files / 26 tests pass. Lint, TypeScript,
+  backend build, real/mock Next builds, API parity and migration source checks
+  pass. All 17 HTTP metadata probes pass; the combined SEO gate still blocks on
+  absent static HTML for dynamic routes.
+- [ ] Resolve the production encryption-provider startup blocker, record-bound
+  encryption/rotation, raw SQL-error logging, privileged broadcast read bypass,
+  MFA, backup authentication, unsafe integration DB setup and current dependency
+  advisories. Other findings and specific acceptance criteria are in the register.
+- [ ] Fresh DB integration, migrations, KMS, backup restore and external services
+  remain unverified: Docker is unavailable and ordinary developer DB isolation
+  was not established. Pilot remains NO-GO; canonical gates were not recalculated.
+
+### Urgent audit fixes, batch 1 — 2026-10-03
+
+- [x] U09: replaced raw unhandled-error logging with an allowlisted projection
+  and configured the Fastify error serializer. SQL diagnostics retain the
+  machine code and request ID while dropping query values, driver details,
+  cause and stack. Aggregate traversal is bounded and malformed error getters
+  cannot break serialization. External reports use the same safe SQL projection.
+- [x] U09 verification: backend unit **309 files / 1171 tests**, backend build,
+  full lint plus final targeted lint and `git diff --check` pass. Added regression
+  tests first reproduced the unsafe logs/SQL diagnostics and now pass, including
+  actual Fastify/Pino output, external reports, HTTP 500 envelopes and cycles.
+- [x] U11: removed role-only admin/super-admin access from broadcast authorization
+  and complete-offer projection. Privileged callers need an ordinary active
+  provider request scope and receive only its authorized branch offers; the
+  request's client retains all eligible offers. No new support/moderation access
+  was added without a scoped workflow.
+- [x] U11 verification: backend **309 files / 1177 tests**, focused authorization
+  **4 files / 31 tests**, backend build, targeted lint, API contract/parity/route
+  snapshot and threat-surface source checks pass. Four new regression cases
+  reproduced the bypass before the fix. Existing owner/client behavior passes.
+- [ ] Remaining: **11 urgent / 17 nonurgent**. Added N17 for existing overly broad
+  mock broadcast access; production backend access is fixed. Live DB/production
+  evidence and external pilot gates remain open.
+
+### Urgent audit fixes, batch 2 — 2026-10-03
+
+- [x] Published U09/U11 to `dev` as separate commits `6ebd62e` / `de701c6`,
+  cherry-picked onto current remote dev in an isolated worktree. Preserved the
+  primary checkout's unrelated integrity-script/manifest changes.
+- [x] U12: pinned Next to `16.3.6` and refreshed its lock entries. Production
+  npm audit reports **0 vulnerabilities**. Frontend **187 files / 603 tests**,
+  TypeScript, full lint and isolated real/mock production builds pass.
+- [x] U12 browser verification: production mock catalog/provider/login redirect
+  and real production login hydration pass. Full live API/DB flows await CI.
+- [x] U13: Fastify `5.12.5`, Nodemailer `10.0.13`, brace-expansion `2.1.7`;
+  removed global fast-uri override, resolved compatible `3.1.8` / `4.2.1`.
+  Removed obsolete external Nodemailer typings in favor of its bundled types.
+  Both full and production backend audits report **0 vulnerabilities**.
+- [x] U13 verification: backend **310 files / 1184 tests**, build and full lint
+  pass. Seven actual-SDK offline tests cover RU/EN auth templates, recipient
+  envelopes and multipart UTF-8; no real recipient or SMTP credentials were used.
+- [ ] Promotion: main requires green Quality and dev-to-main PR checks. The
+  U09/U11 CI dependency gate fails on the known Next advisory; U12/U13 address it.
+- [ ] Remaining after U12/U13: **9 urgent / 17 nonurgent**; pilot stays NO-GO.
+- [x] Created promotion PR [#6](https://github.com/Dima163163/auto-care-hub/pull/6)
+  and synchronized dev with the previous main squash. Conflict resolution keeps
+  the already verified runtime tree unchanged and preserves each urgent commit.
+- [ ] Complete candidate CI and required approving review before main merge.

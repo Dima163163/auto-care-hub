@@ -668,3 +668,119 @@ Proposal **01** captures the Users page header over the detailed backdrop and a 
 ### Product audit follow-up — 2026-09-26
 
 See [`docs/audits/PRODUCT_AUDIT_2026-09-25.md`](docs/audits/PRODUCT_AUDIT_2026-09-25.md) for the 40 findings and current disposition. The code-fixable scope is implemented locally. Fresh frontend verification: **179 files / 569 tests**, full ESLint, TypeScript, Vite and Next production builds pass; the backend remains at its earlier verified **306 files / 1150 unit tests**, and root/backend `npm audit` both reported **0 vulnerabilities**. Remaining partial findings are A21 (complete complaint-history/search/filter) and A29 (full profile HTML, gated by the three-approval design lock in `AGENTS.md`); their visual proposal and acceptance criteria are in [`docs/design/proposals/2026-09-26-a21-a29/README.md`](docs/design/proposals/2026-09-26-a21-a29/README.md). A34 shows owner-visible preferred and confirmed visit times in the service timezone. The latest browser pass verified the client booking summary, owner request inbox and moderator access boundary. A mock-only request was used; its service timezone now survives the client-to-owner mock API contract, and the owner sees Moscow local time rather than UTC. External domain/database/mail/storage checks remain pending; local readiness is not production approval.
+
+### Additional full audit — 2026-10-03 (latest verification)
+
+The current working-copy audit is
+[`docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`](docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md):
+**13 urgent / 16 nonurgent** open items with evidence and acceptance criteria.
+Field encryption now exists, but production startup has no configured key-provider
+adapter; record binding and blind-index rotation also need work. Other urgent
+findings include raw SQL error parameters in logs, an unconditional admin broadcast
+read bypass, MFA/step-up, backup authentication, integration DB isolation and fresh
+dependency advisories. Old statements that encryption is absent or audits are zero
+must not be used as current evidence; A21/A29 disposition needs review against the
+newer implementation rather than automatic reopening of the old scope.
+
+Fresh local PASS: frontend **187 files / 603 tests**, backend unit **309 files /
+1165 tests**, additional pure policies **12 files / 26 tests**, full lint and
+TypeScript, backend build, isolated real/mock Next production builds, API parity
+**244/244 mock routes; 2/2 WebSocket contracts**, migration inventory/order checks
+**139 files**. Production npm audit now fails: web **1 critical**; API **2 high /
+2 moderate**. Advisory reachability is qualified per finding, not presumed.
+The SEO command still blocks on static HTML expectations for dynamic routes even
+though **17/17 local HTTP metadata probes pass**. Guest mock-browser checks covered
+discovery, provider/service selection and login redirect on desktop/mobile.
+
+No fresh DB integration/E2E or production infrastructure evidence: Docker is
+unavailable, ordinary developer DB isolation was not established, and no DB was
+used/reset. No runtime/dependency changes, installation, commit, push or merge was
+performed. Pre-existing integrity-script changes were preserved. Temporary Next
+servers and browser tab were stopped. Pilot remains **NO-GO**; the 54 canonical
+gates and their percentages were not changed.
+
+### Urgent fix U09 — 2026-10-03
+
+User authorized urgent fixes in batches of 1–2, each in a separate commit.
+U09 is fixed locally: the global request handler logs only `serializeError`
+output; Fastify's `err` serializer also excludes raw stacks and attached values.
+SQL error messages are replaced entirely rather than regex-redacted, preserving
+SQLSTATE and request correlation. External reporting and incident error names
+use safe projections; AggregateError depth/count/length is bounded and unsafe
+getters return UnknownError. Non-SQL diagnostics retain existing PII redaction.
+Fresh PASS: backend **309 files / 1171 tests**, backend build, full lint and
+final targeted lint. HTTP inject/Pino capture verifies synthetic email, phone,
+VIN, arbitrary repair text and password do not appear in logs, reporter payload
+or the 500 response. No live DB or production logs were used. The audit register
+has **12 urgent / 16 nonurgent** remaining; U11 is next. Pre-existing integrity
+script/manifest edits remain outside this fix. No push/merge or deployment.
+
+### Urgent fix U11 — 2026-10-03
+
+U11 is fixed in the backend: admin/super-admin roles no longer authorize
+broadcast reads or select the complete offers projection. Every non-client
+caller must pass ordinary active provider/request/branch/market permissions,
+and gets only offers in that scope. The request's client retains all eligible
+offers. There is no new unscoped support endpoint; a future broadcast moderation
+workflow must define assignment/reason/expiry/audit before granting such reads.
+Fresh PASS: backend **309 files / 1177 tests**, focused permissions **4 files /
+31 tests**, backend build, targeted lint, API contract/parity/route snapshot and
+threat-surface checks. New admin/super-admin denial and branch-projection cases
+failed before the fix; owner/client cases preserve legitimate access. No live
+PostgreSQL/authenticated browser replay was performed.
+
+The register now has **11 urgent / 17 nonurgent** remaining. N17 captures the
+pre-existing mock GET broadcast handler's broader non-client access; it needs
+separate frontend/mock ownership and is not a production backend bypass after
+U11. This batch changes no frontend or database data. Integrity-script/manifest
+files remain byte-for-byte unchanged and excluded from both requested commits.
+Pilot remains NO-GO; no push, merge or deployment was performed.
+
+### Dev publication and urgent fix U12 — 2026-10-03
+
+User authorized pushing to dev, then main, then continuing urgent batches.
+Current remote dev had newer CI fixes and squash history, so U09/U11 were
+cherry-picked cleanly onto it in `/private/tmp/autocare-hub-urgent-audit-batch-2`
+and pushed as `6ebd62e` / `de701c6`. The primary checkout remains untouched,
+including its three unrelated integrity-script/manifest files. Main promotion
+must follow the current README/workflow's protected dev-to-main PR process;
+the older local workflow instructions are tracked by N01.
+
+The dependency gate on that dev SHA fails on the known Next advisory. The next
+pair is U12/U13 to unblock it. U12 pins Next to `16.3.6`; production audit is
+zero, frontend **187 files / 603 tests**, TypeScript, full lint and real/mock
+Next production builds pass. Production mock browser catalog/provider/login
+redirect and real login hydration pass; authenticated live API/DB replay awaits
+isolated CI. U13 is in progress and will receive a separate commit. The register
+has **10 urgent / 17 nonurgent** remaining after U12; pilot remains NO-GO.
+
+### Urgent fix U13 — 2026-10-03
+
+U12 is committed as `191bc51`. U13 patches Fastify to `5.12.5`, Nodemailer to
+`10.0.13` and brace-expansion to `2.1.7`. The global fast-uri v3 override is
+removed: AJV/compiler uses patched `3.1.8`, fast-json-stringify 7 uses `4.2.1`.
+Nodemailer now supplies its own types; its obsolete external type dependency is
+removed. Node ≥20 is required and current CI uses 22. Full and production backend
+audits are zero. Backend **310 files / 1184 tests**, build and full lint pass;
+seven actual-SDK offline tests verify RU/EN auth email templates, envelopes and
+UTF-8 multipart composition. Live SMTP/TLS and local DB integration were not run.
+
+The earlier U09/U11 dev run has green backend migrations/tests and real full-stack
+production Next checks, but its dependency scan fails on the old Next advisory.
+The updated candidate must repeat CI before protected main promotion. U12/U13
+are separate commits and ready for dev publication. The register now has
+**9 urgent / 17 nonurgent** remaining; U06/U07 remain queued. The primary
+checkout and unrelated integrity files remain unchanged. Pilot remains NO-GO.
+
+### Promotion PR and history synchronization — 2026-10-03
+
+U12/U13 were pushed to dev as `191bc51` / `abb7dfb`. PR
+[#6](https://github.com/Dima163163/auto-care-hub/pull/6) was created through the
+existing signed-in browser because the GitHub connector lacks PR write permission.
+Main `24bc8b0` contains the same baseline as the previously squashed dev commits,
+but is not an ancestor of dev. Merging it into dev required five conflict
+resolutions; preserving the verified dev versions produced an index identical
+to `abb7dfb` before this documentation update. No runtime or frontend changes
+were introduced by the synchronization. All four urgent commits are preserved.
+CI must rerun on the merge candidate. GitHub also displays a required approving
+review; that gate must be satisfied without bypassing branch protection.

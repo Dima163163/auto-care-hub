@@ -28,7 +28,7 @@ import {
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
 } from '../../entities/index.js'
-import { UserRole } from '../../entities/user/user.entity.js'
+import { UserEntity, UserRole } from '../../entities/user/user.entity.js'
 import { assertOwnerBroadcastAccess, createAutoCareBroadcastRequest, getAutoCareBroadcastRequest, getOwnerAutoCareBroadcastRequests } from './autocare-marketplace.service.js'
 
 const owner = { id: 'owner-1', role: UserRole.Owner } as never
@@ -60,6 +60,61 @@ describe('AutoCare broadcast market boundaries', () => {
         mocks.getRepository.mockReset()
         mocks.transaction.mockReset()
         mocks.getManagedProviderPermissionScopes.mockReset().mockResolvedValue([scope])
+    })
+
+    it.each([UserRole.Admin, UserRole.SuperAdmin])('denies %s private reads without a provider request scope', async (role) => {
+        const broadcastId = '33333333-3333-4333-8333-333333333333'
+        const request = { ...openRequest(broadcastId, 'market-1'), issueDescription: 'confidential repair notes', vehicleSnapshot: { vin: 'JTM1234567890ABCD' } }
+        const requestRepository = { findOneBy: vi.fn().mockResolvedValue(request) }
+        const definitionRepository = { findOneBy: vi.fn().mockResolvedValue({ id: 'definition-1', slug: 'brakes' }) }
+        const offerRepository = { find: vi.fn().mockResolvedValue([]) }
+        mocks.getManagedProviderPermissionScopes.mockResolvedValue([])
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutoCareBroadcastRequestEntity) return requestRepository
+            if (entity === AutomotiveServiceDefinitionEntity) return definitionRepository
+            if (entity === AutoCareBroadcastOfferEntity) return offerRepository
+            return undefined
+        })
+
+        await expect(getAutoCareBroadcastRequest(Object.assign(new UserEntity(), { id: 'administrator', role }), broadcastId))
+            .rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' })
+
+        expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith('administrator', 'requests')
+        expect(definitionRepository.findOneBy).not.toHaveBeenCalled()
+        expect(offerRepository.find).not.toHaveBeenCalled()
+    })
+
+    it.each([UserRole.Admin, UserRole.SuperAdmin, UserRole.Owner, UserRole.Client])('keeps %s offers within their participant scope', async (role) => {
+        const broadcastId = '77777777-7777-4777-8777-777777777777'
+        const request = openRequest(broadcastId, 'market-1')
+        const otherLocation = { ...location, id: '88888888-8888-4888-8888-888888888888' }
+        const offers = [location, otherLocation].map((branch, index) => ({
+            id: `offer-${index}`, broadcastRequestId: broadcastId, providerId: provider.id, locationId: branch.id,
+            offerSnapshot: { amountMinor: 25_000, currencyCode: 'RUB' }, status: 'pending', createdAt: new Date('2026-09-20T10:00:00.000Z'),
+        }))
+        const offerRepository = { find: vi.fn().mockResolvedValue(offers) }
+        mocks.getRepository.mockImplementation((entity: unknown) => {
+            if (entity === AutoCareBroadcastRequestEntity) return { findOneBy: vi.fn().mockResolvedValue(request) }
+            if (entity === AutomotiveProviderEntity) return { find: vi.fn().mockResolvedValue([provider]) }
+            if (entity === AutomotiveServiceLocationEntity) return { find: vi.fn().mockResolvedValue([location, otherLocation]) }
+            if (entity === AutoCareBroadcastOfferEntity) return offerRepository
+            if (entity === AutomotiveServiceDefinitionEntity) return { findOneBy: vi.fn().mockResolvedValue({ id: 'definition-1', slug: 'brakes' }) }
+            return undefined
+        })
+        const actor = Object.assign(new UserEntity(), { id: role === UserRole.Client ? request.clientId : 'workspace-member', role })
+
+        const result = await getAutoCareBroadcastRequest(actor, broadcastId)
+
+        if (role === UserRole.Client) {
+            expect(result.offers.map((offer) => offer.id)).toEqual(['offer-0', 'offer-1'])
+            expect(mocks.getManagedProviderPermissionScopes).not.toHaveBeenCalled()
+        } else {
+            expect(result.offers.map((offer) => offer.id)).toEqual(['offer-0'])
+            expect(mocks.getManagedProviderPermissionScopes).toHaveBeenCalledWith(actor.id, 'requests')
+            expect(offerRepository.find).toHaveBeenLastCalledWith(expect.objectContaining({
+                where: expect.objectContaining({ providerId: expect.any(Object) }),
+            }))
+        }
     })
 
     it('requires a selected public market before persisting a broadcast request', async () => {
