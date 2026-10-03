@@ -143,6 +143,7 @@ jobs:
             sleep 1
           done
           node scripts/check-next-csp.mjs --url http://127.0.0.1:4197
+          node scripts/check-seo-release.mjs --url http://127.0.0.1:4197
 
       - name: Build real-mode Vite compatibility artifact
         run: VITE_API_MODE=real npm run build:vite

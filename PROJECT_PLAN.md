@@ -14,6 +14,8 @@
   и 3 tests PASS; provenance/update procedure записаны, permissions сохранены.
 - [x] N05: nonce CSP в production Next; исправлена composite-extension detection
   Next 16.3.6, 7 runtime samples и 6 policy/checker tests PASS, CI HTTP guard.
+- [x] N06: Next initial-route raw/gzip budgets на выбранном artifact; 17 HTTP
+  metadata + 17 JS checks и 10 checker tests PASS. Device Core Web Vitals открыты.
 
 > Status: historical implementation roadmap
 >

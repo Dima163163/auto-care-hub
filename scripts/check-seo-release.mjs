@@ -8,6 +8,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const publicRoot = resolve(projectRoot, 'public')
 
 export const MAX_SEO_HTML_RESPONSE_BYTES = 2 * 1024 * 1024
+export const INITIAL_ROUTE_JAVASCRIPT_BUDGETS = Object.freeze({ rawBytes: 1_600_000, gzipBytes: 460_000 })
 const SEO_METADATA_IMAGE_PATHS = [
     '/images/autocare/hero-map-generated.webp',
 ]
@@ -348,7 +349,40 @@ function extractHtmlMetadata(html) {
     }
 }
 
-async function checkHttpMetadata(baseUrl) {
+export function measureInitialRouteJavaScript(html, { baseUrl, buildRoot = resolveNextBuildRoot() }) {
+    const base = new URL(baseUrl)
+    const paths = new Set()
+    for (const match of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+        const asset = new URL(match[1].replaceAll('&amp;', '&'), base)
+        if (asset.origin !== base.origin || asset.username || asset.password) throw new Error('Initial script points outside the candidate origin.')
+        if (!asset.pathname.startsWith('/_next/static/') || !asset.pathname.endsWith('.js')) throw new Error('Initial script is not a Next static artifact.')
+        const pathname = decodeURIComponent(asset.pathname.slice('/_next/'.length))
+        const file = resolve(buildRoot, pathname)
+        if (relative(buildRoot, file).startsWith('..') || !existsSync(file)) throw new Error('Initial script is missing from the selected candidate artifact.')
+        paths.add(file)
+    }
+    if (!paths.size) throw new Error('No initial Next JavaScript entries found.')
+    let rawBytes = 0, gzipBytes = 0
+    for (const file of paths) {
+        const contents = readFileSync(file)
+        rawBytes += contents.length
+        gzipBytes += gzipSync(contents).length
+    }
+    return { entries: paths.size, rawBytes, gzipBytes }
+}
+
+export function checkInitialRouteJavaScript(html, options) {
+    try {
+        const size = measureInitialRouteJavaScript(html, options)
+        const { rawBytes: rawBudget, gzipBytes: gzipBudget } = INITIAL_ROUTE_JAVASCRIPT_BUDGETS
+        return check('Initial JavaScript', size.rawBytes <= rawBudget && size.gzipBytes <= gzipBudget ? 'pass' : 'blocked',
+            `${size.entries} entries; ${(size.rawBytes / 1000).toFixed(1)} kB raw, ${(size.gzipBytes / 1000).toFixed(1)} kB gzip; budgets ${rawBudget / 1000}/${gzipBudget / 1000} kB`)
+    } catch (error) {
+        return check('Initial JavaScript', 'blocked', error instanceof Error ? error.message : 'candidate asset inspection failed')
+    }
+}
+
+async function checkHttpMetadata(baseUrl, buildRoot) {
     if (!baseUrl) {
         return [check('Production HTML metadata', 'manual', 'set SEO_BASE_URL or pass --url to validate rendered title, canonical and Open Graph tags')]
     }
@@ -374,6 +408,8 @@ async function checkHttpMetadata(baseUrl) {
             checks.push(check(`HTML ${pathname}`, 'blocked', `HTTP ${response.status}; ${detail}`))
             continue
         }
+        const initialJavaScript = checkInitialRouteJavaScript(html, { baseUrl, buildRoot })
+        checks.push({ ...initialJavaScript, name: `Initial JavaScript ${pathname}` })
         const metadata = extractHtmlMetadata(html)
         const isPrivate = routePath.startsWith('/admin') || routePath.startsWith('/owner') || routePath.startsWith('/profile')
         const isSearchResult = routePath === '/services' && hasSearchParams
@@ -419,7 +455,7 @@ export async function runSeoReleaseChecks(options = {}) {
         checkLocaleCoverage(),
         checkLocalHtmlMetadataReport({ buildRoot: options.buildRoot ?? resolveNextBuildRoot(), baseUrl }),
         checkLighthouseAvailability(baseUrl),
-        ...(await checkHttpMetadata(baseUrl)),
+        ...(await checkHttpMetadata(baseUrl, options.buildRoot ?? resolveNextBuildRoot())),
     ]
 }
 

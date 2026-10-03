@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
+import { randomBytes } from 'node:crypto'
 
 import {
     checkCanonicalRobotsConsistency,
@@ -14,6 +15,9 @@ import {
     readBoundedSeoResponse,
     runSeoReleaseChecks,
     resolveNextBuildRoot,
+    measureInitialRouteJavaScript,
+    checkInitialRouteJavaScript,
+    INITIAL_ROUTE_JAVASCRIPT_BUDGETS,
 } from './check-seo-release.mjs'
 
 test('SEO release check always reports repository budgets and prerender contract', async (t) => {
@@ -94,4 +98,39 @@ test('bounded SEO response reader accepts UTF-8 bodies and rejects oversized hea
         () => readBoundedSeoResponse(new Response('0123456789abcdef'), 8),
         /SEO_HTML_RESPONSE_TOO_LARGE:8/,
     )
+})
+
+
+test('route JS measurement deduplicates hashed entries in the selected build and reports raw/gzip bytes', (t) => {
+    const buildRoot = fixture(t)
+    mkdirSync(resolve(buildRoot, 'static/chunks'), { recursive: true })
+    writeFileSync(resolve(buildRoot, 'static/chunks/candidate.js'), 'console.log("candidate")')
+    const html = '<script src="/_next/static/chunks/candidate.js"></script><script src="/_next/static/chunks/candidate.js?x=1"></script>'
+    const sizes = measureInitialRouteJavaScript(html, { buildRoot, baseUrl: 'https://example.test' })
+    assert.equal(sizes.entries, 1)
+    assert.equal(sizes.rawBytes, 24)
+    assert.ok(sizes.gzipBytes > 0)
+    assert.equal(checkInitialRouteJavaScript(html, { buildRoot, baseUrl: 'https://example.test' }).status, 'pass')
+})
+
+test('route budgets fail closed on missing/mismatched/external initial artifacts', (t) => {
+    const buildRoot = fixture(t)
+    for (const html of ['<script src="/_next/static/missing.js"></script>', '<script src="https://other.test/entry.js"></script>', '<script src="/_next/static/../../../outside.js"></script>', '<title>No entries</title>']) {
+        assert.equal(checkInitialRouteJavaScript(html, { buildRoot, baseUrl: 'https://example.test' }).status, 'blocked')
+    }
+})
+
+test('initial route regression blocks independently on raw and gzip budgets', (t) => {
+    const buildRoot = fixture(t)
+    mkdirSync(resolve(buildRoot, 'static/chunks'), { recursive: true })
+    const asset = resolve(buildRoot, 'static/chunks/oversized.js')
+    const html = '<script src="/_next/static/chunks/oversized.js"></script>'
+    const options = { buildRoot, baseUrl: 'https://example.test' }
+    writeFileSync(asset, 'x'.repeat(INITIAL_ROUTE_JAVASCRIPT_BUDGETS.rawBytes + 1))
+    assert.equal(checkInitialRouteJavaScript(html, options).status, 'blocked')
+    writeFileSync(asset, randomBytes(500_000))
+    const size = measureInitialRouteJavaScript(html, options)
+    assert.ok(size.rawBytes < INITIAL_ROUTE_JAVASCRIPT_BUDGETS.rawBytes)
+    assert.ok(size.gzipBytes > INITIAL_ROUTE_JAVASCRIPT_BUDGETS.gzipBytes)
+    assert.equal(checkInitialRouteJavaScript(html, options).status, 'blocked')
 })

@@ -257,6 +257,8 @@
 
 **Приёмка:** CI обнаруживает ухудшение начальной загрузки Next; до/после есть измерения, разделённые на public/client/owner/admin routes. Статус: открыто.
 
+**Исправление 04.10:** N06: initial JavaScript измеряется по distinct script entries каждого HTTP route и только выбранному NEXT_DIST_DIR; missing/external/mismatched artifacts блокируются. Raw/gzip budgets 1600000/460000 bytes действуют независимо и проверяются на живом CI production Next. Локальные 17 metadata + 17 initial-route checks PASS: 1398858 raw / 403302 gzip, 9 entries на public/provider/client/owner/admin. SEO checker 10 tests PASS, включая обе oversized regressions. Измеренный baseline и ограничения — docs/operations/NEXT_INITIAL_JAVASCRIPT_BASELINE.md. Payload не уменьшался; production real-mode Lighthouse/LCP/INP/CLS остаются внешней приёмкой.
+
 ### N07 · P2 · Включать strict-проверки frontend постепенно
 
 **Подтверждение:** `tsconfig.app.json` не включает `strict`/`strictNullChecks`/`noUncheckedIndexedAccess`; references в корневом config не наследуют backend strict. Backend включает strict и проверку индексного доступа.
