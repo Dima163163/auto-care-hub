@@ -10,7 +10,10 @@ push, явно разрешил основному агенту прямую fro
 Основная dirty-копия не изменяется. N18 реализован и проверен 17 синтетическими
 тестами. N19 runner/policy проверен 12 тестами: required-only checks, оба Quality
 events, bounded wait и exact-head merge guard; live replay ожидает push.
-Остальные пункты в работе, единый push ещё не выполнен.
+Дополнительно выполнены отдельными коммитами N15/N13/N10/N17/N14/N08/N16/N01;
+расширенная DB integration и финальный browser replay впереди. Оставшиеся пункты
+в работе, единый push ещё не выполнен. Tracked docs/agent-rules — canonical;
+ignored старые правила не требуют повторного ownership approval.
 
 This is the compact handoff for future Codex sessions. Read `AGENTS.md`, this
 file, `ARCHITECTURE.md`, and

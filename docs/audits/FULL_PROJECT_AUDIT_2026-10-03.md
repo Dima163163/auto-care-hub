@@ -197,6 +197,8 @@
 
 **Приёмка:** все активные инструкции называют одинаковые базовую ветку, способ promotion и production runtime; `check:ci-cd-policy` проходит. Статус: открыто, новая находка.
 
+**Исправление 04.10:** N01: AGENTS и tracked docs/agent-rules теперь описывают одну политику feature/dev → protected dev/main PR с exact-candidate Quality, сохранением branches/dirty files и существующего разрешения пользователя. Устранены ссылки на отсутствующие в clean checkout ignored rules и старое Bookly/Vite-only описание. Agent profiles/skills и primary ignored rules не изменялись; explicit human frontend ownership/no-subagents policy закреплены по приоритету. Проверены tracked links и diff; docs-only изменение.
+
 ### N02 · P2 · Актуализировать состояние старых аудитов и security baseline
 
 **Подтверждение:** `SECURITY.md` всё ещё перечисляет исправленные WS/quote/deletion-ошибки как open; security audit 26.09 описывает отсутствие шифрования полей, хотя сейчас есть migration `1786410000000`, transformer/subscriber. Product audit отмечает A21/A29 partial, но текущий chat service уже имеет cursor/search/filter, а provider route использует `PublicProviderFirstPaint`.

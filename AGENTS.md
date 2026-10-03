@@ -8,16 +8,20 @@ the current task.
 
 1. `PROJECT_CONTEXT.md` - compressed project memory and current handoff.
 2. `SKILLS.md` - short project-specific review checklists.
-3. `.codex/rules/workflow.md` - git workflow, checks, and local dirty-file
+3. `docs/agent-rules/workflow.md` - git workflow, checks, and local dirty-file
    handling.
-4. `.codex/rules/project-structure.md` - stack and important paths.
-5. `.codex/rules/coding.md` - coding, i18n, UI, and image-upload rules.
-6. `.codex/rules/subagents.md` - read-only subagent roles and limits.
+4. `docs/agent-rules/project-structure.md` - stack and important paths.
+5. `docs/agent-rules/coding.md` - coding, i18n, UI, and image-upload rules.
+6. `docs/agent-rules/subagents.md` - read-only subagent roles and limits.
 
 For auth, provider/admin permissions, messaging privacy, uploads, subscriptions,
 bonuses, deployment security, CSRF/XSS/rate-limit, Redis, or password-flow
 tasks, read `SECURITY_CONTEXT.md` for target AutoCare rules and `SECURITY.md`
 for the implemented platform baseline.
+
+The tracked `docs/agent-rules` files are canonical and available in every checkout.
+Old ignored `.codex/rules` copies are historical; they do not override these rules
+or explicit human instructions. Agent profiles/skills remain unmodified.
 
 ## Project
 
@@ -30,10 +34,11 @@ Backend root: `server`
 
 ## Non-Negotiable Workflow
 
-- One task means one feature branch from current `main`.
-- Do not delete feature branches after merge.
-- After user confirmation: commit, push the feature branch, merge it into
-  `main`, then push `main`.
+- One task means one isolated feature branch from current `dev`, synchronized
+  with current `main` when needed; preserve branches after merge.
+- Use existing user authorization for commits/publication and respect the
+  requested batching. Promote `dev` → `main` only through the protected PR after
+  required exact-candidate Quality checks. Never direct-push `main` or bypass CI.
 - Use explicit `git add <file>` commands. Do not use `git add .`.
 - Preserve unrelated local changes.
 - Every completed implementation step must be reflected in `PROJECT_PLAN.md`
