@@ -267,6 +267,8 @@
 
 **Приёмка:** поиск отсутствующего значения на большой выборке ограничен по времени/строкам, privacy leakage выбранного индекса описан. Статус: открыто.
 
+**Исправление 04.10:** N08: полный email ищется одним SQL запросом по stable HMAC blind index с сохранением role/status/cursor filters. Частичный поиск ограничен 1000 расшифрованных строк и проверкой elapsed budget между batches; при неполном сканировании возвращается явный ADMIN_SEARCH_TOO_BROAD (422), а не ложный пустой/полный список. UI error translation объясняет, как уточнить поиск. 4 tests PASS (index, 5-batch bound, exhausted empty, page+one/cursor), backend build, frontend types, lint PASS. Hard database statement timeout не заменяется elapsed check; production load evidence остаётся внешним.
+
 ### N09 · P2 · Сделать migration шифрования управляемой на большом объёме
 
 **Подтверждение:** migration `1786410000000` выбирает все значения каждой колонки/таблицы в память и выполняет отдельный UPDATE для каждой строки; всё выполняется в одной migration transaction (`migrationsTransactionMode: each`). Она также расширяет обрабатываемый объём за счёт snapshot/messages/outbox.

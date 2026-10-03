@@ -3213,6 +3213,7 @@ export const enTranslations = {
     },
     errors: {
         NETWORK_ERROR: 'The connection was interrupted. Check your internet connection and try again.',
+        ADMIN_SEARCH_TOO_BROAD: 'The search is too broad. Use a full email address or refine the search and filters.',
         VALIDATION_ERROR: 'Validation failed. Please check the form.',
         NOT_FOUND: 'The requested resource was not found.',
         INTERNAL_SERVER_ERROR: 'Something went wrong on our end. Please try again later.',
