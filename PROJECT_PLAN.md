@@ -18,6 +18,8 @@
   metadata + 17 JS checks и 10 checker tests PASS. Device Core Web Vitals открыты.
 - [x] N12: SQL scope до LIMIT; реальный PostgreSQL regression older-match за 120
   чужими requests PASS. Quotes исправлены после воспроизведения; integration 23/88 PASS.
+- [x] N04: bounded scoped chats, SQL unread aggregation и batch summaries;
+  legacy array/explicit page/invalid limit/branch HTTP regressions PASS (23/88 integration).
 
 > Status: historical implementation roadmap
 >

@@ -380,11 +380,20 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
         expect(requestAResponse.headers['cache-control']).toBe('private, no-store')
         expect(requestAResponse.headers.pragma).toBe('no-cache')
         expect(requestBResponse.status).toBe(403)
+        expect(chats.status).toBe(200)
+        expect(Array.isArray(chats.body)).toBe(true)
         expect(chats.body.map((item: { id: string }) => item.id)).toEqual([chatA.id])
         expect(chatBResponse.status).toBe(403)
         expect(requestBMessage.status).toBe(403)
         expect(requestBQuote.status).toBe(403)
         expect(chatBMessage.status).toBe(403)
+
+        const page = await request(app.server).get('/v1/chats?limit=1').set('Authorization', `Bearer ${managerToken}`)
+        expect(page.status).toBe(200)
+        expect(page.body.items.map((item: { id: string }) => item.id)).toEqual([chatA.id])
+        expect(page.body.nextCursor).toBe(null)
+        const invalid = await request(app.server).get('/v1/chats?limit=101').set('Authorization', `Bearer ${managerToken}`)
+        expect(invalid.status).toBe(400)
     })
 
     it('scopes reviews and analytics by capability and branch', async () => {
