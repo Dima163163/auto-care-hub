@@ -329,7 +329,7 @@
 
 **Приёмка:** релевантная заявка находится при 100+ более новых нерелевантных; другой филиал/рынок не попадает в результат. Статус: открыто.
 
-**Исправление 04.10:** N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; добавлен PostgreSQL replay с session-local temp shadow tables: 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Его запуск ожидает isolated CI. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API.
+**Исправление 04.10:** N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; PostgreSQL replay с session-local temp shadow tables проверяет 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Disposable PostgreSQL 17 выявил непроставленные quotes у camelCase колонок внутри SQL EXISTS; они исправлены явно, без зависимости от автоматической property replacement TypeORM. После коррекции весь integration profile **23 files / 88 PASS, без skip**. DB только этого тестового пакета; ordinary DB не использовалась. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API.
 
 ### N13 · P2 · Исправить SEO-проверку для динамических Next routes
 

@@ -16,6 +16,8 @@
   Next 16.3.6, 7 runtime samples и 6 policy/checker tests PASS, CI HTTP guard.
 - [x] N06: Next initial-route raw/gzip budgets на выбранном artifact; 17 HTTP
   metadata + 17 JS checks и 10 checker tests PASS. Device Core Web Vitals открыты.
+- [x] N12: SQL scope до LIMIT; реальный PostgreSQL regression older-match за 120
+  чужими requests PASS. Quotes исправлены после воспроизведения; integration 23/88 PASS.
 
 > Status: historical implementation roadmap
 >
