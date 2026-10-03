@@ -1834,3 +1834,17 @@ production acceptance or design-approval requirements.
   and synchronized dev with the previous main squash. Conflict resolution keeps
   the already verified runtime tree unchanged and preserves each urgent commit.
 - [ ] Complete candidate CI and required approving review before main merge.
+
+### Urgent audit fixes, batch 3 — 2026-10-03
+
+- [x] U07: validate explicit disposable local PostgreSQL/Redis targets before
+  importing configuration in the shared integration/full-suite setup. Reject
+  production environment/names, remote hosts, URL overrides and Redis DB 0.
+  Configure CI's ephemeral services explicitly; document the new local command.
+- [x] U07 verification: **24 policy cases**, strict setup/policy type check,
+  full lint and backend **311 files / 1208 tests** pass. Actual integration
+  command without test targets rejects before importing tests or connecting.
+- [ ] Valid live PostgreSQL/Redis replay awaits this batch's own isolated CI.
+- [ ] U06: encrypted invitation lookup, expired pending scope and race conflicts.
+- [ ] Remaining after U07: **8 urgent / 17 nonurgent**. Work is on
+  `codex/urgent-audit-batch-3`; PR #6 retains its previous reviewed candidate.

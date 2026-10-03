@@ -784,3 +784,23 @@ to `abb7dfb` before this documentation update. No runtime or frontend changes
 were introduced by the synchronization. All four urgent commits are preserved.
 CI must rerun on the merge candidate. GitHub also displays a required approving
 review; that gate must be satisfied without bypassing branch protection.
+
+### Urgent fix U07, next batch — 2026-10-03
+
+PR #6 remains on dev `14c04ba` while a separate `codex/urgent-audit-batch-3`
+branch holds subsequent fixes in the same isolated worktree. U07 now rejects
+integration/full backend test startup unless NODE_ENV=test and explicit local
+disposable TEST_DATABASE_URL / TEST_REDIS_URL are set. URLs are validated before
+dotenv/data-source/Redis modules are imported; safe URLs then replace ordinary
+connection settings. PostgreSQL names must end in _test / _test_<id> without
+production labels; Redis selects DB 1–15. Remote hosts and query overrides are
+rejected. The existing ratelimit:* Redis cleanup was confirmed and recorded as
+additional U07 evidence; the guard isolates that service too. CI uses its own
+ephemeral PostgreSQL/Redis and DB 15, and README documents the explicit targets.
+
+Fresh PASS: 24 target-policy cases, strict setup/policy types, full lint, backend
+311 files / 1208 unit tests. A real invocation without targets exits before
+configuration/test import or service connection. No local live DB/Redis was
+used; this batch still needs its own isolated CI. U06 is next. The register has
+8 urgent / 17 nonurgent open findings. Main still requires the independent
+approving review displayed by GitHub; no protection was bypassed.

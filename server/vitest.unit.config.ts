@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: [
+      'src/test/integration-target-policy.test.ts',
       'src/shared/**/*.test.ts',
       'src/shared/observability/metrics-snapshot.test.ts',
       'src/shared/http/content-type-guard.test.ts',
