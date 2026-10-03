@@ -804,3 +804,28 @@ configuration/test import or service connection. No local live DB/Redis was
 used; this batch still needs its own isolated CI. U06 is next. The register has
 8 urgent / 17 nonurgent open findings. Main still requires the independent
 approving review displayed by GitHub; no protection was bypassed.
+
+### Urgent fix U06 and green promotion candidate — 2026-10-03
+
+U07 is committed as `6845517`. U06 replaces raw invitation email SQL with
+TypeORM object conditions, so the HMAC transformer applies. Lookup and expired
+pending replacement run in one transaction with a row lock. The existing partial
+unique index resolves missing-row races; only its 23505 becomes a controlled
+409. Unrelated database errors remain visible through the safe error handler,
+and notification runs after successful commit. No schema change is needed.
+
+Four regression cases failed before the fix. Five new unit cases now pass,
+including real TypeORM metadata/SQL proving HMAC binding, NULL scope and FOR
+UPDATE without connecting. Three HTTP/PostgreSQL cases cover uppercase repeat,
+expired scope replacement and concurrent sends. Fresh backend PASS: 312 files /
+1213 tests, build, full lint, new unit types with noUncheckedIndexedAccess and
+integration file types under ordinary strict. The stronger integration type
+check exposes pre-existing array fixture narrowing errors, recorded under N14.
+Live DB/Redis cases await this branch's CI; no ordinary developer DB was used.
+
+Both push and pull-request Quality runs are fully green on PR #6 candidate
+`14c04ba`, including browser E2E, real full-stack and aggregate Application CI.
+There is no approving review yet; GitHub's independent review gate still blocks
+main. U07/U06 remain separate local commits on `codex/urgent-audit-batch-3`,
+keeping the green promotion candidate stable. Remaining findings: 7 urgent /
+17 nonurgent. The primary checkout is preserved; pilot remains NO-GO.

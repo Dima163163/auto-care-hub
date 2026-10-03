@@ -18,6 +18,7 @@ import {
     AutomotiveProviderEntity,
     AutomotiveProviderChangeRequestEntity,
     AutomotiveProviderInvitationEntity,
+    AutomotiveProviderInvitationStatus,
     AutomotiveProviderMembershipEntity,
     AutomotiveProviderMembershipRole,
     AutomotiveProviderMembershipStatus,
@@ -452,6 +453,51 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
         expect(rejected.status).toBe(404)
         expect(conversation.body.attachments.map((item: { id: string }) => item.id)).toEqual([attachmentA.id])
         expect(chat.body.attachments.map((item: { id: string }) => item.id)).toEqual([attachmentA.id])
+    })
+
+    it('returns 409 for a repeated invitation after email encryption', async () => {
+        const email = `duplicate-${suffix}@example.test`
+        const send = (address: string) => request(app.server)
+            .post(`/owner/autocare-providers/${provider.id}/members/invitations`)
+            .set('Authorization', `Bearer ${token(owner)}`)
+            .send({ email: address, role: 'staff', locationId: null })
+        expect((await send(email)).status).toBe(200)
+        expect((await send(email.toUpperCase())).status).toBe(409)
+        const pending = await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).find({
+            where: { providerId: provider.id, email, status: AutomotiveProviderInvitationStatus.Pending },
+        })
+        expect(pending).toHaveLength(1)
+    })
+
+    it('reissues an expired pending invitation without losing its previous record', async () => {
+        const email = `expired-${suffix}@example.test`
+        const send = () => request(app.server)
+            .post(`/owner/autocare-providers/${provider.id}/members/invitations`)
+            .set('Authorization', `Bearer ${token(owner)}`)
+            .send({ email, role: 'staff', locationId: locationA.id })
+        const first = await send()
+        expect(first.status).toBe(200)
+        const repository = AppDataSource.getRepository(AutomotiveProviderInvitationEntity)
+        await repository.update({ id: first.body.id }, { expiresAt: new Date('2020-01-01') })
+        const replacement = await send()
+        expect(replacement.status).toBe(200)
+        expect(replacement.body.id).not.toBe(first.body.id)
+        expect((await repository.findOneByOrFail({ id: first.body.id })).status).toBe(AutomotiveProviderInvitationStatus.Expired)
+        expect((await repository.findOneByOrFail({ id: replacement.body.id })).status).toBe(AutomotiveProviderInvitationStatus.Pending)
+    })
+
+    it('commits one invitation and returns one controlled conflict for concurrent sends', async () => {
+        const email = `concurrent-${suffix}@example.test`
+        const send = () => request(app.server)
+            .post(`/owner/autocare-providers/${provider.id}/members/invitations`)
+            .set('Authorization', `Bearer ${token(owner)}`)
+            .send({ email, role: 'staff', locationId: locationB.id })
+        const responses = await Promise.all([send(), send()])
+        expect(responses.map(({ status }) => status).sort()).toEqual([200, 409])
+        const pending = await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).find({
+            where: { providerId: provider.id, email, status: AutomotiveProviderInvitationStatus.Pending },
+        })
+        expect(pending).toHaveLength(1)
     })
 
     it('lets the owner accept and revoke a branch-scoped invitation', async () => {
