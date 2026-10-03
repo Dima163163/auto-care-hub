@@ -435,6 +435,8 @@
 
 ## Рекомендуемый порядок работ
 
+**Дополнительная N05 browser-приёмка 04.10:** существующие **26 real-API cases PASS** на production Next и свежей собственной PostgreSQL/Redis fixture. Новый production-only CSP regression вставляет ненонсированный payload в исходный HTML parser, сохраняет настоящие response headers и подтверждает `script-src-elem` violation без исполнения; после hydration посторонний `wss://csp-blocked.example.test` даёт `connect-src` violation. **1 CSP browser case PASS**; normal HTML/nonce header guard остаётся отдельным CI шагом. Динамическая вставка из доверенного test script не используется как XSS-доказательство: strict-dynamic разрешает эту доверенную цепочку. Backend использовал development/test wiring и synthetic keyring; это не приёмка внешнего production KMS.
+
 | Очередь | Пункты | Результат следующего шага |
 | --- | --- | --- |
 | 1 | U01 | Работающий production key adapter; U09/U11/U12/U13 опубликованы |

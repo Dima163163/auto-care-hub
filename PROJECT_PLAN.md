@@ -20,6 +20,8 @@
   чужими requests PASS. Quotes исправлены после воспроизведения; integration 23/88 PASS.
 - [x] N04: bounded scoped chats, SQL unread aggregation и batch summaries;
   legacy array/explicit page/invalid limit/branch HTTP regressions PASS (23/88 integration).
+- [x] N05 browser regression: parser-inserted inline payload и foreign WebSocket
+  заблокированы на production Next после hydration; 26 existing real cases + 1 CSP PASS.
 
 > Status: historical implementation roadmap
 >
