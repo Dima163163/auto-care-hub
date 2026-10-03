@@ -2017,3 +2017,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N01: AGENTS и tracked docs/agent-rules теперь описывают одну политику feature/dev → protected dev/main PR с exact-candidate Quality, сохранением branches/dirty files и существующего разрешения пользователя. Устранены ссылки на отсутствующие в clean checkout ignored rules и старое Bookly/Vite-only описание. Agent profiles/skills и primary ignored rules не изменялись; explicit human frontend ownership/no-subagents policy закреплены по приоритету. Проверены tracked links и diff; docs-only изменение. Отдельный коммит N01.
+
+
+04 Oct — N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; добавлен PostgreSQL replay с session-local temp shadow tables: 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Его запуск ожидает isolated CI. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API. Отдельный коммит N12.

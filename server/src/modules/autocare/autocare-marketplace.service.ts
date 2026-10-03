@@ -39,6 +39,7 @@ import type {
     CreateAutoCareBroadcastOfferInput,
 } from './autocare.types.js'
 import { getManagedProviderPermissionScopes, hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { scopeBroadcastInbox } from './broadcast-inbox-query.js'
 import { calculateAutoCareTrustScore } from './trust-score.js'
 import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
 import { normalizeAutoCarePublicProviderUuid } from './public-provider-input-policy.js'
@@ -535,37 +536,14 @@ export async function getOwnerAutoCareBroadcastRequests(user: UserEntity) {
         : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds), status: AutomotiveProviderStatus.Active } })
     const locations = (providers.length === 0 ? [] : await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) } }))
         .filter((location) => isManagedProviderLocationAllowed(scopes, location.providerId, location.id))
-    const requests = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).find({ where: { status: 'open' }, order: { createdAt: 'DESC' }, take: 100 })
-    if (locations.length === 0 || requests.length === 0) return []
-    const requestIds = requests.map((request) => request.id)
-    const locationIds = locations.map((location) => location.id)
-    const offers = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).find({
-        where: { broadcastRequestId: In(requestIds), locationId: In(locationIds) },
-    })
-    const offersByRequestId = new Map<string, AutoCareBroadcastOfferEntity[]>()
-    for (const offer of offers) offersByRequestId.set(offer.broadcastRequestId, [...(offersByRequestId.get(offer.broadcastRequestId) ?? []), offer])
+    if (locations.length === 0) return []
     const publicMarketIds = await getPublicMarketIds(locations.map((location) => location.marketId))
-    const marketMatchedLocations = locations.filter((location) => publicMarketIds.has(location.marketId))
-    const definitionIds = [...new Set(requests.map((request) => request.serviceDefinitionId))]
-    const matchingOfferings = marketMatchedLocations.length === 0
-        ? []
-        : await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({
-            where: { definitionId: In(definitionIds), locationId: In(marketMatchedLocations.map((location) => location.id)), active: true },
-        })
-    const activeDefinitionByLocation = new Set(matchingOfferings.map((offer) => `${offer.definitionId}:${offer.locationId}`))
-    const locationById = new Map(locations.map((location) => [location.id, location]))
-    const now = new Date()
-    const visibleRequests = requests.filter((request) => {
-        if (request.expiresAt && request.expiresAt <= now) return false
-        const participantOffer = (offersByRequestId.get(request.id) ?? []).some((offer) => {
-            const location = locationById.get(offer.locationId)
-            return Boolean(location && location.providerId === offer.providerId && isManagedProviderLocationAllowed(scopes, offer.providerId, offer.locationId) && (!request.marketId || location.marketId === request.marketId))
-        })
-        if (participantOffer) return true
-        if (!request.marketId) return false
-        return marketMatchedLocations.some((location) => location.marketId === request.marketId && activeDefinitionByLocation.has(`${request.serviceDefinitionId}:${location.id}`))
-    })
-    return Promise.all(visibleRequests.map((request) => getAutoCareBroadcastRequest(user, request.id)))
+    const requests = await scopeBroadcastInbox(
+        AppDataSource.getRepository(AutoCareBroadcastRequestEntity).createQueryBuilder('broadcast'),
+        locations.map((location) => location.id), [...publicMarketIds], new Date(),
+    ).orderBy('broadcast.createdAt', 'DESC').addOrderBy('broadcast.id', 'DESC').take(100).getMany()
+    // Detail authorization rechecks current permissions and market state.
+    return Promise.all(requests.map((request) => getAutoCareBroadcastRequest(user, request.id)))
 }
 
 export async function createAutoCareBroadcastOffer(user: UserEntity, broadcastId: string, input: CreateAutoCareBroadcastOfferInput) {

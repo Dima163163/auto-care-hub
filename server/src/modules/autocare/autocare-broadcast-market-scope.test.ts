@@ -224,6 +224,11 @@ describe('AutoCare broadcast market boundaries', () => {
         const otherMarketRequest = openRequest('55555555-5555-4555-8555-555555555555', 'market-2')
         const requestRepository = {
             find: vi.fn().mockResolvedValue([matchingRequest, otherMarketRequest]),
+            createQueryBuilder: vi.fn(() => {
+                const query = { where: vi.fn(), andWhere: vi.fn(), orderBy: vi.fn(), addOrderBy: vi.fn(), take: vi.fn(), getMany: vi.fn().mockResolvedValue([matchingRequest]) }
+                for (const method of [query.where, query.andWhere, query.orderBy, query.addOrderBy, query.take]) method.mockReturnValue(query)
+                return query
+            }),
             findOneBy: vi.fn().mockResolvedValue(matchingRequest),
         }
         const providerRepository = { find: vi.fn().mockResolvedValue([provider]) }
@@ -263,7 +268,9 @@ describe('AutoCare broadcast market boundaries', () => {
 
     it('hides unoffered owner-inbox requests when the market country is inactive', async () => {
         const request = openRequest('66666666-6666-4666-8666-666666666666', 'market-1')
-        const requestRepository = { find: vi.fn().mockResolvedValue([request]), findOneBy: vi.fn() }
+        const query = { where: vi.fn(), andWhere: vi.fn(), orderBy: vi.fn(), addOrderBy: vi.fn(), take: vi.fn(), getMany: vi.fn().mockResolvedValue([]) }
+        for (const method of [query.where, query.andWhere, query.orderBy, query.addOrderBy, query.take]) method.mockReturnValue(query)
+        const requestRepository = { find: vi.fn().mockResolvedValue([request]), findOneBy: vi.fn(), createQueryBuilder: vi.fn(() => query) }
         const offerRepository = { find: vi.fn().mockResolvedValue([]) }
         const marketRepository = { find: vi.fn().mockResolvedValue([readyMarket]) }
         const countryRepository = { find: vi.fn().mockResolvedValue([]) }

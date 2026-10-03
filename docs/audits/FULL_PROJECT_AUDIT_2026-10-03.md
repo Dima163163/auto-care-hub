@@ -313,6 +313,8 @@
 
 **Приёмка:** релевантная заявка находится при 100+ более новых нерелевантных; другой филиал/рынок не попадает в результат. Статус: открыто.
 
+**Исправление 04.10:** N12: permissions/active provider branch/market/service/expiry eligibility теперь находится в SQL EXISTS до ORDER/LIMIT 100. Дополнительная detail authorization сохраняется. Existing 12 market/access cases и backend build PASS; добавлен PostgreSQL replay с session-local temp shadow tables: 120 новых нерелевантных записей, older match, wrong branch, private market и expiry. Его запуск ожидает isolated CI. Bounded cursor UI/full inbox остаётся отдельным продуктовым улучшением после согласования визуального scope; исправление полноты SQL не меняет текущий array API.
+
 ### N13 · P2 · Исправить SEO-проверку для динамических Next routes
 
 **Подтверждение:** успешная свежая Next-сборка показывает динамические public routes; root layout читает request headers, provider route задаёт `force-dynamic`. `checkLocalHtmlMetadataReport()` требует файлы `.next/server/app/*.html` для этих маршрутов, включается даже при переданном HTTP URL. Локальная `npm run check:seo` завершилась blocked на missing routes при успешно собранном frontend.
