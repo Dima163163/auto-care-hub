@@ -2029,3 +2029,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N03: выбран явно разрешённый аудитом вариант снятия неподтверждённого PWA обещания. README и runtime status теперь прямо говорят: production Next не поддерживает install/offline/update PWA; Vite Workbox/12 preview tests — только compatibility evidence. Новая UI-композиция/SW/private cache не добавлялись. Будущий Next PWA остаётся отдельной задачей с собственной artifact/browser приёмкой; pilot gates не закрываются Vite evidence. Отдельный коммит N03.
+
+
+04 Oct — N07: strict включён для всего frontend tsconfig.app.json, а не только нового пилотного профиля. Полный tsc -b PASS; existing CI/build type gate автоматически применяет strict nullability/function checks. Sensitive response-schema, refresh lifecycle и automotive DTO malformed/null regressions: 3 files / 14 PASS. any/assertion suppressions и osлабление validators не добавлялись. Отдельный коммит N07.

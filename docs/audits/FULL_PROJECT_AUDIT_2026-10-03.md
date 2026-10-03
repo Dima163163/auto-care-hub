@@ -265,6 +265,8 @@
 
 **Приёмка:** строгий отдельный профиль покрывает чувствительные границы и постепенно становится основным; malformed/null DTO дают управляемые ошибки UI. Статус: открыто.
 
+**Исправление 04.10:** N07: strict включён для всего frontend tsconfig.app.json, а не только нового пилотного профиля. Полный tsc -b PASS; existing CI/build type gate автоматически применяет strict nullability/function checks. Sensitive response-schema, refresh lifecycle и automotive DTO malformed/null regressions: 3 files / 14 PASS. any/assertion suppressions и osлабление validators не добавлялись.
+
 ### N08 · P2 · Убрать неограниченный перебор пользователей при admin search
 
 **Подтверждение:** `admin.service.ts:273-300` ищет substring имени/email после расшифровки, перебирая батчи по 200 до полного конца или заполнения страницы. Есть предел батча, но нет предела всего запроса.
