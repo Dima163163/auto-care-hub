@@ -209,6 +209,8 @@
 
 **Приёмка:** новый участник за один переход находит действующие open/fixed/external статусы без чтения сотен строк хронологии. Статус: открыто.
 
+**Исправление 04.10:** N02: добавлена текущая disposition table с source/evidence/pending acceptance для WS/quote/deletion/runtime/logout, A21/A29, field/backup encryption, cache и MFA. Исторические отчёты сохранены и помечены ссылкой на актуальное состояние; security baseline больше не требует трактовать старое «нет шифрования» как текущий факт. Source presence не выдаётся за свежую production/browser приёмку и не меняет 54 pilot gates. Docs diff/links reviewed.
+
 ### N03 · P2 · Перенести PWA-контур на production runtime
 
 **Подтверждение:** `NextApp.tsx` не монтирует `PwaLifecycle`; компонент использует Vite-only `virtual:pwa-register/react`. Manifest и service worker создаёт только VitePWA. Production HTTP на собственном Next server возвращает 404 для `/sw.js` и `/manifest.webmanifest`; initial HTML не содержит `rel=manifest`. `check-pwa-update-contract.mjs` проверяет только `dist/sw.js`.

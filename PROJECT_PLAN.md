@@ -2038,3 +2038,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N11: выделен самостоятельный chat-read.service (permissions/cursor SQL, bounded batch read model, DTO), mutations/moderation остаются в facade без изменения публичных imports. Mock broadcast authorization/offer visibility вынесены в pure broadcast-access-policy, handler отвечает за fixtures/HTTP. Trace route→read use-case→SQL→DTO теперь отдельный; tests 36 backend + 3 MSW PASS, types/build PASS, targeted lint PASS. Это ответственная постепенная декомпозиция; прочие крупные request/provider/API модули остаются дальнейшим refactor scope, без косметического дробления по числу строк. Отдельный коммит N11.
+
+
+04 Oct — N02: добавлена текущая disposition table с source/evidence/pending acceptance для WS/quote/deletion/runtime/logout, A21/A29, field/backup encryption, cache и MFA. Исторические отчёты сохранены и помечены ссылкой на актуальное состояние; security baseline больше не требует трактовать старое «нет шифрования» как текущий факт. Source presence не выдаётся за свежую production/browser приёмку и не меняет 54 pilot gates. Docs diff/links reviewed. Отдельный коммит N02.

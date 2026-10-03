@@ -1,5 +1,9 @@
 # Security Overview — Current Platform Baseline
 
+Current dated finding status: [disposition](docs/audits/CURRENT_FINDING_DISPOSITION.md).
+Implemented field/backup encryption does not close external KMS, row-scope integrity,
+MFA or recovery acceptance. Preserve the distinction between code and live evidence.
+
 This document describes the implemented security baseline inherited from the
 legacy booking product. AutoCare Hub will reuse these controls, but every new provider,
 location, vehicle, inquiry, message, attachment, quote and bonus
