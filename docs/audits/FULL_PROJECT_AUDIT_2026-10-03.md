@@ -289,6 +289,8 @@
 
 **Приёмка:** повторяемый прогон на размере целевой БД, измеренные окно/RAM/lock time и восстановление; неизвестное состояние не помечается complete. Статус: открыто.
 
+**Частичное исправление 04.10:** N09: опубликованная migration/checksum сохранена. Подготовлен bounded keyset backfill engine с budgets ≤500 rows/batch, atomic compare-write/checkpoint adapter contract, failure/restart semantics и UUID/progress validation. 3 tests PASS, включая 5000 rows по 25 и interrupted commit; build/lint PASS. Runbook задаёт expand/dual write/backfill/verify/switch/rollback/restore/HMAC-retirement. Production DB adapter и фактический масштабный rollout остаются открытыми до U01 KMS/U02 envelope решения и scale/recovery приёмки; real DB/keys/backups не менялись.
+
 ### N10 · P2 · Согласовать публичные контакты и локализацию с текущим продуктом
 
 **Подтверждение:** `Footer.tsx:24` содержит фиксированные `8 (800) 550-35-35` / `support@autocarehub.ru`; в браузере и переводах footer © 2024. `translations/landing-popular.ts` для ES/RO и других языков всё ещё описывает аренду кабинетов/помещений; приложение предлагает эти locales.
