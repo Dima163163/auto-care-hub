@@ -753,3 +753,21 @@ Next production builds pass. Production mock browser catalog/provider/login
 redirect and real login hydration pass; authenticated live API/DB replay awaits
 isolated CI. U13 is in progress and will receive a separate commit. The register
 has **10 urgent / 17 nonurgent** remaining after U12; pilot remains NO-GO.
+
+### Urgent fix U13 — 2026-10-03
+
+U12 is committed as `191bc51`. U13 patches Fastify to `5.12.5`, Nodemailer to
+`10.0.13` and brace-expansion to `2.1.7`. The global fast-uri v3 override is
+removed: AJV/compiler uses patched `3.1.8`, fast-json-stringify 7 uses `4.2.1`.
+Nodemailer now supplies its own types; its obsolete external type dependency is
+removed. Node ≥20 is required and current CI uses 22. Full and production backend
+audits are zero. Backend **310 files / 1184 tests**, build and full lint pass;
+seven actual-SDK offline tests verify RU/EN auth email templates, envelopes and
+UTF-8 multipart composition. Live SMTP/TLS and local DB integration were not run.
+
+The earlier U09/U11 dev run has green backend migrations/tests and real full-stack
+production Next checks, but its dependency scan fails on the old Next advisory.
+The updated candidate must repeat CI before protected main promotion. U12/U13
+are separate commits and ready for dev publication. The register now has
+**9 urgent / 17 nonurgent** remaining; U06/U07 remain queued. The primary
+checkout and unrelated integrity files remain unchanged. Pilot remains NO-GO.

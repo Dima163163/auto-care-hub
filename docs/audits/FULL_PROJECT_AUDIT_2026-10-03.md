@@ -2,7 +2,7 @@
 
 Рабочий реестр: пополняется сразу после подтверждения каждой находки. Анализ текущей рабочей копии, а не только исторических аудитов. После завершения аудита пользователь разрешил выполнять срочные исправления партиями по 1–2, каждое отдельным коммитом; результаты записываются рядом с исходными находками.
 
-Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09/U11/U12 остаются **10 срочных / 17 несрочных**; исправлены 3 пункта, добавлен N17 о mock parity. U09/U11 опубликованы в `dev`; продвижение в `main` ожидает Quality.
+Исходный аудит: **29 пунктов — 13 срочных (9 P1, 4 P2) и 16 несрочных**. У каждого ниже есть подтверждение, последствия, вариант улучшения и критерий приёмки. В список входят как новые проблемы, так и подтверждённые незакрытые проблемы предыдущих аудитов; это не 29 новых уязвимостей. После U09/U11/U12/U13 остаются **9 срочных / 17 несрочных**; исправлены 4 пункта, добавлен N17 о mock parity. U09/U11 опубликованы в `dev`; продвижение в `main` ожидает Quality, U12/U13 закрывают dependency gate.
 
 ## Основание и границы
 
@@ -153,7 +153,9 @@
 
 **Улучшение:** Fastify вне `<5.12.5`; brace-expansion не ниже `2.1.7` для известных записей; fast-uri вне `<3.1.8` с проверкой major-совместимости потребителей вместо общего override; Nodemailer вне всех найденных ranges (audit предлагает `10.0.13`, это major upgrade). Проверить SMTP, URI/schema validation и миграционную tooling. [Nodemailer parser advisory](https://github.com/nodemailer/nodemailer/security/advisories/GHSA-v53p-9fqp-m79j), [brace expansion](https://github.com/advisories/GHSA-qhr7-859c-m2p7), [Fastify HTTP/2](https://github.com/fastify/fastify/security/advisories/GHSA-4mh8-r7rc-xpvc).
 
-**Приёмка:** production audit не содержит high/critical и согласованно закрывает moderate; backend build/unit/integration, email и request schemas проходят. Статус: открыто, новое dependency evidence.
+**Приёмка:** production audit не содержит high/critical и согласованно закрывает moderate; backend build/unit/integration, email и request schemas проходят.
+
+**Исправление 03.10:** закреплены Fastify `5.12.5`, Nodemailer `10.0.13`, brace-expansion override `2.1.7`; общий fast-uri override удалён. Lock разрешает `3.1.8` для AJV/compiler и `4.2.1` для fast-json-stringify 7 в диапазонах потребителей; `npm ls` подтверждает дерево без invalid dependencies. Nodemailer 10 поставляет собственные типы, прежний `@types/nodemailer` удалён. Его [официальный release](https://github.com/nodemailer/nodemailer/releases/tag/v10.0.0) требует Node ≥20; CI использует Node 22. Полный backend audit, включая dev, и production subset — **0 vulnerabilities**. Backend build, полный lint и unit **310 files / 1184 tests PASS**, включая 7 offline контрактов настоящего SDK для RU/EN verification/reset/setup, envelope и multipart UTF-8. Live SMTP/TLS и новая PostgreSQL integration проверка локально не выполнялись; integration/full-stack проверяются отдельным CI candidate. Статус: исправлено в отдельном коммите U13, публикация/CI ожидаются.
 
 ## Несрочные исправления
 

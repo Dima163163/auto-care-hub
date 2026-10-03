@@ -1820,8 +1820,13 @@ production acceptance or design-approval requirements.
   TypeScript, full lint and isolated real/mock production builds pass.
 - [x] U12 browser verification: production mock catalog/provider/login redirect
   and real production login hydration pass. Full live API/DB flows await CI.
-- [ ] U13: update backend advisories with major-compatible URI resolution and
-  verify Nodemailer templates against the actual SDK before its own commit.
+- [x] U13: Fastify `5.12.5`, Nodemailer `10.0.13`, brace-expansion `2.1.7`;
+  removed global fast-uri override, resolved compatible `3.1.8` / `4.2.1`.
+  Removed obsolete external Nodemailer typings in favor of its bundled types.
+  Both full and production backend audits report **0 vulnerabilities**.
+- [x] U13 verification: backend **310 files / 1184 tests**, build and full lint
+  pass. Seven actual-SDK offline tests cover RU/EN auth templates, recipient
+  envelopes and multipart UTF-8; no real recipient or SMTP credentials were used.
 - [ ] Promotion: main requires green Quality and dev-to-main PR checks. The
   U09/U11 CI dependency gate fails on the known Next advisory; U12/U13 address it.
-- [ ] Remaining after U12: **10 urgent / 17 nonurgent**; pilot stays NO-GO.
+- [ ] Remaining after U12/U13: **9 urgent / 17 nonurgent**; pilot stays NO-GO.
