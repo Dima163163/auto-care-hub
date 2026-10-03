@@ -771,3 +771,16 @@ The updated candidate must repeat CI before protected main promotion. U12/U13
 are separate commits and ready for dev publication. The register now has
 **9 urgent / 17 nonurgent** remaining; U06/U07 remain queued. The primary
 checkout and unrelated integrity files remain unchanged. Pilot remains NO-GO.
+
+### Promotion PR and history synchronization — 2026-10-03
+
+U12/U13 were pushed to dev as `191bc51` / `abb7dfb`. PR
+[#6](https://github.com/Dima163163/auto-care-hub/pull/6) was created through the
+existing signed-in browser because the GitHub connector lacks PR write permission.
+Main `24bc8b0` contains the same baseline as the previously squashed dev commits,
+but is not an ancestor of dev. Merging it into dev required five conflict
+resolutions; preserving the verified dev versions produced an index identical
+to `abb7dfb` before this documentation update. No runtime or frontend changes
+were introduced by the synchronization. All four urgent commits are preserved.
+CI must rerun on the merge candidate. GitHub also displays a required approving
+review; that gate must be satisfied without bypassing branch protection.

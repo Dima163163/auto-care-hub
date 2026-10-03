@@ -1830,3 +1830,7 @@ production acceptance or design-approval requirements.
 - [ ] Promotion: main requires green Quality and dev-to-main PR checks. The
   U09/U11 CI dependency gate fails on the known Next advisory; U12/U13 address it.
 - [ ] Remaining after U12/U13: **9 urgent / 17 nonurgent**; pilot stays NO-GO.
+- [x] Created promotion PR [#6](https://github.com/Dima163163/auto-care-hub/pull/6)
+  and synchronized dev with the previous main squash. Conflict resolution keeps
+  the already verified runtime tree unchanged and preserves each urgent commit.
+- [ ] Complete candidate CI and required approving review before main merge.
