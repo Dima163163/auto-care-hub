@@ -1765,3 +1765,37 @@ production acceptance or design-approval requirements.
   inventory/order checks pass.
 - [ ] The new migration has not been applied to the developer database, and
   the feature has not yet been rehearsed against a running PostgreSQL API.
+
+### Additional full project audit — 2026-10-03
+
+- [x] Maintained an incremental urgent/nonurgent register in
+  [`docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`](docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md):
+  13 urgent and 16 nonurgent open items, with evidence, limitations, proposed
+  improvements, acceptance criteria and implementation order. No runtime fixes
+  or dependency updates were requested or performed.
+- [x] Fresh verification: frontend 187 files / 603 tests, backend unit 309 files /
+  1165 tests, plus 12 omitted pure-policy files / 26 tests pass. Lint, TypeScript,
+  backend build, real/mock Next builds, API parity and migration source checks
+  pass. All 17 HTTP metadata probes pass; the combined SEO gate still blocks on
+  absent static HTML for dynamic routes.
+- [ ] Resolve the production encryption-provider startup blocker, record-bound
+  encryption/rotation, raw SQL-error logging, privileged broadcast read bypass,
+  MFA, backup authentication, unsafe integration DB setup and current dependency
+  advisories. Other findings and specific acceptance criteria are in the register.
+- [ ] Fresh DB integration, migrations, KMS, backup restore and external services
+  remain unverified: Docker is unavailable and ordinary developer DB isolation
+  was not established. Pilot remains NO-GO; canonical gates were not recalculated.
+
+### Urgent audit fixes, batch 1 — 2026-10-03
+
+- [x] U09: replaced raw unhandled-error logging with an allowlisted projection
+  and configured the Fastify error serializer. SQL diagnostics retain the
+  machine code and request ID while dropping query values, driver details,
+  cause and stack. Aggregate traversal is bounded and malformed error getters
+  cannot break serialization. External reports use the same safe SQL projection.
+- [x] U09 verification: backend unit **309 files / 1171 tests**, backend build,
+  full lint plus final targeted lint and `git diff --check` pass. Added regression
+  tests first reproduced the unsafe logs/SQL diagnostics and now pass, including
+  actual Fastify/Pino output, external reports, HTTP 500 envelopes and cycles.
+- [ ] Remaining urgent items: 12. Next bounded fix: U11 broadcast role bypass.
+  Live DB/production evidence and external pilot gates remain open.

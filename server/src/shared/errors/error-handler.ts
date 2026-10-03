@@ -13,6 +13,7 @@ import {
     SystemIncidentType,
 } from '../../entities/system-incident/system-incident.entity.js'
 import { reportExternalErrorSafely } from '../observability/error-reporter.js'
+import { serializeError } from '../observability/logger.js'
 import { createApiErrorResponse } from './api-error-response.js'
 import { getRequestLocale } from '../i18n/request-locale.js'
 import { getLocalizedErrorMessage } from '../i18n/error-message.js'
@@ -168,9 +169,10 @@ export function registerErrorHandler(app: FastifyInstance) {
             }))
         }
 
+        const safeError = serializeError(error)
         app.log.error(
             {
-                err: error,
+                error: safeError,
                 requestId: request.id,
             },
             'Unhandled request error',
@@ -189,7 +191,7 @@ export function registerErrorHandler(app: FastifyInstance) {
             title: `Unhandled server error on ${request.routeOptions.url ?? 'unknown route'}`,
             requestId: request.id,
             metadata: {
-                errorName: error instanceof Error ? error.name : 'UnknownError',
+                errorName: safeError.name,
                 method: request.method,
                 route: request.routeOptions.url ?? null,
                 statusCode: 500,

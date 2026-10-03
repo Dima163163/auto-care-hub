@@ -668,3 +668,49 @@ Proposal **01** captures the Users page header over the detailed backdrop and a 
 ### Product audit follow-up — 2026-09-26
 
 See [`docs/audits/PRODUCT_AUDIT_2026-09-25.md`](docs/audits/PRODUCT_AUDIT_2026-09-25.md) for the 40 findings and current disposition. The code-fixable scope is implemented locally. Fresh frontend verification: **179 files / 569 tests**, full ESLint, TypeScript, Vite and Next production builds pass; the backend remains at its earlier verified **306 files / 1150 unit tests**, and root/backend `npm audit` both reported **0 vulnerabilities**. Remaining partial findings are A21 (complete complaint-history/search/filter) and A29 (full profile HTML, gated by the three-approval design lock in `AGENTS.md`); their visual proposal and acceptance criteria are in [`docs/design/proposals/2026-09-26-a21-a29/README.md`](docs/design/proposals/2026-09-26-a21-a29/README.md). A34 shows owner-visible preferred and confirmed visit times in the service timezone. The latest browser pass verified the client booking summary, owner request inbox and moderator access boundary. A mock-only request was used; its service timezone now survives the client-to-owner mock API contract, and the owner sees Moscow local time rather than UTC. External domain/database/mail/storage checks remain pending; local readiness is not production approval.
+
+### Additional full audit — 2026-10-03 (latest verification)
+
+The current working-copy audit is
+[`docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`](docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md):
+**13 urgent / 16 nonurgent** open items with evidence and acceptance criteria.
+Field encryption now exists, but production startup has no configured key-provider
+adapter; record binding and blind-index rotation also need work. Other urgent
+findings include raw SQL error parameters in logs, an unconditional admin broadcast
+read bypass, MFA/step-up, backup authentication, integration DB isolation and fresh
+dependency advisories. Old statements that encryption is absent or audits are zero
+must not be used as current evidence; A21/A29 disposition needs review against the
+newer implementation rather than automatic reopening of the old scope.
+
+Fresh local PASS: frontend **187 files / 603 tests**, backend unit **309 files /
+1165 tests**, additional pure policies **12 files / 26 tests**, full lint and
+TypeScript, backend build, isolated real/mock Next production builds, API parity
+**244/244 mock routes; 2/2 WebSocket contracts**, migration inventory/order checks
+**139 files**. Production npm audit now fails: web **1 critical**; API **2 high /
+2 moderate**. Advisory reachability is qualified per finding, not presumed.
+The SEO command still blocks on static HTML expectations for dynamic routes even
+though **17/17 local HTTP metadata probes pass**. Guest mock-browser checks covered
+discovery, provider/service selection and login redirect on desktop/mobile.
+
+No fresh DB integration/E2E or production infrastructure evidence: Docker is
+unavailable, ordinary developer DB isolation was not established, and no DB was
+used/reset. No runtime/dependency changes, installation, commit, push or merge was
+performed. Pre-existing integrity-script changes were preserved. Temporary Next
+servers and browser tab were stopped. Pilot remains **NO-GO**; the 54 canonical
+gates and their percentages were not changed.
+
+### Urgent fix U09 — 2026-10-03
+
+User authorized urgent fixes in batches of 1–2, each in a separate commit.
+U09 is fixed locally: the global request handler logs only `serializeError`
+output; Fastify's `err` serializer also excludes raw stacks and attached values.
+SQL error messages are replaced entirely rather than regex-redacted, preserving
+SQLSTATE and request correlation. External reporting and incident error names
+use safe projections; AggregateError depth/count/length is bounded and unsafe
+getters return UnknownError. Non-SQL diagnostics retain existing PII redaction.
+Fresh PASS: backend **309 files / 1171 tests**, backend build, full lint and
+final targeted lint. HTTP inject/Pino capture verifies synthetic email, phone,
+VIN, arbitrary repair text and password do not appear in logs, reporter payload
+or the 500 response. No live DB or production logs were used. The audit register
+has **12 urgent / 16 nonurgent** remaining; U11 is next. Pre-existing integrity
+script/manifest edits remain outside this fix. No push/merge or deployment.
