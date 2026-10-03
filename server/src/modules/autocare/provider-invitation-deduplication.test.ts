@@ -40,7 +40,11 @@ beforeEach(() => {
         : entity === AutomotiveProviderInvitationEntity ? repository : { findOne: vi.fn().mockResolvedValue(null) })
     mocks.transaction.mockImplementation((callback) => callback({ getRepository: () => repository }))
     mocks.canManage.mockResolvedValue(true)
-    setDataEncryptionKeyProviderForTests({ activeKeyId: 'synthetic-key', getKey: () => ({ kek: Buffer.alloc(32, 11), indexKey: Buffer.alloc(32, 22) }) })
+    setDataEncryptionKeyProviderForTests({
+        activeKeyId: 'synthetic-key',
+        getKey: () => ({ kek: Buffer.alloc(32, 11) }),
+        getIndexKey: () => Buffer.alloc(32, 22),
+    })
 })
 
 afterEach(() => setDataEncryptionKeyProviderForTests(null))

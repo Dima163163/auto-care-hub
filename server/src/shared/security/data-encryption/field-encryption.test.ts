@@ -14,9 +14,10 @@ const testKey = Buffer.alloc(32, 19)
 beforeEach(() => {
     setDataEncryptionKeyProviderForTests({
         activeKeyId: 'test-key-v1',
+        getIndexKey: () => Buffer.alloc(32, 73),
         getKey(keyId) {
             if (keyId !== 'test-key-v1') throw new Error('unknown test key')
-            return { kek: testKey, indexKey: Buffer.alloc(32, 73) }
+            return { kek: testKey }
         },
     })
 })
