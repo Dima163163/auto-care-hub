@@ -27,6 +27,7 @@ import {
     mockUsers,
 } from './data'
 import { mockSession, clearMockSession, setMockSession } from './session'
+import { getScopedMockBroadcastResponse, isMockBroadcastOffer } from './broadcast-access-policy'
 import { parseMockJson } from './parseMockJson'
 import { getMockScenario, isMockEmpty, isMockPartial, mockScenarioResponse } from './mock-scenario'
 import { clearMockChatReportAssignment, persistMockChatReportAssignment, readMockChatReportAssignment } from './mock-chat-report-assignment'
@@ -1380,26 +1381,12 @@ function currentMockUser() {
     return mockUsers.find((user) => user.id === mockSession.currentUserId)
 }
 
-function isMockBroadcastOffer(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === 'object' && !Array.isArray(value)
-}
-
 function getMockBroadcastResponse(user: User, item: Record<string, unknown>) {
-    const { clientId: _clientId, ...response } = item
-    const offers = Array.isArray(item.offers) ? item.offers.filter(isMockBroadcastOffer) : []
-    if (item.clientId === user.id) return response
     const providers = ownerAutoCareProviders.filter((provider) => provider.status === 'active'
         && hasMockProviderPermission(user.id, provider.id, 'requests', provider.location.id))
-    if (!providers.length) return null
-    const ownOffers = offers.filter((offer) => providers.some((provider) => offer.providerId === provider.id
-        && offer.locationId === provider.location.id
-        && (!item.marketId || item.marketId === provider.location.marketId)))
     const market = autoCareMarkets.find((candidate) => candidate.id === item.marketId)
-    const publicMarket = market?.launchReady && superAdminMarketCountries.some((country) => country.code === market.countryCode && country.active)
-    const matchingService = providers.some((provider) => provider.location.marketId === item.marketId
-        && provider.offers?.some((offering) => offering.active && offering.serviceDefinitionId === item.serviceDefinitionId))
-    if (!ownOffers.length && !(item.status === 'open' && Date.parse(String(item.expiresAt)) > Date.now() && publicMarket && matchingService)) return null
-    return { ...response, offers: ownOffers }
+    const publicMarket = Boolean(market?.launchReady && superAdminMarketCountries.some((country) => country.code === market.countryCode && country.active))
+    return getScopedMockBroadcastResponse(user.id, item, providers, publicMarket, Date.now())
 }
 
 function getMockUserConsentState(userId: string) {

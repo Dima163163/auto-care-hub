@@ -2035,3 +2035,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N09: опубликованная migration/checksum сохранена. Подготовлен bounded keyset backfill engine с budgets ≤500 rows/batch, atomic compare-write/checkpoint adapter contract, failure/restart semantics и UUID/progress validation. 3 tests PASS, включая 5000 rows по 25 и interrupted commit; build/lint PASS. Runbook задаёт expand/dual write/backfill/verify/switch/rollback/restore/HMAC-retirement. Production DB adapter и фактический масштабный rollout остаются открытыми до U01 KMS/U02 envelope решения и scale/recovery приёмки; real DB/keys/backups не менялись. Отдельный коммит N09.
+
+
+04 Oct — N11: выделен самостоятельный chat-read.service (permissions/cursor SQL, bounded batch read model, DTO), mutations/moderation остаются в facade без изменения публичных imports. Mock broadcast authorization/offer visibility вынесены в pure broadcast-access-policy, handler отвечает за fixtures/HTTP. Trace route→read use-case→SQL→DTO теперь отдельный; tests 36 backend + 3 MSW PASS, types/build PASS, targeted lint PASS. Это ответственная постепенная декомпозиция; прочие крупные request/provider/API модули остаются дальнейшим refactor scope, без косметического дробления по числу строк. Отдельный коммит N11.

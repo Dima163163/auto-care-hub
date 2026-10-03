@@ -313,6 +313,8 @@
 
 **Приёмка:** критичный workflow прослеживается от route до transaction/DTO без поиска по нескольким мегамодулям; контракт и поведение не меняются. Статус: открыто.
 
+**Частичное исправление 04.10:** N11: выделен самостоятельный chat-read.service (permissions/cursor SQL, bounded batch read model, DTO), mutations/moderation остаются в facade без изменения публичных imports. Mock broadcast authorization/offer visibility вынесены в pure broadcast-access-policy, handler отвечает за fixtures/HTTP. Trace route→read use-case→SQL→DTO теперь отдельный; tests 36 backend + 3 MSW PASS, types/build PASS, targeted lint PASS. Это ответственная постепенная декомпозиция; прочие крупные request/provider/API модули остаются дальнейшим refactor scope, без косметического дробления по числу строк.
+
 ### N12 · P2 · Фильтровать очередь broadcast до ограничения количества строк
 
 **Подтверждение:** `getOwnerAutoCareBroadcastRequests:536-557` берёт 100 последних открытых заявок по всем рынкам, затем фильтрует рынок/филиал/услугу и expiry в памяти.
