@@ -2041,3 +2041,6 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N02: добавлена текущая disposition table с source/evidence/pending acceptance для WS/quote/deletion/runtime/logout, A21/A29, field/backup encryption, cache и MFA. Исторические отчёты сохранены и помечены ссылкой на актуальное состояние; security baseline больше не требует трактовать старое «нет шифрования» как текущий факт. Source presence не выдаётся за свежую production/browser приёмку и не меняет 54 pilot gates. Docs diff/links reviewed. Отдельный коммит N02.
+
+
+04 Oct — N20: gotoStable теперь ждёт nonvisual Next bootstrap readiness (после MSW/locale initialization), city keyboard case — actual markets data-state=ready до исходных keyboard/assertions. Layout не изменён, global timeouts/retries/skip не увеличены. Локальный изолированный Next dev + strict MSW: 9 повторов до и 9 после PASS на desktop/mobile/tablet, cold/warm. Прежний CI failure локально не воспроизведён; proxy ECONNREFUSED не объявляется доказанной причиной. Финальная first-attempt CI/browser приёмка впереди. Отдельный коммит N20.

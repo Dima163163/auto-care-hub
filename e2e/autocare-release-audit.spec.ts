@@ -62,6 +62,7 @@ async function gotoStable(page: Page, url: string) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
             await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20_000 })
+            await expect(page.locator('html[data-autocare-ready="ready"]')).toHaveCount(1, { timeout: routeReadyTimeoutMs })
             return
         } catch (error) {
             if (attempt === 1 || !(error instanceof Error) || !/ERR_ABORTED|execution context was destroyed/i.test(error.message)) {
@@ -444,7 +445,9 @@ test.describe('AutoCare stable-web release gate', () => {
         await page.setViewportSize({ width: 790, height: 900 })
         await gotoStable(page, '/')
 
-        const trigger = page.locator('[data-market-switcher] > button').first()
+        const switcher = page.locator('[data-market-switcher]').first()
+        await expect(switcher).toHaveAttribute('data-state', 'ready', { timeout: routeReadyTimeoutMs })
+        const trigger = switcher.locator(':scope > button')
         await expect(trigger).toBeEnabled()
         await trigger.focus()
         await trigger.click()

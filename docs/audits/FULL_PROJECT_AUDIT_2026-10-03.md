@@ -427,6 +427,8 @@
 
 **Приёмка:** cold/warm runs во всех трёх viewport profiles воспроизводимо проходят на одном SHA; реальные disabled/error состояния дают диагностический отказ. Статус: открыто, новая несрочная CI-находка. Один rerun только failed jobs запущен на том же candidate (attempt 2), без изменения source/tests или branch protection.
 
+**Исправление 04.10:** N20: gotoStable теперь ждёт nonvisual Next bootstrap readiness (после MSW/locale initialization), city keyboard case — actual markets data-state=ready до исходных keyboard/assertions. Layout не изменён, global timeouts/retries/skip не увеличены. Локальный изолированный Next dev + strict MSW: 9 повторов до и 9 после PASS на desktop/mobile/tablet, cold/warm. Прежний CI failure локально не воспроизведён; proxy ECONNREFUSED не объявляется доказанной причиной. Финальная first-attempt CI/browser приёмка впереди.
+
 ## Рекомендуемый порядок работ
 
 | Очередь | Пункты | Результат следующего шага |
