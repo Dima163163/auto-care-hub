@@ -4,7 +4,8 @@
 
 N01–N20 получили отдельные implementation commits. **18 программных пунктов
 реализованы и локально проверены; N11 завершён дополнительной порцией 04.10,
-N09 и уточнённый по дизайн-обзору N10 остаются частичными.** Это не закрытие
+N09 и публичные контакты N10 остаются частичными. N11 опубликован PR #12;
+выбранные 36 дизайн-пунктов — PR #13. Остальные 10 явно отложены владельцем.** Это не закрытие
 внешней production приёмки. Ниже исходные формулировки/статусы сохранены как
 история; актуальное состояние задают эта таблица и исправления возле каждого ID.
 Срочные U01/U02/U03 остаются открытыми; U08 исправлен автономной порцией 04.10 (приёмка ниже). 54 pilot gates и NO-GO не изменялись.
@@ -20,8 +21,8 @@ N09 и уточнённый по дизайн-обзору N10 остаются 
 | N07 | Strict frontend compilation | Нет |
 | N08 | Exact HMAC email lookup; bounded partial scan с явным 422 | Production load / query latency |
 | N09 | **Частично:** bounded restartable engine и rollout runbook | U01/U02 решение, production DB adapter, scale/restore |
-| N10 | **Частично:** footer/current year и automotive launch copy исправлены | Дизайн-обзор 04.10: contacts/help ещё содержат неподтверждённые каналы; onboarding — кабинеты |
-| N11 | **Завершено:** request/provider/chat use cases, API domain factories и MSW workflows | Hosted exact-candidate replay новой порции |
+| N10 | **Частично:** footer/current year и automotive launch copy исправлены | D38 Help и D39 onboarding исправлены PR #13; D37 contacts и D09 ложные app badges отложены владельцем |
+| N11 | **Завершено:** request/provider/chat use cases, API domain factories и MSW workflows | PR #12 merged 955b12a; оба Quality events PASS |
 | N12 | Broadcast scope до SQL LIMIT; older match за 120 чужими строками PASS | Полная cursor queue/UI — отдельное улучшение |
 | N13 | Prerender-manifest-aware SEO; custom build directory; dynamic HTTP checks | Deployed SEO evidence |
 | N14 | Automatic unit/integration discovery, собственная admin race fixture | Exact-candidate hosted CI на PostgreSQL 16 |
@@ -29,8 +30,8 @@ N09 и уточнённый по дизайн-обзору N10 остаются 
 | N16 | Полный dependency audit, vulnerable generator удалён, CSS сохранён byte-identically | Нет |
 | N17 | Mock broadcast participant/branch/offer privacy parity | Нет |
 | N18 | Inert allowlisted dotenv parser для backup | External backup/restore rehearsal остаётся U04 evidence |
-| N19 | Required-only bounded exact-head promotion, оба Quality events | Live promotion после единого push |
-| N20 | Bootstrap/market readiness перед исходными keyboard assertions | First-attempt hosted browser replay |
+| N19 | Required-only bounded exact-head promotion, оба Quality events | Live required-only promotion PR #11/#12/#13 PASS |
+| N20 | Bootstrap/market readiness перед исходными keyboard assertions | PR #13 push 189 first-attempt PASS; отдельная mobile Security Center instability — UX01 |
 
 **Локальная финальная приёмка:** frontend **189 files / 609 PASS**; backend unit
 **387 / 1406 PASS**, весь backend с DB setup **410 / 1494 PASS**, integration
@@ -49,8 +50,9 @@ Vite PWA compatibility **12 PASS**. Next mock/real и Vite builds, full ESLint,
 не измерялись. Fresh full root/server npm audit — **0 vulnerabilities**.
 Три исходных dirty-файла primary копии повторно сверены по SHA-256: **3/3 unchanged**.
 
-Публикация пакета проводится одним git push в feature/dev, затем обычным
-protected dev→main PR с двумя exact-candidate Quality events. Статус удалённой
+Публикация N01–N20 завершена PR #11; N11 — PR #12; выбранный дизайн —
+PR #13. Каждый пакет отправлен одним push feature/dev и protected PR main
+после двух exact-candidate Quality events. Статус удалённой
 приёмки проверяется в PR/Actions, а не выводится из локального PASS; дополнительный
 status-only push не требуется. Каждый runtime finding и его коррекция имеют
 отдельный коммит; proof/ограничения не смешиваются с исходным историческим аудитом.

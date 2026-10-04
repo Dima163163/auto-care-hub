@@ -5,8 +5,20 @@
 - [x] U08: mock graph, login fixtures и demo favorites исключены из real Next/Vite;
   Next guard сканирует static/server JS, HTML/RSC; 8 positive/negative tests PASS.
 - [x] UX01: actionable event readiness, delayed-query Enter/Space regression; 6/6 browser first-attempt PASS без retries/увеличения timeout.
-- [ ] Полная локальная UI/UX-матрица, новые находки и функциональные исправления.
-- [ ] Актуализация published N11/design статусов и protected publication пакета.
+- [x] UX02–UX10, UX12–UX14: modal semantics/focus/layer, main/landmarks,
+  tablet sign-in label, contrast, vehicle header, guest real favorites, unique SVG
+  IDs, semantic groups и clipped toolbar исправлены отдельными коммитами.
+- [x] UI/UX 200/200 и 100 screenshots; mock 192/192 + финальные targeted 18/18;
+  real production Next 29/29, Vite PWA 12/12, responsive 30/30, unit 196/635,
+  full ESLint/types/builds, 17 metadata + 17 initial JS, HTTP/browser CSP PASS.
+- [x] UX11: 44px touch recommendation и внешние device/screen-reader/CWV
+  ограничения записаны; отложенные 10 дизайнов и U01/U02/U03/N09 сохраняются.
+- [x] DOC01: published N11 PR #12 / выбранные 36 дизайнов PR #13 актуализированы.
+
+Публикация этой порции: один atomic push feature/dev и protected PR main;
+actual exact-candidate CI/source/main evidence — PR/Actions и publication.json
+в `ui-ux-audit-2026-10-04` локального workspace. Все implementation шаги завершены;
+внешний pilot GO/NO-GO не изменяется локальной UI/UX-приёмкой.
 
 Реестр: `docs/audits/UI_UX_AUTONOMOUS_2026-10-04.md`.
 
@@ -24,9 +36,9 @@
 - [x] Strict types, ESLint, Next/backend builds, frontend 189/609,
   backend unit 387/1406, isolated PostgreSQL integration 23/88 и full 410/1494 PASS.
 - [x] Полные mock browser scenarios: 171 PASS, первый запуск, desktop/tablet/mobile (18.8m).
-- [ ] Protected dev→main публикация: оба exact-candidate Quality events обязательны.
-- [ ] Визуальный обзор всего продукта: реальные скриншоты и отдельные
-  изображения предложений для выбора владельцем; product UI пока не меняется.
+- [x] Protected dev→main: PR #12 merged `955b12a`, оба Quality events PASS.
+- [x] Визуальный обзор: 46 пар; выбранные 36 реализованы и опубликованы
+  PR #13 (`3ab9661`). Остальные 10 вариантов остаются отложенными.
 
 Карта: `docs/architecture/AUTOCARE_RESPONSIBILITIES.md`. Каждый implementation
 шаг — отдельный коммит; весь N11 пакет — одним push. Исходная dirty-копия не
