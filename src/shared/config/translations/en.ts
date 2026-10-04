@@ -1071,6 +1071,9 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        calendarSelected: "Selected",
+        calendarPreviousMonth: "Previous month",
+        calendarNextMonth: "Next month",
         providerSectionBonuses: "Bonuses",
         providerSectionCommunication: "Client communication",
         providerSectionEvidence: "Verification",

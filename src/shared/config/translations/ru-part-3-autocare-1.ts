@@ -1,4 +1,7 @@
 export const ruPart3Autocare1 = {
+        calendarSelected: "Выбрано",
+        calendarPreviousMonth: "Предыдущий месяц",
+        calendarNextMonth: "Следующий месяц",
         providerSectionBonuses: "Бонусы",
         providerSectionCommunication: "Связь с клиентами",
         providerSectionEvidence: "Проверка",

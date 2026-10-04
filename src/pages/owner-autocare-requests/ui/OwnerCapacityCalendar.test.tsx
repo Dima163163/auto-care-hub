@@ -11,6 +11,10 @@ vi.mock('@/shared/lib/useTranslation', () => ({
         locale: 'ru',
         t: (key: string, params?: { count?: number }) => ({
             'autocare.ownerCapacityCalendarTitle': 'Календарь филиала',
+            'autocare.providerToday': 'Сегодня',
+            'autocare.calendarSelected': 'Выбрано',
+            'autocare.calendarNextMonth': 'Следующий месяц',
+            'autocare.calendarPreviousMonth': 'Предыдущий месяц',
             'autocare.ownerCapacityCalendarConfirmedCount': `${params?.count ?? 0} подтверждённых записей`,
             'autocare.ownerCapacityCalendarNoConfirmed': 'Подтверждённых записей нет.',
         }[key] ?? key),
@@ -73,6 +77,14 @@ describe('OwnerCapacityCalendar', () => {
         }]
         providerQuery.isLoading = false
         providerQuery.isError = false
+    })
+
+    it('localizes month navigation and day labels in the Russian workspace', () => {
+        render(<OwnerCapacityCalendar requests={[]} onSelectRequest={onSelectRequest} />)
+        expect(screen.getByRole('button', { name: 'Следующий месяц' })).toBeInTheDocument()
+        const labels = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? '').join(' ')
+        expect(labels).not.toMatch(/Today|Sunday|Monday|October/)
+        expect(labels).toContain(new Intl.DateTimeFormat('ru', { dateStyle: 'full' }).format(new Date()))
     })
 
     it('formats booking times in branch timezone and opens the booking from its existing control', async () => {
