@@ -1,4 +1,10 @@
 export const ruPart3Autocare1 = {
+        aboutDemoCount: "В демонстрационном режиме количество филиалов взято из тестового каталога.",
+        aboutAppsUnavailable: "Мобильные приложения пока не опубликованы. Сервис доступен в браузере.",
+        aboutCurrentVersion: "Текущая версия продукта",
+        aboutAvailableLanguages: "Доступные языки интерфейса",
+        aboutPublishedLocations: "Опубликованные филиалы в каталоге",
+        aboutCountUnavailable: "Не загружено",
         publicProfileRetryHint: "Не удалось проверить доступность профиля. Повторите загрузку или продолжите поиск сервиса.",
         requiredLegalConsents: "Обязательные согласия",
         accountDetailsGroup: "Данные аккаунта",

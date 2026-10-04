@@ -1071,6 +1071,12 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        aboutDemoCount: "In demo mode, the location count comes from the test catalogue.",
+        aboutAppsUnavailable: "Mobile apps have not been published yet. The service is available in your browser.",
+        aboutCurrentVersion: "Current product version",
+        aboutAvailableLanguages: "Available interface languages",
+        aboutPublishedLocations: "Published locations in the catalogue",
+        aboutCountUnavailable: "Not loaded",
         publicProfileRetryHint: "The profile availability could not be checked. Retry or continue searching for a provider.",
         requiredLegalConsents: "Required legal consents",
         accountDetailsGroup: "Account details",

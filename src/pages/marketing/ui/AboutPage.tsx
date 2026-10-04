@@ -14,6 +14,9 @@ import {
 import { Link } from 'react-router'
 
 import { ROUTES } from '@/shared/constants/routes'
+import { useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { IS_MOCK_API } from '@/shared/config/api'
+import { formatNumber } from '@/shared/lib/locale-format'
 import type { TranslationKey } from '@/shared/lib/i18n'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -129,7 +132,9 @@ export function AboutPage() {
 }
 
 function AboutHero() {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
+    const catalogue = useGetAutoCareDiscoveryQuery({ limit: 1 })
+    const catalogueCount = catalogue.isLoading ? '…' : catalogue.isError || !catalogue.data ? t('autocare.aboutCountUnavailable') : `${catalogue.data.totalCountIsLowerBound ? '≥ ' : ''}${formatNumber(catalogue.data.totalCount, locale, { maximumFractionDigits: 0 })}`
 
     return (
         <section className="relative isolate overflow-hidden bg-hero-overlay text-primary-foreground">
@@ -146,9 +151,10 @@ function AboutHero() {
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
-                    <StatCard value={t('marketing.about.stat1Value')} label={t('marketing.about.stat1Label')} />
-                    <StatCard value={t('marketing.about.stat2Value')} label={t('marketing.about.stat2Label')} />
-                    <StatCard value={t('marketing.about.stat3Value')} label={t('marketing.about.stat3Label')} />
+                    <StatCard value={catalogueCount} label={t('autocare.aboutPublishedLocations')} />
+                    <StatCard value="RU / EN" label={t('autocare.aboutAvailableLanguages')} />
+                    <StatCard value="Web" label={t('autocare.aboutCurrentVersion')} />
+                    <p className="col-span-full rounded-lg border border-primary-foreground/15 px-4 py-3 text-sm leading-6 text-primary-foreground/80">{t('autocare.aboutAppsUnavailable')}{IS_MOCK_API && <span className="mt-1 block">{t('autocare.aboutDemoCount')}</span>}</p>
                 </div>
             </div>
         </section>
