@@ -268,6 +268,7 @@ test.describe('public and client AutoCare states', () => {
 
         const bonus = page.locator('details').filter({ hasText: /бонусы сервиса|service bonuses/i }).first()
         await expect(bonus).toBeVisible()
+        await bonus.locator('summary').click()
         const points = bonus.locator('input[type="number"]')
         await points.fill('100')
         const redeem = bonus.getByRole('button', { name: /списать|redeem/i })
@@ -289,6 +290,7 @@ test.describe('public and client AutoCare states', () => {
 
         const bonus = page.locator('details').filter({ hasText: /бонусы сервиса|service bonuses/i }).first()
         await expect(bonus).toBeVisible()
+        await bonus.locator('summary').click()
         await expect(bonus).toContainText(/Возвращено: 120|Refunded: 120/i)
         await expect(bonus).toContainText(/Истекло: 80|Expired: 80/i)
 
