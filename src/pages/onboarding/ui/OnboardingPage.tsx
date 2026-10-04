@@ -154,7 +154,7 @@ export function OnboardingPage() {
                         </p>
                     </div>
 
-                    <div className="max-w-xl" aria-label={t('onboarding.progress', {
+                    <div className="max-w-xl" role="group" aria-label={t('onboarding.progress', {
                         completed: completedCount,
                         total: actions.length,
                     })}>

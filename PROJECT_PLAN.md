@@ -1,5 +1,16 @@
 # AutoCare Hub — Project Plan
 
+## Дополнение после публикации — 2026-10-04
+
+- [x] PR #14 слит в protected main; tree equality, push/PR Quality и promotion PASS.
+- [x] UX15: accessible onboarding progress group; отдельный локальный коммит.
+- [x] QA02: verified role/locale/theme, обычный admin и client/owner onboarding;
+  240/240, 120 screenshots, full axe, build/types/lint и 635 unit PASS.
+- [ ] Опубликовать дополнительные UX15/QA02 следующей порцией по новому
+  указанию пользователя «доделывай»: один atomic push feature/dev, protected
+  dev→main PR и обязательные exact-candidate CI. Фактический результат —
+  PR/Actions/publication.json; основной checkout сохраняется без изменений.
+
 ## Автономная UI/UX-порция — 2026-10-04
 
 - [x] U08: mock graph, login fixtures и demo favorites исключены из real Next/Vite;
