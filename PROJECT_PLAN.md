@@ -2116,3 +2116,5 @@ it does not introduce another runtime fix or claim pilot readiness.
 
 
 04 Oct — N16 follow-up: clean npm ci выявил реальный CSS import shadcn/tailwind.css. Статическая MIT CSS 4.21.0 сохранена byte-identical в src/shared/styles/vendor с license/provenance/SHA; import перенаправлен локально. CLI dependency graph не возвращён, визуальные utilities не изменены. Fresh audit остаётся 0; повтор Next build/CSS comparison обязателен перед push.
+
+- [x] D03: карточки сравнения: один переход в профиль, различимые типы цены, ближайшее время из ответа API; fixed/from/range/quote semantic regression добавлена.

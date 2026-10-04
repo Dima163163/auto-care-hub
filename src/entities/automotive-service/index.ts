@@ -22,6 +22,7 @@ export {
     type AutomotiveAmenityId,
 } from './model/automotiveAmenities'
 export { AutomotiveAmenityIcon } from './ui/AutomotiveAmenityIcon'
+export { formatProviderPreviewPrice } from './lib/providerPreviewFormat'
 export { ProviderLogo } from './ui/ProviderLogo'
 export { AutoCareCommunityBadgeList, type AutoCareCommunityBadgeCode } from './ui/AutoCareCommunityBadgeList'
 export { ServiceRequestChat } from './ui/ServiceRequestChat'

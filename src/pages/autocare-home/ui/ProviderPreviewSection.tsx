@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { AlertCircle, BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Pencil, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { mapAutoCareDiscoveryItem, ProviderLogo, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
+import { formatProviderPreviewPrice, mapAutoCareDiscoveryItem, ProviderLogo, type ProviderPreview, useGetAutoCareDiscoveryQuery } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
-import { formatAutoCareSlot, formatCurrency, formatDistanceKm, parseDistanceKm } from '@/shared/lib/locale-format'
+import { formatAutoCareSlot, formatDistanceKm, parseDistanceKm } from '@/shared/lib/locale-format'
 import { formatAutoCareReviewCount } from '@/shared/lib/formatAutoCareCount'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -24,6 +24,9 @@ type HomeProvider = {
     distanceKm: number
     address: string
     price: number
+    priceTo?: number | null
+    priceType?: ProviderPreview['priceType']
+    bookingMode?: ProviderPreview['bookingMode']
     priceValue: number
     oldPrice?: number
     discount?: string
@@ -49,6 +52,9 @@ function toHomeProvider(provider: ProviderPreview): HomeProvider {
         distanceKm: distanceKm ?? Number.MAX_SAFE_INTEGER,
         address: provider.address?.replace(/^Москва,\s*/, '') ?? '',
         price: provider.price,
+        priceTo: provider.priceTo,
+        priceType: provider.priceType,
+        bookingMode: provider.bookingMode,
         priceValue: provider.price,
         next: provider.nextSlot,
         inclusions: provider.inclusions ?? [],
@@ -112,7 +118,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
     return (
         <section className="py-[22px]">
             <div className="relative mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)]">
-                <div className="flex items-end justify-between gap-6">
+                <div className="flex flex-wrap items-end justify-between gap-4">
                     <div className="min-w-0 rounded-[var(--radius-control)] bg-card/95 px-4 py-3 shadow-sm backdrop-blur-sm">
                         <h2 className="text-[1.5rem] font-black tracking-[-0.025em]">{t('autocare.compareHomeTitle')}</h2>
                         <p className="mt-2 text-sm text-muted-foreground">
@@ -131,7 +137,7 @@ export function ProviderPreviewSection({ marketId }: { marketId: string }) {
                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                     </label>
                 </div>
-                <div className="mt-5 grid gap-4 lg:grid-cols-4" aria-busy={isInitialLoading}>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy={isInitialLoading}>
                     {isInitialLoading
                         ? <ProviderPreviewSkeleton label={t('common.loading')} />
                         : hasNoProviders
@@ -167,7 +173,7 @@ function ProviderPreviewSkeleton({ label }: { label: string }) {
     return (
         <div role="status" aria-label={label} className="contents">
             {Array.from({ length: 4 }, (_, index) => (
-                <article key={index} aria-hidden="true" className="flex min-h-[352px] flex-col rounded-[9px] border border-border bg-card px-4 pb-4 pt-5">
+                <article key={index} aria-hidden="true" className="flex min-h-[352px] flex-col rounded-[var(--radius-card)] border border-border bg-card p-5">
                     <div className="flex items-center gap-2"><Skeleton className="size-6 rounded-[6px]" /><Skeleton className="h-4 w-2/5" /></div>
                     <Skeleton className="mt-3 h-3.5 w-4/5" />
                     <Skeleton className="mt-3 h-3 w-full" />
@@ -187,7 +193,7 @@ function ProviderCard({ provider, locale }: { provider: HomeProvider; locale: st
     const { t } = useTranslation()
 
     return (
-        <article className="relative flex min-h-[352px] flex-col rounded-[9px] border border-border bg-card px-4 pb-4 pt-5">
+        <article className="relative flex min-h-[352px] flex-col rounded-[var(--radius-card)] border border-border bg-card p-5">
             <div className="flex min-h-[40px] items-start gap-2">
                 <ProviderLogo logoUrl={provider.logoUrl} name={provider.name} className="size-6" />
                 <h3 className="min-w-0 flex-1 line-clamp-2 text-[1.02rem] font-black leading-5">{provider.name}</h3>
@@ -196,16 +202,16 @@ function ProviderCard({ provider, locale }: { provider: HomeProvider; locale: st
             </div>
             <p className="mt-3 flex min-h-[20px] items-center gap-1 text-sm">{provider.reviews > 0 ? <><strong className="text-rating-foreground">{provider.rating.toFixed(1)}</strong>{Array.from({ length: 5 }).map((_, star) => <Star key={star} className={`size-3.5 ${star < Math.round(provider.rating) ? 'fill-rating-fill text-rating-fill' : 'text-muted-foreground'}`} />)}<span className="ml-1 text-xs text-muted-foreground">({formatAutoCareReviewCount(provider.reviews, locale, t)})</span></> : <span className="text-xs font-medium text-muted-foreground">{t('autocare.providerNoReviews')}</span>}</p>
             <p className="mt-3 flex min-h-[32px] items-start gap-2 text-xs font-medium leading-4 text-muted-foreground"><MapPin className="mt-0.5 size-3.5 shrink-0" /><span className="line-clamp-2">{formatDistanceKm(provider.distanceKm, locale)}{provider.address ? <><span className="px-1">·</span>{provider.address}</> : null}</span></p>
-            <div className="mt-6 min-h-[44px]">
-                <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{t('autocare.fromPrice', { price: formatCurrency(provider.price, provider.currency, locale) })}</p>
+            <div className="mt-5 min-h-[64px]">
+                <p className="flex min-h-[24px] flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-6">{formatProviderPreviewPrice(provider, locale, { from: (price) => t('autocare.fromPrice', { price }), quoteRequired: t('autocare.quoteRequiredPrice') })}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t(`autocare.priceType.${provider.priceType ?? 'from'}`)}</p>
                 {(provider.inclusions.length > 0 || provider.warrantyText) ? <p className="mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground">{[...provider.inclusions.slice(0, 2), provider.warrantyText].filter(Boolean).join(' · ')}</p> : null}
             </div>
             <div className="mt-5 min-h-[36px]">
                 <p className="text-xs leading-4 text-muted-foreground">{t('autocare.nearestBooking')}</p>
-                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{provider.next ? formatAutoCareSlot(provider.next, locale) : t('autocare.availabilityOnRequest')}</p>
+                <p className="mt-1 min-h-[20px] text-base font-black leading-5">{provider.priceType !== 'quote_required' && provider.next ? formatAutoCareSlot(provider.next, locale) : t('autocare.availabilityOnRequest')}</p>
             </div>
-            <Link to={routePaths.serviceProviderDetails(provider.id, provider.serviceId, provider.marketId)} className="mt-auto flex h-[42px] items-center justify-center rounded-[6px] bg-primary text-sm font-bold text-primary-foreground">{t('autocare.bookAction')}</Link>
-            <Link to={routePaths.serviceProviderDetails(provider.id, provider.serviceId, provider.marketId)} className="mt-3 text-center text-xs font-semibold text-primary">{t('autocare.detailsAction')}</Link>
+            <Link to={routePaths.serviceProviderDetails(provider.id, provider.serviceId, provider.marketId)} className="mt-auto flex min-h-11 items-center justify-center rounded-[6px] bg-primary text-sm font-bold text-primary-foreground">{t('autocare.detailsAction')}</Link>
         </article>
     )
 }

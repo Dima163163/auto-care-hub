@@ -28,6 +28,7 @@ export function mapAutoCareDiscoveryItem(item: AutoCareApiDiscoveryItem): Provid
         price: item.offer.priceFromMinor / 100,
         priceTo: item.offer.priceToMinor === null ? null : item.offer.priceToMinor / 100,
         currency: item.offer.currencyCode,
+        bookingMode: item.offer.bookingMode,
         nextSlot: item.nextSlot ?? '',
         image: item.provider.coverImageUrl,
         logoUrl: item.provider.logoUrl,
