@@ -18,7 +18,7 @@ export function ProviderResultsList({ providers, selectedIds, onToggle, onFocus 
     const highestRatingProviderId = highestRatedProviders.length === 1 ? highestRatedProviders[0]?.id : undefined
 
     return (
-        <div className="grid gap-4" aria-label={t('autocare.providersTitle')}>
+        <div role="group" className="grid gap-4" aria-label={t('autocare.providersTitle')}>
             {providers.map((provider) => (
                 <ProviderResultCard
                     key={provider.id}
