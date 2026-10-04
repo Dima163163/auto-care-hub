@@ -6,14 +6,16 @@ test.describe('Security Center investigation details', () => {
         await page.locator('#email').fill('admin@autocarehub.test')
         await page.locator('#password').fill('password123')
         await page.getByRole('button', { name: /sign in/i }).click()
-    await expect(page).toHaveURL(/\/(?:admin|super-admin)\/dashboard$/)
+        await expect(page).toHaveURL(/\/(?:admin|super-admin)\/dashboard$/)
 
         await page.goto('/admin/security-center', { waitUntil: 'networkidle' })
         await expect(page.getByRole('heading', { name: 'Security center' })).toBeVisible()
 
-        const eventRow = page.locator('tbody tr').first()
+        // A cold query briefly renders a non-interactive empty-state row.
+        const eventRow = page.locator('tbody tr[tabindex="0"]').first()
         await expect(eventRow).toBeVisible()
         await eventRow.focus()
+        await expect(eventRow).toBeFocused()
         await eventRow.press('Enter')
 
         const details = page.getByTestId('security-center-detail-drawer')
@@ -68,4 +70,44 @@ test.describe('Security Center investigation details', () => {
         await expect(revokeDialog).not.toBeVisible()
         await expect(page.getByRole('code').filter({ hasText: mitigationIp })).not.toBeVisible()
     })
+
+    test('waits for actionable events during a slow initial query', async ({ page }) => {
+        await page.goto('/login', { waitUntil: 'domcontentloaded' })
+        await page.locator('#email').fill('admin@autocarehub.test')
+        await page.locator('#password').fill('password123')
+        await page.getByRole('button', { name: /sign in/i }).click()
+        await expect(page).toHaveURL(/\/(?:admin|super-admin)\/dashboard$/)
+
+        // Wrap the already installed MSW fetch, then navigate within the SPA.
+        // Hold only the events query until the placeholder has been inspected.
+        await page.evaluate(() => {
+            const originalFetch = window.fetch.bind(window)
+            window.fetch = async (input, init) => {
+                const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+                if (new URL(requestUrl, location.origin).pathname === '/api/admin/security-center/events') {
+                    await new Promise<void>((resolve) => window.addEventListener('autocare-test-release-events', () => resolve(), { once: true }))
+                }
+                return originalFetch(input, init)
+            }
+        })
+        const mobileMenu = page.getByRole('button', { name: 'Menu', exact: true })
+        if (await mobileMenu.isVisible()) await mobileMenu.click()
+        await page.locator('a[href="/admin/security-center"]:visible').first().click()
+        await expect(page.getByRole('heading', { name: 'Security center' })).toBeVisible()
+        const placeholder = page.locator('tbody tr').first()
+        await expect(placeholder).toBeVisible()
+        await expect(placeholder).not.toHaveAttribute('tabindex', '0')
+        await placeholder.press('Enter')
+        const details = page.getByTestId('security-center-detail-drawer')
+        await expect(details.getByText('Investigation timeline')).toHaveCount(0)
+        await page.evaluate(() => window.dispatchEvent(new Event('autocare-test-release-events')))
+        const eventRow = page.locator('tbody tr[tabindex="0"]').first()
+        await expect(eventRow).toBeVisible()
+        await eventRow.focus()
+        await expect(eventRow).toBeFocused()
+        await eventRow.press('Space')
+        await expect(details).toBeVisible()
+        await expect(details.getByText('Investigation timeline')).toBeVisible()
+    })
+
 })

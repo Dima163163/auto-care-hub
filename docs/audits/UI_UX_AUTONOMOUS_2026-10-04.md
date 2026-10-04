@@ -18,7 +18,7 @@ D22/D37/D43 сохраняются. Новые эстетические вари
 
 | ID | Приоритет | Находка | Статус / приёмка |
 | --- | --- | --- | --- |
-| UX01 | P2 | Mobile Security Center keyboard scenario иногда не открывает drawer с первой попытки | Воспроизведение и расследование; причина ещё не установлена |
+| UX01 | P2 | Mobile Security Center keyboard scenario иногда не открывает drawer с первой попытки | Исправлено: cold placeholder не считается событием; actionable row + focus assert, delayed-query Enter/Space regression; 6/6 browser PASS с первой попытки. Исходный CI trace не опубликован; воспроизведён тот же механизм hidden drawer, точная историческая причина не заявляется |
 | DOC01 | P3 | План/контекст сохраняют устаревшие ожидания публикации N11 и выбранного дизайна | Актуализировать по merged PR #12/#13 |
 | N09 | P2 | Production encryption backfill adapter/scale/restore | Engine готов; deployment зависит от U01/U02 |
 
