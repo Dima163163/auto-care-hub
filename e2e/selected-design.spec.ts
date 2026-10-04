@@ -80,6 +80,19 @@ test.describe('selected design interactions', () => {
         await expect(conversation.getByRole('textbox', { name: /Напишите сообщение|Write a message/i })).toBeEnabled()
     })
 
+    test('direct moderation links select their visible queue across workspaces', async ({ page }) => {
+        await signIn(page, 'admin@autocarehub.test')
+        await page.goto('/admin/dashboard#admin-moderation-evidence')
+        await expect(page.locator('#admin-queue-evidence')).toBeVisible()
+        await expect(page.locator('button[aria-controls="admin-queue-evidence"]')).toHaveAttribute('aria-pressed', 'true')
+        await page.goto('/admin/dashboard#admin-catalog-gap-queue')
+        await expect(page.locator('#admin-queue-catalog')).toBeVisible()
+        await expect(page.locator('#admin-queue-evidence')).toBeHidden()
+        await page.locator('button[aria-controls="admin-queue-appeals"]').click()
+        await expect(page.locator('#admin-queue-appeals')).toBeVisible()
+        await expect(page).toHaveURL(/#admin-queue-appeals$/)
+    })
+
     test('mobile request summary stays available beside the final action', async ({ page }) => {
         await signIn(page, 'emily.carter@example.com')
         await page.goto('/services/api-proservice-moscow/request?service=oil-change')

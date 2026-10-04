@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { useGetAdminAutoCareProvidersQuery } from '@/entities/automotive-service'
 import { useGetAdminUsersQuery } from '@/entities/user'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
@@ -19,7 +19,15 @@ import { AdminOutboxControlPanel } from './AdminOutboxControlPanel'
 
 export function AdminAutoCareDashboardPage() {
     const { locale, t } = useTranslation()
-    const [activeQueue, setActiveQueue] = useState('reports')
+    const location = useLocation()
+    const navigate = useNavigate()
+    const queueAnchors: Record<string, string> = {
+        '#admin-chat-reports': 'reports', '#admin-provider-moderation': 'profiles',
+        '#admin-moderation-evidence': 'evidence', '#admin-catalog-gap-queue': 'catalog',
+        '#admin-appeals': 'appeals',
+    }
+    const activeQueue = queueAnchors[location.hash] ?? (['reports', 'profiles', 'evidence', 'changes', 'catalog', 'appeals'].find((queue) => location.hash === `#admin-queue-${queue}`) ?? 'reports')
+    const setActiveQueue = (queue: string) => navigate({ pathname: location.pathname, search: location.search, hash: `#admin-queue-${queue}` }, { replace: true, preventScrollReset: true })
     const providers = useGetAdminAutoCareProvidersQuery()
     const users = useGetAdminUsersQuery()
     const isLoading = providers.isLoading || users.isLoading
