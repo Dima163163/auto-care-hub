@@ -1,4 +1,10 @@
 export const ruPart3Autocare1 = {
+        providerSectionBonuses: "Бонусы",
+        providerSectionCommunication: "Связь с клиентами",
+        providerSectionEvidence: "Проверка",
+        providerSectionProfile: "Профиль",
+        providerSectionOverview: "Обзор",
+        providerWorkspaceSections: "Разделы филиала",
         providerPublicationStep: "Фотографии и проверка",
         providerContactsStep: "Контакты и условия",
         providerProfileStep: "Профиль и адрес",

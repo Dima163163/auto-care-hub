@@ -1071,6 +1071,12 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        providerSectionBonuses: "Bonuses",
+        providerSectionCommunication: "Client communication",
+        providerSectionEvidence: "Verification",
+        providerSectionProfile: "Profile",
+        providerSectionOverview: "Overview",
+        providerWorkspaceSections: "Branch workspace sections",
         providerPublicationStep: "Photos and verification",
         providerContactsStep: "Contacts and conditions",
         providerProfileStep: "Profile and address",
