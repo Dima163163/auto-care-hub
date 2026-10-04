@@ -15,10 +15,11 @@ const profiles = [
 ]
 const groups = [
     { role: 'guest', routes: ['/', '/services?service=oil-change&market=moscow', '/services/api-proservice-moscow', '/reviews', '/features', '/for-owners', '/about', '/favorites', '/blog', '/partners', '/contacts', '/help', '/agreement', '/rules', '/privacy', '/login', '/register', '/forgot-password', '/password/reset', '/verify-email', '/onboarding'] },
-    { role: 'client', email: 'emily.carter@example.com', routes: ['/profile', '/profile?tab=account', '/profile/vehicles', '/profile/bookings', '/profile/reviews', '/notifications', '/chats', '/favorites', '/services/api-proservice-moscow/request?service=oil-change'] },
-    { role: 'owner', email: 'sophia.miller@example.com', routes: ['/owner/dashboard', '/owner/autocare-providers', '/owner/autocare-providers/api-proservice-moscow', '/owner/autocare-requests', '/owner/services', '/owner/reviews', '/owner/clients', '/owner/chats'] },
+    { role: 'client', email: 'emily.carter@example.com', routes: ['/profile', '/profile?tab=account', '/profile/vehicles', '/profile/bookings', '/profile/reviews', '/notifications', '/chats', '/favorites', '/services/api-proservice-moscow/request?service=oil-change', '/onboarding'] },
+    { role: 'owner', email: 'sophia.miller@example.com', routes: ['/owner/dashboard', '/owner/autocare-providers', '/owner/autocare-providers/api-proservice-moscow', '/owner/autocare-requests', '/owner/services', '/owner/reviews', '/owner/clients', '/owner/chats', '/onboarding'] },
     { role: 'staff', email: 'ilya.orlov@proservice.test', routes: ['/owner/dashboard', '/owner/autocare-requests?provider=api-proservice-moscow'] },
-    { role: 'admin', email: 'admin@autocarehub.test', routes: ['/admin/dashboard', '/admin/users', '/admin/owners', '/admin/reviews', '/admin/platform-reviews', '/admin/audit-logs', '/admin/security-center', '/admin/chats', '/super-admin/dashboard', '/super-admin/chats'] },
+    { role: 'admin', email: 'moderator@autocarehub.test', routes: ['/admin/dashboard', '/admin/users', '/admin/owners', '/admin/reviews', '/admin/platform-reviews', '/admin/audit-logs', '/admin/security-center', '/admin/chats'] },
+    { role: 'superadmin', email: 'admin@autocarehub.test', routes: ['/admin/dashboard', '/admin/users', '/admin/owners', '/admin/reviews', '/admin/platform-reviews', '/admin/audit-logs', '/admin/security-center', '/admin/chats', '/super-admin/dashboard', '/super-admin/chats'] },
 ]
 const browserPath = [process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, chromium.executablePath(), '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'].find((candidate) => candidate && existsSync(candidate))
 if (!browserPath) throw new Error('An installed Chromium browser is required')
@@ -38,22 +39,42 @@ try {
                 localStorage.setItem('autocare-hub-theme', theme)
                 localStorage.setItem('autocare-hub:preferred-market', 'moscow')
             }, profile)
+            let authenticatedRole = 'guest'
             if (group.email) {
                 await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' })
                 await page.locator('html[data-autocare-ready="ready"]').waitFor()
                 await page.locator('#email').fill(group.email)
                 await page.locator('#password').fill('password123')
+                const loginResponse = page.waitForResponse((response) => response.url().endsWith('/auth/login') && response.request().method() === 'POST')
                 await page.getByRole('button', { name: /^(sign in|войти)$/i }).click()
+                const loginUser = await (await loginResponse).json()
+                authenticatedRole = loginUser.role
+                const expectedRole = { client: 'client', owner: 'owner', staff: 'owner', superadmin: 'super_admin', admin: 'admin' }[group.role]
+                if (loginUser.role !== expectedRole) throw new Error(`Expected ${expectedRole}, got ${loginUser.role}`)
                 await page.waitForURL((url) => !url.pathname.startsWith('/login'))
             }
             for (const route of group.routes) {
                 const id = `${profile.name}-${group.role}-${route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home'}`
-                const result = { id, profile: profile.name, role: group.role, route }
+                const result = { id, profile: profile.name, role: group.role, authenticatedRole, route }
                 try {
                     await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
                     await page.locator('html[data-autocare-ready="ready"]').waitFor({ timeout: 30_000 })
                     await page.getByRole('main').getByRole('heading').first().waitFor({ timeout: 15_000 })
                     await page.waitForFunction(() => [...document.querySelectorAll('[aria-busy="true"]')].every((node) => node.getBoundingClientRect().height === 0), undefined, { timeout: 8_000 }).catch(() => undefined)
+                    // Account locale is authoritative after sign-in; select the requested language through UI for this full-page load.
+                    if (await page.locator('html').getAttribute('lang') !== profile.locale) {
+                        let openedMenu = false
+                        const language = page.locator('[data-language-switcher] select:visible').first()
+                        if (await language.count() === 0) {
+                            await page.getByRole('button', { name: /^(menu|меню)$/i }).click()
+                            openedMenu = true
+                        }
+                        await language.waitFor({ state: 'visible' })
+                        await language.selectOption(profile.locale)
+                        await page.waitForFunction((locale) => document.documentElement.lang === locale, profile.locale)
+                        if (openedMenu) await page.getByRole('button', { name: /^(close|закрыть)$/i }).click()
+                    }
+
                     await page.evaluate(() => document.fonts.ready)
                     result.layout = await page.evaluate(() => {
                         const visible = (element) => element.checkVisibility() && element.getBoundingClientRect().width > 0
@@ -63,6 +84,8 @@ try {
                         const referencedIds = [...document.querySelectorAll('[aria-labelledby], [aria-describedby], [aria-controls], [aria-activedescendant]')].flatMap((element) => ['aria-labelledby', 'aria-describedby', 'aria-controls', 'aria-activedescendant'].flatMap((attribute) => (element.getAttribute(attribute) ?? '').split(/\s+/).filter(Boolean)))
                         return {
                             actualPath: location.pathname,
+                            documentLang: document.documentElement.lang,
+                            actualTheme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
                             width: innerWidth,
                             scrollWidth: document.documentElement.scrollWidth,
                             mainCount: [...document.querySelectorAll('main')].filter(visible).length,
@@ -78,7 +101,7 @@ try {
                     const axe = await new AxeBuilder({ page }).analyze()
                     result.axe = { passes: axe.passes.length, incomplete: axe.incomplete.map((rule) => ({ id: rule.id, nodes: rule.nodes.length, review: rule.nodes.map((node) => ({ target: node.target, checks: [...node.any, ...node.all, ...node.none].map((check) => check.message) })) })), violations: axe.violations.map((rule) => ({ id: rule.id, impact: rule.impact, help: rule.help, nodes: rule.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) })) }
                     result.exceptions = exceptions.splice(0)
-                    if (result.layout.scrollWidth > profile.width + 1 || result.layout.mainCount !== 1 || result.layout.h1Count !== 1 || result.layout.duplicateReferencedIds.length || result.layout.clippedHeaderControls.length || result.layout.brokenImages.length || result.layout.reducedMotionAnimations || result.layout.untranslated || result.exceptions.length || result.axe.violations.length) report.failures.push(id)
+                    if (result.layout.actualPath !== (group.role === 'guest' && route === '/onboarding' ? '/login' : route.split('?')[0]) || result.layout.documentLang !== profile.locale || result.layout.actualTheme !== profile.theme || result.layout.scrollWidth > profile.width + 1 || result.layout.mainCount !== 1 || result.layout.h1Count !== 1 || result.layout.duplicateReferencedIds.length || result.layout.clippedHeaderControls.length || result.layout.brokenImages.length || result.layout.reducedMotionAnimations || result.layout.untranslated || result.exceptions.length || result.axe.violations.length) report.failures.push(id)
                     if (profile.name === 'mobile-ru-dark' || profile.name === 'desktop-en-light') {
                         result.screenshot = `${id}.png`
                         await page.screenshot({ path: path.join(output, result.screenshot), fullPage: true, animations: 'disabled' })

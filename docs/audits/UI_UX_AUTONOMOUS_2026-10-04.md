@@ -32,8 +32,8 @@ D22/D37/D43 сохраняются. Новые эстетические вари
 | UX11 | P3 | Несколько inline controls имеют высоту 16px: map/clear, следующие дни, change vehicle, garage edit/delete, fleet add | Рекомендация увеличить touch area до 44px; размеры сами по себе не доказывают WCAG 2.5.8 failure (spacing/native exceptions). D11/D19 остаются отложенными; новый layout не применяется |
 | UX12 | P2 | Несколько BrandLogo SVG используют один aria-labelledby/title id, давая duplicate-id-aria | Исправлено: useId, уникальные title references, 0 duplicate referenced IDs на всех 200 cases |
 | UX13 | P3 | Именованные div badges/provider selector без role теряют aria-label | Исправлено: role=group на results list и analytics provider chooser; aria-prohibited-attr incomplete устранён |
-| UX15 | P2 | Авторизованный onboarding: progress div использует запрещённый aria-label без роли; гостевой маршрут проверял только redirect на login | Исправлено локально после PR #14: named group; 8/8 client/owner onboarding в full axe, production build, 635 unit, strict types/full lint PASS. Дополнительный push не выполняется в рамках ограничения одного push |
-| QA02 | P3 | Audit не подтверждает фактические auth role/locale/theme; сохранённый locale аккаунта может подменить язык профиля, обычный admin не включён | В работе локально: actual login role, выбор языка через UI для каждого route, expected guest redirect, отдельные admin/superadmin и client/owner onboarding |
+| UX15 | P2 | Авторизованный onboarding: progress div использует запрещённый aria-label без роли; гостевой маршрут проверял только redirect на login | Исправлено локально после PR #14: named group; 8/8 client/owner onboarding в full axe, production build, 635 unit, strict types/full lint PASS. Пользователь возобновил публикацию следующей порцией: один atomic push и protected dev→main PR |
+| QA02 | P3 | Audit не подтверждает фактические auth role/locale/theme; сохранённый locale аккаунта может подменить язык профиля, обычный admin не включён | Исправлено локально: actual login role/locale/theme, язык через UI на каждом route, expected guest redirect, admin/superadmin и client/owner onboarding; 240/240, 120 screenshots, 0 full axe violations |
 | DOC01 | P3 | План/контекст сохраняют устаревшие ожидания публикации N11 и выбранного дизайна | Исправлено: PROJECT_PLAN/CONTEXT/FULL audit сверены с merged PR #12/#13 и actual Quality evidence |
 | N09 | P2 | Production encryption backfill adapter/scale/restore | Engine готов; deployment зависит от U01/U02 |
 
@@ -73,3 +73,13 @@ UX11 — рекомендация 44px touch area, с учётом spacing/nativ
 14 runtime/test findings закрыты отдельными коммитами; воспроизводимый audit и DOC01 записаны отдельно. Один atomic push feature/dev; main — protected dev→main PR с обоими exact-candidate Quality events. Фактические source/main SHA, workflow IDs и status фиксируются в PR/Actions и `publication.json` локального отчёта.
 
 Primary checkout не использовался для edits: исходные три integrity-файла и их SHA-256 сохранены (3/3). QA использует только собственные ephemeral synthetic PostgreSQL/Redis; постоянные базы владельца не менялись.
+
+## Дополнительная локальная приёмка после PR #14
+
+PR #14 merged 2026-10-04T17:31:24Z: dev `13c0fcbdf60ad1f7faa0a97d02fe1fc7a6c7e0a5`, main `6d1e6b6843e13b2e0315934fb3b29a3429866130`; дерево обоих `fbcb05655800812bdca59b7efe867ac9da70ffc2`. Quality push `37217852692`, PR `37218344787`, promotion `37217852534` PASS. Оба browser suites **204/204** и PWA **12/12** с первой попытки; frontend **635**, backend **1494** PASS. Main protection включён, reviewer approval не требуется. Post-merge workflow не заявляется PASS без отдельного результата.
+
+Дополнительный guard подтвердил обычного администратора, фактические RU/EN и темы: **232/232** на опубликованном runtime. Сохранённый locale аккаунта переопределял входной профиль; новый audit выбирает язык через UI и проверяет фактический DOM. Гостевой onboarding ожидаемо ведёт на login; отдельный authenticated onboarding выявил UX15.
+
+UX15 и QA02 закрыты **локально** после единственного push. Production mock `.next-ux-onboarding-final`, preview `http://127.0.0.1:5198`: **240/240**, 120 screenshots, 8/8 client/owner onboarding; actual role/locale/theme подтверждены. Full axe без исключений: 0 violations/overflow/clipped controls/duplicate ARIA/missing media/keys/JS exceptions/infinite reduced-motion animations. Production build, strict TypeScript, full ESLint и **196 files / 635 tests PASS** после UX15.
+
+Пользователь новым указанием «доделывай» возобновил публикацию этих двух коммитов следующей порцией: один atomic push feature/dev и protected dev→main PR. Фактический hosted результат не подменяется локальной приёмкой. Artifact `ui-ux-audit-2026-10-04/publication.json` различает опубликованный SHA и локальные additions; patch и screenshots сохранены. U01/U02/U03, N09 rollout, UX11, external native/screen-reader/CWV и deferred 10 designs остаются.

@@ -1,5 +1,29 @@
 # AutoCare Hub Project Context
 
+## Последнее дополнение: UX15 / QA02 — публикация возобновлена 2026-10-04
+
+Основная порция опубликована PR #14: main `6d1e6b6`, dev `13c0fcb`, trees равны.
+Push/PR Quality и promotion PASS; оба 204/204 mock + 12/12 PWA без retries,
+frontend 635/backend 1494. Единственный atomic push уже выполнен.
+
+После публикации дополнительный authenticated onboarding audit нашёл UX15
+(aria-label на progress div без разрешающей роли); исправлен named group.
+QA02 расширяет audit до 60 route/role cases × 4: обычный admin/superadmin,
+client/owner onboarding, фактические login role/DOM locale/theme, выбор языка
+через UI на каждом route и ожидаемый guest onboarding → login redirect.
+240/240 и 120 screenshots, 8/8 authenticated onboarding, full axe 0 violations;
+production build, strict types/full lint и 196/635 unit PASS.
+
+UX15 и QA02 — отдельные проверенные коммиты на текущей ветке. После нового
+указания пользователя «доделывай» разрешена следующая порция: один atomic push
+feature/dev и protected dev→main PR с обязательными exact-candidate CI checks.
+Фактическая публикация и hosted CI фиксируются в PR/Actions/publication.json;
+локальные PASS не означают, что новая порция уже слита в main.
+Preview `http://127.0.0.1:5198`; артефакт, patch и publication metadata:
+`/Users/a1/Desktop/my-projects/AutoCareHub/ui-ux-audit-2026-10-04/`.
+Primary integrity files сохранены; собственные synthetic API/PG/Redis убраны.
+KMS/MFA/pilot/native-device/screen-reader/CWV и deferred designs сохраняются.
+
 ## Автономные UI/UX исправления — 2026-10-04
 
 Пользователь поручил закончить доступное без его решений и проверить весь UI/UX.
