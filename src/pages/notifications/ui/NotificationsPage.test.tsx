@@ -23,7 +23,7 @@ function mount() { return render(<MemoryRouter><NotificationsPage /></MemoryRout
 describe('loaded notification filters', () => {
     beforeEach(() => { state.items = [entry('Unread item', null), entry('Read item', '2026-10-01T11:00:00Z')] })
     it('filters only the loaded list and restores all items without marking them read', async () => {
-        mount(); await userEvent.click(screen.getByRole('button', { name: 'notifications.unread', exact: true }))
+        mount(); await userEvent.click(screen.getByRole('button', { name: 'notifications.unread' }))
         expect(screen.getByRole('heading', { name: 'Unread item' })).toBeVisible()
         expect(screen.queryByRole('heading', { name: 'Read item' })).not.toBeInTheDocument()
         expect(state.items[0]?.readAt).toBeNull()
@@ -32,7 +32,7 @@ describe('loaded notification filters', () => {
     })
     it('describes an empty loaded unread selection without replacing the global unread count', async () => {
         state.items = [entry('Read item', '2026-10-01T11:00:00Z')]; mount()
-        await userEvent.click(screen.getByRole('button', { name: 'notifications.unread', exact: true }))
+        await userEvent.click(screen.getByRole('button', { name: 'notifications.unread' }))
         expect(screen.getByText('autocare.noUnreadNotifications')).toBeVisible()
         expect(screen.getByRole('button', { name: 'notifications.markAllRead' })).toBeEnabled()
     })
