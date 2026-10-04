@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        bonusActionHistory: "Bonus activity and grant reasons",
         invitationValidUntil: "Until {{date}}",
         allProviderBranches: "All workshop branches",
         calendarSelected: "Selected",

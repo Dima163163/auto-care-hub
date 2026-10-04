@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        bonusActionHistory: "История бонусных операций и причины начислений",
         invitationValidUntil: "До {{date}}",
         allProviderBranches: "Все филиалы сервиса",
         calendarSelected: "Выбрано",

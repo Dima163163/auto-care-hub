@@ -1,6 +1,6 @@
 import { ArrowLeft, BarChart3, CalendarCheck2, MapPin, MessageSquareText, Star, UsersRound } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { useGetOwnerAutoCareProvidersQuery, useGetOwnerAutoCareWorkspaceAccessQuery, type AutoCareApiProvider } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
@@ -21,8 +21,11 @@ import { OwnerProviderEvidencePanel } from './OwnerProviderEvidencePanel'
 export function OwnerAutoCareProviderDetailsPage() {
     const { locale, t } = useTranslation()
     const { id } = useParams<{ id: string }>()
-    const [sectionState, setSectionState] = useState({ providerId: id, section: 'overview' })
-    const activeSection = sectionState.providerId === id ? sectionState.section : 'overview'
+    const [searchParams] = useSearchParams()
+    const requestedSection = searchParams.get('section') ?? 'overview'
+    const initialSection = ['overview', 'profile', 'evidence', 'communication', 'team', 'bonuses'].includes(requestedSection) ? requestedSection : 'overview'
+    const [sectionState, setSectionState] = useState({ providerId: id, section: '' })
+    const activeSection = sectionState.providerId === id && sectionState.section ? sectionState.section : initialSection
     const { data: providers = [], isLoading, isError, error, refetch } = useGetOwnerAutoCareProvidersQuery()
     const workspaceAccess = useGetOwnerAutoCareWorkspaceAccessQuery()
     const provider = providers.find((item) => item.id === id)
