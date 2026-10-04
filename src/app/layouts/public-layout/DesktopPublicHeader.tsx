@@ -84,6 +84,7 @@ export function DesktopPublicHeader() {
                     {!isLoading && (isError || !user) ? (
                         <Link
                             to={ROUTES.login}
+                            aria-label={t('auth.signIn')}
                             className="public-desktop-header__sign-in inline-flex h-[45px] items-center gap-2 rounded-[9px] border border-primary-foreground/25 px-4 text-sm font-bold"
                         >
                             <UserRound className="size-[19px]" /><span>{t('auth.signIn')}</span>
