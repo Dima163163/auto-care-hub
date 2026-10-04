@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { useGetAutoCareLocationZonesQuery, useGetAutoCareMarketsQuery } from '@/entities/automotive-service'
@@ -11,7 +10,7 @@ import { ServiceCategoryGrid } from './ServiceCategoryGrid'
 
 export function HomeDiscoveryGrid({ marketId }: { marketId: string }) {
     return (
-        <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-4 px-[var(--layout-gutter)] pb-7 lg:grid-cols-[1.05fr_0.97fr_1.05fr]">
+        <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-4 px-[var(--layout-gutter)] pb-7 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <ServiceCategoryGrid />
             <LocationCard marketId={marketId} />
             <PartnerCard />
@@ -43,10 +42,13 @@ function LocationCard({ marketId }: { marketId: string }) {
 function PartnerCard() {
     const { t } = useTranslation()
     return (
-        <section className="relative min-h-[334px] overflow-hidden rounded-[10px] bg-hero-overlay px-6 py-5 text-primary-foreground">
+        <section className="relative min-h-[240px] overflow-hidden lg:col-span-2 rounded-[10px] bg-hero-overlay px-6 py-5 text-primary-foreground">
             <img src="/images/autocare/partner-handshake.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-[64%_center]" />
             <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/85 to-hero-overlay/20" />
-            <div className="relative max-w-[18rem]"><h2 className="text-xl font-black">{t('autocare.partnerTitle')}</h2><p className="mt-3 text-sm leading-6 text-primary-foreground/85">{t('autocare.partnerDescription')}</p><ul className="mt-5 grid gap-3 text-sm font-semibold">{[t('autocare.partnerBenefitClients'), t('autocare.partnerBenefitControl'), t('autocare.partnerBenefitAnalytics')].map((item) => <li key={item} className="flex items-center gap-3"><Check className="size-5 text-map-marker-success" />{item}</li>)}</ul><Link to={ROUTES.owners} className="mt-6 inline-flex h-12 items-center rounded-[7px] bg-primary px-7 text-base font-bold text-primary-foreground">{t('autocare.partnerAction')}</Link></div>
+            <div className="relative flex flex-wrap items-center justify-between gap-6 py-4 sm:px-4">
+                <div className="max-w-xl"><h2 className="text-2xl font-semibold">{t('autocare.partnerTitle')}</h2><p className="mt-3 text-sm leading-6 text-primary-foreground/85">{t('autocare.partnerDescription')}</p><p className="mt-3 text-sm text-primary-foreground/75">{t('autocare.partnerWorkspaceSummary')}</p></div>
+                <Link to={ROUTES.owners} className="inline-flex min-h-12 items-center justify-center rounded-[var(--radius-control)] bg-primary px-6 text-sm font-semibold text-primary-foreground">{t('autocare.partnerAction')}</Link>
+            </div>
         </section>
     )
 }

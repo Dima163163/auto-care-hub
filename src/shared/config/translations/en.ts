@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        partnerWorkspaceSummary: "Profile, services, schedule and team in one workspace.",
         zoneSearchAction: "Find matching workshops →",
         roadsideServices: "Roadside and mobile services",
         workshopServices: "At the workshop",
