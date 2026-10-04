@@ -1,4 +1,7 @@
 export const ruPart3Autocare1 = {
+        optionalConsentAvailability: "Необязательные функции пока недоступны. Ранее сохранённое согласие можно отозвать.",
+        marketingUnavailable: "Публичный маркетинговый канал пока не опубликован.",
+        analyticsUnavailable: "Аналитика продукта пока не включена.",
         chatAccessUnavailable: "Переписка недоступна для просмотра",
         backToChats: "К списку чатов",
         requestsNeedResponse: "Требуют вашего ответа: {{count}}",

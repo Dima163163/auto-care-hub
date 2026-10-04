@@ -66,6 +66,7 @@ export function ProfilePrivacy() {
     }
 
     const handleConsentChange = async (type: 'analytics' | 'marketing', granted: boolean) => {
+        if (granted) return
         try {
             await updateConsents({ [type]: granted }).unwrap()
         } catch (error) {
@@ -85,40 +86,7 @@ export function ProfilePrivacy() {
                 </div>
             </div>
 
-            <div className="mt-6 rounded-lg border bg-muted/20 p-4">
-                <h3 className="font-semibold">{t('profile.privacy.consentTitle')}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{t('profile.privacy.consentDescription')}</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <label className="flex items-start gap-3 text-sm">
-                        <input
-                            type="checkbox"
-                            className="mt-1 size-4 shrink-0 accent-primary"
-                            checked={consentState?.consents.analytics.granted ?? false}
-                            disabled={isLoadingConsents || isUpdatingConsents}
-                            onChange={(event) => void handleConsentChange('analytics', event.target.checked)}
-                        />
-                        <span>
-                            <span className="block font-semibold">{t('profile.privacy.analyticsConsent')}</span>
-                            <span className="mt-1 block text-xs text-muted-foreground">{t('profile.privacy.analyticsConsentDescription')}</span>
-                        </span>
-                    </label>
-                    <label className="flex items-start gap-3 text-sm">
-                        <input
-                            type="checkbox"
-                            className="mt-1 size-4 shrink-0 accent-primary"
-                            checked={consentState?.consents.marketing.granted ?? false}
-                            disabled={isLoadingConsents || isUpdatingConsents}
-                            onChange={(event) => void handleConsentChange('marketing', event.target.checked)}
-                        />
-                        <span>
-                            <span className="block font-semibold">{t('profile.privacy.marketingConsent')}</span>
-                            <span className="mt-1 block text-xs text-muted-foreground">{t('profile.privacy.marketingConsentDescription')}</span>
-                        </span>
-                    </label>
-                </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-6">
                 <div className="rounded-lg border bg-muted/20 p-4">
                     <h3 className="font-semibold">{t('profile.privacy.exportTitle')}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{t('profile.privacy.exportDescription')}</p>
@@ -128,6 +96,42 @@ export function ProfilePrivacy() {
                     </Button>
                 </div>
 
+            </div>
+
+            <div className="mt-6 rounded-lg border bg-muted/20 p-4">
+                <h3 className="font-semibold">{t('profile.privacy.consentTitle')}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t('autocare.optionalConsentAvailability')}</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <label className="flex items-start gap-3 text-sm">
+                        <input
+                            type="checkbox"
+                            className="mt-1 size-4 shrink-0 accent-primary"
+                            checked={consentState?.consents.analytics.granted ?? false}
+                            disabled={isLoadingConsents || isUpdatingConsents || !consentState?.consents.analytics.granted}
+                            onChange={(event) => void handleConsentChange('analytics', event.target.checked)}
+                        />
+                        <span>
+                            <span className="block font-semibold">{t('profile.privacy.analyticsConsent')}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">{t('autocare.analyticsUnavailable')}</span>
+                        </span>
+                    </label>
+                    <label className="flex items-start gap-3 text-sm">
+                        <input
+                            type="checkbox"
+                            className="mt-1 size-4 shrink-0 accent-primary"
+                            checked={consentState?.consents.marketing.granted ?? false}
+                            disabled={isLoadingConsents || isUpdatingConsents || !consentState?.consents.marketing.granted}
+                            onChange={(event) => void handleConsentChange('marketing', event.target.checked)}
+                        />
+                        <span>
+                            <span className="block font-semibold">{t('profile.privacy.marketingConsent')}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">{t('autocare.marketingUnavailable')}</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div className="mt-8 border-t border-border pt-6">
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                     <h3 className="font-semibold">{t('profile.privacy.deletionTitle')}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{t('profile.privacy.deletionDescription')}</p>

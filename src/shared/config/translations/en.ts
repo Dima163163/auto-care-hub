@@ -1071,6 +1071,9 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        optionalConsentAvailability: "Optional features are unavailable. Previously recorded consent can still be withdrawn.",
+        marketingUnavailable: "No public marketing channel is available yet.",
+        analyticsUnavailable: "Product analytics is not enabled yet.",
         chatAccessUnavailable: "Conversation access is unavailable",
         backToChats: "Back to chats",
         requestsNeedResponse: "Need your response: {{count}}",
