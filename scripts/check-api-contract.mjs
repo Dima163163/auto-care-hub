@@ -1,8 +1,9 @@
 import { readFile } from 'node:fs/promises'
+import { readMockHandlerSources } from './mock-handler-sources.mjs'
 
 const [openApiSource, mockSource, routeSources, usersRouteSource] = await Promise.all([
     readFile('server/src/routes/openapi.route.ts', 'utf8'),
-    readFile('src/app/mocks/handlers.ts', 'utf8'),
+    readMockHandlerSources(),
     Promise.all([
         'server/src/routes/health.route.ts',
         'server/src/modules/cabinets/cabinets.routes.ts',

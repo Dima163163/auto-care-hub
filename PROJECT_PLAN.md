@@ -32,6 +32,10 @@ N11 step 4: API types/schemas/endpoint factories разделены по 10 до
 единственная registration сохраняет cache identity, original hooks и transforms.
 212 DTO/schema + 136 endpoint token comparisons и frontend 609 PASS.
 
+N11 step 5: MSW workflows в 18 группах с общей fixture initialization и
+оригинальными ordinal priorities. Все 244 route declarations по прежнему
+проверяются parity/snapshot guards; новая regression ловит modular drift.
+
 ## Несрочный пакет аудита — 2026-10-03, один итоговый push
 
 Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
