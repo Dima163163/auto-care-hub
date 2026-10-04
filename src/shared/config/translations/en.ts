@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        zoneSearchAction: "Find matching workshops →",
         roadsideServices: "Roadside and mobile services",
         workshopServices: "At the workshop",
         heroEyebrow: 'Automotive service marketplace',

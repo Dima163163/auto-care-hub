@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        zoneSearchAction: "Показать подходящие сервисы →",
         roadsideServices: "На дороге и с выездом",
         workshopServices: "В автосервисе",
         ownerRequestsEyebrow: 'Заявки клиентов',

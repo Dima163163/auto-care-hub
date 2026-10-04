@@ -38,6 +38,13 @@ describe('HomeDiscoveryGrid', () => {
         mocks.zones.mockReset().mockReturnValue({ data: [], isLoading: false, isError: false, refetch: vi.fn() })
     })
 
+    it('opens the selected zone without presenting fixture counts as availability', () => {
+        mocks.zones.mockReturnValue({ data: [{ id: 'zone-center', names: { ru: 'Центр' }, serviceCount: 1248, imageUrl: null }], isLoading: false, isError: false })
+        render(<I18nContext.Provider value={{ locale: 'ru', setLocale: vi.fn(), t: (key: TranslationKey) => partnerCopy[key] ?? key }}><MemoryRouter><HomeDiscoveryGrid marketId="moscow" /></MemoryRouter></I18nContext.Provider>)
+        expect(screen.getByRole('link', { name: /Центр/ })).toHaveAttribute('href', expect.stringContaining('zone=zone-center'))
+        expect(screen.queryByText(/1[ ,\u00a0]?248/)).not.toBeInTheDocument()
+    })
+
     it('keeps the partner CTA on the explicit primary foreground contract', () => {
         render(
             <I18nContext.Provider value={{
