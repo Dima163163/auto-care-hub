@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        requestsNeedResponse: "Need your response: {{count}}",
         requestReviewHint: "Review the service and time before sending your request.",
         requestStepReview: "Review and send",
         displayedReviewCount: "Reviews in the loaded selection: {{count}}",

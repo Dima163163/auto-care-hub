@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        requestsNeedResponse: "Требуют вашего ответа: {{count}}",
         requestReviewHint: "Проверьте услугу и время перед отправкой заявки.",
         requestStepReview: "Проверка и отправка",
         displayedReviewCount: "Отзывов в загруженной выборке: {{count}}",
