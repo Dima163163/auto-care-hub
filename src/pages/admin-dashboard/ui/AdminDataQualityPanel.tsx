@@ -38,14 +38,14 @@ export function AdminDataQualityPanel() {
     if (query.error || !data) return <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm"><div role="alert" className="rounded-[var(--radius-card)] border border-destructive/30 bg-destructive/5 p-4"><p className="text-sm font-semibold text-destructive">{getApiErrorMessage(query.error, text.failed)}</p><RetryButton className="mt-3" onRetry={query.refetch} label={t('common.retry')} /></div></section>
 
     const rows: QualityRow[] = [
-        { id: 'reviews', label: text.pendingReviews, value: formatInteger(data.reviews.pending), attention: data.reviews.pending > 0, icon: ClipboardList, href: '#admin-moderation-evidence' },
-        { id: 'anomalies', label: text.reviewAnomalies, value: formatInteger(data.reviews.anomalyCandidates), attention: data.reviews.anomalyCandidates > 0, icon: ShieldAlert, href: '#admin-moderation-evidence' },
-        { id: 'appeals', label: text.pendingAppeals, value: formatInteger(data.appeals.pending), attention: data.appeals.pending > 0, icon: AlertTriangle, href: '#admin-appeals' },
+        { id: 'reviews', label: text.pendingReviews, value: formatInteger(data.reviews.pending), attention: data.reviews.pending > 0, icon: ClipboardList, href: `${ROUTES.adminDashboard}#admin-moderation-evidence` },
+        { id: 'anomalies', label: text.reviewAnomalies, value: formatInteger(data.reviews.anomalyCandidates), attention: data.reviews.anomalyCandidates > 0, icon: ShieldAlert, href: `${ROUTES.adminDashboard}#admin-moderation-evidence` },
+        { id: 'appeals', label: text.pendingAppeals, value: formatInteger(data.appeals.pending), attention: data.appeals.pending > 0, icon: AlertTriangle, href: `${ROUTES.adminDashboard}#admin-appeals` },
         { id: 'conflicts', label: text.bookingConflicts, value: formatInteger(data.reliability.bookingConflicts), attention: data.reliability.bookingConflicts > 0, icon: AlertTriangle, href: ROUTES.adminAuditLogs },
-        { id: 'trust', label: text.evidenceCoverage, value: formatPercent(data.ranking.evidenceCoveragePercent), attention: data.ranking.evidenceCoveragePercent < 80, icon: BadgeCheck, href: '#admin-moderation-evidence' },
-        { id: 'price', label: text.priceCoverage, value: formatPercent(data.catalog.priceCoveragePercent), attention: data.catalog.priceCoveragePercent < 80, icon: Gauge, href: '#admin-catalog-gap-queue' },
-        { id: 'catalog', label: text.catalogCoverage, value: formatPercent(data.catalog.offerCoveragePercent), attention: data.catalog.offerCoveragePercent < 80, icon: BarChart3, href: '#admin-catalog-gap-queue' },
-        { id: 'suspended', label: text.suspendedProviders, value: formatInteger(data.providers.suspended), attention: data.providers.suspended > 0, icon: ShieldAlert, href: '#admin-provider-moderation' },
+        { id: 'trust', label: text.evidenceCoverage, value: formatPercent(data.ranking.evidenceCoveragePercent), attention: data.ranking.evidenceCoveragePercent < 80, icon: BadgeCheck, href: `${ROUTES.adminDashboard}#admin-moderation-evidence` },
+        { id: 'price', label: text.priceCoverage, value: formatPercent(data.catalog.priceCoveragePercent), attention: data.catalog.priceCoveragePercent < 80, icon: Gauge, href: `${ROUTES.adminDashboard}#admin-catalog-gap-queue` },
+        { id: 'catalog', label: text.catalogCoverage, value: formatPercent(data.catalog.offerCoveragePercent), attention: data.catalog.offerCoveragePercent < 80, icon: BarChart3, href: `${ROUTES.adminDashboard}#admin-catalog-gap-queue` },
+        { id: 'suspended', label: text.suspendedProviders, value: formatInteger(data.providers.suspended), attention: data.providers.suspended > 0, icon: ShieldAlert, href: `${ROUTES.adminDashboard}#admin-provider-moderation` },
     ]
     const needsAttention = rows.some((row) => row.attention)
 

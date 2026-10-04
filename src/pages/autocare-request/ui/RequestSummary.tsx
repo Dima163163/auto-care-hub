@@ -25,7 +25,7 @@ export function RequestSummary({ provider, offering }: RequestSelectionProps) {
                 <AutoCareImage src={provider.image} alt={provider.name} className="size-[72px] shrink-0 rounded-[var(--radius-control)] object-cover" />
                 <div className="min-w-0">
                     <p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedProvider')}</p>
-                    <h1 className="mt-1 truncate text-xl font-black tracking-tight text-foreground">{provider.name}</h1>
+                    <h2 className="mt-1 truncate text-xl font-black tracking-tight text-foreground">{provider.name}</h2>
                     <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><MapPin className="size-3.5 text-primary" />{provider.address}</p>
                     <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-status-success-foreground">
                         <span className="inline-flex items-center gap-1 rounded-[var(--radius-control)] bg-status-success-surface px-2 py-1"><Clock3 className="size-3.5" />{provider.hours}</span>
@@ -59,7 +59,7 @@ export function RequestOrderSummary({ provider, offering, appointmentDate, appoi
         <aside className="h-fit overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm lg:sticky lg:top-5">
             <div className="border-b border-border px-5 py-4">
                 <h2 className="text-lg font-black tracking-tight text-foreground">{t('autocare.providerBookingTitle')}</h2>
-                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.providerBookingStep')}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.requestReviewHint')}</p>
             </div>
             <div className="divide-y divide-border px-5 text-sm">
                 <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedService')}</p><p className="mt-1 font-black text-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</p><p className="mt-1 text-xs font-bold text-foreground">{price}</p></div>
@@ -70,4 +70,16 @@ export function RequestOrderSummary({ provider, offering, appointmentDate, appoi
             <div className="grid gap-3 p-5"><p className="flex gap-2 text-xs font-semibold leading-5 text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-primary" />{t('autocare.requestProviderConfirmation')}</p></div>
         </aside>
     )
+}
+
+export function RequestCompactSummary({ provider, offering, appointmentDate, appointmentTime, serviceTimezone }: RequestSelectionProps & { appointmentDate: string; appointmentTime: string; serviceTimezone?: string }) {
+    const { t, locale } = useTranslation()
+    const service = automotiveServices.find((item) => item.id === offering.serviceId)
+    const price = formatProviderOfferingPrice(offering, locale, { from: (value) => t('autocare.fromPrice', { price: value }), quoteRequired: t('autocare.quoteRequiredPrice') })
+    return <section aria-label={t('autocare.requestReviewHint')} className="rounded-[var(--radius-control)] border border-border bg-secondary/30 p-3 text-sm">
+        <div className="flex flex-wrap justify-between gap-2"><strong className="font-semibold">{provider.name}</strong><strong className="font-semibold">{price}</strong></div>
+        <p className="mt-1 text-muted-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</p>
+        <p className="mt-2 font-medium">{appointmentTime ? `${formatRequestLongDate(appointmentDate, locale)} · ${appointmentTime} (${serviceTimezone ?? 'UTC'})` : t('booking.noAvailableTimes')}</p>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">{t('autocare.requestProviderConfirmation')}</p>
+    </section>
 }

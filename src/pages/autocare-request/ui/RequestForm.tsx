@@ -1,5 +1,5 @@
 import { CalendarDays, Camera, Check, Clock3, Send } from 'lucide-react'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { useGetAutoCareAvailabilityQuery } from '@/entities/automotive-service'
@@ -27,7 +27,9 @@ type RequestFormProps = {
     initialContact?: RequestFormPayload['contactSnapshot']
     onSubmit: (payload: RequestFormPayload) => void | boolean | Promise<void | boolean>
     onAppointmentSelectionChange?: (selection: { date: string; time: string }) => void
+    onStageChange?: (step: 2 | 3 | 4) => void
     isSubmitting?: boolean
+    reviewSummary?: ReactNode
     errorMessage?: string
 }
 
@@ -56,7 +58,7 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, onAppointmentSelectionChange, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, onAppointmentSelectionChange, onStageChange, isSubmitting = false, errorMessage, reviewSummary }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
@@ -116,14 +118,19 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
     }
 
     return (
-        <form onSubmit={(event) => void handleSubmit(event)} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
+        <form onFocusCapture={(event) => {
+            if (!(event.target instanceof HTMLElement)) return
+            const step = event.target.closest('[data-request-step]')?.getAttribute('data-request-step')
+            if (step === '2' || step === '3' || step === '4') onStageChange?.(step === '2' ? 2 : step === '3' ? 3 : 4)
+        }} onSubmit={(event) => void handleSubmit(event)} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-sm sm:p-6">
             <AppointmentPicker locale={locale} serviceTimezone={currentAvailability?.timezone ?? serviceTimezone} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={currentAvailability} isLoading={isAvailabilityLoading} isError={isAvailabilityError} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { const normalized = parseRequestDate(value); if (normalized) { setCustomDate(normalized); setSelectedDate('') } }} onTimeChange={setSelectedTime} />
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} vehicle={vehicleSnapshot} onVehicleChange={setVehicleSnapshot} />
             <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} attachmentIssue={attachmentIssue} onAttachmentIssueChange={setAttachmentIssue} />
-            <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
-            <label className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required checked={dataProcessingConsent} onChange={(event) => setDataProcessingConsent(event.target.checked)} className="mt-0.5 size-4 accent-primary" />{t('autocare.requestDataProcessingConsent')} <a className="font-bold text-primary hover:underline" href="/privacy" target="_blank" rel="noreferrer">{t('info.legal.privacy.shortTitle')}</a></label>
+            <label data-request-step="4" className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
+            <label data-request-step="4" className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required checked={dataProcessingConsent} onChange={(event) => setDataProcessingConsent(event.target.checked)} className="mt-0.5 size-4 accent-primary" />{t('autocare.requestDataProcessingConsent')} <a className="font-bold text-primary hover:underline" href="/privacy" target="_blank" rel="noreferrer">{t('info.legal.privacy.shortTitle')}</a></label>
             {errorMessage && <p role="alert" className="rounded-[var(--radius-control)] bg-status-danger-surface px-3 py-2 text-sm font-semibold text-status-danger-foreground">{errorMessage}</p>}
-            <button type="submit" disabled={isSubmitting || isAvailabilityLoading || !effectiveSelectedTime} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : errorMessage ? t('common.retry') : t('autocare.requestSubmit')}</button>
+            {reviewSummary ? <div className="lg:hidden" data-request-step="4">{reviewSummary}</div> : null}
+            <button data-request-step="4" type="submit" disabled={isSubmitting || isAvailabilityLoading || !effectiveSelectedTime} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : errorMessage ? t('common.retry') : t('autocare.requestSubmit')}</button>
             {isAvailabilityError ? <p role="alert" className="text-xs font-semibold text-status-danger-foreground">{t('autocare.requestAvailabilityError')}</p> : null}
         </form>
     )
@@ -156,20 +163,20 @@ function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, 
     const times = availability?.slots.map((slot) => slot.startTime) ?? []
 
     return (
-        <section>
+        <section data-request-step="2">
             <div className="flex items-center gap-2"><CalendarDays className="size-5 text-primary" /><h2 className="text-xl font-black tracking-tight text-foreground">{t('autocare.requestDateTimeTitle')}</h2></div>
             <div className="mt-4 grid gap-5 sm:grid-cols-[minmax(220px,0.75fr)_minmax(0,1fr)]">
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestDateLabel')}</p>
                     <div className="mt-3 grid grid-cols-4 gap-1.5">
-                        {days.map(({ id, label, date }) => <button key={id} type="button" onClick={() => onDateChange(id)} className={!customDate && selectedDate === id ? 'min-h-14 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-1 text-[10px] font-black text-primary' : 'min-h-14 rounded-[var(--radius-control)] border border-border px-1 text-[10px] font-bold text-muted-foreground transition hover:border-primary hover:text-primary'}><span className="block">{label}</span><span className="mt-1 block text-[9px] font-medium">{date}</span></button>)}
+                        {days.map(({ id, label, date }) => <button key={id} type="button" aria-pressed={!customDate && selectedDate === id} onClick={() => onDateChange(id)} className={!customDate && selectedDate === id ? 'min-h-14 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-1 text-xs font-semibold text-primary' : 'min-h-14 rounded-[var(--radius-control)] border border-border px-1 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-primary'}><span className="block">{label}</span><span className="mt-1 block text-xs font-medium">{date}</span></button>)}
                     </div>
                     <DateInputTrigger className="mt-4" label={t('autocare.providerOtherDateTime')} min={getRequestDateInputValue(0, serviceTimezone)} value={customDate} onChange={onCustomDateChange} />
                 </div>
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestTimeLabel')}</p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
-                        {times.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
+                        {times.map((time) => <button key={time} type="button" aria-pressed={selectedTime === time} disabled={isLoading || isError} onClick={() => onTimeChange(time)} className={selectedTime === time ? 'min-h-11 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'min-h-11 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
                     </div>
                     {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : isError ? null : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('booking.noAvailableTimes')}</p> : null}
                     <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" /><span>{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}<span className="ml-1 font-black text-foreground">({serviceTimezone ?? 'UTC'})</span></span></p>
@@ -184,7 +191,7 @@ function VehicleAndContacts({ values, onChange, vehicle, onVehicleChange }: { va
     const [isEditingVehicle, setIsEditingVehicle] = useState(false)
 
     return (
-        <section className="grid gap-5 border-t border-border pt-5">
+        <section data-request-step="3" className="grid gap-5 border-t border-border pt-5">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-border p-4">
                 <div className="min-w-0 flex-1"><p className="text-xs font-bold text-muted-foreground">{t('autocare.providerVehicleLabel')}</p>{isEditingVehicle ? <div className="mt-2 grid gap-2 sm:grid-cols-3"><input value={vehicle.make} onChange={(event) => onVehicleChange({ ...vehicle, make: event.target.value })} placeholder={t('autocare.vehicleMake')} aria-label={t('autocare.vehicleMake')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /><input value={vehicle.model} onChange={(event) => onVehicleChange({ ...vehicle, model: event.target.value })} placeholder={t('autocare.vehicleModel')} aria-label={t('autocare.vehicleModel')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /><input type="number" min="1900" max={new Date().getFullYear() + 1} value={vehicle.year} onChange={(event) => onVehicleChange({ ...vehicle, year: Number(event.target.value) })} placeholder={t('autocare.vehicleYear')} aria-label={t('autocare.vehicleYear')} className="h-9 rounded-[var(--radius-control)] border border-border bg-background px-2 text-xs" /></div> : <><p className="mt-1 text-sm font-black text-foreground">{vehicle.make && vehicle.model ? `${vehicle.make} ${vehicle.model}` : t('autocare.providerVehicleValue')}</p><p className="mt-1 text-xs font-medium text-muted-foreground">{vehicle.make && vehicle.model ? String(vehicle.year) : t('autocare.providerVehicleDetails')}</p>{vehicle.make && vehicle.model && (vehicle.licensePlate || vehicle.internalNumber || vehicle.vin) ? <p className="mt-1 text-[11px] font-semibold text-muted-foreground">{[vehicle.licensePlate, vehicle.internalNumber, vehicle.vin ? `VIN ${vehicle.vin}` : null].filter(Boolean).join(' · ')}</p> : null}</>}</div>
                 <button type="button" onClick={() => setIsEditingVehicle((value) => !value)} className="text-xs font-black text-primary">{t('autocare.requestChangeVehicle')}</button>
@@ -201,5 +208,5 @@ function RequestDetails({ note, onNoteChange, files, onFilesChange, attachmentIs
         attachmentIssue?.tooManyCount ? t('autocare.requestAttachmentLimit', { count: MAX_REQUEST_ATTACHMENTS }) : null,
     ].filter((message): message is string => Boolean(message))
 
-    return <section className="border-t border-border pt-5"><label className="grid gap-2 text-xs font-bold text-foreground">{t('autocare.requestNoteLabel')}<textarea rows={4} maxLength={4000} value={note} onChange={(event) => onNoteChange(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.requestNotePlaceholder')} /></label><label htmlFor="request-attachments" className={`mt-4 flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed px-3 text-xs font-bold transition ${attachmentIssue ? 'border-status-warning-border bg-status-warning-surface text-status-warning-foreground' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`}><Camera className="size-4 text-primary" />{files.length ? `${t('autocare.requestAttachPhoto')} (${files.length})` : t('autocare.requestAttachPhoto')}<input id="request-attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" aria-invalid={Boolean(attachmentIssue)} aria-describedby={attachmentIssue ? 'requestAttachmentError' : undefined} onChange={(event) => { const selection = selectRequestImageFiles(Array.from(event.target.files ?? [])); onFilesChange(selection.files); onAttachmentIssueChange(selection.invalidCount || selection.tooManyCount ? { invalidCount: selection.invalidCount, tooManyCount: selection.tooManyCount } : null); event.target.value = '' }} /></label>{attachmentMessages.length > 0 ? <p id="requestAttachmentError" role="alert" className="mt-2 text-xs font-semibold text-status-warning-foreground">{attachmentMessages.join(' ')}</p> : null}</section>
+    return <section data-request-step="3" className="border-t border-border pt-5"><label className="grid gap-2 text-xs font-bold text-foreground">{t('autocare.requestNoteLabel')}<textarea rows={4} maxLength={4000} value={note} onChange={(event) => onNoteChange(event.target.value)} className="resize-y rounded-[var(--radius-control)] border border-border bg-background p-3 text-sm font-medium outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/40" placeholder={t('autocare.requestNotePlaceholder')} /></label><label htmlFor="request-attachments" className={`mt-4 flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-control)] border border-dashed px-3 text-xs font-bold transition ${attachmentIssue ? 'border-status-warning-border bg-status-warning-surface text-status-warning-foreground' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`}><Camera className="size-4 text-primary" />{files.length ? `${t('autocare.requestAttachPhoto')} (${files.length})` : t('autocare.requestAttachPhoto')}<input id="request-attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" aria-invalid={Boolean(attachmentIssue)} aria-describedby={attachmentIssue ? 'requestAttachmentError' : undefined} onChange={(event) => { const selection = selectRequestImageFiles(Array.from(event.target.files ?? [])); onFilesChange(selection.files); onAttachmentIssueChange(selection.invalidCount || selection.tooManyCount ? { invalidCount: selection.invalidCount, tooManyCount: selection.tooManyCount } : null); event.target.value = '' }} /></label>{attachmentMessages.length > 0 ? <p id="requestAttachmentError" role="alert" className="mt-2 text-xs font-semibold text-status-warning-foreground">{attachmentMessages.join(' ')}</p> : null}</section>
 }

@@ -97,7 +97,7 @@ function OwnerAutoCareProviderCard({ provider, locale, t }: { provider: AutoCare
         </Link>
         <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-t border-border bg-secondary/40 px-4 py-3 md:px-5">
             <div className="flex min-w-0 flex-wrap items-center gap-3"><span className="inline-flex items-center gap-2 text-sm font-black text-foreground">{chatEnabled ? <MessageCircle className="size-4 text-primary" /> : <Phone className="size-4 text-primary" />}<span>{chatEnabled ? t('autocare.ownerProviderChatsEnabled') : t('autocare.ownerProviderChatsDisabled')}</span><span className="sr-only">{modeLabel}</span></span><OwnerProviderChatQuickSwitch provider={provider} t={t} /></div>
-            <Link data-testid="owner-provider-communication-link" to={routePaths.ownerAutoCareProviderDetails(provider.id)} className="inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-primary/40 px-3.5 py-2 text-sm font-black text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Settings2 className="size-4" />{t('autocare.ownerProviderContactSettings')}</Link>
+            <Link data-testid="owner-provider-communication-link" to={`${routePaths.ownerAutoCareProviderDetails(provider.id)}?section=communication`} className="inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-primary/40 px-3.5 py-2 text-sm font-black text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Settings2 className="size-4" />{t('autocare.ownerProviderContactSettings')}</Link>
         </div>
     </article>
 }

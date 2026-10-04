@@ -229,7 +229,7 @@ export function AdminUsersPage() {
                 {(queryState === 'success' || queryState === 'refreshing' || queryState === 'stale-error') && (
                     <AdminUsersList
                         isUpdating={isUpdating}
-                        viewerRole={currentUser?.role}
+                        viewerRole={currentUser?.role} viewerId={currentUser?.id}
                         users={users}
                         onStatusChange={handleStatusChange}
                         hasMore={Boolean(currentPagination.nextCursor)}

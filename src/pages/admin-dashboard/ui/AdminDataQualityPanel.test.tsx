@@ -56,5 +56,8 @@ describe('AdminDataQualityPanel', () => {
         expect(screen.getByText('1,234')).toBeVisible()
         expect(screen.getByText('92%')).toBeVisible()
         expect(screen.getAllByText('Healthy').length).toBeGreaterThan(0)
+        for (const link of screen.getAllByRole('link', { name: 'Open queue' })) {
+            expect(link.getAttribute('href')).toMatch(/^\/admin\//)
+        }
     })
 })

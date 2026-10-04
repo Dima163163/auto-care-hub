@@ -1,10 +1,11 @@
-import { ArrowLeft, BarChart3, CarFront, Check, ChevronDown, Copy, Gift, MessageSquare, Phone, Star, Tag, X } from 'lucide-react'
-import type { ComponentType, ReactNode } from 'react'
+import { ArrowLeft, CarFront, Check, ChevronDown, Copy, Gift, Phone, Star, Tag, X } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import {
     useGetOwnerAutoCareReviewsQuery,
+    useGetOwnerAutoCareWorkspaceAccessQuery,
     useGetOwnerAutoCareServiceRequestsQuery,
     useIssueOwnerAutoCareReviewPromoMutation,
 } from '@/entities/automotive-service'
@@ -67,6 +68,7 @@ export function OwnerAutoCareProviderReviewsPage() {
     const selectedProviderId = searchParams.get('provider') ?? id ?? undefined
     const reviews = useGetOwnerAutoCareReviewsQuery(selectedProviderId)
     const requests = useGetOwnerAutoCareServiceRequestsQuery()
+    const access = useGetOwnerAutoCareWorkspaceAccessQuery()
     const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
     const provider = reviews.data?.providers.find((item) => item.id === selectedProviderId)
     const filteredReviews = useMemo(
@@ -98,6 +100,7 @@ export function OwnerAutoCareProviderReviewsPage() {
             <PageHeader eyebrow={copy.eyebrow} title={copy.title} description={copy.description} />
             <LocationFilter providers={reviews.data.providers} value={selectedProviderId ?? ''} label={copy.locationFilterLabel} allLabel={copy.allLocations} onChange={(value) => setSearchParams(value ? { provider: value } : {})} />
             <ProviderReviewOverview provider={provider} stats={reviews.data} copy={copy} />
+            {provider && access.data?.scopes.some((scope) => scope.providerId === provider.id && scope.roles.includes('owner')) ? <Link to={`${routePaths.ownerAutoCareProviderDetails(provider.id)}?section=bonuses`} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-border bg-card px-4 text-sm font-medium text-primary"><Gift className="size-4" />{t('autocare.bonusActionHistory')}</Link> : null}
             <ReviewsList reviews={filteredReviews} requests={requests.data ?? []} ratingFilter={ratingFilter} onRatingFilterChange={setRatingFilter} copy={copy} locale={locale} />
         </ReviewsShell>
     )
@@ -113,12 +116,12 @@ function ProviderReviewOverview({ provider, stats, copy }: { provider?: OwnerAut
             <div className="flex flex-wrap items-center gap-4 border-b border-border pb-5">
                 <span className="flex size-12 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><CarFront className="size-6" /></span>
                 <div className="min-w-0 flex-1"><h2 className="truncate text-lg font-black text-foreground">{provider?.name ?? copy.allLocations}</h2><p className="mt-1 text-xs font-semibold text-muted-foreground">{provider?.address ?? copy.allLocations}</p></div>
-                <div className="flex items-center gap-1 text-lg font-black text-status-warning-foreground"><Star className="size-5 fill-current" />{stats.averageRating.toFixed(1)}</div>
+
             </div>
-            {stats.totalReviews === 0 ? <StateCard className="mt-5" variant="empty" title={copy.noReviewsForLocation} /> : <div className="mt-5 grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_180px]">
+            {stats.totalReviews === 0 ? <StateCard className="mt-5" variant="empty" title={copy.noReviewsForLocation} /> : <div className="mt-5 grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)]">
                 <div className="rounded-[var(--radius-card)] bg-primary/5 p-4"><p className="text-4xl font-black text-foreground">{stats.averageRating.toFixed(1)}</p><div className="mt-2 flex gap-0.5 text-status-warning-foreground">{ratingRows.map((rating) => <Star key={rating} className={`size-4 ${rating <= Math.round(stats.averageRating) ? 'fill-current' : ''}`} />)}</div><p className="mt-2 text-xs font-semibold text-muted-foreground">{stats.totalReviews} {copy.review}</p></div>
                 <div className="rounded-[var(--radius-card)] border border-border p-4"><h3 className="text-sm font-black text-foreground">{copy.distribution}</h3><div className="mt-3 grid gap-2">{ratingRows.map((rating) => <RatingRow key={rating} rating={rating} count={stats.distribution[String(rating) as keyof typeof stats.distribution]} total={stats.totalReviews} />)}</div></div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1"><StatCard icon={MessageSquare} label={copy.total} value={String(stats.totalReviews)} /><StatCard icon={BarChart3} label={copy.average} value={stats.averageRating.toFixed(1)} /></div>
+
             </div>}
         </section>
     )
@@ -134,8 +137,10 @@ function ReviewsList({ reviews, requests, ratingFilter, onRatingFilterChange, co
 }
 
 function ReviewCard({ review, request, copy, locale }: { review: AutoCareApiReview; request?: AutoCareServiceRequest; copy: ReviewsCopy; locale: string }) {
+    const branchName = review.providerName ?? request?.providerName
+    const branchAddress = review.providerAddress ?? request?.address
     const publishedAt = formatDateTime(review.createdAt, locale, { day: 'numeric', month: 'short', year: 'numeric' })
-    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{review.providerName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{review.providerName} · {review.providerAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt={copy.completedWorkPhotoAlt} loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><ContactClientDialog request={request} copy={copy} /><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
+    return <article className="flex min-h-[220px] flex-col rounded-[var(--radius-card)] border border-border bg-background p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-black text-primary">{review.avatarUrl ? <img src={review.avatarUrl} alt="" className="size-full object-cover" /> : review.authorName.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="font-black text-foreground">{review.authorName}</p><p className="mt-1 text-xs font-semibold text-muted-foreground">{review.vehicleLabel}</p>{branchName && <p className="mt-1 truncate text-[11px] font-bold text-primary">{branchName} · {branchAddress}</p>}</div><span className="inline-flex items-center gap-1 text-sm font-black text-status-warning-foreground"><Star className="size-4 fill-current" />{review.rating.toFixed(1)}</span></div><p className="mt-4 text-sm leading-6 text-muted-foreground">{review.text}</p>{review.photoUrls.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2">{review.photoUrls.map((photoUrl) => <img key={photoUrl} src={photoUrl} alt={copy.completedWorkPhotoAlt} loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius-control)] object-cover" />)}</div>}<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><span className="text-xs font-semibold text-muted-foreground">{publishedAt}</span><span className="rounded-full bg-status-success-surface px-2 py-1 text-xs font-semibold text-status-success-foreground">{copy.published}</span></div><div className="mt-3 flex flex-wrap gap-2"><ContactClientDialog request={request} copy={copy} /><ReviewResolutionDialog providerId={review.providerId} review={review} copy={copy} /></div></article>
 }
 
 function ContactClientDialog({ request, copy }: { request?: AutoCareServiceRequest; copy: ReviewsCopy }) {
@@ -194,10 +199,6 @@ function RatingFilterSelect({ value, onChange, label }: { value: RatingFilter; o
 function RatingRow({ rating, count, total }: { rating: number; count: number; total: number }) {
     const percentage = total === 0 ? 0 : Math.round((count / total) * 100)
     return <div className="grid grid-cols-[28px_minmax(0,1fr)_34px] items-center gap-2 text-xs font-bold text-muted-foreground"><span>{rating} ★</span><span className="h-2 overflow-hidden rounded-full bg-secondary"><span className="block h-full rounded-full bg-status-warning-foreground" style={{ width: `${percentage}%` }} /></span><span className="text-right">{count}</span></div>
-}
-
-function StatCard({ icon: Icon, label, value }: { icon: ComponentType<{ className?: string }>; label: string; value: string }) {
-    return <div className="rounded-[var(--radius-card)] border border-border p-3"><Icon className="size-4 text-primary" /><p className="mt-2 text-[11px] font-bold text-muted-foreground">{label}</p><p className="mt-1 text-xl font-black text-foreground">{value}</p></div>
 }
 
 function ReviewsShell({ children }: { children: ReactNode }) {

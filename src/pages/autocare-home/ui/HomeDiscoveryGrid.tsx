@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { useGetAutoCareLocationZonesQuery, useGetAutoCareMarketsQuery } from '@/entities/automotive-service'
@@ -11,7 +10,7 @@ import { ServiceCategoryGrid } from './ServiceCategoryGrid'
 
 export function HomeDiscoveryGrid({ marketId }: { marketId: string }) {
     return (
-        <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-4 px-[var(--layout-gutter)] pb-7 lg:grid-cols-[1.05fr_0.97fr_1.05fr]">
+        <section className="mx-auto grid max-w-[var(--layout-public-max)] gap-4 px-[var(--layout-gutter)] pb-7 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <ServiceCategoryGrid />
             <LocationCard marketId={marketId} />
             <PartnerCard />
@@ -27,26 +26,12 @@ function LocationCard({ marketId }: { marketId: string }) {
     const routeMarket = selectedMarket?.cityCode ?? marketId
     const { data: zones = [], isLoading, isError, refetch } = useGetAutoCareLocationZonesQuery({ marketId: apiMarketId, limit: 4 }, { skip: !apiMarketId || isMarketsLoading })
     const getZoneName = (names: Record<string, string>) => names[locale] ?? names[locale.split('-')[0] ?? ''] ?? names.en ?? names.ru ?? Object.values(names)[0] ?? ''
-    const countLabel = (count: number) => {
-        const formattedCount = count.toLocaleString(locale)
-        if (!locale.startsWith('ru')) {
-            return `${formattedCount} ${t(count === 1 ? 'autocare.locationServiceOne' : 'autocare.locationServicePlural')}`
-        }
-        const mod10 = count % 10
-        const mod100 = count % 100
-        const nounKey = mod10 === 1 && mod100 !== 11
-            ? 'autocare.locationServiceOne'
-            : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)
-                ? 'autocare.locationServiceFew'
-                : 'autocare.locationServiceMany'
-        return `${formattedCount} ${t(nounKey)}`
-    }
     return (
         <section className="h-full rounded-[10px] bg-card p-5">
             <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black">{t('autocare.exploreLocations')}</h2><Link to={routePaths.serviceDiscovery({ market: routeMarket })} className="text-xs font-semibold text-primary">{t('autocare.viewOnMap')}</Link></div>
             <div className="mt-4 grid gap-2" aria-busy={isMarketsLoading || isLoading}>
                 {(isMarketsLoading || isLoading) && [1, 2, 3, 4].map((item) => <div key={item} className="flex h-[52px] items-center gap-3" aria-hidden="true"><Skeleton className="h-[52px] w-[73px] rounded-[7px]" /><div className="grid flex-1 gap-2"><Skeleton className="h-3.5 w-3/5" /><Skeleton className="h-3 w-2/5" /></div></div>)}
-                {!isMarketsLoading && !isLoading && !isError && zones.map((zone) => <Link key={zone.id} to={routePaths.serviceDiscovery({ market: routeMarket, zone: zone.id })} className="group flex items-center gap-3"><img src={zone.imageUrl ?? '/images/autocare/locations/center.webp'} alt="" className="h-[52px] w-[73px] rounded-[7px] object-cover" /><span><strong className="block text-sm group-hover:text-primary">{getZoneName(zone.names)}</strong><span className="mt-0.5 block text-xs text-muted-foreground">{countLabel(zone.serviceCount)}</span></span></Link>)}
+                {!isMarketsLoading && !isLoading && !isError && zones.map((zone) => <Link key={zone.id} to={routePaths.serviceDiscovery({ market: routeMarket, zone: zone.id })} className="group flex min-h-16 items-center gap-3 rounded-[var(--radius-control)] border border-border p-2 transition-colors hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-ring"><img src={zone.imageUrl ?? '/images/autocare/locations/center.webp'} alt="" className="h-[52px] w-[73px] rounded-[7px] object-cover" /><span><strong className="block text-sm group-hover:text-primary">{getZoneName(zone.names)}</strong><span className="mt-0.5 block text-xs text-muted-foreground">{t('autocare.zoneSearchAction')}</span></span></Link>)}
                 {!isMarketsLoading && !isLoading && isError && <div role="alert" className="rounded-[var(--radius-control)] border border-status-danger-border bg-status-danger-surface p-3"><p className="text-sm font-semibold text-status-danger-foreground">{t('common.failedToLoad')}</p><RetryButton className="mt-3" size="sm" onRetry={refetch} label={t('common.retry')} /></div>}
                 {!isMarketsLoading && !isLoading && !isError && zones.length === 0 && <p className="rounded-[var(--radius-control)] border border-dashed border-border bg-secondary/40 px-3 py-4 text-sm text-muted-foreground">{t('autocare.noLocations')}</p>}
             </div>
@@ -57,10 +42,13 @@ function LocationCard({ marketId }: { marketId: string }) {
 function PartnerCard() {
     const { t } = useTranslation()
     return (
-        <section className="relative min-h-[334px] overflow-hidden rounded-[10px] bg-hero-overlay px-6 py-5 text-primary-foreground">
+        <section className="relative min-h-[240px] overflow-hidden lg:col-span-2 rounded-[10px] bg-hero-overlay px-6 py-5 text-primary-foreground">
             <img src="/images/autocare/partner-handshake.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-[64%_center]" />
             <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/85 to-hero-overlay/20" />
-            <div className="relative max-w-[18rem]"><h2 className="text-xl font-black">{t('autocare.partnerTitle')}</h2><p className="mt-3 text-sm leading-6 text-primary-foreground/85">{t('autocare.partnerDescription')}</p><ul className="mt-5 grid gap-3 text-sm font-semibold">{[t('autocare.partnerBenefitClients'), t('autocare.partnerBenefitControl'), t('autocare.partnerBenefitAnalytics')].map((item) => <li key={item} className="flex items-center gap-3"><Check className="size-5 text-map-marker-success" />{item}</li>)}</ul><Link to={ROUTES.owners} className="mt-6 inline-flex h-12 items-center rounded-[7px] bg-primary px-7 text-base font-bold text-primary-foreground">{t('autocare.partnerAction')}</Link></div>
+            <div className="relative flex flex-wrap items-center justify-between gap-6 py-4 sm:px-4">
+                <div className="max-w-xl"><h2 className="text-2xl font-semibold">{t('autocare.partnerTitle')}</h2><p className="mt-3 text-sm leading-6 text-primary-foreground/85">{t('autocare.partnerDescription')}</p><p className="mt-3 text-sm text-primary-foreground/75">{t('autocare.partnerWorkspaceSummary')}</p></div>
+                <Link to={ROUTES.owners} className="inline-flex min-h-12 items-center justify-center rounded-[var(--radius-control)] bg-primary px-6 text-sm font-semibold text-primary-foreground">{t('autocare.partnerAction')}</Link>
+            </div>
         </section>
     )
 }

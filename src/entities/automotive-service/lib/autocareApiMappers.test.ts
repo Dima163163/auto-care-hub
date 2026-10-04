@@ -66,4 +66,9 @@ describe('AutoCare API mappers', () => {
         expect(result.reviewDistribution?.['5']).toBe(1)
         expect(result.reviews[0]).toMatchObject({ author: 'Алексей С.', vehicleLabel: 'BMW X5', avatarUrl: '/avatar.webp', photos: ['/review.webp'] })
     })
+    it('preserves explicit request and instant offer modes in a provider profile', () => {
+        const profile = mapAutoCareProviderProfile({ ...provider, offers: [{ ...offer, bookingMode: 'request' }, { ...offer, id: 'instant-offer', bookingMode: 'instant' }] })
+        expect(profile.offerings.map((item) => item.bookingMode)).toEqual(['request', 'instant'])
+    })
+
 })

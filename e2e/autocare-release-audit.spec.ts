@@ -552,21 +552,23 @@ test.describe('AutoCare stable-web release gate', () => {
         await expectNoHorizontalOverflow(page)
     })
 
-    test('owner onboarding exposes evidence, team and communication controls', async ({ page }) => {
+    test('owner onboarding exposes evidence, team and communication controls through scoped sections', async ({ page }) => {
         await signInWithMockAccount(page, 'sophia.miller@example.com')
         await page.goto('/owner/autocare-providers/api-proservice-moscow')
         await expectWorkspaceShell(page)
-
+        await page.locator('button[aria-controls="provider-section-profile"]').click()
         await expect(page.getByRole('heading', { name: /onboarding and profile changes|подключение и изменения профиля/i })).toBeVisible()
-        await expect(page.getByRole('heading', { level: 2, name: /documents and evidence|документы и подтверждения/i })).toBeVisible()
-        await expect(page.getByRole('heading', { name: /branch team|команда филиала/i })).toBeVisible()
-        await expect(page.getByTestId('owner-communication-settings')).toBeVisible()
-
         const profileChangeForm = page.getByRole('heading', { name: /change public details|изменить публичные данные/i }).locator('..')
         await expect(profileChangeForm.getByRole('button', { name: /add document|добавить документ/i })).toBeVisible()
         await profileChangeForm.getByRole('button', { name: /add document|добавить документ/i }).click()
         await expect(profileChangeForm.locator('input[name="documentLabel"]')).toBeVisible()
         await expect(profileChangeForm.locator('input[name="documentReference"]')).toHaveAttribute('pattern', '^private://.*')
+        await page.locator('button[aria-controls="provider-section-evidence"]').click()
+        await expect(page.getByRole('heading', { level: 2, name: /documents and evidence|документы и подтверждения/i })).toBeVisible()
+        await page.locator('button[aria-controls="provider-section-team"]').click()
+        await expect(page.getByRole('heading', { name: /branch team|команда филиала/i })).toBeVisible()
+        await page.locator('button[aria-controls="provider-section-communication"]').click()
+        await expect(page.getByTestId('owner-communication-settings')).toBeVisible()
         await expect(page.getByTestId('owner-chat-toggle')).toBeChecked()
     })
 
@@ -587,6 +589,7 @@ test.describe('AutoCare stable-web release gate', () => {
         await page.goto('/admin/dashboard')
         await expectWorkspaceShell(page)
 
+        await page.locator('button[aria-controls="admin-queue-evidence"]').click()
         const evidence = page.locator('#admin-moderation-evidence')
         await expect(evidence.getByRole('heading', { name: /moderation evidence|материалы для модерации/i })).toBeVisible()
         const pendingItem = evidence.locator('article').first()
@@ -604,6 +607,7 @@ test.describe('AutoCare stable-web release gate', () => {
         await page.goto('/super-admin/dashboard')
         await expectWorkspaceShell(page)
 
+        await page.locator('button[aria-controls="platform-markets"]').click()
         const hierarchy = page.locator('section').filter({ has: page.getByRole('heading', { name: /countries, cities and zones|страны, города и зоны/i }) }).last()
         await expect(hierarchy).toBeVisible()
         await hierarchy.getByRole('button', { name: /new country|новая страна/i }).click()
@@ -616,6 +620,7 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(hierarchy.getByRole('heading', { name: /new city in|новый город в/i })).toBeVisible()
         await expect(hierarchy.getByRole('button', { name: /create city|создать город/i })).toBeVisible()
 
+        await hierarchy.getByRole('button', { name: /^(?:Zones|Зоны):/i }).first().click()
         await hierarchy.getByRole('button', { name: /add zone|добавить зону/i }).click()
         await expect(hierarchy.getByRole('heading', { name: /new zone|новая зона/i })).toBeVisible()
         await expect(hierarchy.getByRole('button', { name: /create zone|создать зону/i })).toBeVisible()

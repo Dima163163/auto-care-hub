@@ -27,6 +27,7 @@ export type ProviderPreview = {
     servicePrices?: Partial<Record<string, number>>
     address?: string
     priceType?: AutomotivePriceType
+    bookingMode?: 'request' | 'instant'
     inclusions?: readonly string[]
     warrantyMonths?: number | null
     warrantyText?: string | null
@@ -50,6 +51,7 @@ export type ProviderOffering = {
     priceTo?: number | null
     currency?: string
     priceType?: AutomotivePriceType
+    bookingMode?: 'request' | 'instant'
     duration: string
     durationMinutes?: number
     durationMinutesTo?: number | null

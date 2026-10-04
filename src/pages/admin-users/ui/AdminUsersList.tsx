@@ -9,6 +9,7 @@ type AdminUsersListProps = {
     onStatusChange: (id: string, status: UserStatus) => void
     users: User[]
     viewerRole?: UserRole | undefined
+    viewerId?: string
     hasMore: boolean
     isLoadingMore: boolean
     onLoadMore: () => void
@@ -19,6 +20,7 @@ export function AdminUsersList({
     onStatusChange,
     users,
     viewerRole,
+    viewerId,
     hasMore,
     isLoadingMore,
     onLoadMore,
@@ -27,13 +29,11 @@ export function AdminUsersList({
 
     return (
         <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div className="hidden grid-cols-[minmax(180px,1.2fr)_minmax(180px,1.25fr)_minmax(150px,0.95fr)_minmax(100px,0.7fr)_minmax(110px,0.8fr)_minmax(150px,0.95fr)_minmax(140px,0.9fr)] gap-4 border-b bg-muted/30 px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[minmax(160px,1.2fr)_minmax(170px,1.3fr)_110px_110px_minmax(150px,1fr)] gap-4 border-b bg-muted/30 px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground lg:grid">
                 <span>{t('adminUsers.userColumn')}</span>
                 <span>{t('auth.email')}</span>
                 <span>{t('profile.role')}</span>
                 <span>{t('common.status')}</span>
-                <span>{t('profile.authProvider')}</span>
-                <span>{t('profile.createdAt')}</span>
                 <span>{t('common.actions')}</span>
             </div>
 
@@ -43,6 +43,7 @@ export function AdminUsersList({
                         key={user.id}
                         isUpdating={isUpdating}
                         viewerRole={viewerRole}
+                        viewerId={viewerId}
                         user={user}
                         onStatusChange={onStatusChange}
                     />

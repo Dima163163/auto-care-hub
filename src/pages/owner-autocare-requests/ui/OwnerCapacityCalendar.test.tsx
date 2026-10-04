@@ -11,6 +11,10 @@ vi.mock('@/shared/lib/useTranslation', () => ({
         locale: 'ru',
         t: (key: string, params?: { count?: number }) => ({
             'autocare.ownerCapacityCalendarTitle': 'Календарь филиала',
+            'autocare.providerToday': 'Сегодня',
+            'autocare.calendarSelected': 'Выбрано',
+            'autocare.calendarNextMonth': 'Следующий месяц',
+            'autocare.calendarPreviousMonth': 'Предыдущий месяц',
             'autocare.ownerCapacityCalendarConfirmedCount': `${params?.count ?? 0} подтверждённых записей`,
             'autocare.ownerCapacityCalendarNoConfirmed': 'Подтверждённых записей нет.',
         }[key] ?? key),
@@ -75,6 +79,14 @@ describe('OwnerCapacityCalendar', () => {
         providerQuery.isError = false
     })
 
+    it('localizes month navigation and day labels in the Russian workspace', () => {
+        render(<OwnerCapacityCalendar requests={[]} onSelectRequest={onSelectRequest} />)
+        expect(screen.getByRole('button', { name: 'Следующий месяц' })).toBeInTheDocument()
+        const labels = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? '').join(' ')
+        expect(labels).not.toMatch(/Today|Sunday|Monday|October/)
+        expect(labels).toContain(new Intl.DateTimeFormat('ru', { dateStyle: 'full' }).format(new Date()))
+    })
+
     it('formats booking times in branch timezone and opens the booking from its existing control', async () => {
         const user = userEvent.setup()
         render(<OwnerCapacityCalendar requests={[makeRequest()]} onSelectRequest={onSelectRequest} />)
@@ -108,4 +120,23 @@ describe('OwnerCapacityCalendar', () => {
 
         expect(screen.getByRole('button', { name: /Замена масла/ })).toBeVisible()
     })
+    it('keeps scoped staff visits visible without catalog access and uses the request timezone', async () => {
+        providerQuery.data = []
+        const preferredAt = new Date(); preferredAt.setHours(12, 0, 0, 0)
+        const timezone = 'Europe/Samara'
+        const branchDay = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(preferredAt)
+        const dayNumber = Number(branchDay.find((part) => part.type === 'day')?.value)
+        const request = makeRequest({ preferredAt: preferredAt.toISOString(), timezone, providerName: 'Assigned ProService', address: 'Assigned branch address' })
+        render(<OwnerCapacityCalendar requests={[request]} onSelectRequest={onSelectRequest} />)
+        // The selected local calendar day may differ from the request's branch day.
+        const current = new Date().getDate()
+        if (dayNumber !== current) await userEvent.click(screen.getByRole('button', { name: new RegExp(`^.*${dayNumber} `) }))
+        const visit = screen.getByRole('button', { name: /Assigned ProService/ })
+        expect(visit).toHaveTextContent(new Intl.DateTimeFormat('ru', { timeZone: timezone, timeStyle: 'short' }).format(preferredAt))
+        expect(visit).toHaveTextContent(timezone)
+        expect(screen.queryByText('1 / 1')).not.toBeInTheDocument()
+        await userEvent.click(visit)
+        expect(onSelectRequest).toHaveBeenCalledWith(request.id)
+    })
+
 })

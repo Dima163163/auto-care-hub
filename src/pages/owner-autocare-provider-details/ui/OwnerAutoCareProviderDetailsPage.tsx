@@ -1,5 +1,6 @@
 import { ArrowLeft, BarChart3, CalendarCheck2, MapPin, MessageSquareText, Star, UsersRound } from 'lucide-react'
-import { Link, useParams } from 'react-router'
+import { useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { useGetOwnerAutoCareProvidersQuery, useGetOwnerAutoCareWorkspaceAccessQuery, type AutoCareApiProvider } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
@@ -20,6 +21,11 @@ import { OwnerProviderEvidencePanel } from './OwnerProviderEvidencePanel'
 export function OwnerAutoCareProviderDetailsPage() {
     const { locale, t } = useTranslation()
     const { id } = useParams<{ id: string }>()
+    const [searchParams] = useSearchParams()
+    const requestedSection = searchParams.get('section') ?? 'overview'
+    const initialSection = ['overview', 'profile', 'evidence', 'communication', 'team', 'bonuses'].includes(requestedSection) ? requestedSection : 'overview'
+    const [sectionState, setSectionState] = useState({ providerId: id, section: '' })
+    const requestedActiveSection = sectionState.providerId === id && sectionState.section ? sectionState.section : initialSection
     const { data: providers = [], isLoading, isError, error, refetch } = useGetOwnerAutoCareProvidersQuery()
     const workspaceAccess = useGetOwnerAutoCareWorkspaceAccessQuery()
     const provider = providers.find((item) => item.id === id)
@@ -30,8 +36,17 @@ export function OwnerAutoCareProviderDetailsPage() {
 
     const scope = workspaceAccess.data?.scopes.find((item) => item.providerId === provider.id)
     const isDirectOwner = scope?.roles.includes('owner') ?? false
+    const activeSection = isDirectOwner ? requestedActiveSection : 'overview'
 
-    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><div className="space-y-5"><ProviderOverview provider={provider} />{isDirectOwner ? <><OwnerProviderOnboardingPanel provider={provider} locale={locale} /><OwnerProviderEvidencePanel provider={provider} locale={locale} /><OwnerProviderCommunicationSettings provider={provider} /><OwnerProviderMembersPanel provider={provider} /><OwnerProviderBonusPanel provider={provider} /></> : <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 text-sm leading-6 text-muted-foreground shadow-sm">{t('autocare.ownerProviderRestrictedAccess')}</section>}</div></section></main>
+    return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><p className="mb-4 text-sm text-muted-foreground">{provider.location.address}</p><div className="mb-5 flex flex-wrap gap-2" role="group" aria-label={t('autocare.providerWorkspaceSections')}>
+        {(isDirectOwner ? ['overview', 'profile', 'evidence', 'communication', 'team', 'bonuses'] : ['overview']).map((section) => <button key={section} type="button" aria-pressed={activeSection === section} aria-controls={`provider-section-${section}`} onClick={() => setSectionState({ providerId: id, section })} className={`min-h-11 rounded-[var(--radius-control)] border px-4 text-sm font-medium ${activeSection === section ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:border-primary'}`}>{t(section === 'overview' ? 'autocare.providerSectionOverview' : section === 'profile' ? 'autocare.providerSectionProfile' : section === 'evidence' ? 'autocare.providerSectionEvidence' : section === 'communication' ? 'autocare.providerSectionCommunication' : section === 'team' ? 'autocare.ownerProviderMembersTitle' : 'autocare.providerSectionBonuses')}</button>)}
+    </div><div className="space-y-5"><div id="provider-section-overview" hidden={activeSection !== 'overview'}><ProviderOverview provider={provider} /></div>{isDirectOwner ? <>
+        <div id="provider-section-profile" hidden={activeSection !== 'profile'}><OwnerProviderOnboardingPanel provider={provider} locale={locale} /></div>
+        <div id="provider-section-evidence" hidden={activeSection !== 'evidence'}><OwnerProviderEvidencePanel provider={provider} locale={locale} /></div>
+        <div id="provider-section-communication" hidden={activeSection !== 'communication'}><OwnerProviderCommunicationSettings provider={provider} /></div>
+        <div id="provider-section-team" hidden={activeSection !== 'team'}><OwnerProviderMembersPanel provider={provider} /></div>
+        <div id="provider-section-bonuses" hidden={activeSection !== 'bonuses'}><OwnerProviderBonusPanel provider={provider} /></div>
+    </> : <section className="rounded-[var(--radius-panel)] border border-border bg-card p-5 text-sm leading-6 text-muted-foreground shadow-sm">{t('autocare.ownerProviderRestrictedAccess')}</section>}</div></section></main>
 }
 
 function ProviderOverview({ provider }: { provider: AutoCareApiProvider }) {

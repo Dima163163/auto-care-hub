@@ -64,6 +64,7 @@ export function NotificationsPage() {
         useLazyGetNotificationsQuery()
     const [markRead, { isLoading: isMarkingRead }] = useMarkNotificationReadMutation()
     const [markAllRead, { isLoading: isMarkingAllRead }] = useMarkAllNotificationsReadMutation()
+    const [filter, setFilter] = useState<'all' | 'unread'>('all')
     const [markingNotificationId, setMarkingNotificationId] = useState<string | null>(null)
     const [additionalNotifications, setAdditionalNotifications] = useState<Notification[]>([])
     const [loadedNextCursor, setLoadedNextCursor] = useState<string | null | undefined>(undefined)
@@ -76,6 +77,7 @@ export function NotificationsPage() {
     ]
     const localUnreadCount = notifications.filter((notification) => !notification.readAt).length
     const unreadCount = unreadCountResponse?.count ?? localUnreadCount
+    const visibleNotifications = filter === 'unread' ? notifications.filter((notification) => !notification.readAt) : notifications
     const hasStaleNotifications = notifications.length > 0
 
     const handleRefresh = () => {
@@ -202,6 +204,11 @@ export function NotificationsPage() {
                     </Button>
                 </div>
 
+                <div className="mt-5 flex flex-wrap gap-2" role="group" aria-label={t('autocare.notificationFilter')}>
+                    {(['all', 'unread'] as const).map((value) => <Button key={value} type="button" variant={filter === value ? 'default' : 'outline'} aria-pressed={filter === value} onClick={() => setFilter(value)}>{t(value === 'all' ? 'autocare.allNotifications' : 'notifications.unread')}</Button>)}
+                </div>
+                {filter === 'unread' && !isLoading && notifications.length > 0 && visibleNotifications.length === 0 ? <StateCard className="mt-5" variant="empty" title={t('autocare.noUnreadNotifications')} /> : null}
+
                 <QueryRefreshStatus
                     isRefreshing={isFetching && !isLoading}
                     label={t('common.refreshing')}
@@ -245,8 +252,8 @@ export function NotificationsPage() {
                     </div>
                 )}
 
-                <div className="mt-10 grid gap-4">
-                    {notifications.map((notification) => (
+                <div className="mt-5 grid gap-3">
+                    {visibleNotifications.map((notification) => (
                         <article
                             key={notification.id}
                             className="flex gap-4 rounded-lg border bg-card p-5 shadow-sm"
@@ -258,7 +265,7 @@ export function NotificationsPage() {
                             </span>
                             <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                    <h2 className="text-lg font-black">{notification.title}</h2>
+                                    <h2 className="text-base font-semibold">{notification.title}</h2>
                                     <span className="text-xs font-bold text-muted-foreground">
                                         {formatDateTime(notification.createdAt)}
                                     </span>
@@ -309,7 +316,7 @@ export function NotificationsPage() {
                     </Button>
                 )}
 
-                {user && <div className="mt-8"><ProfilePreferences user={user} /></div>}
+                {user && <details className="mt-8 rounded-[var(--radius-panel)] border border-border bg-card p-4"><summary className="cursor-pointer text-sm font-semibold">{t('autocare.notificationDeliverySettings')}</summary><div className="mt-4"><ProfilePreferences user={user} /></div></details>}
             </section>
         </main>
     )

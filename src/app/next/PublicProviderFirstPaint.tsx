@@ -18,14 +18,14 @@ export function PublicProviderFirstPaint({ profile, locale, selectedServiceId }:
         <section className="relative isolate overflow-hidden bg-hero-overlay text-primary-foreground">
             {profile.coverImageUrl && <img src={profile.coverImageUrl} alt="" aria-hidden="true" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
             <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/86 to-hero-overlay/30" aria-hidden="true" />
-            <div className="relative mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-4 sm:py-5">
+            <div className="relative mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-6 sm:py-8">
                 <a href="/services" className="inline-flex items-center gap-2 text-xs font-bold text-primary-foreground/70 hover:text-primary-foreground">← {labels.back}</a>
-                <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(380px,0.64fr)] lg:items-center">
+                <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-center">
                     <div className="flex min-w-0 items-start gap-4">
-                        {profile.logoUrl && <img src={profile.logoUrl} alt="" className="size-16 shrink-0 rounded-[var(--radius-card)] bg-card object-contain p-2" />}
+                        {profile.logoUrl && <img src={profile.logoUrl} alt="" className="size-18 shrink-0 rounded-[var(--radius-card)] bg-card object-contain p-2" />}
                         <div className="min-w-0">
                             {profile.verified && <span className="inline-flex rounded-[var(--radius-control)] bg-status-success-surface px-2.5 py-1 text-xs font-black text-status-success-foreground">{labels.verified}</span>}
-                            <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{profile.name}</h1>
+                            <h1 className="mt-2 text-3xl font-normal tracking-tight sm:text-4xl">{profile.name}</h1>
                             {profile.reviewCount > 0 && <p className="mt-2 text-sm font-black text-rating-fill">★ {profile.rating} <span className="font-semibold text-primary-foreground/75">({profile.reviewCount})</span></p>}
                             <div className="mt-3 grid gap-2 text-sm font-semibold text-primary-foreground/85"><span>{profile.location.address}</span><span>{profile.location.hours}</span></div>
                         </div>

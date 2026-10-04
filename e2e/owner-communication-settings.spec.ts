@@ -18,7 +18,7 @@ test.describe('owner communication settings', () => {
         await expect(quickChatToggle).toBeChecked()
         await page.getByTestId('owner-provider-communication-link').first().click()
 
-        await expect(page).toHaveURL(/\/owner\/autocare-providers\/[^/]+$/)
+        await expect(page).toHaveURL(/\/owner\/autocare-providers\/[^/?]+\?section=communication$/)
         await expect(page.getByTestId('owner-communication-settings')).toBeVisible()
 
         const chatToggle = page.getByTestId('owner-chat-toggle')
@@ -47,6 +47,7 @@ test.describe('owner communication settings', () => {
         await expect(page).toHaveURL(/\/owner\/dashboard$/)
 
         await page.goto('/owner/autocare-providers/api-proservice-moscow')
+        await page.locator('button[aria-controls="provider-section-team"]').click()
         const team = page.locator('section').filter({ has: page.getByRole('heading', { name: /команда филиала|branch team/i }) }).last()
         await expect(team).toBeVisible()
 

@@ -22,6 +22,7 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
 import { LegalDocumentPage } from './LegalDocumentPage'
+import { TaskInfoPage } from './TaskInfoPage'
 
 type InfoContent = {
     eyebrowKey: TranslationKey
@@ -142,11 +143,11 @@ function InfoPage({ content }: { content: InfoContent }) {
 }
 
 export function BlogPage() {
-    return <InfoPage content={infoContent.blog} />
+    return <TaskInfoPage kind="blog" />
 }
 
 export function PartnersPage() {
-    return <InfoPage content={infoContent.partners} />
+    return <TaskInfoPage kind="partners" />
 }
 
 export function ContactsPage() {
