@@ -23,7 +23,7 @@ export function PasswordResetPage() {
     }
 
     return (
-        <section>
+        <main>
             <div className="mb-8">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
                     {tokenDetails.email}
@@ -120,6 +120,6 @@ export function PasswordResetPage() {
                         : t('auth.passwordResetSubmit')}
                 </Button>
             </form>
-        </section>
+        </main>
     )
 }

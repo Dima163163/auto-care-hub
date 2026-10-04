@@ -32,7 +32,7 @@ export function ProviderHero({ provider, selectedServiceId }: ProviderHeroProps)
     const phone = provider.phones[0] ?? provider.phone
 
     return (
-        <section className="relative isolate overflow-hidden bg-hero-overlay text-primary-foreground">
+        <section aria-label={provider.name} className="relative isolate overflow-hidden bg-hero-overlay text-primary-foreground">
             <AutoCareImage src={provider.image} alt="" loading="eager" className="absolute inset-0 h-full w-full object-cover opacity-45" />
             <div className="absolute inset-0 bg-gradient-to-r from-hero-overlay via-hero-overlay/86 to-hero-overlay/30" aria-hidden="true" />
             <div data-testid="provider-hero-container" className="relative mx-auto max-w-[var(--layout-public-wide-max)] px-[var(--layout-public-gutter)] py-6 sm:py-8">

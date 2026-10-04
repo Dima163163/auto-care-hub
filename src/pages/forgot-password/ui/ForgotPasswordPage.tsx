@@ -53,7 +53,7 @@ export function ForgotPasswordPage() {
 
     if (isSubmitted) {
         return (
-            <section
+            <main
                 className="rounded-xl border bg-card p-6 text-center shadow-sm"
                 aria-live="polite"
             >
@@ -71,12 +71,12 @@ export function ForgotPasswordPage() {
                 >
                     {t('auth.goToSignIn')}
                 </Link>
-            </section>
+            </main>
         )
     }
 
     return (
-        <section>
+        <main>
             <div className="mb-8">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
                     {t('auth.passwordResetRequestSubmit')}
@@ -149,6 +149,6 @@ export function ForgotPasswordPage() {
                     </Link>
                 </div>
             </form>
-        </section>
+        </main>
     )
 }

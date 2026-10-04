@@ -79,7 +79,7 @@ export function EmailVerificationPage() {
 
     if (isProcessing) {
         return (
-            <section
+            <main
                 className="rounded-xl border bg-card p-6 text-center shadow-sm"
                 aria-live="polite"
             >
@@ -89,13 +89,13 @@ export function EmailVerificationPage() {
                 <p className="mt-3 text-muted-foreground">
                     {t('auth.emailVerificationVerifying')}
                 </p>
-            </section>
+            </main>
         )
     }
 
     if (verificationError) {
         return (
-            <section className="rounded-xl border bg-card p-6 text-center shadow-sm">
+            <main className="rounded-xl border bg-card p-6 text-center shadow-sm">
                 <h1 className="text-2xl font-semibold tracking-tight text-destructive">
                     {t('auth.emailVerificationInvalidTitle')}
                 </h1>
@@ -110,13 +110,13 @@ export function EmailVerificationPage() {
                 >
                     {t('common.back')}
                 </Link>
-            </section>
+            </main>
         )
     }
 
     if (isComplete) {
         return (
-            <section className="rounded-xl border bg-card p-6 text-center shadow-sm">
+            <main className="rounded-xl border bg-card p-6 text-center shadow-sm">
                 <h1 className="text-2xl font-semibold tracking-tight text-primary">
                     {t('auth.emailVerificationSuccess')}
                 </h1>
@@ -131,7 +131,7 @@ export function EmailVerificationPage() {
                 >
                     {t('auth.goToHome')}
                 </Link>
-            </section>
+            </main>
         )
     }
 

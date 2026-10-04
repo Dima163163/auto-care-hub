@@ -8,7 +8,7 @@ export function PasswordResetVerifying() {
     const { t } = useTranslation()
     
     return (
-        <section
+        <main
             className="rounded-xl border bg-card p-6 text-center shadow-sm"
             aria-live="polite"
         >
@@ -16,7 +16,7 @@ export function PasswordResetVerifying() {
                 {t('auth.passwordResetTitle')}
             </h1>
             <StateCard className="mt-4 border-0 p-0 shadow-none" variant="loading" description={t('auth.passwordResetVerifying')} />
-        </section>
+        </main>
     )
 }
 
@@ -28,7 +28,7 @@ export function PasswordResetInvalid({ error }: PasswordResetInvalidProps) {
     const { t } = useTranslation()
     
     return (
-        <section className="rounded-xl border bg-card p-6 text-center shadow-sm">
+        <main className="rounded-xl border bg-card p-6 text-center shadow-sm">
             <h1 className="text-2xl font-semibold tracking-tight">
                 {t('auth.passwordResetInvalidTitle')}
             </h1>
@@ -42,6 +42,6 @@ export function PasswordResetInvalid({ error }: PasswordResetInvalidProps) {
                 {t('auth.requestNewResetLink')}
             </Link>
             } />
-        </section>
+        </main>
     )
 }

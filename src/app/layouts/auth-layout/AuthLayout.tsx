@@ -13,13 +13,13 @@ export function AuthLayout() {
 
     return (
         <div className="autocare-app-surface min-h-screen bg-muted/30 px-4 py-6 lg:px-8 lg:py-8">
-            <div className="fixed right-4 top-4 z-20">
+            <aside aria-label={t('common.theme')} className="fixed right-4 top-4 z-20">
                 <ThemeSwitcher />
-            </div>
+            </aside>
 
             <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1180px] items-center justify-center">
                 <div className="grid w-full overflow-hidden rounded-xl border bg-card shadow-xl shadow-foreground/10 lg:grid-cols-[0.92fr_1.08fr]">
-                    <div className="relative hidden min-h-[680px] overflow-hidden bg-primary/10 lg:block">
+                    <div role="region" aria-label={APP_CONFIG.name} className="relative hidden min-h-[680px] overflow-hidden bg-primary/10 lg:block">
                         <img
                             src="/images/autocare/owners/workshop-hero.png"
                             alt=""
@@ -38,9 +38,11 @@ export function AuthLayout() {
 
                     <div className="flex min-h-[680px] items-center bg-background px-6 py-10 sm:px-12 lg:px-16">
                         <div className="w-full max-w-md">
-                            <Link to={ROUTES.home} className="mb-8 flex items-center gap-2 text-foreground">
-                                <BrandLogo size="sm" />
-                            </Link>
+                            <nav aria-label={t('navigation.mainNavigation')}>
+                                <Link to={ROUTES.home} className="mb-8 flex items-center gap-2 text-foreground">
+                                    <BrandLogo size="sm" />
+                                </Link>
+                            </nav>
                             <Suspense fallback={<PageContentSkeleton label={t('common.loadingPage')} tone="auth" />}><Outlet /></Suspense>
                         </div>
                     </div>
