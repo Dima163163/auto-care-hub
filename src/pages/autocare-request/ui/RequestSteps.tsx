@@ -17,13 +17,13 @@ export function RequestSteps({ submitted, activeStep = 2 }: RequestStepsProps) {
     ]
 
     return (
-        <ol className="grid overflow-hidden rounded-[var(--radius-panel)] bg-card text-foreground shadow-sm sm:grid-cols-4">
+        <ol className="grid grid-cols-2 overflow-hidden rounded-[var(--radius-panel)] bg-card text-foreground shadow-sm sm:grid-cols-4">
             {steps.map((step, index) => {
                 const isActive = index + 1 === (submitted ? 4 : activeStep)
                 const isComplete = submitted || index + 1 < activeStep
 
                 return (
-                    <li key={step} aria-current={isActive ? 'step' : undefined} className="relative flex min-h-[74px] items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+                    <li key={step} aria-current={isActive ? 'step' : undefined} className="relative flex min-h-16 items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
                         <span className={isActive || isComplete ? 'flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground' : 'flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-xs font-black text-muted-foreground'}>
                             {isComplete ? <Check className="size-4" /> : index + 1}
                         </span>

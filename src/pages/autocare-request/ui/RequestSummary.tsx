@@ -71,3 +71,15 @@ export function RequestOrderSummary({ provider, offering, appointmentDate, appoi
         </aside>
     )
 }
+
+export function RequestCompactSummary({ provider, offering, appointmentDate, appointmentTime, serviceTimezone }: RequestSelectionProps & { appointmentDate: string; appointmentTime: string; serviceTimezone?: string }) {
+    const { t, locale } = useTranslation()
+    const service = automotiveServices.find((item) => item.id === offering.serviceId)
+    const price = formatProviderOfferingPrice(offering, locale, { from: (value) => t('autocare.fromPrice', { price: value }), quoteRequired: t('autocare.quoteRequiredPrice') })
+    return <section aria-label={t('autocare.requestReviewHint')} className="rounded-[var(--radius-control)] border border-border bg-secondary/30 p-3 text-sm">
+        <div className="flex flex-wrap justify-between gap-2"><strong className="font-semibold">{provider.name}</strong><strong className="font-semibold">{price}</strong></div>
+        <p className="mt-1 text-muted-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</p>
+        <p className="mt-2 font-medium">{appointmentTime ? `${formatRequestLongDate(appointmentDate, locale)} · ${appointmentTime} (${serviceTimezone ?? 'UTC'})` : t('booking.noAvailableTimes')}</p>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">{t('autocare.requestProviderConfirmation')}</p>
+    </section>
+}

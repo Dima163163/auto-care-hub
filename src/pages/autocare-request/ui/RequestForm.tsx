@@ -1,5 +1,5 @@
 import { CalendarDays, Camera, Check, Clock3, Send } from 'lucide-react'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { useGetAutoCareAvailabilityQuery } from '@/entities/automotive-service'
@@ -29,6 +29,7 @@ type RequestFormProps = {
     onAppointmentSelectionChange?: (selection: { date: string; time: string }) => void
     onStageChange?: (step: 2 | 3 | 4) => void
     isSubmitting?: boolean
+    reviewSummary?: ReactNode
     errorMessage?: string
 }
 
@@ -57,7 +58,7 @@ export type RequestFormPayload = {
 
 const appointmentDates = ['today', 'tomorrow', 'day-2', 'day-3']
 
-export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, onAppointmentSelectionChange, onStageChange, isSubmitting = false, errorMessage }: RequestFormProps) {
+export function RequestForm({ providerId, locationId, offeringId, serviceTimezone, draftKey = null, initialVehicle, initialVehicleId = null, initialContact, onSubmit, onAppointmentSelectionChange, onStageChange, isSubmitting = false, errorMessage, reviewSummary }: RequestFormProps) {
     const { t, locale } = useTranslation()
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
@@ -121,13 +122,14 @@ export function RequestForm({ providerId, locationId, offeringId, serviceTimezon
             if (!(event.target instanceof HTMLElement)) return
             const step = event.target.closest('[data-request-step]')?.getAttribute('data-request-step')
             if (step === '2' || step === '3' || step === '4') onStageChange?.(step === '2' ? 2 : step === '3' ? 3 : 4)
-        }} onSubmit={(event) => void handleSubmit(event)} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-5 shadow-sm sm:p-6">
+        }} onSubmit={(event) => void handleSubmit(event)} className="grid gap-5 rounded-[var(--radius-panel)] border border-border bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-sm sm:p-6">
             <AppointmentPicker locale={locale} serviceTimezone={currentAvailability?.timezone ?? serviceTimezone} selectedDate={selectedDate} customDate={customDate} selectedTime={effectiveSelectedTime} availability={currentAvailability} isLoading={isAvailabilityLoading} isError={isAvailabilityError} onDateChange={(value) => { setCustomDate(''); setSelectedDate(value) }} onCustomDateChange={(value) => { const normalized = parseRequestDate(value); if (normalized) { setCustomDate(normalized); setSelectedDate('') } }} onTimeChange={setSelectedTime} />
             <VehicleAndContacts values={contactSnapshot} onChange={setContactSnapshot} vehicle={vehicleSnapshot} onVehicleChange={setVehicleSnapshot} />
             <RequestDetails note={note} onNoteChange={setNote} files={files} onFilesChange={setFiles} attachmentIssue={attachmentIssue} onAttachmentIssueChange={setAttachmentIssue} />
             <label data-request-step="4" className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required className="mt-0.5 size-4 accent-primary" />{t('autocare.requestCustomerConfirmation')}</label>
             <label data-request-step="4" className="flex gap-3 text-xs font-medium leading-5 text-muted-foreground"><input type="checkbox" required checked={dataProcessingConsent} onChange={(event) => setDataProcessingConsent(event.target.checked)} className="mt-0.5 size-4 accent-primary" />{t('autocare.requestDataProcessingConsent')} <a className="font-bold text-primary hover:underline" href="/privacy" target="_blank" rel="noreferrer">{t('info.legal.privacy.shortTitle')}</a></label>
             {errorMessage && <p role="alert" className="rounded-[var(--radius-control)] bg-status-danger-surface px-3 py-2 text-sm font-semibold text-status-danger-foreground">{errorMessage}</p>}
+            {reviewSummary ? <div className="lg:hidden" data-request-step="4">{reviewSummary}</div> : null}
             <button data-request-step="4" type="submit" disabled={isSubmitting || isAvailabilityLoading || !effectiveSelectedTime} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-60"><Send className="size-4" />{isSubmitting ? '…' : errorMessage ? t('common.retry') : t('autocare.requestSubmit')}</button>
             {isAvailabilityError ? <p role="alert" className="text-xs font-semibold text-status-danger-foreground">{t('autocare.requestAvailabilityError')}</p> : null}
         </form>
@@ -167,14 +169,14 @@ function AppointmentPicker({ locale, serviceTimezone, selectedDate, customDate, 
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestDateLabel')}</p>
                     <div className="mt-3 grid grid-cols-4 gap-1.5">
-                        {days.map(({ id, label, date }) => <button key={id} type="button" onClick={() => onDateChange(id)} className={!customDate && selectedDate === id ? 'min-h-14 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-1 text-[10px] font-black text-primary' : 'min-h-14 rounded-[var(--radius-control)] border border-border px-1 text-[10px] font-bold text-muted-foreground transition hover:border-primary hover:text-primary'}><span className="block">{label}</span><span className="mt-1 block text-[9px] font-medium">{date}</span></button>)}
+                        {days.map(({ id, label, date }) => <button key={id} type="button" aria-pressed={!customDate && selectedDate === id} onClick={() => onDateChange(id)} className={!customDate && selectedDate === id ? 'min-h-14 rounded-[var(--radius-control)] border border-primary bg-primary/10 px-1 text-xs font-semibold text-primary' : 'min-h-14 rounded-[var(--radius-control)] border border-border px-1 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-primary'}><span className="block">{label}</span><span className="mt-1 block text-xs font-medium">{date}</span></button>)}
                     </div>
                     <DateInputTrigger className="mt-4" label={t('autocare.providerOtherDateTime')} min={getRequestDateInputValue(0, serviceTimezone)} value={customDate} onChange={onCustomDateChange} />
                 </div>
                 <div className="rounded-[var(--radius-card)] border border-border p-4">
                     <p className="text-xs font-bold text-foreground">{t('autocare.requestTimeLabel')}</p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
-                        {times.map((time) => <button key={time} type="button" onClick={() => onTimeChange(time)} className={selectedTime === time ? 'h-10 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'h-10 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
+                        {times.map((time) => <button key={time} type="button" aria-pressed={selectedTime === time} disabled={isLoading || isError} onClick={() => onTimeChange(time)} className={selectedTime === time ? 'min-h-11 rounded-[var(--radius-control)] border border-primary bg-primary text-xs font-black text-primary-foreground shadow-sm' : 'min-h-11 rounded-[var(--radius-control)] border border-border text-xs font-bold text-foreground transition hover:border-primary hover:text-primary'}>{time}</button>)}
                     </div>
                     {isLoading ? <p className="mt-3 text-xs font-semibold text-muted-foreground">{t('autocare.requestAvailabilityLoading')}</p> : isError ? null : times.length === 0 ? <p className="mt-3 text-xs font-semibold text-status-danger-foreground">{t('booking.noAvailableTimes')}</p> : null}
                     <p className="mt-4 flex items-center gap-2 rounded-[var(--radius-control)] bg-secondary px-3 py-2 text-xs font-semibold text-muted-foreground"><Clock3 className="size-4 text-primary" /><span>{t('autocare.requestSelectedDateTime', { date: selectedDateLabel, time: selectedTime })}<span className="ml-1 font-black text-foreground">({serviceTimezone ?? 'UTC'})</span></span></p>
