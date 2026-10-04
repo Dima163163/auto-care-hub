@@ -1071,6 +1071,8 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        offeringDuration: "Duration",
+        sharedOfferingConditions: "Shared service conditions",
         platformReviewsContext: "About search and the platform. Repair reviews belong to workshop profiles.",
         partnerWorkspaceSummary: "Profile, services, schedule and team in one workspace.",
         zoneSearchAction: "Find matching workshops →",

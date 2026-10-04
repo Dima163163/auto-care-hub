@@ -1,4 +1,6 @@
 export const ruPart3Autocare1 = {
+        offeringDuration: "Длительность",
+        sharedOfferingConditions: "Общие условия услуг",
         platformReviewsContext: "О поиске и работе платформы. Отзывы о ремонте — в профилях автосервисов.",
         partnerWorkspaceSummary: "Профиль, услуги, расписание и команда — в одной рабочей области.",
         zoneSearchAction: "Показать подходящие сервисы →",
