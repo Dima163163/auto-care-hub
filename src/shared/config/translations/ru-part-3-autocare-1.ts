@@ -1,4 +1,8 @@
 export const ruPart3Autocare1 = {
+        providerPublicationStep: "Фотографии и проверка",
+        providerContactsStep: "Контакты и условия",
+        providerProfileStep: "Профиль и адрес",
+        managedProviderCount: "Точек с доступом к каталогу: {{count}}",
         notificationDeliverySettings: "Настройки доставки уведомлений",
         noUnreadNotifications: "В загруженной выборке нет непрочитанных уведомлений",
         allNotifications: "Все уведомления",

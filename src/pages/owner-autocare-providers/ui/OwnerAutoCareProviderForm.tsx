@@ -361,6 +361,7 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             {mediaError ? <p id="owner-provider-media-error" role="alert" className="mb-4 rounded-[var(--radius-control)] border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{t('autocare.ownerProviderMediaUploadFailed')}</p> : null}
 
             <fieldset disabled={isLoading || isLogoUploading || isMediaUploading} className="space-y-6 disabled:cursor-not-allowed disabled:opacity-60">
+                <h3 className="text-base font-semibold">1 · {t('autocare.providerProfileStep')}</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field label={t('autocare.ownerProviderNameLabel')}>
                         <input required minLength={2} maxLength={160} name="name" value={textDraft.name} onChange={(event) => updateText('name', event.target.value)} aria-invalid={formError === 'name'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={inputClassName} placeholder={t('autocare.ownerProviderNamePlaceholder')} />
@@ -401,7 +402,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                     <textarea name="description" rows={3} maxLength={5000} value={textDraft.description} onChange={(event) => updateText('description', event.target.value)} aria-invalid={formError === 'description'} aria-describedby={formError ? 'owner-provider-form-error' : undefined} className={`${inputClassName} resize-none`} placeholder={t('autocare.ownerProviderDescriptionPlaceholder')} />
                 </Field>
 
-                <div className="grid gap-4 border-t pt-5 md:grid-cols-2">
+                <h3 className="border-t border-border pt-5 text-base font-semibold">2 · {t('autocare.providerContactsStep')}</h3>
+                <div className="grid gap-4 md:grid-cols-2">
                     <div className="md:col-span-2">
                         <div className="flex items-end gap-3">
                             <div className="min-w-0 flex-1">
@@ -443,7 +445,8 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                     <Field label={t('autocare.ownerProviderBonusLabel')}><input name="bonusSummary" maxLength={500} value={textDraft.bonusSummary} onChange={(event) => updateText('bonusSummary', event.target.value)} className={inputClassName} placeholder={t('autocare.ownerProviderBonusPlaceholder')} /></Field>
                 </div>
 
-                <section className="grid gap-4 border-t pt-5 md:grid-cols-2">
+                <h3 className="border-t border-border pt-5 text-base font-semibold">3 · {t('autocare.providerPublicationStep')}</h3>
+                <section className="grid gap-4 md:grid-cols-2">
                     <Field label={t('autocare.ownerProviderLogoLabel')}>
                     <input name="logo" type="file" accept="image/jpeg,image/png,image/webp" aria-invalid={mediaError} aria-describedby={mediaError ? 'owner-provider-media-error' : undefined} onChange={handleLogoChange} className={inputClassName} />
                     <span className="mt-1 block text-xs font-medium text-muted-foreground">{t('autocare.ownerProviderLogoHint')}</span>

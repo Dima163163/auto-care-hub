@@ -1071,6 +1071,10 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        providerPublicationStep: "Photos and verification",
+        providerContactsStep: "Contacts and conditions",
+        providerProfileStep: "Profile and address",
+        managedProviderCount: "Locations with catalog access: {{count}}",
         notificationDeliverySettings: "Notification delivery settings",
         noUnreadNotifications: "No unread notifications in the loaded selection",
         allNotifications: "All notifications",
