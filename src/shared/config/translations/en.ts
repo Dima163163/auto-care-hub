@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        publicProfileRetryHint: "The profile availability could not be checked. Retry or continue searching for a provider.",
         requiredLegalConsents: "Required legal consents",
         accountDetailsGroup: "Account details",
         helpContactUnavailable: "A public support channel has not been published yet. Contact your provider in the request chat; report a message from its message menu.",

@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { StateCard } from '@/shared/ui/state-card'
 
 export function PasswordSetupVerifying() {
     const { t } = useTranslation()
@@ -14,9 +15,7 @@ export function PasswordSetupVerifying() {
             <h1 className="text-2xl font-semibold tracking-tight">
                 {t('auth.passwordSetupTitle')}
             </h1>
-            <p className="mt-3 text-muted-foreground">
-                {t('auth.passwordSetupVerifying')}
-            </p>
+            <StateCard className="mt-4 border-0 p-0 shadow-none" variant="loading" description={t('auth.passwordSetupVerifying')} />
         </section>
     )
 }
@@ -33,9 +32,7 @@ export function PasswordSetupInvalid({ error }: PasswordSetupInvalidProps) {
             <h1 className="text-2xl font-semibold tracking-tight">
                 {t('auth.passwordSetupInvalidTitle')}
             </h1>
-            <p className="mt-3 text-muted-foreground">
-                {error ?? t('auth.passwordSetupInvalid')}
-            </p>
+            <StateCard className="mt-4 border-0 p-0 shadow-none" variant="error" description={error ?? t('auth.passwordSetupInvalid')} action={
             <Link
                 to={ROUTES.login}
                 className={buttonVariants({
@@ -44,6 +41,7 @@ export function PasswordSetupInvalid({ error }: PasswordSetupInvalidProps) {
             >
                 {t('auth.goToSignIn')}
             </Link>
+            } />
         </section>
     )
 }

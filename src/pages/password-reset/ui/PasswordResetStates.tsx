@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
+import { StateCard } from '@/shared/ui/state-card'
 
 export function PasswordResetVerifying() {
     const { t } = useTranslation()
@@ -14,9 +15,7 @@ export function PasswordResetVerifying() {
             <h1 className="text-2xl font-semibold tracking-tight">
                 {t('auth.passwordResetTitle')}
             </h1>
-            <p className="mt-3 text-muted-foreground">
-                {t('auth.passwordResetVerifying')}
-            </p>
+            <StateCard className="mt-4 border-0 p-0 shadow-none" variant="loading" description={t('auth.passwordResetVerifying')} />
         </section>
     )
 }
@@ -33,9 +32,7 @@ export function PasswordResetInvalid({ error }: PasswordResetInvalidProps) {
             <h1 className="text-2xl font-semibold tracking-tight">
                 {t('auth.passwordResetInvalidTitle')}
             </h1>
-            <p className="mt-3 text-muted-foreground">
-                {error ?? t('auth.passwordResetInvalid')}
-            </p>
+            <StateCard className="mt-4 border-0 p-0 shadow-none" variant="error" description={error ?? t('auth.passwordResetInvalid')} action={
             <Link
                 to={ROUTES.forgotPassword}
                 className={buttonVariants({
@@ -44,6 +41,7 @@ export function PasswordResetInvalid({ error }: PasswordResetInvalidProps) {
             >
                 {t('auth.requestNewResetLink')}
             </Link>
+            } />
         </section>
     )
 }

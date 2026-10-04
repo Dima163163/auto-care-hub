@@ -1,10 +1,13 @@
-import { BadgeCheck, CarFront, LoaderCircle, MessageSquareText, Sparkles, UserRound } from 'lucide-react'
-import { useParams } from 'react-router'
+import { BadgeCheck, CarFront, MessageSquareText, Sparkles, UserRound } from 'lucide-react'
+import { Link, useParams } from 'react-router'
 
 import { AutoCareCommunityBadgeList, useGetPublicAutoCareCommunityProfileQuery } from '@/entities/automotive-service'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
 import { StateCard } from '@/shared/ui/state-card'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
+import { ROUTES } from '@/shared/constants/routes'
+import { buttonVariants } from '@/components/ui/button-variants'
 
 export function CommunityClientProfilePage() {
     const { profileId = '' } = useParams()
@@ -12,8 +15,11 @@ export function CommunityClientProfilePage() {
     const query = useGetPublicAutoCareCommunityProfileQuery(profileId, { skip: !profileId })
     const profile = query.data
 
-    if (query.isLoading) return <main className="mx-auto max-w-3xl px-[var(--layout-gutter)] py-12"><div aria-busy="true" className="rounded-[var(--radius-panel)] border border-border bg-card p-8"><LoaderCircle className="size-5 animate-spin text-primary" /><span className="sr-only">{t('common.loading')}</span></div></main>
-    if (query.isError || !profile) return <main className="mx-auto max-w-3xl px-[var(--layout-gutter)] py-12"><StateCard variant="empty" title={t('profile.community.profileUnavailable')} description={t('profile.community.privacyNote')} /></main>
+    const isPrivateOrMissing = query.error && 'status' in query.error && (query.error.status === 403 || query.error.status === 404)
+    const catalogueAction = <Link to={ROUTES.serviceDiscovery} className={buttonVariants()}>{t('info.openCatalog')}</Link>
+    if (query.isLoading) return <main className="mx-auto max-w-3xl px-[var(--layout-gutter)] py-12"><StateCard variant="loading" description={t('common.loading')} /></main>
+    if (query.isError && !isPrivateOrMissing) return <main className="mx-auto max-w-3xl px-[var(--layout-gutter)] py-12"><StateCard variant="error" title={t('common.failedToLoad')} description={t('autocare.publicProfileRetryHint')} action={<div className="flex flex-wrap gap-3"><RetryButton onRetry={query.refetch} label={t('common.retry')} />{catalogueAction}</div>} /></main>
+    if (query.isError || !profile) return <main className="mx-auto max-w-3xl px-[var(--layout-gutter)] py-12"><StateCard variant="empty" title={t('profile.community.profileUnavailable')} description={t('profile.community.privacyNote')} action={catalogueAction} /></main>
 
     const metrics = [
         { key: 'confirmedVisits', value: profile.metrics.confirmedVisits, icon: CarFront },
