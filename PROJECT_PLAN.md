@@ -2138,3 +2138,5 @@ it does not introduce another runtime fix or claim pilot readiness.
 - [x] D15: дата и время в сетке с 44px touch targets, pressed/disabled states, явным provider timezone и полноширинными error/loading состояниями; логика availability сохранена.
 
 - [x] D16: видимая область рейтинга и выборки, переход к существующим основаниям trust; фиктивное распределение при отсутствии серверных данных удалено, реальные voting/moderation guards сохранены.
+
+- [x] D17: единые четыре этапа; текущий этап следует фокусу формы, сводка не показывает ошибочные 3 этапа, отправка не названа подтверждением сервиса. Progress regression добавлена.

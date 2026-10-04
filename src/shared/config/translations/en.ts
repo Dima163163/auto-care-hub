@@ -1071,6 +1071,8 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        requestReviewHint: "Review the service and time before sending your request.",
+        requestStepReview: "Review and send",
         displayedReviewCount: "Reviews in the loaded selection: {{count}}",
         reviewsAndTrustContext: "Repair ratings and the trust index are different measures. Profile evidence and index factors are available separately.",
         providerRatingScope: "Workshop rating across all services",
@@ -1976,7 +1978,7 @@ export const enTranslations = {
         providerReviewPhoto: 'Review photo',
         providerNextPhoto: 'Next photo',
         providerBookingTitle: 'Your booking',
-        providerBookingStep: 'Step 1 of 3',
+        providerBookingStep: 'Step 2 of 4 · Date and time',
         providerVehicleLabel: 'Your vehicle',
         vehicleMake: 'Make',
         vehicleModel: 'Model',

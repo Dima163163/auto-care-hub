@@ -1,4 +1,6 @@
 export const ruPart3Autocare1 = {
+        requestReviewHint: "Проверьте услугу и время перед отправкой заявки.",
+        requestStepReview: "Проверка и отправка",
         displayedReviewCount: "Отзывов в загруженной выборке: {{count}}",
         reviewsAndTrustContext: "Оценки ремонта и индекс доверия — разные показатели. Основания проверки профиля и факторы индекса доступны отдельно.",
         providerRatingScope: "Оценка автосервиса по всем услугам",

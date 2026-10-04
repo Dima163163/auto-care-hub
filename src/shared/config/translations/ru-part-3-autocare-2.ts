@@ -125,7 +125,7 @@ export const ruPart3Autocare2 = {
         providerReviewPhoto: 'Фото из отзыва',
         providerNextPhoto: 'Следующее фото',
         providerBookingTitle: 'Ваша запись',
-        providerBookingStep: 'Шаг 1 из 3',
+        providerBookingStep: 'Шаг 2 из 4 · Дата и время',
         providerVehicleLabel: 'Ваш автомобиль',
         vehicleMake: 'Марка',
         vehicleModel: 'Модель',

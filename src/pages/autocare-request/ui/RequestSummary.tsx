@@ -59,7 +59,7 @@ export function RequestOrderSummary({ provider, offering, appointmentDate, appoi
         <aside className="h-fit overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm lg:sticky lg:top-5">
             <div className="border-b border-border px-5 py-4">
                 <h2 className="text-lg font-black tracking-tight text-foreground">{t('autocare.providerBookingTitle')}</h2>
-                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.providerBookingStep')}</p>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{t('autocare.requestReviewHint')}</p>
             </div>
             <div className="divide-y divide-border px-5 text-sm">
                 <div className="py-4"><p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedService')}</p><p className="mt-1 font-black text-foreground">{service ? getServiceLabel(service, locale) : offering.serviceId}</p><p className="mt-1 text-xs font-bold text-foreground">{price}</p></div>
