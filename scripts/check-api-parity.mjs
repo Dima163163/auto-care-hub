@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { readMockHandlerSources } from './mock-handler-sources.mjs'
 
 const MOCK_ROUTE_PATTERN = /http\.(get|post|patch|put|delete)\s*\(\s*['"]\/api([^'"]+)['"]/g
 const BACKEND_ROUTE_PATTERN = /\bapp\.(get|post|patch|put|delete)\b[\s\S]{0,500}?\(\s*['"]([^'"]+)['"]/g
@@ -33,7 +34,7 @@ function collectRoutes(source, pattern) {
 }
 
 const [mockSource, backendFiles] = await Promise.all([
-    readFile('src/app/mocks/handlers.ts', 'utf8'),
+    readMockHandlerSources(),
     collectTypeScriptFiles('server/src'),
 ])
 const backendSource = (await Promise.all(backendFiles.map((path) => readFile(path, 'utf8')))).join('\n')

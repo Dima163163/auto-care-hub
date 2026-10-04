@@ -1,5 +1,42 @@
 # AutoCare Hub — Project Plan
 
+## N11 — разделение ответственностей, 2026-10-04
+
+- [x] Заявки: отдельные создание/чтение, переписка, сметы, расписание,
+  переходы, вложения, доступ и DTO; исходные транзакции сохранены.
+- [x] Каталог и сервисы: discovery/geo/markets, профиль, ресурсы, media,
+  настройки и review workflows.
+- [x] Чаты: сообщения, вложения, reports, назначения и санкции с общим access policy.
+- [x] Frontend: 136 endpoint bodies и 212 DTO/schema declarations перенесены
+  в доменные модули; единая RTK registration и прежние hooks сохранены.
+- [x] MSW: 244 callbacks в 18 route families, единое состояние и прежний
+  порядок; contract checks читают зарегистрированные handler modules.
+- [x] Strict types, ESLint, Next/backend builds, frontend 189/609,
+  backend unit 387/1406, isolated PostgreSQL integration 23/88 и full 410/1494 PASS.
+- [x] Полные mock browser scenarios: 171 PASS, первый запуск, desktop/tablet/mobile (18.8m).
+- [ ] Protected dev→main публикация: оба exact-candidate Quality events обязательны.
+- [ ] Визуальный обзор всего продукта: реальные скриншоты и отдельные
+  изображения предложений для выбора владельцем; product UI пока не меняется.
+
+Карта: `docs/architecture/AUTOCARE_RESPONSIBILITIES.md`. Каждый implementation
+шаг — отдельный коммит; весь N11 пакет — одним push. Исходная dirty-копия не
+используется для работы. Новые дизайн-находки фиксируются в отдельном обзоре.
+
+N11 step 2: discovery/catalog/provider management/reviews получили 14 отдельных
+ответственностей; токены исходных 58 declarations, сборка и регрессии сохранены.
+
+N11 step 3: chat mutations/attachments/report decisions/assignments/blocks
+разделены на 11 модулей с прямыми imports общей политики доступа. PostgreSQL,
+unit и TypeScript PASS; исходные 40 declarations сохранены.
+
+N11 step 4: API types/schemas/endpoint factories разделены по 10 доменам;
+единственная registration сохраняет cache identity, original hooks и transforms.
+212 DTO/schema + 136 endpoint token comparisons и frontend 609 PASS.
+
+N11 step 5: MSW workflows в 18 группах с общей fixture initialization и
+оригинальными ordinal priorities. Все 244 route declarations по прежнему
+проверяются parity/snapshot guards; новая regression ловит modular drift.
+
 ## Несрочный пакет аудита — 2026-10-03, один итоговый push
 
 Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
@@ -33,8 +70,8 @@
 - [x] N20: 171 mock E2E first-attempt PASS; отдельно 9 strict-MSW city repeats PASS.
 - [ ] N09: engine/runbook готовы, production DB adapter и масштабный rollout
   ожидают U01/U02 key/envelope решения и recovery evidence.
-- [ ] N11: chat read model и mock access policy выделены; дальнейшие
-  request/provider/frontend API вертикальные refactors остаются в реестре.
+- [x] N11: завершён дополнительной порцией 04.10; карта responsibilities и
+  полная локальная regression-приёмка находятся выше.
 
 Итог локальной приёмки пакета: frontend 189/609; backend unit 387/1406;
 backend full с isolated DB 410/1494; integration 23/88 без skip; migrations,

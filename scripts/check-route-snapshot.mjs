@@ -1,6 +1,7 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readMockHandlerSources } from './mock-handler-sources.mjs'
 
 const PROJECT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
 export const DEFAULT_SNAPSHOT_PATH = 'docs/operations/MOCK_BACKEND_ROUTE_SNAPSHOT.json'
@@ -43,7 +44,7 @@ export function compareRouteSnapshots(expected, actual) {
 
 export async function readCurrentRouteSnapshot(root = PROJECT_ROOT) {
     const [mockSource, backendFiles] = await Promise.all([
-        readFile(resolve(root, 'src/app/mocks/handlers.ts'), 'utf8'),
+        readMockHandlerSources(root),
         collectBackendFiles(resolve(root, 'server/src')),
     ])
     const backendSource = (await Promise.all(backendFiles.map((file) => readFile(file, 'utf8')))).join('\n')

@@ -3,7 +3,8 @@
 ## Текущее состояние несрочной порции — 4 октября 2026
 
 N01–N20 получили отдельные implementation commits. **18 программных пунктов
-реализованы и локально проверены; N09 и N11 выполнены частично.** Это не закрытие
+реализованы и локально проверены; N11 завершён дополнительной порцией 04.10,
+N09 и уточнённый по дизайн-обзору N10 остаются частичными.** Это не закрытие
 внешней production приёмки. Ниже исходные формулировки/статусы сохранены как
 история; актуальное состояние задают эта таблица и исправления возле каждого ID.
 Срочные U01/U02/U03/U08 остаются открытыми, 54 pilot gates и NO-GO не изменялись.
@@ -19,8 +20,8 @@ N01–N20 получили отдельные implementation commits. **18 пр�
 | N07 | Strict frontend compilation | Нет |
 | N08 | Exact HMAC email lookup; bounded partial scan с явным 422 | Production load / query latency |
 | N09 | **Частично:** bounded restartable engine и rollout runbook | U01/U02 решение, production DB adapter, scale/restore |
-| N10 | Подтверждённое отсутствие контактов, current year, automotive launch copy | Публичные каналы ещё не существуют |
-| N11 | **Частично:** отдельный chat read model и mock access policy | Последующие вертикальные request/provider/frontend API refactors |
+| N10 | **Частично:** footer/current year и automotive launch copy исправлены | Дизайн-обзор 04.10: contacts/help ещё содержат неподтверждённые каналы; onboarding — кабинеты |
+| N11 | **Завершено:** request/provider/chat use cases, API domain factories и MSW workflows | Hosted exact-candidate replay новой порции |
 | N12 | Broadcast scope до SQL LIMIT; older match за 120 чужими строками PASS | Полная cursor queue/UI — отдельное улучшение |
 | N13 | Prerender-manifest-aware SEO; custom build directory; dynamic HTTP checks | Deployed SEO evidence |
 | N14 | Automatic unit/integration discovery, собственная admin race fixture | Exact-candidate hosted CI на PostgreSQL 16 |
@@ -372,6 +373,20 @@ status-only push не требуется. Каждый runtime finding и его
 **Приёмка:** критичный workflow прослеживается от route до transaction/DTO без поиска по нескольким мегамодулям; контракт и поведение не меняются. Статус: открыто.
 
 **Частичное исправление 04.10:** N11: выделен самостоятельный chat-read.service (permissions/cursor SQL, bounded batch read model, DTO), mutations/moderation остаются в facade без изменения публичных imports. Mock broadcast authorization/offer visibility вынесены в pure broadcast-access-policy, handler отвечает за fixtures/HTTP. Trace route→read use-case→SQL→DTO теперь отдельный; tests 36 backend + 3 MSW PASS, types/build PASS, targeted lint PASS. Это ответственная постепенная декомпозиция; прочие крупные request/provider/API модули остаются дальнейшим refactor scope, без косметического дробления по числу строк.
+
+**Завершение N11 04.10, отдельная порция:** request/provider/chat разделены на
+39 responsibilities (14/14/11), facade entries — 10/12/10 строк. Исходные 158
+declarations и тела транзакций сохранены. API: 212 DTO/schema declarations и 136
+endpoint bodies перенесены в доменные types/schemas/factories; единая registration,
+cache tags и все hooks сохранены. 244 MSW callbacks — 18 families, единое
+состояние и исходная routing precedence; private ID counter имеет общий allocator.
+Parity/snapshot guards читают зарегистрированные modules; новый test ловит drift
+в modular handlers. Проверка исходных tokens, строгие types, full lint, Next/backend
+build, frontend 189/609, backend unit 387/1406, isolated PostgreSQL integration
+23/88 без skip и backend full 410/1494 PASS. Пять implementation шагов — отдельные
+коммиты. Карта `docs/architecture/AUTOCARE_RESPONSIBILITIES.md`; UI и API contracts
+не менялись. Полные mock E2E: 171 PASS с первого запуска (18.8m), все три
+viewport profiles. Hosted results принимаются только после фактического PASS.
 
 ### N12 · P2 · Фильтровать очередь broadcast до ограничения количества строк
 
