@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        platformReviewsContext: "О поиске и работе платформы. Отзывы о ремонте — в профилях автосервисов.",
         partnerWorkspaceSummary: "Профиль, услуги, расписание и команда — в одной рабочей области.",
         zoneSearchAction: "Показать подходящие сервисы →",
         roadsideServices: "На дороге и с выездом",
