@@ -1071,6 +1071,8 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        invitationValidUntil: "Until {{date}}",
+        allProviderBranches: "All workshop branches",
         calendarSelected: "Selected",
         calendarPreviousMonth: "Previous month",
         calendarNextMonth: "Next month",

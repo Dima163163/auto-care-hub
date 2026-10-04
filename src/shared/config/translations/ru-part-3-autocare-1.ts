@@ -1,4 +1,6 @@
 export const ruPart3Autocare1 = {
+        invitationValidUntil: "До {{date}}",
+        allProviderBranches: "Все филиалы сервиса",
         calendarSelected: "Выбрано",
         calendarPreviousMonth: "Предыдущий месяц",
         calendarNextMonth: "Следующий месяц",

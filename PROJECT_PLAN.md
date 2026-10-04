@@ -2162,3 +2162,5 @@ it does not introduce another runtime fix or claim pilot readiness.
 - [x] D28: RU/EN месяц, неделя, навигация и ARIA date labels; компактный календарь/очередь с timezone филиала. Localization regression и прежние timezone booking tests включены.
 
 - [x] D29: компактные строки услуг выбранного филиала с корректными fixed/from/range/quote ценами и локализованной длительностью; существующий полный editor/modal сохранён.
+
+- [x] D30: активный доступ и приглашения явно показывают сервис/филиал и роль; приглашения показывают срок. Invite/revoke и защита owner membership сохранены.
