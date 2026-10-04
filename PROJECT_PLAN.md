@@ -28,6 +28,10 @@ N11 step 3: chat mutations/attachments/report decisions/assignments/blocks
 разделены на 11 модулей с прямыми imports общей политики доступа. PostgreSQL,
 unit и TypeScript PASS; исходные 40 declarations сохранены.
 
+N11 step 4: API types/schemas/endpoint factories разделены по 10 доменам;
+единственная registration сохраняет cache identity, original hooks и transforms.
+212 DTO/schema + 136 endpoint token comparisons и frontend 609 PASS.
+
 ## Несрочный пакет аудита — 2026-10-03, один итоговый push
 
 Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
