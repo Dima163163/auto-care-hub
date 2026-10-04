@@ -32,6 +32,8 @@ D22/D37/D43 сохраняются. Новые эстетические вари
 | UX11 | P3 | Несколько inline controls имеют высоту 16px: map/clear, следующие дни, change vehicle, garage edit/delete, fleet add | Рекомендация увеличить touch area до 44px; размеры сами по себе не доказывают WCAG 2.5.8 failure (spacing/native exceptions). D11/D19 остаются отложенными; новый layout не применяется |
 | UX12 | P2 | Несколько BrandLogo SVG используют один aria-labelledby/title id, давая duplicate-id-aria | Исправлено: useId, уникальные title references, 0 duplicate referenced IDs на всех 200 cases |
 | UX13 | P3 | Именованные div badges/provider selector без role теряют aria-label | Исправлено: role=group на results list и analytics provider chooser; aria-prohibited-attr incomplete устранён |
+| UX15 | P2 | Авторизованный onboarding: progress div использует запрещённый aria-label без роли; гостевой маршрут проверял только redirect на login | Исправлено локально после PR #14: named group; 8/8 client/owner onboarding в full axe, production build, 635 unit, strict types/full lint PASS. Дополнительный push не выполняется в рамках ограничения одного push |
+| QA02 | P3 | Audit не подтверждает фактические auth role/locale/theme; сохранённый locale аккаунта может подменить язык профиля, обычный admin не включён | В работе локально: actual login role, выбор языка через UI для каждого route, expected guest redirect, отдельные admin/superadmin и client/owner onboarding |
 | DOC01 | P3 | План/контекст сохраняют устаревшие ожидания публикации N11 и выбранного дизайна | Исправлено: PROJECT_PLAN/CONTEXT/FULL audit сверены с merged PR #12/#13 и actual Quality evidence |
 | N09 | P2 | Production encryption backfill adapter/scale/restore | Engine готов; deployment зависит от U01/U02 |
 
