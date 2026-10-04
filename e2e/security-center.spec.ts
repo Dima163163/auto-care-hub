@@ -23,6 +23,16 @@ test.describe('Security Center investigation details', () => {
         await expect(details.getByText('Investigation timeline')).toBeVisible()
 
         if (testInfo.project.name === 'mobile-chromium') {
+            await expect(details).toHaveAttribute('role', 'dialog')
+            await expect(details).toHaveAttribute('aria-modal', 'true')
+            await expect.poll(() => details.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+            await page.keyboard.press('Shift+Tab')
+            await expect.poll(() => details.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+            await page.keyboard.press('Escape')
+            await expect(details).toBeHidden()
+            await expect(eventRow).toBeFocused()
+            await eventRow.press('Space')
+            await expect(details).toBeVisible()
             await expect.poll(async () => page.evaluate(() => {
                 const drawer = document.querySelector('[data-testid="security-center-detail-drawer"]')
                 return drawer ? window.getComputedStyle(drawer).position : null
@@ -91,7 +101,10 @@ test.describe('Security Center investigation details', () => {
             }
         })
         const mobileMenu = page.getByRole('button', { name: 'Menu', exact: true })
-        if (await mobileMenu.isVisible()) await mobileMenu.click()
+        if ((page.viewportSize()?.width ?? 0) < 768) {
+            await expect(mobileMenu).toBeVisible()
+            await mobileMenu.click()
+        }
         await page.locator('a[href="/admin/security-center"]:visible').first().click()
         await expect(page.getByRole('heading', { name: 'Security center' })).toBeVisible()
         const placeholder = page.locator('tbody tr').first()
