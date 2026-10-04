@@ -10,7 +10,7 @@ const readMobile = () => window.matchMedia(mobileQuery).matches
 const readServer = () => false
 
 export function useSecurityEventDrawer(selectedId: string | null, onClose: () => void) {
-    const drawerRef = useRef<HTMLElement>(null)
+    const drawerRef = useRef<HTMLDivElement>(null)
     const isMobile = useSyncExternalStore(subscribeMobile, readMobile, readServer)
 
     useEffect(() => {

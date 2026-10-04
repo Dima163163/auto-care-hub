@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test.describe('Security Center investigation details', () => {
     test('opens responsive details and supports assignment controls', async ({ page }, testInfo) => {
+        if (testInfo.project.name === 'mobile-chromium') await page.setViewportSize({ width: 360, height: 844 })
         await page.goto('/login', { waitUntil: 'networkidle' })
         await page.locator('#email').fill('admin@autocarehub.test')
         await page.locator('#password').fill('password123')
@@ -25,6 +26,13 @@ test.describe('Security Center investigation details', () => {
         if (testInfo.project.name === 'mobile-chromium') {
             await expect(details).toHaveAttribute('role', 'dialog')
             await expect(details).toHaveAttribute('aria-modal', 'true')
+            await expect.poll(() => details.evaluate((drawer) => {
+                const bounds = drawer.getBoundingClientRect()
+                return [bounds.top + 8, bounds.bottom - 8].every((y) => {
+                    const target = document.elementFromPoint(bounds.left + bounds.width / 2, y)
+                    return target !== null && drawer.contains(target)
+                })
+            })).toBe(true)
             await expect.poll(() => details.evaluate((element) => element.contains(document.activeElement))).toBe(true)
             await page.keyboard.press('Shift+Tab')
             await expect.poll(() => details.evaluate((element) => element.contains(document.activeElement))).toBe(true)
