@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { Plus, X } from 'lucide-react'
 import { useGetAutoCareMarketsQuery, useGetOwnerAutoCareProvidersQuery } from '@/entities/automotive-service'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
@@ -14,7 +15,8 @@ import { OwnerAutoCareProviderMap } from './OwnerAutoCareProviderMap'
 
 export function OwnerAutoCareProvidersPage() {
     const { t } = useTranslation()
-    const [isCreating, setIsCreating] = useState(false)
+    const [searchParams] = useSearchParams()
+    const [isCreating, setIsCreating] = useState(() => searchParams.get('create') === '1')
     const { data: markets = [], isLoading: isMarketsLoading } = useGetAutoCareMarketsQuery()
     const { data: providers = [], error, isError, isLoading, refetch } = useGetOwnerAutoCareProvidersQuery()
     const market = markets.find((item) => item.launchReady) ?? markets[0]

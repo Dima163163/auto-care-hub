@@ -6,7 +6,7 @@ import {
     CalendarClock,
     ClipboardList,
     Search,
-    UserRound,
+    CarFront,
 } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -34,27 +34,9 @@ type OnboardingAction = {
 }
 
 const clientActions: OnboardingAction[] = [
-    {
-        titleKey: 'onboarding.client.findCabinetTitle',
-        descriptionKey: 'onboarding.client.findCabinetDescription',
-        labelKey: 'onboarding.client.findCabinetAction',
-        to: ROUTES.cabinets,
-        icon: Search,
-    },
-    {
-        titleKey: 'onboarding.client.bookingsTitle',
-        descriptionKey: 'onboarding.client.bookingsDescription',
-        labelKey: 'onboarding.client.bookingsAction',
-        to: ROUTES.profileBookings,
-        icon: CalendarCheck,
-    },
-    {
-        titleKey: 'onboarding.client.profileTitle',
-        descriptionKey: 'onboarding.client.profileDescription',
-        labelKey: 'onboarding.client.profileAction',
-        to: ROUTES.profile,
-        icon: UserRound,
-    },
+    { titleKey: 'onboarding.client.profileTitle', descriptionKey: 'onboarding.client.profileDescription', labelKey: 'onboarding.client.profileAction', to: ROUTES.profileVehicles, icon: CarFront },
+    { titleKey: 'onboarding.client.findCabinetTitle', descriptionKey: 'onboarding.client.findCabinetDescription', labelKey: 'onboarding.client.findCabinetAction', to: ROUTES.serviceDiscovery, icon: Search },
+    { titleKey: 'onboarding.client.bookingsTitle', descriptionKey: 'onboarding.client.bookingsDescription', labelKey: 'onboarding.client.bookingsAction', to: ROUTES.profileBookings, icon: CalendarCheck },
 ]
 
 const ownerActions: OnboardingAction[] = [
@@ -62,21 +44,21 @@ const ownerActions: OnboardingAction[] = [
         titleKey: 'onboarding.owner.createCabinetTitle',
         descriptionKey: 'onboarding.owner.createCabinetDescription',
         labelKey: 'onboarding.owner.createCabinetAction',
-        to: ROUTES.ownerCabinetCreate,
+        to: `${ROUTES.ownerAutoCareProviders}?create=1`,
         icon: Building2,
     },
     {
         titleKey: 'onboarding.owner.servicesTitle',
         descriptionKey: 'onboarding.owner.servicesDescription',
         labelKey: 'onboarding.owner.servicesAction',
-        to: ROUTES.ownerServices,
+        to: ROUTES.ownerAutoCareProviders,
         icon: ClipboardList,
     },
     {
         titleKey: 'onboarding.owner.bookingsTitle',
         descriptionKey: 'onboarding.owner.bookingsDescription',
         labelKey: 'onboarding.owner.bookingsAction',
-        to: ROUTES.ownerBookings,
+        to: ROUTES.ownerAutoCareRequests,
         icon: CalendarClock,
     },
 ]
