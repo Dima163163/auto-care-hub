@@ -1,4 +1,7 @@
 export const ruPart3Autocare1 = {
+        platformTrustPolicy: "Правила доверия",
+        platformGeography: "География",
+        platformAreas: "Разделы управления платформой",
         securityStatistics: "Статистика и источники сигналов",
         securityAdditionalFilters: "Дополнительные фильтры",
         unblockUserAction: "Разблокировать",

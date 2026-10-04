@@ -1071,6 +1071,9 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        platformTrustPolicy: "Trust policy",
+        platformGeography: "Geography",
+        platformAreas: "Platform management areas",
         securityStatistics: "Statistics and signal sources",
         securityAdditionalFilters: "Additional filters",
         unblockUserAction: "Unblock user",

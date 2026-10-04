@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ArrowRight, Building2, Globe2, KeyRound, UsersRound } from 'lucide-react'
 import { Link } from 'react-router'
 
@@ -19,6 +20,7 @@ import { SuperAdminTrustPolicyPanel } from './SuperAdminTrustPolicyPanel'
 
 export function SuperAdminDashboardPage() {
     const { locale, t } = useTranslation()
+    const [area, setArea] = useState<'overview' | 'markets' | 'trust'>('overview')
     const query = useGetSuperAdminPlatformOverviewQuery()
     const formatInteger = (value: number) => formatNumber(value, locale, { maximumFractionDigits: 0 })
     const marketGroups = groupMarkets(query.data?.markets ?? [])
@@ -54,6 +56,10 @@ export function SuperAdminDashboardPage() {
             {query.error && <div role="alert" className="rounded-[var(--radius-panel)] border border-destructive/30 bg-card p-6"><p className="font-semibold text-destructive">{getApiErrorMessage(query.error, t('common.failedToLoad'))}</p><RetryButton className="mt-4" onRetry={() => void query.refetch()} label={t('common.retry')} /></div>}
 
             {query.data && <>
+                <div role="group" aria-label={t('autocare.platformAreas')} className="flex flex-wrap gap-2">
+                    {(['overview', 'markets', 'trust'] as const).map((item) => <button key={item} type="button" aria-pressed={area === item} aria-controls={`platform-${item}`} onClick={() => setArea(item)} className={`min-h-11 rounded-md border px-4 text-sm font-medium ${area === item ? 'border-primary bg-primary/10 text-primary' : 'bg-card hover:bg-muted'}`}>{item === 'overview' ? t('autocare.providerSectionOverview') : item === 'markets' ? t('autocare.platformGeography') : t('autocare.platformTrustPolicy')}</button>)}
+                </div>
+                <div id="platform-overview" hidden={area !== 'overview'} className="space-y-5">
                 <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <Metric icon={Globe2} label={text.markets} value={formatInteger(query.data.markets.length)} note={`${formatInteger(query.data.markets.filter((market) => market.launchReady).length)} ${text.activeMarkets}`} />
                     <Metric icon={Building2} label={text.trust} value={`${formatInteger(query.data.providers.verified)}/${formatInteger(query.data.providers.total)}`} note={`${formatInteger(query.data.providers.active)} ${text.active}`} />
@@ -66,8 +72,9 @@ export function SuperAdminDashboardPage() {
                 <AdminDataQualityPanel />
                 <AdminAutoCareAppealsPanel />
                 <AdminChatReportsPanel />
-                <SuperAdminTrustPolicyPanel />
-                <SuperAdminMarketsPanel locale={locale} />
+                </div>
+                <div id="platform-trust" hidden={area !== 'trust'}><SuperAdminTrustPolicyPanel /></div>
+                <div id="platform-markets" hidden={area !== 'markets'}><SuperAdminMarketsPanel locale={locale} /></div>
             </>}
         </section>
     </main>
