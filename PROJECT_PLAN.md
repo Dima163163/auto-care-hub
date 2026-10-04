@@ -2144,3 +2144,5 @@ it does not introduce another runtime fix or claim pilot readiness.
 - [x] D44: на телефоне четыре коротких этапа и компактная сводка непосредственно перед отправкой; slot pressed/disabled, touch targets и safe-area padding. Сводка desktop и обязательные согласия сохранены.
 
 - [x] D20: заявки со сметой/переносом ждут первыми, затем активные и история; бонусы ниже очереди и операции раскрываются отдельно. Быстрый переход в сообщения ведёт в чаты.
+
+- [x] D21: mobile list/dialog переключаются по URL с кнопкой назад; выбранный диалог имеет ограниченную высоту и scroll сообщений, composer остаётся внизу. Desktop, drafts, realtime и actions сохранены; navigation regression добавлена.

@@ -110,6 +110,16 @@ describe('ChatsPage', () => {
         mocks.getChat.mockReset()
     })
 
+    it('uses explicit conversation selection and returns to the mobile list', async () => {
+        const user = userEvent.setup()
+        renderPage('/chats?chat=chat-1')
+        expect(screen.getByTestId('chat-thread-list')).toHaveClass('hidden')
+        expect(screen.getByTestId('chat-conversation-view')).toHaveClass('block')
+        await user.click(screen.getByRole('button', { name: 'autocare.backToChats' }))
+        expect(screen.getByTestId('chat-thread-list')).toHaveClass('block')
+        expect(screen.getByTestId('chat-conversation-view')).toHaveClass('hidden')
+    })
+
     it('does not connect realtime chat before the conversation query starts', () => {
         mocks.chatIsLoading = true
         mocks.emitPresenceOnConnect = true

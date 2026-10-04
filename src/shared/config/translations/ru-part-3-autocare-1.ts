@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        backToChats: "К списку чатов",
         requestsNeedResponse: "Требуют вашего ответа: {{count}}",
         requestReviewHint: "Проверьте услугу и время перед отправкой заявки.",
         requestStepReview: "Проверка и отправка",
