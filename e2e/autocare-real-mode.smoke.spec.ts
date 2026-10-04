@@ -651,3 +651,36 @@ test.describe('AutoCare real API smoke', () => {
         await expect(page.getByRole('main')).toBeVisible()
     })
 })
+
+
+test('guest real favorites resolve saved public UUIDs without demo fallback and can be removed', async ({ page, request }) => {
+    const response = await request.get(`${apiBaseUrl}/v1/discovery/providers?marketId=moscow&radiusKm=25&limit=8`)
+    expect(response.ok()).toBe(true)
+    const payload = await response.json() as { items: Array<{ provider: { id: string; name: string } }> }
+    const provider = payload.items[0]?.provider
+    expect(provider).toBeDefined()
+    if (!provider) throw new Error('Synthetic real catalog is empty')
+    await page.addInitScript((providerId) => {
+        localStorage.setItem('autocare-hub-locale', 'en')
+        localStorage.setItem('autocare-hub:automotive-favorites', JSON.stringify([providerId, 'proservice-moscow']))
+    }, provider.id)
+    await page.goto('/favorites')
+    const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: provider.name, exact: true }) })
+    await expect(card).toBeVisible()
+    await expect(page.getByRole('article')).toHaveCount(1)
+    await expect(card.getByRole('link', { name: 'View details', exact: true })).toHaveAttribute('href', `/services/${provider.id}`)
+    await card.getByRole('button', { name: /remove from favorites/i }).click()
+    await expect(card).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Your shortlist is empty' })).toBeVisible()
+})
+
+test('guest can remove an unavailable real favorite after a public profile error', async ({ page }) => {
+    await page.addInitScript(() => {
+        localStorage.setItem('autocare-hub-locale', 'en')
+        localStorage.setItem('autocare-hub:automotive-favorites', JSON.stringify(['123e4567-e89b-42d3-a456-426614174000']))
+    })
+    await page.goto('/favorites')
+    await expect(page.getByRole('button', { name: /retry/i })).toBeVisible()
+    await page.getByRole('button', { name: /remove from favorites/i }).click()
+    await expect(page.getByRole('heading', { name: 'Your shortlist is empty' })).toBeVisible()
+})

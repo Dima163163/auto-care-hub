@@ -30,7 +30,7 @@ function writeFavoriteIds(ids: string[]) {
     window.dispatchEvent(new Event(CHANGE_EVENT))
 }
 
-function isUuid(value: string) {
+export function isUuid(value: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
@@ -118,6 +118,7 @@ export function useAutoCareFavorites() {
     return {
         favoriteIds,
         favoriteProviders,
+        isClient,
         isFavorite: (providerId: string) => favoriteIds.has(providerId),
         toggle,
     }

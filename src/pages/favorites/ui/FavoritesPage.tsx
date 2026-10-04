@@ -4,16 +4,18 @@ import { IS_REAL_API } from '@/shared/config/api'
 import { BadgeCheck, Heart, MapPin, MessageCircle, Star } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { automotiveServices, getServiceLabel, type ProviderPreview } from '@/entities/automotive-service'
-import { useAutoCareFavorites } from '@/features/automotive-favorites'
+import { automotiveServices, getServiceLabel, mapAutoCareProviderProfile, useGetAutoCareProviderProfileQuery, type ProviderPreview } from '@/entities/automotive-service'
+import { isUuid, useAutoCareFavorites } from '@/features/automotive-favorites'
 import { ROUTES, routePaths } from '@/shared/constants/routes'
 import { formatAutoCareSlot, formatCurrency, formatDistanceKm, parseDistanceKm } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareImage } from '@/shared/ui/autocare-image'
+import { StateCard } from '@/shared/ui/state-card'
+import { RetryButton } from '@/shared/ui/query-refresh-error'
 
 export function FavoritesPage() {
     const { t, locale } = useTranslation()
-    const { favoriteIds, favoriteProviders, toggle } = useAutoCareFavorites()
+    const { favoriteIds, favoriteProviders, isClient, toggle } = useAutoCareFavorites()
     const [mockProviders, setMockProviders] = useState<readonly ProviderPreview[]>([])
     useEffect(() => {
         let active = true
@@ -28,7 +30,17 @@ export function FavoritesPage() {
     const localProviders = IS_REAL_API ? [] : mockProviders.filter((provider) => favoriteIds.has(provider.id))
     const providers = [...favoriteProviders, ...localProviders.filter((provider) => !favoriteProviders.some((remote) => remote.id === provider.id))]
 
-    return <main className="bg-background"><div className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-8 sm:py-12"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.14em] text-primary">{t('autocare.favoritesEyebrow')}</p><h1 className="mt-2 text-3xl font-black tracking-tight text-foreground sm:text-4xl">{t('autocare.favoritesTitle')}</h1><p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">{t('autocare.favoritesDescription')}</p></div>{providers.length > 0 && <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black text-primary">{providers.length}</span>}</div>{providers.length === 0 ? <EmptyFavorites /> : <div className="mt-8 grid gap-4 md:grid-cols-2">{providers.map((provider) => <FavoriteProviderCard key={provider.id} provider={provider} locale={locale} onRemove={() => toggle(provider.id)} />)}</div>}</div></main>
+    const guestIds = IS_REAL_API && !isClient ? [...favoriteIds].filter(isUuid) : []
+    const count = providers.length + guestIds.length
+
+    return <main className="bg-background"><div className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-8 sm:py-12"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.14em] text-primary">{t('autocare.favoritesEyebrow')}</p><h1 className="mt-2 text-3xl font-black tracking-tight text-foreground sm:text-4xl">{t('autocare.favoritesTitle')}</h1><p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">{t('autocare.favoritesDescription')}</p></div>{count > 0 && <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black text-primary">{count}</span>}</div>{count === 0 ? <EmptyFavorites /> : <div className="mt-8 grid gap-4 md:grid-cols-2">{providers.map((provider) => <FavoriteProviderCard key={provider.id} provider={provider} locale={locale} onRemove={() => toggle(provider.id)} />)}{guestIds.map((providerId) => <GuestFavoriteProvider key={providerId} providerId={providerId} locale={locale} onRemove={() => toggle(providerId)} />)}</div>}</div></main>
+}
+
+function GuestFavoriteProvider({ providerId, locale, onRemove }: { providerId: string; locale: string; onRemove: () => void }) {
+    const { t } = useTranslation()
+    const { data, isLoading, isError, refetch } = useGetAutoCareProviderProfileQuery(providerId)
+    if (data) return <FavoriteProviderCard provider={mapAutoCareProviderProfile(data)} locale={locale} onRemove={onRemove} />
+    return <StateCard variant={isLoading ? 'loading' : 'error'} title={t(isLoading ? 'common.loading' : 'common.failedToLoad')} action={isError ? <div className="flex flex-wrap gap-2"><RetryButton onRetry={refetch} label={t('common.retry')} /><button type="button" onClick={onRemove} className="min-h-11 px-3 text-sm font-semibold text-status-danger-foreground">{t('autocare.favoritesRemove')}</button></div> : undefined} />
 }
 
 function EmptyFavorites() {

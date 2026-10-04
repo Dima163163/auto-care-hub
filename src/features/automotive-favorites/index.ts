@@ -1,1 +1,1 @@
-export { useAutoCareFavorites } from './lib/useAutoCareFavorites'
+export { isUuid, useAutoCareFavorites } from './lib/useAutoCareFavorites'
