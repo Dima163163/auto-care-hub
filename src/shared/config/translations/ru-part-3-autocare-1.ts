@@ -1,4 +1,12 @@
 export const ruPart3Autocare1 = {
+        adminPlatformOverview: "Обзор платформы и системные операции",
+        adminQueueAppeals: "Апелляции",
+        adminQueueCatalog: "Каталог",
+        adminQueueChanges: "Изменения профиля",
+        adminQueueEvidence: "Документы",
+        adminQueueProfiles: "Профили",
+        adminQueueReports: "Жалобы",
+        adminWorkspaceQueues: "Очереди модерации",
         bonusActionHistory: "История бонусных операций и причины начислений",
         invitationValidUntil: "До {{date}}",
         allProviderBranches: "Все филиалы сервиса",
