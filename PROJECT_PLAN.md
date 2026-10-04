@@ -24,6 +24,10 @@
 N11 step 2: discovery/catalog/provider management/reviews получили 14 отдельных
 ответственностей; токены исходных 58 declarations, сборка и регрессии сохранены.
 
+N11 step 3: chat mutations/attachments/report decisions/assignments/blocks
+разделены на 11 модулей с прямыми imports общей политики доступа. PostgreSQL,
+unit и TypeScript PASS; исходные 40 declarations сохранены.
+
 ## Несрочный пакет аудита — 2026-10-03, один итоговый push
 
 Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
