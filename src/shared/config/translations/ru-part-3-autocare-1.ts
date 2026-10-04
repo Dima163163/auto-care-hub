@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        serviceTimeContext: "Время автосервиса · {{timezone}}",
         offeringDuration: "Длительность",
         sharedOfferingConditions: "Общие условия услуг",
         platformReviewsContext: "О поиске и работе платформы. Отзывы о ремонте — в профилях автосервисов.",

@@ -2134,3 +2134,5 @@ it does not introduce another runtime fix or claim pilot readiness.
 - [x] D13: hero профиля: спокойная иерархия имени/адреса/проверки, одна основная кнопка и вторичная ссылка на переписку; фото/факты и phone-only guards сохранены.
 
 - [x] D14: общие условия показываются один раз только при совпадении всех предложений; различающиеся включения/гарантии, тип цены и длительность сохранены в строках.
+
+- [x] D15: дата и время в сетке с 44px touch targets, pressed/disabled states, явным provider timezone и полноширинными error/loading состояниями; логика availability сохранена.

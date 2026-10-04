@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        serviceTimeContext: "Workshop time · {{timezone}}",
         offeringDuration: "Duration",
         sharedOfferingConditions: "Shared service conditions",
         platformReviewsContext: "About search and the platform. Repair reviews belong to workshop profiles.",
