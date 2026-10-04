@@ -1071,6 +1071,8 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        roadsideServices: "Roadside and mobile services",
+        workshopServices: "At the workshop",
         heroEyebrow: 'Automotive service marketplace',
         ownerRequestsEyebrow: 'Customer requests',
         ownerRequestsTitle: 'AutoCare request inbox',

@@ -1,4 +1,6 @@
 export const ruPart3Autocare1 = {
+        roadsideServices: "На дороге и с выездом",
+        workshopServices: "В автосервисе",
         ownerRequestsEyebrow: 'Заявки клиентов',
         ownerRequestsTitle: 'Входящие заявки AutoCare',
         ownerRequestsDescription: 'Отвечайте водителям, уточняйте объём работ и отправляйте предварительную смету из одного рабочего пространства.',
