@@ -516,7 +516,8 @@ test.describe('AutoCare real API smoke', () => {
         const requestsResponse = await request.get('/api/v1/service-requests/my', { headers: authorization })
         expect(requestsResponse.status()).toBe(200)
         const requests = await requestsResponse.json() as Array<{ id?: string }>
-        expect(requests.filter((entry) => entry.id === first.id)).toHaveLength(1)
+        const persistedCount = requests.filter((entry) => entry.id === first.id).length
+        expect(persistedCount).toBe(1)
     })
 
     for (const failure of ['offline', 'timeout'] as const) {
