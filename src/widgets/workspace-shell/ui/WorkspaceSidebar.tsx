@@ -21,7 +21,7 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps) {
     )
 
     return (
-        <aside className={`${isCollapsed ? 'w-[72px]' : 'w-[232px]'} hidden h-full min-h-0 shrink-0 overflow-hidden border-r bg-background transition-[width] duration-200 md:block`}>
+        <aside aria-label={t('navigation.profileWorkspace')} className={`${isCollapsed ? 'w-[72px]' : 'w-[232px]'} hidden h-full min-h-0 shrink-0 overflow-hidden border-r bg-background transition-[width] duration-200 md:block`}>
             <div className="flex h-full min-h-0 flex-col px-3 py-5">
                 <nav aria-label={t('navigation.profileWorkspace')} className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain pb-4">
                     {getWorkspaceNavigationGroups(role).map((group) => (
