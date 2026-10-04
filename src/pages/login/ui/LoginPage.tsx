@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router'
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { SocialAuthButtons } from '@/features/auth'
@@ -8,6 +8,11 @@ import { IS_MOCK_API } from '@/shared/config/api'
 import { FloatingInput } from '@/components/ui/floating-input'
 import { QueryStateCard } from '@/shared/ui/query-state-card'
 import { useLogin } from '../lib/useLogin'
+
+// Both build tools inline this setting before resolving the lazy module.
+const MockLoginGuidance = process.env.NEXT_PUBLIC_API_MODE === 'real'
+    ? () => null
+    : lazy(() => import('./MockLoginGuidance'))
 
 export function LoginPage() {
     const location = useLocation()
@@ -141,24 +146,7 @@ export function LoginPage() {
                     </div>
                 </form>
 
-                {IS_MOCK_API && (
-                    <div className="mt-6 rounded-xl border bg-card p-5 text-sm text-muted-foreground shadow-sm">
-                        <p className="font-medium text-foreground">
-                            {t('auth.mockUsers')}
-                        </p>
-
-                        <ul className="mt-3 space-y-2">
-                            <li>{t('auth.mockOwner')}</li>
-                            <li>{t('auth.mockStaff')}</li>
-                            <li>{t('auth.mockAdmin')}</li>
-                            <li>{t('auth.mockClient')}</li>
-                        </ul>
-
-                        <p className="mt-3">
-                            {t('auth.mockPasswordHint')}
-                        </p>
-                    </div>
-                )}
+                {IS_MOCK_API && <Suspense fallback={null}><MockLoginGuidance /></Suspense>}
             </section>
         </main>
     )

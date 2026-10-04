@@ -1,5 +1,15 @@
 # AutoCare Hub — Project Plan
 
+## Автономная UI/UX-порция — 2026-10-04
+
+- [x] U08: mock graph, login fixtures и demo favorites исключены из real Next/Vite;
+  Next guard сканирует static/server JS, HTML/RSC; 8 positive/negative tests PASS.
+- [ ] UX01: actionable event readiness, delayed-query regression и keyboard replay.
+- [ ] Полная локальная UI/UX-матрица, новые находки и функциональные исправления.
+- [ ] Актуализация published N11/design статусов и protected publication пакета.
+
+Реестр: `docs/audits/UI_UX_AUTONOMOUS_2026-10-04.md`.
+
 ## N11 — разделение ответственностей, 2026-10-04
 
 - [x] Заявки: отдельные создание/чтение, переписка, сметы, расписание,

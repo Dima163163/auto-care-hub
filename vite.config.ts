@@ -5,6 +5,10 @@ import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Match the Next build boundary so real compatibility builds omit mock-only UI.
+  define: {
+    'process.env.NEXT_PUBLIC_API_MODE': JSON.stringify(process.env.VITE_API_MODE ?? 'mock'),
+  },
   server: {
     proxy: {
       '/api': {

@@ -37,24 +37,28 @@ async function enableMocking() {
     }
 
     mockingPromise = (async () => {
-        try {
-            const { worker } = await import('@/app/mocks/browser')
+        // The direct conditional lets Next exclude the whole import graph.
+        // A runtime resolver or early return still emits its lazy chunks.
+        if (process.env.NEXT_PUBLIC_API_MODE !== 'real') {
+            try {
+                const { worker } = await import('@/app/mocks/browser')
 
-            await worker.start({
-                onUnhandledRequest(request) {
-                    if (new URL(request.url).pathname.startsWith('/api/')) {
-                        const message = `Unhandled mock API request: ${request.method} ${request.url}`
-                        if (strictMocking) {
-                            throw new Error(message)
+                await worker.start({
+                    onUnhandledRequest(request) {
+                        if (new URL(request.url).pathname.startsWith('/api/')) {
+                            const message = `Unhandled mock API request: ${request.method} ${request.url}`
+                            if (strictMocking) {
+                                throw new Error(message)
+                            }
+                            console.warn(`[MSW] ${message}`)
                         }
-                        console.warn(`[MSW] ${message}`)
-                    }
-                },
-            })
-        } catch (error) {
-            // Mocking must never block the application shell. API queries expose
-            // their own error/retry states when the worker cannot be registered.
-            console.warn('[AutoCare Hub mock API] worker unavailable', error)
+                    },
+                })
+            } catch (error) {
+                // Mocking must never block the application shell. API queries expose
+                // their own error/retry states when the worker cannot be registered.
+                console.warn('[AutoCare Hub mock API] worker unavailable', error)
+            }
         }
     })()
 

@@ -7,7 +7,7 @@ N01–N20 получили отдельные implementation commits. **18 пр�
 N09 и уточнённый по дизайн-обзору N10 остаются частичными.** Это не закрытие
 внешней production приёмки. Ниже исходные формулировки/статусы сохранены как
 история; актуальное состояние задают эта таблица и исправления возле каждого ID.
-Срочные U01/U02/U03/U08 остаются открытыми, 54 pilot gates и NO-GO не изменялись.
+Срочные U01/U02/U03 остаются открытыми; U08 исправлен автономной порцией 04.10 (приёмка ниже). 54 pilot gates и NO-GO не изменялись.
 
 | ID | Программный результат | Остаток |
 | --- | --- | --- |
@@ -173,6 +173,8 @@ status-only push не требуется. Каждый runtime finding и его
 **Улучшение:** исключать mock tree на этапе real Next build; проверять все выпускаемые Next client chunks и публичный initial HTML. Сохранить mock build отдельным тестовым профилем.
 
 **Приёмка:** real Next artifact не содержит fixture-маркеры/MSW fixtures, mock build работает; CI намеренно внесённый маркер в Next chunk отклоняет. Статус: открыто, регрессия границы, связана с V2-MVP-10.
+
+**Исправление автономной порции 04.10:** прямые build-time import guards исключают MSW, server mock profiles, demo favorites и login credentials. Mock-only guidance вынесен отдельно, переводы используют параметры; Vite определяет тот же compile boundary. Guard по умолчанию проверяет selected Next production BUILD_ID/manifest и рекурсивно static/server JS/HTML/RSC; Vite только при explicit format. Реальные сборки: Next 192, Vite 91 assets без 8 synthetic contact/account/provider markers; 8 positive/negative artifact cases PASS, 6 provider/login unit cases, strict types/lint и mock browser PASS. Guard включён в real E2E Quality и release snapshot workflow. Локальное исправление завершено; hosted exact-candidate status фиксируется после общего push.
 
 ### U09 · P1 · Санитизировать необработанные ошибки перед Fastify/Pino logging
 
