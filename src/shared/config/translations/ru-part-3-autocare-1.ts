@@ -1,4 +1,6 @@
 export const ruPart3Autocare1 = {
+        unblockUserAction: "Разблокировать",
+        blockUserAction: "Заблокировать",
         adminPlatformOverview: "Обзор платформы и системные операции",
         adminQueueAppeals: "Апелляции",
         adminQueueCatalog: "Каталог",
