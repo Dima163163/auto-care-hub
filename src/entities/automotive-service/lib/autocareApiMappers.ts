@@ -57,6 +57,7 @@ function mapOffer(offer: AutoCareApiOffer): ProviderOffering {
         price: offer.priceFromMinor / 100,
         priceTo: offer.priceToMinor === null ? null : offer.priceToMinor / 100,
         currency: offer.currencyCode,
+        bookingMode: offer.bookingMode,
         priceType: offer.priceType ?? (offer.priceToMinor === null ? 'from' : 'range'),
         duration: `${offer.durationMinutes} min`,
         durationMinutes: offer.durationMinutes,
