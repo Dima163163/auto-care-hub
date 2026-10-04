@@ -1,4 +1,6 @@
 export const ruPart3Autocare1 = {
+        securityStatistics: "Статистика и источники сигналов",
+        securityAdditionalFilters: "Дополнительные фильтры",
         unblockUserAction: "Разблокировать",
         blockUserAction: "Заблокировать",
         adminPlatformOverview: "Обзор платформы и системные операции",

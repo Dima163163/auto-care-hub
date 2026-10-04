@@ -1071,6 +1071,8 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        securityStatistics: "Statistics and signal sources",
+        securityAdditionalFilters: "Additional filters",
         unblockUserAction: "Unblock user",
         blockUserAction: "Block user",
         adminPlatformOverview: "Platform overview and system operations",
