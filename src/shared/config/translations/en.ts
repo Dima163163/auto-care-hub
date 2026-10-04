@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        requestsHistory: "Request history · {{count}}",
         assignedBranchAddressUnavailable: "Assigned branch address unavailable",
         partnerWorkspaceText: "For existing owner accounts: provider profiles, services and branches.",
         partnerAccountText: "Choose the service provider scenario when registering.",

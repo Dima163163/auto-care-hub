@@ -7,6 +7,7 @@ import type { AutoCareServiceRequest } from '@/entities/automotive-service'
 import { AutoCareRequestsPanel } from './AutoCareRequestsPanel'
 
 const mocks = vi.hoisted(() => ({
+    historyRequests: [] as AutoCareServiceRequest[],
     acceptQuote: vi.fn(),
     declineQuote: vi.fn(),
     decideReschedule: vi.fn(),
@@ -36,7 +37,7 @@ vi.mock('@/entities/automotive-service', () => ({
     useDecideAutoCareServiceRescheduleMutation: () => [mocks.decideReschedule, { isLoading: false, error: null }],
     useDeclineAutoCareServiceQuoteMutation: () => [mocks.declineQuote, { isLoading: false }],
     useGetMyAutoCareBonusAccountsQuery: () => ({ data: [], isLoading: false, error: null }),
-    useGetMyAutoCareServiceRequestsQuery: () => ({ data: [request], isLoading: false, isFetching: false, isError: false, error: null, refetch: vi.fn() }),
+    useGetMyAutoCareServiceRequestsQuery: () => ({ data: [request, ...mocks.historyRequests], isLoading: false, isFetching: false, isError: false, error: null, refetch: vi.fn() }),
     useRedeemAutoCareBonusMutation: () => [vi.fn(), { isLoading: false, error: null }],
 }))
 
@@ -59,6 +60,7 @@ vi.mock('@/shared/lib/useTranslation', () => ({
 
 describe('AutoCareRequestsPanel quote decisions', () => {
     beforeEach(() => {
+        mocks.historyRequests = []
         mocks.acceptQuote.mockReset().mockImplementation(() => ({
             unwrap: vi.fn().mockRejectedValue({ data: { message: 'Смета уже обработана.' } }),
         }))
@@ -103,4 +105,13 @@ describe('AutoCareRequestsPanel quote decisions', () => {
 
         expect(mocks.decideReschedule).toHaveBeenCalledWith({ requestId: 'request-1', rescheduleId: 'reschedule-1', decision: 'accept' })
     })
+    it('keeps completed requests in a collapsed history while pending decisions stay visible', async () => {
+        mocks.historyRequests = [{ ...request, id: 'closed-request', status: 'closed', reschedule: null, serviceLabels: { ru: 'Завершённая диагностика' } }]
+        render(<AutoCareRequestsPanel />)
+        expect(screen.getByText('Завершённая диагностика')).not.toBeVisible()
+        expect(screen.getByRole('button', { name: /Замена масла/ })).toBeVisible()
+        await userEvent.click(screen.getByText('autocare.requestsHistory'))
+        expect(screen.getByText('Завершённая диагностика')).toBeVisible()
+    })
+
 })
