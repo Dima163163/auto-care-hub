@@ -1,5 +1,26 @@
 # AutoCare Hub — Project Plan
 
+## N11 — разделение ответственностей, 2026-10-04
+
+- [x] Заявки: отдельные создание/чтение, переписка, сметы, расписание,
+  переходы, вложения, доступ и DTO; исходные транзакции сохранены.
+- [x] Каталог и сервисы: discovery/geo/markets, профиль, ресурсы, media,
+  настройки и review workflows.
+- [x] Чаты: сообщения, вложения, reports, назначения и санкции с общим access policy.
+- [x] Frontend: 136 endpoint bodies и 212 DTO/schema declarations перенесены
+  в доменные модули; единая RTK registration и прежние hooks сохранены.
+- [x] MSW: 244 callbacks в 18 route families, единое состояние и прежний
+  порядок; contract checks читают зарегистрированные handler modules.
+- [x] Strict types, ESLint, Next/backend builds, frontend 189/609,
+  backend unit 387/1406, isolated PostgreSQL integration 23/88 и full 410/1494 PASS.
+- [ ] Полные mock browser scenarios и protected dev→main публикация.
+- [ ] Визуальный обзор всего продукта: реальные скриншоты и отдельные
+  изображения предложений для выбора владельцем; product UI пока не меняется.
+
+Карта: `docs/architecture/AUTOCARE_RESPONSIBILITIES.md`. Каждый implementation
+шаг — отдельный коммит; весь N11 пакет — одним push. Исходная dirty-копия не
+используется для работы. Новые дизайн-находки фиксируются в отдельном обзоре.
+
 ## Несрочный пакет аудита — 2026-10-03, один итоговый push
 
 Пользователь разрешил выполнить несрочные N01–N20 отдельными коммитами и
