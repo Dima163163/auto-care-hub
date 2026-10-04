@@ -2,10 +2,11 @@ import { BadgeCheck, ChevronDown, Clock3, MapPin, Star, Wrench } from 'lucide-re
 import { Link } from 'react-router'
 import { useState } from 'react'
 
+import { formatProviderPreviewPrice } from '@/entities/automotive-service'
 import type { AutoCareApiOffer, AutoCareApiProvider, AutoCareApiServiceDefinition } from '@/entities/automotive-service'
 import { routePaths } from '@/shared/constants/routes'
 import type { SupportedLocale } from '@/shared/config/i18n'
-import { formatCurrency } from '@/shared/lib/locale-format'
+import { formatDurationMinutes } from '@/shared/lib/locale-format'
 import { formatAutoCareReviewCount } from '@/shared/lib/formatAutoCareCount'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -78,7 +79,7 @@ export function OwnerBranchServices({ provider, definitions, locale, labels, isO
                         <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3.5 text-primary" />{labels.hours}: {provider.location.hours}</span>
                     </div>
                     {offers.length > 0 ? (
-                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="divide-y divide-border">
                             {offers.map((offer) => <ServiceOfferCard key={offer.id} providerId={provider.id} offer={offer} definitions={definitions} locale={locale} labels={labels} />)}
                         </div>
                     ) : (
@@ -94,19 +95,16 @@ function ServiceOfferCard({ providerId, offer, definitions, locale, labels }: { 
     const [isEditing, setIsEditing] = useState(false)
     const definition = definitions.find((item) => item.id === offer.serviceDefinitionId || item.slug === offer.serviceSlug)
     const title = offer.serviceLabels?.[locale] ?? definition?.labels[locale] ?? offer.serviceLabels?.en ?? definition?.labels.en ?? offer.serviceSlug ?? labels.serviceFallback
-    const price = formatCurrency(offer.priceFromMinor / 100, offer.currencyCode, locale)
+    const { t } = useTranslation()
+    const price = formatProviderPreviewPrice({ price: offer.priceFromMinor / 100, priceTo: offer.priceToMinor == null ? null : offer.priceToMinor / 100, currency: offer.currencyCode, priceType: offer.priceType }, locale, { from: (value) => t('autocare.fromPrice', { price: value }), quoteRequired: labels.estimate })
 
     return (
         <>
-            <article className="rounded-[var(--radius-card)] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                    <span className="flex size-9 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Wrench className="size-4" /></span>
-                    <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-black text-muted-foreground">{offer.priceType === 'quote_required' ? labels.estimate : labels.from}</span>
-                </div>
-                <div className="mt-4 flex items-start justify-between gap-3"><h2 className="text-sm font-black text-foreground">{title}</h2><EditOfferButton label={labels.edit} onClick={() => setIsEditing(true)} /></div>
-                {offer.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{offer.description}</p> : null}
-                <p className="mt-2 text-lg font-black text-foreground">{offer.priceType === 'quote_required' ? labels.estimate : price}</p>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground">{offer.durationMinutes} min · {offer.warrantyText ?? labels.notProvided}</p>
+            <article className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(100px,0.35fr)_minmax(90px,0.3fr)_auto] sm:items-center">
+                <div className="min-w-0"><h2 className="text-sm font-semibold text-foreground">{title}</h2>{offer.description ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{offer.description}</p> : null}<p className="mt-1 text-xs text-muted-foreground">{offer.warrantyText ?? labels.notProvided}</p></div>
+                <div><p className="text-sm font-semibold text-foreground">{price}</p><p className="mt-1 text-xs text-muted-foreground">{t(`autocare.priceType.${offer.priceType ?? 'from'}`)}</p></div>
+                <p className="text-sm text-muted-foreground">{formatDurationMinutes(offer.durationMinutes, locale)}</p>
+                <EditOfferButton label={labels.edit} onClick={() => setIsEditing(true)} />
             </article>
             <OwnerOfferDialog title={title} isOpen={isEditing} onOpenChange={setIsEditing} providerId={providerId} offer={offer} labels={labels} onCancel={() => setIsEditing(false)} onSaved={() => setIsEditing(false)} />
         </>
