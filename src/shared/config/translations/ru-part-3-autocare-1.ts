@@ -1,4 +1,8 @@
 export const ruPart3Autocare1 = {
+        notificationDeliverySettings: "Настройки доставки уведомлений",
+        noUnreadNotifications: "В загруженной выборке нет непрочитанных уведомлений",
+        allNotifications: "Все уведомления",
+        notificationFilter: "Фильтр уведомлений",
         optionalConsentAvailability: "Необязательные функции пока недоступны. Ранее сохранённое согласие можно отозвать.",
         marketingUnavailable: "Публичный маркетинговый канал пока не опубликован.",
         analyticsUnavailable: "Аналитика продукта пока не включена.",

@@ -1071,6 +1071,10 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        notificationDeliverySettings: "Notification delivery settings",
+        noUnreadNotifications: "No unread notifications in the loaded selection",
+        allNotifications: "All notifications",
+        notificationFilter: "Notification filter",
         optionalConsentAvailability: "Optional features are unavailable. Previously recorded consent can still be withdrawn.",
         marketingUnavailable: "No public marketing channel is available yet.",
         analyticsUnavailable: "Product analytics is not enabled yet.",
