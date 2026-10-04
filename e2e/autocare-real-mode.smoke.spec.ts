@@ -463,110 +463,60 @@ test.describe('AutoCare real API smoke', () => {
         }
     })
 
-    test('real API keeps a repeated request idempotent in PostgreSQL', async ({ page }) => {
-        await signIn(page, 'client.demo@autocarehub.test')
-
-        const result = await page.evaluate(async () => {
-            const csrfResponse = await fetch('/api/auth/csrf')
-            const csrf = await csrfResponse.json() as { csrfToken?: string }
-            if (!csrf.csrfToken) throw new Error('Real API did not return a CSRF token.')
-
-            // Refresh once inside the test page and keep the returned access
-            // token local to this isolated API flow. Navigating to a cabinet
-            // can start another refresh rotation in parallel and revoke the
-            // session while the idempotency assertions are running.
-            let sessionResponse: Response | null = null
-            for (let attempt = 0; attempt < 3; attempt += 1) {
-                sessionResponse = await fetch('/api/auth/refresh', {
-                    method: 'POST',
-                    headers: { 'x-csrf-token': csrf.csrfToken },
-                })
-                if (sessionResponse.status !== 429 || attempt === 2) break
-                const retryAfterSeconds = Number(sessionResponse.headers.get('retry-after') ?? '1')
-                const retryAfterMs = Math.min(Math.max(Number.isFinite(retryAfterSeconds) ? retryAfterSeconds * 1_000 : 1_000, 1_000), 75_000)
-                await new Promise((resolve) => setTimeout(resolve, retryAfterMs + 100))
-            }
-            const session = await sessionResponse!.json() as { accessToken?: string; code?: string }
-            if (!session.accessToken) throw new Error(`Real API did not return an access token (status ${sessionResponse!.status}, code ${session.code ?? 'unknown'}).`)
-            const token = session.accessToken
-            const authorization = { Authorization: `Bearer ${token}` }
-
-            const discoveryResponse = await fetch('/api/v1/discovery/providers?serviceId=oil-change&marketId=moscow&radiusKm=25&limit=8', {
-                headers: authorization,
-            })
-            const discovery = await discoveryResponse.json() as {
-                items?: Array<{
-                    provider?: { id?: string; location?: { id?: string } }
-                    offer?: { id?: string; bookingMode?: string }
-                }>
-            }
-            const item = discovery.items?.find((candidate) => candidate.offer?.bookingMode === 'request') ?? discovery.items?.[0]
-            const providerId = item?.provider?.id
-            const locationId = item?.provider?.location?.id
-            const offeringId = item?.offer?.id
-            if (!providerId || !locationId || !offeringId) {
-                throw new Error('Real discovery did not return a request-capable provider offering.')
-            }
-
-            const idempotencyKey = `real-e2e-request-${crypto.randomUUID()}`
-            const body = {
-                providerId,
-                locationId,
-                offeringId,
-                preferredAt: '2099-02-15T10:00:00+03:00',
-                vehicleId: null,
-                vehicleSnapshot: null,
-                contactSnapshot: {
-                    name: 'Demo Client',
-                    email: 'client.demo@autocarehub.test',
-                    phone: '+79990000000',
-                },
-                note: 'Real API idempotency smoke request.',
-                dataProcessingConsent: true,
-            }
-            const headers = {
-                'content-type': 'application/json',
-                'x-csrf-token': csrf.csrfToken,
-                'idempotency-key': idempotencyKey,
-                ...authorization,
-            }
-            const firstResponse = await fetch('/api/v1/service-requests', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(body),
-            })
-            const firstPayload = await firstResponse.json() as unknown
-            const first = firstPayload as { id?: string }
-            const secondResponse = await fetch('/api/v1/service-requests', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(body),
-            })
-            const secondPayload = await secondResponse.json() as unknown
-            const second = secondPayload as { id?: string }
-            const requestsResponse = await fetch('/api/v1/service-requests/my', { headers: authorization })
-            const requestsPayload = await requestsResponse.json() as unknown
-            const requests = Array.isArray(requestsPayload) ? requestsPayload as Array<{ id?: string }> : []
-
-            return {
-                firstStatus: firstResponse.status,
-                secondStatus: secondResponse.status,
-                firstId: first.id,
-                secondId: second.id,
-                persistedCount: requests.filter((request) => request.id === first.id).length,
-                firstPayload,
-                secondPayload,
-                tokenLength: token.length,
-                requestsStatus: requestsResponse.status,
-                requestsPayloadType: Array.isArray(requestsPayload) ? 'array' : typeof requestsPayload,
-            }
+    test('real API keeps a repeated request idempotent in PostgreSQL', async ({ request }) => {
+        // Keep this API transaction in its own cookie jar. A mounted browser
+        // application can rotate its session while the test is using a token
+        // returned by a manual refresh, invalidating the transaction token.
+        // Browser login, rotation and request-form flows have separate cases.
+        const origin = 'http://127.0.0.1:5174'
+        const csrfResponse = await request.get('/api/auth/csrf')
+        expect(csrfResponse.status()).toBe(200)
+        const csrf = await csrfResponse.json() as { csrfToken?: string }
+        if (!csrf.csrfToken) throw new Error('Real API did not return a CSRF token.')
+        const sessionResponse = await request.post('/api/auth/login', {
+            headers: { origin, 'x-csrf-token': csrf.csrfToken },
+            data: { email: 'client.demo@autocarehub.test', password: demoPassword },
         })
-
-        expect(result.firstStatus, JSON.stringify(result)).toBe(200)
-        expect(result.secondStatus, JSON.stringify(result)).toBe(200)
-        expect(result.firstId).toBeTruthy()
-        expect(result.secondId).toBe(result.firstId)
-        expect(result.persistedCount).toBe(1)
+        expect(sessionResponse.status()).toBe(200)
+        const session = await sessionResponse.json() as { accessToken?: string }
+        if (!session.accessToken) throw new Error('Real API did not return an access token.')
+        const authorization = { Authorization: `Bearer ${session.accessToken}` }
+        expect((await request.get('/api/auth/me', { headers: authorization })).status()).toBe(200)
+        const discoveryResponse = await request.get('/api/v1/discovery/providers?serviceId=oil-change&marketId=moscow&radiusKm=25&limit=8', { headers: authorization })
+        expect(discoveryResponse.status()).toBe(200)
+        const discovery = await discoveryResponse.json() as {
+            items?: Array<{
+                provider?: { id?: string; location?: { id?: string } }
+                offer?: { id?: string; bookingMode?: string }
+            }>
+        }
+        const item = discovery.items?.find((candidate) => candidate.offer?.bookingMode === 'request') ?? discovery.items?.[0]
+        const providerId = item?.provider?.id
+        const locationId = item?.provider?.location?.id
+        const offeringId = item?.offer?.id
+        if (!providerId || !locationId || !offeringId) throw new Error('Real discovery did not return a request-capable provider offering.')
+        const idempotencyKey = `real-e2e-request-${crypto.randomUUID()}`
+        const data = {
+            providerId, locationId, offeringId,
+            preferredAt: '2099-02-15T10:00:00+03:00',
+            vehicleId: null, vehicleSnapshot: null,
+            contactSnapshot: { name: 'Demo Client', email: 'client.demo@autocarehub.test', phone: '+79990000000' },
+            note: 'Real API idempotency smoke request.',
+            dataProcessingConsent: true,
+        }
+        const headers = { origin, 'x-csrf-token': csrf.csrfToken, 'idempotency-key': idempotencyKey, ...authorization }
+        const firstResponse = await request.post('/api/v1/service-requests', { headers, data })
+        const secondResponse = await request.post('/api/v1/service-requests', { headers, data })
+        expect(firstResponse.status(), await firstResponse.text()).toBe(200)
+        expect(secondResponse.status(), await secondResponse.text()).toBe(200)
+        const first = await firstResponse.json() as { id?: string }
+        const second = await secondResponse.json() as { id?: string }
+        expect(first.id).toBeTruthy()
+        expect(second.id).toBe(first.id)
+        const requestsResponse = await request.get('/api/v1/service-requests/my', { headers: authorization })
+        expect(requestsResponse.status()).toBe(200)
+        const requests = await requestsResponse.json() as Array<{ id?: string }>
+        expect(requests.filter((entry) => entry.id === first.id)).toHaveLength(1)
     })
 
     for (const failure of ['offline', 'timeout'] as const) {
