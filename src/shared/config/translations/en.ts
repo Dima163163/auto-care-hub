@@ -1071,6 +1071,9 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        displayedReviewCount: "Reviews in the loaded selection: {{count}}",
+        reviewsAndTrustContext: "Repair ratings and the trust index are different measures. Profile evidence and index factors are available separately.",
+        providerRatingScope: "Workshop rating across all services",
         serviceTimeContext: "Workshop time · {{timezone}}",
         offeringDuration: "Duration",
         sharedOfferingConditions: "Shared service conditions",

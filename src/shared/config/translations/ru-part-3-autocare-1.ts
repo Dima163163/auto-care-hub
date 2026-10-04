@@ -1,4 +1,7 @@
 export const ruPart3Autocare1 = {
+        displayedReviewCount: "Отзывов в загруженной выборке: {{count}}",
+        reviewsAndTrustContext: "Оценки ремонта и индекс доверия — разные показатели. Основания проверки профиля и факторы индекса доступны отдельно.",
+        providerRatingScope: "Оценка автосервиса по всем услугам",
         serviceTimeContext: "Время автосервиса · {{timezone}}",
         offeringDuration: "Длительность",
         sharedOfferingConditions: "Общие условия услуг",
