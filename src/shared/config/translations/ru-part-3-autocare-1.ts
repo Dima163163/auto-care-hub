@@ -1,4 +1,8 @@
 export const ruPart3Autocare1 = {
+        helpContactUnavailable: "Публичный канал поддержки пока не опубликован. По текущей заявке можно написать сервису в чате; жалоба на сообщение доступна в меню сообщения.",
+        helpNextStep: "Перейти к действию",
+        helpTasksDescription: "Выберите сценарий или найдите вопрос. В ответах есть переход к нужному разделу.",
+        helpTasksTitle: "Помощь по вашей задаче",
         platformTrustPolicy: "Правила доверия",
         platformGeography: "География",
         platformAreas: "Разделы управления платформой",
