@@ -13,7 +13,8 @@
   порядок; contract checks читают зарегистрированные handler modules.
 - [x] Strict types, ESLint, Next/backend builds, frontend 189/609,
   backend unit 387/1406, isolated PostgreSQL integration 23/88 и full 410/1494 PASS.
-- [ ] Полные mock browser scenarios и protected dev→main публикация.
+- [x] Полные mock browser scenarios: 171 PASS, первый запуск, desktop/tablet/mobile (18.8m).
+- [ ] Protected dev→main публикация: оба exact-candidate Quality events обязательны.
 - [ ] Визуальный обзор всего продукта: реальные скриншоты и отдельные
   изображения предложений для выбора владельцем; product UI пока не меняется.
 
@@ -69,8 +70,8 @@ N11 step 5: MSW workflows в 18 группах с общей fixture initializat
 - [x] N20: 171 mock E2E first-attempt PASS; отдельно 9 strict-MSW city repeats PASS.
 - [ ] N09: engine/runbook готовы, production DB adapter и масштабный rollout
   ожидают U01/U02 key/envelope решения и recovery evidence.
-- [ ] N11: chat read model и mock access policy выделены; дальнейшие
-  request/provider/frontend API вертикальные refactors остаются в реестре.
+- [x] N11: завершён дополнительной порцией 04.10; карта responsibilities и
+  полная локальная regression-приёмка находятся выше.
 
 Итог локальной приёмки пакета: frontend 189/609; backend unit 387/1406;
 backend full с isolated DB 410/1494; integration 23/88 без skip; migrations,

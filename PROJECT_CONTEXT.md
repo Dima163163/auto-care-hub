@@ -1,5 +1,41 @@
 # AutoCare Hub Project Context
 
+## Текущая работа — N11 и дизайн-обзор, 2026-10-04
+
+Владелец поручил закончить N11, затем проверить весь дизайн и показать пары
+«текущий скриншот / предложение», чтобы выбрать будущие изменения. Основной
+агент работает напрямую; субагенты не запрошены. Product UI/styling не менялись.
+N11 выполнен в изолированной CLI worktree `/private/tmp/autocare-hub-urgent-audit-batch-2`,
+ветка `codex/n11-responsibility-refactor-2026-10-04`, исходный dev `bb108e1` и
+no-content sync main `3559ad7` (`e243634`). Первичные 3 dirty-файла сохранены.
+
+Request use cases, provider/discovery/review workflows и chat/moderation теперь
+имеют 39 самостоятельных backend responsibilities; прежние public facades и
+transaction bodies сохранены. Frontend API: 212 DTO/schema declarations и 136
+endpoint bodies в доменных файлах, одна RTK registration и прежние hooks.
+MSW: 244 callbacks в 18 families, общая fixture initialization, прежний порядок
+регистрации; contract guards читают именно зарегистрированные modules.
+Карта: `docs/architecture/AUTOCARE_RESPONSIBILITIES.md`.
+
+Локальная приёмка: frontend 189/609, backend unit 387/1406, PostgreSQL integration
+23/88 без skip, полный backend 410/1494, миграции/seed/integrity/transition smoke,
+Next production build, TypeScript/ESLint/route guards PASS. Полный mock browser
+suite: 171 PASS с первого запуска, 18.8m, desktop/tablet/mobile. Hosted publication
+фиксируется по фактическому PR/Actions результату, без второго status-only push.
+
+Предыдущий пакет N01–N20 уже опубликован: PR #11 merged `3559ad7`, оба Quality
+events на `bb108e1` PASS attempt 1, required-only promotion PASS; tree main/dev
+совпал. Эта новая N11 порция тоже использует отдельные коммиты и один push,
+обычный protected dev→main PR; обход защиты не разрешён.
+
+Дизайн-артефакты сохраняются вне production checkout:
+`/Users/a1/Desktop/my-projects/AutoCareHub/design-review-2026-10-04/`.
+Все текущие экраны — локальная production mock-сборка с synthetic accounts.
+Выявлено уточнение N10: footer исправлен, но `/contacts` и help mailto по прежнему
+содержат неподтверждённые каналы; onboarding упоминает кабинеты. Это записывается
+в очередь выбора, а не маскируется предыдущим closed статусом. U01/U02/U03/U08,
+N09 adapter/rollout и внешний pilot NO-GO сохраняются.
+
 ## Текущая работа — несрочный пакет 2026-10-03
 
 Пользователь попросил исправить N01–N20 отдельными коммитами с одним итоговым
