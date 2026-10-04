@@ -1071,6 +1071,8 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        requiredLegalConsents: "Required legal consents",
+        accountDetailsGroup: "Account details",
         helpContactUnavailable: "A public support channel has not been published yet. Contact your provider in the request chat; report a message from its message menu.",
         helpNextStep: "Continue to action",
         helpTasksDescription: "Choose a scenario or find a question. Answers link to the relevant section.",

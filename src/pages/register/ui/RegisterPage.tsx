@@ -1,4 +1,4 @@
-import { CarFront, Globe2, MessageCircle, ShieldCheck, Store } from 'lucide-react'
+import { CarFront, Store } from 'lucide-react'
 import { Link } from 'react-router'
 import { useEffect, useRef } from 'react'
 import { SocialAuthButtons } from '@/features/auth'
@@ -19,11 +19,6 @@ export function RegisterPage() {
         onSubmit
     } = useRegister()
     const formErrorRef = useRef<HTMLParagraphElement>(null)
-    const registrationBenefits = [
-        'auth.registrationBenefit1',
-        'auth.registrationBenefit2',
-        'auth.registrationBenefit3',
-    ] as const
 
     useEffect(() => {
         if (formError) {
@@ -34,26 +29,17 @@ export function RegisterPage() {
     return (
         <main className="w-full">
             <section className="mx-auto">
-                <div className="mb-7">
-                    <div className="flex items-center justify-between gap-4">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                            {t('auth.registrationEyebrow')}
-                        </p>
-                        <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
-                            AutoCare Hub
-                        </span>
-                    </div>
-
-                    <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+                <div className="mb-5">
+                    <h1 className=" text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
                         {t('auth.joinTitle')}
                     </h1>
 
-                    <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                         {t(IS_MOCK_API ? 'auth.joinDescription' : 'auth.joinDescriptionReal')}
                     </p>
                 </div>
 
-                <form onSubmit={onSubmit} className="rounded-[var(--radius-panel)] border border-border/80 bg-card/95 p-5 shadow-[0_18px_50px_-28px_hsl(var(--foreground)/.35)] backdrop-blur sm:p-7">
+                <form onSubmit={onSubmit} className="rounded-[var(--radius-panel)] border border-border/80 bg-card/95 p-5 shadow-sm sm:p-6">
                     {formError && (
                         <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
                             <p
@@ -69,35 +55,33 @@ export function RegisterPage() {
                     )}
 
                     <div className="space-y-5">
-                        <div>
-                            <div className="flex items-end justify-between gap-3">
-                                <p className="text-sm font-black text-foreground">{t('auth.accountType')}</p>
-                                <span className="text-[11px] font-medium text-muted-foreground">1 / 2</span>
-                            </div>
-                            <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('auth.accountTypeDescription')}</p>
+                        <fieldset>
+                            <legend className="text-sm font-semibold text-foreground">{t('auth.accountType')}</legend>
                             <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                 <label className="group relative cursor-pointer">
                                     <input type="radio" value="client" className="peer sr-only" {...register('role')} />
-                                    <span className="block rounded-[var(--radius-card)] border border-border bg-background p-4 transition-all peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:shadow-[0_0_0_3px_hsl(var(--primary)/.1)] group-hover:border-primary/50">
+                                    <span className="block rounded-[var(--radius-card)] border border-border bg-background p-3 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:shadow-[0_0_0_3px_hsl(var(--primary)/.1)] group-hover:border-primary/50">
                                         <span className="flex items-start gap-3">
                                             <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><CarFront className="size-4" /></span>
-                                            <span><span className="block text-sm font-black">{t('auth.clientRoleTitle')}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t('auth.clientRoleDescription')}</span></span>
+                                            <span><span className="block text-sm font-black">{t('auth.clientRoleTitle')}</span><span className="sr-only">{t('auth.clientRoleDescription')}</span></span>
                                         </span>
                                     </span>
                                 </label>
                                 <label className="group relative cursor-pointer">
                                     <input type="radio" value="owner" className="peer sr-only" {...register('role')} />
-                                    <span className="block rounded-[var(--radius-card)] border border-border bg-background p-4 transition-all peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:shadow-[0_0_0_3px_hsl(var(--primary)/.1)] group-hover:border-primary/50">
+                                    <span className="block rounded-[var(--radius-card)] border border-border bg-background p-3 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:shadow-[0_0_0_3px_hsl(var(--primary)/.1)] group-hover:border-primary/50">
                                         <span className="flex items-start gap-3">
                                             <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-primary/10 text-primary"><Store className="size-4" /></span>
-                                            <span><span className="block text-sm font-black">{t('auth.ownerRoleTitle')}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t('auth.ownerRoleDescription')}</span></span>
+                                            <span><span className="block text-sm font-black">{t('auth.ownerRoleTitle')}</span><span className="sr-only">{t('auth.ownerRoleDescription')}</span></span>
                                         </span>
                                     </span>
                                 </label>
                             </div>
                             {errors.role && <p id="register-role-error" role="alert" className="mt-2 text-sm text-destructive">{errors.role.message}</p>}
-                        </div>
+                        </fieldset>
 
+                        <fieldset className="space-y-4">
+                            <legend className="mb-3 text-sm font-semibold">{t('autocare.accountDetailsGroup')}</legend>
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <FloatingInput
@@ -148,22 +132,24 @@ export function RegisterPage() {
                             </div>
                         </div>
 
-                        <div className="grid gap-3 rounded-[var(--radius-card)] border border-border bg-background p-4 text-sm">
-                            <label className="flex items-start gap-3 text-muted-foreground">
+                        </fieldset>
+                        <fieldset className="grid gap-3 rounded-[var(--radius-card)] border border-border bg-background p-4 text-sm">
+                            <legend className="px-1 text-sm font-semibold">{t('autocare.requiredLegalConsents')}</legend>
+                            <label className="flex min-h-11 items-start gap-3 text-muted-foreground">
                                 <input type="checkbox" className="mt-1 size-4 shrink-0 accent-primary" {...register('termsAccepted')} />
                                 <span>
                                     {t('auth.termsConsentPrefix')} <Link className="font-bold text-primary hover:underline" to={ROUTES.agreement} target="_blank" rel="noreferrer">{t('info.legal.agreement.shortTitle')}</Link>.
                                 </span>
                             </label>
                             {errors.termsAccepted && <p role="alert" className="text-sm text-destructive">{errors.termsAccepted.message}</p>}
-                            <label className="flex items-start gap-3 text-muted-foreground">
+                            <label className="flex min-h-11 items-start gap-3 text-muted-foreground">
                                 <input type="checkbox" className="mt-1 size-4 shrink-0 accent-primary" {...register('privacyAccepted')} />
                                 <span>
                                     {t('auth.privacyConsentPrefix')} <Link className="font-bold text-primary hover:underline" to={ROUTES.privacy} target="_blank" rel="noreferrer">{t('info.legal.privacy.shortTitle')}</Link>.
                                 </span>
                             </label>
                             {errors.privacyAccepted && <p role="alert" className="text-sm text-destructive">{errors.privacyAccepted.message}</p>}
-                        </div>
+                        </fieldset>
                     </div>
 
                     <Button
@@ -173,13 +159,6 @@ export function RegisterPage() {
                     >
                         {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
                     </Button>
-
-                    <div className="mt-5 grid gap-2 border-t border-border pt-5 text-xs font-semibold text-muted-foreground sm:grid-cols-3">
-                        {registrationBenefits.map((benefitKey, index) => {
-                            const Icon = [ShieldCheck, MessageCircle, Globe2][index]
-                            return <span key={benefitKey} className="flex items-start gap-2"><Icon className="mt-0.5 size-3.5 shrink-0 text-primary" />{t(benefitKey)}</span>
-                        })}
-                    </div>
 
                     <div className="mt-6">
                         <SocialAuthButtons

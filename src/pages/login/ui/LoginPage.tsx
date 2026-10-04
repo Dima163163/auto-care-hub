@@ -32,16 +32,12 @@ export function LoginPage() {
     return (
         <main className="w-full">
             <section className="mx-auto">
-                <div className="mb-8">
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                        {t('auth.welcomeBack')}
-                    </p>
-
-                    <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+                <div className="mb-5">
+                    <h1 className=" text-3xl font-semibold tracking-tight">
                         {t('auth.signInTitle')}
                     </h1>
 
-                    <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                         {t(IS_MOCK_API
                             ? 'auth.signInDescription'
                             : 'auth.signInDescriptionReal')}
@@ -63,7 +59,7 @@ export function LoginPage() {
 
                 <form
                     onSubmit={onSubmit}
-                    className="rounded-xl border bg-card p-6 shadow-sm"
+                    className="rounded-xl border bg-card p-5 shadow-sm sm:p-6"
                 >
                     {formError && (
                         <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
@@ -79,7 +75,7 @@ export function LoginPage() {
                         </div>
                     )}
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         <div>
                             <FloatingInput
                                 id="email"
