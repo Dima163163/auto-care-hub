@@ -1071,6 +1071,7 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        chatAccessUnavailable: "Conversation access is unavailable",
         backToChats: "Back to chats",
         requestsNeedResponse: "Need your response: {{count}}",
         requestReviewHint: "Review the service and time before sending your request.",

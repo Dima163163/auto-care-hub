@@ -253,6 +253,8 @@ describe('ChatsPage', () => {
 
         expect(await screen.findByRole('alert')).toHaveTextContent('autocare.chatReadAccessExpired')
         expect(screen.queryByText('Sensitive chat text')).not.toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'autocare.chatWorkspaceModeratorQueue' })).toHaveAttribute('href', '/admin/dashboard#admin-chat-reports')
+        expect(screen.queryByPlaceholderText('autocare.chatPlaceholder')).not.toBeInTheDocument()
         expect(mocks.getChat).toHaveBeenCalledWith(expect.objectContaining({ chatId: 'chat-1' }), expect.objectContaining({ skip: true }))
         expect(mocks.markRead).not.toHaveBeenCalled()
     })
