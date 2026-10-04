@@ -1071,6 +1071,12 @@ export const enTranslations = {
         blockingAction: 'Blocking...',
     },
     autocare: {
+        partnerWorkspaceText: "For existing owner accounts: provider profiles, services and branches.",
+        partnerAccountText: "Choose the service provider scenario when registering.",
+        partnerJoinProcessText: "Review the steps for creating a profile and publishing offers.",
+        partnerJoinProcessTitle: "How to add a provider",
+        partnerCurrentPath: "Add your provider profile through the owner workspace. The owner guide describes listing terms and onboarding steps.",
+        blogPublicationStatus: "Dedicated articles have not been published yet. Practical answers are available in Help.",
         assignedConfirmedVisits: "Accessible confirmed visits",
         assignedCalendarCapacityUnavailable: "Branch capacity settings are not loaded. Confirmed visits from accessible requests are shown below.",
         allAccessibleRequests: "All accessible requests",
