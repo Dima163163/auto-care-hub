@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -102,4 +102,11 @@ describe('OwnerProviderMembersPanel', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent('Access changed by another owner.')
         expect(screen.getByText('Alex Staff')).toBeVisible()
     })
+    it('does not substitute the default branch address for an unknown member assignment', () => {
+        render(<OwnerProviderMembersPanel provider={{ ...provider, location: { ...provider.location, id: 'default-branch', address: 'Unrelated default address' } }} />)
+        const members = within(screen.getByTestId('owner-provider-members'))
+        expect(members.queryByText('Unrelated default address')).not.toBeInTheDocument()
+        expect(members.getAllByText('autocare.assignedBranchAddressUnavailable')).toHaveLength(2)
+    })
+
 })

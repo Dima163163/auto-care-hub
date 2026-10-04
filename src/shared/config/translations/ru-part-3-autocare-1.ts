@@ -1,4 +1,5 @@
 export const ruPart3Autocare1 = {
+        assignedBranchAddressUnavailable: "Адрес назначенного филиала недоступен",
         partnerWorkspaceText: "Для действующего аккаунта владельца: профили сервисов, услуги и филиалы.",
         partnerAccountText: "При регистрации выберите сценарий владельца автосервиса.",
         partnerJoinProcessText: "Посмотрите порядок создания профиля и публикации предложений.",
