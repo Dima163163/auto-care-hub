@@ -25,7 +25,7 @@ export function OwnerAutoCareProviderDetailsPage() {
     const requestedSection = searchParams.get('section') ?? 'overview'
     const initialSection = ['overview', 'profile', 'evidence', 'communication', 'team', 'bonuses'].includes(requestedSection) ? requestedSection : 'overview'
     const [sectionState, setSectionState] = useState({ providerId: id, section: '' })
-    const activeSection = sectionState.providerId === id && sectionState.section ? sectionState.section : initialSection
+    const requestedActiveSection = sectionState.providerId === id && sectionState.section ? sectionState.section : initialSection
     const { data: providers = [], isLoading, isError, error, refetch } = useGetOwnerAutoCareProvidersQuery()
     const workspaceAccess = useGetOwnerAutoCareWorkspaceAccessQuery()
     const provider = providers.find((item) => item.id === id)
@@ -36,6 +36,7 @@ export function OwnerAutoCareProviderDetailsPage() {
 
     const scope = workspaceAccess.data?.scopes.find((item) => item.providerId === provider.id)
     const isDirectOwner = scope?.roles.includes('owner') ?? false
+    const activeSection = isDirectOwner ? requestedActiveSection : 'overview'
 
     return <main className="min-h-full bg-background px-4 py-8 lg:px-8"><section className="mx-auto max-w-6xl"><Link to={ROUTES.ownerAutoCareProviders} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline"><ArrowLeft className="size-4" />{t('auth.accountMenuAllBranches')}</Link><PageHeader eyebrow={t('autocare.ownerProviderDetailsEyebrow')} title={provider.name} description={provider.description ?? t('common.notProvided')} /><p className="mb-4 text-sm text-muted-foreground">{provider.location.address}</p><div className="mb-5 flex flex-wrap gap-2" role="group" aria-label={t('autocare.providerWorkspaceSections')}>
         {(isDirectOwner ? ['overview', 'profile', 'evidence', 'communication', 'team', 'bonuses'] : ['overview']).map((section) => <button key={section} type="button" aria-pressed={activeSection === section} aria-controls={`provider-section-${section}`} onClick={() => setSectionState({ providerId: id, section })} className={`min-h-11 rounded-[var(--radius-control)] border px-4 text-sm font-medium ${activeSection === section ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:border-primary'}`}>{t(section === 'overview' ? 'autocare.providerSectionOverview' : section === 'profile' ? 'autocare.providerSectionProfile' : section === 'evidence' ? 'autocare.providerSectionEvidence' : section === 'communication' ? 'autocare.providerSectionCommunication' : section === 'team' ? 'autocare.ownerProviderMembersTitle' : 'autocare.providerSectionBonuses')}</button>)}
