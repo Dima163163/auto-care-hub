@@ -12,6 +12,7 @@ import { OwnerAutoCareRequestsPage } from './OwnerAutoCareRequestsPage'
 const mocks = vi.hoisted(() => {
     const rejectedTrigger = vi.fn(() => ({ unwrap: vi.fn().mockRejectedValue(new Error('temporary failure')) }))
     return {
+        requestList: undefined as AutoCareServiceRequest[] | undefined,
         rejectedTrigger,
         confirm: vi.fn(() => Promise.resolve({ error: { status: 503, data: { message: 'temporary failure' } } })),
         createResource: vi.fn(() => ({ unwrap: vi.fn().mockResolvedValue({}) })),
@@ -53,16 +54,16 @@ vi.mock('@/entities/automotive-service', () => ({
     }),
     useGetOwnerAutoCareCapacityReservationsQuery: () => ({ data: [], isLoading: false, isFetching: false, isError: false }),
     useGetOwnerAutoCareCapacityResourcesQuery: () => ({ data: [], isLoading: false, isError: false }),
-    useGetOwnerAutoCareServiceRequestsQuery: () => ({ data: [mocks.request], isLoading: false, error: null }),
+    useGetOwnerAutoCareServiceRequestsQuery: () => ({ data: mocks.requestList ?? [mocks.request], isLoading: false, error: null }),
     useMarkAutoCareServiceRequestNoShowMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useRequestAutoCareServiceRescheduleMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useUpdateOwnerAutoCareCapacityResourceMutation: () => [mocks.updateResource, { isLoading: false }],
 }))
 
-function renderPage() {
+function renderPage(path = '/owner/autocare-requests') {
     return render(
         <I18nContext.Provider value={{ locale: 'ru', setLocale: vi.fn(), t: (key: TranslationKey) => key }}>
-            <MemoryRouter initialEntries={['/owner/autocare-requests']}>
+            <MemoryRouter initialEntries={[path]}>
                 <OwnerAutoCareRequestsPage />
             </MemoryRouter>
         </I18nContext.Provider>,
@@ -71,6 +72,7 @@ function renderPage() {
 
 describe('OwnerAutoCareRequestsPage', () => {
     beforeEach(() => {
+        mocks.requestList = undefined
         mocks.rejectedTrigger.mockClear()
         mocks.confirm.mockClear()
     })
@@ -118,4 +120,12 @@ describe('OwnerAutoCareRequestsPage', () => {
         expect(screen.getByText(/15:00 GMT\+3/)).toBeInTheDocument()
         expect(screen.queryByText(/12:00 UTC/)).not.toBeInTheDocument()
     })
+    it('filters the existing authorized request list by provider and restores it when cleared', async () => {
+        mocks.requestList = [{ ...mocks.request, providerId: 'provider-1' }, { ...mocks.request, id: 'request-2', providerId: 'provider-2', providerName: 'Other authorized provider', locationId: 'other-branch' }]
+        renderPage('/owner/autocare-requests?provider=provider-1')
+        expect(screen.queryByText('Other authorized provider')).not.toBeInTheDocument()
+        await userEvent.click(screen.getByRole('button', { name: 'autocare.allAccessibleRequests' }))
+        expect(screen.getByText('Other authorized provider')).toBeVisible()
+    })
+
 })
