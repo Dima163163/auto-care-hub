@@ -95,7 +95,12 @@ test.describe('selected design interactions', () => {
 
     test('mobile request summary stays available beside the final action', async ({ page }) => {
         await signIn(page, 'emily.carter@example.com')
-        await page.goto('/services/api-proservice-moscow/request?service=oil-change')
+        // Today can be closed or already past its final slot. Choose a future
+        // working day so this layout contract also holds in evening/weekend CI.
+        const visitDate = new Date()
+        visitDate.setUTCDate(visitDate.getUTCDate() + 2)
+        while ([0, 6].includes(visitDate.getUTCDay())) visitDate.setUTCDate(visitDate.getUTCDate() + 1)
+        await page.goto(`/services/api-proservice-moscow/request?service=oil-change&date=${visitDate.toISOString().slice(0, 10)}`)
         await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
         const time = page.getByRole('button', { name: /^\d{2}:\d{2}$/ }).first()
         await time.click()

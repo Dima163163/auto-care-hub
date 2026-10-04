@@ -50,12 +50,12 @@ export function WorkspaceMobileHeader({ role }: WorkspaceMobileHeaderProps) {
     }, [isMenuOpen])
 
     return (
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between gap-3 border-b border-primary-foreground/10 bg-hero-overlay px-4 text-primary-foreground md:hidden">
-            <Link to={ROUTES.home} className="flex shrink-0 items-center" aria-label="AutoCare Hub">
+        <header className="workspace-mobile-header sticky top-0 z-50 flex h-16 items-center justify-between gap-3 border-b border-primary-foreground/10 bg-hero-overlay px-4 text-primary-foreground md:hidden">
+            <Link to={ROUTES.home} className="workspace-mobile-header__logo flex min-w-0 flex-1 items-center" aria-label="AutoCare Hub">
                 <BrandLogo size="md" />
             </Link>
 
-            <div ref={menuRef} className="relative flex min-w-0 items-center gap-2">
+            <div ref={menuRef} className="relative flex shrink-0 items-center gap-2">
                 <button
                     type="button"
                     className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/85 transition-colors hover:bg-primary-foreground/15 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

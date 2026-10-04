@@ -233,7 +233,7 @@ function MarketingInfoPage({ content }: { content: MarketingPageContent }) {
                         {content.stats.map((stat) => (
                             <div key={stat.labelKey}>
                                 <p className="text-3xl font-black tracking-tight">{t(stat.valueKey)}</p>
-                                <p className="mt-2 text-sm font-semibold text-primary-foreground/80">{t(stat.labelKey)}</p>
+                                <p className="mt-2 text-sm font-semibold text-inherit">{t(stat.labelKey)}</p>
                             </div>
                         ))}
                     </div>

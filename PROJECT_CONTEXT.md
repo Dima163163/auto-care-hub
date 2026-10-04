@@ -1,6 +1,51 @@
 # AutoCare Hub Project Context
 
-## Активный пакет выбранного дизайна — 2026-10-04
+## Автономные UI/UX исправления — 2026-10-04
+
+Пользователь поручил закончить доступное без его решений и проверить весь UI/UX.
+Основной агент работает напрямую, субагенты не запрошены. Изолированная worktree
+`/private/tmp/autocare-hub-urgent-audit-batch-2`, branch
+`codex/autonomous-ui-ux-fixes-2026-10-04` от dev `a8ac107`, sync main `3ab9661`.
+14 runtime/test findings (U08, UX01–UX10, UX12–UX14) закрыты отдельными commits.
+Реестр: `docs/audits/UI_UX_AUTONOMOUS_2026-10-04.md`; audit script
+`scripts/audit-ui-ux.mjs`, loopback production mock preview only.
+
+U08 исключает mock runtime/server getter, login credentials и fallback providers
+из real Next/Vite graphs; direct compile-time guarded dynamic imports обязательны
+(early return или IS_MOCK_API оставляли chunks). Guard проверяет complete Next
+static/server artifact, HTML/RSC/maps; Vite требует explicit --format/--dist-dir.
+CI/release evidence включают real Next guard. 192 Next / 91 Vite files чисты,
+8 positive/negative guard tests PASS. Guest real favorites разрешают только UUID
+и public profile, удаление недоступного сервиса доступно после query failure.
+
+UI/UX: 200/200, 100 full-page screenshots, 0 full axe violations/overflow/clipped
+header controls/duplicate referenced IDs/missing media/keys/JS exceptions.
+Mock full 192/192 без retries; после финальных SVG/header fixes targeted 18/18
+без retries. Current hosted suite — 204 cases. Real production frontend
+29/29 с isolated synthetic PostgreSQL 17 / Redis 7 и development test API,
+Vite PWA 12/12, responsive 30/30, unit 196/635, strict types/full lint/builds PASS.
+17 metadata + 17 initial JS и HTTP/browser CSP PASS.
+
+Mobile Security Center drawer — portal above workspace main stacking context,
+semantic div dialog, inert siblings/body lock, Tab/Shift+Tab/Escape/return focus.
+Open-state axe catches aside role=dialog; closed-page audit did not. Clipped
+header controls требуют bounds/hit-test, root scrollWidth недостаточен; compact
+ThemeSwitcher reset должен сбрасывать individual CSS translate, не только transform.
+Date-layout test uses future working day; не менять production slot rules.
+UX01 placeholder не событие; mobile menu readiness нельзя семплировать isVisible
+сразу после route change. Exact historical PR #13 failure trace отсутствует.
+
+UX11 touch area 44px — optional improvement; spacing/native exceptions и deferred
+D11/D19 сохраняются. KMS U01/U02, mandatory privileged MFA U03, N09 production
+adapter/rollout, native devices/screen readers/CWV/legal/pilot evidence не закрыты.
+Отложенные 10 дизайнов не реализованы. Primary 3 integrity files hashes unchanged.
+
+Пакет использует один atomic push feature/dev и protected main PR. Actual hosted
+publication/CI/source/main evidence сохраняется в PR/Actions и локальном
+`/Users/a1/Desktop/my-projects/AutoCareHub/ui-ux-audit-2026-10-04/publication.json`,
+без второго status-only push. Preview/evidence — synthetic, не production pilot GO.
+
+## Опубликованный пакет выбранного дизайна — 2026-10-04
 
 Пользователь просмотрел конкретные пары и явно поручил применить 36 вариантов:
 D03–D08, D12–D17, D20–D21, D23–D36, D38–D42, D44–D46.
@@ -22,8 +67,12 @@ responsive 30 / 30. Браузерные исходные 171 сочетание
 Реестр: `docs/audits/SELECTED_DESIGN_IMPLEMENTATION_2026-10-04.md`.
 При проверке закрыты D21 (обрезанная форма предложения), D32 (ссылки на скрытые
 очереди), D17 (второй h1). Три исходных пользовательских dirty-файла сохранены.
-Один общий push и protected dev→main publication продолжаются по фактическому
-GitHub статусу; локальная приёмка не выдаётся за удалённый CI.
+Пакет опубликован: PR #13 merged `3ab9661`, source/dev `a8ac107`.
+Оба exact-candidate Quality events PASS (push 37197468733, PR 37197513447);
+push browser 189 first-attempt, PR 188 first-attempt + 1 mobile Security Center
+retry; Vite PWA 12/12. Promote 37197468732 PASS; деревья main/dev совпали.
+Mobile first-attempt instability вынесена в UX01 автономной порции; original
+failure trace не опубликован. Post-merge main CI не заявляется: runs отсутствуют.
 
 ## История — N11 и дизайн-обзор, 2026-10-04
 

@@ -27,7 +27,7 @@ export function ProfileReviewsPage() {
 
     if (isLoading) {
         return (
-                <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
+                <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
                 <ProfileNavigation />
                 <PageHeader
                     eyebrow={t('autocare.reviewsEyebrow')}
@@ -35,13 +35,13 @@ export function ProfileReviewsPage() {
                 />
 
                 <ReviewsSkeleton label={t('review.loading')} count={2} />
-            </section>
+            </main>
         )
     }
 
     if (isError) {
         return (
-            <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
+            <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8">
                 <ProfileNavigation />
                 <PageHeader
                     eyebrow={t('autocare.reviewsEyebrow')}
@@ -56,12 +56,12 @@ export function ProfileReviewsPage() {
                         <RetryButton onRetry={refetch} label={t('common.retry')} />
                     }
                 />
-            </section>
+            </main>
         )
     }
 
     return (
-        <section
+        <main
             className="mx-auto max-w-6xl space-y-6 px-4 py-8 lg:px-8"
             aria-busy={isFetching}
         >
@@ -100,6 +100,6 @@ export function ProfileReviewsPage() {
                     ))}
                 </div>
             )}
-        </section>
+        </main>
     )
 }

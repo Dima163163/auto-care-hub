@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 type BrandLogoProps = {
     size?: 'sm' | 'md' | 'lg'
 }
@@ -9,14 +11,15 @@ const sizeStyles = {
 } as const
 
 export function BrandLogo({ size = 'md' }: BrandLogoProps) {
+    const titleId = useId()
     return (
         <svg
             viewBox="0 0 268 72"
             role="img"
-            aria-labelledby="autocare-logo-title"
+            aria-labelledby={titleId}
             className={`block h-auto shrink-0 ${sizeStyles[size]}`}
         >
-            <title id="autocare-logo-title">AutoCare Hub — Сервис, которому доверяют</title>
+            <title id={titleId}>AutoCare Hub — Сервис, которому доверяют</title>
             <g transform="translate(4 4)">
                 <circle cx="32" cy="32" r="28" fill="var(--map-overlay)" stroke="var(--primary)" strokeWidth="2" />
                 <path d="M32 4a28 28 0 0 1 23.8 13.3L43.9 24A14.4 14.4 0 0 0 32 17.6Z" fill="var(--primary)" />

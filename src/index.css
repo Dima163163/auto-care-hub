@@ -155,7 +155,7 @@
     --muted-foreground: oklch(0.34 0.02 260);
     --accent: oklch(0.91 0.06 190);
     --accent-foreground: oklch(0.35 0.15 265);
-    --destructive: oklch(0.6 0.18 25);
+    --destructive: oklch(0.52 0.18 25);
     --success-strong: #067647;
     --border: oklch(0.92 0.01 260);
     --input: oklch(0.92 0.01 260);
@@ -819,6 +819,32 @@ button:disabled[type="submit"][aria-label] {
 
 /* Workspace headers use the same compact contract, because authenticated
    layouts are still desktop-rendered from the md breakpoint upward. */
+.public-mobile-header__logo > svg {
+    width: 100%;
+    max-width: 168px;
+}
+
+/* Keep all compact workspace actions reachable at 360px. */
+.workspace-mobile-header__logo > svg {
+    width: 100%;
+    max-width: 190px;
+}
+
+@media (max-width: 440px) {
+    .workspace-mobile-header [data-theme-switcher] {
+        width: 2.5rem;
+    }
+
+    .workspace-mobile-header [data-theme-switcher] > img {
+        display: none;
+    }
+
+    .workspace-mobile-header [data-theme-switcher] > span {
+        translate: none;
+        transform: none;
+    }
+}
+
 .workspace-header__logo {
     min-width: 0;
     flex: 0 1 auto;

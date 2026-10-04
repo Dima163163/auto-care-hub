@@ -134,6 +134,10 @@ jobs:
         run: npm run build
         working-directory: release-source
 
+      - name: Check real Next fixture isolation
+        run: npm run check:production-fixture-leakage
+        working-directory: release-source
+
       - name: Build API
         run: npm ci && npm run build
         working-directory: release-source/server
