@@ -25,7 +25,7 @@ export function RequestSummary({ provider, offering }: RequestSelectionProps) {
                 <AutoCareImage src={provider.image} alt={provider.name} className="size-[72px] shrink-0 rounded-[var(--radius-control)] object-cover" />
                 <div className="min-w-0">
                     <p className="text-xs font-bold text-muted-foreground">{t('autocare.requestSelectedProvider')}</p>
-                    <h1 className="mt-1 truncate text-xl font-black tracking-tight text-foreground">{provider.name}</h1>
+                    <h2 className="mt-1 truncate text-xl font-black tracking-tight text-foreground">{provider.name}</h2>
                     <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><MapPin className="size-3.5 text-primary" />{provider.address}</p>
                     <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-status-success-foreground">
                         <span className="inline-flex items-center gap-1 rounded-[var(--radius-control)] bg-status-success-surface px-2 py-1"><Clock3 className="size-3.5" />{provider.hours}</span>
