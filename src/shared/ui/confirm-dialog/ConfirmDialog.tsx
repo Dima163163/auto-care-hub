@@ -109,7 +109,7 @@ export function ConfirmDialog({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 backdrop-blur-sm"
+            className="fixed inset-0 z-[1200] flex items-center justify-center bg-background/80 px-4 py-4 backdrop-blur-sm"
             onKeyDown={handleKeyDown}
         >
             <div
@@ -118,7 +118,7 @@ export function ConfirmDialog({
                 aria-modal="true"
                 aria-labelledby={titleId}
                 aria-describedby={descriptionId}
-                className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg"
+                className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-lg border bg-card p-6 shadow-lg"
             >
                 <p className="text-sm font-medium text-muted-foreground">
                     {resolvedEyebrow}
@@ -144,11 +144,12 @@ export function ConfirmDialog({
                     </div>
                 )}
 
-                <div className="mt-6 flex justify-end gap-3">
+                <div className="mt-6 flex flex-wrap justify-end gap-3">
                     <Button
                         ref={cancelButtonRef}
                         type="button"
                         variant="outline"
+                        className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-center"
                         disabled={isLoading}
                         onClick={onCancel}
                     >
@@ -158,6 +159,7 @@ export function ConfirmDialog({
                     <Button
                         type="button"
                         variant={confirmVariant}
+                        className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-center"
                         loading={isLoading}
                         onClick={onConfirm}
                     >
