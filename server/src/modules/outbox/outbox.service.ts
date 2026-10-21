@@ -32,6 +32,7 @@ import { normalizeNotificationLink } from '../notifications/notification-link-po
 import { normalizeOutboxErrorMessage } from './outbox-error-policy.js'
 import { renderNotificationTemplate } from '../notifications/notification-renderer.js'
 import { decryptOutboxSecret, redactOutboxSecrets } from './outbox-secret.js'
+import { outboxPayloadEncryptionTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export const OUTBOX_MAX_ATTEMPTS = 5
 export { MAX_OUTBOX_ERROR_LENGTH as OUTBOX_MAX_ERROR_LENGTH } from './outbox-error-policy.js'
@@ -154,6 +155,9 @@ export async function enqueueOutboxEvent(
     const idempotencyKey = normalizeOutboxIdempotencyKey(input.idempotencyKey)
     const availableAt = assertOutboxAvailableAt(input.availableAt)
     const repository = manager.getRepository(OutboxEventEntity)
+    // Raw SQL preserves the atomic ON CONFLICT path, but bypasses TypeORM's
+    // column transformer. Apply the same storage format before the INSERT.
+    const storedPayload = outboxPayloadEncryptionTransformer.to(input.payload)
 
     await manager.query(
         `INSERT INTO "outbox_events"
@@ -163,7 +167,7 @@ export async function enqueueOutboxEvent(
          ON CONFLICT ("idempotencyKey") DO NOTHING`,
         [
             input.type,
-            JSON.stringify(input.payload),
+            JSON.stringify(storedPayload),
             idempotencyKey,
             OutboxEventStatus.Pending,
             0,
