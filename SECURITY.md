@@ -19,7 +19,7 @@ that deployment controls, backups or an independent security review are complete
 
 AutoCare Hub follows a modern, multi-layered security approach:
 
-- **Authentication:** Uses short-lived Access Tokens (JWT) and persistent Refresh Tokens stored in `httpOnly`, `Secure`, and `SameSite: Strict` cookies.
+- **Authentication:** Uses short-lived Access Tokens (JWT) and persistent refresh tokens in `httpOnly` cookies. The refresh cookie is `Secure; SameSite=None` in production and `SameSite=Lax` in development/test; browser cookie mutations also use the CSRF and Origin/Referer guards.
 - **In-Memory Storage:** To mitigate XSS risks, Access Tokens are stored only in the application's memory and are never persisted to `localStorage` or `sessionStorage`.
 - **CSRF Protection:** Implements a double-submit cookie pattern with custom headers (`X-CSRF-Token`) for all state-changing requests.
 - **Rate Limiting:** Production requires distributed Redis and fail-closed behavior for protected requests. In-memory fallback is development/test-only. Two-replica outage/reconnect evidence remains required.
@@ -42,7 +42,7 @@ AutoCare Hub follows a modern, multi-layered security approach:
 - **Email Verification:** Mandatory verification for sensitive actions. Tokens are hashed and stored with expiry.
 
 ### Data Protection
-- **Password Hardening:** Secure password hashing (Argon2/Bcrypt). One-time password setup/reset flows with secure token exchange.
+- **Password Hardening:** Password hashing uses bcryptjs. One-time password setup/reset flows use secure token exchange.
 - **Database Security:** Backup encryption/checksum and isolated-restore tooling exist. Actual backup scheduling, off-site retention, WAL/PITR, TLS configuration and timed restore are external release gates; an operational backup is not yet evidenced.
 - **HTML Escaping:** Mandatory server-side escaping of all user-generated content in email templates to prevent Stored XSS.
 
@@ -65,9 +65,11 @@ AutoCare Hub follows a modern, multi-layered security approach:
 - **Scanning:** CI declares dependency review, npm production dependency audits
   and secret scanning. A current successful run on the release artifact and an
   independent review remain required.
-- **Open findings:** Connected WebSockets do not recheck revoked access; quote
-  decisions lack the viewed version; deletion cancel/completion can race.
-  The final audit specifies fixes and regression acceptance before real data.
+- **Previously fixed findings:** Connected WebSockets recheck access before
+  delivery and periodically; quote decisions compare the viewed quote ID and
+  version under transaction; deletion cancellation/completion uses a row lock.
+  Deployed replay and independent security acceptance remain open. Current
+  unresolved findings are tracked in the working audit registry.
 
 ## Verification & Maintenance
 

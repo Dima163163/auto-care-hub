@@ -1,5 +1,20 @@
 # AutoCare Hub — Project Plan
 
+## Повторная проверка всех файлов — 2026-10-21
+
+- [x] Инвентаризировать и механически проверить 2 585 tracked files: текст,
+  JSON/SVG/YAML/PlantUML, 195 изображений, JS/shell syntax и локальные ссылки.
+- [x] Повторить frontend 647/647, backend 1408/1408, lint, Next/Vite builds,
+  статические contracts и production fixture leakage; сохранить границы
+  в `docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md`.
+- [x] Повторить 15 прежних synthetic defect cases без устаревшего U14
+  assertion; подтвердить открытые U15–U20/N24–N30/N32–N33 без live-DB claims.
+- [x] Исправить неверные security claims, неразбираемый YAML и непереносимую
+  ссылку на внешний отчёт; обновить `docs/INDEX.md` и coverage evidence.
+- [ ] Проверить открытые code blockers и 54 pilot gates на опубликованном
+  exact candidate с PostgreSQL+Redis/staging/real users; локальный unit PASS
+  не закрывает этот пункт.
+
 ## Финальная локальная проверка пилота — 2026-10-21
 
 - [x] Прогнать полные frontend/backend unit suites, lint, production Next real

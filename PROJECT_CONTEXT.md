@@ -1,5 +1,19 @@
 # AutoCare Hub Project Context
 
+## Повторная проверка файлов — 2026-10-21
+
+В checkout `fix/request-chat-state-isolation-2026-10-20` механически проверены
+все 2 585 tracked files на исходном срезе `365e087`: форматы, 195 PNG/WebP,
+JS/shell/YAML syntax и ссылки. Повторно PASS frontend 647/647, backend Quality
+1408/1408, lint, TypeScript/Vite/production Next builds, API/design/interaction
+contracts и 62 PlantUML anchors. 15/15 прежних synthetic defect cases
+воспроизвелись на текущем коде (кроме закрытого U14). Новых подтверждённых
+code defects нет; U15/U17–U21 и pilot blockers открыты. Исправлены неверные claims в SECURITY.md,
+YAML syntax и абсолютная ссылка на внешний отчёт. Полная semantic review всех
+исторических документов и каждого source file не заявляется; нет нового
+PostgreSQL+Redis integration/staging evidence. Отчёт и точное покрытие:
+`docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md`.
+
 ## Итоговая локальная проверка пилота — 2026-10-21
 
 Ветка `fix/request-chat-state-isolation-2026-10-20`, HEAD `26da803`, содержит
@@ -815,7 +829,7 @@ the desktop header follows the dark navy AutoCare reference direction. The first
 homepage implementation now follows the full supplied composition, including
 comparison cards, services/locations/partner discovery, process/trust content,
 reviews and the mobile-app promotion. The partner banner uses the project asset
-`public/images/autocare/partner-handshake.png`, generated specifically for this
+`public/images/autocare/partner-handshake.webp`, generated specifically for this
 layout. The first isolated backend schema slice is in
 `server/src/database/migrations/1785700000000-CreateAutoCareCatalogFoundation.ts`
 with `autocare_` entities for markets, definitions, providers, locations, and
@@ -972,8 +986,17 @@ not include live database seeding or role-login validation.
 
 ### AutoCare security hardening — 2026-09-24
 
-Implemented the code changes for the 11 findings from the security audit in
-[`security-audit-2026-09-24/REPORT.md`](/Users/a1/.codex/visualizations/2026/09/24/01a0d2e0-ed2b-7d52-8dd2-f96f2d22dbc6/security-audit-2026-09-24/REPORT.md): chat block enforcement and lock ordering, restricted/read-only moderation with access audit, request/quote/reschedule lifecycle checks, private attachment fetch, WebSocket rate limiting and token refresh, expired-offer rejection, and generic chat idempotency. Production storage GET CORS still needs exact frontend origins configured. At that initial security-hardening checkpoint, the idempotency migration had not been run and PostgreSQL/browser checks remained open; the later disposable-database and real-browser validation is recorded below. Pilot remains NO-GO and external release gates stay in force.
+Implemented the code changes for the 11 findings from the 24 September security
+audit (its original report is an external local artifact; current disposition is
+in [the repository registry](docs/audits/CURRENT_FINDING_DISPOSITION.md)):
+chat block enforcement and lock ordering, restricted/read-only moderation with
+access audit, request/quote/reschedule lifecycle checks, private attachment
+fetch, WebSocket rate limiting and token refresh, expired-offer rejection, and
+generic chat idempotency. Production storage GET CORS still needs exact frontend
+origins configured. At that initial security-hardening checkpoint, the
+idempotency migration had not been run and PostgreSQL/browser checks remained
+open; the later disposable-database and real-browser validation is recorded
+below. Pilot remains NO-GO and external release gates stay in force.
 
 The revised AC-02 policy is now implemented locally. Only the SuperAdmin-assigned active moderator can read the complete service-request conversation and its attachments for 24 hours, with one reasoned 24-hour extension; reads are audited and read-only. SuperAdmin assignment/reassignment and emergency access require a reason and audit record. A report requires explicit notice and confirmation; cancellation creates no report or access. Reporters alone see report status, and the other participant cannot see the reporter's identity. A later counter-report is blocked while the case is active; a distinct later urgent threat can be linked only with threat category and at least 20 characters of context. Sender text can be deleted for five minutes; later hiding is local to that user/device. Legacy unanchored reports expose metadata only.
 

@@ -3,6 +3,7 @@
 Срез remote dev `8840ae8`, локальная fix-ветка `26da803`, 21 октября 2026.
 Начать с [карты PlantUML](diagrams/README.md) и
 [итоговой проверки пилота](audits/PILOT_READINESS_RECHECK_2026-10-21.md).
+Повторная проверка всех отслеживаемых файлов: [file recheck](audits/REPOSITORY_FILE_RECHECK_2026-10-21.md).
 
 **Полная semantic сверка не завершена.** Этот индекс учитывает каждый найденный
 text/spec документ, PlantUML и SVG/HTML reference; статус указан для каждого файла.
@@ -26,7 +27,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) — AutoCare Hub Project Context | текущий документ / статус реализации не сверён | сверено частично | Git branch; docs/audits/; docs/diagrams/ |
 | [PROJECT_PLAN.md](../PROJECT_PLAN.md) — AutoCare Hub — Project Plan | текущий документ / статус реализации не сверён | сверено частично | docs/audits/UI_SECURITY_RECHECK_2026-10-20.md |
 | [README.md](../README.md) — AutoCare Hub | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [SECURITY.md](../SECURITY.md) — Security Overview — Current Platform Baseline | текущий документ / статус реализации не сверён | сверено частично | server/src/modules/auth/auth-cookie.ts; server/src/app.ts |
+| [SECURITY.md](../SECURITY.md) — Security Overview — Current Platform Baseline | текущий security baseline | сверено частично; исправлены cookie/hash и устаревшие finding status | auth-cookie.ts, auth.service.ts, service-chat.gateway.ts, request-quote.service.ts, account-deletion.service.ts |
 | [SECURITY_CONTEXT.md](../SECURITY_CONTEXT.md) — AutoCare Hub Security Context | текущий документ / статус реализации не сверён | сверено частично | server/src/modules/autocare/{provider,request,chat}-access.service.ts |
 | [SKILLS.md](../SKILLS.md) — Project Skills | текущий документ / статус реализации не сверён | сверено частично | src/, server/src/ |
 | [docs/agent-rules/coding.md](agent-rules/coding.md) — Coding Rules | текущий документ / статус реализации не сверён | сверено частично | AGENTS.md; repository layout |
@@ -77,6 +78,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/audits/FINAL_REHEARSAL_2026-09-26.md](audits/FINAL_REHEARSAL_2026-09-26.md) — Финальная репетиция ролей и сценариев — 26 сентября 2026 | audit/evidence history | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md](audits/FULL_PROJECT_AUDIT_2026-10-03.md) — Дополнительный полный аудит AutoCare Hub — 3 октября 2026 | рабочий реестр / текущая disposition / новый отчёт | сверено частично | evidence/2026-10-20/; server/src/modules/ |
 | [docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md](audits/PILOT_READINESS_RECHECK_2026-10-21.md) — Итоговая локальная проверка для пилота | текущий локальный аудит / pilot disposition | проверено в указанном объёме | quality logs, U14 PostgreSQL smoke, npm audit, 54-gate scope |
+| [docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md](audits/REPOSITORY_FILE_RECHECK_2026-10-21.md) — Повторная проверка всех отслеживаемых файлов | текущий локальный audit/inventory | проверено в указанном объёме; semantic review ограничен | Git inventory, syntax/build/tests, security source, docs links |
 | [docs/audits/PRODUCT_AUDIT_2026-09-25.md](audits/PRODUCT_AUDIT_2026-09-25.md) — Продуктовый аудит AutoCare Hub — 25 сентября 2026 | audit/evidence history | сверено частично | src/pages/autocare-results/; src/pages/autocare-request/ |
 | [docs/audits/RUNTIME_VERIFICATION_2026-10-13.md](audits/RUNTIME_VERIFICATION_2026-10-13.md) — Продолжение аудита: PostgreSQL, Redis, recovery и live API — 13 октября 2026 | audit/evidence history | сверено частично | package-lock.json; server/package-lock.json |
 | [docs/audits/SELECTED_DESIGN_IMPLEMENTATION_2026-10-04.md](audits/SELECTED_DESIGN_IMPLEMENTATION_2026-10-04.md) — Применённые варианты дизайна — 2026-10-04 | audit/evidence history | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
@@ -100,7 +102,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/architecture/AUTOCARE_RESPONSIBILITIES.md](architecture/AUTOCARE_RESPONSIBILITIES.md) — AutoCare responsibility map | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/architecture/FUTURE_DATA_RESIDENCY.md](architecture/FUTURE_DATA_RESIDENCY.md) — Будущая региональная архитектура и резидентность данных | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/architecture/autocare-api-v1.yaml](architecture/autocare-api-v1.yaml) — autocare-api-v1 | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/architecture/delivery-plan.yaml](architecture/delivery-plan.yaml) — delivery-plan | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
+| [docs/architecture/delivery-plan.yaml](architecture/delivery-plan.yaml) — delivery-plan | предложенный архитектурный план / reference | синтаксис проверен; семантика частично | PROJECT_PLAN.md; YAML line 28 исправлена |
 | [docs/architecture/domain-model.yaml](architecture/domain-model.yaml) — domain-model | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/architecture/legacy-migration-map.yaml](architecture/legacy-migration-map.yaml) — legacy-migration-map | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 

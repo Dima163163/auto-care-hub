@@ -6,7 +6,7 @@
     "documents": 151,
     "lines": 26598
   },
-  "scope": "Final local pilot recheck: full code tests/build/static gates, targeted security flows and structural documentation inventory; semantic review of all documents remains incomplete.",
+  "scope": "Repeat full tracked-file mechanical inventory and focused semantic/security review; full semantic review of every source and historical document remains incomplete.",
   "documents": [
     {
       "path": "AGENTS.md",
@@ -164,11 +164,11 @@
     {
       "path": "docs/architecture/delivery-plan.yaml",
       "purpose": "delivery-plan",
-      "type": "архитектурный контракт / reference; текущий статус не обобщён",
-      "status": "не проверено",
-      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
-      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
-      "sha256": "6ef62293f21052070e68430a97e8a445b5f9217f3fc14a98be62a58fad6d1291"
+      "type": "предложенный архитектурный план / reference",
+      "status": "структурная проверка",
+      "coverage": "Исправлен YAML parser error в exit_gate; синтаксис проверен. Семантика фаз и текущая реализация не сверены полностью.",
+      "sourceConnection": "PROJECT_PLAN.md; YAML parser",
+      "sha256": "e2f7e02527187b81c03df7ec54590f370782998e228a276cd433d1b654fe2fd9"
     },
     {
       "path": "docs/architecture/domain-model.yaml",
@@ -267,7 +267,7 @@
       "status": "сверено частично",
       "coverage": "Текущие таблицы и выбранные разделы; U14/U15/U20/U21 recheck и U22/UX16–18 добавлены. Старый отчёт целиком не перечитан.",
       "sourceConnection": "evidence/2026-10-20/; server/src/modules/",
-      "sha256": "242a08e6f7269a01dd9399f2bb0218ff2f8fb19a9486b0275c74042860224863"
+      "sha256": "cd5f245cf1631d8f3bd15cea46ccf32c4911ed1ed836ee37474655fd6cffad4b"
     },
     {
       "path": "docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md",
@@ -276,7 +276,7 @@
       "status": "проверено в указанном объёме",
       "coverage": "Frontend/backend quality, U14 disposable PostgreSQL, dependency audit, readiness gates and explicit limits.",
       "sourceConnection": "Git HEAD 26da803; quality logs; npm audit; docs/operations/PILOT_SCOPE_FREEZE.md",
-      "sha256": "8662a6aaf75d8712ddd7b60575c8562faef3f93089ca554a221631ba2b614f8f"
+      "sha256": "fefff87c5d8956703b272cf17b41c3a165d7441343ac04348c6ed312fc2c39cc"
     },
     {
       "path": "docs/audits/PRODUCT_AUDIT_2026-09-25.md",
@@ -286,6 +286,15 @@
       "coverage": "Заголовки и выбранные findings для дедупликации; не полный semantic re-audit.",
       "sourceConnection": "src/pages/autocare-results/; src/pages/autocare-request/",
       "sha256": "ff290fc5f86bab90603334d6a116a92c5e82c54557391b879dd15da41bad7c19"
+    },
+    {
+      "path": "docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md",
+      "purpose": "Повторная проверка файлов репозитория — 21 октября 2026",
+      "type": "current local audit/inventory",
+      "status": "проверено в указанном объёме",
+      "coverage": "2585 tracked files mechanically scanned, syntax/format/image decode, full unit/build/lint, targeted security/documentation review and explicit limits.",
+      "sourceConnection": "Git inventory; quality gates; server/src/modules/; docs/diagrams/; docs/operations/PILOT_SCOPE_FREEZE.md",
+      "sha256": "7e2c2335b62ed4d17fcdf9c15f64ab4925e36ba5902c8ec90184d859bf88a397"
     },
     {
       "path": "docs/audits/RUNTIME_VERIFICATION_2026-10-13.md",
@@ -1489,9 +1498,9 @@
       "purpose": "AutoCare Hub Project Context",
       "type": "текущий документ / статус реализации не сверён",
       "status": "сверено частично",
-      "coverage": "Прочитаны свежие handoffs; исторические 1196 строк целиком не перечитаны. Добавлен fresh handoff.",
+      "coverage": "Прочитаны свежие handoffs; исторические разделы целиком не сверены. Непереносимая абсолютная ссылка на внешний отчёт заменена текущим репозиторным disposition.",
       "sourceConnection": "Git branch; docs/audits/; docs/diagrams/",
-      "sha256": "705a866cabdc1c30b525dd47390d8d4d25f39ebeb0672ee8e8825ce46ae7a191"
+      "sha256": "668cd7ecefaf6f01dbf8be5d18e0761d9ca2e789442f4bd0a1dd0b699eaf1350"
     },
     {
       "path": "PROJECT_PLAN.md",
@@ -1500,7 +1509,7 @@
       "status": "сверено частично",
       "coverage": "Свежие разделы и task updates; исторические 2276 строк целиком не перечитаны.",
       "sourceConnection": "docs/audits/UI_SECURITY_RECHECK_2026-10-20.md",
-      "sha256": "b07a8b14c40e2cc59f0a2d11b4d00e8431567d7598a141b45c4953fcaf92de9e"
+      "sha256": "9844e705f97726c28c70ada5d73b562900575fb86ebafc9c11a7f31b92a79747"
     },
     {
       "path": "README.md",
@@ -1523,11 +1532,11 @@
     {
       "path": "SECURITY.md",
       "purpose": "Security Overview — Current Platform Baseline",
-      "type": "текущий документ / статус реализации не сверён",
+      "type": "текущий security baseline",
       "status": "сверено частично",
-      "coverage": "Сверены выбранные auth/headers/media claims; есть drift SameSite и старых открытых findings.",
-      "sourceConnection": "server/src/modules/auth/auth-cookie.ts; server/src/app.ts",
-      "sha256": "9455ee38f17458cfb35717968380e3b59c45a037eae9627dbca03ae19f918342"
+      "coverage": "SameSite, bcryptjs и статус трёх исторических findings исправлены по runtime source; остальные claims не проверены исчерпывающе.",
+      "sourceConnection": "server/src/modules/auth/auth-cookie.ts; auth.service.ts; server/src/modules/autocare/service-chat.gateway.ts; request-quote.service.ts; server/src/modules/users/account-deletion.service.ts",
+      "sha256": "bef5674ba64600ef9de84323d84f5da9c6c016d001882c2b0cf93a57bd6bc550"
     },
     {
       "path": "server/docs/security/FIELD_ENCRYPTION.md",
@@ -1900,8 +1909,8 @@
     }
   ],
   "localLinkCheck": {
-    "checked": 220,
+    "checked": 412,
     "missing": 0,
-    "limits": "Local target existence only; anchors and external targets are not exhaustively verified."
+    "limits": "All 141 tracked/new Markdown files: local target existence only. Anchors and external targets not exhaustively verified."
   }
 }
