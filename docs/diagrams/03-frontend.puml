@@ -1,0 +1,69 @@
+@startuml
+!include _style.puml
+title Frontend — навигация и владельцы состояния
+top to bottom direction
+package "Next production shell" {
+  component "src/app/layout.page.tsx\nmetadata / theme / app shell" as Layout
+  component "App Router pages\n[[...slug]] / services / provider" as Pages
+  component "NextClientApp\nlocale / theme / store / BrowserRouter" as Client
+}
+package "Существующее React application tree" {
+  component "NextApp → AppRouter\nroute-groups.tsx" as Router
+  component "Public / Auth / Workspace layouts\nprotected routes / lazy pages" as Routes
+  component "src/pages + src/widgets\nэкраны и композиция" as Screens
+  component "src/features\nпользовательские действия" as Features
+  component "src/entities\nданные и API hooks" as Entities
+  component "ServiceRequestChat\nсостояние по userId + requestId" as RequestChat
+  component "RequestForm\nчерновик визита с абсолютной датой" as BookingForm
+  component "src/shared + src/components/ui\nUI / i18n / helpers" as Shared
+}
+package "Данные" {
+  component "Redux store\nRTK Query cache" as Store
+  component "autocareApi.ts\nединая injectEndpoints registration" as AutoAPI
+  component "api/autocare/*.endpoints.ts\ntypes / schemas / transforms\n10 доменных factories" as Factories
+  component "shared/api/baseApi.ts\nauth / refresh / CSRF / errors" as Transport
+}
+component "Backend через /api rewrite" as Backend
+component "MSW browser + handlers\nтолько mock runtime" as Mock
+Layout --> Pages
+Pages --> Client : initial path / public provider DTO
+Client --> Router
+Router --> Routes
+Routes --> Screens
+Screens --> Features
+Screens --> Entities
+Screens --> RequestChat : request conversation
+RequestChat --> Entities : thread / messages / mutations
+Screens --> BookingForm : request booking
+BookingForm --> Entities : availability / submit
+Features --> Entities
+Entities --> Shared
+Screens --> Shared
+Client --> Store
+Entities --> AutoAPI
+AutoAPI --> Factories
+AutoAPI --> Transport
+Transport --> Backend : real mode
+Transport ..> Mock : mock mode interception
+Store --> AutoAPI : middleware / reducer cache
+note bottom of Factories
+  catalog / providers / requests / chat / workspace
+  resources / reviews / bonuses / governance / marketplace
+  Фабрики — первый адрес поиска endpoint implementation.
+end note
+note right of Client
+  Vite — compatibility/development entry.
+  Реальный production graph исключает MSW fixtures.
+end note
+note right of RequestChat
+  При смене пользователя или заявки дочерний компонент
+  монтируется заново: черновик, retry key, offer, cursor,
+  preview и открытые действия не переходят к другому адресату.
+  Серверная авторизация проверяется отдельно.
+end note
+note right of BookingForm
+  URL date/time имеет приоритет над черновиком.
+  Сохранённый slot восстанавливается на исходную дату;
+  исчезнувший slot требует нового выбора до отправки.
+end note
+@enduml

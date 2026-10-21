@@ -1,0 +1,1907 @@
+{
+  "verifiedOn": "2026-10-21",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "auditComplete": false,
+  "originalTextSpecInventory": {
+    "documents": 151,
+    "lines": 26598
+  },
+  "scope": "Final local pilot recheck: full code tests/build/static gates, targeted security flows and structural documentation inventory; semantic review of all documents remains incomplete.",
+  "documents": [
+    {
+      "path": "AGENTS.md",
+      "purpose": "Agent Instructions",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; сверены навигация, сохранение dirty files и отсутствие runtime edits.",
+      "sourceConnection": "docs/diagrams/, Git branch/status",
+      "sha256": "f7e04c3ddd4cf3e26aa2a878f7e01345cb8aa9bb361249247f270bfa3b359bed"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "purpose": "AutoCare Hub — Architecture",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Target architecture header, Next/Fastify baseline, and excluded future billing reviewed; full model not revalidated.",
+      "sourceConnection": "Next shell; Fastify API; docs/operations/PILOT_SCOPE_FREEZE.md",
+      "sha256": "54a9f904cb32c1093f7f71a42521ee583c001c528f037692dcf38cb034e50fa9"
+    },
+    {
+      "path": "CLAUDE.md",
+      "purpose": "AutoCare Hub Claude Code Instructions",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "0728ab6e51df61fe3af15064a873c2fcea9ec1c31df5122d19ab962a94905917"
+    },
+    {
+      "path": "docs/adr/0001-evolve-existing-typescript-stack.md",
+      "purpose": "ADR-0001: Evolve the existing TypeScript stack",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "789798b146deafd897c12286445a0bb2887068e5cef3880e039a0541bd3a412f"
+    },
+    {
+      "path": "docs/adr/0002-web-first-and-native-readiness-gate.md",
+      "purpose": "ADR-0002: Web first with a native readiness gate",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "15bd92040adc0542943a3307d8aaa047be94c2a9bfd9e15c7621d6e5dafcb5f9"
+    },
+    {
+      "path": "docs/adr/0003-separate-repair-payments-subscriptions-and-bonuses.md",
+      "purpose": "ADR-0003: Separate repair payments, subscriptions and bonuses",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "5e2d0a0422308980119f8f37d0d59235caaeaef52e9fbe2a98d3155a49732f3b"
+    },
+    {
+      "path": "docs/adr/0004-durable-service-conversations-and-quotes.md",
+      "purpose": "ADR-0004: Durable service conversations and versioned quotes",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f03d61a3e315baef2debc7488aaf32ba128b2864f37c8d348f357fcd93d01383"
+    },
+    {
+      "path": "docs/adr/0005-provider-membership-authorization.md",
+      "purpose": "ADR-0005: Provider membership is the authorization boundary",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4bf02bf350aed8a0d223108f60e138672f670f608ca59a48bb43b5f68657261d"
+    },
+    {
+      "path": "docs/adr/0006-provider-scoped-bonus-ledger.md",
+      "purpose": "ADR-0006: Provider-scoped bonus ledger",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "1aeac01bc1e004bbc7dad039c12b6870c3eaadcfc49b6f9627eaf8d165800ad7"
+    },
+    {
+      "path": "docs/adr/0007-portable-geospatial-discovery.md",
+      "purpose": "ADR-0007: Portable indexed geospatial discovery for the launch",
+      "type": "ADR / историческое решение",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "32d8bf9107f892e1881d028a8734e764117f9fb544eb8cc42c7fb264db23627a"
+    },
+    {
+      "path": "docs/agent-rules/coding.md",
+      "purpose": "Coding Rules",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; применены относящиеся к задаче правила. Publication/other-role claims не проверялись.",
+      "sourceConnection": "AGENTS.md; repository layout",
+      "sha256": "39ef8a6f74ffb6c27b45142022d56a49bade58bfad27b42c01329d48531705ff"
+    },
+    {
+      "path": "docs/agent-rules/project-structure.md",
+      "purpose": "Project Structure",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; применены относящиеся к задаче правила. Publication/other-role claims не проверялись.",
+      "sourceConnection": "AGENTS.md; repository layout",
+      "sha256": "b13e8b36f84df6636fe1a55591fcf730168321a64887620e046a7dc2d5e46a83"
+    },
+    {
+      "path": "docs/agent-rules/subagents.md",
+      "purpose": "Subagent Rules",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; применены относящиеся к задаче правила. Publication/other-role claims не проверялись.",
+      "sourceConnection": "AGENTS.md; repository layout",
+      "sha256": "a475d03052c4edc32a49dcaf13a9c8981ccf66a698717869be7e9c72d3a72c88"
+    },
+    {
+      "path": "docs/agent-rules/workflow.md",
+      "purpose": "Workflow Rules",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; применены относящиеся к задаче правила. Publication/other-role claims не проверялись.",
+      "sourceConnection": "AGENTS.md; repository layout",
+      "sha256": "3a3de6183f94c82658ed994079958917d40083da9032dc5430ad89dd69f1c70a"
+    },
+    {
+      "path": "docs/API_CONTRACT.md",
+      "purpose": "AutoCare Hub API Contract",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "1378d679211e3aa39a30c609664daa746f1150b951feaa80340dc8890d639cfa"
+    },
+    {
+      "path": "docs/architecture/AUTOCARE_RESPONSIBILITIES.md",
+      "purpose": "AutoCare responsibility map",
+      "type": "архитектурный контракт / reference; текущий статус не обобщён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4a9c33a07c970067ca384d1dda6fb301ed9c861529b7eff0dee3cd9afe7996f0"
+    },
+    {
+      "path": "docs/architecture/autocare-api-v1.yaml",
+      "purpose": "autocare-api-v1",
+      "type": "архитектурный контракт / reference; текущий статус не обобщён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "12b067cb0467f73cb876d570db4821ff8985366740190a2a6da4cfdd95d0ede8"
+    },
+    {
+      "path": "docs/architecture/delivery-plan.yaml",
+      "purpose": "delivery-plan",
+      "type": "архитектурный контракт / reference; текущий статус не обобщён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "6ef62293f21052070e68430a97e8a445b5f9217f3fc14a98be62a58fad6d1291"
+    },
+    {
+      "path": "docs/architecture/domain-model.yaml",
+      "purpose": "domain-model",
+      "type": "архитектурный контракт / reference; текущий статус не обобщён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "6c5196e97f8dedaa698d174d685528f01781d98cc0144c24c64f4f5cc15774a5"
+    },
+    {
+      "path": "docs/architecture/FUTURE_DATA_RESIDENCY.md",
+      "purpose": "Будущая региональная архитектура и резидентность данных",
+      "type": "архитектурный контракт / reference; текущий статус не обобщён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "370dd3ced06a142fbdd6877afd0e3314104b5c85a35e3dafc74bd08ab121fea2"
+    },
+    {
+      "path": "docs/architecture/legacy-migration-map.yaml",
+      "purpose": "legacy-migration-map",
+      "type": "архитектурный контракт / reference; текущий статус не обобщён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "a194f32002ca6c8f55391475d837c3868cc737e0adfb5b8df80cbd96f9432793"
+    },
+    {
+      "path": "docs/archive/bookly/commission-removal-2026-08-27.md",
+      "purpose": "Legacy commission module removal",
+      "type": "исторический архив",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "240e2ab42a18a859bf089db4648e6231171f8551156fe83667d14edd7e858695"
+    },
+    {
+      "path": "docs/archive/bookly/e2e/README.md",
+      "purpose": "Archived Bookly browser checks",
+      "type": "исторический архив",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f52adcd01ca98803252d9314b80d2df9d2b3f796965ba12486e7e71de3b0a258"
+    },
+    {
+      "path": "docs/archive/bookly/owner-action-center/README.md",
+      "purpose": "Archived owner action center",
+      "type": "исторический архив",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4065d437f2da9216510d7ec5506484f6118f9b971f145ed7f5eb8240cdee5d18"
+    },
+    {
+      "path": "docs/archive/translations/README.md",
+      "purpose": "Archived translation monoliths",
+      "type": "исторический архив",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "3198e92d5d699b77039be82518d2520e4c796c49221bd2f1d42bfa137c9762f5"
+    },
+    {
+      "path": "docs/audits/CURRENT_FINDING_DISPOSITION.md",
+      "purpose": "Current finding disposition — 2026-10-04",
+      "type": "рабочий реестр / текущая disposition / новый отчёт",
+      "status": "сверено частично",
+      "coverage": "Прочитан; использован для различения исторических и новых рисков. Все старые closure criteria заново не проверены.",
+      "sourceConnection": "server/src/modules/autocare/; working audit registry",
+      "sha256": "a5af27cd61cb3b15b5ba98c52eab64c3cb315fd34411930b743f2af031f92f5e"
+    },
+    {
+      "path": "docs/audits/DEEP_PROJECT_AUDIT_2026-10-13.md",
+      "purpose": "Углублённый аудит AutoCare Hub — 13 октября 2026",
+      "type": "audit/evidence history",
+      "status": "сверено частично",
+      "coverage": "Summary и выбранные U/N findings; не весь текст. Старые воспроизведения не считаются новым integration run.",
+      "sourceConnection": "server/src/modules/; evidence/2026-10-13/",
+      "sha256": "7387789b5ba5e94722918052f7e872ef4b8658660c663fba72f4da8fd7004b9a"
+    },
+    {
+      "path": "docs/audits/FINAL_REHEARSAL_2026-09-26.md",
+      "purpose": "Финальная репетиция ролей и сценариев — 26 сентября 2026",
+      "type": "audit/evidence history",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "74ecc09d7b1b0382a9ee32dcf8cca1a23e7f37e05ec089d471c31c8f676f7626"
+    },
+    {
+      "path": "docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md",
+      "purpose": "Дополнительный полный аудит AutoCare Hub — 3 октября 2026",
+      "type": "рабочий реестр / текущая disposition / новый отчёт",
+      "status": "сверено частично",
+      "coverage": "Текущие таблицы и выбранные разделы; U14/U15/U20/U21 recheck и U22/UX16–18 добавлены. Старый отчёт целиком не перечитан.",
+      "sourceConnection": "evidence/2026-10-20/; server/src/modules/",
+      "sha256": "242a08e6f7269a01dd9399f2bb0218ff2f8fb19a9486b0275c74042860224863"
+    },
+    {
+      "path": "docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md",
+      "purpose": "Итоговая локальная проверка AutoCare Hub для пилота",
+      "type": "current local audit and pilot disposition",
+      "status": "проверено в указанном объёме",
+      "coverage": "Frontend/backend quality, U14 disposable PostgreSQL, dependency audit, readiness gates and explicit limits.",
+      "sourceConnection": "Git HEAD 26da803; quality logs; npm audit; docs/operations/PILOT_SCOPE_FREEZE.md",
+      "sha256": "8662a6aaf75d8712ddd7b60575c8562faef3f93089ca554a221631ba2b614f8f"
+    },
+    {
+      "path": "docs/audits/PRODUCT_AUDIT_2026-09-25.md",
+      "purpose": "Продуктовый аудит AutoCare Hub — 25 сентября 2026",
+      "type": "audit/evidence history",
+      "status": "сверено частично",
+      "coverage": "Заголовки и выбранные findings для дедупликации; не полный semantic re-audit.",
+      "sourceConnection": "src/pages/autocare-results/; src/pages/autocare-request/",
+      "sha256": "ff290fc5f86bab90603334d6a116a92c5e82c54557391b879dd15da41bad7c19"
+    },
+    {
+      "path": "docs/audits/RUNTIME_VERIFICATION_2026-10-13.md",
+      "purpose": "Продолжение аудита: PostgreSQL, Redis, recovery и live API — 13 октября 2026",
+      "type": "audit/evidence history",
+      "status": "сверено частично",
+      "coverage": "Dependency applicability и выбранные evidence sections; не весь runtime report.",
+      "sourceConnection": "package-lock.json; server/package-lock.json",
+      "sha256": "40b5332c10f80a57a4e2041a4a20d4009770a52e07cb6c363315cf86bc34c76d"
+    },
+    {
+      "path": "docs/audits/SELECTED_DESIGN_IMPLEMENTATION_2026-10-04.md",
+      "purpose": "Применённые варианты дизайна — 2026-10-04",
+      "type": "audit/evidence history",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b7ee495c9a80464d026de9f2a4eef7caf68aeed6f35e3dbbea00acb5ca67e39f"
+    },
+    {
+      "path": "docs/audits/UI_SECURITY_RECHECK_2026-10-20.md",
+      "purpose": "Повторный аудит интерфейса, дизайна и безопасности — 20 октября 2026",
+      "type": "рабочий реестр / текущая disposition / новый отчёт",
+      "status": "сверено частично",
+      "coverage": "Новый отчёт; утверждения сверены с fresh evidence и ограничениями.",
+      "sourceConnection": "evidence/2026-10-20/; relevant source links",
+      "sha256": "d2bd15b446fb5df6858829ea2abb8accd0c7a0fbb3c68fbcb18231d1c0a2354d"
+    },
+    {
+      "path": "docs/audits/UI_UX_AUTONOMOUS_2026-10-04.md",
+      "purpose": "Автономные исправления и UI/UX-приёмка — 04.10.2026",
+      "type": "audit/evidence history",
+      "status": "сверено частично",
+      "coverage": "Прочитаны scope/results/findings, не все исторические evidence. Fresh matrix не закрывает новые interaction defects.",
+      "sourceConnection": "scripts/audit-ui-ux.mjs; src/shared/ui/",
+      "sha256": "25c4e5c388508e756477fac6acc55e6aace7f1ba51d21b3675a954eaafeede59"
+    },
+    {
+      "path": "docs/backend-api-parity.md",
+      "purpose": "Backend/API parity",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "6edec8d3dcb31b087f8c2af22cbdc69e703194df2c25aec896a45495a7f4d6fb"
+    },
+    {
+      "path": "docs/CONCURRENCY_TEST_MATRIX.md",
+      "purpose": "Concurrency Test Matrix",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "08acdba004152b47a08ad9a3b3e278bba3a35404e44c02fdc2867e3872ff55b1"
+    },
+    {
+      "path": "docs/CUSTOMER_HANDOFF.md",
+      "purpose": "AutoCare Hub Customer Handoff",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "817e087cffccc3c517bd0b470398a1e84cbb9a8611e70174cc80e7909431dcef"
+    },
+    {
+      "path": "docs/DATA_RETENTION.md",
+      "purpose": "Data Retention Policy",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "cd6f157ab1d50e41798f0b2837a845e2ece08f3e6125b6c74e78338b1de8568a"
+    },
+    {
+      "path": "docs/design/approved-desktop-baseline.md",
+      "purpose": "Legacy desktop baseline — retained for migration reference",
+      "type": "design contract / proposal direction",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "036b6655e650deffd6cce215d8b4705fe9fb338373aa6dc3846c5690dcb76d15"
+    },
+    {
+      "path": "docs/design/approved-homepage-direction.md",
+      "purpose": "Legacy homepage direction — retained for migration reference",
+      "type": "design contract / proposal direction",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b33e9798806aa696eb58abf1b64071f4dc35c99c659f56ab77e404f1a1f5c4bb"
+    },
+    {
+      "path": "docs/design/autocare-design-brief.md",
+      "purpose": "AutoCare Hub — design brief",
+      "type": "design contract / proposal direction",
+      "status": "сверено частично",
+      "coverage": "Прочитаны основные разделы; typography Inter расходится с Russo One/Onest в tokens.",
+      "sourceConnection": "src/index.css:10; src/pages/autocare-home/",
+      "sha256": "416093e116f6d4e04d3d3821256073c68fce7400679a97eb8cb97e8a05765c4d"
+    },
+    {
+      "path": "docs/design/autocare-interaction-state-contract.md",
+      "purpose": "AutoCare Hub — interaction and state contract",
+      "type": "design contract / proposal direction",
+      "status": "сверено частично",
+      "coverage": "Прочитан; scope drift subscription/promo и дефекты compare/draft. Не весь API contract проверен.",
+      "sourceConnection": "src/pages/autocare-request/; src/pages/autocare-results/; src/entities/automotive-service/ui/ServiceRequestChat.tsx",
+      "sha256": "9ab8ceaba5dbdfb7298d71632239b97e6ddeb96cfcd2650f9b292eceab5bf21e"
+    },
+    {
+      "path": "docs/design/design-token-contract.md",
+      "purpose": "AutoCare Hub Design Token Contract",
+      "type": "design contract / proposal direction",
+      "status": "сверено частично",
+      "coverage": "Прочитан; проверен token guard, light/dark matrix.",
+      "sourceConnection": "src/index.css; scripts/check-design-tokens.mjs",
+      "sha256": "f0e62c842499c1f5e60b761bd39ffd820984447e9418240a972f148571a30dbd"
+    },
+    {
+      "path": "docs/design/font-license-contract.md",
+      "purpose": "AutoCare Hub font license contract",
+      "type": "design contract / proposal direction",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "67dff3513101367641a7e79af1b5160a621edfc179044da2f7d7d61f66da3191"
+    },
+    {
+      "path": "docs/design/footer-route-contract.md",
+      "purpose": "AutoCare Hub footer route contract",
+      "type": "design contract / proposal direction",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "572f2239195bdc9810178402017cc22571de0948638975d20e3ea06f653a3be7"
+    },
+    {
+      "path": "docs/design/interaction-state-contract.md",
+      "purpose": "Legacy Interaction State Contract",
+      "type": "design contract / proposal direction",
+      "status": "сверено частично",
+      "coverage": "Прочитан; primitive guard PASS, реальные dialog/draft bugs описаны отдельно.",
+      "sourceConnection": "src/shared/ui/confirm-dialog/; scripts/check-interaction-state-contract.mjs",
+      "sha256": "a247be691e2acc8ca4079cf04878b6160a1b7a43473bd22c7aed94294c925472"
+    },
+    {
+      "path": "docs/design/logo-options.md",
+      "purpose": "AutoCare Hub — logo directions for review",
+      "type": "design contract / proposal direction",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "c5fb664b3c8f9a97217d851ffad70ba129a648b93a5ebbd6402da8456adb5425"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/README.md",
+      "purpose": "AutoCare Hub desktop proposal suite, revision 2",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "31f653f40ca0272498766deedc64db6c75f788b984cb6e60248871a2340f8307"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/README.md",
+      "purpose": "AutoCare Hub visual proposal suite",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "c47ae17ad0d66fda0cef11161a676feaa690d51296f5b243245b20c568cabd72"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/README.md",
+      "purpose": "AutoCare Hub homepage directions",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "ed6a674c5658e58131da0197909b30aa922157c0cbda22c59eedbbe3633d050c"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/README.md",
+      "purpose": "AutoCare Hub desktop proposal suite, revision 3",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "189c43d5f6045ce2e715e53a536a1f2e6efdd5e70fd671331d6ffa253e03f775"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/README.md",
+      "purpose": "AutoCare Hub footer-linked public page proposals",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "d01599344e17478de9a459618973aa0d3f0cba9b27138e8d94ef64a4d8bf4876"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/README.md",
+      "purpose": "AutoCare Hub PWA/mobile proposal suite",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "eb5e8ad704c3c874668a42fd767253a0043c1f1fe1d14d1474eba6ece7e34628"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-tablet/README.md",
+      "purpose": "AutoCare Hub tablet proposal suite",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "776c148e52848d5d40d01a768696234900213e44dc38e8ba94914ec5bd4a7af8"
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/README.md",
+      "purpose": "AutoCare Hub missing-page desktop proposal suite",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "d1148f46b986f5278b10b23aeb55ddf45d7cc4d79058810fa8a568b9b8f4b731"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-a21-a29/a21-report-queue.svg",
+      "purpose": "a21-report-queue",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "076a4289039ff7c409fc9bfaed27cef3de1b0fe9807a5ce0be7257a4a1d100d4"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-a21-a29/a29-public-profile.svg",
+      "purpose": "a29-public-profile",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "8a4361cb5edde77c9f430d306c1a6ee79ac9fcd99da52d748654e32a7153e433"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-a21-a29/README.md",
+      "purpose": "Предложение по A21 и A29 — 26 сентября 2026",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "1334e241527ce9ba10434280bfb540990551cbd48d978122390d83b9bdfb3bce"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-final-pass/README.md",
+      "purpose": "01. Give the user-page heading an opaque surface",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "2f6070cbf9750a86a452d77395cdb04e0eadecb8ec68833e24c8a0243b0a19c0"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/favicon-proposal.svg",
+      "purpose": "favicon-proposal",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "50d6d58bc0cff276e99c7969a1108dffa9f0e633f4ea3941352fd69ab603c154"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/logo-option-a-road-wheel.svg",
+      "purpose": "logo-option-a-road-wheel",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "239fdc167857a072967758bef3e9372eb082b81cadd3e08d378d20d7eab22f85"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/logo-option-b-hub-nut.svg",
+      "purpose": "logo-option-b-hub-nut",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "a659e3b8bdf63de321341abe33a782a7edd5f844ae3b29a7faa8a309ce05aadf"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/logo-option-c-monogram.svg",
+      "purpose": "logo-option-c-monogram",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "7c5e0aca74fc55e1a3a4107918f59d9a0075ac4a600a0bad9e18a8f97500fee0"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/provider-placeholder-proposal.svg",
+      "purpose": "provider-placeholder-proposal",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "fdc7c0d0643b5c4e609dcdd129682ab0dc0e47a9cdbb0c6d28d176193715b133"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/service-pattern-proposal.svg",
+      "purpose": "service-pattern-proposal",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b49684d41f33931057387e61f2a1e7f7cdbd243dd9c7aca66291ce01b50dd0a4"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/theme-moon-proposal.svg",
+      "purpose": "theme-moon-proposal",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f1b628d28322d5637ab7b245a830db8998df37b4ab359fdaf4bb9c6462c0e5f9"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/theme-sun-proposal.svg",
+      "purpose": "theme-sun-proposal",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "18981d98a283f7f467fb98819a8adb8f6978e71fe072385c8dcc64df90c04f5e"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/assets/wheel-send-proposal.svg",
+      "purpose": "wheel-send-proposal",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4af61f60f9c875a6c13a4d1bc59166c32671eec72227ee391dd7db5158152ba8"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/preview.html",
+      "purpose": "preview",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "e6d1f81a5c7da75f6f016669869739bad025ab451e3a8a344f465579637c0105"
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-svg-refresh/README.md",
+      "purpose": "AutoCare Hub — SVG личных кабинетов и панелей управления",
+      "type": "визуальное предложение / reference asset",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "666ceca01876b7450376d5f11201d1c624b8074419b69daf21ee71c96ecc427f"
+    },
+    {
+      "path": "docs/diagrams/_style.puml",
+      "purpose": "_style",
+      "type": "PlantUML source / shared style",
+      "status": "не проверено",
+      "coverage": "Source anchors совпали, но исходник/семантика схемы заново полностью не перечитаны; свежей syntax/render проверки нет.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf"
+    },
+    {
+      "path": "docs/diagrams/01-system-context.puml",
+      "purpose": "01-system-context",
+      "type": "PlantUML architecture map",
+      "status": "не проверено",
+      "coverage": "Source anchors совпали, но исходник/семантика схемы заново полностью не перечитаны; свежей syntax/render проверки нет.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "fd38c6b64ec81ce5e614e4dc5f33a01e5716caf4f370b4d2b9187f5ae7550c77"
+    },
+    {
+      "path": "docs/diagrams/02-runtime.puml",
+      "purpose": "02-runtime",
+      "type": "PlantUML architecture map",
+      "status": "не проверено",
+      "coverage": "Source anchors совпали, но исходник/семантика схемы заново полностью не перечитаны; свежей syntax/render проверки нет.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "d513cdbaed2e07f39525725d3d2ee7ce7d71174c55e9d7dc30804a1230f4e595"
+    },
+    {
+      "path": "docs/diagrams/03-frontend.puml",
+      "purpose": "03-frontend",
+      "type": "PlantUML architecture map",
+      "status": "сверено частично",
+      "coverage": "Прочитан; scoped frontend routes/API ownership сверены. Component-local states не представлены графом.",
+      "sourceConnection": "src/app/routes/route-groups.tsx; src/entities/automotive-service/api/",
+      "sha256": "cac7d87671ae3e95a0a380dda91e02323849d6cbd4d1c68c5bbd613d2c38c2c4"
+    },
+    {
+      "path": "docs/diagrams/04-backend.puml",
+      "purpose": "04-backend",
+      "type": "PlantUML architecture map",
+      "status": "не проверено",
+      "coverage": "Source anchors совпали, но исходник/семантика схемы заново полностью не перечитаны; свежей syntax/render проверки нет.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "c190e5b670316896f43fe2ed86f6ef060c06f2c4d6b94f6569a7bef39bfbc34b"
+    },
+    {
+      "path": "docs/diagrams/05-domain-data.puml",
+      "purpose": "05-domain-data",
+      "type": "PlantUML architecture map",
+      "status": "не проверено",
+      "coverage": "Source anchors совпали, но исходник/семантика схемы заново полностью не перечитаны; свежей syntax/render проверки нет.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "a8ad4647740e463e74f69c485c5cae0b4ce8ad7450dc9bfd111d8e65f7ba7d62"
+    },
+    {
+      "path": "docs/diagrams/06-request-workflow.puml",
+      "purpose": "06-request-workflow",
+      "type": "PlantUML architecture map",
+      "status": "не проверено",
+      "coverage": "Source anchors совпали, но исходник/семантика схемы заново полностью не перечитаны; свежей syntax/render проверки нет.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "9072f450e77bbcbddb334821fc38a258244e8b009476d806b109597bc8bd2e46"
+    },
+    {
+      "path": "docs/diagrams/07-auth-session.puml",
+      "purpose": "07-auth-session",
+      "type": "PlantUML architecture map",
+      "status": "сверено частично",
+      "coverage": "Прочитан; requireAuth/session boundary и auth sources сверены выборочно. Полный refresh concurrency run не выполнялся.",
+      "sourceConnection": "server/src/modules/auth/; src/shared/api/",
+      "sha256": "7d2974b0231d331201c054f803ab1202b02d5251921622369aa44dcbdc82f071"
+    },
+    {
+      "path": "docs/diagrams/08-outbox-maintenance.puml",
+      "purpose": "08-outbox-maintenance",
+      "type": "PlantUML architecture map",
+      "status": "структурная проверка",
+      "coverage": "U14 enqueue sequence checked against source; syntax, SVG XML, and PNG visual inspection PASS.",
+      "sourceConnection": "server/src/modules/outbox/outbox.service.ts",
+      "sha256": "a84372488a672585d1df28bbfab2c24166185cc1d946584412afb8b12510ce1a"
+    },
+    {
+      "path": "docs/diagrams/09-access-privacy.puml",
+      "purpose": "09-access-privacy",
+      "type": "PlantUML architecture map",
+      "status": "сверено частично",
+      "coverage": "Прочитан; old/new private writer mismatch воспроизведён; другие privilege endpoints не все проверены.",
+      "sourceConnection": "server/src/modules/autocare/{request,chat}-access.service.ts",
+      "sha256": "5c7fb0b0674de50d2e167ab41f133ca81e2c5f83bba260516e0251711b576fb9"
+    },
+    {
+      "path": "docs/diagrams/README.md",
+      "purpose": "Карта проекта AutoCare Hub",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; все 51 anchors/4 inventories совпали; новая полная semantic проверка не заявляется.",
+      "sourceConnection": "docs/diagrams/sources.json",
+      "sha256": "5ba84fbcaec6aa8a1fc3d47f2a6d99840f96a701442880f2e10644e4fceb7040"
+    },
+    {
+      "path": "docs/diagrams/rendered/01-system-context.svg",
+      "purpose": "01-system-context",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/01-system-context.puml",
+      "sha256": "e63103c57eb796a1ec9a96c644185fab8cbb5df80baa2b6870feff75c02632b2"
+    },
+    {
+      "path": "docs/diagrams/rendered/02-runtime.svg",
+      "purpose": "02-runtime",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/02-runtime.puml",
+      "sha256": "0d18eb22d2162fd5743270279d970cd168eab743102e5dd9147a5160bfe8b7c4"
+    },
+    {
+      "path": "docs/diagrams/rendered/03-frontend.svg",
+      "purpose": "03-frontend",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/03-frontend.puml",
+      "sha256": "05d186d9e7e6b041d5f9fcb1859c06755551f44d779596060e699ba739177c43"
+    },
+    {
+      "path": "docs/diagrams/rendered/04-backend.svg",
+      "purpose": "04-backend",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/04-backend.puml",
+      "sha256": "d9ce98426f8c03bba8731b71802ce85cfb5852ea2584522a5f4c6252773a6de4"
+    },
+    {
+      "path": "docs/diagrams/rendered/05-domain-data.svg",
+      "purpose": "05-domain-data",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/05-domain-data.puml",
+      "sha256": "e554483a3060041049587ff77a1a8d529b3f62cf1355e96acfe58522bac1f62a"
+    },
+    {
+      "path": "docs/diagrams/rendered/06-request-workflow.svg",
+      "purpose": "06-request-workflow",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/06-request-workflow.puml",
+      "sha256": "8c65247bc183d0c5b12c516d4b6fdd7cc7bcf31507f3ba87350c5ebd18b85525"
+    },
+    {
+      "path": "docs/diagrams/rendered/07-auth-session.svg",
+      "purpose": "07-auth-session",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/07-auth-session.puml",
+      "sha256": "8770fdfa4f31b88b43bd8d0fc83cecc5b22aa55b5c7e535072b00f717eac5d53"
+    },
+    {
+      "path": "docs/diagrams/rendered/08-outbox-maintenance.svg",
+      "purpose": "08-outbox-maintenance",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/08-outbox-maintenance.puml",
+      "sha256": "001a5abd6e91b1331586c8c5ab777ea5b1af003979bc00e2a510abb76aac93b5"
+    },
+    {
+      "path": "docs/diagrams/rendered/09-access-privacy.svg",
+      "purpose": "09-access-privacy",
+      "type": "производный SVG preview",
+      "status": "структурная проверка",
+      "coverage": "SVG XML parse PASS; сохранён preview 15 Oct. Новая отрисовка/семантическая проверка не выполнялась.",
+      "sourceConnection": "docs/diagrams/09-access-privacy.puml",
+      "sha256": "51a81f9b2b6996d4c9e1e47568e09d7512dc5b1551c495e54725bfa0b23d2e01"
+    },
+    {
+      "path": "docs/FINANCIAL_DATA_RETENTION.md",
+      "purpose": "Financial Data Retention Contract",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b828ce196d168eec48b787e7f0f1f88a75451ed77b1624a1d971fbd5d61ed71e"
+    },
+    {
+      "path": "docs/INCIDENT_RUNBOOK.md",
+      "purpose": "AutoCare Hub Incident Runbook",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b1a996e342771dc5fd5600a8aaa8711cbb54168390256eb84dd52d9f600d0498"
+    },
+    {
+      "path": "docs/location-zone-catalog.md",
+      "purpose": "AutoCare location-zone catalog",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "5a33eae713cddcb73ab26376a553917ede980f1e5b751d6eea3514c787db8f2c"
+    },
+    {
+      "path": "docs/MAP_PROVIDER.md",
+      "purpose": "Catalog Map Provider",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "ea7e5a7eecb88cdad2d673c0c74dce941b0f80933248b463ca2e013e5ea3feef"
+    },
+    {
+      "path": "docs/MIGRATION_AUDIT.md",
+      "purpose": "Legacy Cabinet Booking -> AutoCare Hub Migration Audit",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "80f0e4c5b74a11278b8e722f78fb3ba9d3189932c28c281c4ac4473cbcba7ce0"
+    },
+    {
+      "path": "docs/native/MOBILE_READINESS_GATE.md",
+      "purpose": "Native mobile readiness gate",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "9b6f74d1b9d087b5be39e6d596f20dd49e75315e2ebde4808bc991b79a873784"
+    },
+    {
+      "path": "docs/notification-delivery-semantics.md",
+      "purpose": "Notification Delivery Semantics",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "703127076473944c3ebea0eb43defb56681e9de141ef2bf402e84d9c7ac114aa"
+    },
+    {
+      "path": "docs/OBSERVABILITY.md",
+      "purpose": "Observability Runbook",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "fe3b89ac8452a02117eca52b1906b6b87199597697c8df4ae3d11684a6fa93b1"
+    },
+    {
+      "path": "docs/operations/autocare-discovery-release-gate.md",
+      "purpose": "AutoCare discovery and trust release gate",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "3ca3636a6e94e91b176314f00df586b4548db6eaae621ce2c8997ec7860a77c6"
+    },
+    {
+      "path": "docs/operations/BACKEND_TEST_PROFILES.md",
+      "purpose": "Backend test profiles",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b20853d24bbbf2298ce9797f2541fab3d95678b2055dcc492a002ffa4654930a"
+    },
+    {
+      "path": "docs/operations/BACKUP_RESTORE_EVIDENCE_TEMPLATE.md",
+      "purpose": "Backup and restore evidence template",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "dfb7bec6a74ce5d0ab750101a78f0bdb97f81b9b84302a4d3fdf8017c9e59e4d"
+    },
+    {
+      "path": "docs/operations/BACKUP_RESTORE_RUNBOOK.md",
+      "purpose": "Backup, restore and alert rehearsal",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4ae1edc2aa36c06a359816739167a05d31f28422b17b0958cf1d45649fce8e1f"
+    },
+    {
+      "path": "docs/operations/BOOKING_MEDIA_RELIABILITY_STATUS_2026-08-24.md",
+      "purpose": "Booking, media and notification reliability — 2026-08-24",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "aa725d9030af95238cfef0b6366a4b998c0865d3730140360ac49b41cec8fd38"
+    },
+    {
+      "path": "docs/operations/BROWSER_RELEASE_AUDIT_2026-08-25.md",
+      "purpose": "Browser release audit — 2026-08-25",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "18a3c5b3333580a4c784e4e65e4d81b381d9f4b63fe2ad762e5ab3680b75082e"
+    },
+    {
+      "path": "docs/operations/CONCURRENCY_MATRIX.md",
+      "purpose": "Booking concurrency matrix",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "c35bdb53d0ba4d08ad0160fa308725636fb66c162aabac3798e5b428b2e0ae76"
+    },
+    {
+      "path": "docs/operations/DISCOVERY_BENCHMARK.md",
+      "purpose": "Discovery benchmark",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "11192c8d6d18f0a554bec489277e797dee8185fe96b47332bc783a08fd51750e"
+    },
+    {
+      "path": "docs/operations/ENCRYPTION_BACKFILL_ROLLOUT.md",
+      "purpose": "Encryption backfill rollout — N09",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4ad40b2a6f4874721c30414c8693db6e0942610346052036ca278872edf66712"
+    },
+    {
+      "path": "docs/operations/FINAL_PROJECT_AUDIT_2026-09-05.md",
+      "purpose": "Финальная ревизия AutoCare Hub — 05.09.2026",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "52390032de5a6c88bd106e67495aef66f3ca412523aa17a49f9fd25b2510067c"
+    },
+    {
+      "path": "docs/operations/GEO_SEARCH_STRATEGY.md",
+      "purpose": "Production geo-search strategy",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "1cd36642f19e52260118b7f09ffe68f78275546d7be3d32c1d1f4c8ea13a6f34"
+    },
+    {
+      "path": "docs/operations/GITHUB_ACTION_PINS.md",
+      "purpose": "GitHub Actions: immutable references",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b59f27affe6ab996b393c4f3efeaf32e41940a1a36e5631ff16d4b54889ffaae"
+    },
+    {
+      "path": "docs/operations/LEGACY_CLEANUP_EVIDENCE_2026-08-27.md",
+      "purpose": "Legacy cleanup evidence — 2026-08-27",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "9a40dde31aafe51097a2bb41f92021c0fbfe0b337c96835f2cd8ceab263e0f4a"
+    },
+    {
+      "path": "docs/operations/LOCAL_MOCK_SCENARIOS.md",
+      "purpose": "Local mock UI scenarios",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "e8882acc12fac828eefe9aecfda936ed914ac08d7709818eb5a09004d18c1f1f"
+    },
+    {
+      "path": "docs/operations/LOCAL_PILOT_QUALITY_EVIDENCE_2026-08-25.md",
+      "purpose": "Local pilot quality evidence — 2026-08-25",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "8e0c49c7068a16a8ea198d6b8c63058f4487d989c4cfddc0ba6389a1996129b7"
+    },
+    {
+      "path": "docs/operations/LOCAL_PRODUCTION_OPERATIONS_EVIDENCE_2026-08-27.md",
+      "purpose": "Local production operations evidence — 27 Aug 2026",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "016357d9314285bb1903896c9e44e7dd9741201987bcf197b06d076087c51fc0"
+    },
+    {
+      "path": "docs/operations/MVP_MANUAL_ACCEPTANCE_CHECKLIST.md",
+      "purpose": "AutoCare Hub — ручная приёмка локального MVP",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "5f55e1ab5a26836e9630328ba6f23ea3338c980b89be555f38ddb677a46ff428"
+    },
+    {
+      "path": "docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md",
+      "purpose": "MVP / pilot improvement plan — 2026-09-23",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "88fdacf71809bce6de340f8afecac217b00a25f8605f4acbfb9af4a974a6e701"
+    },
+    {
+      "path": "docs/operations/MVP_REMAINING_100_BLOCKS.md",
+      "purpose": "AutoCare Hub — оставшиеся MVP-блоки по 100 шагов",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4305b507bc9a285f0078f447a297814610294f4b1da0ba95ee7798d4aa2cb123"
+    },
+    {
+      "path": "docs/operations/MVP_VERIFICATION_SLICE_2026-08-25.md",
+      "purpose": "MVP verification slice — 25 Aug 2026",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "44bf128b6f0b5330e3237fa956fa5e2da7e6d34d01120bc9cfdaf93f88ac1710"
+    },
+    {
+      "path": "docs/operations/NEXT_INITIAL_JAVASCRIPT_BASELINE.md",
+      "purpose": "Production Next initial JavaScript baseline — 2026-10-04",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "b68543ee6309af19fda553a17bc0ad86d29b0cb1dceadfe0c535884a49aefc3c"
+    },
+    {
+      "path": "docs/operations/NEXT_ROUTE_MATRIX_2026-08-25.md",
+      "purpose": "Next.js route matrix",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "00be270a7bd040a0d66c7144eb51033609e7990f172cfa0d6ebfb538877e4038"
+    },
+    {
+      "path": "docs/operations/PILOT_100_READINESS_PLAN.md",
+      "purpose": "AutoCare Hub — план готовности к пилоту 100%",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f31ddb1787354023d3ce7aec982fc4f4320666dac283f1decc1e89b5dd9bcfa9"
+    },
+    {
+      "path": "docs/operations/PILOT_AUTONOMOUS_100_EXECUTION.md",
+      "purpose": "AutoCare Hub — автономное выполнение 100 пунктов",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "1f1883e7195ecbfa4932a6fa37858a2447b05183408c699f2216b1070df2bac0"
+    },
+    {
+      "path": "docs/operations/PILOT_AUTONOMOUS_100_NEXT.md",
+      "purpose": "AutoCare Hub — 100 следующих автономных шагов",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "77842e41dc816d833ac063eb72f4e847efdf269f535f1b0e8d37b2e4205adbb0"
+    },
+    {
+      "path": "docs/operations/PILOT_AUTONOMOUS_200_EXECUTION.md",
+      "purpose": "AutoCare Hub — единый 200-пунктовый аудит",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "3e117e6d96e68a6670d0c69e08dc593676516f7ea8044e8ea20fbe4ef47f6b7e"
+    },
+    {
+      "path": "docs/operations/PILOT_EVIDENCE_TEMPLATE.md",
+      "purpose": "Real pilot evidence template",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "7fdd1600af408c7ac7c25d5d851ba10904a60fe71ba45d10662017df382b2fb5"
+    },
+    {
+      "path": "docs/operations/PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md",
+      "purpose": "Локальное evidence пилотного трека — 31.08.2026",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "8d8fe6e93b178a572012d1e01563df56beb5079d17288d47cb8c9429e1c86d36"
+    },
+    {
+      "path": "docs/operations/PILOT_READINESS_RUNBOOK.md",
+      "purpose": "AutoCare Hub pilot readiness runbook",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "162ecbba8a7f5e31b63595d5ac2a3f9a771393740911faa86534401f2a31756c"
+    },
+    {
+      "path": "docs/operations/PILOT_SCOPE_FREEZE.md",
+      "purpose": "AutoCare Hub — окончательный план готовности закрытого пилота",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "сверено частично",
+      "coverage": "Canonical 54-gate scope and NO-GO rules reviewed; individual gate evidence not all audited.",
+      "sourceConnection": "scripts/check-mvp-readiness.mjs; server/src/scripts/check-pilot-evidence.ts",
+      "sha256": "8af65f5b0ef2d4e0db33bdb31c8f2ef5ac9d4d4bd2cf8a9cd25ff7aedd31fc16"
+    },
+    {
+      "path": "docs/operations/PILOT_TASK_ALLOCATION.md",
+      "purpose": "Распределение работ: срочность, ответственность и прогресс",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "20c46a9eb82f3a06fe3eb87423022a11ff0eeb839102fb43645d257e6d17e283"
+    },
+    {
+      "path": "docs/operations/POST_PILOT_LOCAL_EVIDENCE_2026-09-08.md",
+      "purpose": "AutoCare Hub — post-pilot backlog: локальное evidence",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "67868888aa91d4871d6d50427f6b6388b2a018f05060ebe1dc5f97bf9b5dfb6d"
+    },
+    {
+      "path": "docs/operations/PRODUCTION_OPERATIONS_PREFLIGHT.md",
+      "purpose": "Production operations preflight",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "030de20316620ad6f7319cd122ea94732167dc638aa0e32ac0c8c81c432e2429"
+    },
+    {
+      "path": "docs/operations/PUBLIC_PAGES_SEARCH_TRUST_RELEASE_GATE_2026-08-25.md",
+      "purpose": "Public pages, discovery and trust release gate — 2026-08-25",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f636742b020f22a2dcb1b9d5dc985fd4f983225e1fae3879493f076b3f20dee3"
+    },
+    {
+      "path": "docs/operations/PWA_RUNTIME_STATUS.md",
+      "purpose": "PWA runtime status — 2026-10-04",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f4f89a09ccce0174c4d7dca7cb7e49c19f51fd2ae93f7c9ddd64fd14a70ab6fc"
+    },
+    {
+      "path": "docs/operations/RELEASE_EVIDENCE_TEMPLATE.md",
+      "purpose": "Stable web release evidence template",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "8c03ca4bd018de9bfcc575db93a06c249d5fb1c328711a61217a6aa75dbc6c44"
+    },
+    {
+      "path": "docs/operations/REMAINING_BLOCKS_2026-08-23.md",
+      "purpose": "Remaining roadmap blocks — 2026-08-23",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "46444b8c144d6b02692db5b5741d4389d933189e276aef74330509dc6b5fc179"
+    },
+    {
+      "path": "docs/operations/RESOURCE_CAPACITY.md",
+      "purpose": "Resource-level capacity policy",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "c81ffb9bcf640837cee6f9ea90dc492e358cf3d90a7ea09cd26527aac9f2a2db"
+    },
+    {
+      "path": "docs/operations/ROADMAP_STATUS_2026-08-23.md",
+      "purpose": "Roadmap status — blocks 2–8",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "e9bc78be0b9564bc99e845068270c3b9d315490adec9e71bff59684449d3a8aa"
+    },
+    {
+      "path": "docs/operations/SELF_EXECUTION_2026-09-08.md",
+      "purpose": "Автономный проход AutoCare Hub — 8 сентября 2026",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "13fd7aa32188e533640faf01b998157ce8f9f99d96400caf0779dc06c8eda285"
+    },
+    {
+      "path": "docs/operations/SEO_PRERENDER_MEDIA_EVIDENCE_2026-08-27.md",
+      "purpose": "SEO, prerender and media budget evidence",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "6c32651d63712768e4410cc5bb490d5d46a9f8a144a7455e53bf85d59ed8896e"
+    },
+    {
+      "path": "docs/operations/STABLE_WEB_RELEASE_EVIDENCE.md",
+      "purpose": "Stable web release evidence",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "72488da4258105917f84903b56f56bed850cba1ee8e7c57e678924c19521f0b7"
+    },
+    {
+      "path": "docs/operations/STAGING_API_EVIDENCE_TEMPLATE.md",
+      "purpose": "Staging API compatibility evidence",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "a05fdf20f610e689d6fc5ce220badba8fd252dd38136b0f540392b035931c1a3"
+    },
+    {
+      "path": "docs/operations/UI_LOADING_RESPONSIVE_A11Y_LOCALE_2026-08-25.md",
+      "purpose": "UI readiness audit — 25 August 2026",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "647abf2dd3378e9473b34ffd367cf2cf5bda348ed6334c646f9cac61450177ba"
+    },
+    {
+      "path": "docs/operations/UI_RUNTIME_FIXES_2026-08-25.md",
+      "purpose": "UI/runtime fixes — 2026-08-25",
+      "type": "runbook / template / историческая приёмка; статус не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "d669226eaf8476924e40bb6e68abcf6a76a6e6f0a5f32caccecfd0a95d99e9bd"
+    },
+    {
+      "path": "docs/PHASE_L_DESIGN_QA.md",
+      "purpose": "Phase L Design QA Checklist",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "27688b0618f4c0b77bc0374af0d40a5f8db5345c8c925614ba602341578f4e33"
+    },
+    {
+      "path": "docs/product/BONUS_POLICY.md",
+      "purpose": "Политика бонусов AutoCare Hub",
+      "type": "product policy / acceptance template",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "92f7f252feeba8de9cf62e78486c9d8f43b0401f04ca97e9e5b4225ce495cfe2"
+    },
+    {
+      "path": "docs/product/LEGAL_PUBLICATION_CHECKLIST.md",
+      "purpose": "Legal publication checklist",
+      "type": "product policy / acceptance template",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "7cda7a8edf70cd8869c69f4249374a142acf939bfdf8cec71a786e2385aa83d7"
+    },
+    {
+      "path": "docs/product/MONETIZATION_GATE.md",
+      "purpose": "Excluded commercial scope",
+      "type": "product policy / acceptance template",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "ae5a46620e06df984825ec8142aae0c46e28a60b25d68441b650c7bc8182c3b3"
+    },
+    {
+      "path": "docs/product/MVP_POLICY_BASELINE.md",
+      "purpose": "AutoCare Hub — MVP policy baseline",
+      "type": "product policy / acceptance template",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "a9b6bea0d3c2fc8d9a0cf1b77b6847607ff78e9465d462435bb2750120d33dd4"
+    },
+    {
+      "path": "docs/product/OPEN_DECISIONS.md",
+      "purpose": "AutoCare Hub — Open Product Decisions",
+      "type": "product policy / acceptance template",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "91b41cdb547e2d29f092612efd659aec2c97d8509d946a79da859f76998046ba"
+    },
+    {
+      "path": "docs/product/PUBLIC_DESIGN_STATE_MATRIX.md",
+      "purpose": "Public design state matrix",
+      "type": "product policy / acceptance template",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "4b6581474204492ace429470f4744f65dc0b6f097346e5ba2da5864cf92986b8"
+    },
+    {
+      "path": "docs/product/RESPONSIVE_ACCESSIBILITY_LOCALE_MATRIX.md",
+      "purpose": "Responsive, accessibility and localization matrix",
+      "type": "product policy / acceptance template",
+      "status": "сверено частично",
+      "coverage": "Прочитан; fresh RU/EN/three widths. Остальные locales, devices и zoom не перепроверены.",
+      "sourceConnection": "scripts/audit-ui-ux.mjs",
+      "sha256": "153642607815c095438ff98e184259a51fc0b7090a4396a12e43aeaa40104fbc"
+    },
+    {
+      "path": "docs/PRODUCTION_READINESS.md",
+      "purpose": "Production Readiness Checklist",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "3a97f2a9d5a0d405c7da00fbe69ce054cc81469c449d70760772ce7ae62fbaa0"
+    },
+    {
+      "path": "docs/PROVIDER_CONFIGURATION.md",
+      "purpose": "Provider Configuration Handoff",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "51e99d2c7924c4ad8224df8aed5010614614a1c71c7f4f050c74273ff043048e"
+    },
+    {
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "purpose": "Release Checklist",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "bf83760e253adc5777e644b0cc529a47c2477a8e596bc8a2897519ea1977da62"
+    },
+    {
+      "path": "docs/REPOSITORY_PROTECTION.md",
+      "purpose": "Repository protection policy",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "c5a2a45ba07aab211634a6bae273f3cdc9bf7d7a6906d183fb9794a970a0f331"
+    },
+    {
+      "path": "docs/SECURITY_AUDIT_2026-09-26.md",
+      "purpose": "Аудит защиты данных AutoCare Hub — 26 сентября 2026",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "73c3056c4baaf4b79dbf11d18f2bed0e75754fdd149e6b136b6dd6b278ce3d8f"
+    },
+    {
+      "path": "docs/security/CHAT_REPORT_ENFORCEMENT_POLICY_DRAFT_2026-09-24.md",
+      "purpose": "Draft: proportionate enforcement for chat reports",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "0397c00585253a1ddb467a97b7fb1f299a630f7e4f771dae070184069c50bf8b"
+    },
+    {
+      "path": "docs/security/LOCAL_SECURITY_REVIEW_2026-08-27.md",
+      "purpose": "AutoCare Hub — local backend security review (2026-08-27)",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "c6963ade68dd14b758977e773e1d04255556636414f2225ba66716aab5c8a685"
+    },
+    {
+      "path": "docs/security/THREAT_MODEL.md",
+      "purpose": "AutoCare Hub web threat model",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; проверены выбранные границы. Implementation complete не означает отсутствие U14/U15/U20/U22.",
+      "sourceConnection": "server/src/app.ts; server/src/modules/autocare/",
+      "sha256": "2861e8071841604c5460f40b0a1b50f7fab9622121bdf7d05e297bc3f8ab042f"
+    },
+    {
+      "path": "docs/SEO_PRERENDER_MEDIA_BUDGET.md",
+      "purpose": "SEO, prerender and media budget gate",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "5ef30b3a84502903ef73354ef396550adf267bd0cd46f015088d335c26084ccc"
+    },
+    {
+      "path": "docs/specs/MVP_BOOKING_QUOTE_SPEC.md",
+      "purpose": "Спецификация MVP: дата записи и согласие с версией сметы",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "a90cf27143120e9f5c22ee556858a0a2bec4e6f15b470015d3651bb7c03dc899"
+    },
+    {
+      "path": "FRONTEND_REVIEW.md",
+      "purpose": "Legacy cabinet-booking Frontend Baseline Review",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "fec38801cb2f9234873472ce13f5fa251a2c97b390a38db8f5013074019184bd"
+    },
+    {
+      "path": "GEMINI.md",
+      "purpose": "AutoCare Hub Project Instructions",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "9b601feb05de065aba96aedbabafa9c43c8336aeee3c5850f1ac071ebd4eb7e2"
+    },
+    {
+      "path": "PROJECT_CONTEXT.md",
+      "purpose": "AutoCare Hub Project Context",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитаны свежие handoffs; исторические 1196 строк целиком не перечитаны. Добавлен fresh handoff.",
+      "sourceConnection": "Git branch; docs/audits/; docs/diagrams/",
+      "sha256": "705a866cabdc1c30b525dd47390d8d4d25f39ebeb0672ee8e8825ce46ae7a191"
+    },
+    {
+      "path": "PROJECT_PLAN.md",
+      "purpose": "AutoCare Hub — Project Plan",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Свежие разделы и task updates; исторические 2276 строк целиком не перечитаны.",
+      "sourceConnection": "docs/audits/UI_SECURITY_RECHECK_2026-10-20.md",
+      "sha256": "b07a8b14c40e2cc59f0a2d11b4d00e8431567d7598a141b45c4953fcaf92de9e"
+    },
+    {
+      "path": "README.md",
+      "purpose": "AutoCare Hub",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "8b66adb2eb2770adfe2141e1fd760846906b28f91dff464e3efd74c4e7c11753"
+    },
+    {
+      "path": "SECURITY_CONTEXT.md",
+      "purpose": "AutoCare Hub Security Context",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; сопоставлены provider/privacy границы и открытые gates.",
+      "sourceConnection": "server/src/modules/autocare/{provider,request,chat}-access.service.ts",
+      "sha256": "ed9dfda380b2ed7ba96b27c09e1339a7b71d7240270e933b48f79b875a5d6c3b"
+    },
+    {
+      "path": "SECURITY.md",
+      "purpose": "Security Overview — Current Platform Baseline",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Сверены выбранные auth/headers/media claims; есть drift SameSite и старых открытых findings.",
+      "sourceConnection": "server/src/modules/auth/auth-cookie.ts; server/src/app.ts",
+      "sha256": "9455ee38f17458cfb35717968380e3b59c45a037eae9627dbca03ae19f918342"
+    },
+    {
+      "path": "server/docs/security/FIELD_ENCRYPTION.md",
+      "purpose": "Field encryption status",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "U14 raw outbox encryption and production key limits reviewed.",
+      "sourceConnection": "server/src/modules/outbox/outbox.service.ts; server/src/database/migrations/1786420000000-EncryptRawOutboxRecipients.ts",
+      "sha256": "b29eac1158dfa4c4194d5105b3a86397c4a1bf2b018eee12eb0f642b906b36ad"
+    },
+    {
+      "path": "server/README.md",
+      "purpose": "AutoCare Hub Server — Migration Baseline",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "не проверено",
+      "coverage": "Не перечитан и не сопоставлен заново с кодом: объём startup inventory и целевой UI/security scope. Полный аудит не заявляется.",
+      "sourceConnection": "Связь с конкретной реализацией не сверена в этом проходе.",
+      "sha256": "f82477a9ea731b9843431f49a8efeb8397b33845ba6c1720f7b8a870bd56a04d"
+    },
+    {
+      "path": "SKILLS.md",
+      "purpose": "Project Skills",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "сверено частично",
+      "coverage": "Прочитан; использованы UI/security checklists.",
+      "sourceConnection": "src/, server/src/",
+      "sha256": "e76055fb13428606d4bea37ca247e3b77f986130e7884473a2ef630f6a89ed33"
+    },
+    {
+      "path": "src/shared/styles/vendor/README.md",
+      "purpose": "Vendored static stylesheet",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "исключено",
+      "coverage": "Vendor license/reference copy; не авторское описание поведения приложения.",
+      "sourceConnection": "src/shared/styles/vendor/",
+      "sha256": "06ed12bc46ff8a094d974d0afeb09e49a01ffb4d3d27770855a56de310460482"
+    },
+    {
+      "path": "src/shared/styles/vendor/shadcn-LICENSE.md",
+      "purpose": "shadcn-LICENSE",
+      "type": "текущий документ / статус реализации не сверён",
+      "status": "исключено",
+      "coverage": "Vendor license/reference copy; не авторское описание поведения приложения.",
+      "sourceConnection": "src/shared/styles/vendor/",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+    }
+  ],
+  "supportingAssetsExcluded": [
+    {
+      "path": "docs/archive/bookly/e2e/mobile-home.spec.ts-snapshots/mobile-home-guest-mobile-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-admin-dashboard-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-admin-dashboard-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-admin-users-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-admin-users-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-client-bookings-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-client-bookings-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-client-reviews-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-client-reviews-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-help-center-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-help-center-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-owner-bookings-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-owner-bookings-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-owner-services-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-owner-services-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-pricing-1024-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/archive/bookly/e2e/tablet-route-coverage.spec.ts-snapshots/tablet-routes-pricing-768-tablet-chromium-darwin.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/audits/evidence/2026-10-20/booking-time-restored.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/audits/evidence/2026-10-20/comparison-price.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/audits/evidence/2026-10-20/cross-chat-draft.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/audits/evidence/2026-10-20/report-dialog-360x568.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/admin-audit-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/cabinet-detail-booking-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/cabinet-reviews-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/catalog-map-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/client-booking-route-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/owner-cabinet-editor-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01-v2-desktop/owner-dashboard-desktop-v2.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/approved-owner-dashboard-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/approved-owner-dashboard-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/approved-public-catalog.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/proposed-admin-audit-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/proposed-cabinet-detail-booking-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/proposed-client-bookings-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/proposed-home-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-01/proposed-owner-cabinet-edit-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/availability-first-guides-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/availability-first-information-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/variant-a-availability-first.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/variant-b-map-first.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/variant-c-planner-first.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-home-variants/variant-d-trust-first.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/admin-audit-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/cabinet-detail-booking-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/cabinet-reviews-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/catalog-map-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/client-booking-route-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/owner-cabinet-editor-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-02-v3-desktop/owner-dashboard-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/blog-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/company-contact-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/for-owners-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/help-center-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/how-booking-works-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-footer-pages/service-rules-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/admin-audit-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/client-booking-offline-directions-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/guest-cabinet-booking-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/guest-home-discovery-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/owner-dashboard-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/owner-dashboard-sidebar-superseded-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-pwa-mobile/owner-more-bottom-sheet-mobile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-tablet/admin-audit-tablet.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-tablet/catalog-map-tablet.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-tablet/client-booking-directions-tablet.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-tablet/home-availability-info-tablet.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-03-tablet/owner-dashboard-tablet.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/admin-management-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/auth-flow-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/client-workspace-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/onboarding-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/owner-operations-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-08-04-missing-pages/pricing-recovery-desktop.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-a21-a29/a21-report-queue.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-a21-a29/a29-public-profile.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-final-pass/01-users-heading-after.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-final-pass/01-users-heading-before.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    },
+    {
+      "path": "docs/design/proposals/2026-09-26-final-pass/02-operations-status-strip-after.png",
+      "reason": "Исторические proposal/reference images или новые screenshots; иллюстративные assets не сверены с текущим кодом как самостоятельная спецификация."
+    }
+  ],
+  "workspaceNavigation": [
+    {
+      "path": "../AGENTS.md",
+      "status": "прочитан; navigation constraints applied"
+    },
+    {
+      "path": "../docs/diagrams/README.md",
+      "status": "прочитан; canonical checkout link exists"
+    }
+  ],
+  "localLinkCheck": {
+    "checked": 220,
+    "missing": 0,
+    "limits": "Local target existence only; anchors and external targets are not exhaustively verified."
+  }
+}

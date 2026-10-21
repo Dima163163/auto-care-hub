@@ -1,0 +1,125 @@
+@startuml
+!include _style.puml
+title Основные данные — выбранные ключи и связи
+left to right direction
+entity "User" as User {
+  * id : uuid
+  --
+  role / status / tokenVersion
+}
+entity "UserSession" as Session {
+  * id : uuid
+  userId / expiresAt
+}
+entity "Provider" as Provider {
+  * id : uuid
+  ownerId : legacy compatibility
+}
+entity "ProviderMembership" as Membership {
+  * id : uuid
+  userId / providerId
+  locationId : nullable
+  role / status
+}
+entity "ServiceLocation" as Location {
+  * id : uuid
+  providerId / marketId
+  timezone / schedule / capacity
+}
+entity "ServiceDefinition" as Definition {
+  * id : uuid
+  slug / comparison attributes
+}
+entity "ServiceOffering" as Offering {
+  * id : uuid
+  locationId / definitionId
+  bookingMode / price / duration
+}
+entity "ServiceRequest" as Request {
+  * id : uuid
+  clientId / providerId / locationId
+  definitionId / offeringId?
+  status / historical snapshots
+}
+entity "ServiceQuote" as Quote {
+  * id : uuid
+  requestId / version / status
+  amountMinor / currencyCode
+}
+entity "ChatThread" as Thread {
+  * id : uuid
+  requestId? / providerId? / clientId?
+  type / status
+}
+entity "ServiceMessage" as Message {
+  * id : uuid
+  requestId? / threadId? / senderId
+  encrypted body / offer
+}
+entity "ServiceAttachment" as Attachment {
+  * id : uuid
+  requestId? / threadId? / uploadedById
+  private storage object key
+}
+entity "AutomotiveReview" as Review {
+  * id : uuid
+  providerId / clientId? / serviceRequestId?
+  status / revision allowance
+}
+entity "TrustEvidence" as Evidence {
+  * id : uuid
+  providerId / kind / status
+  reference : encrypted text
+}
+entity "GuaranteeClaim" as Claim {
+  * id : uuid
+  requestId / clientId / providerId
+  status / resolution
+}
+entity "BonusAccount" as Account {
+  * id : uuid
+  clientId / providerId
+  cached balance projection
+}
+entity "BonusLedger" as Ledger {
+  * id : uuid
+  accountId / requestId?
+  type / points / idempotencyKey
+}
+entity "OutboxEvent" as Outbox {
+  * id : uuid
+  type / payload / idempotencyKey
+  status / attempts / availableAt
+}
+User ||--o{ Session
+User ||--o{ Membership
+Provider ||--o{ Membership
+Location |o--o{ Membership : optional scope
+Provider ||--o{ Location
+Location ||--o{ Offering
+Definition ||--o{ Offering
+User ||--o{ Request : client
+Location ||--o{ Request
+Offering |o--o{ Request
+Request ||--o{ Quote
+Request |o--o{ Thread
+Thread |o--o{ Message
+Thread |o--o{ Attachment
+Request |o--o{ Attachment
+Request |o--o{ Review
+Provider ||--o{ Review
+Provider ||--o{ Evidence
+Review ..> Evidence : logical encrypted reference
+Request ||--o{ Claim
+Provider ||--o{ Account
+User ||--o{ Account
+Account ||--o{ Ledger
+Request ..> Outbox : effects; payload association
+note bottom of Evidence
+  Пунктир — логическая связь, не FK.
+  Encrypted reference equality lookup имеет открытый дефект.
+  Snapshot и FK нельзя восстанавливать из этой сокращённой карты:
+  authoritative schema — entities + migrations.
+end note
+footer Полная schema также содержит market hierarchy / vehicles / capacity / appeals / audit
+@enduml

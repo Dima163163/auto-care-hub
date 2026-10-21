@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-20",
+  "branch": "fix/request-chat-state-isolation-2026-10-20",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "unit": {
+    "files": ["RequestForm.test.tsx", "request-draft.test.ts", "AutoCareRequestPage.test.tsx"],
+    "preFixNewCases": "2 failed: stored time ignored and unavailable time silently replaced",
+    "postFix": "12/12 passed",
+    "scenarios": ["saved time restore", "URL precedence", "unavailable slot requires reselection", "service date retained across midnight", "timezone handling"]
+  },
+  "browser": {
+    "runtime": "production Next build, synthetic MSW API",
+    "chosenTime": "20:00",
+    "savedDraft": {
+      "selectedDate": "today",
+      "customDate": "",
+      "selectedTime": "20:00",
+      "appointmentDate": "2026-10-20"
+    },
+    "restoredTime": "20:00",
+    "result": "PASS"
+  },
+  "legacyDraftLimit": "A draft without appointmentDate cannot reveal which calendar date its relative today/tomorrow originally meant.",
+  "limits": ["real API not exercised", "not deployed"]
+}

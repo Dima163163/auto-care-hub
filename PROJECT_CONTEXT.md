@@ -1,5 +1,159 @@
 # AutoCare Hub Project Context
 
+## Итоговая локальная проверка пилота — 2026-10-21
+
+Ветка `fix/request-chat-state-isolation-2026-10-20`, HEAD `26da803`, содержит
+пять локальных исправлений U22/UX17/UX18/UX16/U14. Полный frontend unit:
+197 файлов / 647 tests PASS; backend Quality с тестовым окружением: 388 файлов /
+1408 tests PASS. Lint, production Next real build, mock leakage, contract checks
+и 62 PlantUML source anchors PASS. U14 отдельно проверен на чистой disposable
+PostgreSQL16 с 140 миграциями. Pilot readiness, operations, anonymized evidence
+и published migration manifest не закрыты; U15/U20/U17/U18/U19/U21/U01–U03
+остаются открыты. Решение NO-GO для реальных данных, синтетический staging/demo
+допустим в рамках 54 gate. Полная semantic сверка документации не завершена.
+Подробности: `docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md`.
+
+## Локальное исправление U14 — 2026-10-21
+
+`enqueueOutboxEvent` теперь явно применяет `outboxPayloadEncryptionTransformer`
+перед raw INSERT; атомарный `ON CONFLICT` сохраняется. Миграция 178642
+шифрует прежние plaintext email/toEmail/recipientName, включая смешанные
+payload, не расшифровывая данные при откате. На собственной disposable
+PostgreSQL16 применены 140 миграций; новый raw JSONB и backfill не содержат
+открытых email/name, повтор enqueue оставляет одну строку, blind index
+совпадает с запросом удаления аккаунта. Unit 13/13, API build и migration
+filename check PASS. Обновлены `08-outbox-maintenance.puml`, SVG и anchors.
+Production backfill, реальный mail worker и внешнее управление ключами
+не проверялись; U15/U20/U21 и прочие pilot blockers открыты.
+
+## Локальное исправление UX16 — 2026-10-20
+
+На `fix/request-chat-state-isolation-2026-10-20` `ConfirmDialog` ограничен
+высотой viewport, прокручивает длинное содержимое и расположен выше нижней
+мобильной навигации. Кнопки переносятся на сверхузком экране. Production Next
+mock browser: 320×568, 360×568, 390×844, 568×320 и стрессовый 180×284;
+обе кнопки полностью в viewport и получают hit в центре. Axe dialog 0,
+Escape закрывает окно и возвращает фокус; targeted unit 26/26, lint, tsc и
+production build PASS. [Доказательство](docs/audits/evidence/2026-10-20/report-dialog-fix-verification.json).
+Это локальная проверка; реальное устройство, browser zoom, real API и
+deployed приёмка ещё не выполнены. Ранее найденные security issues открыты.
+
+## Локальное исправление UX18 — 2026-10-20
+
+На `fix/request-chat-state-isolation-2026-10-20` сравнение, карточка и карта
+используют общий `formatProviderPreviewPrice`; сравнение/карточка используют
+общие availability/warranty helpers. `bookingMode=request` и `quote_required`
+не обещают фиксированное время. Из карты убран придуманный priceTo +20%.
+На мобильном 360px `min-w-0` в grid item даёт таблице собственный horizontal
+scroll (wrapper 326px, scrollWidth 640px, крайний столбец достижим).
+Unit 9/9 для price/availability/warranty RU/EN и browser quote offer
+`Prime Wheels`: Quote required / confirmation by service / текст гарантии.
+Frontend map 60 anchors PASS. Локально, не опубликовано; real-API/deployed
+приёмка не выполнена. UX16 и прежние security findings остаются открытыми.
+
+## Локальное исправление UX17 — 2026-10-20
+
+На `fix/request-chat-state-isolation-2026-10-20` после U22 форма заявки
+восстанавливает `selectedTime` из сохранённого draft при отсутствии URL time;
+URL date/time имеют приоритет. Новый draft дополнен абсолютной датой в timezone
+сервиса. После смены дня относительное «сегодня» восстанавливается на исходную
+дату. Исчезнувший слот снимает выбор, блокирует submit и показывает существующее
+локализованное сообщение `SLOT_UNAVAILABLE`. Legacy draft без абсолютной даты
+восстанавливается по старой относительной дате best effort: исторический день
+из старого JSON узнать невозможно. Browser production Next mock подтвердил
+20:00→20:00 после reload и сохранение appointmentDate; targeted unit 12/12.
+Frontend diagram, SVG и source anchors обновлены. Не опубликовано; real-API
+и production acceptance не выполнены. UX16/UX18 остаются открытыми.
+
+## Локальное исправление U22 — 2026-10-20
+
+Ветка `fix/request-chat-state-isolation-2026-10-20` от dev `8840ae8`.
+`ServiceRequestChat` теперь монтирует внутреннее состояние по ключу
+`viewer.id + requestId` во всех местах использования. При смене адресата или
+пользователя очищаются черновик, retry key, offer, cursor, preview и открытые
+действия; старый запрос к API продолжает относиться к исходному requestId.
+Регрессионные unit tests: A→B→A, одинаковый текст после failed send,
+identity switch, позднее завершение отправки A. Production Next mock browser:
+черновик B пуст, POST с новым текстом направлен в B, при возврате A пуст.
+Обновлены `03-frontend.puml`, SVG и anchor map. Это локальная проверка;
+real-API / deployed privacy acceptance и публикация не выполнены. UX16–UX18
+и другие security findings остаются открыты.
+
+## UI/security recheck — 2026-10-20
+
+Branch `audit/ui-security-recheck-2026-10-20`, dev `8840ae8`; remote dev/main
+rechecked unchanged. Four new open findings in
+`docs/audits/UI_SECURITY_RECHECK_2026-10-20.md` and working FULL registry:
+U22 P1 request-chat draft carries into another provider's request; UX16 P2
+report dialog actions clipped at 360×568; UX17 P2 stored 20:00 becomes 11:30
+after reload; UX18 P2 comparison drops priceType/booking confirmation semantics.
+
+Production Next mock 240/240 closed-page cases, 120 screenshots, 0 axe
+violations plus incomplete; four extra interactions reproduce defects.
+104/104 security unit tests (11 files), 5 source contracts, 5 HTTP CSP samples,
+Next/API builds PASS. Initial unit env failure preserved, final run used fake
+DB port 1 and temp storage. U14/U15/U20 reproduced again with synthetic
+repositories/ORM metadata; no actual DB commit run on 20 Oct. npm audit U21
+still web5/API2 package entries, applicability not equated to exploitable RCE.
+No runtime/design/dependency edits. Prior dirty audit/map files preserved.
+
+`docs/INDEX.md` and docs-coverage.json enumerate scoped startup review and
+unread/unverified documents; this was not a complete semantic audit of all
+151 original text/spec documents. All 51 map anchors match; existing previews
+remain from 15 Oct, no fresh PlantUML renderer available. No fresh production
+pentest/KMS/MFA, DB/Redis integration, native/screen-reader/200%-zoom acceptance.
+Own loopback preview/temp artifacts only; source fixes and 54 pilot gates remain
+open. Primary checkout's three integrity files preserved.
+
+## PlantUML navigation — 2026-10-15
+
+Start targeted project reading at `docs/diagrams/README.md`: 9 `.puml` diagrams
+with SVG previews cover context/runtime/frontend/backend/data/requests/auth/
+outbox/privacy. `sources.json` records 51 source anchors and 4 structural
+inventories against dev `8840ae8`. `node docs/diagrams/check-map.mjs --scope auth`
+checks a selected area; use `--repo <checkout>` for another branch copy.
+Update affected diagrams/anchors/previews when code responsibilities or flows
+change. Open the actual task function/tests after the map; fingerprints do not
+prove semantic completeness. Workspace `../AGENTS.md` and `../docs/diagrams/`
+route future sessions here. Existing primary checkout remains older/dirty;
+preserve it. Branch `docs/plantuml-project-map-2026-10-15` carries the map and
+preserves the earlier uncommitted audit documentation in this worktree.
+
+## Дополнение аудита — 2026-10-13
+
+На изолированной ветке `audit/project-weaknesses-2026-10-13` от локального
+`origin/dev` (`8840ae8`, remote dev проверен GitHub compare и идентичен) добавлены
+22 находки: N21–N23, U14–U21/N24–N34, всего 7 P1/12 P2/3 P3.
+Рабочий реестр: `docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`;
+полные proof/приёмка/границы: `docs/audits/DEEP_PROJECT_AUDIT_2026-10-13.md`;
+последующее runtime evidence: `docs/audits/RUNTIME_VERIFICATION_2026-10-13.md`.
+
+Высокие риски: raw outbox обходит encryption; superadmin private write через
+request API; production invite не доставляет token; expired spent earn съедает
+свежие бонусы; duplicate claims влияют на public trust; stale UserEntity save
+включает прежние hash/status/tokenVersion в ORM diff. N22 расширен на trust,
+N23 — на unbounded request lists/N+1. Ничего из этого ещё не исправлено.
+
+16 synthetic воспроизведений подтвердили дефекты; evidence script ручной,
+asserts текущее ошибочное поведение, не является green release gate.
+Frontend 196/635, backend unit 387/1406, lint и API/Next real builds PASS.
+Общий Node tooling suite: 188/190 PASS, два stale positive fixtures FAIL (N31).
+Own loopback browser при unavailable API подтвердил raw error text и stale
+auth metadata. Продолжение: 23/88 PostgreSQL integration, 10 real persisted
+defect cases, 139 migrations/30 VALIDATE, PG/Redis multi-process smoke,
+encrypted restore с matching 76 tables, 29/29 real production E2E без retries,
+17/17 metadata + 17/17 JS + 5 CSP. N21 counter=0 при DB pending=3;
+N23 list 1002 → 5016 queries. HTTP discovery 80/0fail, p95=118.8ms на loopback.
+Свежий полный npm audit: web5/API2 entries; U21, применимость отделена от severity.
+GitHub PR Quality run 37226572467 action_required/jobs=[], не CI PASS.
+Hosted Node22/PG16 и production/native/CWV условия остаются внешними.
+Использовались только собственные disposable PG29442/Redis29389 и synthetic
+test/real/restore targets. Главная DB не менялась.
+
+Workspace: `../autocare-hub-weakness-audit`; runtime изменения отсутствуют.
+Три исходных незавершённых файла основной копии сохранены.
+Новые пункты не закрывают и не расширяют 54 pilot gates; NO-GO сохраняется.
+
 ## Последнее дополнение: UX15 / QA02 — публикация возобновлена 2026-10-04
 
 Основная порция опубликована PR #14: main `6d1e6b6`, dev `13c0fcb`, trees равны.

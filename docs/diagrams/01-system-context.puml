@@ -1,0 +1,40 @@
+@startuml
+!include _style.puml
+title AutoCare Hub — контекст реализованной системы
+left to right direction
+actor "Гость / водитель" as Guest
+actor "Клиент" as Client
+actor "Владелец / сотрудник сервиса" as ProviderUser
+actor "Admin / SuperAdmin" as Admin
+rectangle "AutoCare Hub" {
+  component "Web\nNext.js + React" as Web
+  component "API\nFastify modular monolith" as API
+  component "Фоновые задачи\nтот же backend codebase" as Worker
+  database "PostgreSQL\nисточник продуктовых данных" as PG
+  database "Redis\nлимиты / realtime / leases" as Redis
+}
+cloud "OAuth providers\nGoogle / Yandex\nпо capability profile" as OAuth
+cloud "SMTP\nили local logger" as Mail
+cloud "Private attachment storage\nS3 + quarantine\nlocal filesystem в local mode" as Files
+cloud "Картографические tiles\nLeaflet / OpenStreetMap" as Maps
+Guest --> Web : каталог / поиск
+Client --> Web : заявки / отзывы / бонусы
+ProviderUser --> Web : provider workspace
+Admin --> Web : moderation / governance
+Web --> API : HTTP /api/* → backend paths
+Web --> API : WebSocket private chat
+Web --> Maps : отображение карты
+API --> OAuth : auth callbacks
+API --> Files : авторизованные media операции
+API --> PG : TypeORM / SQL
+API --> Redis : runtime coordination
+Worker --> PG : outbox / maintenance
+Worker --> Redis : maintenance lease
+Worker --> Mail : доставка
+note bottom of Worker
+  api / worker / all — конфигурационные режимы.
+  Отдельные процессы поддержаны кодом;
+  фактическое deployed окружение здесь не утверждается.
+end note
+footer Baseline: dev 8840ae8 | Проверено: 2026-10-15 | См. README.md и sources.json
+@enduml

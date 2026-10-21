@@ -1,0 +1,9 @@
+{
+  "encryptedBackup": true,
+  "checksumVerified": true,
+  "restoredDatabase": "disposable audit restore target",
+  "tablesWithMatchingCountsAndContentDigests": 76,
+  "rows": 3742,
+  "encryptedNameDecryptsWithRetainedLocalAuditKey": true,
+  "productionRecovery": false
+}

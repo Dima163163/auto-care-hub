@@ -1,0 +1,47 @@
+@startuml
+!include _style.puml
+title Durable effects — outbox и периодическая maintenance
+participant "API use case" as API
+participant "Outbox enqueue" as Queue
+database "PostgreSQL" as PG
+participant "Worker / all runtime\nmaintenance-jobs" as Worker
+database "Redis" as Redis
+participant "Mailer / Notification writer" as Delivery
+API -> PG : business mutation
+API -> Queue : enqueue(payload, key, manager?)
+Queue -> Queue : transformer.to(payload)\nemail blind index + encrypted PII
+Queue -> PG : INSERT pending encrypted JSONB\nON CONFLICT idempotency DO NOTHING
+Queue -> PG : findOne by idempotency key
+PG --> Queue : decoded entity / existing event
+note over API, PG
+  Переданный EntityManager позволяет общий business transaction.
+  Safely/after-commit callers нужно проверять отдельно.
+  Raw INSERT вызывает transformer явно до записи.
+  Миграция 178642 шифрует legacy plaintext recipients;
+  сохранность ключей и production backfill проверяются отдельно.
+end note
+loop scheduled cycle (60s interval)
+  Worker -> Redis : acquire / renew maintenance lease
+  alt lease acquired
+    Worker -> PG : recover stale locks / claim outbox batch
+    PG --> Worker : processing events
+    Worker -> Delivery : bounded payload / template validation
+    alt dispatched
+      Delivery -> PG : notification row (if notification event)
+      Delivery --> Worker : mail/notification result
+      Worker -> PG : completed / secret redaction
+    else retryable failure
+      Worker -> PG : failed + backoff / attempts
+    else exhausted or terminal failure
+      Worker -> PG : dead_letter + incident/metrics
+    end
+    Worker -> PG : reminders / quote expiry / auth cleanup\naudit retention / orphan cleanup / trust reassessment
+  end
+end
+note over Worker, Delivery
+  Claim/lease дают повторную обработку при сбое.
+  Event identity и downstream idempotency требуют проверки.
+  Повторные quote versions сейчас делят один notification key.
+end note
+footer outbox.service.ts / maintenance-jobs.service.ts / maintenance-lease.service.ts
+@enduml

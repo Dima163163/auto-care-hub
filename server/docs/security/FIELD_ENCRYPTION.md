@@ -21,6 +21,13 @@ The migration encrypts the following existing data and entity transformers encry
 - Service-quote snapshots, trust-evidence notes/references, repair-event titles/notes/metadata, broadcast request/offer snapshots, guarantee-claim text, expert-question details, fleet labels/notes/snapshots, and provider/catalog change-request private payloads.
 - Email and recipient-name values embedded in notification outbox payloads. Outbox email is replaced by a blind index; recipient name is removed from the clear-text field.
 
+As of the local U14 fix on 2026-10-21, raw outbox enqueue explicitly applies
+the same transformer before its atomic INSERT. Migration `1786420000000`
+backfills plaintext recipient fields left by earlier raw enqueues, including
+mixed encrypted/plaintext payloads. A disposable PostgreSQL run verified raw
+JSONB, duplicate enqueue, and the email blind-index match used by account
+deletion. Production backfill and key recovery still require release evidence.
+
 Public business listings, published public reviews, aggregate counters, state/status fields, timestamps, IDs, role/permission data, and fields needed for ordinary filtering remain readable in the database. Passwords remain one-way password hashes, not reversible encrypted values. Uploaded object contents are outside this field-encryption migration; private attachments require separate private-object storage and server-side encryption controls.
 
 Operational security telemetry is a separate remaining gap: IP addresses and user-agent values in audit logs, security events, and user sessions, plus IP values in security mitigations, are still stored in clear text to preserve existing SQL filtering and response behavior. They need their own blind-index/ciphertext migration and retention review before production data is used.

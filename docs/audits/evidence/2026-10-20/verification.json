@@ -1,0 +1,99 @@
+{
+  "verifiedOn": "2026-10-20",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "remoteRefs": {
+    "dev": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+    "main": "6d1e6b6843e13b2e0315934fb3b29a3429866130"
+  },
+  "branch": "audit/ui-security-recheck-2026-10-20",
+  "newFindings": {
+    "U22": "P1",
+    "UX16": "P2",
+    "UX17": "P2",
+    "UX18": "P2"
+  },
+  "builds": {
+    "NextMockProduction": "PASS",
+    "backendTypeScript": "PASS"
+  },
+  "uiMatrix": {
+    "cases": 240,
+    "failed": 0,
+    "screenshots": 120,
+    "axeViolations": 0,
+    "incompleteRuleRecords": 397,
+    "visualSample": 3,
+    "artifact": ".next-ui-security-audit-2026-10-20",
+    "api": "MSW synthetic",
+    "backendHttpStarted": false,
+    "serverLogLimit": "SSR/rewrite requests to absent loopback API may report ECONNREFUSED; browser data via MSW only."
+  },
+  "interactionReproductions": {
+    "confirmed": 4,
+    "securityBoundary": "Client has access to both requests; no server-side IDOR claim"
+  },
+  "securityUnit": {
+    "passed": 104,
+    "files": 11,
+    "database": "no DB connection; synthetic env port 1",
+    "initialRun": "9 files / 71 tests passed; 2 suites missing environment",
+    "finalRun": "11 files / 104 tests passed"
+  },
+  "reconfirmedExistingFindings": [
+    "U14",
+    "U15",
+    "U20",
+    "U21"
+  ],
+  "securityReproductionLimit": "Synthetic service repositories and ORM update diff, not new persisted/concurrent PostgreSQL execution; exit 0 means defect confirmed.",
+  "sourceContractsPassed": [
+    "design-tokens",
+    "interaction-state",
+    "security-headers",
+    "threat-surface",
+    "owner-route-auth"
+  ],
+  "httpCspSamplesPassed": 5,
+  "mapCheck": {
+    "sourceAnchors": 51,
+    "inventories": 4,
+    "result": "PASS",
+    "newPlantUmlRender": false,
+    "reason": "temporary renderer jar no longer available; no PUML modifications"
+  },
+  "docsAuditComplete": false,
+  "docsCoverage": "docs-coverage.json",
+  "newLinksPassed": 227,
+  "allMarkdownFileLinksChecked": 199,
+  "existingUnresolvedFileLinks": 0,
+  "notRun": [
+    "PostgreSQL/Redis integration",
+    "real-API E2E",
+    "production pentest/KMS/MFA/restore acceptance",
+    "native devices and full screen reader",
+    "200 percent browser zoom",
+    "deployed performance",
+    "full semantic audit of all docs"
+  ],
+  "artifacts": {
+    "booking-time-restored.png": "d6169628311a24bba3be63161dc06531f078591b22626cc08bc381670f05df04",
+    "comparison-price.png": "98459b91632c83787b0a1dd3205d4e0650a9de169829d5bdb3f11377e1e34633",
+    "comparison-probe.json": "3fa4ab730bdad41a75c9a88f234051d17cf0119ebeb933501b7639548e284a9c",
+    "comparison-probe.mjs": "6dea238dd7cabf7a8877ccc899e115f2c05759f1902f65e74b57faf28c6c96d3",
+    "cross-chat-draft.png": "c3c7f97a2800bdfc125239c597b6bf32ccee9ef322058b4094e2249391c3a6f9",
+    "docs-coverage.json": "21c2cf35f74d08c74d7dad0ea7fda6403e2ddc2771c22bbeb8b95ab22ebf039f",
+    "documentation-links.json": "7432172e39d7d3296286b90f7f24b8016e5101d3059a8fcc38dddfdc8072e8b7",
+    "headers.json": "68a535f2e6fdf9dec8d96617452d4381afb4823beb08a487f9185e76e5cd5c99",
+    "interaction-probe.json": "ad3a072870bddc35d9077d575eea3a488c8c08ff1265d2f6cf1e5375d92ce937",
+    "interaction-probe.mjs": "857e7623cddd487964aa5c186a3addbe565db5f2cb936bf3603a523354658df9",
+    "npm-api-audit.json": "e87d96180d727ace930211c5be68de9a91ef22f3803fe06ecfadd140cd6e27e1",
+    "npm-web-audit.json": "839de3c3b85a08cd66e0749f272a20dfa07f894cac7b5cdd7db603ebc6477329",
+    "report-dialog-360x568.png": "9cefc80edc6237f0a962c03026921169cd4ab9e74f6f265202bcfbe4fe171646",
+    "route-matrix-summary.json": "f82b28a63e36b4139afe6a0bfb1992b9fe6ed557a760fb6a81d69bda181a7d11",
+    "security-reproduce.json": "6822f89a2849aa0c8831fe2dff267c3cd091c5f6c6597f6b535388a9bc16913e",
+    "security-reproduce.mjs": "d1fe7579f18306f3bb4c368aacb2bda795f00c7c2f0b8e3b2bfac945d45bea0d",
+    "security-unit-final.log": "3c97b311050277850ef78f2d36e806666deb15bc2f0feb506303f518320ade6f",
+    "security-unit-initial.log": "8462e0ed5b4a6a092893109232282a921dd1707e9e230e24dc30169635b5aa21"
+  },
+  "previewStopped": true
+}

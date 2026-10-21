@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "verifiedOn": "2026-10-15",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "branch": "docs/plantuml-project-map-2026-10-15",
+  "renderer": {
+    "name": "PlantUML",
+    "version": "1.2026.8",
+    "layout": "smetana",
+    "release": "https://github.com/plantuml/plantuml/releases/tag/v1.2026.8",
+    "jarSha256": "5e1ecfa8ecd32c90b03bbf3b1eb6f020943f98ab0fcf4032be31a0002ee2c462",
+    "runtime": "Existing JetBrains Runtime OpenJDK 25.0.3",
+    "renderLocation": "local",
+    "graphvizRequired": false,
+    "sourceUploaded": false,
+    "jarStoredInRepository": false
+  },
+  "syntaxCheck": {
+    "result": "PASS",
+    "command": "java -Djava.awt.headless=true -jar /path/to/plantuml.jar -charset UTF-8 -checkonly docs/diagrams",
+    "diagrams": 9
+  },
+  "svgRender": {
+    "result": "PASS",
+    "command": "java -Djava.awt.headless=true -jar /path/to/plantuml.jar -charset UTF-8 -failfast2 -tsvg -o rendered 'docs/diagrams/0*.puml'",
+    "previews": 9,
+    "xmlParse": "PASS"
+  },
+  "sourceFreshness": {
+    "sourceAnchors": 51,
+    "inventories": 4,
+    "positiveChecks": [
+      {
+        "scope": "all",
+        "exitCode": 0,
+        "sourceAnchors": 51
+      },
+      {
+        "scope": "context",
+        "exitCode": 0,
+        "sourceAnchors": 5
+      },
+      {
+        "scope": "runtime",
+        "exitCode": 0,
+        "sourceAnchors": 8
+      },
+      {
+        "scope": "frontend",
+        "exitCode": 0,
+        "sourceAnchors": 10
+      },
+      {
+        "scope": "backend",
+        "exitCode": 0,
+        "sourceAnchors": 6
+      },
+      {
+        "scope": "data",
+        "exitCode": 0,
+        "sourceAnchors": 9
+      },
+      {
+        "scope": "requests",
+        "exitCode": 0,
+        "sourceAnchors": 6
+      },
+      {
+        "scope": "auth",
+        "exitCode": 0,
+        "sourceAnchors": 8
+      },
+      {
+        "scope": "outbox",
+        "exitCode": 0,
+        "sourceAnchors": 5
+      },
+      {
+        "scope": "security",
+        "exitCode": 0,
+        "sourceAnchors": 6
+      }
+    ],
+    "negativeCheck": {
+      "repository": "../autocare-hub",
+      "scope": "frontend",
+      "expectedExitCode": 1,
+      "actualExitCode": 1,
+      "reportedDrift": [
+        "DRIFT package.json: content changed [frontend]",
+        "DRIFT src/app/layout.page.tsx: content changed [frontend]",
+        "DRIFT src/app/next/NextClientApp.tsx: content changed [frontend]",
+        "DRIFT src/entities/automotive-service/api/autocareApi.ts: content changed [frontend]",
+        "DRIFT src/entities/automotive-service/api/autocare: directory missing [frontend]"
+      ]
+    }
+  },
+  "visualInspection": {
+    "result": "PASS",
+    "diagrams": [
+      "01-system-context.puml",
+      "05-domain-data.puml"
+    ],
+    "method": "Locally rendered PNGs inspected for readability, clipping and overlap"
+  },
+  "artifacts": [
+    {
+      "scope": "context",
+      "source": "01-system-context.puml",
+      "sourceSha256": "fd38c6b64ec81ce5e614e4dc5f33a01e5716caf4f370b4d2b9187f5ae7550c77",
+      "preview": "rendered/01-system-context.svg",
+      "previewSha256": "e63103c57eb796a1ec9a96c644185fab8cbb5df80baa2b6870feff75c02632b2",
+      "width": "1552px",
+      "height": "627px"
+    },
+    {
+      "scope": "runtime",
+      "source": "02-runtime.puml",
+      "sourceSha256": "d513cdbaed2e07f39525725d3d2ee7ce7d71174c55e9d7dc30804a1230f4e595",
+      "preview": "rendered/02-runtime.svg",
+      "previewSha256": "0d18eb22d2162fd5743270279d970cd168eab743102e5dd9147a5160bfe8b7c4",
+      "width": "1812px",
+      "height": "714px"
+    },
+    {
+      "scope": "frontend",
+      "source": "03-frontend.puml",
+      "sourceSha256": "cac7d87671ae3e95a0a380dda91e02323849d6cbd4d1c68c5bbd613d2c38c2c4",
+      "preview": "rendered/03-frontend.svg",
+      "previewSha256": "05d186d9e7e6b041d5f9fcb1859c06755551f44d779596060e699ba739177c43",
+      "width": "1810px",
+      "height": "1155px"
+    },
+    {
+      "scope": "backend",
+      "source": "04-backend.puml",
+      "sourceSha256": "c190e5b670316896f43fe2ed86f6ef060c06f2c4d6b94f6569a7bef39bfbc34b",
+      "preview": "rendered/04-backend.svg",
+      "previewSha256": "d9ce98426f8c03bba8731b71802ce85cfb5852ea2584522a5f4c6252773a6de4",
+      "width": "1702px",
+      "height": "858px"
+    },
+    {
+      "scope": "data",
+      "source": "05-domain-data.puml",
+      "sourceSha256": "a8ad4647740e463e74f69c485c5cae0b4ce8ad7450dc9bfd111d8e65f7ba7d62",
+      "preview": "rendered/05-domain-data.svg",
+      "previewSha256": "e554483a3060041049587ff77a1a8d529b3f62cf1355e96acfe58522bac1f62a",
+      "width": "2105px",
+      "height": "789px"
+    },
+    {
+      "scope": "requests",
+      "source": "06-request-workflow.puml",
+      "sourceSha256": "9072f450e77bbcbddb334821fc38a258244e8b009476d806b109597bc8bd2e46",
+      "preview": "rendered/06-request-workflow.svg",
+      "previewSha256": "8c65247bc183d0c5b12c516d4b6fdd7cc7bcf31507f3ba87350c5ebd18b85525",
+      "width": "1164px",
+      "height": "649px"
+    },
+    {
+      "scope": "auth",
+      "source": "07-auth-session.puml",
+      "sourceSha256": "7d2974b0231d331201c054f803ab1202b02d5251921622369aa44dcbdc82f071",
+      "preview": "rendered/07-auth-session.svg",
+      "previewSha256": "8770fdfa4f31b88b43bd8d0fc83cecc5b22aa55b5c7e535072b00f717eac5d53",
+      "width": "1052px",
+      "height": "1209px"
+    },
+    {
+      "scope": "outbox",
+      "source": "08-outbox-maintenance.puml",
+      "sourceSha256": "a84372488a672585d1df28bbfab2c24166185cc1d946584412afb8b12510ce1a",
+      "preview": "rendered/08-outbox-maintenance.svg",
+      "previewSha256": "001a5abd6e91b1331586c8c5ab777ea5b1af003979bc00e2a510abb76aac93b5",
+      "width": "1327px",
+      "height": "1010px"
+    },
+    {
+      "scope": "security",
+      "source": "09-access-privacy.puml",
+      "sourceSha256": "5c7fb0b0674de50d2e167ab41f133ca81e2c5f83bba260516e0251711b576fb9",
+      "preview": "rendered/09-access-privacy.svg",
+      "previewSha256": "51a81f9b2b6996d4c9e1e47568e09d7512dc5b1551c495e54725bfa0b23d2e01",
+      "width": "1405px",
+      "height": "708px"
+    }
+  ],
+  "sharedStyleSha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf",
+  "incrementalUpdates": [
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "sourceAnchorCount": 52,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "rendererJarSha256": "3845bf1037df6029ae1b8cb1be69f645711797035648e114b765289c3406d45d",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "UX17 restores draft time and anchors relative date",
+      "sourceAnchorCount": 54,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "rendererJarSha256": "3845bf1037df6029ae1b8cb1be69f645711797035648e114b765289c3406d45d",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "UX18 shared provider preview formatting and mobile comparison scroll",
+      "sourceAnchorCount": 60,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
+    },
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "UX16 viewport-bounded ConfirmDialog and reachable actions",
+      "sourceAnchorCount": 61,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
+    },
+    {
+      "date": "2026-10-21",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "outbox",
+      "change": "U14 encrypt raw enqueue and backfill legacy recipients",
+      "sourceAnchorCount": 62,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    }
+  ],
+  "limitations": [
+    "Selected source anchors and inventories are not an exhaustive import graph.",
+    "Matching fingerprints do not prove security or semantic completeness; inspect task code and tests.",
+    "Production deployment and external acceptance are not established by these diagrams."
+  ]
+}

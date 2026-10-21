@@ -1,5 +1,95 @@
 # AutoCare Hub — Project Plan
 
+## Финальная локальная проверка пилота — 2026-10-21
+
+- [x] Прогнать полные frontend/backend unit suites, lint, production Next real
+  build, boundary/design/CI checks, mock leakage и карту PlantUML; результаты
+  и пределы зафиксировать в `docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md`.
+- [x] Сверить pilot readiness и operations gates, доступность реального pilot
+  evidence, migration manifest и свежие npm advisories; зафиксировать NO-GO
+  для реальных данных и порядок исправлений.
+- [ ] Исправить U20/U15, затем U17/U18/U19 и runtime dependencies; подтвердить
+  U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
+
+## Повторный UI / security аудит — 2026-10-20
+
+- [x] Сверить remote dev, карту и выбранные UI/security contracts; явно
+  перечислить непроверенные документы и ограничения в docs/INDEX.md/evidence.
+- [x] Собрать отдельный production Next mock artifact; выполнить 240/240
+  route/role/profile cases, сохранить 120 screenshots и targeted interactions.
+- [x] Добавить U22/UX16–UX18: wrong-recipient chat draft, clipped report dialog,
+  booking time restore и semantic mismatch comparison. Runtime не менять.
+- [x] Перепроверить U14/U15/U20 synthetic service/ORM cases, npm audit U21,
+  104 security unit tests, 5 source contracts, 5 HTTP CSP samples и API build.
+- [x] U22: изолировать composer/pending/offer/cursor/preview по user/request;
+  проверить два разных сервиса, A→B→A, failed send, поздний ответ и identity
+  switch. Локальный fix branch, unit и production Next mock browser PASS;
+  публикация и real-API приёмка отдельно.
+- [x] UX16: ограничить высоту ConfirmDialog, дать содержимому прокрутку поверх
+  мобильной навигации и перенос действий на узком экране. Production Next mock
+  browser: пять viewport, hit-testing обеих кнопок, axe 0, Escape/focus PASS;
+  targeted unit 26/26. Real device/zoom и deployed проверка отдельно.
+- [x] UX17: восстановить selectedTime из draft; URL имеет приоритет, абсолютная
+  дата сервиса сохраняется против перехода через полночь. Недоступный слот
+  требует нового выбора и блокирует submit. Unit и production Next mock browser
+  PASS; real-API/deployed проверка остаётся отдельно.
+- [x] UX18: единый formatter для price types, bookingMode и warranty в карточке,
+  таблице и карте; таблица прокручивается внутри мобильной grid column.
+  Unit RU/EN и production Next mock browser 1440/360 PASS; публикация и
+  real-API/deployed приёмка отдельно.
+- [x] U14: raw outbox enqueue применяет шифрующий transformer до INSERT;
+  миграция 178642 backfill шифрует legacy email/name. Unit 13/13,
+  API build, 140 миграций на собственной disposable PostgreSQL16 и raw JSONB /
+  retry / account-deletion index smoke PASS. Production backfill отдельно.
+
+## Карта PlantUML — 2026-10-15
+
+- [x] Создать `docs/diagrams/` с 9 схемами текущего dev: система/runtime,
+  frontend/backend, данные, заявки, auth, outbox и privacy boundaries.
+- [x] Добавить task-to-file index, source fingerprints и scoped drift checker;
+  привязать первый просмотр к карте через repository/workspace AGENTS.
+- [x] Завершить local PlantUML syntax/render и проверку previews/links; сохранить
+  verification metadata вместе с картой. Ранее сделанные audit-файлы сохранить.
+
+## Дополнение аудита — 2026-10-13
+
+- [x] Сверить текущую ветку `origin/dev` и рабочий реестр, добавить три
+  подтверждённые source-based находки N21–N23 с последствиями, приёмкой и
+  ограничением проверки в `docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`.
+- [x] Углублённый аудит локального dev `8840ae8`: U14–U20/N24–N34,
+  16 synthetic reproductions, browser failure/metadata checks, unit/build/lint
+  и tooling coverage. Отчёт: `docs/audits/DEEP_PROJECT_AUDIT_2026-10-13.md`.
+- [x] Продолжение на собственных PostgreSQL17/Redis7: 139 migrations,
+  23/88 integration без skip, 10 реальных defect cases, 30 VALIDATE,
+  encrypted backup/restore 76 tables, PG/Redis multi-process smoke, 29/29
+  production real E2E, 17/17 metadata + 17/17 JS + 5 CSP; load samples.
+  Remote dev равен baseline; PR CI action_required не заявлен PASS.
+  Отчёт: `docs/audits/RUNTIME_VERIFICATION_2026-10-13.md`.
+- [ ] U21: обновить fresh vulnerable dependency entries в обоих lockfiles,
+  проверить применимость и повторить audit/build/integration/real E2E;
+  никаких force upgrades или закрытия по unit PASS.
+- [ ] U15/U20: единая private write policy и narrow/CAS user writes без
+  возврата старого security state.
+- [ ] U18/U19: корректное истечение bonus lots, уникальные guarantee cases
+  и отделение complaint от доказанного нарушения в trust score.
+- [ ] U16/U17: searchable encrypted evidence reference и production invite delivery.
+- [ ] N24/N25/N26/N28: atomic review revision/evidence, fair trust worker,
+  согласованный password byte policy, cleanup при denied storage.
+- [ ] N30/N32: отдельная current quote/latest history и notification identity
+  по quote version с сохранением retry idempotency.
+- [ ] N27/N31: реальные domain endpoints в boundary guard, актуальные root
+  tooling fixtures и автоматическая цепочка их исполнения.
+- [ ] N29/N33/N34: явные session/token TTL, понятные transport errors,
+  согласованные direct/client auth metadata.
+- [ ] N21: считать полный статусный backlog отзывов отдельно от bounded анализа
+  аномалий/калибровки; проверить >1000 записей.
+- [ ] N22: единая политика первого ответа для owner analytics, admin quality
+  и public trust score;
+  негативные случаи system/чужой филиал/отзыв доступа/ответ до заявки.
+- [ ] N23: bounded или SQL-агрегированная аналитика на большой истории,
+  scoped pagination/batch hydration списка заявок;
+  измерить latency/память и сохранить точность lifetime/period метрик.
+
 ## Дополнение после публикации — 2026-10-04
 
 - [x] PR #14 слит в protected main; tree equality, push/PR Quality и promotion PASS.

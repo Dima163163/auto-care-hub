@@ -1,0 +1,47 @@
+@startuml
+!include _style.puml
+title Auth — login, protected request и refresh
+actor "Пользователь" as User
+participant "Frontend\nauth UI + baseApi" as Front
+participant "Fastify\nauth routes + guards" as API
+participant "Auth/session services" as Auth
+database "PostgreSQL\nUser / UserSession" as PG
+User -> Front : sign in
+Front -> API : CSRF bootstrap / auth/login\ncredentials + browser mutation guards
+API -> Auth : validate input / password / account status
+Auth -> PG : load user / persist refresh session
+Auth --> API : access token + refresh token
+API --> Front : access DTO + HttpOnly refresh cookie
+Front -> Front : access token в памяти\nRTK auth/cache state
+Front -> API : protected request\nBearer access token
+API -> Auth : requireAuth / getUserById\nassertAccessSessionActive
+Auth -> PG : active user / session-token state checks
+alt valid and resource scope allowed
+  API --> Front : authorized DTO
+else access token no longer accepted
+  API --> Front : 401
+  Front -> Front : refresh-access-token single flight
+  Front -> API : /auth/refresh\nrefresh cookie + CSRF/Origin policy
+  API -> Auth : validate / rotate refresh session
+  Auth -> PG : session lock / rotate / revoke on reuse
+  alt refresh succeeds
+    API --> Front : new access DTO + rotated cookie
+    Front -> API : retry original request
+  else refresh fails
+    API --> Front : unauthorized / session-expired
+    Front -> Front : clear identity/cache / login navigation
+  end
+end
+note over Front
+  Session hint и expiry hint не содержат access token.
+  Denied sessionStorage может прервать cleanup:
+  открытая находка; защитные helpers не универсальны.
+end note
+note over Auth, PG
+  Для session-bound access проверяется persisted session;
+  legacy/setup токены могут не содержать sessionId.
+  UserEntity full-save и refresh/cookie TTL имеют открытые находки.
+  MFA/KMS production acceptance этой схемой не подтверждается.
+end note
+footer baseApi.ts / refresh-access-token.ts / auth.service.ts / require-auth.ts / session.service.ts
+@enduml

@@ -1,0 +1,11 @@
+
+ RUN  v4.1.11 /Users/a1/Desktop/my-projects/AutoCareHub/autocare-hub-weakness-audit/server
+
+{"level":"error","time":"2026-10-20T08:22:08.408Z","message":"Redis rate limit error","scope":"redis-outage-sensitive","error":{"name":"Error","message":"redis unavailable"}}
+{"level":"error","time":"2026-10-20T08:22:08.412Z","message":"Redis rate limit error","scope":"redis-outage-local","error":{"name":"Error","message":"redis unavailable"}}
+{"level":"error","time":"2026-10-20T08:22:08.412Z","message":"Redis rate limit error","scope":"redis-outage-local","error":{"name":"Error","message":"redis unavailable"}}
+
+ Test Files  11 passed (11)
+      Tests  104 passed (104)
+   Start at  12:22:07
+   Duration  1.60s (transform 2.20s, setup 0ms, import 4.86s, tests 135ms, environment 1ms)

@@ -1,0 +1,122 @@
+{
+  "baseline": "8840ae8",
+  "fixtures": "synthetic, no network or database",
+  "findings": [
+    {
+      "id": "U14",
+      "reproduced": true,
+      "rawInsertHasPlaintextRecipient": true,
+      "transformerWasBypassed": true
+    },
+    {
+      "id": "U15",
+      "reproduced": true,
+      "legacyRequestMessageSaved": true,
+      "modernChatRejectedWith403": true
+    },
+    {
+      "id": "U16",
+      "reproduced": true,
+      "exactLookupReencryptsReference": true,
+      "lookupCiphertextDiffersFromStoredAndNextLookup": true
+    },
+    {
+      "id": "U17",
+      "reproduced": true,
+      "productionResponseTokenIsNull": true,
+      "onlyNotificationContainsNoAcceptanceToken": true
+    },
+    {
+      "id": "U18",
+      "reproduced": true,
+      "freshUnexpiredPointsBeforeRead": 100,
+      "freshPointsAfterRead": 0,
+      "spentOldEarnExpiredAgain": true
+    },
+    {
+      "id": "U19",
+      "reproduced": true,
+      "duplicateClaimsForOneUncompletedRequest": 4,
+      "trustBefore": 92.8,
+      "trustAfter": 30.8,
+      "unadjudicatedClaimsBecomeModerationPenalty": 40
+    },
+    {
+      "id": "N24",
+      "reproduced": true,
+      "successfulOneTimeRevisions": 2,
+      "transactionOrCompareAndSet": false
+    },
+    {
+      "id": "N25",
+      "reproduced": true,
+      "postgresAscNullsLastFixturePasses": [
+        [
+          "a",
+          "b"
+        ],
+        [
+          "a",
+          "b"
+        ],
+        [
+          "a",
+          "b"
+        ]
+      ],
+      "neverAssessedProviderRemainsNull": true
+    },
+    {
+      "id": "N26",
+      "reproduced": true,
+      "allowedDistinctPasswordsAfterByte72AuthenticateIdentically": true
+    },
+    {
+      "id": "U20",
+      "reproduced": true,
+      "preferenceSaveRevertsConcurrentSecurityFields": [
+        "passwordHash",
+        "status",
+        "tokenVersion"
+      ],
+      "ormDiffProofOnly": true
+    },
+    {
+      "id": "N27",
+      "reproduced": true,
+      "unvalidatedDomainEndpointAccepted": true,
+      "checkedEndpointsInNegativeFixture": 0
+    },
+    {
+      "id": "N28",
+      "reproduced": true,
+      "expiryReadWriteClearAllThrowWhenStorageDenied": true,
+      "authCleanupCallsExpiryWriteBeforeCredentialClear": true
+    },
+    {
+      "id": "N29",
+      "reproduced": true,
+      "configuredRefreshJwtLifetimeSeconds": 3600,
+      "fixedCookieMaxAgeSeconds": 604800,
+      "databaseSessionLifetimeDays": 7
+    },
+    {
+      "id": "N30",
+      "reproduced": true,
+      "trueLatestQuoteVersion": 51,
+      "visibleQuoteVersion": 50,
+      "currentPendingQuoteExposedAs": "superseded"
+    },
+    {
+      "id": "N32",
+      "reproduced": true,
+      "distinctQuoteNotificationsShareOneIdempotencyKey": true,
+      "outboxRowsForTwoQuoteVersions": 1
+    },
+    {
+      "id": "N33",
+      "reproduced": true,
+      "parsingFailureDisplaysRawTechnicalError": true
+    }
+  ]
+}
