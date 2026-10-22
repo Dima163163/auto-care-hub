@@ -213,7 +213,14 @@
     },
     {
       "path": "server/src/modules/autocare/chat-access.service.ts",
-      "sha256": "904e19a1d7395927f83e5c736736dbe8c48c0506ab806383178ca04b948b0fa0",
+      "sha256": "bb457e3edab70a1d4d3f1e5290d3b869d8767e98754a5914b2f4182bcc17e236",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-write-policy.ts",
+      "sha256": "4910cc85c0bfbb3dbe5c9dd49f5647cad61f3b6d7318205b447e77e0f65772e1",
       "scopes": [
         "security"
       ]
@@ -228,7 +235,14 @@
     },
     {
       "path": "server/src/modules/autocare/request-access.service.ts",
-      "sha256": "fdb71671adf07239519aec7e17ec0299078532098436eea7595889e47c434d00",
+      "sha256": "3944281a816d0ed409927a72977656f37266447ea548a15c8cd0ce3dd07abff8",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-attachment.service.ts",
+      "sha256": "f39b6378d5605bfc5a00a4c820e01d39d4b2cd5d64c78797dd1be5515ba126b0",
       "scopes": [
         "security"
       ]
@@ -245,6 +259,13 @@
       "sha256": "1a3af605c4bd00a44d6c9c6140a4668b197f7f3cc244fb996c55daf50091df9f",
       "scopes": [
         "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-conversation.service.ts",
+      "sha256": "e2967485b1a465f75b0d9a1d4b764dae51cb0c88b626733cf6a6b09be4633d32",
+      "scopes": [
+        "security"
       ]
     },
     {

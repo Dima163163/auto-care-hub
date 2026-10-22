@@ -1,5 +1,17 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление U15 — 2026-10-22
+
+Новый `chat-write-policy.ts` задаёт единое правило для chat и request API:
+admin/superadmin могут писать только в support/escalation, но не в private
+service-request thread. Legacy message/attachment routes проверяют правило до
+чтения данных и загрузки объекта; `lockRequestChatThreadForWrite` повторяет
+его до создания thread и после row lock. Новый chat API использует тот же
+export. Targeted unit 45/45, полный backend unit 1419/1419 и API build PASS;
+локального PostgreSQL+Redis
+HTTP integration нет. `09-access-privacy.puml`, SVG и manifest обновлены;
+pilot production acceptance остаётся открытой.
+
 ## Локальное исправление U20 — 2026-10-22
 
 Preferences и login counter reset теперь обновляют только разрешённые поля с

@@ -179,11 +179,11 @@
     {
       "scope": "security",
       "source": "09-access-privacy.puml",
-      "sourceSha256": "5c7fb0b0674de50d2e167ab41f133ca81e2c5f83bba260516e0251711b576fb9",
+      "sourceSha256": "3833ffe6107a1b6cd36033059de0dd780f62ccdf81f69eae34098360b47e2e98",
       "preview": "rendered/09-access-privacy.svg",
-      "previewSha256": "51a81f9b2b6996d4c9e1e47568e09d7512dc5b1551c495e54725bfa0b23d2e01",
-      "width": "1405px",
-      "height": "708px"
+      "previewSha256": "f267a225742b2469e1eeba5e19729e07eb923adb1cc7841964d7f3929ddb96d0",
+      "width": "1632px",
+      "height": "777px"
     }
   ],
   "sharedStyleSha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf",
@@ -251,6 +251,18 @@
       "scope": "auth",
       "change": "U20 conditional preference/login writes and transactional password change",
       "sourceAnchorCount": 63,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "security",
+      "change": "U15 shared private chat write policy across chat and request APIs",
+      "sourceAnchorCount": 66,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

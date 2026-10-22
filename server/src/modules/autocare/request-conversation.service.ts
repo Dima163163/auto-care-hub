@@ -1,7 +1,7 @@
 import { MoreThan } from 'typeorm'
 import { createHash, randomUUID } from 'node:crypto'
 import { AppDataSource } from '../../database/data-source.js'
-import { AutomotiveProviderEntity, AutoCareChatReportEntity, AutoCareChatReportStatus, ServiceAttachmentEntity, ServiceAttachmentStatus, ServiceMessageEntity, ServiceMessageKind, type ServiceMessageOffer, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/index.js'
+import { AutomotiveProviderEntity, AutoCareChatThreadType, AutoCareChatReportEntity, AutoCareChatReportStatus, ServiceAttachmentEntity, ServiceAttachmentStatus, ServiceMessageEntity, ServiceMessageKind, type ServiceMessageOffer, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/index.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
@@ -12,6 +12,7 @@ import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 import { resolveAutoCareAttachmentContentType } from './attachment-content.js'
 import { hasProviderWorkspacePermissionWithManager } from './provider-access.service.js'
 import { normalizeAutoCareServiceMessageInput } from './message-content-policy.js'
+import { assertChatMessageWriteAccess } from './chat-write-policy.js'
 import { normalizeAutoCareServiceOfferDecision, normalizeAutoCareServiceOfferInput } from './offer-policy.js'
 import { normalizeAutoCareRequestUuid } from './request-input-policy.js'
 import { isAutoCareServiceOfferExpired } from './request-lifecycle-policy.js'
@@ -112,6 +113,7 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
 
 export async function createAutoCareServiceMessage(user: UserEntity, requestId: string, input: unknown) {
     requestId = requireAutoCareRequestUuid(requestId)
+    assertChatMessageWriteAccess(user, { type: AutoCareChatThreadType.ServiceRequest })
     const normalizedInput = normalizeAutoCareServiceMessageInput(input)
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Message body is invalid.' })
     const request = await getParticipantRequest(user, requestId)

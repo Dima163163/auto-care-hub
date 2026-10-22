@@ -27,7 +27,11 @@
   смену пароля сериализовать row lock и отзывом сессий в одной транзакции;
   пересмотреть остальные UserEntity saves. Unit 1410/1410 и build PASS; PostgreSQL race
   integration добавлен, локально не запущен без server PostgreSQL/Redis.
-- [ ] Исправить U15, затем U17/U18/U19 и runtime dependencies; подтвердить
+- [x] U15: единая chat write policy для нового chat API и legacy request
+  messages/attachments; admin/superadmin не пишут private request thread.
+  Targeted unit 45/45, полный backend unit 1419/1419 и API build PASS;
+  реальный HTTP/DB regression ожидает CI.
+- [ ] Исправить U17/U18/U19 и runtime dependencies; подтвердить
   U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
 
 ## Повторный UI / security аудит — 2026-10-20
@@ -87,7 +91,8 @@
 - [ ] U21: обновить fresh vulnerable dependency entries в обоих lockfiles,
   проверить применимость и повторить audit/build/integration/real E2E;
   никаких force upgrades или закрытия по unit PASS.
-- [ ] U15: единая private write policy для request/chat messages и attachments.
+- [x] U15: единая private write policy для request/chat messages и attachments;
+  локальные unit/сборка PASS, real-stack acceptance открыта.
 - [x] U20: narrow/CAS user writes и row locks для security transitions;
   PostgreSQL race acceptance остаётся до запуска integration в CI/staging.
 - [ ] U18/U19: корректное истечение bonus lots, уникальные guarantee cases

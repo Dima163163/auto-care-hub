@@ -1,12 +1,13 @@
 import { type EntityManager } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
-import { AutomotiveProviderEntity, AutoCareChatThreadEntity, AutoCareChatBlockEntity, AutoCareChatBlockStatus, ServiceRequestEntity } from '../../entities/index.js'
+import { AutomotiveProviderEntity, AutoCareChatThreadEntity, AutoCareChatThreadType, AutoCareChatBlockEntity, AutoCareChatBlockStatus, ServiceRequestEntity } from '../../entities/index.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { ensureAutoCareRequestChatThread } from './autocare-chat.service.js'
 import { hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManager } from './provider-access.service.js'
 import { isAutoCareChatBlockEffective } from './chat-moderation-policy.js'
+import { assertChatMessageWriteAccess } from './chat-write-policy.js'
 import { forbidden, notFound, requireAutoCareRequestUuid } from './request-errors.js'
 
 export async function getParticipantRequest(user: UserEntity, requestId: string) {
@@ -64,12 +65,14 @@ export async function assertParticipantWithManager(manager: EntityManager, user:
 }
 
 export async function lockRequestChatThreadForWrite(manager: EntityManager, request: ServiceRequestEntity, user: UserEntity) {
+    assertChatMessageWriteAccess(user, { type: AutoCareChatThreadType.ServiceRequest })
     const candidate = await ensureAutoCareRequestChatThread(request, manager)
     const thread = await manager.getRepository(AutoCareChatThreadEntity).findOne({
         where: { id: candidate.id },
         lock: { mode: 'pessimistic_write' },
     })
     if (!thread) notFound('Chat not found.')
+    assertChatMessageWriteAccess(user, thread)
     const blocks = await manager.getRepository(AutoCareChatBlockEntity).find({
         where: [
             { threadId: thread.id, blockedUserId: user.id, status: AutoCareChatBlockStatus.Active },

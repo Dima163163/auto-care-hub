@@ -132,6 +132,11 @@ API build и целевые unit 3/3 PASS. Локальный DB race не за�
 серверного PostgreSQL/Redis, поэтому runtime/production приёмка ещё открыта.
 Таблица выше сохраняет историческое доказательство исходного дефекта.
 
+**Локальная disposition U15, 2026-10-22:** общий write guard применяется к
+chat и legacy request message/attachment paths до записи и повторно под lock.
+Admin/superadmin private write отклоняется 403; targeted unit 45/45 и API
+build PASS. HTTP/DB regression и published candidate ещё не проверены.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

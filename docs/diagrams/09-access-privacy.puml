@@ -8,6 +8,7 @@ component "Resource resolved from DB\nrequest / thread / provider / attachment" 
 component "Client access\nresource.clientId == user.id" as Client
 component "Provider access\nactive membership + permission\nlocation scope / legacy owner fallback" as Provider
 component "Privileged access\nrole + exceptional reason / assignment\nзависит от конкретного entrypoint" as Admin
+component "Shared chat write policy\nprivate request: client / provider only\nsupport / escalation: admin allowed" as ChatWrite
 component "Use-case mutation / private DTO" as Result
 component "Authorized object delivery\nprivate object key / short-lived access" as Object
 component "Audit / security events\nбез private message bodies / raw credentials" as Audit
@@ -16,9 +17,13 @@ Auth --> Resource
 Resource --> Client
 Resource --> Provider
 Resource --> Admin
-Client --> Result
-Provider --> Result
-Admin --> Result
+Client --> Result : scoped read
+Provider --> Result : scoped read
+Admin --> Result : audited read
+Client --> ChatWrite
+Provider --> ChatWrite
+Admin --> ChatWrite : support / escalation only
+ChatWrite --> Result : messages / attachments
 Result --> Object : attachment access rechecked
 Admin --> Audit : exceptional read / moderation
 note right of Provider
@@ -27,14 +32,13 @@ note right of Provider
   один frontend guard не является backend authorization.
 end note
 note bottom of Admin
-  Modern chat writer запрещает admin/superadmin private send.
-  Legacy request participant guard пропускает SuperAdmin,
-  поэтому request message write обходит этот запрет.
-  Не переносить правила одного endpoint на другой по аналогии.
+  Legacy request participant guard допускает SuperAdmin для иных действий.
+  Оба message/attachment API вызывают общую write policy до сохранения;
+  повторная проверка выполняется под lock для request thread.
 end note
 note bottom of Object
   S3/private storage adapter и scan/quarantine поддержаны кодом.
   Production storage policy / KMS / MFA — отдельные acceptance gates.
 end note
-footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-access.service.ts
+footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-write-policy.ts
 @enduml
