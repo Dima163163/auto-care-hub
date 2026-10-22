@@ -250,7 +250,8 @@ export function createBlindIndex(value: string, domain: string): string {
     const normalized = domain === 'email'
         ? value.normalize('NFKC').trim().toLowerCase()
         : value.normalize('NFKC')
-    if (normalized.length < 1 || normalized.length > 320) throw new Error('Blind-index value is invalid.')
+    const maxLength = domain === 'evidence-reference' ? 500 : 320
+    if (normalized.length < 1 || normalized.length > maxLength) throw new Error('Blind-index value is invalid.')
     const provider = getDataEncryptionKeyProvider()
     const indexKey = provider.getIndexKey()
     const digest = createHmac('sha256', indexKey).update(`autocarehub:${domain}:v1:${normalized}`, 'utf8').digest('base64url')

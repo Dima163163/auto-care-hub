@@ -143,11 +143,11 @@
     {
       "scope": "data",
       "source": "05-domain-data.puml",
-      "sourceSha256": "ca320ed55178bf5b76d5f490f66a3efb45403d5b855b29809933a801564f0151",
+      "sourceSha256": "960ffa11c4d817c533c7c63fdfa1fce514aac4d259f6d8ba657163d6ac84db3e",
       "preview": "rendered/05-domain-data.svg",
-      "previewSha256": "5848f39b6ab334f193d467399e5298eaa55a9b7d2af5be78ad59665bb7551153",
+      "previewSha256": "3a3f10712c24fceccd66ccc5c22dda51fd1b932b0b5b746c753593607d982e56",
       "width": "2243px",
-      "height": "805px"
+      "height": "904px"
     },
     {
       "scope": "requests",
@@ -314,6 +314,18 @@
       "sourceFreshness": "PASS",
       "diagramSourceChange": false,
       "previewChange": false
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data",
+      "change": "U16 searchable HMAC index for encrypted evidence references",
+      "sourceAnchorCount": 77,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
     }
   ],
   "limitations": [

@@ -129,7 +129,7 @@ export async function decideAdminAutoCareReview(
         const savedReview = await reviewRepository.save(review)
         const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
         const pendingEvidence = await evidenceRepository.findOne({
-            where: { kind: 'review', reference: savedReview.id, status: 'pending' },
+            where: { kind: 'review', referenceIndex: savedReview.id, status: 'pending' },
             lock: { mode: 'pessimistic_write' },
         })
         if (pendingEvidence) {

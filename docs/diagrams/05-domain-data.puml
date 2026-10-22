@@ -70,6 +70,7 @@ entity "TrustEvidence" as Evidence {
   * id : uuid
   providerId / kind / status
   reference : encrypted text
+  referenceIndex : HMAC blind index
 }
 entity "GuaranteeClaim" as Claim {
   * id : uuid
@@ -128,10 +129,15 @@ note bottom of Claim
   only the canonical case affects trust.
   Allegations never count as proven violations.
 end note
+note bottom of Evidence
+  U16: exact lookup uses referenceIndex;
+  reference remains randomly encrypted.
+  Migration backfills existing references.
+end note
 Request ..> Outbox : effects; payload association
 note bottom of Evidence
   Пунктир — логическая связь, не FK.
-  Encrypted reference equality lookup имеет открытый дефект.
+  Reference lookup fix требует применения migration и проверки DB.
   Snapshot и FK нельзя восстанавливать из этой сокращённой карты:
   authoritative schema — entities + migrations.
 end note

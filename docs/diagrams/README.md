@@ -71,6 +71,12 @@ source anchors; карта проверяет 74 файла. PostgreSQL migratio
 anchor получили свежие fingerprint; схема и SVG не менялись. Детали в
 [dependency upgrade](../audits/DEPENDENCY_UPGRADE_2026-10-22.md).
 
+**Локальное исправление U16, 2026-10-22:** `05-domain-data.puml` и SVG
+показывают HMAC blind index для equality lookup зашифрованного evidence
+reference. Миграция заполняет индекс по существующим encrypted values;
+добавлены три source anchors, всего 77. Реальная PostgreSQL проверка миграции
+и lookup остаётся открытой.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |
@@ -140,9 +146,9 @@ source scan не выполняется. Hash не подтверждает се
 - Backend — один модульный codebase; `api`/`worker`/`all` — runtime modes.
 - FK/schema details сверяются с entities и migrations; пунктирные связи ERD
   явно логические. Точные transition guards находятся в domain services.
-- Известные gaps в auth cleanup, private write, encrypted reference и outbox
-  обозначены на схемах. Наличие блока «проверка» не означает исправление всех
-  entrypoints. Актуальный рабочий аудит: [реестр находок](../audits/FULL_PROJECT_AUDIT_2026-10-03.md).
+- Auth cleanup и production gates остаются открытыми; локальные исправления
+  private write, encrypted reference и outbox ожидают real-DB/worker проверок.
+  Актуальный рабочий аудит: [реестр находок](../audits/FULL_PROJECT_AUDIT_2026-10-03.md).
 - Production KMS/MFA, deployed topology, native clients и внешняя приёмка
   имеют собственные gates. Billing исключён из действующего pilot scope.
 

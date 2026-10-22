@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление U16 — 2026-10-22
+
+Для `autocare_trust_evidence.reference` добавлен отдельный HMAC blind index.
+Review moderation и dedup приватных документов ищут по индексу; исходный
+reference остаётся случайно зашифрованным. Миграция 178644 строит индекс
+для старых записей из расшифрованного значения. Targeted unit и API build
+PASS, PostgreSQL migration/query integration без server PostgreSQL/Redis
+локально не выполнена. Обновлены `05-domain-data.puml`, SVG и 77 anchors.
+
 ## Локальное исправление U21 — 2026-10-22
 
 Web/API зависимости и lockfiles обновлены по текущим advisories. Оба

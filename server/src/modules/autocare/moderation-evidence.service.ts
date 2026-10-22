@@ -120,6 +120,7 @@ export async function queueProviderMediaModerationEvidence(
         kind: entry.kind,
         label: entry.label,
         reference: entry.reference,
+        referenceIndex: entry.reference,
         status: 'pending',
         notes: 'Ожидает проверки публичного медиа.',
     })))
@@ -132,6 +133,7 @@ export async function queueReviewModerationEvidence(manager: EntityManager, revi
         kind: 'review',
         label: 'Отзыв о подтверждённом визите',
         reference: review.id,
+        referenceIndex: review.id,
         status: 'pending',
         notes: 'Ожидает модерации текста и приложенных материалов.',
     }))
@@ -156,7 +158,7 @@ export async function queueProviderDocumentModerationEvidence(
         where: {
             providerId,
             kind: 'provider_document',
-            reference: In(entries.map((document) => document.reference)),
+            referenceIndex: In(entries.map((document) => document.reference)),
         },
         select: { reference: true },
     })
@@ -168,6 +170,7 @@ export async function queueProviderDocumentModerationEvidence(
         kind: 'provider_document',
         label: document.label,
         reference: document.reference,
+        referenceIndex: document.reference,
         expiresAt: document.expiresAt ?? null,
         status: 'pending',
         notes: 'Ожидает проверки регистрационных данных сервиса.',

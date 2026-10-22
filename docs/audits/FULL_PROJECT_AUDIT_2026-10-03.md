@@ -162,6 +162,12 @@ Vite/API/Next real build и fixture leakage PASS. Integration/E2E, опубли�
 миграция и staging acceptance остаются открыты. Подробности:
 [dependency upgrade](DEPENDENCY_UPGRADE_2026-10-22.md).
 
+**Локальная disposition U16, 2026-10-22:** добавлен HMAC blind index для
+`autocare_trust_evidence.reference`; review moderation и document dedup
+используют индекс вместо randomized ciphertext. Миграция 178644 заполняет
+индекс старых encrypted rows. Targeted unit/API build PASS; PostgreSQL
+migration/query и published candidate пока не проверены.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

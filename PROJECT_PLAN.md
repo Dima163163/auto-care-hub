@@ -112,7 +112,8 @@
 - [x] U18: корректное истечение bonus lots по остатку; real-DB gate открыт.
 - [x] U19: уникальные guarantee cases и отделение complaint от доказанного
   нарушения в trust score; real-DB gate открыт.
-- [ ] U16: searchable encrypted evidence reference.
+- [x] U16: searchable HMAC index для encrypted evidence reference;
+  backfill migration и unit/API build PASS, PostgreSQL lookup открыт.
 - [x] U17: production invite delivery подготовлена через encrypted outbox;
   фактическая SMTP доставка и published acceptance остаются открыты.
 - [ ] N24/N25/N26/N28: atomic review revision/evidence, fair trust worker,
