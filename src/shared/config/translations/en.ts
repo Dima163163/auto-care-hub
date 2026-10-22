@@ -550,6 +550,7 @@ export const enTranslations = {
         description: 'This summary highlights processes that need attention. Detailed decisions are recorded in the audit log.',
         pendingReviews: 'Reviews awaiting moderation',
         reviewAnomalies: 'Review quality signals',
+        reviewAnalysisWindow: 'Quality signals and review calibration use the latest {count} reviews.',
         pendingAppeals: 'Appeals awaiting decision',
         bookingConflicts: 'Booking conflicts',
         evidenceCoverage: 'Current trust signals',

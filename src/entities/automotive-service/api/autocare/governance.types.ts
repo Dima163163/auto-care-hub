@@ -16,7 +16,7 @@ export type SuperAdminPlatformOverview = {
 export type AutoCareQualityMonitoring = {
     generatedAt: string
     providers: { total: number; active: number; verified: number; trusted: number; suspended: number }
-    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number }
+    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number; analysisWindow: { recentLimit: number; sampled: number; truncated: boolean } }
     requests: { total: number; completed: number; cancelled: number; noShows: number }
     ranking: {
         trustSnapshots: number

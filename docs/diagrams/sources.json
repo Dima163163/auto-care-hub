@@ -669,14 +669,14 @@
     },
     {
       "path": "src/entities/automotive-service/api/autocare/governance.schemas.ts",
-      "sha256": "3b07c9d570279b3d56984d34c22b456ad3453f4486fdaad880a035c6339ea64f",
+      "sha256": "270a01cee392037914ac200535262d99e25a76faddef46b82df759c04aa76cba",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/entities/automotive-service/api/autocare/governance.types.ts",
-      "sha256": "741a14e1e36294c8b16087516ce950e61fec8605bd9bb6f217eaeb4ffc50af70",
+      "sha256": "4df4e14cd8182386fe8ba86cef0007b997bf82ba5668fbc4e9985cb17d5721e0",
       "scopes": [
         "frontend"
       ]
@@ -690,14 +690,14 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "a8df3df85d655b0e4e134670a83cf2b2f1099bd056e19107594ed9c04d4cdae5",
+      "sha256": "a76319230cf4f56b7952864779b9924db40b995e07c3d071cfae84c36403239a",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/shared/config/translations/ru-part-3-admin.ts",
-      "sha256": "9dc5e1441677aafd5053a4fb13ef97176afc0bd855f60834c75d4785b258d084",
+      "sha256": "aeea0ec7a0219c427851303abbf5157ca672958ab83b6cc0e0a01dbaef1e38c2",
       "scopes": [
         "frontend"
       ]
@@ -810,6 +810,28 @@
     {
       "path": "src/shared/config/runtime-env.ts",
       "sha256": "26bf65a46f725119334acaf12bb713980710731109553235bf85c84a2b4530c6",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-quality-monitoring.service.ts",
+      "sha256": "32028972f764ae80b3305831613700580dae828d17892a231d2239ab2f1b9c21",
+      "scopes": [
+        "backend",
+        "data"
+      ]
+    },
+    {
+      "path": "src/pages/admin-dashboard/ui/AdminDataQualityPanel.tsx",
+      "sha256": "bffbe40753417c1bdf8e5e36b1d34f6e1978868390daf832d923ea8bb1b1746d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/mocks/autocare/governance.handlers.ts",
+      "sha256": "6aa7ca8e9dd7014b7acac1daba6b66d3d620bf124eb7a4068752d2b3fc077d34",
       "scopes": [
         "frontend"
       ]

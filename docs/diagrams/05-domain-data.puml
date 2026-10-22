@@ -148,6 +148,8 @@ note bottom of Review
   increments contentRevision and queues matching evidence.
   Older pending evidence becomes superseded;
   moderation checks the matching revision under row lock.
+  N21: admin status counts aggregate the full table;
+  anomaly signals and calibration use the latest 1000 reviews.
 end note
 Request ..> Outbox : effects; payload association
 note bottom of Evidence

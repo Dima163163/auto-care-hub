@@ -31,7 +31,7 @@ import { getAutoCareTrustRollout } from '../admin/super-admin-trust-policy.servi
 export type AutoCareQualityMonitoringResponse = {
     generatedAt: string
     providers: { total: number; active: number; verified: number; trusted: number; suspended: number }
-    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number }
+    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number; analysisWindow: { recentLimit: number; sampled: number; truncated: boolean } }
     requests: { total: number; completed: number; cancelled: number; noShows: number }
     ranking: {
         trustSnapshots: number
@@ -54,13 +54,33 @@ function percent(value: number, total: number) {
     return total === 0 ? 0 : Number(((value / total) * 100).toFixed(1))
 }
 
+const REVIEW_ANALYSIS_LIMIT = 1_000
+
+async function getFullReviewStatusCounts() {
+    const rows = await AppDataSource.getRepository(AutomotiveReviewEntity)
+        .createQueryBuilder('review')
+        .select('review.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('review.status')
+        .getRawMany<{ status: AutomotiveReviewStatus; count: string }>()
+
+    const counts = { approved: 0, pending: 0, rejected: 0 }
+    for (const row of rows) {
+        if (row.status === AutomotiveReviewStatus.Approved) counts.approved = Number(row.count)
+        if (row.status === AutomotiveReviewStatus.Pending) counts.pending = Number(row.count)
+        if (row.status === AutomotiveReviewStatus.Rejected) counts.rejected = Number(row.count)
+    }
+    return counts
+}
+
 /** Aggregate-only telemetry; private review/chat content is never returned. */
 export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<AutoCareQualityMonitoringResponse> {
     assertAdmin(user)
-    const [providers, memberships, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
+    const [providers, memberships, reviews, reviewCounts, requests, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
         AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, ownerId: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
         AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { status: AutomotiveProviderMembershipStatus.Active }, select: { providerId: true, userId: true, locationId: true, status: true } }),
-        AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
+        AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: REVIEW_ANALYSIS_LIMIT }),
+        getFullReviewStatusCounts(),
         AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, clientId: true, providerId: true, locationId: true, status: true, completedAt: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
         AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({ select: { providerId: true, score: true, computedAt: true } }),
         AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ select: { id: true, active: true } }),
@@ -104,10 +124,13 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
             suspended: providers.filter((provider) => provider.status === AutomotiveProviderStatus.Suspended).length,
         },
         reviews: {
-            approved: reviews.filter((review) => review.status === AutomotiveReviewStatus.Approved).length,
-            pending: reviews.filter((review) => review.status === AutomotiveReviewStatus.Pending).length,
-            rejected: reviews.filter((review) => review.status === AutomotiveReviewStatus.Rejected).length,
+            ...reviewCounts,
             anomalyCandidates,
+            analysisWindow: {
+                recentLimit: REVIEW_ANALYSIS_LIMIT,
+                sampled: reviews.length,
+                truncated: reviewCounts.approved + reviewCounts.pending + reviewCounts.rejected > reviews.length,
+            },
         },
         requests: {
             total: requests.length,
