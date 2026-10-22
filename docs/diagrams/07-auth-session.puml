@@ -43,6 +43,8 @@ note over Auth, PG
   Preferences обновляют только свои поля с проверкой status/tokenVersion.
   Login reset counters использует условный UPDATE;
   смена пароля блокирует User row и отзывает сессии в той же transaction.
+  Bcrypt принимает максимум 72 UTF-8 bytes при создании и проверке;
+  старым длинным паролям требуется email reset.
   Refresh/cookie TTL остаётся открытой находкой.
   MFA/KMS production acceptance этой схемой не подтверждается.
 end note

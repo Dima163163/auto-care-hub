@@ -189,8 +189,22 @@
       ]
     },
     {
+      "path": "server/src/modules/auth/auth.schemas.ts",
+      "sha256": "e2dbaf19cd116f3d9db7e92879ad54da0ed9922b3447509fdca2f57e6385e731",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/password-policy.ts",
+      "sha256": "5b3981c59c91e41eb1c0d0949b96847bfd210a3ed08d0887dd11f4ab1cfed7a6",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
       "path": "server/src/modules/auth/auth.service.ts",
-      "sha256": "1a8dd1479c99e78fa3973e4b64fbc08083c463be6b37ea3960fb2744daea9ff7",
+      "sha256": "94a813f38a0079f813a34104cbb4d7a58cafaccc94e1766d6be21189394ac9cc",
       "scopes": [
         "auth"
       ]

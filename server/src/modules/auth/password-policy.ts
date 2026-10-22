@@ -23,10 +23,20 @@ const COMMON_PASSWORDS = new Set([
     'welcome',
 ])
 
+/** bcrypt hashes only the first 72 UTF-8 bytes. Reject longer secrets on
+ * both creation and verification so two distinct inputs cannot authenticate
+ * against the same hash. Existing longer passwords require email reset. */
+export const BCRYPT_MAX_PASSWORD_BYTES = 72
+
+export function isPasswordWithinBcryptLimit(password: string) {
+    return Buffer.byteLength(password, 'utf8') <= BCRYPT_MAX_PASSWORD_BYTES
+}
+
 export const passwordSchema = z
     .string()
     .min(8, 'Password must contain at least 8 characters.')
     .max(128, 'Password must contain at most 128 characters.')
+    .refine(isPasswordWithinBcryptLimit, 'Password must contain at most 72 UTF-8 bytes.')
     .refine((password) => !COMMON_PASSWORDS.has(password.trim().toLowerCase()), {
         message: 'Choose a less common password.',
     })
@@ -41,8 +51,8 @@ export function assertPasswordPolicy(password: string) {
 }
 
 export function assertPasswordVerificationInput(password: string) {
-    if (password.length < 1 || password.length > 128) {
-        throw new Error('Password input is outside the accepted bounds.')
+    if (password.length < 1 || password.length > 128 || !isPasswordWithinBcryptLimit(password)) {
+        throw new Error('Password input is outside the accepted bounds of 72 UTF-8 bytes.')
     }
 
     return password

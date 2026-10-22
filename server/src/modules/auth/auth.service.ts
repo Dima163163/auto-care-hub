@@ -789,7 +789,7 @@ export async function changePassword(user: UserEntity, input: ChangePasswordInpu
         if (current.provider !== UserProvider.Email || !current.passwordHash) {
             throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Account does not have an email password.' })
         }
-        if (!await compare(input.oldPassword, current.passwordHash)) {
+        if (!await compare(assertPasswordVerificationInput(input.oldPassword), current.passwordHash)) {
             throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Invalid current password.' })
         }
         await userRepository.update(current.id, {

@@ -168,6 +168,11 @@ Vite/API/Next real build и fixture leakage PASS. Integration/E2E, опубли�
 индекс старых encrypted rows. Targeted unit/API build PASS; PostgreSQL
 migration/query и published candidate пока не проверены.
 
+**Локальная disposition N26, 2026-10-22:** password create/login/change
+ограничены 72 UTF-8 bytes. Unit воспроизводит bcrypt collision двух 73-byte
+секретов и проверяет отказ обоих, включая Unicode boundary. API build PASS;
+старым длинным паролям требуется email reset, deployed recovery не проверен.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

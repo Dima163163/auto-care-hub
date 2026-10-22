@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление N26 — 2026-10-22
+
+Новые пароли и проверяемые login/change-password inputs ограничены 72 UTF-8
+байтами, как фактически обрабатывает bcrypt. Тест воспроизводит совпадение
+двух разных 73-byte secrets на старом bcrypt hash и подтверждает их отказ
+новой политикой; проверен Unicode. Targeted unit и API build PASS. Существующие
+длинные пароли требуют email reset; production recovery flow и реальная база
+локально не проверены. Обновлены `07-auth-session.puml`, SVG и 79 anchors.
+
 ## Локальное исправление U16 — 2026-10-22
 
 Для `autocare_trust_evidence.reference` добавлен отдельный HMAC blind index.

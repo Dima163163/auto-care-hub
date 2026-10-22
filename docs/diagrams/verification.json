@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "715efc61d18db356d1f385cc8f89140b8709c84bf7668dcabfbf95c03d731ad0",
+      "sourceSha256": "fbf0e76f5db494b789173c93e87af06401cabb0fe0ff207f3a6d6368414dc93f",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "cd96b3f270490e14f1fde6e326eca208eff7df82f772ec8ce5dd450955b7493d",
+      "previewSha256": "7de7b6874174a74072a870b63148dccb5310354c42aa3d008e80a67c5a3812a4",
       "width": "1057px",
-      "height": "1211px"
+      "height": "1241px"
     },
     {
       "scope": "outbox",
@@ -321,6 +321,18 @@
       "scope": "data",
       "change": "U16 searchable HMAC index for encrypted evidence references",
       "sourceAnchorCount": 77,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "N26 reject bcrypt-truncated secrets at creation and verification",
+      "sourceAnchorCount": 79,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",
