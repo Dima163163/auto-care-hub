@@ -87,6 +87,11 @@ email reset; production recovery flow предстоит проверить.
 `sessionStorage`; in-memory token/cache очищаются раньше optional hint.
 Source anchors остались 79; browser denial flow на production не проверен.
 
+**Локальное исправление N25, 2026-10-22:** `05-domain-data.puml` и
+`08-outbox-maintenance.puml` с SVG показывают due queue пересчёта trust,
+раздельные timestamps успешной и неудачной попытки и backoff. Добавлены
+anchors миграции и policy editor; PostgreSQL worker passes ещё не проверены.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |

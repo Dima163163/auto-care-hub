@@ -14,6 +14,8 @@ entity "UserSession" as Session {
 entity "Provider" as Provider {
   * id : uuid
   ownerId : legacy compatibility
+  trustReassessedAt : successful scan?
+  trustReassessmentAttemptedAt : queue order?
 }
 entity "ProviderMembership" as Membership {
   * id : uuid
@@ -128,6 +130,11 @@ note bottom of Claim
   Historic duplicates retain null caseKey;
   only the canonical case affects trust.
   Allegations never count as proven violations.
+end note
+note bottom of Provider
+  N25: successful trust scans advance both timestamps,
+  failed scans advance only attemptedAt.
+  A policy change clears both watermarks.
 end note
 note bottom of Evidence
   U16: exact lookup uses referenceIndex;

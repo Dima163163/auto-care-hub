@@ -1,6 +1,6 @@
 import { AppDataSource } from '../../database/data-source.js'
 import { In } from 'typeorm'
-import { AutoCareTrustPolicyEntity, AutomotiveMarketEntity } from '../../entities/index.js'
+import { AutoCareTrustPolicyEntity, AutomotiveMarketEntity, AutomotiveProviderEntity, AutomotiveProviderStatus } from '../../entities/index.js'
 import type { UserEntity } from '../../entities/user/user.entity.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import { AppError } from '../../shared/errors/app-error.js'
@@ -122,21 +122,39 @@ export async function updateSuperAdminTrustPolicy(actor: UserEntity, input: unkn
             })
         }
     }
-    const repository = AppDataSource.getRepository(AutoCareTrustPolicyEntity)
-    const entity = await repository.findOneBy({ id: POLICY_ID }) ?? repository.create({ id: POLICY_ID })
-    Object.assign(entity, {
-        policyVersion: normalizedInput.policyVersion,
-        trustedMinimumRating: normalizedInput.trustedMinimumRating,
-        trustedMinimumReviews: normalizedInput.trustedMinimumReviews,
-        trustedMinimumCompletedVisits: normalizedInput.trustedMinimumCompletedVisits,
-        trustedMaxNoShowRate: normalizedInput.trustedMaxNoShowRate,
-        trustedMaxComplaintRate: normalizedInput.trustedMaxComplaintRate,
-        trustedMaxResponseTimeMinutes: normalizedInput.trustedMaxResponseTimeMinutes,
-        reassessmentIntervalHours: normalizedInput.reassessmentIntervalHours,
-        rolloutEnabled: normalizedInput.rollout.enabled,
-        rolloutMarketIds,
-        rolloutPercentage: normalizedInput.rollout.percentage,
-        updatedById: actor.id,
+    return AppDataSource.transaction(async (manager) => {
+        const repository = manager.getRepository(AutoCareTrustPolicyEntity)
+        const entity = await repository.findOneBy({ id: POLICY_ID }) ?? repository.create({ id: POLICY_ID })
+        const scoringChanged = entity.policyVersion !== normalizedInput.policyVersion
+            || Number(entity.trustedMinimumRating) !== normalizedInput.trustedMinimumRating
+            || entity.trustedMinimumReviews !== normalizedInput.trustedMinimumReviews
+            || entity.trustedMinimumCompletedVisits !== normalizedInput.trustedMinimumCompletedVisits
+            || Number(entity.trustedMaxNoShowRate) !== normalizedInput.trustedMaxNoShowRate
+            || Number(entity.trustedMaxComplaintRate) !== normalizedInput.trustedMaxComplaintRate
+            || entity.trustedMaxResponseTimeMinutes !== normalizedInput.trustedMaxResponseTimeMinutes
+            || entity.reassessmentIntervalHours !== normalizedInput.reassessmentIntervalHours
+        Object.assign(entity, {
+            policyVersion: normalizedInput.policyVersion,
+            trustedMinimumRating: normalizedInput.trustedMinimumRating,
+            trustedMinimumReviews: normalizedInput.trustedMinimumReviews,
+            trustedMinimumCompletedVisits: normalizedInput.trustedMinimumCompletedVisits,
+            trustedMaxNoShowRate: normalizedInput.trustedMaxNoShowRate,
+            trustedMaxComplaintRate: normalizedInput.trustedMaxComplaintRate,
+            trustedMaxResponseTimeMinutes: normalizedInput.trustedMaxResponseTimeMinutes,
+            reassessmentIntervalHours: normalizedInput.reassessmentIntervalHours,
+            rolloutEnabled: normalizedInput.rollout.enabled,
+            rolloutMarketIds,
+            rolloutPercentage: normalizedInput.rollout.percentage,
+            updatedById: actor.id,
+        })
+        const saved = await repository.save(entity)
+        if (scoringChanged) {
+            await manager.getRepository(AutomotiveProviderEntity).createQueryBuilder()
+                .update()
+                .set({ trustReassessedAt: null, trustReassessmentAttemptedAt: null })
+                .where('status = :status', { status: AutomotiveProviderStatus.Active })
+                .execute()
+        }
+        return fromEntity(saved)
     })
-    return fromEntity(await repository.save(entity))
 }

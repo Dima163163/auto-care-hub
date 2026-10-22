@@ -106,7 +106,7 @@
     },
     {
       "path": "server/src/entities/automotive/automotive.entity.ts",
-      "sha256": "694cbd6c10a2263341c83e167241a5c1d7cccb70c002ef727008346d766a6acf",
+      "sha256": "1a86d0be7fd9f22aad0028fbb6f9fb8dd0c0b5fa22d2b6354a8b2818c3235f38",
       "scopes": [
         "data"
       ]
@@ -168,6 +168,14 @@
       ]
     },
     {
+      "path": "server/src/database/migrations/1786450000000-FairTrustReassessmentQueue.ts",
+      "sha256": "91dc3164f85b541fa6ecf59c77a4aa39af7268819b0cb684ba294e40388d4e19",
+      "scopes": [
+        "data",
+        "outbox"
+      ]
+    },
+    {
       "path": "server/src/database/migrations/1786430000000-UniqueGuaranteeClaimCase.ts",
       "sha256": "816206695308a183ef9f50b0b48006f5192bab42b593f2faf531f1bf5a74c88a",
       "scopes": [
@@ -177,6 +185,13 @@
     {
       "path": "server/src/entities/user/user.entity.ts",
       "sha256": "066bc0d7ad810e35061e5b723b98e577c1da13412650edf1b23dbac96c2c6df7",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/super-admin-trust-policy.service.ts",
+      "sha256": "f676b130cd84e9bfdfd1f6e3e397bede99ce536bca713a00845347a99ccfdd71",
       "scopes": [
         "data"
       ]
@@ -239,7 +254,7 @@
     },
     {
       "path": "server/src/modules/autocare/trust-score.service.ts",
-      "sha256": "3f4d2b58a655df754bcd649f130e5214208c5dec75b240b6bbe2f427ac85cf74",
+      "sha256": "cb2e347e6447ece00e4d862e9899e105fdf584262fbd1aad02b073a1cf2b9c5f",
       "scopes": [
         "data"
       ]
@@ -404,7 +419,7 @@
     },
     {
       "path": "server/src/modules/jobs/maintenance-jobs.service.ts",
-      "sha256": "6c56efc06d8ab8157f91214987193c2dad3d33ec073a5620fb25127a485f79bf",
+      "sha256": "dea7d03df10aa5b0712185486e9413c1b6f6109a2ee0a57226d55febca0ccd34",
       "scopes": [
         "outbox"
       ]

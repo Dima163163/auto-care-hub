@@ -41,7 +41,16 @@ loop scheduled cycle (60s interval)
     else exhausted or terminal failure
       Worker -> PG : dead_letter + incident/metrics
     end
-    Worker -> PG : reminders / quote expiry / auth cleanup\naudit retention / orphan cleanup / trust reassessment
+    Worker -> PG : reminders / quote expiry / auth cleanup\naudit retention / orphan cleanup
+    Worker -> PG : trust due candidates\nNULLS FIRST + attemptedAt retry backoff
+    loop each bounded provider
+      Worker -> PG : recompute trust; advance successful watermark
+      note right of Worker
+        N25: unchanged scores still advance watermark.
+        Failed provider only advances attemptedAt;
+        next provider continues, cycle reports partial.
+      end note
+    end
   end
 end
 note over Worker, Delivery

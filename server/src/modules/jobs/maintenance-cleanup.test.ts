@@ -26,7 +26,7 @@ describe('summarizeMaintenanceCycle', () => {
             auditCleanup: { auditLogs: 5, securityEvents: 2 },
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
-            trustReassessment: { scanned: 4, changed: 2 },
+            trustReassessment: { scanned: 4, changed: 2, failed: 0 },
             phaseFailures: [],
         })).toEqual({
             remindersScheduled: 1,
@@ -35,7 +35,7 @@ describe('summarizeMaintenanceCycle', () => {
             auditCleanup: { auditLogs: 5, securityEvents: 2 },
             notificationCleanup: { notifications: 7 },
             orphanImageCleanup: { failed: 0, scanned: 6, removed: 1 },
-            trustReassessment: { scanned: 4, changed: 2 },
+            trustReassessment: { scanned: 4, changed: 2, failed: 0 },
         })
     })
 })

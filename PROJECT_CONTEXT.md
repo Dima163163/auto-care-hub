@@ -1420,3 +1420,14 @@ U08 under the local role rule and user's no-subagents-by-default instruction.
 All three questions remain unanswered. No subagent or skill installation is
 authorized by silence. Final status-only publication records verified work;
 it does not introduce another runtime fix or claim pilot readiness.
+
+
+22 Oct — N25 local trust queue fix on `fix/request-chat-state-isolation-2026-10-20`:
+Migration 178645 adds `trustReassessmentAttemptedAt` and queue index. The worker
+selects due active providers with NULLS FIRST, advances success watermarks even
+when the score is unchanged, backs off failed providers for 15 minutes and
+continues the batch. A scoring policy change invalidates queue watermarks in
+the policy transaction. Unit tests and API build pass. PostgreSQL migration,
+several real worker passes and deployed maintenance behavior remain open. Local
+commit is not yet pushed; accumulated commits will go to dev then main after
+the correction batch and release gates.

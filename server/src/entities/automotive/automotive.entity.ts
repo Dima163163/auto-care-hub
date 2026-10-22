@@ -164,6 +164,7 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 }) trustScore!: number
     @Column({ type: 'text', nullable: true }) trustBadge!: string | null
     @Column({ type: 'timestamptz', nullable: true }) trustReassessedAt!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) trustReassessmentAttemptedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 

@@ -143,10 +143,10 @@
     {
       "scope": "data",
       "source": "05-domain-data.puml",
-      "sourceSha256": "960ffa11c4d817c533c7c63fdfa1fce514aac4d259f6d8ba657163d6ac84db3e",
+      "sourceSha256": "d863fb7152df898cd5ecdb0ecabd0c8f1bdbf7cc89fea7746abdf45bf140f3e7",
       "preview": "rendered/05-domain-data.svg",
-      "previewSha256": "3a3f10712c24fceccd66ccc5c22dda51fd1b932b0b5b746c753593607d982e56",
-      "width": "2243px",
+      "previewSha256": "2040a6d2aec99573365fd6a35e19c22d469d9e204d16f2f81bed5b7c8d62778d",
+      "width": "2383px",
       "height": "904px"
     },
     {
@@ -170,11 +170,11 @@
     {
       "scope": "outbox",
       "source": "08-outbox-maintenance.puml",
-      "sourceSha256": "6f0efd081a935f5951154aa9f39e548b0e14804671e363c4072ed1f1d4127cc1",
+      "sourceSha256": "836ed6aa23ba454b8ddba3cb3a15e559fea75ba4badfd4f7e0269f45a13cca30",
       "preview": "rendered/08-outbox-maintenance.svg",
-      "previewSha256": "aafd6a77a876481e07209959e5c83a34a708b984a8492ccea0551b3e7535a0a6",
-      "width": "1618px",
-      "height": "1090px"
+      "previewSha256": "fbe2f15bec5df2706454af86f22c8e22284f39bfca9f449566840bc5e04d7c3e",
+      "width": "1589px",
+      "height": "1259px"
     },
     {
       "scope": "security",
@@ -345,6 +345,18 @@
       "scope": "auth",
       "change": "N28 storage-denied expiry hint cannot interrupt in-memory auth cleanup",
       "sourceAnchorCount": 79,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data,outbox",
+      "change": "N25 fair due trust reassessment queue with failed-provider backoff and policy invalidation",
+      "sourceAnchorCount": 81,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

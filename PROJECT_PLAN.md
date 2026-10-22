@@ -122,7 +122,9 @@
 - [x] N28: denied `sessionStorage` не прерывает in-memory auth cleanup;
   expiry hint использует безопасный fallback. Unit/type/lint PASS, browser
   denial на опубликованном кандидате открыт.
-- [ ] N24/N25: atomic review revision/evidence, fair trust worker.
+- [ ] N24: atomic review revision/evidence.
+- [x] N25: due trust queue with NULLS FIRST, successful scan watermark and
+  failed-provider retry; unit/build PASS, PostgreSQL scheduling gate open.
 - [ ] N30/N32: отдельная current quote/latest history и notification identity
   по quote version с сохранением retry idempotency.
 - [ ] N27/N31: реальные domain endpoints в boundary guard, актуальные root

@@ -115,7 +115,7 @@ run action_required не заявлен PASS. Рабочая developer БД не
 | U20 | P1 | Full stale UserEntity save возвращает прежние security fields | Реальный preference save + TypeORM update diff |
 | U21 | P1 | Fresh high/critical dependency advisories в текущих lockfiles | Полный npm audit, upstream advisories и применимость в runtime-отчёте |
 | N24 | P2 | Concurrent edits дважды используют review revision; новая evidence не ставится | Реальные concurrent functions + source |
-| N25 | P2 | Trust worker пропускает null providers и повторяет неизменный batch | Реальные worker functions / модель SQL ordering |
+| N25 | P2 | Trust worker пропускает null providers и повторяет неизменный batch | Локально исправлено: due/NULLS FIRST/attemptedAt и unit; PostgreSQL gate открыт |
 | N26 | P2 | Разные допустимые пароли после 72 bytes bcrypt совпадают | Реальные policy/hash/compare |
 | N27 | P2 | Runtime-boundary guard не сканирует domain factories | Negative fixture: PASS при 0 checked endpoints |
 | N28 | P2 | Denied sessionStorage прерывает auth cleanup | Исходный helper в VM + порядок cleanup |

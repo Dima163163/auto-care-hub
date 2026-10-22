@@ -283,6 +283,13 @@ Case N25 моделирует этот порядок repositories и вызыв
 сканирования независимо от score change. Несколько batch проходят весь каталог
 в согласованный срок; failed provider не блокирует прогресс остальных.
 
+**Локальное исправление 22.10.** Worker выбирает только due providers по
+`trustReassessedAt`, сначала без попытки, затем по старой попытке; ошибка одного
+provider фиксирует `trustReassessmentAttemptedAt` и не блокирует следующих.
+Успешное сканирование всегда обновляет оба timestamp. Изменение scoring policy
+инвалидирует watermarks транзакционно. Unit и TypeScript build проходят;
+миграция 178645 и многократные passes на PostgreSQL пока не проверены.
+
 ### N26 · P2 · Password policy принимает отличающиеся пароли с одинаковым bcrypt hash
 
 **Доказательство.** `password-policy.ts:27–30` разрешает 128 символов, hashing
