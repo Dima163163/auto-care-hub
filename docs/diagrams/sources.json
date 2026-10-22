@@ -757,6 +757,13 @@
       "scopes": [
         "auth"
       ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-read.service.ts",
+      "sha256": "d94239cba749789d1c9d9614e58bd60c6a71ee6467887ce68dfe4d7b55c524a6",
+      "scopes": [
+        "requests"
+      ]
     }
   ],
   "inventories": [

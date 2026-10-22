@@ -152,11 +152,11 @@
     {
       "scope": "requests",
       "source": "06-request-workflow.puml",
-      "sourceSha256": "9072f450e77bbcbddb334821fc38a258244e8b009476d806b109597bc8bd2e46",
+      "sourceSha256": "bdbaca7b4c56d35e759f7bb33bbc3752b47e0119fc7b6949a59866fee33d7f92",
       "preview": "rendered/06-request-workflow.svg",
-      "previewSha256": "8c65247bc183d0c5b12c516d4b6fdd7cc7bcf31507f3ba87350c5ebd18b85525",
-      "width": "1164px",
-      "height": "649px"
+      "previewSha256": "6b0a61c4914baf0769660592105fd890ba66fab5ac26b5def3d3157c6f9d8356",
+      "width": "1431px",
+      "height": "654px"
     },
     {
       "scope": "auth",
@@ -403,6 +403,18 @@
       "scope": "auth",
       "change": "N29 absolute refresh expiry aligned across persisted session, JWT and cookie, including OAuth",
       "sourceAnchorCount": 99,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "requests",
+      "change": "N30 current quote retained in latest 50 revisions with stale quote decision guard",
+      "sourceAnchorCount": 100,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

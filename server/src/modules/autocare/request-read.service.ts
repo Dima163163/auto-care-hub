@@ -16,11 +16,11 @@ export async function hydrateRequest(request: ServiceRequestEntity) {
     const offering = request.offeringId
         ? await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: request.offeringId })
         : null
-    const quoteHistory = await AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({
+    const quoteHistory = (await AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({
         where: { requestId: request.id },
-        order: { version: 'ASC' },
+        order: { version: 'DESC' },
         take: 50,
-    })
+    })).reverse()
     const pendingReschedule = await AppDataSource.getRepository(AutoCareRescheduleRequestEntity).findOne({
         where: { requestId: request.id, status: AutoCareRescheduleStatus.Pending },
         order: { createdAt: 'DESC' },

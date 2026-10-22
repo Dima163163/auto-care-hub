@@ -12,6 +12,12 @@ state "closed" as Closed
 [*] --> Accepted : create / instant bookingMode\nslot + capacity + resource reservation
 Awaiting --> Estimate : provider sends quote
 Estimate --> Estimate : provider sends next revision\nprevious pending quote → superseded
+note right of Estimate
+  Чтение показывает последние 50 версий (DESC limit,
+  затем ASC для клиента). Актуальная версия всегда в конце
+  quoteHistory и соответствует status в quote snapshot.
+  Решение по старой quoteId/version получает 409.
+end note
 Estimate --> Accepted : client accepts current quote\nquoteId + version / expiry / capacity
 Estimate --> Declined : client declines quote
 Estimate --> Awaiting : quote expires / expiry handling

@@ -1467,3 +1467,11 @@ retains the original session deadline. Unit cases for 1h, 7d and 30d and the
 API build passed locally. A PostgreSQL rotation integration assertion was added
 but cannot run without a local database; existing sessions keep their stored
 expiry. `07-auth-session.puml` and its preview were refreshed.
+
+22 Oct — N30 quote history boundary:
+Request hydration now selects the newest 50 quote versions and returns them in
+ascending order, preserving the latest revision as `quoteHistory.at(-1)` for
+both client decision views. A PostgreSQL integration case seeds 51 versions,
+checks the current status/identity and rejects a stale quote decision with 409.
+The API build passed; that database scenario is not locally runnable.
+`06-request-workflow.puml` records the read/decision contract.
