@@ -1,0 +1,52 @@
+[
+  {
+    "id": "cross-chat-draft",
+    "url": "http://127.0.0.1:5199/chats?chat=chat-request-owner-request-2",
+    "valueAfterSwitch": "SYNTHETIC SECRET FOR PROSERVICE ONLY",
+    "sentTo": "/api/v1/service-requests/owner-request-2/messages",
+    "body": "SYNTHETIC SECRET FOR PROSERVICE ONLY"
+  },
+  {
+    "id": "report-dialog-small-viewport",
+    "geometry": {
+      "top": -60,
+      "bottom": 628,
+      "height": 688,
+      "viewportHeight": 568,
+      "overflowY": "visible",
+      "bodyOverflow": "visible",
+      "backgroundInert": false,
+      "buttons": [
+        {
+          "name": "Cancel",
+          "top": 567,
+          "bottom": 603
+        },
+        {
+          "name": "Submit report",
+          "top": 567,
+          "bottom": 603
+        }
+      ]
+    },
+    "axe": []
+  },
+  {
+    "id": "booking-time-restore",
+    "chosen": "20:00",
+    "draft": {
+      "autocare-request:user-client-1:api-proservice-moscow:location-proservice-moscow:offer-api-proservice-moscow-oil-change:none": {
+        "version": 1,
+        "data": {
+          "selectedDate": "today",
+          "customDate": "",
+          "selectedTime": "20:00"
+        }
+      }
+    },
+    "restored": [
+      "TodayOct 20",
+      "11:30"
+    ]
+  }
+]

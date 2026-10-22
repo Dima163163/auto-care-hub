@@ -1,0 +1,1086 @@
+{
+  "schemaVersion": 1,
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "verifiedOn": "2026-10-22",
+  "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
+  "diagrams": [
+    {
+      "scope": "context",
+      "file": "01-system-context.puml",
+      "preview": "rendered/01-system-context.svg"
+    },
+    {
+      "scope": "runtime",
+      "file": "02-runtime.puml",
+      "preview": "rendered/02-runtime.svg"
+    },
+    {
+      "scope": "frontend",
+      "file": "03-frontend.puml",
+      "preview": "rendered/03-frontend.svg"
+    },
+    {
+      "scope": "backend",
+      "file": "04-backend.puml",
+      "preview": "rendered/04-backend.svg"
+    },
+    {
+      "scope": "data",
+      "file": "05-domain-data.puml",
+      "preview": "rendered/05-domain-data.svg"
+    },
+    {
+      "scope": "requests",
+      "file": "06-request-workflow.puml",
+      "preview": "rendered/06-request-workflow.svg"
+    },
+    {
+      "scope": "auth",
+      "file": "07-auth-session.puml",
+      "preview": "rendered/07-auth-session.svg"
+    },
+    {
+      "scope": "outbox",
+      "file": "08-outbox-maintenance.puml",
+      "preview": "rendered/08-outbox-maintenance.svg"
+    },
+    {
+      "scope": "security",
+      "file": "09-access-privacy.puml",
+      "preview": "rendered/09-access-privacy.svg"
+    }
+  ],
+  "sources": [
+    {
+      "path": "docs/architecture/AUTOCARE_RESPONSIBILITIES.md",
+      "sha256": "4a9c33a07c970067ca384d1dda6fb301ed9c861529b7eff0dee3cd9afe7996f0",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "next.config.ts",
+      "sha256": "5601817bf22b81e9494f113795908a7b1cc76d92f0ae3c0db3bc4fcfef3280d8",
+      "scopes": [
+        "context",
+        "runtime"
+      ]
+    },
+    {
+      "path": "package.json",
+      "sha256": "78e87e9c03469168198f875e49f41e07af4b5c02ec0066329a93ef6b9e3a0acd",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/package.json",
+      "sha256": "5cb8df3fd3712d9846e620197499013f0ba858bc78420848b72fc1005e671c75",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/app.ts",
+      "sha256": "186c65fc103cb5bdf78ea369784e3306fc5bab85481c2bc24ea96a76e133b2c4",
+      "scopes": [
+        "context",
+        "runtime",
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/config/runtime-mode-policy.ts",
+      "sha256": "13d2f9c08c1578132e0c3f22883ea8a7bc315b7693fd4e1ad93a1b8ec554588b",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "server/src/database/data-source.ts",
+      "sha256": "672fbe1e79ff019253c960d8ffe9b52d46d08c2112c8b76805fa388f6c3f4601",
+      "scopes": [
+        "runtime",
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/automotive.entity.ts",
+      "sha256": "6e22f438d3543c7030ee1c8086d8c4b3715ef02d87fd3a9eaf422bb668ae3900",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/bonus.entity.ts",
+      "sha256": "aee418b103ef73c9bf9778a6a366a27204dc46968f556436dbcb0ccc04d44444",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
+      "sha256": "cb90b1023ab407269dcf8075063bf8e8f78d9a29d3a2500238777d4864b19fb7",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/provider-membership.entity.ts",
+      "sha256": "cdfc10416783b44af3bec3963f221d43f812afa1ad4968efc93d4cc8fb2678a5",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/service-quote.entity.ts",
+      "sha256": "850ed727aea7548b36d01f35ec0b828a3380f9920c5476bf9ae107f12d12e108",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/service-request.entity.ts",
+      "sha256": "af917912b4f9e01253aea3b9b6b8094a6347ad5c33714572f3d8d80f03e4007f",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/outbox/outbox-event.entity.ts",
+      "sha256": "d36df983968af02bed3480d5113e88201f8f0888427192ea34ac8dbe297014ba",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/user-session/user-session.entity.ts",
+      "sha256": "6f0c04e627a4042ba32dc8cebc2e9425a1f008f934fff4146ee29bb6c5cd9269",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786440000000-IndexTrustEvidenceReferences.ts",
+      "sha256": "c855cff3ad9796e53e869eb7d8c7cacfe1c2dcead8f2210d159ad0e179a54a24",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786450000000-FairTrustReassessmentQueue.ts",
+      "sha256": "91dc3164f85b541fa6ecf59c77a4aa39af7268819b0cb684ba294e40388d4e19",
+      "scopes": [
+        "data",
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786430000000-UniqueGuaranteeClaimCase.ts",
+      "sha256": "816206695308a183ef9f50b0b48006f5192bab42b593f2faf531f1bf5a74c88a",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/user/user.entity.ts",
+      "sha256": "066bc0d7ad810e35061e5b723b98e577c1da13412650edf1b23dbac96c2c6df7",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/super-admin-trust-policy.service.ts",
+      "sha256": "f676b130cd84e9bfdfd1f6e3e397bede99ce536bca713a00845347a99ccfdd71",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/auth-cookie.ts",
+      "sha256": "7ca2c57c55ff41f3e1145b29a765f3a6741cb2cc05833b5e1e499630be22e23a",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/auth.schemas.ts",
+      "sha256": "e2dbaf19cd116f3d9db7e92879ad54da0ed9922b3447509fdca2f57e6385e731",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/password-policy.ts",
+      "sha256": "5b3981c59c91e41eb1c0d0949b96847bfd210a3ed08d0887dd11f4ab1cfed7a6",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/auth.service.ts",
+      "sha256": "651c5129413927dcaa4777a65e74a993298ef569a483e705bc39be339773276d",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-bonus.service.ts",
+      "sha256": "f602edefa581e4c5b725fb164b8ed3c32db945ce11f54f4a41c74bec770578f1",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/bonus-lot-policy.ts",
+      "sha256": "df1119fede74a708c0599d32b47290bd14f6f91e1eaa65195dbe8ae932d21fda",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-marketplace.service.ts",
+      "sha256": "314eae6b7f2a3be349db4b5d4d930314c6c428c446cfc46eb15c8c1e9e06394e",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/guarantee-claim-policy.ts",
+      "sha256": "43f3842278993f21feace788043d57b767885547758aee1166bc372c90e1bb73",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/trust-score.service.ts",
+      "sha256": "19f06cd6d61b5e54bcbf2684dfb776442e843508d4b52a08f0e9e368e742d200",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/moderation-evidence.service.ts",
+      "sha256": "bf6e11bf741c53c259b5acf2249243ad1ef32384c92ec6878b4585e22e9d597e",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/review-moderation.service.ts",
+      "sha256": "b55a7f7bf2bfc00e99dd220ab2f09211c1fa337d0152bb27c5111d005dbe1f52",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/provider-membership.service.ts",
+      "sha256": "d47b8bdba3dab796511fe844f4979a855024bc3131082f98d696cdc1a7043d8b",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/require-auth.ts",
+      "sha256": "cde3915b17178484e641071d089408e6f47a94ce5cf13cf34f288c63e6e9846c",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/session.service.ts",
+      "sha256": "103bea7ac351bc9a1418efa091ca91d060880f989a9294882d313ec83cab779a",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-attachment-storage.ts",
+      "sha256": "f8a56050205af04e8f064c553cc6752e94082e6cda3ffe69222389c913304595",
+      "scopes": [
+        "context",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare.routes.ts",
+      "sha256": "7079f8d43023e233e1fbbddef791fc4e044925245e4024f9f11f3bb70407012f",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-access.service.ts",
+      "sha256": "bb457e3edab70a1d4d3f1e5290d3b869d8767e98754a5914b2f4182bcc17e236",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-write-policy.ts",
+      "sha256": "4910cc85c0bfbb3dbe5c9dd49f5647cad61f3b6d7318205b447e77e0f65772e1",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/provider-access.service.ts",
+      "sha256": "42824c27b60bab2a17591165169f66dec72a22f4e9c70d8e326dd0bf49cfc4fb",
+      "scopes": [
+        "backend",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-access.service.ts",
+      "sha256": "3944281a816d0ed409927a72977656f37266447ea548a15c8cd0ce3dd07abff8",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-attachment.service.ts",
+      "sha256": "f39b6378d5605bfc5a00a4c820e01d39d4b2cd5d64c78797dd1be5515ba126b0",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-availability.service.ts",
+      "sha256": "af9f5f3a8a8b36489c5d714ca55a8c919f56d60c69d9b3b335e915108eeb302d",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-create.service.ts",
+      "sha256": "1a3af605c4bd00a44d6c9c6140a4668b197f7f3cc244fb996c55daf50091df9f",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-conversation.service.ts",
+      "sha256": "e2967485b1a465f75b0d9a1d4b764dae51cb0c88b626733cf6a6b09be4633d32",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-effects.service.ts",
+      "sha256": "91d80309677ec75d0a90c047282633940fd25c4e13a8f5f49321b0314bd08da3",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-lifecycle-policy.ts",
+      "sha256": "ffd2f42499986cf017006fc5db26202a9f9c71705ca17ffff5372923a277183f",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-quote.service.ts",
+      "sha256": "c6832d98cee16e8aa62e3a72153abe5f631a12930b72f3b45d2dd166024da57a",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-reschedule.service.ts",
+      "sha256": "2038c783d5c0600f90771cb5033e5901e0fb0982b02ca9a7e4ec475f63efa9dc",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-transition.service.ts",
+      "sha256": "a8b3871ca08f24cb40a5853255c283a308c32e1a56e6d519eb8f8e650265dc04",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/service-chat.gateway.ts",
+      "sha256": "7651d0cefea1449212d00473a8eb07a97d2da2c7736b642b19cbd4600559e6b6",
+      "scopes": [
+        "context"
+      ]
+    },
+    {
+      "path": "server/src/modules/jobs/background-jobs.ts",
+      "sha256": "5f18145cbf176865106b5150bc6ea8b970a2a34901de291220641b8f6b5ed12c",
+      "scopes": [
+        "runtime",
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/jobs/maintenance-jobs.service.ts",
+      "sha256": "dea7d03df10aa5b0712185486e9413c1b6f6109a2ee0a57226d55febca0ccd34",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/jobs/maintenance-lease.service.ts",
+      "sha256": "0c667a022071b3aab290e67e613baccadf7d5a54fcc562b990cd44da86341557",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/outbox/outbox.service.ts",
+      "sha256": "fd7195ccf0eea327b073d9765701b95bd7aa79bcc44037f5681097b98699d978",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/shared/mail/provider-invitation-email.ts",
+      "sha256": "666f2adc21b9b2afa882c3db114434ca9fb18d27359b796e00e8455596532c01",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/users/users.service.ts",
+      "sha256": "27454e921fb9e29557a8ef8423b12b4e708ddf4fb55d831e7f32fc054b54dc5a",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/server.ts",
+      "sha256": "53d702200d8777210d3e4e9db23f666e4a68dc446293922e228efe5a964cb5c0",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/field-encryption.ts",
+      "sha256": "0311fe65cdaf76c57140dc5bfa4425b59755cb8411cadc5cf2c87505b8bab984",
+      "scopes": [
+        "runtime",
+        "security"
+      ]
+    },
+    {
+      "path": "src/app/[[...slug]]/page.page.tsx",
+      "sha256": "f14d35a88c104a32c57777271b3f28dd5db7b9eb208a9e4ffad8693333f452da",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/layout.page.tsx",
+      "sha256": "ffe3e272d259bb8998e9371b69c89b18d3b352bc9d76f93ab1d397a0cf06de9e",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/next/NextApp.tsx",
+      "sha256": "1112d5ee9e5bd4902f06b5a75242b074691980d8727a57a12d5d255a592d2f2d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/next/NextClientApp.tsx",
+      "sha256": "44e36e11aaa16d39cacbf063d81f840632e3b265c0a925ce6c62d316e1fcb830",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/routes/route-groups.tsx",
+      "sha256": "e813c972401cf194ba4f9f03d90c8d6b2bc150721cceece935035b8d8468d6e7",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/store/store.ts",
+      "sha256": "d802b17ef76da664c96b1f6f052404be5dc179f9f277f3b4f51a0673bc848414",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocareApi.ts",
+      "sha256": "dc4aa155ccacb63faa2ad4add19d24b04eadc6b534600e609bea873c0b05c04f",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/index.ts",
+      "sha256": "a5588a9f842552c53a30e4183f93ea0493a2ff6273dd38620833ea42e73733f1",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/lib/providerPreviewFormat.ts",
+      "sha256": "20eaa666c24ef5d1f33a84314bb8c6eb083f935a9999fdc005e2846931d399ee",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/lib/service-chat.ts",
+      "sha256": "be17439a27b57f633d182d6425d7e9b84586f4a661c3afddc8af5b57f6d7d41a",
+      "scopes": [
+        "context",
+        "runtime",
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/ui/ServiceRequestChat.tsx",
+      "sha256": "5ebe4fc36ffee419726eacfd6a8d3e5e3d56e7a3cf2df67e439cd97e24e83bc7",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/autocare-request/ui/RequestForm.tsx",
+      "sha256": "8d375145e3d7e3e9623e2435b175fd3f540c17b1048b200f34c9622f212137eb",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/autocare-request/ui/request-draft.ts",
+      "sha256": "2b27da73cef20bf86a53311d2f47a9e047506390f3e8d5b19ad908862bb96540",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/autocare-results/ui/AutoCareMapPreview.tsx",
+      "sha256": "72abaca5a4e35729dcbd1e6d01299aae30048d95b6f7ae22960bc1bbea7e96f8",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/autocare-results/ui/AutoCareResultsPage.tsx",
+      "sha256": "06b1985613a7a7a82b2dcc9c0a57fee1abde6029e10b29e00442a395146aa109",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/autocare-results/ui/ComparisonTable.tsx",
+      "sha256": "2f7eb99a304e2e98bff66a04d6a7ea1269674eca0e81e3cc622aacab7b5694b1",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/autocare-results/ui/ProviderResultCard.tsx",
+      "sha256": "73faa1f79202bf8acbf670aa0c75c801c476a674c14bc7e6c03d546ffb60b369",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/api/baseApi.ts",
+      "sha256": "5486720eac1fef55c7c7b1f84be35fe66185ab14012d9ea79e0c34db2b542d67",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "src/shared/api/refresh-access-token.ts",
+      "sha256": "1b36b8888e7e871b80f8bda739370110ba43dd05ec17aca30ea9709b50d7f4c3",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "src/shared/lib/auth-session-state.ts",
+      "sha256": "86850556d40c6c6902cccbbbc03225094304a6284bf09591e86b9553172a9b00",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "src/shared/lib/auth-token.ts",
+      "sha256": "fa5a5a7cfb85f7c71abac25ee18b11d1e5d05f35f580cca9580803beabcdd55b",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "src/shared/ui/confirm-dialog/ConfirmDialog.tsx",
+      "sha256": "aad8da5afa89e0c32fa134646e1984de96f9c5d5fc2b93b63a263a5e54fb0cbf",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786420000000-EncryptRawOutboxRecipients.ts",
+      "sha256": "e14ea893ed74fdaf29e379da18685dc8c1ce4486170fd140e6db22ee3d8cee79",
+      "scopes": [
+        "data",
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786460000000-VersionReviewModerationEvidence.ts",
+      "sha256": "333632ccd3707edcb4b1d8a62f7fc1e64bddd0176571ef22400b7b5ca0e2968c",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/admin.schemas.ts",
+      "sha256": "6c069b611237bbc2c05731285d1bccf8a6093d6e7ae6e17b2df64365b3242172",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/provider-reviews-write.service.ts",
+      "sha256": "618cefa4bb967280cda3fc50ba7717595ae6439a3783401cd5e199447fe7125b",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/provider-review-promo.service.ts",
+      "sha256": "1d09cf71131029e908825f3d3912e966092bac9adca04e22670504b47980ce06",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/moderation-evidence-policy.ts",
+      "sha256": "bc19a90bb815572cbeb4c6469613511d6aef0991ebdf8d1b960e475a21715807",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/governance.schemas.ts",
+      "sha256": "270a01cee392037914ac200535262d99e25a76faddef46b82df759c04aa76cba",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/governance.types.ts",
+      "sha256": "4df4e14cd8182386fe8ba86cef0007b997bf82ba5668fbc4e9985cb17d5721e0",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/admin-dashboard/ui/AdminModerationEvidencePanel.tsx",
+      "sha256": "9493fa979d2fe1471be487234396547f4d46b5b501678e6595e1ad31428cdc00",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/translations/en.ts",
+      "sha256": "ca4139bec910c4c53f81661161b85b4b874dd07f0bb18a122bda766a213d6687",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/translations/ru-part-3-admin.ts",
+      "sha256": "aeea0ec7a0219c427851303abbf5157ca672958ab83b6cc0e0a01dbaef1e38c2",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": ".github/workflows/quality.yml",
+      "sha256": "99c01823456a4fdcffcca770dddf9441ead93376b8b5a393cafa18a27b70468d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "scripts/check-api-runtime-boundaries.mjs",
+      "sha256": "b0e1d0bb03cb15f271e9d3da51725774aefb250dc720f80440eaa23611d0f797",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "scripts/check-api-runtime-boundaries.test.mjs",
+      "sha256": "8f17c38573e2550e6c83594411980ffec46212a92bd084a9e57ce772f7c6cd52",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "scripts/check-threat-surface.test.mjs",
+      "sha256": "11ec2c10af8e321cf951de8ca5f1f5ec18eedacf226f831028311b7a38d3fa41",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "scripts/check-mvp-readiness.test.mjs",
+      "sha256": "e09bdee8bf9c0853807490605444d6226dd1ba8f4e63fec489e76bbc2bec9b0a",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/auth-token.ts",
+      "sha256": "e11f87e2a5b6889de3296cedcff8a80581695516f6c1a638eb8225dc0836610f",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/refresh-session-lifetime.ts",
+      "sha256": "1eef7f61f8409d28462bbc8fe2be46831bb3eaf6b72d0961cd1b5dd2563a2c5c",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/oauth/oauth.service.ts",
+      "sha256": "bea35d806f01b22bb812086ee797670a9303f9c63961903f7ba142eb94189781",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/request-read.service.ts",
+      "sha256": "c9f29d39340717337e4e9545fcc8e079d33f23df953dacd430b786daf4281109",
+      "scopes": [
+        "requests"
+      ]
+    },
+    {
+      "path": "src/shared/api/getApiErrorMessage.ts",
+      "sha256": "a2f598e91cc10107d57d1d6e67dcf73426779bc5c6c9fec1697283a4ec2ba001",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/routes/AppRouter.tsx",
+      "sha256": "1dd39a99955adf05ddc6b89fb752e6cd7acaefa60788401eeca3c80270dc8c77",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/layouts/public-layout/PublicLayout.tsx",
+      "sha256": "f043c613c09cabe62c1d285c08116d3fa07ccb708a37432f73493c654a36bd7a",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/metadata.ts",
+      "sha256": "ff1c9458572f28e702b40b4988598f47f36c63cf88bfa021de020b00a23c377d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/ui/seo-head/SeoHead.tsx",
+      "sha256": "4278ada4d4e2bbb0c2740acfe4cdea5bc51636a17dec6ae86c8da2b55d10af1e",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/route-metadata-policy.ts",
+      "sha256": "f9b7f8b86744cd1c1aceb39ffc034473555e502e626b2b3a1e999fff10e6818a",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/runtime-env.ts",
+      "sha256": "26bf65a46f725119334acaf12bb713980710731109553235bf85c84a2b4530c6",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-quality-monitoring.service.ts",
+      "sha256": "d07b4fdf0d8460bab7bac581d5d60803601d01cc05901da7fad1f286a4af8d91",
+      "scopes": [
+        "backend",
+        "data"
+      ]
+    },
+    {
+      "path": "src/pages/admin-dashboard/ui/AdminDataQualityPanel.tsx",
+      "sha256": "bffbe40753417c1bdf8e5e36b1d34f6e1978868390daf832d923ea8bb1b1746d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/mocks/autocare/governance.handlers.ts",
+      "sha256": "6aa7ca8e9dd7014b7acac1daba6b66d3d620bf124eb7a4068752d2b3fc077d34",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/first-provider-response-policy.ts",
+      "sha256": "57218bcf1e7e5396a0388c7e00237f29bd8bb72b8f201a4ee622f9963018ac44",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-analytics.service.ts",
+      "sha256": "ca7c94de6565793b99651f6a2140ee7d2eecb696bbb1a2031dc016a65635f163",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/quality-metrics.ts",
+      "sha256": "8250ffb37668759deb0bdde33e55569ca64ce6bb525403cbec047bf04f59d70c",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-request.service.ts",
+      "sha256": "4e141f59076583a47079daa39854008dcac98c2a695951e9739cd6660e55a5cc",
+      "scopes": [
+        "backend",
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare.schemas.ts",
+      "sha256": "8560e15f15e9263acf491c73b4f0d0f6448585686da9f9465dcb4c438a9873da",
+      "scopes": [
+        "backend",
+        "requests"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/requests.endpoints.ts",
+      "sha256": "758d51f33439ad0621c6085e49062b7db0b46e36e92688d10149ea33f025803f",
+      "scopes": [
+        "frontend",
+        "requests"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/requests.schemas.ts",
+      "sha256": "c24fb782666c5401744e2bb7f647e59a08002443c7b8d5954c0044dce4281555",
+      "scopes": [
+        "frontend",
+        "requests"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/requests.types.ts",
+      "sha256": "c8455fde28978a93c106a6c0b3c6974e3f3dc19c521a52f06d8eaca8bbaad5fd",
+      "scopes": [
+        "frontend",
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/first-provider-response-reader.ts",
+      "sha256": "3befe4d0b9198ed0176c8e1f95725f455f9608af5dc21da835f6b46c7f4f2b4e",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/ranking-calibration.ts",
+      "sha256": "14f7f833fb85a816456799896b3f11db146d5380d11af746ee210efa83f1f5f3",
+      "scopes": [
+        "backend",
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/routes/openapi.route.ts",
+      "sha256": "656bc169914394207c30a29346ac553e00bd224f69bb8879826cbbe553ed7a73",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/cors.ts",
+      "sha256": "9b67fe36bba09eccce6c7ef10d652f385167b5cc6af7d3012dd01ed286ce7dd4",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/lib/useAutoCareRequestPages.ts",
+      "sha256": "3038a9ee0636142d9b7fa7de62c7af79e87f1c6905c151597cd8c057c152e984",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-autocare-requests/ui/OwnerAutoCareRequestsPage.tsx",
+      "sha256": "ab76498e74d7d68c1714f8eb1bcd35a4cca7d9e93656a14a02350a54298a7fb5",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/profile-bookings/ui/AutoCareRequestsPanel.tsx",
+      "sha256": "42a08650751b020a60bc4eace89f4dbfa71c2a85a1a758c894f1f2560bc2efdf",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-clients/ui/OwnerClientsPage.tsx",
+      "sha256": "ea30c08ac89e7c24a6dd7754fe20f8592b5b849b3c0055e03f61bf19233515f0",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-dashboard/ui/OwnerAutoCareDashboardPage.tsx",
+      "sha256": "40ef1b5be65a95f8cb2c1618fe6c58986648864b7b3a8c64a99dc9b83547df8b",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-autocare-provider-reviews/ui/OwnerAutoCareProviderReviewsPage.tsx",
+      "sha256": "0a727cf9b17c53d2297f341ceec1839383645292e6b8d79ad0a75df525538e0d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/mocks/autocare/requests.handlers.ts",
+      "sha256": "000ce23e29fbe565a3bc0a6cc885cdfaabf36de4d1f4659cfb68bc8a46a48802",
+      "scopes": [
+        "frontend"
+      ]
+    }
+  ],
+  "inventories": [
+    {
+      "path": "server/src/modules",
+      "kind": "directories",
+      "entries": [
+        "admin",
+        "auth",
+        "autocare",
+        "bookings",
+        "bootstrap",
+        "cabinets",
+        "jobs",
+        "notifications",
+        "oauth",
+        "outbox",
+        "platform-reviews",
+        "reviews",
+        "services",
+        "users",
+        "vehicles"
+      ],
+      "scopes": [
+        "backend",
+        "context"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive",
+      "kind": "sources",
+      "entries": [
+        "appeal.entity.ts",
+        "autocare-reschedule-request.entity.ts",
+        "automotive.entity.ts",
+        "bonus.entity.ts",
+        "capacity-resource.entity.ts",
+        "catalog-gap-request.entity.ts",
+        "chat-moderation.entity.ts",
+        "marketplace-enhancements.entity.ts",
+        "provider-change-request.entity.ts",
+        "provider-daily-metric.entity.ts",
+        "provider-favorite.entity.ts",
+        "provider-invitation.entity.ts",
+        "provider-membership.entity.ts",
+        "review-helpful-vote.entity.ts",
+        "service-quote.entity.ts",
+        "service-request.entity.ts",
+        "trust-policy.entity.ts"
+      ],
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare",
+      "kind": "sources",
+      "entries": [
+        "bonuses.endpoints.ts",
+        "bonuses.schemas.ts",
+        "bonuses.types.ts",
+        "catalog.endpoints.ts",
+        "catalog.schemas.ts",
+        "catalog.types.ts",
+        "chat.endpoints.ts",
+        "chat.schemas.ts",
+        "chat.types.ts",
+        "common.schemas.ts",
+        "endpoint-builder.ts",
+        "governance.endpoints.ts",
+        "governance.schemas.ts",
+        "governance.types.ts",
+        "marketplace.endpoints.ts",
+        "marketplace.schemas.ts",
+        "marketplace.types.ts",
+        "providers.endpoints.ts",
+        "providers.schemas.ts",
+        "providers.types.ts",
+        "requests.endpoints.ts",
+        "requests.schemas.ts",
+        "requests.types.ts",
+        "resources.endpoints.ts",
+        "resources.schemas.ts",
+        "resources.types.ts",
+        "reviews.endpoints.ts",
+        "reviews.schemas.ts",
+        "reviews.types.ts",
+        "workspace.endpoints.ts",
+        "workspace.schemas.ts",
+        "workspace.types.ts"
+      ],
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/routes",
+      "kind": "sources",
+      "entries": [
+        "AppRouter.tsx",
+        "auth-pages.ts",
+        "lazy-pages.tsx",
+        "route-groups.tsx"
+      ],
+      "scopes": [
+        "frontend"
+      ]
+    }
+  ]
+}

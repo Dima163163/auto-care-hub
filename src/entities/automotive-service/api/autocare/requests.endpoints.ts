@@ -1,6 +1,6 @@
 import { updatedCountSchema } from './common.schemas'
-import { autoCareAvailabilitySchema, autoCareRepairEventsSchema, autoCareRescheduleSchema, autoCareServiceAttachmentSchema, autoCareServiceConversationSchema, autoCareServiceMessageSchema, autoCareServiceRequestSchema, autoCareServiceRequestsSchema } from './requests.schemas'
-import type { AutoCareAvailability, AutoCareQuoteDecisionInput, AutoCareRepairEvent, AutoCareReschedule, AutoCareServiceAttachment, AutoCareServiceConversation, AutoCareServiceMessage, AutoCareServiceRequest, CompleteAutoCareServiceRequestInput, CreateAutoCareServiceAttachmentInput, CreateAutoCareServiceMessageInput, CreateAutoCareServiceOfferInput, CreateAutoCareServiceQuoteInput, CreateAutoCareServiceRequestInput, DecideAutoCareServiceOfferInput, GetAutoCareAttachmentObjectUrlInput, GetAutoCareServiceConversationInput } from './requests.types'
+import { autoCareAvailabilitySchema, autoCareRepairEventsSchema, autoCareRescheduleSchema, autoCareServiceAttachmentSchema, autoCareServiceConversationSchema, autoCareServiceMessageSchema, autoCareServiceRequestSchema, autoCareServiceRequestPageSchema, autoCareServiceRequestsSchema } from './requests.schemas'
+import type { AutoCareAvailability, AutoCareQuoteDecisionInput, AutoCareRepairEvent, AutoCareReschedule, AutoCareServiceAttachment, AutoCareServiceConversation, AutoCareServiceMessage, AutoCareServiceRequest, AutoCareServiceRequestPage, CompleteAutoCareServiceRequestInput, CreateAutoCareServiceAttachmentInput, CreateAutoCareServiceMessageInput, CreateAutoCareServiceOfferInput, CreateAutoCareServiceQuoteInput, CreateAutoCareServiceRequestInput, DecideAutoCareServiceOfferInput, GetAutoCareAttachmentObjectUrlInput, GetAutoCareServiceConversationInput } from './requests.types'
 import type { AutoCareEndpointBuilder } from './endpoint-builder'
 
 export function createRequestsEndpoints(build: AutoCareEndpointBuilder) {
@@ -24,6 +24,13 @@ getMyAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({
             transformResponse: (value: unknown) => autoCareServiceRequestsSchema.parse(value),
             providesTags: (result) => result
                 ? [...result.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'LIST' }]
+                : [{ type: 'AutoCareServiceRequest', id: 'LIST' }],
+        }),
+getMyAutoCareServiceRequestPage: build.query<AutoCareServiceRequestPage, { cursor?: string; limit?: number }>({
+            query: ({ cursor, limit = 50 }) => ({ url: '/v1/service-requests/my', params: { cursor, limit } }),
+            transformResponse: (value: unknown) => autoCareServiceRequestPageSchema.parse(value),
+            providesTags: (result) => result
+                ? [...result.items.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'LIST' }]
                 : [{ type: 'AutoCareServiceRequest', id: 'LIST' }],
         }),
 getAutoCareServiceRequest: build.query<AutoCareServiceRequest, string>({
@@ -127,6 +134,13 @@ getOwnerAutoCareServiceRequests: build.query<AutoCareServiceRequest[], void>({
             transformResponse: (value: unknown) => autoCareServiceRequestsSchema.parse(value),
             providesTags: (result) => result
                 ? [...result.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'OWNER_LIST' }]
+                : [{ type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
+        }),
+getOwnerAutoCareServiceRequestPage: build.query<AutoCareServiceRequestPage, { cursor?: string; limit?: number }>({
+            query: ({ cursor, limit = 50 }) => ({ url: '/owner/service-requests', params: { cursor, limit } }),
+            transformResponse: (value: unknown) => autoCareServiceRequestPageSchema.parse(value),
+            providesTags: (result) => result
+                ? [...result.items.map((item) => ({ type: 'AutoCareServiceRequest' as const, id: item.id })), { type: 'AutoCareServiceRequest' as const, id: 'OWNER_LIST' }]
                 : [{ type: 'AutoCareServiceRequest', id: 'OWNER_LIST' }],
         }),
 confirmOwnerAutoCareServiceRequest: build.mutation<AutoCareServiceRequest, string>({

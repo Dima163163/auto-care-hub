@@ -12,7 +12,7 @@ import { formatDateTime } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { RetryButton } from '@/shared/ui/query-refresh-error'
 
-type EvidenceFilter = 'pending' | 'approved' | 'rejected' | 'all'
+type EvidenceFilter = 'pending' | 'approved' | 'rejected' | 'superseded' | 'all'
 type EvidenceKindFilter = 'all' | 'provider_gallery' | 'provider_document' | 'review'
 
 function reviewStatusText(
@@ -44,6 +44,7 @@ export function AdminModerationEvidencePanel() {
         pending: t('adminModerationEvidence.pending'),
         approved: t('adminModerationEvidence.approved'),
         rejected: t('adminModerationEvidence.rejected'),
+        superseded: t('adminModerationEvidence.superseded'),
         empty: t('adminModerationEvidence.empty'),
         provider: t('adminModerationEvidence.provider'),
         review: t('adminModerationEvidence.review'),
@@ -105,7 +106,7 @@ export function AdminModerationEvidencePanel() {
                     <div><h2 className="text-lg font-black text-foreground">{text.title}</h2><p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{text.description}</p></div>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                    <label className="grid shrink-0 gap-1 text-xs font-bold text-muted-foreground"><span>{text.filter}</span><select value={filter} onChange={(event) => setFilter(event.target.value as EvidenceFilter)} className="h-9 min-w-36 cursor-pointer appearance-none rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm font-semibold text-foreground"><option value="pending">{text.pending}</option><option value="approved">{text.approved}</option><option value="rejected">{text.rejected}</option><option value="all">{text.all}</option></select></label>
+                    <label className="grid shrink-0 gap-1 text-xs font-bold text-muted-foreground"><span>{text.filter}</span><select value={filter} onChange={(event) => setFilter(event.target.value as EvidenceFilter)} className="h-9 min-w-36 cursor-pointer appearance-none rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm font-semibold text-foreground"><option value="pending">{text.pending}</option><option value="approved">{text.approved}</option><option value="rejected">{text.rejected}</option><option value="superseded">{text.superseded}</option><option value="all">{text.all}</option></select></label>
                     <label className="grid shrink-0 gap-1 text-xs font-bold text-muted-foreground"><span>{text.kindFilter}</span><select value={kindFilter} onChange={(event) => setKindFilter(event.target.value as EvidenceKindFilter)} className="h-9 min-w-36 cursor-pointer appearance-none rounded-[var(--radius-control)] border border-border bg-card px-3 text-sm font-semibold text-foreground"><option value="all">{text.allKinds}</option><option value="provider_gallery">{text.gallery}</option><option value="provider_document">{text.document}</option><option value="review">{text.review}</option></select></label>
                 </div>
             </div>
@@ -127,6 +128,8 @@ export function AdminModerationEvidencePanel() {
 
                             {evidence.review ? (
                                 <div className="mt-4 rounded-[var(--radius-control)] border border-border bg-card p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-black text-foreground">{text.author}: {evidence.review.authorName} · {evidence.review.vehicleLabel}</p><span className="inline-flex items-center gap-1 text-xs font-bold text-status-warning-foreground"><Star className="size-3.5 fill-current" />{evidence.review.rating}/5</span></div><p className="mt-2 text-sm leading-6 text-muted-foreground">{evidence.review.text}</p>{evidence.review.photoUrls.length > 0 ? <div className="mt-3 flex flex-wrap gap-2">{evidence.review.photoUrls.map((url) => <img key={url} src={url} alt="" loading="lazy" className="size-20 rounded-[var(--radius-control)] border border-border object-cover" />)}</div> : null}<p className="mt-3 text-xs font-semibold text-muted-foreground">{text.reviewStatus}: {reviewStatusText(evidence.review.status, text)}</p></div>
+                            ) : evidence.kind === 'review' ? (
+                                <p className="mt-4 rounded-[var(--radius-control)] bg-secondary p-3 text-sm text-muted-foreground">{text.superseded}</p>
                             ) : isDocumentEvidence(evidence.kind) ? (
                                 <div className="mt-4 rounded-[var(--radius-control)] border border-border bg-card p-3"><div className="flex items-center gap-2 text-sm font-bold text-foreground"><FileText className="size-4 text-primary" />{text.document}</div><p className="mt-2 text-sm leading-6 text-muted-foreground">{text.privateDocument}</p><dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2"><div><dt className="font-semibold text-muted-foreground">{text.documentReference}</dt><dd className="mt-1 break-all font-mono text-foreground">{evidence.reference || t('common.notProvided')}</dd></div>{evidence.expiresAt ? <div><dt className="font-semibold text-muted-foreground">{text.documentExpires}</dt><dd className="mt-1 text-foreground">{formatDateTime(evidence.expiresAt, locale, { dateStyle: 'medium' })}</dd></div> : null}</dl></div>
                             ) : evidence.reference ? (

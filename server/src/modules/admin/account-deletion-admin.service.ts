@@ -87,7 +87,10 @@ function encryptedRedactedJson(table: string, column: string, value: unknown) {
 
 async function anonymizeAccount(manager: EntityManager, userId: string) {
     const userRepository = manager.getRepository(UserEntity)
-    const user = await userRepository.findOneBy({ id: userId })
+    const user = await userRepository.findOne({
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+    })
     if (!user) return null
 
     const originalEmail = user.email

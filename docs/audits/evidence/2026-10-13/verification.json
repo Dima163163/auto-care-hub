@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-13",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "baselineSource": "locally available origin/dev; no fresh fetch",
+  "branch": "audit/project-weaknesses-2026-10-13",
+  "changes": "audit documentation and synthetic evidence only",
+  "checks": [
+    {
+      "name": "Frontend unit",
+      "status": "PASS",
+      "files": 196,
+      "passed": 635,
+      "log": "web-tests.log",
+      "replayCommand": "npm test -- --maxWorkers=2"
+    },
+    {
+      "name": "Backend unit",
+      "status": "PASS",
+      "files": 387,
+      "passed": 1406,
+      "log": "api-tests.log",
+      "environment": "synthetic test environment; no database",
+      "replayCommand": "npm --prefix server run test:unit -- --maxWorkers=2"
+    },
+    {
+      "name": "Full ESLint",
+      "status": "PASS",
+      "log": "lint.log",
+      "replayCommand": "npm run lint"
+    },
+    {
+      "name": "API TypeScript build",
+      "status": "PASS",
+      "log": "api-build.log",
+      "replayCommand": "npm --prefix server run build"
+    },
+    {
+      "name": "Next real production build",
+      "status": "PASS",
+      "log": "next-build.log",
+      "apiOrigin": "http://127.0.0.1:1",
+      "siteUrl": "https://autocare-audit.example.test",
+      "replayCommand": "NEXT_DIST_DIR=.next-deep-audit-real NEXT_PUBLIC_API_MODE=real npm run build"
+    },
+    {
+      "name": "Combined Node tooling",
+      "status": "FAIL",
+      "total": 190,
+      "passed": 188,
+      "failed": 2,
+      "finding": "N31",
+      "log": "tooling.log",
+      "replayCommand": "node --test scripts/*.test.mjs server/scripts/*.test.mjs"
+    },
+    {
+      "name": "Manual defect reproductions",
+      "status": "CURRENT DEFECTS REPRODUCED",
+      "cases": 16,
+      "result": "results.json",
+      "replayCommand": "node docs/audits/evidence/2026-10-13/reproduce.mjs"
+    },
+    {
+      "name": "HTTP SEO and JavaScript budgets",
+      "status": "PARTIAL",
+      "metadataPassed": 14,
+      "providerMetadataBlocked": 3,
+      "initialJavaScriptPassed": 17,
+      "log": "seo-http.log",
+      "limitation": "unavailable API and demo provider ID defaults"
+    },
+    {
+      "name": "HTTP nonce/CSP",
+      "status": "PASS",
+      "samples": 5,
+      "limitations": "own loopback frontend; not deployed proxy or browser exploit suite"
+    },
+    {
+      "name": "Real artifact fixture guard",
+      "status": "PASS",
+      "files": 192
+    },
+    {
+      "name": "Runtime boundary source checker",
+      "status": "PASS WITH COVERAGE GAP",
+      "endpoints": 120,
+      "modules": 12,
+      "finding": "N27"
+    },
+    {
+      "name": "Threat surface source checker",
+      "status": "PASS",
+      "limitation": "source contracts; not dynamic penetration testing"
+    }
+  ],
+  "notRun": [
+    "Fresh PostgreSQL/Redis integration",
+    "Persisted database race tests",
+    "Production KMS or MFA acceptance",
+    "Hosted CI",
+    "Current dependency advisory audit",
+    "Load, query plans, CWV, native devices, screen readers"
+  ],
+  "pilot": "54 gates and NO-GO unchanged",
+  "commandNote": "Replay commands are equivalent entrypoints; run logs are the observed outputs. Test environment and build settings must also be supplied."
+}

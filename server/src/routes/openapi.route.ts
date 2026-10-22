@@ -476,7 +476,7 @@ export function getOpenApiDocument() {
                 },
             },
             '/v1/service-requests/my': {
-                get: { operationId: 'listMyAutoCareServiceRequests', responses: { '200': { description: 'Authenticated client service requests.' } } },
+                get: { operationId: 'listMyAutoCareServiceRequests', parameters: [...cursorParameters], responses: { '200': { description: 'Client requests. Without pagination parameters: latest 100 as an array with X-Next-Cursor. With cursor or limit: { items, nextCursor } page, limit 1–100.' } } },
             },
             '/v1/service-requests/{requestId}/timeline': {
                 get: { operationId: 'getAutoCareRepairTimeline', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Repair timeline with quote, confirmations and status events.' } } },
@@ -564,7 +564,7 @@ export function getOpenApiDocument() {
                 post: { operationId: 'confirmAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Client confirmation transition.' } } },
             },
             '/owner/service-requests': {
-                get: { operationId: 'listOwnerAutoCareServiceRequests', responses: { '200': { description: 'Service requests for owned provider locations.' } } },
+                get: { operationId: 'listOwnerAutoCareServiceRequests', parameters: [...cursorParameters], responses: { '200': { description: 'Accessible provider requests, branch-scoped before pagination. Without pagination parameters: latest 100 as an array with X-Next-Cursor. With cursor or limit: { items, nextCursor } page, limit 1–100.' } } },
             },
             '/owner/service-requests/{requestId}/confirm': {
                 post: { operationId: 'confirmOwnerAutoCareServiceRequest', parameters: [{ name: 'requestId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Provider confirmation transition.' } } },

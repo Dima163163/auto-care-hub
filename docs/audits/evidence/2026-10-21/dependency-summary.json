@@ -1,0 +1,38 @@
+{
+  "verifiedOn": "2026-10-21",
+  "command": "npm audit --omit=dev --json; npm --prefix server audit --omit=dev --json",
+  "web": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 3,
+      "critical": 0,
+      "total": 3
+    },
+    "packages": [
+      "next",
+      "sharp",
+      "source-map-js"
+    ]
+  },
+  "api": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0,
+      "total": 1
+    },
+    "packages": [
+      "sharp"
+    ]
+  },
+  "declaredVersions": {
+    "next": "16.3.6",
+    "webSharp": "0.35.4",
+    "apiSharp": "0.35.4"
+  },
+  "limit": "npm advisories are not proof of reachability in this application."
+}

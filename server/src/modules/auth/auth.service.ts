@@ -1,6 +1,6 @@
 import { compare, hash } from 'bcryptjs'
 import type { FastifyRequest } from 'fastify'
-import type { EntityManager } from 'typeorm'
+import { IsNull, type EntityManager } from 'typeorm'
 
 import { AppDataSource } from '../../database/data-source.js'
 import { env } from '../../config/env.js'
@@ -14,6 +14,7 @@ import { UserSessionEntity } from '../../entities/user-session/user-session.enti
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { createAccessToken, createRefreshToken } from './auth-token.js'
+import { getRefreshSessionExpiry } from './refresh-session-lifetime.js'
 import { toPublicUser } from './public-user.js'
 import {
     createSecurityToken,
@@ -28,6 +29,7 @@ import {
     rotateUserSession,
 } from './session.service.js'
 import { normalizeSessionMetadata } from './session-metadata.js'
+import { getSessionRevocationMetadata } from './session-revocation.js'
 import { assertCurrentSessionVersion } from './session-version.js'
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
@@ -132,12 +134,24 @@ async function recordFailedLogin(userId: string) {
 }
 
 async function resetFailedLogins(user: UserEntity) {
-    if (user.failedLoginAttempts === 0 && !user.lockedUntil && !user.lastFailedLoginAt) return
-
-    user.failedLoginAttempts = 0
-    user.lockedUntil = null
-    user.lastFailedLoginAt = null
-    await AppDataSource.getRepository(UserEntity).save(user)
+    if (!user.passwordHash) {
+        throw new AppError({ statusCode: 401, code: ERROR_CODES.Unauthorized, message: 'Account state changed. Please login again.' })
+    }
+    // Authentication ran against an earlier snapshot. A concurrent block,
+    // password change, or failed attempt must invalidate this login attempt.
+    const result = await AppDataSource.getRepository(UserEntity).update(
+        {
+            id: user.id,
+            status: UserStatus.Active,
+            tokenVersion: user.tokenVersion,
+            passwordHash: user.passwordHash,
+            failedLoginAttempts: user.failedLoginAttempts,
+        },
+        { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
+    )
+    if (result.affected !== 1) {
+        throw new AppError({ statusCode: 401, code: ERROR_CODES.Unauthorized, message: 'Account state changed. Please login again.' })
+    }
 }
 
 async function recordSecurityEvent(
@@ -199,15 +213,7 @@ async function recordSecurityEvent(
     }
 }
 
-function getRefreshTokenExpiry() {
-    // jwtRefreshExpiresIn is '7d' by default
-    const days = 7
-    const date = new Date()
-    date.setDate(date.getDate() + days)
-    return date
-}
-
-export function createAuthTokens(user: UserEntity, sessionId?: string) {
+export function createAuthTokens(user: UserEntity, sessionId?: string, sessionExpiresAt?: Date) {
     const payload = {
         userId: user.id,
         role: user.role,
@@ -217,7 +223,7 @@ export function createAuthTokens(user: UserEntity, sessionId?: string) {
 
     return {
         accessToken: createAccessToken(payload),
-        refreshToken: createRefreshToken(payload),
+        refreshToken: createRefreshToken(payload, sessionExpiresAt),
     }
 }
 
@@ -285,10 +291,10 @@ export async function registerUser(input: RegisterInput) {
         userId: savedUser.id,
         userAgent: input.userAgent,
         ipAddress: input.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(savedUser, session.id)
+    const tokens = createAuthTokens(savedUser, session.id, session.expiresAt)
 
     return {
         userEntity: savedUser,
@@ -373,10 +379,10 @@ export async function loginUser(input: LoginInput) {
         userId: user.id,
         userAgent: input.userAgent,
         ipAddress: input.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(user, session.id)
+    const tokens = createAuthTokens(user, session.id, session.expiresAt)
 
     return {
         user: toPublicUser(user),
@@ -413,10 +419,10 @@ export async function loginUser(input: LoginInput) {
         userId: user.id,
         userAgent: sessionInfo.userAgent,
         ipAddress: sessionInfo.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(user, session.id)
+    const tokens = createAuthTokens(user, session.id, session.expiresAt)
 
     return {
         user: toPublicUser(user),
@@ -461,6 +467,7 @@ export async function refreshAuth(
 ) {
     const user = await getUserById(userId, tokenVersion)
 
+    let sessionExpiresAt: Date | undefined
     if (sessionId) {
         const session = await rotateUserSession(sessionId, userId)
 
@@ -490,9 +497,10 @@ export async function refreshAuth(
         }
 
         sessionId = session.id
+        sessionExpiresAt = session.expiresAt
     }
 
-    const tokens = createAuthTokens(user, sessionId)
+    const tokens = createAuthTokens(user, sessionId, sessionExpiresAt)
 
     return {
         user: toPublicUser(user),
@@ -587,13 +595,13 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
                     userAgent: metadata.userAgent,
                     ipAddress: metadata.ipAddress,
                     lastActiveAt: new Date(),
-                    expiresAt: getRefreshTokenExpiry(),
+                    expiresAt: getRefreshSessionExpiry(),
                     revokedAt: null,
                     revocationReason: null,
                 }),
             )
 
-            return { user: savedUser, sessionId: session.id }
+            return { user: savedUser, sessionId: session.id, sessionExpiresAt: session.expiresAt }
         },
     )
 
@@ -605,7 +613,7 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
         })
     }
 
-    const tokens = createAuthTokens(setup.user, setup.sessionId)
+    const tokens = createAuthTokens(setup.user, setup.sessionId, setup.sessionExpiresAt)
 
     return {
         user: toPublicUser(setup.user),
@@ -669,9 +677,13 @@ export async function completePasswordReset(input: CompletePasswordResetInput) {
             })
             const passwordHash = await hash(password, PASSWORD_SALT_ROUNDS)
 
-            securityToken.user.passwordHash = passwordHash
-            securityToken.user.tokenVersion += 1
-            await manager.getRepository(UserEntity).save(securityToken.user)
+            if (securityToken.user.status === UserStatus.Blocked) {
+                throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'User is blocked.' })
+            }
+            await manager.getRepository(UserEntity).update(securityToken.userId, {
+                passwordHash,
+                tokenVersion: () => '"tokenVersion" + 1',
+            })
             return true
         },
     )
@@ -714,8 +726,10 @@ export async function completeEmailVerification(token: string) {
         token,
         SecurityTokenPurpose.EmailVerification,
         async (securityToken, manager) => {
-            securityToken.user.emailVerifiedAt = new Date()
-            await manager.getRepository(UserEntity).save(securityToken.user)
+            if (securityToken.user.status === UserStatus.Blocked) {
+                throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'User is blocked.' })
+            }
+            await manager.getRepository(UserEntity).update(securityToken.userId, { emailVerifiedAt: new Date() })
             return true
         },
     )
@@ -734,8 +748,6 @@ export async function completeEmailVerification(token: string) {
 }
 
 export async function changePassword(user: UserEntity, input: ChangePasswordInput) {
-    const userRepository = AppDataSource.getRepository(UserEntity)
-
     if (user.provider !== UserProvider.Email) {
         throw new AppError({
             statusCode: 400,
@@ -752,30 +764,38 @@ export async function changePassword(user: UserEntity, input: ChangePasswordInpu
         })
     }
 
-    const isOldPasswordCorrect = await compare(
-        input.oldPassword,
-        user.passwordHash
-    )
-
-    if (!isOldPasswordCorrect) {
-        throw new AppError({
-            statusCode: 400,
-            code: ERROR_CODES.BadRequest,
-            message: 'Invalid current password.',
-        })
-    }
-
     const newPassword = await assertPasswordSecurityPolicy(input.newPassword, {
         mode: env.auth.breachedPasswordCheckMode,
         timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
     })
     const newPasswordHash = await hash(newPassword, PASSWORD_SALT_ROUNDS)
 
-    user.passwordHash = newPasswordHash
-    user.tokenVersion += 1
-
-    await userRepository.save(user)
-    await revokeAllUserSessions(user.id)
+    await AppDataSource.transaction(async (manager) => {
+        const userRepository = manager.getRepository(UserEntity)
+        const current = await userRepository
+            .createQueryBuilder('user')
+            .where('user.id = :userId', { userId: user.id })
+            .setLock('pessimistic_write')
+            .getOne()
+        if (!current || current.status !== UserStatus.Active) {
+            throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'User is blocked.' })
+        }
+        assertCurrentSessionVersion(current.tokenVersion, user.tokenVersion)
+        if (current.provider !== UserProvider.Email || !current.passwordHash) {
+            throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Account does not have an email password.' })
+        }
+        if (!await compare(assertPasswordVerificationInput(input.oldPassword), current.passwordHash)) {
+            throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Invalid current password.' })
+        }
+        await userRepository.update(current.id, {
+            passwordHash: newPasswordHash,
+            tokenVersion: () => '"tokenVersion" + 1',
+        })
+        await manager.getRepository(UserSessionEntity).update(
+            { userId: current.id, revokedAt: IsNull() },
+            getSessionRevocationMetadata('all_sessions'),
+        )
+    })
 
     return {
         success: true,

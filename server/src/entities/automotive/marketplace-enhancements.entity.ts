@@ -6,7 +6,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm'
-import { createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
+import { createBlindIndexTransformer, createEncryptedFieldTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 @Entity('autocare_price_benchmarks')
 @Index(['marketId', 'serviceDefinitionId', 'makeId', 'modelId', 'active'])
@@ -31,6 +31,7 @@ export class AutoCarePriceBenchmarkEntity {
 
 @Entity('autocare_trust_evidence')
 @Index(['providerId', 'status', 'expiresAt'])
+@Index('IDX_autocare_trust_evidence_reference', ['providerId', 'kind', 'referenceIndex'])
 export class AutoCareTrustEvidenceEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) providerId!: string
@@ -39,6 +40,8 @@ export class AutoCareTrustEvidenceEntity {
     @Column({ type: 'text', default: 'pending' }) status!: string
     @Column({ type: 'timestamptz', nullable: true }) expiresAt!: Date | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_trust_evidence', 'reference', 'text') }) reference!: string | null
+    @Column({ type: 'text', nullable: true, transformer: createBlindIndexTransformer('evidence-reference') }) referenceIndex!: string | null
+    @Column({ type: 'integer', nullable: true }) reviewRevision!: number | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_trust_evidence', 'notes', 'text') }) notes!: string | null
     @Column({ type: 'uuid', nullable: true }) verifiedById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) verifiedAt!: Date | null
@@ -108,9 +111,11 @@ export class AutoCareBroadcastOfferEntity {
 
 @Entity('autocare_guarantee_claims')
 @Index(['providerId', 'status', 'createdAt'])
+@Index('UQ_autocare_guarantee_claim_case', ['caseKey'], { unique: true, where: '"caseKey" IS NOT NULL' })
 export class AutoCareGuaranteeClaimEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) requestId!: string
+    @Column({ type: 'uuid', nullable: true }) caseKey!: string | null
     @Column({ type: 'uuid' }) clientId!: string
     @Column({ type: 'uuid' }) providerId!: string
     @Column({ type: 'text' }) claimType!: string

@@ -164,6 +164,7 @@ export class AutomotiveProviderEntity {
     @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 }) trustScore!: number
     @Column({ type: 'text', nullable: true }) trustBadge!: string | null
     @Column({ type: 'timestamptz', nullable: true }) trustReassessedAt!: Date | null
+    @Column({ type: 'timestamptz', nullable: true }) trustReassessmentAttemptedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 
@@ -232,6 +233,7 @@ export class AutomotiveReviewEntity {
     @Column({ type: 'text', nullable: true }) serviceSlug!: string | null
     @Column({ type: 'timestamptz', nullable: true }) revisionAllowedUntil!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) revisionUsedAt!: Date | null
+    @Column({ type: 'integer', default: 1 }) contentRevision!: number
     @Column({ type: 'enum', enum: AutomotiveReviewStatus, enumName: 'autocare_review_status', default: AutomotiveReviewStatus.Approved }) status!: AutomotiveReviewStatus
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

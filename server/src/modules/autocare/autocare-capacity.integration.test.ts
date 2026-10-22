@@ -31,6 +31,7 @@ import {
     confirmOwnerAutoCareServiceRequest,
     createAutoCareServiceRequest,
     createAutoCareServiceQuote,
+    getAutoCareServiceRequest,
     acceptAutoCareServiceQuote,
     declineAutoCareServiceQuote,
     decideAutoCareServiceReschedule,
@@ -38,6 +39,7 @@ import {
     requestAutoCareServiceReschedule,
 } from './autocare-request.service.js'
 import { expireAutoCareServiceQuotes } from './quote-expiry.service.js'
+import { notifyAutoCareParticipant } from './request-effects.service.js'
 
 describe('AutoCare appointment capacity integration', () => {
     const suffix = `${Date.now()}`
@@ -500,6 +502,92 @@ describe('AutoCare appointment capacity integration', () => {
             AutoCareQuoteStatus.Expired,
             AutoCareQuoteStatus.Pending,
         ])
+    })
+
+    it('keeps the current quote visible and rejects a stale decision after 51 revisions', async () => {
+        const preferredAt = new Date(Date.now() + 40 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(12, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Long quote history',
+            idempotencyKey: `quote-history-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        const first = await createAutoCareServiceQuote(owner, request.id, {
+            amountMinor: 100_001,
+            currencyCode: 'RUB',
+            priceLocked: true,
+        })
+        const firstQuote = first.quoteHistory.at(-1)!
+        const quoteRepository = AppDataSource.getRepository(AutoCareServiceQuoteEntity)
+        await quoteRepository.update({ id: firstQuote.id }, { status: AutoCareQuoteStatus.Superseded })
+        const persistedRequest = await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: request.id })
+        const baseSnapshot = persistedRequest.estimateSnapshot!
+        const revisions = await quoteRepository.save(Array.from({ length: 50 }, (_, index) => {
+            const version = index + 2
+            const amountMinor = 100_000 + version
+            return quoteRepository.create({
+                requestId: request.id,
+                providerId: provider.id,
+                version,
+                amountMinor,
+                currencyCode: 'RUB',
+                snapshot: { ...baseSnapshot, amountMinor, subtotalMinor: amountMinor },
+                validUntil: null,
+                status: version === 51 ? AutoCareQuoteStatus.Pending : AutoCareQuoteStatus.Superseded,
+            })
+        }))
+        persistedRequest.estimateSnapshot = { ...baseSnapshot, amountMinor: 100_051, subtotalMinor: 100_051 }
+        await AppDataSource.getRepository(ServiceRequestEntity).save(persistedRequest)
+
+        const hydrated = await getAutoCareServiceRequest(client, request.id)
+        expect(hydrated.quoteHistory).toHaveLength(50)
+        expect(hydrated.quoteHistory[0]?.version).toBe(2)
+        expect(hydrated.quoteHistory.at(-1)).toMatchObject({ version: 51, id: revisions.at(-1)?.id, status: AutoCareQuoteStatus.Pending })
+        expect(hydrated.quote).toMatchObject({ amountMinor: 100_051, status: AutoCareQuoteStatus.Pending })
+        await expect(acceptAutoCareServiceQuote(client, request.id, {
+            quoteId: firstQuote.id,
+            quoteVersion: firstQuote.version,
+        })).rejects.toMatchObject({ statusCode: 409 })
+        expect((await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: request.id })).status).toBe(ServiceRequestStatus.EstimateShared)
+    })
+
+    it('enqueues one notification per quote revision and deduplicates its retry', async () => {
+        const preferredAt = new Date(Date.now() + 42 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(14, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Quote notification revisions',
+            idempotencyKey: `quote-notification-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        const first = await createAutoCareServiceQuote(owner, request.id, { amountMinor: 120_000, currencyCode: 'RUB' })
+        const second = await createAutoCareServiceQuote(owner, request.id, { amountMinor: 125_000, currencyCode: 'RUB' })
+        const firstQuote = first.quoteHistory.at(-1)!
+        const secondQuote = second.quoteHistory.at(-1)!
+        const key = (quoteId: string) => `notification:autocare:${request.id}:estimate-shared:${quoteId}:${client.id}`
+        const outboxRepository = AppDataSource.getRepository(OutboxEventEntity)
+        expect(await outboxRepository.countBy({ idempotencyKey: key(firstQuote.id) })).toBe(1)
+        expect(await outboxRepository.countBy({ idempotencyKey: key(secondQuote.id) })).toBe(1)
+
+        await AppDataSource.transaction((manager) => notifyAutoCareParticipant({
+            userId: client.id,
+            requestId: request.id,
+            event: 'estimate-shared',
+            eventIdentity: secondQuote.id,
+            role: 'client',
+            title: 'Сервис прислал предварительную смету',
+            message: 'Повторная постановка одной версии',
+        }, manager))
+        expect(await outboxRepository.countBy({ idempotencyKey: key(secondQuote.id) })).toBe(1)
     })
 
     it('makes repeated quote acceptance idempotent and preserves the accepted price', async () => {

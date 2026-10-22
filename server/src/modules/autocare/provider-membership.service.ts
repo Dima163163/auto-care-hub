@@ -17,6 +17,9 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { canManageProvider } from './provider-access.service.js'
 import { enqueueNotificationSafely } from '../outbox/notification-outbox.service.js'
+import { enqueueOutboxEvent } from '../outbox/outbox.service.js'
+import { encryptOutboxSecret } from '../outbox/outbox-secret.js'
+import { env } from '../../config/env.js'
 import type { CreateAutoCareProviderInvitationInput } from './autocare.types.js'
 import {
     normalizeProviderInvitationInput,
@@ -67,8 +70,8 @@ async function notifyExistingInvitee(invitation: AutomotiveProviderInvitationEnt
         userId,
         category: NotificationCategory.Account,
         title: 'Приглашение в команду сервиса',
-        message: 'Вас пригласили в команду автосервиса. Откройте уведомление, чтобы принять приглашение.',
-        link: '/profile/notifications',
+        message: 'Вас пригласили в команду автосервиса. Проверьте электронную почту и перейдите по ссылке для принятия.',
+        link: '/owner/invitations/accept',
         metadata: { providerId: invitation.providerId, invitationId: invitation.id, role: invitation.role, locationId: invitation.locationId },
     }, `autocare-provider-invitation:${invitation.id}`)
 }
@@ -171,7 +174,7 @@ export async function createOwnerProviderInvitation(user: UserEntity, providerId
                 existing.status = AutomotiveProviderInvitationStatus.Expired
                 await invitationRepository.save(existing)
             }
-            return invitationRepository.save(invitationRepository.create({
+            const saved = await invitationRepository.save(invitationRepository.create({
                 providerId: normalizedProviderId, email,
                 locationId: normalizedInput.locationId, role,
                 status: AutomotiveProviderInvitationStatus.Pending,
@@ -179,6 +182,21 @@ export async function createOwnerProviderInvitation(user: UserEntity, providerId
                 expiresAt: new Date(now.getTime() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000),
                 acceptedAt: null, revokedAt: null,
             }))
+            // Keep the one-time link and invitation in one transaction. A
+            // failed enqueue must not leave an invitation nobody can accept.
+            await enqueueOutboxEvent({
+                type: 'email.send',
+                idempotencyKey: `email:provider-invitation:${saved.id}`,
+                payload: {
+                    template: 'provider_invitation',
+                    email,
+                    expiresAt: saved.expiresAt.toISOString(),
+                    frontendOrigin: env.frontendOrigin,
+                    encryptedToken: encryptOutboxSecret(token),
+                    locale: null,
+                },
+            }, manager)
+            return saved
         })
     } catch (error) {
         // A missing-row race is arbitrated by the partial unique index.

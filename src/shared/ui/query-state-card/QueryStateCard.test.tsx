@@ -38,4 +38,20 @@ describe('QueryStateCard', () => {
 
         expect(screen.getByRole('status')).toHaveAttribute('data-state', 'empty')
     })
+
+    it('shows a retry action without exposing malformed API response text', () => {
+        render(
+            <I18nProvider>
+                <QueryStateCard
+                    state="error"
+                    error={{ status: 'PARSING_ERROR', originalStatus: 500, data: 'Internal Server Error', error: 'SyntaxError: Unexpected token I' }}
+                    onRetry={vi.fn()}
+                />
+            </I18nProvider>,
+        )
+
+        expect(screen.getByRole('alert')).toBeInTheDocument()
+        expect(screen.getByRole('button')).toBeInTheDocument()
+        expect(screen.queryByText(/SyntaxError|Internal Server Error/)).not.toBeInTheDocument()
+    })
 })

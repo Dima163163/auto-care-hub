@@ -1,12 +1,19 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import jwt from 'jsonwebtoken'
 
 import { env } from '../../config/env.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 
-const SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60
+export function getRefreshTokenCookieMaxAge(refreshToken: string, now = new Date()) {
+    const payload = jwt.decode(refreshToken)
+    if (!payload || typeof payload === 'string' || !Number.isSafeInteger(payload.exp)) {
+        throw new Error('Refresh token expiry is missing.')
+    }
+    return Math.max(0, Number(payload.exp) - Math.ceil(now.getTime() / 1_000))
+}
 
-function getRefreshCookieOptions() {
+function getRefreshCookieOptions(refreshToken: string) {
     const isProduction = env.nodeEnv === 'production'
 
     return {
@@ -14,7 +21,7 @@ function getRefreshCookieOptions() {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'none' as const : 'lax' as const,
-        maxAge: SEVEN_DAYS_IN_SECONDS,
+        maxAge: getRefreshTokenCookieMaxAge(refreshToken),
     }
 }
 
@@ -25,7 +32,7 @@ export function setRefreshTokenCookie(
     reply.setCookie(
         env.auth.refreshTokenCookieName,
         refreshToken,
-        getRefreshCookieOptions()
+        getRefreshCookieOptions(refreshToken)
     )
 }
 

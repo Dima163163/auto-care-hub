@@ -101,6 +101,7 @@ export type MaintenanceCycleResult = {
     trustReassessment: {
         scanned: number
         changed: number
+        failed: number
     }
     phaseFailures: MaintenancePhaseFailure[]
 }
@@ -689,8 +690,11 @@ export async function runMaintenanceCycle(
         const trustReassessment = await runPhase(
             'trust_reassessment',
             () => reassessAutoCareTrustScores(),
-            { scanned: 0, changed: 0 },
+            { scanned: 0, changed: 0, failed: 0 },
         )
+        if (trustReassessment.failed > 0) {
+            phaseFailures.push({ phase: 'trust_reassessment', errorClass: 'dependency' })
+        }
         const outcome = phaseFailures.length > 0 ? 'partial' : 'success'
         metrics.increment('maintenance_cycles_completed_total', 1, { outcome })
         metrics.setGauge(

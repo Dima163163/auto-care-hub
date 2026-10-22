@@ -100,6 +100,10 @@ export async function decideAdminAutoCareReview(
         })
     }
 
+    if (input.status !== AutomotiveReviewStatus.Approved && input.status !== AutomotiveReviewStatus.Rejected) {
+        throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review moderation status is invalid.' })
+    }
+
     const reason = normalizeModerationReason(input.reason)
     if (input.status === AutomotiveReviewStatus.Rejected && !reason) {
         throw new AppError({
@@ -124,21 +128,26 @@ export async function decideAdminAutoCareReview(
             })
         }
 
+        if (review.status !== AutomotiveReviewStatus.Pending) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review has already been moderated.' })
+        }
+
         const oldStatus = review.status
-        review.status = input.status
-        const savedReview = await reviewRepository.save(review)
         const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
         const pendingEvidence = await evidenceRepository.findOne({
-            where: { kind: 'review', reference: savedReview.id, status: 'pending' },
+            where: { kind: 'review', referenceIndex: review.id, reviewRevision: review.contentRevision, status: 'pending' },
             lock: { mode: 'pessimistic_write' },
         })
-        if (pendingEvidence) {
-            pendingEvidence.status = input.status
-            pendingEvidence.notes = reason ?? pendingEvidence.notes
-            pendingEvidence.verifiedById = admin.id
-            pendingEvidence.verifiedAt = new Date()
-            await evidenceRepository.save(pendingEvidence)
+        if (!pendingEvidence) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Current review revision has no pending moderation item.' })
         }
+        review.status = input.status
+        const savedReview = await reviewRepository.save(review)
+        pendingEvidence.status = input.status
+        pendingEvidence.notes = reason ?? pendingEvidence.notes
+        pendingEvidence.verifiedById = admin.id
+        pendingEvidence.verifiedAt = new Date()
+        await evidenceRepository.save(pendingEvidence)
         const provider = await manager.getRepository(AutomotiveProviderEntity).findOne({
             where: { id: savedReview.providerId },
             select: { id: true, name: true },

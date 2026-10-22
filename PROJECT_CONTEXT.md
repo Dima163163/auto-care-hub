@@ -1,5 +1,310 @@
 # AutoCare Hub Project Context
 
+## CI secret scan, 2026-10-22
+
+PR #16 обнаружил один false positive: Gitleaks принял сохранённый SHA-256
+`npm-api-audit.json` за API key. Хэш побайтно сверён с evidence-файлом;
+`.gitleaksignore` исключает только fingerprint конкретной находки старого
+коммита. Проверка нового CI ожидается.
+
+## Локальное исправление N23 — 2026-10-22
+
+Клиентские и owner списки заявок используют cursor pages (50 на странице),
+SQL scope филиала до лимита и пакетную загрузку связей. Старый array-контракт
+ограничен 100 записями и возвращает `X-Next-Cursor`. Owner/admin аналитика
+обрабатывает заявки блоками по 500, сообщения — блоками по 1000 metadata;
+счётчики lifetime сохраняются, SQL считает сумму бонусов/отзывов и наличие
+смет. Unit 1465/1465, web 659/659, API/Next builds, ESLint и
+API runtime boundary PASS.
+Queue counters on paginated screens now show `+` and an explanation until
+older pages are loaded, avoiding false totals. Active older requests still
+require explicit pagination; prioritised server filtering is a pilot follow-up.
+PostgreSQL измерение latency/памяти и проверка большой истории после
+исправления ещё не выполнены. `03-frontend`/`04-backend` схемы обновляются.
+
+## Локальное исправление N22 — 2026-10-22
+
+Owner analytics, admin quality и public trust теперь используют единое
+правило первого ответа сервиса с проверкой автора, active membership,
+филиала и времени. Историческая семантика доступа основана на текущем
+membership до появления audit intervals. Targeted unit и API build PASS;
+PostgreSQL HTTP flow ожидает среды с БД. Обновлены `04-backend.puml` и SVG.
+
+## Локальное исправление N21 — 2026-10-22
+
+Административные счётчики статусов отзывов теперь берутся из полной SQL
+агрегации, а последние 1000 отзывов используются только для аномалий и
+калибровки. API возвращает границы выборки, интерфейс показывает их при
+усечении. Server unit 1457/1457, API/Next builds, focused web test и ESLint
+PASS. Повторный сценарий PostgreSQL >1000 после исправления остаётся открытым:
+локальная БД недоступна. Обновлены `05-domain-data.puml` и SVG.
+
+## Локальное исправление N28 — 2026-10-22
+
+`markSessionExpired`/`hasSessionExpired`/`clearSessionExpired` безопасно
+обрабатывают отказ `sessionStorage` и хранят короткий fallback во вкладке.
+`baseApi` очищает token, CSRF и API cache до записи optional expiry hint.
+Targeted unit, ESLint и TypeScript PASS; реальный browser denial/deployed flow
+не проверен. `07-auth-session.puml`, SVG и 79 anchors актуальны.
+
+## Локальное исправление N26 — 2026-10-22
+
+Новые пароли и проверяемые login/change-password inputs ограничены 72 UTF-8
+байтами, как фактически обрабатывает bcrypt. Тест воспроизводит совпадение
+двух разных 73-byte secrets на старом bcrypt hash и подтверждает их отказ
+новой политикой; проверен Unicode. Targeted unit и API build PASS. Существующие
+длинные пароли требуют email reset; production recovery flow и реальная база
+локально не проверены. Обновлены `07-auth-session.puml`, SVG и 79 anchors.
+
+## Локальное исправление U16 — 2026-10-22
+
+Для `autocare_trust_evidence.reference` добавлен отдельный HMAC blind index.
+Review moderation и dedup приватных документов ищут по индексу; исходный
+reference остаётся случайно зашифрованным. Миграция 178644 строит индекс
+для старых записей из расшифрованного значения. Targeted unit и API build
+PASS, PostgreSQL migration/query integration без server PostgreSQL/Redis
+локально не выполнена. Обновлены `05-domain-data.puml`, SVG и 77 anchors.
+
+## Локальное исправление U21 — 2026-10-22
+
+Web/API зависимости и lockfiles обновлены по текущим advisories. Оба
+`npm audit` вернули 0 вместо 8 web и 6 API entries. После `npm ci` прошли
+web 647/647, API 1436/1436, lint, Vite/API/Next production real builds,
+fixture leakage 193 файлов и Next route/runtime checks. Прямые версии:
+Next 16.4.2, sharp 0.35.5, Vitest 4.1.12; полный список и ограничения:
+`docs/audits/DEPENDENCY_UPGRADE_2026-10-22.md`. PostgreSQL/Redis integration,
+real E2E, published migration manifest и staging acceptance открыты.
+Диаграммы не менялись; 74 anchors актуальны.
+
+## Локальное исправление U19 — 2026-10-22
+
+Создание guarantee claim блокирует связанную заявку и допускается только для
+подтверждённой записи/завершённого визита, а no-show — после соответствующего
+статуса. Повтор того же payload возвращает существующий case; иной claim
+получает 409. `caseKey` и уникальный PostgreSQL index ограничивают один
+канонический case на request. Миграция сохраняет старые дубликаты без caseKey;
+trust score считает только канонический открытый case, а claim type сам по себе
+не увеличивает счётчик доказанных moderation violations. Unit 1436/1436,
+API build и migration filename check PASS. Локально не выполнена реальная
+PostgreSQL migration/concurrency; published acceptance открыта. Обновлены
+`05-domain-data.puml`, SVG и 74 source anchors.
+
+## Локальное исправление U18 — 2026-10-22
+
+Истечение бонусов теперь восстанавливает остаток каждого начисления из полного
+журнала account. Списание распределяется по ближайшему сроку годности, затем
+по времени начисления; возврат отменённой записи образует новый бессрочный
+credit. Уже потраченное старое начисление не забирает более поздние баллы.
+Unit 1429/1429 и API build PASS; PostgreSQL regression для реального ledger
+добавлен, но локально не выполнен без server PostgreSQL/Redis. Обновлены
+`05-domain-data.puml`, SVG и 70 source anchors. Старые ошибочные списания,
+если они были в production, требуют отдельной сверки/компенсации.
+
+## Локальное исправление U17 — 2026-10-22
+
+Создание provider invitation теперь в одной DB transaction ставит `email.send`
+с encrypted одноразовым токеном. Worker строит ссылку на
+`/owner/invitations/accept`, отправляет письмо и удаляет token из завершённого
+outbox payload. Existing user получает также уведомление с указанием проверить
+почту; незарегистрированный адрес получает письмо. Production API по-прежнему
+возвращает `inviteToken: null`. Unit и API build PASS; реальный PostgreSQL,
+worker и SMTP локально не проверены. Обновлены `08-outbox-maintenance.puml`, SVG
+и 68 source anchors. Pilot production acceptance остаётся открытой.
+
+## Локальное исправление U15 — 2026-10-22
+
+Новый `chat-write-policy.ts` задаёт единое правило для chat и request API:
+admin/superadmin могут писать только в support/escalation, но не в private
+service-request thread. Legacy message/attachment routes проверяют правило до
+чтения данных и загрузки объекта; `lockRequestChatThreadForWrite` повторяет
+его до создания thread и после row lock. Новый chat API использует тот же
+export. Targeted unit 45/45, полный backend unit 1419/1419 и API build PASS;
+локального PostgreSQL+Redis
+HTTP integration нет. `09-access-privacy.puml`, SVG и manifest обновлены;
+pilot production acceptance остаётся открытой.
+
+## Локальное исправление U20 — 2026-10-22
+
+Preferences и login counter reset теперь обновляют только разрешённые поля с
+условиями актуального status/tokenVersion/password/attempts. Смена пароля
+повторно читает User под row lock, проверяет версию и текущий hash, меняет
+hash/version и отзывает сессии в одной транзакции. Reset/verification token
+обновляют узкие поля; OAuth profile, bootstrap и account anonymization
+читают User под row lock до full save. Unit `users.service.test.ts` 3/3 и API
+build PASS. Добавлен PostgreSQL concurrency integration test, но локально
+не запущен: `initdb` есть, серверного `postgres` и Redis нет. Обновлены
+`07-auth-session.puml`, SVG и source anchors. Полный backend unit 1410/1410
+PASS. Это локальный code fix;
+production/CI race acceptance и остальные pilot blockers не закрыты.
+
+## Повторная проверка файлов — 2026-10-21
+
+В checkout `fix/request-chat-state-isolation-2026-10-20` механически проверены
+все 2 585 tracked files на исходном срезе `365e087`: форматы, 195 PNG/WebP,
+JS/shell/YAML syntax и ссылки. Повторно PASS frontend 647/647, backend Quality
+1408/1408, lint, TypeScript/Vite/production Next builds, API/design/interaction
+contracts и 62 PlantUML anchors. 15/15 прежних synthetic defect cases
+воспроизвелись на текущем коде (кроме закрытого U14). Новых подтверждённых
+code defects нет; U15/U17–U21 и pilot blockers открыты. Исправлены неверные claims в SECURITY.md,
+YAML syntax и абсолютная ссылка на внешний отчёт. Полная semantic review всех
+исторических документов и каждого source file не заявляется; нет нового
+PostgreSQL+Redis integration/staging evidence. Отчёт и точное покрытие:
+`docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md`.
+
+## Итоговая локальная проверка пилота — 2026-10-21
+
+Ветка `fix/request-chat-state-isolation-2026-10-20`, HEAD `26da803`, содержит
+пять локальных исправлений U22/UX17/UX18/UX16/U14. Полный frontend unit:
+197 файлов / 647 tests PASS; backend Quality с тестовым окружением: 388 файлов /
+1408 tests PASS. Lint, production Next real build, mock leakage, contract checks
+и 62 PlantUML source anchors PASS. U14 отдельно проверен на чистой disposable
+PostgreSQL16 с 140 миграциями. Pilot readiness, operations, anonymized evidence
+и published migration manifest не закрыты; U15/U20/U17/U18/U19/U21/U01–U03
+остаются открыты. Решение NO-GO для реальных данных, синтетический staging/demo
+допустим в рамках 54 gate. Полная semantic сверка документации не завершена.
+Подробности: `docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md`.
+
+## Локальное исправление U14 — 2026-10-21
+
+`enqueueOutboxEvent` теперь явно применяет `outboxPayloadEncryptionTransformer`
+перед raw INSERT; атомарный `ON CONFLICT` сохраняется. Миграция 178642
+шифрует прежние plaintext email/toEmail/recipientName, включая смешанные
+payload, не расшифровывая данные при откате. На собственной disposable
+PostgreSQL16 применены 140 миграций; новый raw JSONB и backfill не содержат
+открытых email/name, повтор enqueue оставляет одну строку, blind index
+совпадает с запросом удаления аккаунта. Unit 13/13, API build и migration
+filename check PASS. Обновлены `08-outbox-maintenance.puml`, SVG и anchors.
+Production backfill, реальный mail worker и внешнее управление ключами
+не проверялись; U15/U20/U21 и прочие pilot blockers открыты.
+
+## Локальное исправление UX16 — 2026-10-20
+
+На `fix/request-chat-state-isolation-2026-10-20` `ConfirmDialog` ограничен
+высотой viewport, прокручивает длинное содержимое и расположен выше нижней
+мобильной навигации. Кнопки переносятся на сверхузком экране. Production Next
+mock browser: 320×568, 360×568, 390×844, 568×320 и стрессовый 180×284;
+обе кнопки полностью в viewport и получают hit в центре. Axe dialog 0,
+Escape закрывает окно и возвращает фокус; targeted unit 26/26, lint, tsc и
+production build PASS. [Доказательство](docs/audits/evidence/2026-10-20/report-dialog-fix-verification.json).
+Это локальная проверка; реальное устройство, browser zoom, real API и
+deployed приёмка ещё не выполнены. Ранее найденные security issues открыты.
+
+## Локальное исправление UX18 — 2026-10-20
+
+На `fix/request-chat-state-isolation-2026-10-20` сравнение, карточка и карта
+используют общий `formatProviderPreviewPrice`; сравнение/карточка используют
+общие availability/warranty helpers. `bookingMode=request` и `quote_required`
+не обещают фиксированное время. Из карты убран придуманный priceTo +20%.
+На мобильном 360px `min-w-0` в grid item даёт таблице собственный horizontal
+scroll (wrapper 326px, scrollWidth 640px, крайний столбец достижим).
+Unit 9/9 для price/availability/warranty RU/EN и browser quote offer
+`Prime Wheels`: Quote required / confirmation by service / текст гарантии.
+Frontend map 60 anchors PASS. Локально, не опубликовано; real-API/deployed
+приёмка не выполнена. UX16 и прежние security findings остаются открытыми.
+
+## Локальное исправление UX17 — 2026-10-20
+
+На `fix/request-chat-state-isolation-2026-10-20` после U22 форма заявки
+восстанавливает `selectedTime` из сохранённого draft при отсутствии URL time;
+URL date/time имеют приоритет. Новый draft дополнен абсолютной датой в timezone
+сервиса. После смены дня относительное «сегодня» восстанавливается на исходную
+дату. Исчезнувший слот снимает выбор, блокирует submit и показывает существующее
+локализованное сообщение `SLOT_UNAVAILABLE`. Legacy draft без абсолютной даты
+восстанавливается по старой относительной дате best effort: исторический день
+из старого JSON узнать невозможно. Browser production Next mock подтвердил
+20:00→20:00 после reload и сохранение appointmentDate; targeted unit 12/12.
+Frontend diagram, SVG и source anchors обновлены. Не опубликовано; real-API
+и production acceptance не выполнены. UX16/UX18 остаются открытыми.
+
+## Локальное исправление U22 — 2026-10-20
+
+Ветка `fix/request-chat-state-isolation-2026-10-20` от dev `8840ae8`.
+`ServiceRequestChat` теперь монтирует внутреннее состояние по ключу
+`viewer.id + requestId` во всех местах использования. При смене адресата или
+пользователя очищаются черновик, retry key, offer, cursor, preview и открытые
+действия; старый запрос к API продолжает относиться к исходному requestId.
+Регрессионные unit tests: A→B→A, одинаковый текст после failed send,
+identity switch, позднее завершение отправки A. Production Next mock browser:
+черновик B пуст, POST с новым текстом направлен в B, при возврате A пуст.
+Обновлены `03-frontend.puml`, SVG и anchor map. Это локальная проверка;
+real-API / deployed privacy acceptance и публикация не выполнены. UX16–UX18
+и другие security findings остаются открыты.
+
+## UI/security recheck — 2026-10-20
+
+Branch `audit/ui-security-recheck-2026-10-20`, dev `8840ae8`; remote dev/main
+rechecked unchanged. Four new open findings in
+`docs/audits/UI_SECURITY_RECHECK_2026-10-20.md` and working FULL registry:
+U22 P1 request-chat draft carries into another provider's request; UX16 P2
+report dialog actions clipped at 360×568; UX17 P2 stored 20:00 becomes 11:30
+after reload; UX18 P2 comparison drops priceType/booking confirmation semantics.
+
+Production Next mock 240/240 closed-page cases, 120 screenshots, 0 axe
+violations plus incomplete; four extra interactions reproduce defects.
+104/104 security unit tests (11 files), 5 source contracts, 5 HTTP CSP samples,
+Next/API builds PASS. Initial unit env failure preserved, final run used fake
+DB port 1 and temp storage. U14/U15/U20 reproduced again with synthetic
+repositories/ORM metadata; no actual DB commit run on 20 Oct. npm audit U21
+still web5/API2 package entries, applicability not equated to exploitable RCE.
+No runtime/design/dependency edits. Prior dirty audit/map files preserved.
+
+`docs/INDEX.md` and docs-coverage.json enumerate scoped startup review and
+unread/unverified documents; this was not a complete semantic audit of all
+151 original text/spec documents. All 51 map anchors match; existing previews
+remain from 15 Oct, no fresh PlantUML renderer available. No fresh production
+pentest/KMS/MFA, DB/Redis integration, native/screen-reader/200%-zoom acceptance.
+Own loopback preview/temp artifacts only; source fixes and 54 pilot gates remain
+open. Primary checkout's three integrity files preserved.
+
+## PlantUML navigation — 2026-10-15
+
+Start targeted project reading at `docs/diagrams/README.md`: 9 `.puml` diagrams
+with SVG previews cover context/runtime/frontend/backend/data/requests/auth/
+outbox/privacy. `sources.json` records 51 source anchors and 4 structural
+inventories against dev `8840ae8`. `node docs/diagrams/check-map.mjs --scope auth`
+checks a selected area; use `--repo <checkout>` for another branch copy.
+Update affected diagrams/anchors/previews when code responsibilities or flows
+change. Open the actual task function/tests after the map; fingerprints do not
+prove semantic completeness. Workspace `../AGENTS.md` and `../docs/diagrams/`
+route future sessions here. Existing primary checkout remains older/dirty;
+preserve it. Branch `docs/plantuml-project-map-2026-10-15` carries the map and
+preserves the earlier uncommitted audit documentation in this worktree.
+
+## Дополнение аудита — 2026-10-13
+
+На изолированной ветке `audit/project-weaknesses-2026-10-13` от локального
+`origin/dev` (`8840ae8`, remote dev проверен GitHub compare и идентичен) добавлены
+22 находки: N21–N23, U14–U21/N24–N34, всего 7 P1/12 P2/3 P3.
+Рабочий реестр: `docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`;
+полные proof/приёмка/границы: `docs/audits/DEEP_PROJECT_AUDIT_2026-10-13.md`;
+последующее runtime evidence: `docs/audits/RUNTIME_VERIFICATION_2026-10-13.md`.
+
+Высокие риски: raw outbox обходит encryption; superadmin private write через
+request API; production invite не доставляет token; expired spent earn съедает
+свежие бонусы; duplicate claims влияют на public trust; stale UserEntity save
+включает прежние hash/status/tokenVersion в ORM diff. N22 расширен на trust,
+N23 — на unbounded request lists/N+1. Ничего из этого ещё не исправлено.
+
+16 synthetic воспроизведений подтвердили дефекты; evidence script ручной,
+asserts текущее ошибочное поведение, не является green release gate.
+Frontend 196/635, backend unit 387/1406, lint и API/Next real builds PASS.
+Общий Node tooling suite: 188/190 PASS, два stale positive fixtures FAIL (N31).
+Own loopback browser при unavailable API подтвердил raw error text и stale
+auth metadata. Продолжение: 23/88 PostgreSQL integration, 10 real persisted
+defect cases, 139 migrations/30 VALIDATE, PG/Redis multi-process smoke,
+encrypted restore с matching 76 tables, 29/29 real production E2E без retries,
+17/17 metadata + 17/17 JS + 5 CSP. N21 counter=0 при DB pending=3;
+N23 list 1002 → 5016 queries. HTTP discovery 80/0fail, p95=118.8ms на loopback.
+Свежий полный npm audit: web5/API2 entries; U21, применимость отделена от severity.
+GitHub PR Quality run 37226572467 action_required/jobs=[], не CI PASS.
+Hosted Node22/PG16 и production/native/CWV условия остаются внешними.
+Использовались только собственные disposable PG29442/Redis29389 и synthetic
+test/real/restore targets. Главная DB не менялась.
+
+Workspace: `../autocare-hub-weakness-audit`; runtime изменения отсутствуют.
+Три исходных незавершённых файла основной копии сохранены.
+Новые пункты не закрывают и не расширяют 54 pilot gates; NO-GO сохраняется.
+
 ## Последнее дополнение: UX15 / QA02 — публикация возобновлена 2026-10-04
 
 Основная порция опубликована PR #14: main `6d1e6b6`, dev `13c0fcb`, trees равны.
@@ -661,7 +966,7 @@ the desktop header follows the dark navy AutoCare reference direction. The first
 homepage implementation now follows the full supplied composition, including
 comparison cards, services/locations/partner discovery, process/trust content,
 reviews and the mobile-app promotion. The partner banner uses the project asset
-`public/images/autocare/partner-handshake.png`, generated specifically for this
+`public/images/autocare/partner-handshake.webp`, generated specifically for this
 layout. The first isolated backend schema slice is in
 `server/src/database/migrations/1785700000000-CreateAutoCareCatalogFoundation.ts`
 with `autocare_` entities for markets, definitions, providers, locations, and
@@ -818,8 +1123,17 @@ not include live database seeding or role-login validation.
 
 ### AutoCare security hardening — 2026-09-24
 
-Implemented the code changes for the 11 findings from the security audit in
-[`security-audit-2026-09-24/REPORT.md`](/Users/a1/.codex/visualizations/2026/09/24/01a0d2e0-ed2b-7d52-8dd2-f96f2d22dbc6/security-audit-2026-09-24/REPORT.md): chat block enforcement and lock ordering, restricted/read-only moderation with access audit, request/quote/reschedule lifecycle checks, private attachment fetch, WebSocket rate limiting and token refresh, expired-offer rejection, and generic chat idempotency. Production storage GET CORS still needs exact frontend origins configured. At that initial security-hardening checkpoint, the idempotency migration had not been run and PostgreSQL/browser checks remained open; the later disposable-database and real-browser validation is recorded below. Pilot remains NO-GO and external release gates stay in force.
+Implemented the code changes for the 11 findings from the 24 September security
+audit (its original report is an external local artifact; current disposition is
+in [the repository registry](docs/audits/CURRENT_FINDING_DISPOSITION.md)):
+chat block enforcement and lock ordering, restricted/read-only moderation with
+access audit, request/quote/reschedule lifecycle checks, private attachment
+fetch, WebSocket rate limiting and token refresh, expired-offer rejection, and
+generic chat idempotency. Production storage GET CORS still needs exact frontend
+origins configured. At that initial security-hardening checkpoint, the
+idempotency migration had not been run and PostgreSQL/browser checks remained
+open; the later disposable-database and real-browser validation is recorded
+below. Pilot remains NO-GO and external release gates stay in force.
 
 The revised AC-02 policy is now implemented locally. Only the SuperAdmin-assigned active moderator can read the complete service-request conversation and its attachments for 24 hours, with one reasoned 24-hour extension; reads are audited and read-only. SuperAdmin assignment/reassignment and emergency access require a reason and audit record. A report requires explicit notice and confirmation; cancellation creates no report or access. Reporters alone see report status, and the other participant cannot see the reporter's identity. A later counter-report is blocked while the case is active; a distinct later urgent threat can be linked only with threat category and at least 20 characters of context. Sender text can be deleted for five minutes; later hiding is local to that user/device. Legacy unanchored reports expose metadata only.
 
@@ -1145,3 +1459,89 @@ U08 under the local role rule and user's no-subagents-by-default instruction.
 All three questions remain unanswered. No subagent or skill installation is
 authorized by silence. Final status-only publication records verified work;
 it does not introduce another runtime fix or claim pilot readiness.
+
+
+22 Oct — N25 local trust queue fix on `fix/request-chat-state-isolation-2026-10-20`:
+Migration 178645 adds `trustReassessmentAttemptedAt` and queue index. The worker
+selects due active providers with NULLS FIRST, advances success watermarks even
+when the score is unchanged, backs off failed providers for 15 minutes and
+continues the batch. A scoring policy change invalidates queue watermarks in
+the policy transaction. Unit tests and API build pass. PostgreSQL migration,
+several real worker passes and deployed maintenance behavior remain open. Local
+commit is not yet pushed; accumulated commits will go to dev then main after
+the correction batch and release gates.
+
+
+22 Oct — N24 local review revision fix:
+Migration 178646 adds `contentRevision` to reviews and `reviewRevision` to
+moderation evidence. Review edits lock the row, consume one allowance and
+replace old pending evidence with a new revision-specific item in one
+transaction. Both moderation paths check the current revision under locks;
+superseded evidence is visible separately in the admin queue. Approved old
+evidence no longer inflates the current trust score. Server and frontend unit
+tests/build pass; a real PostgreSQL parallel-edit and moderation test is added
+but not run locally. Nothing from this batch has been pushed yet.
+
+
+22 Oct — N27 local API runtime-boundary checker fix:
+The checker parses TypeScript AST to discover registered AutoCare endpoint
+factories from `autocareApi.ts`, and checks all 256 endpoints including 136
+domain endpoints. It fails on zero coverage, an orphan factory and a missing
+`transformResponse`. Three positive/negative fixture tests pass and are wired
+into the Quality workflow. This is local evidence; published CI has not run.
+
+
+22 Oct — N31 local tooling-test repair:
+Threat-surface and MVP readiness fixtures now match the current WebSocket
+connection prehandler and Render readiness/origin contract. A new root test
+command runs all 52 tooling test files (172 tests PASS locally) and is the
+first command in `quality:backend`, which the Quality workflow invokes.
+Published CI confirmation remains open.
+
+22 Oct — N29 refresh lifetime alignment:
+`JWT_REFRESH_EXPIRES_IN` now sets the absolute expiry for newly created
+password, registration, setup and OAuth sessions. Issued refresh JWTs use the
+persisted expiry and cookie Max-Age uses the remaining JWT lifetime. Rotation
+retains the original session deadline. Unit cases for 1h, 7d and 30d and the
+API build passed locally. A PostgreSQL rotation integration assertion was added
+but cannot run without a local database; existing sessions keep their stored
+expiry. `07-auth-session.puml` and its preview were refreshed.
+
+22 Oct — N30 quote history boundary:
+Request hydration now selects the newest 50 quote versions and returns them in
+ascending order, preserving the latest revision as `quoteHistory.at(-1)` for
+both client decision views. A PostgreSQL integration case seeds 51 versions,
+checks the current status/identity and rejects a stale quote decision with 409.
+The API build passed; that database scenario is not locally runnable.
+`06-request-workflow.puml` records the read/decision contract.
+
+22 Oct — N32 quote notification identity:
+The outbox key for an estimate now includes the persisted quote ID while the
+public event type remains `estimate-shared`. The quote and notification enqueue
+share a transaction. A PostgreSQL integration case verifies two revisions
+produce two events and retrying one revision remains idempotent. The API build
+passed; database execution and actual worker delivery remain open.
+`08-outbox-maintenance.puml` and preview describe this boundary.
+
+22 Oct — N33 safe transport error presentation:
+The shared API error formatter now displays localized neutral text for malformed
+JSON, timeout, HTTP 5xx and direct SyntaxError failures instead of response
+fragments or exception strings. QueryStateCard still exposes an accessible
+retry action. Focused helper/UI tests and the Next build passed locally.
+Centralized client telemetry is not present yet; RTK error objects remain
+available to callers for diagnostics. `03-frontend.puml` was updated.
+
+22 Oct — N34 route metadata lifecycle:
+`SeoHead` now sits above every layout in `AppRouter` so auth and workspace
+navigation update title, canonical and robots. Next SSR metadata and the client
+share pure auth copy/noindex rules. Auth navigation clears stale alternate links
+and structured data; public provider-specific copy remains in place. Tests for
+server metadata and `/services` to `/login` client transition and the Next
+production build passed. The SEO quality guard now checks the extracted
+shared noindex policy and passes its root tooling test. The deployed browser
+chain is still unverified.
+
+22 Oct — dependency follow-up:
+API Fastify was raised from 5.12.5 to 5.12.7 for the newly reported
+GHSA-389g-gv7q-r4x8. Fresh root and API npm audits report zero findings.
+Published Quality CI on the final PR candidate remains the release gate.

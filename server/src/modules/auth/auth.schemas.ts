@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { passwordSchema } from './password-policy.js'
+import { isPasswordWithinBcryptLimit, passwordSchema } from './password-policy.js'
+
+const passwordVerificationSchema = z.string().min(1, 'Password is required.')
+    .max(128).refine(isPasswordWithinBcryptLimit, 'Password exceeds 72 UTF-8 bytes. Reset it by email.')
 
 export const registerSchema = z.object({
     name: z.string().trim().min(2, 'Name must contain at least 2 characters.').max(120),
@@ -12,7 +15,7 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
     email: z.string().trim().email('Enter a valid email.').max(320),
-    password: z.string().min(1, 'Password is required.'),
+    password: passwordVerificationSchema,
 })
 
 export const passwordSetupTokenSchema = z.object({
@@ -40,6 +43,6 @@ export const emailVerificationTokenSchema = z.object({
 })
 
 export const changePasswordSchema = z.object({
-    oldPassword: z.string().min(1, 'Old password is required.'),
+    oldPassword: passwordVerificationSchema,
     newPassword: passwordSchema,
 })

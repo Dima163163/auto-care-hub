@@ -36,6 +36,11 @@ import type { TranslationKey } from '@/shared/lib/i18n'
 type ServiceRequestChatProps = { requestId: string; ownerMode?: boolean; fillViewport?: boolean }
 
 export function ServiceRequestChat({ requestId, ownerMode = false, fillViewport = false }: ServiceRequestChatProps) {
+    const viewer = useGetMeQuery()
+    return <ServiceRequestChatForParticipant key={`${viewer.data?.id ?? 'anonymous'}:${requestId}`} requestId={requestId} ownerMode={ownerMode} fillViewport={fillViewport} />
+}
+
+function ServiceRequestChatForParticipant({ requestId, ownerMode = false, fillViewport = false }: ServiceRequestChatProps) {
     const { locale, t } = useTranslation()
     const viewer = useGetMeQuery()
     const canUseChat = Boolean(viewer.data)

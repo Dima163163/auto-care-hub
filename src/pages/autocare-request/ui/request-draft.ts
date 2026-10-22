@@ -4,6 +4,7 @@ export type RequestDraft = {
     selectedDate: string
     customDate: string
     selectedTime: string
+    appointmentDate?: string
 }
 
 const requestDateChoices = new Set(['', 'today', 'tomorrow', 'day-2', 'day-3'])
@@ -13,10 +14,12 @@ export function parseRequestDraft(value: unknown): RequestDraft | null {
     const raw = value as Record<string, unknown>
     if (typeof raw.selectedDate !== 'string' || !requestDateChoices.has(raw.selectedDate)) return null
     if (typeof raw.customDate !== 'string' || (raw.customDate !== '' && !parseRequestDate(raw.customDate))) return null
-    if (typeof raw.selectedTime !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(raw.selectedTime)) return null
+    if (typeof raw.selectedTime !== 'string' || (raw.selectedTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(raw.selectedTime))) return null
+    if (raw.appointmentDate !== undefined && (typeof raw.appointmentDate !== 'string' || !parseRequestDate(raw.appointmentDate) || (raw.customDate && raw.customDate !== raw.appointmentDate))) return null
     return {
         selectedDate: raw.selectedDate,
         customDate: raw.customDate,
         selectedTime: raw.selectedTime,
+        ...(raw.appointmentDate ? { appointmentDate: raw.appointmentDate } : {}),
     }
 }

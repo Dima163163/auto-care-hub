@@ -76,6 +76,21 @@ describe('getApiErrorMessage', () => {
         ).toBe('Соединение прервано. Проверьте интернет и попробуйте еще раз.')
     })
 
+    it.each([
+        { status: 'PARSING_ERROR', originalStatus: 500, data: 'Internal Server Error', error: 'SyntaxError: Unexpected token I' },
+        { status: 'PARSING_ERROR', originalStatus: 200, data: '<html>upstream</html>', error: 'SyntaxError: Unexpected token <' },
+        { status: 500, data: { message: 'Database host private.internal failed' } },
+        { status: 'TIMEOUT_ERROR', error: 'TimeoutError: upstream request timed out' },
+    ])('hides raw transport diagnostics from the UI for %o', (error) => {
+        expect(getApiErrorMessage(error, 'Fallback message', 'en')).toBe('Something went wrong on our end. Please try again later.')
+        expect(getApiErrorMessage(error, 'Fallback message', 'ru')).toBe('Произошла внутренняя ошибка сервера. Попробуйте позже.')
+    })
+
+    it('does not display arbitrary RTK transport error strings', () => {
+        expect(getApiErrorMessage({ status: 'CUSTOM_ERROR', error: 'private upstream detail' }, 'Fallback message')).toBe('Fallback message')
+        expect(getApiErrorMessage(new SyntaxError('Unexpected token in private response'), 'Fallback message', 'en')).toBe('Something went wrong on our end. Please try again later.')
+    })
+
     it('localizes an expired session even when the server only returns HTTP 401', () => {
         expect(getApiErrorMessage({ status: 401 }, 'Fallback message', 'ru')).toBe('Сессия истекла')
         expect(getApiErrorMessage({ status: 401 }, 'Fallback message', 'en')).toBe('Your session has expired')
@@ -104,14 +119,14 @@ describe('getApiErrorMessage', () => {
         expect(getApiErrorCode({ data: { code: { nested: 'not-a-code' } } })).toBeUndefined()
     })
 
-    it('returns fallback message when error does not contain data', () => {
+    it('uses a neutral server message when HTTP 500 has no structured data', () => {
         const error = {
             status: 500,
         }
 
         expect(
             getApiErrorMessage(error, 'Fallback message'),
-        ).toBe('Fallback message')
+        ).toBe('Something went wrong on our end. Please try again later.')
     })
 
     it('returns fallback message when error is null', () => {

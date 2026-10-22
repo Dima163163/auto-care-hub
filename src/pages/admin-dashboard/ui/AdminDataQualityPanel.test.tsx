@@ -9,7 +9,7 @@ const data = {
     generatedAt: '2026-09-08T10:00:00.000Z',
     providers: { total: 20, active: 18, verified: 16, trusted: 12, suspended: 0 },
     users: { clients: 100, owners: 20, admins: 2, superAdmins: 1 },
-    reviews: { approved: 80, pending: 1234, rejected: 2, anomalyCandidates: 0 },
+    reviews: { approved: 80, pending: 1234, rejected: 2, anomalyCandidates: 0, analysisWindow: { recentLimit: 1000, sampled: 1000, truncated: true } },
     requests: { total: 300, completed: 200, cancelled: 4, noShows: 1 },
     ranking: { trustSnapshots: 20, reassessedProviders: 10, evidenceCoveragePercent: 92 },
     catalog: { activeDefinitions: 10, activeOffers: 25, providersWithOffers: 18, offerCoveragePercent: 88, offersWithDescription: 20, offersWithPrice: 22, priceCoveragePercent: 90 },
@@ -25,11 +25,12 @@ vi.mock('@/entities/automotive-service', () => ({
 vi.mock('@/shared/lib/useTranslation', () => ({
     useTranslation: () => ({
         locale: 'en',
-        t: (key: string) => ({
+        t: (key: string, values?: Record<string, string | number>) => ({
             'adminDataQuality.title': 'Data quality and work queues',
             'adminDataQuality.description': 'Quality summary.',
             'adminDataQuality.pendingReviews': 'Reviews awaiting moderation',
             'adminDataQuality.reviewAnomalies': 'Review quality signals',
+            'adminDataQuality.reviewAnalysisWindow': `Quality signals and review calibration use the latest ${values?.count} reviews.`,
             'adminDataQuality.pendingAppeals': 'Appeals awaiting decision',
             'adminDataQuality.bookingConflicts': 'Booking conflicts',
             'adminDataQuality.evidenceCoverage': 'Current trust signals',
@@ -54,6 +55,7 @@ describe('AdminDataQualityPanel', () => {
 
         expect(screen.getByRole('heading', { name: 'Data quality and work queues' })).toBeVisible()
         expect(screen.getByText('1,234')).toBeVisible()
+        expect(screen.getByText('Quality signals and review calibration use the latest 1,000 reviews.')).toBeVisible()
         expect(screen.getByText('92%')).toBeVisible()
         expect(screen.getAllByText('Healthy').length).toBeGreaterThan(0)
         for (const link of screen.getAllByRole('link', { name: 'Open queue' })) {

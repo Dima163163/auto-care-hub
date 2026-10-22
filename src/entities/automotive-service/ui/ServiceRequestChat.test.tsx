@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -112,6 +112,65 @@ describe('ServiceRequestChat', () => {
         mocks.decideOffer.mockReset().mockImplementation(() => ({
             unwrap: vi.fn().mockRejectedValue({ data: { message: 'Предложение уже закрыто.' } }),
         }))
+    })
+
+    it('isolates drafts and retry keys across requests, including A to B to A', async () => {
+        const user = userEvent.setup()
+        mocks.sendMessage
+            .mockImplementationOnce(() => ({ unwrap: vi.fn().mockRejectedValue(new Error('offline')) }))
+            .mockImplementationOnce(() => ({ unwrap: vi.fn().mockResolvedValue({}) }))
+        const { rerender } = render(<ServiceRequestChat requestId="request-1" />)
+        const composer = () => screen.getByPlaceholderText('autocare.chatPlaceholder')
+
+        await user.type(composer(), 'private draft')
+        await user.click(screen.getByRole('button', { name: 'autocare.chatSend' }))
+        await screen.findByRole('alert')
+        const firstSend = mocks.sendMessage.mock.calls[0]?.[0]
+        expect(firstSend).toMatchObject({ requestId: 'request-1', body: 'private draft' })
+
+        rerender(<ServiceRequestChat requestId="request-2" />)
+        expect(composer()).toHaveValue('')
+        expect(screen.getByRole('button', { name: 'autocare.chatSend' })).toBeDisabled()
+        await user.type(composer(), 'private draft')
+        await user.click(screen.getByRole('button', { name: 'autocare.chatSend' }))
+        await waitFor(() => expect(mocks.sendMessage).toHaveBeenCalledTimes(2))
+        const secondSend = mocks.sendMessage.mock.calls[1]?.[0]
+        expect(secondSend).toMatchObject({ requestId: 'request-2', body: 'private draft' })
+        expect(secondSend.idempotencyKey).not.toBe(firstSend.idempotencyKey)
+
+        rerender(<ServiceRequestChat requestId="request-1" />)
+        expect(composer()).toHaveValue('')
+    })
+
+    it('clears a draft when the signed-in participant changes', async () => {
+        const user = userEvent.setup()
+        const { rerender } = render(<ServiceRequestChat requestId="request-1" />)
+        await user.type(screen.getByPlaceholderText('autocare.chatPlaceholder'), 'private to client one')
+
+        mocks.viewer = { id: 'client-2', role: 'client' }
+        rerender(<ServiceRequestChat requestId="request-1" />)
+
+        expect(screen.getByPlaceholderText('autocare.chatPlaceholder')).toHaveValue('')
+        expect(screen.getByRole('button', { name: 'autocare.chatSend' })).toBeDisabled()
+    })
+
+    it('does not clear a new request draft when the previous send finishes late', async () => {
+        const user = userEvent.setup()
+        let finishFirstSend: (() => void) | undefined
+        mocks.sendMessage.mockImplementationOnce(() => ({
+            unwrap: () => new Promise<void>((resolve) => { finishFirstSend = resolve }),
+        }))
+        const { rerender } = render(<ServiceRequestChat requestId="request-1" />)
+        await user.type(screen.getByPlaceholderText('autocare.chatPlaceholder'), 'sent from A')
+        await user.click(screen.getByRole('button', { name: 'autocare.chatSend' }))
+        expect(mocks.sendMessage).toHaveBeenCalledWith(expect.objectContaining({ requestId: 'request-1', body: 'sent from A' }))
+
+        rerender(<ServiceRequestChat requestId="request-2" />)
+        await user.type(screen.getByPlaceholderText('autocare.chatPlaceholder'), 'unsent draft B')
+        await act(async () => { finishFirstSend?.() })
+
+        await waitFor(() => expect(screen.getByPlaceholderText('autocare.chatPlaceholder')).toHaveValue('unsent draft B'))
+        expect(mocks.sendMessage).toHaveBeenCalledTimes(1)
     })
 
     it('keeps offer actions retryable when the decision API rejects', async () => {

@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-20",
+  "branch": "fix/request-chat-state-isolation-2026-10-20",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "unit": {
+    "file": "src/entities/automotive-service/ui/ServiceRequestChat.test.tsx",
+    "preFixNewTests": "2 failed: request and identity drafts persisted",
+    "postFix": "9/9 passed",
+    "scenarios": [
+      "A to B to A clears drafts",
+      "same body after failed send uses a different retry key for B",
+      "identity switch clears draft",
+      "late completion of A send leaves B draft intact"
+    ]
+  },
+  "browser": {
+    "runtime": "production Next build, synthetic MSW API",
+    "scenario": "client A to B to A",
+    "draftB": "",
+    "sendButtonDisabledBeforeTypingB": true,
+    "sentTo": "/api/v1/service-requests/owner-request-2/messages",
+    "sentBody": "SYNTHETIC PRIVATE DRAFT B",
+    "draftAAfterReturn": "",
+    "result": "PASS"
+  },
+  "limits": ["real API not exercised", "not deployed"]
+}

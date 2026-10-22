@@ -1,0 +1,65 @@
+@startuml
+!include _style.puml
+title Backend — модульный монолит и точки поиска
+top to bottom direction
+component "server/src/app.ts\nHTTP limits / CORS / CSRF / auth hooks\nroutes registration / errors / metrics" as App
+package "Identity / platform" {
+  component "auth + oauth + users\ncredentials / sessions / deletion" as Identity
+  component "admin + platform-reviews\nmoderation / audit / incidents" as Admin
+}
+package "modules/autocare" {
+  component "autocare.routes.ts\ninput normalization / route guards" as Routes
+  component "Catalog / providers\ncatalog-read / provider-discovery\nprovider-workspace / resources / media" as Providers
+  component "Requests\nrequest-create / read (cursor pages) / quote\ntransition / reschedule / availability" as Requests
+  component "Chat\nchat-read / messaging / attachment\nrequest-conversation / gateway" as Chat
+  component "Quality / marketplace\nreviews / moderation / trust-score\nbonus / guarantee / broadcast" as Quality
+  component "Analytics / response policy\nowner + admin + trust\ncurrent member / branch / time checks" as Analytics
+  component "Access policy\nprovider-access / request-access\nchat-access + input policy helpers" as Access
+}
+component "outbox + notifications\nqueued effects / delivery" as Outbox
+component "jobs\nmaintenance + lease" as Jobs
+component "Legacy compatibility\ncabinets / services / bookings / reviews" as Legacy
+component "database/data-source.ts\nTypeORM entities / migrations" as ORM
+database "PostgreSQL" as PG
+App --> Identity
+App --> Admin
+App --> Routes
+App --> Legacy
+Routes --> Providers
+Routes --> Requests
+Routes --> Chat
+Routes --> Quality
+Routes --> Analytics
+Providers --> Access
+Requests --> Access
+Chat --> Access
+Quality --> Access
+Quality --> Analytics : first response
+Requests --> Quality : bonus / trust transitions
+Requests --> Outbox
+Chat --> Outbox
+Identity --> Outbox
+Jobs --> Outbox : processOutboxBatch
+Jobs --> Quality : periodic maintenance
+Providers --> ORM
+Requests --> ORM
+Chat --> ORM
+Quality --> ORM
+Analytics --> ORM
+Identity --> ORM
+Admin --> ORM
+Legacy --> ORM
+Outbox --> ORM
+ORM --> PG
+note bottom of Routes
+  autocare.service / request / chat facades сохраняют exports.
+  Бизнес-логику искать в concrete use-case модулях,
+  сверяясь с docs/architecture/AUTOCARE_RESPONSIBILITIES.md.
+end note
+note bottom of Requests
+  N23: scoped cursor pages hydrate relations in batches.
+  Legacy array routes cap at 100 and expose X-Next-Cursor.
+  Owner/admin analytics scan requests and message metadata in pages.
+end note
+footer Показаны зависимости уровня ответственности, не полный import graph
+@enduml

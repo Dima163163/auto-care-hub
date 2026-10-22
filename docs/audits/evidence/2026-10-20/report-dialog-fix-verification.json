@@ -1,0 +1,182 @@
+{
+  "date": "2026-10-20",
+  "branch": "fix/request-chat-state-isolation-2026-10-20",
+  "build": "Next.js production mock",
+  "account": "synthetic client",
+  "route": "/chats?chat=chat-inquiry-proservice",
+  "scenario": "Incoming message report dialog with reason threat",
+  "sizes": [
+    {
+      "width": 320,
+      "height": 568,
+      "fit": true,
+      "actionsReachable": true,
+      "dialog": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "scrollTop": 238,
+        "scrollHeight": 772,
+        "clientHeight": 534
+      },
+      "buttons": [
+        {
+          "text": "Отмена",
+          "x": 44.703125,
+          "y": 489,
+          "width": 73.359375,
+          "height": 38,
+          "hit": true
+        },
+        {
+          "text": "Отправить жалобу",
+          "x": 130.0625,
+          "y": 489,
+          "width": 148.9375,
+          "height": 38,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "height": 568,
+      "fit": true,
+      "actionsReachable": true,
+      "dialog": {
+        "x": 16,
+        "y": 16,
+        "width": 328,
+        "height": 536,
+        "scrollTop": 198,
+        "scrollHeight": 732,
+        "clientHeight": 534
+      },
+      "buttons": [
+        {
+          "text": "Отмена",
+          "x": 84.703125,
+          "y": 489,
+          "width": 73.359375,
+          "height": 38,
+          "hit": true
+        },
+        {
+          "text": "Отправить жалобу",
+          "x": 170.0625,
+          "y": 489,
+          "width": 148.9375,
+          "height": 38,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "fit": true,
+      "actionsReachable": true,
+      "dialog": {
+        "x": 16,
+        "y": 63,
+        "width": 358,
+        "height": 718,
+        "scrollTop": 0,
+        "scrollHeight": 716,
+        "clientHeight": 716
+      },
+      "buttons": [
+        {
+          "text": "Отмена",
+          "x": 114.703125,
+          "y": 718,
+          "width": 73.359375,
+          "height": 38,
+          "hit": true
+        },
+        {
+          "text": "Отправить жалобу",
+          "x": 200.0625,
+          "y": 718,
+          "width": 148.9375,
+          "height": 38,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "width": 568,
+      "height": 320,
+      "fit": true,
+      "actionsReachable": true,
+      "dialog": {
+        "x": 60,
+        "y": 16,
+        "width": 448,
+        "height": 288,
+        "scrollTop": 342,
+        "scrollHeight": 628,
+        "clientHeight": 286
+      },
+      "buttons": [
+        {
+          "text": "Отмена",
+          "x": 248.703125,
+          "y": 241,
+          "width": 73.359375,
+          "height": 38,
+          "hit": true
+        },
+        {
+          "text": "Отправить жалобу",
+          "x": 334.0625,
+          "y": 241,
+          "width": 148.9375,
+          "height": 38,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "width": 180,
+      "height": 284,
+      "fit": true,
+      "actionsReachable": true,
+      "dialog": {
+        "x": 16,
+        "y": 16,
+        "width": 148,
+        "height": 252,
+        "scrollTop": 1020,
+        "scrollHeight": 1270,
+        "clientHeight": 250
+      },
+      "buttons": [
+        {
+          "text": "Отмена",
+          "x": 65.640625,
+          "y": 135,
+          "width": 73.359375,
+          "height": 38,
+          "hit": true
+        },
+        {
+          "text": "Отправить жалобу",
+          "x": 41,
+          "y": 185,
+          "width": 98,
+          "height": 58,
+          "hit": true
+        }
+      ]
+    }
+  ],
+  "axeViolations": [],
+  "escapeClosed": true,
+  "focusRestored": true,
+  "limitations": [
+    "No real API or deployment exercised",
+    "180x284 is a CSS viewport stress case, not a measured browser zoom"
+  ]
+}

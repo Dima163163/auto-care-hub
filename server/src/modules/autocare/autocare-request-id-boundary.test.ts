@@ -32,6 +32,7 @@ import {
 const owner = { id: 'owner-1', role: 'owner' } as never
 const client = { id: 'client-1', role: 'client' } as never
 const superAdmin = { id: 'super-admin-1', role: 'super_admin' } as never
+const admin = { id: 'admin-1', role: 'admin' } as never
 
 describe('service request identifier boundary', () => {
     beforeEach(() => {
@@ -69,6 +70,16 @@ describe('service request identifier boundary', () => {
         await expect(getAutoCareServiceAttachment(superAdmin, requestId, '22222222-2222-4222-8222-222222222222')).rejects.toMatchObject({ statusCode: 403 })
         await expect(markAutoCareServiceConversationRead(superAdmin, requestId)).resolves.toEqual({ updated: 0 })
         expect(mocks.getRepository).not.toHaveBeenCalled()
+    })
+
+    it.each([admin, superAdmin])('rejects privileged private writes before storage or transactions', async (actor) => {
+        const requestId = '11111111-1111-4111-8111-111111111111'
+        await expect(createAutoCareServiceMessage(actor, requestId, { body: 'Private message' }))
+            .rejects.toMatchObject({ statusCode: 403 })
+        await expect(createAutoCareServiceAttachment(actor, requestId, {} as never))
+            .rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.getRepository).not.toHaveBeenCalled()
+        expect(mocks.transaction).not.toHaveBeenCalled()
     })
 
     it('requires a reason before SuperAdmin can load private request contact data', async () => {

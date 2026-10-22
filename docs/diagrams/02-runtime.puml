@@ -1,0 +1,48 @@
+@startuml
+!include _style.puml
+title Runtime — пути HTTP, данные и запуск backend
+top to bottom direction
+node "Браузер" {
+  component "React Router\nв Next client shell" as Browser
+}
+node "Next.js process" {
+  component "App Router\nmetadata / SSR / first paint" as Next
+  component "/api/* rewrite\nnext.config.ts" as Proxy
+}
+node "Backend entrypoint: server/src/server.ts" {
+  component "assertDataEncryptionProviderReady\nbuildApp / DB schema contract" as Startup
+  component "RUNTIME_MODE=api или all\nFastify HTTP + WebSocket" as API
+  component "RUNTIME_MODE=worker или all\nbackground-jobs → maintenance" as Worker
+}
+database "PostgreSQL\nentities / migrations / outbox" as PG
+database "Redis" as Redis
+folder "Private objects\nS3 or local attachment adapter" as Storage
+component "Mailer adapter\nSMTP / logger" as Mail
+component "Key provider boundary\nlocal keyring: dev/test\nexternal KMS wiring: открыто" as Keys
+Browser --> Next : HTML / JS
+Browser --> Proxy : HTTP /api/...\nWS при relative API base
+Proxy --> API : backend origin + original path
+Next --> API : server public-provider fetch
+Browser ..> API : HTTP/WS при absolute API base
+Startup --> API : shouldStartApi(mode)
+Startup --> Worker : shouldStartWorker(mode)
+Startup --> Keys : readiness before startup
+API --> PG
+API --> Redis
+API --> Storage
+Worker --> PG
+Worker --> Redis
+Worker --> Mail
+PG .. Keys : transformers / sensitive-data subscriber
+note bottom of Startup
+  worker mode тоже вызывает buildApp и DB setup,
+  но не открывает HTTP listener.
+  Идемпотентный shutdown закрывает jobs / app / DB.
+end note
+note right of Next
+  NEXT_DIST_DIR разделяет build artifacts.
+  NEXT_PUBLIC_API_ORIGIN задаёт upstream.
+  TLS/proxy/production topology зависят от deployment.
+end note
+footer Источники: server.ts / app.ts / runtime-mode-policy.ts / next.config.ts
+@enduml

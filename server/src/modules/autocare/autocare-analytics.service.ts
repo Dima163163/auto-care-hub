@@ -1,14 +1,13 @@
-import { In } from 'typeorm'
-
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutoCareBonusAccountEntity,
     AutoCareProviderDailyMetricEntity,
     AutoCareServiceQuoteEntity,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
-    ServiceMessageEntity,
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
@@ -21,6 +20,7 @@ import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import { normalizeProviderMembershipUuid } from './provider-membership-policy.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
 import { env } from '../../config/env.js'
+import { readFirstProviderResponseMinutes } from './first-provider-response-reader.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -36,6 +36,36 @@ function invalid(message: string): never {
 
 function percent(value: number, total: number) {
     return total === 0 ? 0 : Number(((value / total) * 100).toFixed(1))
+}
+
+const OWNER_ANALYTICS_PAGE_SIZE = 500
+
+async function* ownerRequestPages(providerId: string, locationIds: string[] | null, generatedAt: Date) {
+    if (locationIds?.length === 0) return
+    let cursor: { createdAt: Date; id: string } | null = null
+    while (true) {
+        const query = AppDataSource.getRepository(ServiceRequestEntity).createQueryBuilder('request')
+            .select([
+                'request.id', 'request.providerId', 'request.locationId', 'request.clientId',
+                'request.status', 'request.completedAt', 'request.clientConfirmedAt',
+                'request.providerConfirmedAt', 'request.acceptedQuoteAt',
+                'request.estimateSnapshot', 'request.createdAt',
+            ])
+            .where('request.providerId = :providerId', { providerId })
+            .andWhere('request.createdAt <= :generatedAt', { generatedAt })
+        if (locationIds !== null) query.andWhere('request.locationId IN (:...locationIds)', { locationIds })
+        if (cursor) query.andWhere('(request.createdAt < :cursorCreatedAt OR (request.createdAt = :cursorCreatedAt AND request.id < :cursorId))', {
+            cursorCreatedAt: cursor.createdAt, cursorId: cursor.id,
+        })
+        const rows = await query.orderBy('request.createdAt', 'DESC').addOrderBy('request.id', 'DESC')
+            .take(OWNER_ANALYTICS_PAGE_SIZE + 1).getMany()
+        const page = rows.slice(0, OWNER_ANALYTICS_PAGE_SIZE)
+        if (page.length === 0) return
+        yield page
+        if (rows.length <= OWNER_ANALYTICS_PAGE_SIZE) return
+        const last = page.at(-1)!
+        cursor = { createdAt: last.createdAt, id: last.id }
+    }
 }
 
 /**
@@ -54,21 +84,8 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
 
     const scopedLocationIds = scope.locationIds
     const isProviderWide = scopedLocationIds === null
-    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({
-        where: isProviderWide ? { providerId: normalizedProviderId } : { providerId: normalizedProviderId, locationId: In(scopedLocationIds ?? []) },
-        order: { createdAt: 'ASC' },
-    })
-
-    const requestIds = requests.map((request) => request.id)
-    const requestIdSet = new Set(requestIds)
-    const [quotes, allReviews, accounts, metrics] = await Promise.all([
-        requestIds.length === 0
-            ? Promise.resolve([])
-            : AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({ where: { requestId: In(requestIds) } }),
-        AppDataSource.getRepository(AutomotiveReviewEntity).find({ where: { providerId: normalizedProviderId, status: AutomotiveReviewStatus.Approved } }),
-        isProviderWide
-            ? AppDataSource.getRepository(AutoCareBonusAccountEntity).find({ where: { providerId: normalizedProviderId }, select: { balancePoints: true } })
-            : Promise.resolve([]),
+    const generatedAt = new Date()
+    const [metrics, memberships, bonusAggregate, providerReviewAggregate] = await Promise.all([
         isProviderWide
             ? AppDataSource.getRepository(AutoCareProviderDailyMetricEntity).createQueryBuilder('metric')
                 .select('COALESCE(SUM(metric.impressions), 0)', 'impressions')
@@ -76,55 +93,93 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
                 .where('metric.providerId = :providerId', { providerId: normalizedProviderId })
                 .getRawOne<{ impressions: string; profileOpens: string }>()
             : Promise.resolve(null),
+        AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({
+            where: { providerId: normalizedProviderId, status: AutomotiveProviderMembershipStatus.Active },
+            select: { providerId: true, userId: true, locationId: true, status: true },
+        }),
+        isProviderWide
+            ? AppDataSource.getRepository(AutoCareBonusAccountEntity).createQueryBuilder('account')
+                .select('COALESCE(SUM(account.balancePoints), 0)', 'points')
+                .where('account.providerId = :providerId', { providerId: normalizedProviderId })
+                .getRawOne<{ points: string }>()
+            : Promise.resolve(null),
+        isProviderWide
+            ? AppDataSource.getRepository(AutomotiveReviewEntity).createQueryBuilder('review')
+                .select('COUNT(review.id)', 'count')
+                .addSelect('COALESCE(SUM(review.rating), 0)', 'ratingSum')
+                .where('review.providerId = :providerId', { providerId: normalizedProviderId })
+                .andWhere('review.status = :status', { status: AutomotiveReviewStatus.Approved })
+                .getRawOne<{ count: string; ratingSum: string }>()
+            : Promise.resolve(null),
     ])
-    const reviews = isProviderWide
-        ? allReviews
-        : allReviews.filter((review) => review.serviceRequestId !== null && requestIdSet.has(review.serviceRequestId))
-    const messages = requestIds.length === 0
-        ? []
-        : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, order: { createdAt: 'ASC' } })
-    const clientByRequest = new Map(requests.map((request) => [request.id, request.clientId]))
-    const firstProviderMessage = new Map<string, Date>()
-    for (const message of messages) {
-        if (message.requestId && message.senderId !== clientByRequest.get(message.requestId) && !firstProviderMessage.has(message.requestId)) {
-            firstProviderMessage.set(message.requestId, message.createdAt)
+    let inquiries = 0
+    let openRequests = 0
+    let confirmedBookings = 0
+    let completedVisits = 0
+    let cancelledRequests = 0
+    let noShowRequests = 0
+    let quoteAccepted = 0
+    let eligibleQuoteRequests = 0
+    let responseSamples = 0
+    let responseMinutesSum = 0
+    let reviewCount = Number(providerReviewAggregate?.count ?? 0)
+    let ratingSum = Number(providerReviewAggregate?.ratingSum ?? 0)
+    const clientCounts = new Map<string, number>()
+    for await (const requests of ownerRequestPages(normalizedProviderId, scopedLocationIds, generatedAt)) {
+        const requestIds = requests.map((request) => request.id)
+        const [quotes, responseMinutes, branchReviews] = await Promise.all([
+            AppDataSource.getRepository(AutoCareServiceQuoteEntity).createQueryBuilder('quote')
+                .select('DISTINCT quote.requestId', 'requestId')
+                .where('quote.requestId IN (:...requestIds)', { requestIds })
+                .getRawMany<{ requestId: string }>(),
+            readFirstProviderResponseMinutes({ providers: [provider], memberships, requests }),
+            isProviderWide
+                ? Promise.resolve(null)
+                : AppDataSource.getRepository(AutomotiveReviewEntity).createQueryBuilder('review')
+                    .select('COUNT(review.id)', 'count')
+                    .addSelect('COALESCE(SUM(review.rating), 0)', 'ratingSum')
+                    .where('review.providerId = :providerId', { providerId: normalizedProviderId })
+                    .andWhere('review.status = :status', { status: AutomotiveReviewStatus.Approved })
+                    .andWhere('review.serviceRequestId IN (:...requestIds)', { requestIds })
+                    .getRawOne<{ count: string; ratingSum: string }>(),
+        ])
+        reviewCount += Number(branchReviews?.count ?? 0)
+        ratingSum += Number(branchReviews?.ratingSum ?? 0)
+        const quotedIds = new Set(quotes.map((quote) => quote.requestId))
+        for (const minutes of responseMinutes.values()) {
+            responseSamples += 1
+            responseMinutesSum += minutes
+        }
+        for (const request of requests) {
+            if (request.status !== ServiceRequestStatus.Draft) inquiries += 1
+            if ([ServiceRequestStatus.Open, ServiceRequestStatus.AwaitingReply, ServiceRequestStatus.EstimateShared].includes(request.status)) openRequests += 1
+            if (request.clientConfirmedAt && request.providerConfirmedAt) confirmedBookings += 1
+            if (isVerifiedCompletedVisit(request)) completedVisits += 1
+            if (request.status === ServiceRequestStatus.Cancelled) cancelledRequests += 1
+            if (request.status === ServiceRequestStatus.NoShow) noShowRequests += 1
+            if (request.acceptedQuoteAt !== null) quoteAccepted += 1
+            if (quotedIds.has(request.id) || request.estimateSnapshot || request.acceptedQuoteAt) eligibleQuoteRequests += 1
+            clientCounts.set(request.clientId, (clientCounts.get(request.clientId) ?? 0) + 1)
         }
     }
-    const responseTimes = requests.flatMap((request) => {
-        const firstMessage = firstProviderMessage.get(request.id)
-        if (!firstMessage) return []
-        return [Math.max(0, (firstMessage.getTime() - request.createdAt.getTime()) / 60_000)]
-    })
-
-    const eligibleQuoteRequests = new Set(quotes.map((quote) => quote.requestId))
-    for (const request of requests) {
-        if (request.estimateSnapshot || request.acceptedQuoteAt) eligibleQuoteRequests.add(request.id)
-    }
-    const confirmed = requests.filter((request) => Boolean(request.clientConfirmedAt && request.providerConfirmedAt))
-    const completed = requests.filter(isVerifiedCompletedVisit)
-    const clientCounts = new Map<string, number>()
-    for (const request of requests) clientCounts.set(request.clientId, (clientCounts.get(request.clientId) ?? 0) + 1)
     const repeatCustomers = [...clientCounts.values()].filter((count) => count > 1).length
-    const quoteAccepted = requests.filter((request) => request.acceptedQuoteAt !== null).length
-    const cancelled = requests.filter((request) => request.status === ServiceRequestStatus.Cancelled).length
-    const noShows = requests.filter((request) => request.status === ServiceRequestStatus.NoShow).length
 
     return {
         providerId: normalizedProviderId,
-        generatedAt: new Date().toISOString(),
-        inquiries: requests.filter((request) => request.status !== ServiceRequestStatus.Draft).length,
-        openRequests: requests.filter((request) => [ServiceRequestStatus.Open, ServiceRequestStatus.AwaitingReply, ServiceRequestStatus.EstimateShared].includes(request.status)).length,
-        confirmedBookings: confirmed.length,
-        completedVisits: completed.length,
-        cancelledRequests: cancelled,
-        noShowRequests: noShows,
-        completionRate: percent(completed.length, confirmed.length),
-        quoteConversionRate: percent(quoteAccepted, eligibleQuoteRequests.size),
-        averageResponseMinutes: responseTimes.length === 0 ? null : Number((responseTimes.reduce((sum, value) => sum + value, 0) / responseTimes.length).toFixed(1)),
+        generatedAt: generatedAt.toISOString(),
+        inquiries,
+        openRequests,
+        confirmedBookings,
+        completedVisits,
+        cancelledRequests,
+        noShowRequests,
+        completionRate: percent(completedVisits, confirmedBookings),
+        quoteConversionRate: percent(quoteAccepted, eligibleQuoteRequests),
+        averageResponseMinutes: responseSamples === 0 ? null : Number((responseMinutesSum / responseSamples).toFixed(1)),
         repeatCustomers,
-        reviewCount: reviews.length,
-        averageRating: reviews.length === 0 ? 0 : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)),
-        bonusLiabilityPoints: accounts.reduce((sum, account) => sum + account.balancePoints, 0),
+        reviewCount,
+        averageRating: reviewCount === 0 ? 0 : Number((ratingSum / reviewCount).toFixed(1)),
+        bonusLiabilityPoints: Number(bonusAggregate?.points ?? 0),
         tracking: {
             impressions: Number(metrics?.impressions ?? 0),
             profileOpens: Number(metrics?.profileOpens ?? 0),

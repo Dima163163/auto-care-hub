@@ -49,7 +49,7 @@ describe('OwnerProviderCommunicationSettings', () => {
 
             await user.click(screen.getByRole('button', { name: 'Сохранить режим связи' }))
 
-            expect(await screen.findByRole('alert')).toHaveTextContent('temporary failure')
+            expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong on our end. Please try again later.')
             expect(screen.getByRole('button', { name: 'Сохранить режим связи' })).toBeEnabled()
             expect(unhandled).toEqual([])
         } finally {

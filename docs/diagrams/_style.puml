@@ -1,0 +1,21 @@
+' Shared local style only; no remote includes or services.
+!pragma layout smetana
+skinparam backgroundColor #FAFBFD
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #42536D
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam noteBackgroundColor #FFF7DE
+skinparam noteBorderColor #C8A552
+skinparam componentBackgroundColor #EAF1FB
+skinparam componentBorderColor #6585B5
+skinparam databaseBackgroundColor #E8F4EE
+skinparam databaseBorderColor #58846C
+skinparam entityBackgroundColor #FFFFFF
+skinparam entityBorderColor #6585B5
+skinparam stateBackgroundColor #EAF1FB
+skinparam stateBorderColor #6585B5
+hide empty members

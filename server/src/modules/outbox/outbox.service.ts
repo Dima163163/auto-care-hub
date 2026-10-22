@@ -9,6 +9,7 @@ import type { Mailer } from '../../shared/mail/mailer.js'
 import { createPasswordResetEmail } from '../../shared/mail/password-reset-email.js'
 import { createEmailVerificationEmail } from '../../shared/mail/email-verification-email.js'
 import { createPasswordSetupEmail } from '../../shared/mail/password-setup-email.js'
+import { createProviderInvitationEmail } from '../../shared/mail/provider-invitation-email.js'
 import { createBookingEmail } from '../../shared/mail/booking-email.js'
 import { createAutoCareVisitReminderEmail } from '../../shared/mail/autocare-visit-reminder-email.js'
 import { SUPPORTED_LOCALES } from '../../config/i18n.js'
@@ -32,6 +33,7 @@ import { normalizeNotificationLink } from '../notifications/notification-link-po
 import { normalizeOutboxErrorMessage } from './outbox-error-policy.js'
 import { renderNotificationTemplate } from '../notifications/notification-renderer.js'
 import { decryptOutboxSecret, redactOutboxSecrets } from './outbox-secret.js'
+import { outboxPayloadEncryptionTransformer } from '../../shared/security/data-encryption/field-encryption.js'
 
 export const OUTBOX_MAX_ATTEMPTS = 5
 export { MAX_OUTBOX_ERROR_LENGTH as OUTBOX_MAX_ERROR_LENGTH } from './outbox-error-policy.js'
@@ -82,6 +84,14 @@ const emailPayloadSchema = z.discriminatedUnion('template', [
     }),
     z.object({
         template: z.literal('password_setup'),
+        email: z.string().transform(normalizeEmailAddress),
+        expiresAt: z.string().datetime(),
+        frontendOrigin: z.string().transform((value) => normalizeFrontendOrigin(value, { allowHttpLoopback: true })),
+        encryptedToken: z.string().min(32),
+        locale: z.enum(SUPPORTED_LOCALES).nullable(),
+    }),
+    z.object({
+        template: z.literal('provider_invitation'),
         email: z.string().transform(normalizeEmailAddress),
         expiresAt: z.string().datetime(),
         frontendOrigin: z.string().transform((value) => normalizeFrontendOrigin(value, { allowHttpLoopback: true })),
@@ -154,6 +164,9 @@ export async function enqueueOutboxEvent(
     const idempotencyKey = normalizeOutboxIdempotencyKey(input.idempotencyKey)
     const availableAt = assertOutboxAvailableAt(input.availableAt)
     const repository = manager.getRepository(OutboxEventEntity)
+    // Raw SQL preserves the atomic ON CONFLICT path, but bypasses TypeORM's
+    // column transformer. Apply the same storage format before the INSERT.
+    const storedPayload = outboxPayloadEncryptionTransformer.to(input.payload)
 
     await manager.query(
         `INSERT INTO "outbox_events"
@@ -163,7 +176,7 @@ export async function enqueueOutboxEvent(
          ON CONFLICT ("idempotencyKey") DO NOTHING`,
         [
             input.type,
-            JSON.stringify(input.payload),
+            JSON.stringify(storedPayload),
             idempotencyKey,
             OutboxEventStatus.Pending,
             0,
@@ -278,6 +291,8 @@ async function dispatchOutboxEvent(event: OutboxEventEntity, mailer?: Mailer) {
             await mailer.send(createPasswordResetEmail(input))
         } else if (payload.template === 'email_verification') {
             await mailer.send(createEmailVerificationEmail(input))
+        } else if (payload.template === 'provider_invitation') {
+            await mailer.send(createProviderInvitationEmail(input))
         } else {
             await mailer.send(createPasswordSetupEmail(input))
         }

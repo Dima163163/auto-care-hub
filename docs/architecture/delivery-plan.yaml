@@ -25,7 +25,7 @@ phases:
       - proposed_adrs
     exit_gate:
       - Documentation/product direction has been reviewed.
-      - `dev` is the integration branch; `main` remains production-only.
+      - '`dev` is the integration branch; `main` remains production-only.'
 
   phase_1_product_contract:
     order: 1

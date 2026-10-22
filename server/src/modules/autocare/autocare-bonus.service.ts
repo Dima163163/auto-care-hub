@@ -18,6 +18,7 @@ import { hasProviderWorkspacePermission, hasProviderWorkspacePermissionWithManag
 import type { AutoCareBonusAccountResponse, AutoCareBonusLedgerEntryResponse, AutoCareBonusProgramResponse, GrantAutoCareBonusInput, OwnerAutoCareBonusLiabilityResponse, OwnerAutoCareBonusProgramInput, RedeemAutoCareBonusInput } from './autocare.types.js'
 import { normalizeIdempotencyKey } from '../../shared/http/idempotency-key.js'
 import { normalizeGrantAutoCareBonusInput, normalizeOwnerAutoCareBonusProgramInput, normalizeRedeemAutoCareBonusInput, normalizeAutoCareBonusProviderUuid } from './bonus-input-policy.js'
+import { getExpirableBonusLots } from './bonus-lot-policy.js'
 
 /** Launch markets use two-decimal currencies. One bonus point therefore
  * represents one major currency unit, stored in integer minor units. */
@@ -86,23 +87,24 @@ async function accountResponse(account: AutoCareBonusAccountEntity, manager = Ap
 async function reconcileExpiredBonusEntries(manager: EntityManager, account: AutoCareBonusAccountEntity) {
     const now = new Date()
     const ledgerRepository = manager.getRepository(AutoCareBonusLedgerEntity)
-    const expired = await ledgerRepository.createQueryBuilder('entry')
-        .where('entry.accountId = :accountId', { accountId: account.id })
-        .andWhere('entry.expiresAt IS NOT NULL AND entry.expiresAt <= :now', { now })
-        .andWhere('entry.points > 0')
-        .andWhere('entry.type IN (:...types)', { types: [AutoCareBonusLedgerType.Earn, AutoCareBonusLedgerType.Adjustment] })
-        .getMany()
+    // Redemption allocation depends on the full history, including refunds
+    // and earlier expirations. The account row is locked by every caller.
+    const entries = await ledgerRepository.find({
+        where: { accountId: account.id },
+        order: { createdAt: 'ASC', id: 'ASC' },
+    })
+    const expired = getExpirableBonusLots(entries, now)
+    const requestIds = new Map(entries.map((entry) => [entry.id, entry.requestId]))
     let expiredPoints = 0
     for (const entry of expired) {
         const idempotencyKey = `expire:${entry.id}`
-        if (await ledgerRepository.findOne({ where: { accountId: account.id, idempotencyKey } })) continue
         const points = Math.min(entry.points, Math.max(account.balancePoints - expiredPoints, 0))
         if (points <= 0) continue
         await ledgerRepository.save(ledgerRepository.create({
             accountId: account.id,
             clientId: account.clientId,
             providerId: account.providerId,
-            requestId: entry.requestId,
+            requestId: requestIds.get(entry.id) ?? null,
             type: AutoCareBonusLedgerType.Expire,
             points: -points,
             reason: 'Срок действия бонусов истёк',

@@ -1,0 +1,46 @@
+@startuml
+!include _style.puml
+title Заявка — основные реализованные переходы
+state "awaiting_reply" as Awaiting
+state "estimate_shared" as Estimate
+state "accepted" as Accepted
+state "declined" as Declined
+state "cancelled" as Cancelled
+state "no_show" as NoShow
+state "closed" as Closed
+[*] --> Awaiting : create / request bookingMode
+[*] --> Accepted : create / instant bookingMode\nslot + capacity + resource reservation
+Awaiting --> Estimate : provider sends quote
+Estimate --> Estimate : provider sends next revision\nprevious pending quote → superseded
+note right of Estimate
+  Чтение показывает последние 50 версий (DESC limit,
+  затем ASC для клиента). Актуальная версия всегда в конце
+  quoteHistory и соответствует status в quote snapshot.
+  Решение по старой quoteId/version получает 409.
+end note
+Estimate --> Accepted : client accepts current quote\nquoteId + version / expiry / capacity
+Estimate --> Declined : client declines quote
+Estimate --> Awaiting : quote expires / expiry handling
+Awaiting --> Accepted : provider confirms / visit time + capacity
+Estimate --> Accepted : provider confirmation route\nсм. конкретные guards в source
+Accepted --> Closed : provider completes\nclient + provider confirmations / visit time
+Accepted --> NoShow : provider marks no-show / reason
+Awaiting --> Cancelled : client / cancellation reason
+Estimate --> Cancelled : client / cancellation reason
+Accepted --> Cancelled : client / release + bonus refund
+note right of Accepted
+  Клиентское confirm обновляет clientConfirmedAt,
+  само по себе не меняет request.status.
+  accepted не тождественно «оба подтвердили».
+end note
+note bottom of Closed
+  Completion → bonus award / trust reassessment.
+  Closed + mutual confirmation → verified review eligibility.
+end note
+note left of Awaiting
+  Основной путь. Draft/open совместимость, reschedule и детали
+  quote lifecycle требуют request-lifecycle-policy и use cases.
+  Это карта навигации, не полный transition allowlist.
+end note
+footer request-create / request-quote / request-transition / request-reschedule / request-availability
+@enduml

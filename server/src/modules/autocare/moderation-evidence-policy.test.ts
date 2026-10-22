@@ -13,6 +13,7 @@ describe('AutoCare moderation evidence policy', () => {
     it('allows only a pending item to receive one decision', () => {
         expect(canDecideAutoCareModerationEvidence('pending', 'approved')).toBe(true)
         expect(canDecideAutoCareModerationEvidence('approved', 'rejected')).toBe(false)
+        expect(canDecideAutoCareModerationEvidence('superseded', 'approved')).toBe(false)
     })
 
     it('limits the evidence queue to supported public moderation subjects', () => {
@@ -51,6 +52,7 @@ describe('AutoCare moderation evidence policy', () => {
     it('normalizes and bounds the admin evidence queue status filter', () => {
         expect(normalizeAutoCareModerationEvidenceStatus('  PENDING ')).toBe('pending')
         expect(normalizeAutoCareModerationEvidenceStatus('approved')).toBe('approved')
+        expect(normalizeAutoCareModerationEvidenceStatus('superseded')).toBe('superseded')
         expect(normalizeAutoCareModerationEvidenceStatus('verified')).toBeNull()
         expect(normalizeAutoCareModerationEvidenceStatus(null)).toBeNull()
     })

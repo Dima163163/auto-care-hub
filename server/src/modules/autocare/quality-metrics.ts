@@ -1,6 +1,6 @@
 import type { AutomotiveBookingMode, AutomotivePriceType } from '../../entities/automotive/automotive.entity.js'
-import { AutomotiveProviderMembershipStatus } from '../../entities/automotive/provider-membership.entity.js'
 import { ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
+import { getFirstProviderResponseMinutes } from './first-provider-response-policy.js'
 
 export type QualityProvider = { id: string; status: string; ownerId?: string | null }
 export type QualityProviderMembership = { providerId: string; userId: string; locationId: string | null; status: string }
@@ -81,6 +81,7 @@ export function buildQualityMetrics(input: {
     offers: QualityOffer[]
     requests: QualityRequest[]
     messages: QualityMessage[]
+    reliabilityOverride?: AutoCareReliabilityQualityMetrics
 }): {
     catalog: AutoCareCatalogQualityMetrics
     supply: AutoCareSupplyQualityMetrics
@@ -99,37 +100,12 @@ export function buildQualityMetrics(input: {
             && activeDefinitionIds.has(offer.definitionId)
     })
     const providerIdsWithOffers = new Set(activeOffers.map((offer) => locationById.get(offer.locationId)?.providerId).filter((id): id is string => Boolean(id)))
-    const responseMinutes: number[] = []
-    const firstProviderMessage = new Map<string, Date>()
-    const providerById = new Map(input.providers.map((provider) => [provider.id, provider]))
-    const membershipsByProvider = new Map<string, QualityProviderMembership[]>()
-    for (const membership of input.providerMemberships) {
-        const memberships = membershipsByProvider.get(membership.providerId) ?? []
-        memberships.push(membership)
-        membershipsByProvider.set(membership.providerId, memberships)
-    }
-    const requestById = new Map(input.requests.map((request) => [request.id, request]))
-    for (const message of input.messages) {
-        if (!message.requestId || message.kind === 'system') continue
-        const request = requestById.get(message.requestId)
-        const provider = request ? providerById.get(request.providerId) : undefined
-        if (!request || !provider || message.senderId === request.clientId) continue
-        const requestCreatedAt = request.createdAt.getTime()
-        const messageCreatedAt = message.createdAt.getTime()
-        if (!Number.isFinite(requestCreatedAt) || !Number.isFinite(messageCreatedAt) || messageCreatedAt < requestCreatedAt) continue
-        const providerAuthored = provider.ownerId === message.senderId || (membershipsByProvider.get(request.providerId) ?? []).some((membership) => (
-            membership.status === AutomotiveProviderMembershipStatus.Active
-            && membership.userId === message.senderId
-            && (membership.locationId === null || membership.locationId === request.locationId)
-        ))
-        if (!providerAuthored) continue
-        const previousMessage = firstProviderMessage.get(message.requestId)
-        if (!previousMessage || messageCreatedAt < previousMessage.getTime()) firstProviderMessage.set(message.requestId, message.createdAt)
-    }
-    for (const request of input.requests) {
-        const firstReply = firstProviderMessage.get(request.id)
-        if (firstReply) responseMinutes.push(Math.max(0, (firstReply.getTime() - request.createdAt.getTime()) / 60_000))
-    }
+    const responseMinutes = input.reliabilityOverride ? [] : [...getFirstProviderResponseMinutes({
+        providers: input.providers,
+        memberships: input.providerMemberships,
+        requests: input.requests,
+        messages: input.messages,
+    }).values()]
     const confirmationSamples = input.requests.filter((request) => request.providerConfirmedAt || request.clientConfirmedAt)
     const confirmedBookings = input.requests.filter((request) => request.providerConfirmedAt && request.clientConfirmedAt).length
     const bookingConflicts = input.requests.filter((request) => request.status === ServiceRequestStatus.Declined || request.status === ServiceRequestStatus.Cancelled).length
@@ -160,7 +136,7 @@ export function buildQualityMetrics(input: {
             activeMarkets: markets.size,
             averageLocationsPerProvider: providerCount === 0 ? 0 : Number((activeLocations.length / providerCount).toFixed(1)),
         },
-        reliability: {
+        reliability: input.reliabilityOverride ?? {
             responseSamples: responseMinutes.length,
             averageResponseMinutes: responseMinutes.length === 0 ? null : Number((responseMinutes.reduce((sum, value) => sum + value, 0) / responseMinutes.length).toFixed(1)),
             p95ResponseMinutes: percentile(responseMinutes, 95),

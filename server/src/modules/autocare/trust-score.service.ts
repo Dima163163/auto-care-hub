@@ -7,6 +7,8 @@ import {
     AutoCareTrustEvidenceEntity,
     AutoCareTrustSnapshotEntity,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
@@ -19,6 +21,12 @@ import { calculateAutoCareTrustScore, type AutoCareTrustScore } from './trust-sc
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
 import { getAutoCareTrustPolicy } from '../admin/super-admin-trust-policy.service.js'
+import { countActiveGuaranteeCases } from './guarantee-claim-policy.js'
+import { logError } from '../../shared/observability/logger.js'
+import { metrics } from '../../shared/observability/metrics.js'
+import { getFirstProviderResponseMinutes } from './first-provider-response-policy.js'
+
+const FAILED_REASSESSMENT_RETRY_MS = 15 * 60_000
 
 function getProfileFieldCount(provider: AutomotiveProviderEntity) {
     return [
@@ -43,22 +51,32 @@ export async function reassessAutoCareProviderTrust(
     const provider = await providerRepository.findOneBy({ id: providerId })
     if (!provider) return null
 
-    const [evidence, reviews, claims, interactions, policy] = await Promise.all([
+    const [evidence, reviews, claims, interactions, policy, memberships] = await Promise.all([
         manager.getRepository(AutoCareTrustEvidenceEntity).find({ where: { providerId } }),
         manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved, verifiedVisit: true } }),
         manager.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { providerId } }),
         manager.getRepository(ServiceRequestEntity).find({ where: { providerId } }),
         getAutoCareTrustPolicy(),
+        manager.getRepository(AutomotiveProviderMembershipEntity).find({
+            where: { providerId, status: AutomotiveProviderMembershipStatus.Active },
+            select: { providerId: true, userId: true, locationId: true, status: true },
+        }),
     ])
     const nowMs = Date.now()
+    const approvedReviewById = new Map(reviews.map((review) => [review.id, review]))
     const verifiedEvidenceCount = evidence.filter((item) =>
-        isApprovedAutoCareEvidenceStatus(item.status) && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
+        isApprovedAutoCareEvidenceStatus(item.status)
+        && (item.expiresAt === null || item.expiresAt.getTime() > nowMs)
+        && (item.kind !== 'review' || Boolean(
+            item.reference
+            && approvedReviewById.get(item.reference)?.contentRevision === (item.reviewRevision ?? 1),
+        )),
     ).length
     const reviewCount = reviews.length
     const rating = reviewCount > 0
         ? reviews.reduce((total, review) => total + review.rating, 0) / reviewCount
         : Number(provider.rating)
-    const activeGuaranteeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status)).length
+    const activeGuaranteeClaims = countActiveGuaranteeCases(claims)
     const completedInteractionCount = interactions.filter(isVerifiedCompletedVisit).length
     const cancelledInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.Cancelled).length
     const noShowInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.NoShow).length
@@ -69,16 +87,19 @@ export async function reassessAutoCareProviderTrust(
             where: { requestId: In(requestIds) },
             order: { createdAt: 'ASC' },
         })
-    const firstResponseMinutes = interactions.flatMap((request) => {
-        const response = messages.find((message) => message.requestId === request.id && message.senderId !== request.clientId)
-        return response ? [(response.createdAt.getTime() - request.createdAt.getTime()) / 60_000] : []
-    })
+    const firstResponseMinutes = [...getFirstProviderResponseMinutes({
+        providers: [provider],
+        memberships,
+        requests: interactions,
+        messages,
+    }).values()]
     const responseTimeMinutes = firstResponseMinutes.length > 0
         ? firstResponseMinutes.reduce((sum, value) => sum + value, 0) / firstResponseMinutes.length
         : undefined
-    const activeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status))
-    const complaintRate = completedInteractionCount > 0 ? activeClaims.length / completedInteractionCount : 0
-    const criticalViolationCount = activeClaims.filter((claim) => /critical|safety|fraud|identity/i.test(claim.claimType)).length
+    const complaintRate = completedInteractionCount > 0 ? activeGuaranteeClaims / completedInteractionCount : 0
+    // Claim type is an allegation, not an adjudicated moderation finding.
+    // No confirmed-violation state is persisted yet, so the proven count is 0.
+    const criticalViolationCount = 0
     const orderedReviews = [...reviews].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
     const recentReviews = orderedReviews.slice(-5)
     const priorReviews = orderedReviews.slice(0, -5)
@@ -159,12 +180,18 @@ export async function reassessAutoCareProviderTrust(
         })))
     }
     const changed = Number(provider.trustScore) !== trust.score || provider.trustBadge !== trust.badge
-    if (changed || provider.trustReassessedAt === null || snapshots.length > 0) {
-        provider.trustScore = trust.score
-        provider.trustBadge = trust.badge
-        provider.trustReassessedAt = now
-        await providerRepository.save(provider)
-    }
+    // Advance the scheduling watermark even when the score did not change.
+    // A narrow update avoids restoring an older provider profile from the read above.
+    await providerRepository.update({ id: providerId }, {
+        trustScore: trust.score,
+        trustBadge: trust.badge,
+        trustReassessedAt: now,
+        trustReassessmentAttemptedAt: now,
+    })
+    provider.trustScore = trust.score
+    provider.trustBadge = trust.badge
+    provider.trustReassessedAt = now
+    provider.trustReassessmentAttemptedAt = now
     return { provider, trust, changed, snapshots }
 }
 
@@ -173,16 +200,38 @@ export async function reassessAutoCareProviderTrust(
  * still ensuring a large provider catalog converges over several cycles.
  */
 export async function reassessAutoCareTrustScores(limit = 100) {
-    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity).find({
-        where: { status: AutomotiveProviderStatus.Active },
-        select: { id: true },
-        order: { trustReassessedAt: 'ASC', createdAt: 'ASC' },
-        take: Math.max(1, Math.min(limit, 500)),
-    })
+    const now = new Date()
+    const policy = await getAutoCareTrustPolicy()
+    const dueBefore = new Date(now.getTime() - policy.reassessmentIntervalHours * 60 * 60_000)
+    const retryBefore = new Date(now.getTime() - FAILED_REASSESSMENT_RETRY_MS)
+    const providers = await AppDataSource.getRepository(AutomotiveProviderEntity)
+        .createQueryBuilder('provider')
+        .select('provider.id', 'id')
+        .where('provider.status = :status', { status: AutomotiveProviderStatus.Active })
+        .andWhere('(provider.trustReassessedAt IS NULL OR provider.trustReassessedAt <= :dueBefore)', { dueBefore })
+        .andWhere('(provider.trustReassessmentAttemptedAt IS NULL OR provider.trustReassessmentAttemptedAt <= :retryBefore)', { retryBefore })
+        .orderBy('provider.trustReassessmentAttemptedAt', 'ASC', 'NULLS FIRST')
+        .addOrderBy('provider.createdAt', 'ASC')
+        .addOrderBy('provider.id', 'ASC')
+        .limit(Math.max(1, Math.min(limit, 500)))
+        .getRawMany<{ id: string }>()
     let changed = 0
+    let failed = 0
     for (const provider of providers) {
-        const result = await reassessAutoCareProviderTrust(provider.id)
-        if (result?.changed) changed += 1
+        try {
+            const result = await reassessAutoCareProviderTrust(provider.id)
+            if (result?.changed) changed += 1
+        } catch (error) {
+            failed += 1
+            logError('AutoCare trust reassessment failed for provider', error, { providerId: provider.id })
+            metrics.increment('autocare_trust_reassessment_failed_total')
+            // Keep trustReassessedAt unchanged so the failed provider stays due.
+            // Retry it after the backoff, without blocking other providers.
+            await AppDataSource.getRepository(AutomotiveProviderEntity).update(
+                { id: provider.id },
+                { trustReassessmentAttemptedAt: new Date() },
+            )
+        }
     }
-    return { scanned: providers.length, changed }
+    return { scanned: providers.length, changed, failed }
 }

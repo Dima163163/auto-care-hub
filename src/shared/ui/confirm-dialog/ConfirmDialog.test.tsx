@@ -92,4 +92,24 @@ describe('ConfirmDialog', () => {
         expect(onConfirm).not.toHaveBeenCalled()
         expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     })
+
+    it('keeps keyboard focus inside a dialog with long content', async () => {
+        const user = userEvent.setup()
+        render(
+            <I18nProvider>
+                <ConfirmDialog isOpen title="Report message" description="Review the report before sending." onCancel={vi.fn()} onConfirm={vi.fn()}>
+                    <label htmlFor="report-details">Details</label>
+                    <textarea id="report-details" rows={20} />
+                </ConfirmDialog>
+            </I18nProvider>,
+        )
+
+        expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus()
+        await user.tab()
+        expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus()
+        await user.tab()
+        expect(screen.getByRole('textbox', { name: 'Details' })).toHaveFocus()
+        await user.tab({ shift: true })
+        expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus()
+    })
 })

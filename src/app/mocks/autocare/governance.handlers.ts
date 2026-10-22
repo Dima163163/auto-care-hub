@@ -92,7 +92,7 @@ export const governanceHandlers = [
         return HttpResponse.json({
             generatedAt: new Date().toISOString(),
             providers: { total: providers.length, active: providers.filter((provider) => provider.status === 'active').length, verified: providers.filter((provider) => provider.verified).length, trusted: providers.filter((provider) => provider.trustBadge === 'trusted').length, suspended: providers.filter((provider) => provider.status === 'suspended').length },
-            reviews: { approved: reviews.filter((review) => review.status !== 'pending' && review.status !== 'rejected').length, pending: reviews.filter((review) => review.status === 'pending').length, rejected: reviews.filter((review) => review.status === 'rejected').length, anomalyCandidates },
+            reviews: { approved: reviews.filter((review) => review.status !== 'pending' && review.status !== 'rejected').length, pending: reviews.filter((review) => review.status === 'pending').length, rejected: reviews.filter((review) => review.status === 'rejected').length, anomalyCandidates, analysisWindow: { recentLimit: 1000, sampled: reviews.length, truncated: false } },
             requests: { total: mockAutoCareServiceRequests.length, completed, cancelled, noShows },
             ranking: { trustSnapshots: reassessedProviders, reassessedProviders, evidenceCoveragePercent: providers.length === 0 ? 0 : Number(((reassessedProviders / providers.length) * 100).toFixed(1)) },
             catalog: { activeDefinitions: 18, activeOffers: providers.length * 4, providersWithOffers: providers.length, offerCoveragePercent: providers.length === 0 ? 0 : 100, offersWithDescription: providers.length * 4, offersWithPrice: providers.length * 4, priceCoveragePercent: 100 },

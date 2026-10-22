@@ -7,12 +7,14 @@ the current task.
 ## First Read
 
 1. `PROJECT_CONTEXT.md` - compressed project memory and current handoff.
-2. `SKILLS.md` - short project-specific review checklists.
-3. `docs/agent-rules/workflow.md` - git workflow, checks, and local dirty-file
+2. `docs/diagrams/README.md` - PlantUML navigation map, task-to-file index and
+   source freshness check; choose the relevant diagram before scanning code.
+3. `SKILLS.md` - short project-specific review checklists.
+4. `docs/agent-rules/workflow.md` - git workflow, checks, and local dirty-file
    handling.
-4. `docs/agent-rules/project-structure.md` - stack and important paths.
-5. `docs/agent-rules/coding.md` - coding, i18n, UI, and image-upload rules.
-6. `docs/agent-rules/subagents.md` - read-only subagent roles and limits.
+5. `docs/agent-rules/project-structure.md` - stack and important paths.
+6. `docs/agent-rules/coding.md` - coding, i18n, UI, and image-upload rules.
+7. `docs/agent-rules/subagents.md` - read-only subagent roles and limits.
 
 For auth, provider/admin permissions, messaging privacy, uploads, subscriptions,
 bonuses, deployment security, CSRF/XSS/rate-limit, Redis, or password-flow
@@ -87,6 +89,11 @@ must state the exact limitation and the proposal remains incomplete.
 ## Token Economy
 
 - Do not rescan the whole project by default.
+- Use `docs/diagrams/README.md` and its selected source anchors for navigation;
+  run `node docs/diagrams/check-map.mjs --scope <area>` before relying on a map.
+  If it reports drift, inspect the named files and update the affected `.puml`,
+  manifest and SVG. A matching fingerprint is navigation evidence, not a proof
+  of behavior or security. Do not refresh hashes without reviewing the change.
 - Start with `PROJECT_CONTEXT.md`, then targeted files. Use
   `SECURITY_CONTEXT.md` instead of broad rescans for target security tasks.
 - Update `PROJECT_CONTEXT.md` when a completed change affects future work.

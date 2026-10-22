@@ -1,0 +1,136 @@
+{
+  "baseline": "8840ae8",
+  "database": "dedicated PostgreSQL 17, loopback 29442",
+  "mocks": false,
+  "findings": [
+    {
+      "id": "U14",
+      "reproduced": true,
+      "rawPersistedJsonbHasPlaintext": true
+    },
+    {
+      "id": "U15",
+      "reproduced": true,
+      "superAdminPrivateMessagePersisted": true
+    },
+    {
+      "id": "U16",
+      "reproduced": true,
+      "reviewApprovedButPersistedEvidenceStillPending": true
+    },
+    {
+      "id": "U18",
+      "reproduced": true,
+      "unexpiredBalanceBefore": 100,
+      "persistedBalanceAfter": 0
+    },
+    {
+      "id": "U19",
+      "reproduced": true,
+      "persistedDuplicateCases": 4,
+      "trustBefore": 45.5,
+      "trustAfter": 0,
+      "moderationPenalty": 40
+    },
+    {
+      "id": "U20",
+      "reproduced": true,
+      "controlledReadUpdateSaveInterleaving": true,
+      "persistedSecurityStateReverted": [
+        "status",
+        "passwordHash",
+        "tokenVersion"
+      ]
+    },
+    {
+      "id": "N24",
+      "reproduced": true,
+      "realParallelReadsAndWrites": true,
+      "barrierOnlyDelaysCompletedDatabaseReads": true,
+      "successfulSingleUseRevisions": 2
+    },
+    {
+      "id": "N25",
+      "reproduced": true,
+      "postgresOrderedWorkerPasses": 3,
+      "limit": 1,
+      "nullProviderNeverReassessed": true
+    },
+    {
+      "id": "N23",
+      "reproduced": true,
+      "actualPostgresHistoryGrowthMeasured": true,
+      "samples": [
+        {
+          "name": "request-list",
+          "insertedHistoryRows": 100,
+          "durationMs": 108,
+          "queries": 516,
+          "resultCount": 102,
+          "heapDeltaBytes": -7511240
+        },
+        {
+          "name": "provider-analytics",
+          "insertedHistoryRows": 100,
+          "durationMs": 12,
+          "queries": 11,
+          "heapDeltaBytes": 2492216
+        },
+        {
+          "name": "request-list",
+          "insertedHistoryRows": 1000,
+          "durationMs": 845,
+          "queries": 5016,
+          "resultCount": 1002,
+          "heapDeltaBytes": 2821584
+        },
+        {
+          "name": "provider-analytics",
+          "insertedHistoryRows": 1000,
+          "durationMs": 26,
+          "queries": 11,
+          "heapDeltaBytes": 12842536
+        }
+      ]
+    },
+    {
+      "id": "N21",
+      "reproduced": true,
+      "insertedRecentApprovedReviews": 1000,
+      "actualPending": 3,
+      "displayedPending": 0
+    }
+  ],
+  "scale": [
+    {
+      "name": "request-list",
+      "insertedHistoryRows": 100,
+      "durationMs": 108,
+      "queries": 516,
+      "resultCount": 102,
+      "heapDeltaBytes": -7511240
+    },
+    {
+      "name": "provider-analytics",
+      "insertedHistoryRows": 100,
+      "durationMs": 12,
+      "queries": 11,
+      "heapDeltaBytes": 2492216
+    },
+    {
+      "name": "request-list",
+      "insertedHistoryRows": 1000,
+      "durationMs": 845,
+      "queries": 5016,
+      "resultCount": 1002,
+      "heapDeltaBytes": 2821584
+    },
+    {
+      "name": "provider-analytics",
+      "insertedHistoryRows": 1000,
+      "durationMs": 26,
+      "queries": 11,
+      "heapDeltaBytes": 12842536
+    }
+  ]
+}

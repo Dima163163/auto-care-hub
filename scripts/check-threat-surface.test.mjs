@@ -20,8 +20,8 @@ const sourceMap = {
         "app.post('/owner/autocare-providers/media', { preHandler: autoCareUploadRateLimit",
         "app.post('/v1/chats/:chatId/attachments', { preHandler: serviceRequestTransitionRateLimit",
         "app.post('/v1/service-requests/:requestId/attachments', { preHandler: serviceRequestTransitionRateLimit",
-        "app.get('/v1/chats/:chatId/ws', { websocket: true }",
-        "app.get('/v1/service-requests/:requestId/ws', { websocket: true }",
+        "app.get('/v1/chats/:chatId/ws', { websocket: true, preHandler: autoCareWebSocketConnectionRateLimit }",
+        "app.get('/v1/service-requests/:requestId/ws', { websocket: true, preHandler: autoCareWebSocketConnectionRateLimit }",
         'isAllowedWebSocketOrigin(request)',
         'getWebSocketToken(request)',
         'await requireAuth(authRequest)',
@@ -52,4 +52,14 @@ test('threat-surface contract reports the exact missing control', () => {
     const platformReviews = results.find((result) => result.name === 'Platform review abuse controls')
     assert.equal(platformReviews?.status, 'blocked')
     assert.match(platformReviews?.detail ?? '', /createPlatformReviewRateLimit/)
+})
+
+test('blocks WebSocket endpoints when connection rate limiting is removed', () => {
+    const results = evaluateThreatSurface({
+        ...sourceMap,
+        autocare: sourceMap.autocare.replaceAll(', preHandler: autoCareWebSocketConnectionRateLimit', ''),
+    })
+    const websocket = results.find((result) => result.name === 'WebSocket authentication and origin controls')
+    assert.equal(websocket?.status, 'blocked')
+    assert.match(websocket?.detail ?? '', /autoCareWebSocketConnectionRateLimit/)
 })

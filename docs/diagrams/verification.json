@@ -1,0 +1,526 @@
+{
+  "schemaVersion": 1,
+  "verifiedOn": "2026-10-15",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "branch": "docs/plantuml-project-map-2026-10-15",
+  "renderer": {
+    "name": "PlantUML",
+    "version": "1.2026.8",
+    "layout": "smetana",
+    "release": "https://github.com/plantuml/plantuml/releases/tag/v1.2026.8",
+    "jarSha256": "5e1ecfa8ecd32c90b03bbf3b1eb6f020943f98ab0fcf4032be31a0002ee2c462",
+    "runtime": "Existing JetBrains Runtime OpenJDK 25.0.3",
+    "renderLocation": "local",
+    "graphvizRequired": false,
+    "sourceUploaded": false,
+    "jarStoredInRepository": false
+  },
+  "syntaxCheck": {
+    "result": "PASS",
+    "command": "java -Djava.awt.headless=true -jar /path/to/plantuml.jar -charset UTF-8 -checkonly docs/diagrams",
+    "diagrams": 9
+  },
+  "svgRender": {
+    "result": "PASS",
+    "command": "java -Djava.awt.headless=true -jar /path/to/plantuml.jar -charset UTF-8 -failfast2 -tsvg -o rendered 'docs/diagrams/0*.puml'",
+    "previews": 9,
+    "xmlParse": "PASS"
+  },
+  "sourceFreshness": {
+    "sourceAnchors": 51,
+    "inventories": 4,
+    "positiveChecks": [
+      {
+        "scope": "all",
+        "exitCode": 0,
+        "sourceAnchors": 51
+      },
+      {
+        "scope": "context",
+        "exitCode": 0,
+        "sourceAnchors": 5
+      },
+      {
+        "scope": "runtime",
+        "exitCode": 0,
+        "sourceAnchors": 8
+      },
+      {
+        "scope": "frontend",
+        "exitCode": 0,
+        "sourceAnchors": 10
+      },
+      {
+        "scope": "backend",
+        "exitCode": 0,
+        "sourceAnchors": 6
+      },
+      {
+        "scope": "data",
+        "exitCode": 0,
+        "sourceAnchors": 9
+      },
+      {
+        "scope": "requests",
+        "exitCode": 0,
+        "sourceAnchors": 6
+      },
+      {
+        "scope": "auth",
+        "exitCode": 0,
+        "sourceAnchors": 8
+      },
+      {
+        "scope": "outbox",
+        "exitCode": 0,
+        "sourceAnchors": 5
+      },
+      {
+        "scope": "security",
+        "exitCode": 0,
+        "sourceAnchors": 6
+      }
+    ],
+    "negativeCheck": {
+      "repository": "../autocare-hub",
+      "scope": "frontend",
+      "expectedExitCode": 1,
+      "actualExitCode": 1,
+      "reportedDrift": [
+        "DRIFT package.json: content changed [frontend]",
+        "DRIFT src/app/layout.page.tsx: content changed [frontend]",
+        "DRIFT src/app/next/NextClientApp.tsx: content changed [frontend]",
+        "DRIFT src/entities/automotive-service/api/autocareApi.ts: content changed [frontend]",
+        "DRIFT src/entities/automotive-service/api/autocare: directory missing [frontend]"
+      ]
+    }
+  },
+  "visualInspection": {
+    "result": "PASS",
+    "diagrams": [
+      "01-system-context.puml",
+      "05-domain-data.puml"
+    ],
+    "method": "Locally rendered PNGs inspected for readability, clipping and overlap"
+  },
+  "artifacts": [
+    {
+      "scope": "context",
+      "source": "01-system-context.puml",
+      "sourceSha256": "fd38c6b64ec81ce5e614e4dc5f33a01e5716caf4f370b4d2b9187f5ae7550c77",
+      "preview": "rendered/01-system-context.svg",
+      "previewSha256": "e63103c57eb796a1ec9a96c644185fab8cbb5df80baa2b6870feff75c02632b2",
+      "width": "1552px",
+      "height": "627px"
+    },
+    {
+      "scope": "runtime",
+      "source": "02-runtime.puml",
+      "sourceSha256": "d513cdbaed2e07f39525725d3d2ee7ce7d71174c55e9d7dc30804a1230f4e595",
+      "preview": "rendered/02-runtime.svg",
+      "previewSha256": "0d18eb22d2162fd5743270279d970cd168eab743102e5dd9147a5160bfe8b7c4",
+      "width": "1812px",
+      "height": "714px"
+    },
+    {
+      "scope": "frontend",
+      "source": "03-frontend.puml",
+      "sourceSha256": "17c54408d860b210785b34748492c6537cce2006b5eab67ac107b58b4214f450",
+      "preview": "rendered/03-frontend.svg",
+      "previewSha256": "bdf792e79356d347b36b92bff57b5e604e5063bde453c08f51b0253885852669",
+      "width": "1917px",
+      "height": "1222px"
+    },
+    {
+      "scope": "backend",
+      "source": "04-backend.puml",
+      "sourceSha256": "8606358456d979d8f0e181d0f3731274ea5b272859d7020d310df2c87d25b867",
+      "preview": "rendered/04-backend.svg",
+      "previewSha256": "65db4fd23648dd4c09f7e884ff3208ac1ebaa330502dfe46778fa435acb556b3",
+      "width": "2076px",
+      "height": "827px"
+    },
+    {
+      "scope": "data",
+      "source": "05-domain-data.puml",
+      "sourceSha256": "7765c6fb1b871a3c5516aa33314c827fbdac2077e3aa5279bd709a6fccfd404b",
+      "preview": "rendered/05-domain-data.svg",
+      "previewSha256": "3d051e95663bb3e1dae399e2999dcae96f8d96f0c047735bd921e4d4458cdf19",
+      "width": "2473px",
+      "height": "914px"
+    },
+    {
+      "scope": "requests",
+      "source": "06-request-workflow.puml",
+      "sourceSha256": "bdbaca7b4c56d35e759f7bb33bbc3752b47e0119fc7b6949a59866fee33d7f92",
+      "preview": "rendered/06-request-workflow.svg",
+      "previewSha256": "6b0a61c4914baf0769660592105fd890ba66fab5ac26b5def3d3157c6f9d8356",
+      "width": "1431px",
+      "height": "654px"
+    },
+    {
+      "scope": "auth",
+      "source": "07-auth-session.puml",
+      "sourceSha256": "8c2dd024001c24f65f535fb62dbad14f780483bc37c09c112b0167bbf5eb77db",
+      "preview": "rendered/07-auth-session.svg",
+      "previewSha256": "c1e65d766ea558dcc2565e79b04a9bc96ce43b2e89454ad5a3b69aef493fbef8",
+      "width": "1122px",
+      "height": "1301px"
+    },
+    {
+      "scope": "outbox",
+      "source": "08-outbox-maintenance.puml",
+      "sourceSha256": "da904f08625daf6e0e44361b5199b2860e3c75ec26fbc7c2acf4a2c1c68ec92b",
+      "preview": "rendered/08-outbox-maintenance.svg",
+      "previewSha256": "cd5d208226f9a9f7e29c5fb0e6426615d8fe49a32566c16de6d56e23a89c0ae7",
+      "width": "1646px",
+      "height": "1304px"
+    },
+    {
+      "scope": "security",
+      "source": "09-access-privacy.puml",
+      "sourceSha256": "3833ffe6107a1b6cd36033059de0dd780f62ccdf81f69eae34098360b47e2e98",
+      "preview": "rendered/09-access-privacy.svg",
+      "previewSha256": "f267a225742b2469e1eeba5e19729e07eb923adb1cc7841964d7f3929ddb96d0",
+      "width": "1632px",
+      "height": "777px"
+    }
+  ],
+  "sharedStyleSha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf",
+  "incrementalUpdates": [
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "sourceAnchorCount": 52,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "rendererJarSha256": "3845bf1037df6029ae1b8cb1be69f645711797035648e114b765289c3406d45d",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "UX17 restores draft time and anchors relative date",
+      "sourceAnchorCount": 54,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "rendererJarSha256": "3845bf1037df6029ae1b8cb1be69f645711797035648e114b765289c3406d45d",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "UX18 shared provider preview formatting and mobile comparison scroll",
+      "sourceAnchorCount": 60,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
+    },
+    {
+      "date": "2026-10-20",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "UX16 viewport-bounded ConfirmDialog and reachable actions",
+      "sourceAnchorCount": 61,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
+    },
+    {
+      "date": "2026-10-21",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "outbox",
+      "change": "U14 encrypt raw enqueue and backfill legacy recipients",
+      "sourceAnchorCount": 62,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "U20 conditional preference/login writes and transactional password change",
+      "sourceAnchorCount": 63,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "security",
+      "change": "U15 shared private chat write policy across chat and request APIs",
+      "sourceAnchorCount": 66,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "outbox",
+      "change": "U17 atomic provider invitation email with encrypted one-time token",
+      "sourceAnchorCount": 68,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data",
+      "change": "U18 replay bonus lots and expire only unspent credit",
+      "sourceAnchorCount": 70,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data",
+      "change": "U19 canonical guarantee case and unproven claim trust policy",
+      "sourceAnchorCount": 74,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "runtime",
+      "change": "U21 refresh web and API dependency locks; Next configuration comment only",
+      "sourceAnchorCount": 74,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data",
+      "change": "U16 searchable HMAC index for encrypted evidence references",
+      "sourceAnchorCount": 77,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "N26 reject bcrypt-truncated secrets at creation and verification",
+      "sourceAnchorCount": 79,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "N28 storage-denied expiry hint cannot interrupt in-memory auth cleanup",
+      "sourceAnchorCount": 79,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data,outbox",
+      "change": "N25 fair due trust reassessment queue with failed-provider backoff and policy invalidation",
+      "sourceAnchorCount": 81,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data,frontend",
+      "change": "N24 atomic review revision and version-scoped moderation evidence",
+      "sourceAnchorCount": 91,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N27 AST checker covers registered domain endpoint factories and CI negative tests",
+      "sourceAnchorCount": 94,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "runtime",
+      "change": "N31 root tooling fixtures and mandatory quality:backend suite",
+      "sourceAnchorCount": 96,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "N29 absolute refresh expiry aligned across persisted session, JWT and cookie, including OAuth",
+      "sourceAnchorCount": 99,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "requests",
+      "change": "N30 current quote retained in latest 50 revisions with stale quote decision guard",
+      "sourceAnchorCount": 100,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "requests,outbox",
+      "change": "N32 quote revision notification identity preserves event type and retry deduplication",
+      "sourceAnchorCount": 100,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N33 safe localized parsing, timeout and server error presentation with retry",
+      "sourceAnchorCount": 101,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N34 shared SSR/client auth metadata policy with SeoHead above all route layouts",
+      "sourceAnchorCount": 107,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "backend,data,frontend",
+      "change": "N21 full review status aggregation and disclosed bounded anomaly/calibration window",
+      "sourceAnchorCount": 110,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "backend",
+      "change": "N22 shared first provider response policy across owner, admin and public trust",
+      "sourceAnchorCount": 113,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "backend,requests,frontend",
+      "change": "N23 partial cursor request pages with SQL branch scope and batched relation hydration; legacy array routes remain full",
+      "sourceAnchorCount": 118,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "backend,requests,frontend",
+      "change": "N23 bounded legacy arrays, paged client and owner screens, request and message analytics scans, SQL aggregate counts",
+      "sourceAnchorCount": 129,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N23 paginated request counters explicitly marked partial until all pages load",
+      "sourceAnchorCount": 129,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    }
+  ],
+  "limitations": [
+    "Selected source anchors and inventories are not an exhaustive import graph.",
+    "Matching fingerprints do not prove security or semantic completeness; inspect task code and tests.",
+    "Production deployment and external acceptance are not established by these diagrams."
+  ]
+}

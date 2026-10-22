@@ -185,10 +185,10 @@ function clearAuthenticatedClientState(
     api: Parameters<typeof rawBaseQuery>[1],
 ) {
     authRefreshBlocked = true
-    markSessionExpired()
     clearAccessToken()
     clearCsrfToken()
     api.dispatch(baseApi.util.resetApiState())
+    markSessionExpired()
     void clearIdentityScopedPwaCaches()
 }
 
