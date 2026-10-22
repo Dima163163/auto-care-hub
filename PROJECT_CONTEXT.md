@@ -1527,4 +1527,6 @@ navigation update title, canonical and robots. Next SSR metadata and the client
 share pure auth copy/noindex rules. Auth navigation clears stale alternate links
 and structured data; public provider-specific copy remains in place. Tests for
 server metadata and `/services` to `/login` client transition and the Next
-production build passed. The deployed browser chain is still unverified.
+production build passed. The SEO quality guard now checks the extracted
+shared noindex policy and passes its root tooling test. The deployed browser
+chain is still unverified.

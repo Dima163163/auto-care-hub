@@ -141,7 +141,8 @@
 - [x] N33: parsing/timeout/5xx показывают локализованный текст с retry;
   централизованная клиентская telemetry остаётся открытой.
 - [x] N34: SeoHead на уровне маршрутизатора и общая server/client политика
-  auth copy/noindex; browser chain после публикации остаётся открытым.
+  auth copy/noindex; SEO quality guard сверяет вынесенную shared policy;
+  browser chain после публикации остаётся открытым.
 - [x] N21: полный статусный backlog считается SQL-агрегацией; bounded анализ
   аномалий/калибровки помечен в API и интерфейсе. Server unit/build, web
   focused test/lint/build PASS; повторная проверка >1000 на PostgreSQL ожидает
