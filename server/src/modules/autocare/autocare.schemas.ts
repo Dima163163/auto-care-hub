@@ -422,6 +422,11 @@ export const autoCareChatThreadListQuerySchema = z.object({
     limit: z.coerce.number().int().positive().max(100).optional(),
 }).strict()
 
+export const autoCareServiceRequestListQuerySchema = z.object({
+    cursor: z.string().trim().max(2_048).optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+}).strict()
+
 export const serviceMessageOfferDecisionSchema = z.object({
     decision: z.enum(['accept', 'decline']),
 })

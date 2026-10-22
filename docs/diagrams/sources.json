@@ -305,7 +305,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare.routes.ts",
-      "sha256": "1f52e8f735d515caa73645a4ca749e6c37df8c96e959c9cf4dbaccfbe54c1cb2",
+      "sha256": "71ccadb0d41327b25530c08a1fb359320015ea69bbe95491b10b21315078d552",
       "scopes": [
         "backend"
       ]
@@ -511,14 +511,14 @@
     },
     {
       "path": "src/entities/automotive-service/api/autocareApi.ts",
-      "sha256": "0b0e8a131d8501301edaabf1e1017c634e8eba513347f339b472db455ecb4690",
+      "sha256": "dc4aa155ccacb63faa2ad4add19d24b04eadc6b534600e609bea873c0b05c04f",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/entities/automotive-service/index.ts",
-      "sha256": "86515f307eabd208cf41b874901a6e6abb8bd8cd341a1acbcaade7ae2d09bb2e",
+      "sha256": "c933f8802d0b3ba2c251e955a4f276f0f72971da562c7f35b89cdeb87b00da1a",
       "scopes": [
         "frontend"
       ]
@@ -760,7 +760,7 @@
     },
     {
       "path": "server/src/modules/autocare/request-read.service.ts",
-      "sha256": "d94239cba749789d1c9d9614e58bd60c6a71ee6467887ce68dfe4d7b55c524a6",
+      "sha256": "2f0bdf8a80339900361786e8176b3b5a7583d63cd5f5ac14cbb55090e9622df7",
       "scopes": [
         "requests"
       ]
@@ -855,6 +855,46 @@
       "sha256": "7c6ad35f7cb8ccd47dd714818c95c1d9d3f1d372367f26e6da64e5f908fa06b3",
       "scopes": [
         "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-request.service.ts",
+      "sha256": "4e141f59076583a47079daa39854008dcac98c2a695951e9739cd6660e55a5cc",
+      "scopes": [
+        "backend",
+        "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare.schemas.ts",
+      "sha256": "8560e15f15e9263acf491c73b4f0d0f6448585686da9f9465dcb4c438a9873da",
+      "scopes": [
+        "backend",
+        "requests"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/requests.endpoints.ts",
+      "sha256": "758d51f33439ad0621c6085e49062b7db0b46e36e92688d10149ea33f025803f",
+      "scopes": [
+        "frontend",
+        "requests"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/requests.schemas.ts",
+      "sha256": "c24fb782666c5401744e2bb7f647e59a08002443c7b8d5954c0044dce4281555",
+      "scopes": [
+        "frontend",
+        "requests"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/requests.types.ts",
+      "sha256": "c8455fde28978a93c106a6c0b3c6974e3f3dc19c521a52f06d8eaca8bbaad5fd",
+      "scopes": [
+        "frontend",
+        "requests"
       ]
     }
   ],

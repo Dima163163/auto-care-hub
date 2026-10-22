@@ -10,7 +10,7 @@ package "Identity / platform" {
 package "modules/autocare" {
   component "autocare.routes.ts\ninput normalization / route guards" as Routes
   component "Catalog / providers\ncatalog-read / provider-discovery\nprovider-workspace / resources / media" as Providers
-  component "Requests\nrequest-create / read / quote\ntransition / reschedule / availability" as Requests
+  component "Requests\nrequest-create / read (cursor pages) / quote\ntransition / reschedule / availability" as Requests
   component "Chat\nchat-read / messaging / attachment\nrequest-conversation / gateway" as Chat
   component "Quality / marketplace\nreviews / moderation / trust-score\nbonus / guarantee / broadcast" as Quality
   component "Analytics / response policy\nowner + admin + trust\ncurrent member / branch / time checks" as Analytics
@@ -55,6 +55,10 @@ note bottom of Routes
   autocare.service / request / chat facades сохраняют exports.
   Бизнес-логику искать в concrete use-case модулях,
   сверяясь с docs/architecture/AUTOCARE_RESPONSIBILITIES.md.
+end note
+note bottom of Requests
+  N23 partial: scoped cursor pages hydrate relations in batches.
+  Legacy array routes still read full history for existing clients.
 end note
 footer Показаны зависимости уровня ответственности, не полный import graph
 @enduml

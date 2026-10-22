@@ -2,6 +2,8 @@
 
 export type AutoCareAvailability = { date: string; timezone?: string; durationMinutes: number; slots: Array<{ startTime: string; endTime: string; startsAt: string }> }
 
+export type AutoCareServiceRequestPage = { items: AutoCareServiceRequest[]; nextCursor: string | null }
+
 export type AutoCareServiceRequest = {
     id: string
     providerId: string

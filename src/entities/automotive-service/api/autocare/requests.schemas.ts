@@ -51,6 +51,7 @@ export const autoCareServiceRequestSchema = z.object({
 }).passthrough()
 
 export const autoCareServiceRequestsSchema = z.array(autoCareServiceRequestSchema)
+export const autoCareServiceRequestPageSchema = z.object({ items: autoCareServiceRequestsSchema, nextCursor: z.string().nullable() })
 
 const autoCareServiceMessageOfferSchema = z.object({ type: z.enum(['discount', 'alternative']), title: z.string(), description: z.string().nullable(), discountPercent: z.number().int().nullable(), couponCode: z.string().nullable(), amountMinor: z.number().finite().nullable(), currencyCode: z.string().nullable(), expiresAt: z.string().nullable(), status: z.enum(['pending', 'accepted', 'declined']) }).passthrough()
 
