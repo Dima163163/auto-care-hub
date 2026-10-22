@@ -1,5 +1,16 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление U21 — 2026-10-22
+
+Web/API зависимости и lockfiles обновлены по текущим advisories. Оба
+`npm audit` вернули 0 вместо 8 web и 6 API entries. После `npm ci` прошли
+web 647/647, API 1436/1436, lint, Vite/API/Next production real builds,
+fixture leakage 193 файлов и Next route/runtime checks. Прямые версии:
+Next 16.4.2, sharp 0.35.5, Vitest 4.1.12; полный список и ограничения:
+`docs/audits/DEPENDENCY_UPGRADE_2026-10-22.md`. PostgreSQL/Redis integration,
+real E2E, published migration manifest и staging acceptance открыты.
+Диаграммы не менялись; 74 anchors актуальны.
+
 ## Локальное исправление U19 — 2026-10-22
 
 Создание guarantee claim блокирует связанную заявку и допускается только для

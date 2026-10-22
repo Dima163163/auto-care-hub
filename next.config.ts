@@ -16,8 +16,8 @@ const nextConfig: NextConfig = {
     // The legacy feature-sliced tree uses `src/pages` as a component folder.
     // Restricting Next page extensions prevents it from being mistaken for
     // the Pages Router while we migrate routes incrementally into `app/`.
-    // Next 16.3.6 root convention discovery parses only the last extension;
-    // proxy.js avoids its composite-extension bug. Legacy FSD pages are TSX.
+    // Root convention discovery parses only the last extension; proxy.js
+    // avoids composite-extension ambiguity. Legacy FSD pages are TSX.
     pageExtensions: ['page.tsx', 'page.ts', 'route.ts', 'route.tsx', 'js'],
     async rewrites() {
         return [

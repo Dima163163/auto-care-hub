@@ -66,6 +66,11 @@ PlantUML 1.2026.2. PostgreSQL race test добавлен, но локально 
 source anchors; карта проверяет 74 файла. PostgreSQL migration не запускалась
 локально.
 
+**Локальное исправление U21, 2026-10-22:** обновлены версии и lockfiles web/API;
+комментарий `next.config.ts` приведён к текущему Next. Три существующих source
+anchor получили свежие fingerprint; схема и SVG не менялись. Детали в
+[dependency upgrade](../audits/DEPENDENCY_UPGRADE_2026-10-22.md).
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |

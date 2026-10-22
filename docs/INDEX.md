@@ -1,11 +1,13 @@
 # Индекс документации AutoCare Hub
 
 Срез remote dev `8840ae8`, локальная fix-ветка `26da803`, 21 октября 2026.
-Локальные порции U20/U15/U17/U18/U19 от 22 октября описаны в `PROJECT_CONTEXT.md` и
+Локальные порции U20/U15/U17/U18/U19/U21 от 22 октября описаны в `PROJECT_CONTEXT.md` и
 `docs/diagrams/README.md`; PostgreSQL race test ожидает выполнения в среде с БД.
 Начать с [карты PlantUML](diagrams/README.md) и
 [итоговой проверки пилота](audits/PILOT_READINESS_RECHECK_2026-10-21.md).
 Повторная проверка всех отслеживаемых файлов: [file recheck](audits/REPOSITORY_FILE_RECHECK_2026-10-21.md).
+[Обновление зависимостей](audits/DEPENDENCY_UPGRADE_2026-10-22.md) фиксирует
+текущий audit и пределы локальной проверки.
 
 **Полная semantic сверка не завершена.** Этот индекс учитывает каждый найденный
 text/spec документ, PlantUML и SVG/HTML reference; статус указан для каждого файла.

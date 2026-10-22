@@ -60,7 +60,7 @@
     },
     {
       "path": "next.config.ts",
-      "sha256": "6b4880434be95be66be9877b92434c4c321af17587b7bce6b465bd09dba3b7a3",
+      "sha256": "5601817bf22b81e9494f113795908a7b1cc76d92f0ae3c0db3bc4fcfef3280d8",
       "scopes": [
         "context",
         "runtime"
@@ -68,14 +68,14 @@
     },
     {
       "path": "package.json",
-      "sha256": "164de6f419eccf72ea46c318194192c5e836f3369dcc4dde13db0a04a596dc5e",
+      "sha256": "dbea27c823eb792c3dd95c07901fd460d4e4fb0e9332473108dbffdd3fc21ecc",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "server/package.json",
-      "sha256": "c8a1cb5b4329b1ae0f706c1e8630c1cf80d4ad48876a801774e26bcd82a466f1",
+      "sha256": "5cb8df3fd3712d9846e620197499013f0ba858bc78420848b72fc1005e671c75",
       "scopes": [
         "backend"
       ]

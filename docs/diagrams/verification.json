@@ -304,6 +304,16 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "runtime",
+      "change": "U21 refresh web and API dependency locks; Next configuration comment only",
+      "sourceAnchorCount": 74,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
     }
   ],
   "limitations": [

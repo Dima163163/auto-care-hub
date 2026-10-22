@@ -156,6 +156,12 @@ Trust score учитывает один канонический открыты�
 по типу доказанным нарушением. Unit 1436/1436, API build и migration filename
 PASS; PostgreSQL migration/concurrency и published candidate не проверены.
 
+**Локальная disposition U21, 2026-10-22:** web/API lockfiles обновлены;
+`npm audit` 0/0, clean `npm ci`, web 647/647, API 1436/1436, lint,
+Vite/API/Next real build и fixture leakage PASS. Integration/E2E, опубликованная
+миграция и staging acceptance остаются открыты. Подробности:
+[dependency upgrade](DEPENDENCY_UPGRADE_2026-10-22.md).
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

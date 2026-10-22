@@ -41,7 +41,11 @@
   повтор возвращает тот же case; public trust считает только канонические
   открытые cases, неподтверждённый тип не становится moderation violation.
   Unit/build и migration filename PASS; реальная migration/DB gate открыта.
-- [ ] Исправить runtime dependencies; подтвердить
+- [x] U21: обновить web/API lockfiles и прямые версии до исправленных;
+  оба npm audit 0, `npm ci`, 647/647 web, 1436/1436 API, lint,
+  Vite/API/Next real builds и fixture leakage PASS. Integration/E2E/staging
+  на exact candidate остаются открыты.
+- [ ] Подтвердить
   U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
 
 ## Повторный UI / security аудит — 2026-10-20
@@ -98,9 +102,9 @@
   production real E2E, 17/17 metadata + 17/17 JS + 5 CSP; load samples.
   Remote dev равен baseline; PR CI action_required не заявлен PASS.
   Отчёт: `docs/audits/RUNTIME_VERIFICATION_2026-10-13.md`.
-- [ ] U21: обновить fresh vulnerable dependency entries в обоих lockfiles,
-  проверить применимость и повторить audit/build/integration/real E2E;
-  никаких force upgrades или закрытия по unit PASS.
+- [x] U21: обновлены vulnerable dependency entries в обоих lockfiles,
+  audit/build/unit и real-mode Next artifact PASS; integration/real E2E
+  ожидают PostgreSQL/Redis и staging exact candidate.
 - [x] U15: единая private write policy для request/chat messages и attachments;
   локальные unit/сборка PASS, real-stack acceptance открыта.
 - [x] U20: narrow/CAS user writes и row locks для security transitions;
