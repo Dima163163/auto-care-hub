@@ -143,6 +143,12 @@ acceptance link, а production response остаётся без token. Unit и A
 PASS. Интеграционный тест добавлен, но локально без PostgreSQL/Redis не
 выполнялся; фактическая SMTP доставка и published candidate не проверены.
 
+**Локальная disposition U18, 2026-10-22:** expiration теперь рассчитывает
+остатки начислений после распределения redemption по ближайшему expiresAt.
+Refund создаёт новый бессрочный lot. Unit 1429/1429 и API build PASS;
+PostgreSQL regression добавлен, но без server PostgreSQL/Redis локально не
+запускался. Исторические ошибочные списания и published candidate не сверены.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

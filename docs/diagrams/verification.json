@@ -143,11 +143,11 @@
     {
       "scope": "data",
       "source": "05-domain-data.puml",
-      "sourceSha256": "a8ad4647740e463e74f69c485c5cae0b4ce8ad7450dc9bfd111d8e65f7ba7d62",
+      "sourceSha256": "75c2024cf6eea66b7bac88a91ee23ba5d1a93387ad3e7426808c156e6fbdfdd0",
       "preview": "rendered/05-domain-data.svg",
-      "previewSha256": "e554483a3060041049587ff77a1a8d529b3f62cf1355e96acfe58522bac1f62a",
-      "width": "2105px",
-      "height": "789px"
+      "previewSha256": "09aa1b35a2fc4058ff49a0bfac528c6507a059314ea4328226abde9f84a6732f",
+      "width": "2226px",
+      "height": "781px"
     },
     {
       "scope": "requests",
@@ -275,6 +275,18 @@
       "scope": "outbox",
       "change": "U17 atomic provider invitation email with encrypted one-time token",
       "sourceAnchorCount": 68,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data",
+      "change": "U18 replay bonus lots and expire only unspent credit",
+      "sourceAnchorCount": 70,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

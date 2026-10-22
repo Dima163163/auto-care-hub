@@ -182,6 +182,20 @@
       ]
     },
     {
+      "path": "server/src/modules/autocare/autocare-bonus.service.ts",
+      "sha256": "f602edefa581e4c5b725fb164b8ed3c32db945ce11f54f4a41c74bec770578f1",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/bonus-lot-policy.ts",
+      "sha256": "df1119fede74a708c0599d32b47290bd14f6f91e1eaa65195dbe8ae932d21fda",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
       "path": "server/src/modules/autocare/provider-membership.service.ts",
       "sha256": "d47b8bdba3dab796511fe844f4979a855024bc3131082f98d696cdc1a7043d8b",
       "scopes": [

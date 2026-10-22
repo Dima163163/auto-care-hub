@@ -34,7 +34,10 @@
 - [x] U17: доставлять acceptance link письмом через encrypted outbox в одной
   транзакции с invitation; production response не раскрывает token. Unit/build
   PASS; DB/SMTP интеграционная приёмка ожидает CI/staging.
-- [ ] Исправить U18/U19 и runtime dependencies; подтвердить
+- [x] U18: истечение учитывает FIFO по ближайшему expiresAt и потраченный
+  остаток каждого lot; возврат создаёт отдельный бессрочный credit. Unit/build
+  PASS; PostgreSQL integration добавлен, но локально не запущен.
+- [ ] Исправить U19 и runtime dependencies; подтвердить
   U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
 
 ## Повторный UI / security аудит — 2026-10-20
@@ -98,8 +101,9 @@
   локальные unit/сборка PASS, real-stack acceptance открыта.
 - [x] U20: narrow/CAS user writes и row locks для security transitions;
   PostgreSQL race acceptance остаётся до запуска integration в CI/staging.
-- [ ] U18/U19: корректное истечение bonus lots, уникальные guarantee cases
-  и отделение complaint от доказанного нарушения в trust score.
+- [x] U18: корректное истечение bonus lots по остатку; real-DB gate открыт.
+- [ ] U19: уникальные guarantee cases и отделение complaint от доказанного
+  нарушения в trust score.
 - [ ] U16: searchable encrypted evidence reference.
 - [x] U17: production invite delivery подготовлена через encrypted outbox;
   фактическая SMTP доставка и published acceptance остаются открыты.

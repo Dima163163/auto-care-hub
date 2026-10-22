@@ -224,4 +224,45 @@ describe('AutoCare bonus transaction invariants', () => {
         expect(expirations).toHaveLength(1)
         expect(reconciled.balancePoints).toBe(500)
     })
+
+    it('does not take a fresh award when an older award was already redeemed before expiry', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const accounts = AppDataSource.getRepository(AutoCareBonusAccountEntity)
+        const ledger = AppDataSource.getRepository(AutoCareBonusLedgerEntity)
+        const secondClient = await users.save(users.create({
+            name: 'Bonus Expiry Client', email: `bonus-expiry-${suffix}@example.com`,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'hash', emailVerifiedAt: new Date(),
+        }))
+        let secondAccount: AutoCareBonusAccountEntity | null = null
+        try {
+            secondAccount = await accounts.save(accounts.create({
+                clientId: secondClient.id, providerId: provider.id,
+                balancePoints: 100, earnedPoints: 200, redeemedPoints: 100,
+            }))
+            const oldDate = new Date('2026-01-01T00:00:00.000Z')
+            const spentDate = new Date('2026-01-02T00:00:00.000Z')
+            const freshDate = new Date('2026-01-06T00:00:00.000Z')
+            for (const [id, type, points, createdAt, expiresAt] of [
+                ['old', AutoCareBonusLedgerType.Earn, 100, oldDate, new Date('2026-01-05T00:00:00.000Z')],
+                ['spent', AutoCareBonusLedgerType.Redeem, -100, spentDate, null],
+                ['fresh', AutoCareBonusLedgerType.Earn, 100, freshDate, new Date('2027-01-05T00:00:00.000Z')],
+            ] as const) {
+                await ledger.save(ledger.create({
+                    accountId: secondAccount.id, clientId: secondClient.id, providerId: provider.id,
+                    requestId: null, type, points, reason: id, idempotencyKey: `${id}-${suffix}`,
+                    expiresAt, actorId: null, createdAt,
+                }))
+            }
+
+            const [result] = await getMyAutoCareBonusAccounts(secondClient)
+            expect(result?.balancePoints).toBe(100)
+            expect(await ledger.countBy({ accountId: secondAccount.id, type: AutoCareBonusLedgerType.Expire })).toBe(0)
+        } finally {
+            if (secondAccount) {
+                await ledger.delete({ accountId: secondAccount.id })
+                await accounts.delete({ id: secondAccount.id })
+            }
+            await users.delete({ id: secondClient.id })
+        }
+    })
 })

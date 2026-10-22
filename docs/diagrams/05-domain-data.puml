@@ -85,6 +85,7 @@ entity "BonusLedger" as Ledger {
   * id : uuid
   accountId / requestId?
   type / points / idempotencyKey
+  expiresAt / createdAt
 }
 entity "OutboxEvent" as Outbox {
   * id : uuid
@@ -114,6 +115,12 @@ Request ||--o{ Claim
 Provider ||--o{ Account
 User ||--o{ Account
 Account ||--o{ Ledger
+note bottom of Ledger
+  U18: positive earn/adjustment/refund entries form lots.
+  Redemption consumes earliest expiry first;
+  expiry applies only to the unspent amount of its lot.
+  Refund is a new non-expiring credit.
+end note
 Request ..> Outbox : effects; payload association
 note bottom of Evidence
   Пунктир — логическая связь, не FK.
