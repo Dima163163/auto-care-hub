@@ -1,5 +1,18 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление U19 — 2026-10-22
+
+Создание guarantee claim блокирует связанную заявку и допускается только для
+подтверждённой записи/завершённого визита, а no-show — после соответствующего
+статуса. Повтор того же payload возвращает существующий case; иной claim
+получает 409. `caseKey` и уникальный PostgreSQL index ограничивают один
+канонический case на request. Миграция сохраняет старые дубликаты без caseKey;
+trust score считает только канонический открытый case, а claim type сам по себе
+не увеличивает счётчик доказанных moderation violations. Unit 1436/1436,
+API build и migration filename check PASS. Локально не выполнена реальная
+PostgreSQL migration/concurrency; published acceptance открыта. Обновлены
+`05-domain-data.puml`, SVG и 74 source anchors.
+
 ## Локальное исправление U18 — 2026-10-22
 
 Истечение бонусов теперь восстанавливает остаток каждого начисления из полного

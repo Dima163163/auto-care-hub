@@ -74,6 +74,7 @@ entity "TrustEvidence" as Evidence {
 entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
+  caseKey : unique canonical request?
   status / resolution
 }
 entity "BonusAccount" as Account {
@@ -120,6 +121,12 @@ note bottom of Ledger
   Redemption consumes earliest expiry first;
   expiry applies only to the unspent amount of its lot.
   Refund is a new non-expiring credit.
+end note
+note bottom of Claim
+  U19: one canonical case per request.
+  Historic duplicates retain null caseKey;
+  only the canonical case affects trust.
+  Allegations never count as proven violations.
 end note
 Request ..> Outbox : effects; payload association
 note bottom of Evidence

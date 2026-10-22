@@ -149,6 +149,13 @@ Refund создаёт новый бессрочный lot. Unit 1429/1429 и API
 PostgreSQL regression добавлен, но без server PostgreSQL/Redis локально не
 запускался. Исторические ошибочные списания и published candidate не сверены.
 
+**Локальная disposition U19, 2026-10-22:** request row lock и уникальный
+`caseKey` дают один канонический guarantee case на заявку; одинаковый retry
+возвращает прежний результат. Eligibility исключает неподтверждённый запрос.
+Trust score учитывает один канонический открытый case и не считает allegation
+по типу доказанным нарушением. Unit 1436/1436, API build и migration filename
+PASS; PostgreSQL migration/concurrency и published candidate не проверены.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

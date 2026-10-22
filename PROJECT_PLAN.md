@@ -37,7 +37,11 @@
 - [x] U18: истечение учитывает FIFO по ближайшему expiresAt и потраченный
   остаток каждого lot; возврат создаёт отдельный бессрочный credit. Unit/build
   PASS; PostgreSQL integration добавлен, но локально не запущен.
-- [ ] Исправить U19 и runtime dependencies; подтвердить
+- [x] U19: одна каноническая жалоба на заявку, проверка booking state,
+  повтор возвращает тот же case; public trust считает только канонические
+  открытые cases, неподтверждённый тип не становится moderation violation.
+  Unit/build и migration filename PASS; реальная migration/DB gate открыта.
+- [ ] Исправить runtime dependencies; подтвердить
   U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
 
 ## Повторный UI / security аудит — 2026-10-20
@@ -102,8 +106,8 @@
 - [x] U20: narrow/CAS user writes и row locks для security transitions;
   PostgreSQL race acceptance остаётся до запуска integration в CI/staging.
 - [x] U18: корректное истечение bonus lots по остатку; real-DB gate открыт.
-- [ ] U19: уникальные guarantee cases и отделение complaint от доказанного
-  нарушения в trust score.
+- [x] U19: уникальные guarantee cases и отделение complaint от доказанного
+  нарушения в trust score; real-DB gate открыт.
 - [ ] U16: searchable encrypted evidence reference.
 - [x] U17: production invite delivery подготовлена через encrypted outbox;
   фактическая SMTP доставка и published acceptance остаются открыты.

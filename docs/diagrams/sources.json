@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "001152043f829ed8bdad5f17a648d410ce9ffef544767945adf8e22d146a71ab",
+      "sha256": "43529ed2ba9bc1e8232ea678bb84ff0b3baec530a58c3578c09ff611cb9ed30b",
       "scopes": [
         "data"
       ]
@@ -161,6 +161,13 @@
       ]
     },
     {
+      "path": "server/src/database/migrations/1786430000000-UniqueGuaranteeClaimCase.ts",
+      "sha256": "816206695308a183ef9f50b0b48006f5192bab42b593f2faf531f1bf5a74c88a",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
       "path": "server/src/entities/user/user.entity.ts",
       "sha256": "066bc0d7ad810e35061e5b723b98e577c1da13412650edf1b23dbac96c2c6df7",
       "scopes": [
@@ -191,6 +198,27 @@
     {
       "path": "server/src/modules/autocare/bonus-lot-policy.ts",
       "sha256": "df1119fede74a708c0599d32b47290bd14f6f91e1eaa65195dbe8ae932d21fda",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-marketplace.service.ts",
+      "sha256": "314eae6b7f2a3be349db4b5d4d930314c6c428c446cfc46eb15c8c1e9e06394e",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/guarantee-claim-policy.ts",
+      "sha256": "43f3842278993f21feace788043d57b767885547758aee1166bc372c90e1bb73",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/trust-score.service.ts",
+      "sha256": "3f4d2b58a655df754bcd649f130e5214208c5dec75b240b6bbe2f427ac85cf74",
       "scopes": [
         "data"
       ]

@@ -19,6 +19,7 @@ import { calculateAutoCareTrustScore, type AutoCareTrustScore } from './trust-sc
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import { isApprovedAutoCareEvidenceStatus } from './moderation-evidence-policy.js'
 import { getAutoCareTrustPolicy } from '../admin/super-admin-trust-policy.service.js'
+import { countActiveGuaranteeCases } from './guarantee-claim-policy.js'
 
 function getProfileFieldCount(provider: AutomotiveProviderEntity) {
     return [
@@ -58,7 +59,7 @@ export async function reassessAutoCareProviderTrust(
     const rating = reviewCount > 0
         ? reviews.reduce((total, review) => total + review.rating, 0) / reviewCount
         : Number(provider.rating)
-    const activeGuaranteeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status)).length
+    const activeGuaranteeClaims = countActiveGuaranteeCases(claims)
     const completedInteractionCount = interactions.filter(isVerifiedCompletedVisit).length
     const cancelledInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.Cancelled).length
     const noShowInteractionCount = interactions.filter((request) => request.status === ServiceRequestStatus.NoShow).length
@@ -76,9 +77,10 @@ export async function reassessAutoCareProviderTrust(
     const responseTimeMinutes = firstResponseMinutes.length > 0
         ? firstResponseMinutes.reduce((sum, value) => sum + value, 0) / firstResponseMinutes.length
         : undefined
-    const activeClaims = claims.filter((claim) => !['resolved', 'rejected', 'closed'].includes(claim.status))
-    const complaintRate = completedInteractionCount > 0 ? activeClaims.length / completedInteractionCount : 0
-    const criticalViolationCount = activeClaims.filter((claim) => /critical|safety|fraud|identity/i.test(claim.claimType)).length
+    const complaintRate = completedInteractionCount > 0 ? activeGuaranteeClaims / completedInteractionCount : 0
+    // Claim type is an allegation, not an adjudicated moderation finding.
+    // No confirmed-violation state is persisted yet, so the proven count is 0.
+    const criticalViolationCount = 0
     const orderedReviews = [...reviews].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
     const recentReviews = orderedReviews.slice(-5)
     const priorReviews = orderedReviews.slice(0, -5)

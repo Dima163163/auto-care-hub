@@ -108,9 +108,11 @@ export class AutoCareBroadcastOfferEntity {
 
 @Entity('autocare_guarantee_claims')
 @Index(['providerId', 'status', 'createdAt'])
+@Index('UQ_autocare_guarantee_claim_case', ['caseKey'], { unique: true, where: '"caseKey" IS NOT NULL' })
 export class AutoCareGuaranteeClaimEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) requestId!: string
+    @Column({ type: 'uuid', nullable: true }) caseKey!: string | null
     @Column({ type: 'uuid' }) clientId!: string
     @Column({ type: 'uuid' }) providerId!: string
     @Column({ type: 'text' }) claimType!: string
