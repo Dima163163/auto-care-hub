@@ -51,29 +51,35 @@ export async function updateUserPreferences(
         assertNotificationPreferenceMutation(notificationMutation)
     }
 
-    if (normalizedInput.emailNotifications !== undefined) {
-        user.emailNotifications = normalizedInput.emailNotifications
+    const changes: Partial<Pick<UserEntity,
+        'emailNotifications' | 'bookingEmailNotifications' | 'preferredCity' | 'preferredCategories' | 'locale'>> = {}
+    if (normalizedInput.emailNotifications !== undefined) changes.emailNotifications = normalizedInput.emailNotifications
+    if (normalizedInput.bookingEmailNotifications !== undefined) changes.bookingEmailNotifications = normalizedInput.bookingEmailNotifications
+    if (normalizedInput.preferredCity !== undefined) changes.preferredCity = preferredCity ?? null
+    if (normalizedInput.preferredCategories !== undefined) changes.preferredCategories = preferredCategories ?? []
+    if (normalizedInput.locale !== undefined) changes.locale = locale ?? null
+
+    if (Object.keys(changes).length > 0) {
+        // The auth snapshot can predate a block, password reset, or logout-all.
+        // Update only preference columns and reject requests from that old version.
+        const result = await userRepository.update(
+            { id: user.id, status: UserStatus.Active, tokenVersion: user.tokenVersion },
+            changes,
+        )
+        if (result.affected !== 1) {
+            throw new AppError({ statusCode: 401, code: ERROR_CODES.Unauthorized, message: 'Session has expired. Please login again.' })
+        }
     }
 
-    if (normalizedInput.bookingEmailNotifications !== undefined) {
-        user.bookingEmailNotifications = normalizedInput.bookingEmailNotifications
+    const currentUser = await userRepository.findOneBy({
+        id: user.id,
+        status: UserStatus.Active,
+        tokenVersion: user.tokenVersion,
+    })
+    if (!currentUser) {
+        throw new AppError({ statusCode: 401, code: ERROR_CODES.Unauthorized, message: 'Session has expired. Please login again.' })
     }
-
-    if (normalizedInput.preferredCity !== undefined) {
-        user.preferredCity = preferredCity ?? null
-    }
-
-    if (normalizedInput.preferredCategories !== undefined) {
-        user.preferredCategories = preferredCategories ?? []
-    }
-
-    if (normalizedInput.locale !== undefined) {
-        user.locale = locale ?? null
-    }
-
-    const savedUser = await userRepository.save(user)
-
-    return toPublicUser(savedUser)
+    return toPublicUser(currentUser)
 }
 
 function assertOwner(user: UserEntity) {

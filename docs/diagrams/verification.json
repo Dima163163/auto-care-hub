@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "7d2974b0231d331201c054f803ab1202b02d5251921622369aa44dcbdc82f071",
+      "sourceSha256": "715efc61d18db356d1f385cc8f89140b8709c84bf7668dcabfbf95c03d731ad0",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "8770fdfa4f31b88b43bd8d0fc83cecc5b22aa55b5c7e535072b00f717eac5d53",
-      "width": "1052px",
-      "height": "1209px"
+      "previewSha256": "cd96b3f270490e14f1fde6e326eca208eff7df82f772ec8ce5dd450955b7493d",
+      "width": "1057px",
+      "height": "1211px"
     },
     {
       "scope": "outbox",
@@ -239,6 +239,18 @@
       "scope": "outbox",
       "change": "U14 encrypt raw enqueue and backfill legacy recipients",
       "sourceAnchorCount": 62,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "U20 conditional preference/login writes and transactional password change",
+      "sourceAnchorCount": 63,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

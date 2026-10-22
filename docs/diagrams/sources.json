@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
-  "verifiedOn": "2026-10-21",
+  "verifiedOn": "2026-10-22",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -176,7 +176,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.service.ts",
-      "sha256": "c5eadaaba5d60f64cb99c3f21b15136b26ed3662dc4a9b72214fdca559788f3b",
+      "sha256": "1a8dd1479c99e78fa3973e4b64fbc08083c463be6b37ea3960fb2744daea9ff7",
       "scopes": [
         "auth"
       ]
@@ -316,6 +316,13 @@
       "sha256": "dad5f85a3ebe81c52173d174197c6aea7926a1b00633561a6d0cd4a55bf1a428",
       "scopes": [
         "outbox"
+      ]
+    },
+    {
+      "path": "server/src/modules/users/users.service.ts",
+      "sha256": "27454e921fb9e29557a8ef8423b12b4e708ddf4fb55d831e7f32fc054b54dc5a",
+      "scopes": [
+        "auth"
       ]
     },
     {

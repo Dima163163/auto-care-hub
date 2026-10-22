@@ -35,7 +35,10 @@ export async function bootstrapSuperAdmin(input: BootstrapSuperAdminInput) {
         )
 
         const userRepository = manager.getRepository(UserEntity)
-        const existingUser = await userRepository.findOne({ where: { email } })
+        const existingUser = await userRepository.findOne({
+            where: { email },
+            lock: { mode: 'pessimistic_write' },
+        })
 
         if (existingUser) {
             // A configured address is not proof that an existing account is

@@ -1,5 +1,19 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление U20 — 2026-10-22
+
+Preferences и login counter reset теперь обновляют только разрешённые поля с
+условиями актуального status/tokenVersion/password/attempts. Смена пароля
+повторно читает User под row lock, проверяет версию и текущий hash, меняет
+hash/version и отзывает сессии в одной транзакции. Reset/verification token
+обновляют узкие поля; OAuth profile, bootstrap и account anonymization
+читают User под row lock до full save. Unit `users.service.test.ts` 3/3 и API
+build PASS. Добавлен PostgreSQL concurrency integration test, но локально
+не запущен: `initdb` есть, серверного `postgres` и Redis нет. Обновлены
+`07-auth-session.puml`, SVG и source anchors. Полный backend unit 1410/1410
+PASS. Это локальный code fix;
+production/CI race acceptance и остальные pilot blockers не закрыты.
+
 ## Повторная проверка файлов — 2026-10-21
 
 В checkout `fix/request-chat-state-isolation-2026-10-20` механически проверены

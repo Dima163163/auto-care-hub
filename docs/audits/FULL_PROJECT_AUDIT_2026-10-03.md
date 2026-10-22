@@ -126,6 +126,12 @@ run action_required не заявлен PASS. Рабочая developer БД не
 | N33 | P3 | Parsing/internal transport error показывается пользователю | Browser + исходный error helper |
 | N34 | P3 | Public → auth client navigation оставляет старые metadata | Browser head до/после direct reload + layouts |
 
+**Локальная disposition U20, 2026-10-22:** код исправлен узкими CAS updates
+и row locks для чувствительных переходов; добавлен PostgreSQL concurrency test.
+API build и целевые unit 3/3 PASS. Локальный DB race не запущен из-за отсутствия
+серверного PostgreSQL/Redis, поэтому runtime/production приёмка ещё открыта.
+Таблица выше сохраняет историческое доказательство исходного дефекта.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

@@ -241,6 +241,7 @@ export async function processOAuthCallback(
         if (identity) {
             const linkedUser = await userRepository.findOne({
                 where: { id: identity.userId },
+                lock: { mode: 'pessimistic_write' },
             })
 
             if (!linkedUser) {
@@ -373,6 +374,7 @@ export async function processOAuthLinkCallback(
         const identityRepository = manager.getRepository(OAuthIdentityEntity)
         const user = await userRepository.findOne({
             where: { id: linkRequest.userId },
+            lock: { mode: 'pessimistic_write' },
         })
 
         if (!user) {
