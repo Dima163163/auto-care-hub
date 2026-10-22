@@ -82,6 +82,11 @@ reference. Миграция заполняет индекс по существ�
 Добавлены два source anchors, всего 79. Старым паролям свыше предела нужен
 email reset; production recovery flow предстоит проверить.
 
+**Локальное исправление N28, 2026-10-22:** `07-auth-session.puml` и SVG
+отражают безопасный fallback для session expiry hint при denied
+`sessionStorage`; in-memory token/cache очищаются раньше optional hint.
+Source anchors остались 79; browser denial flow на production не проверен.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |
@@ -151,8 +156,9 @@ source scan не выполняется. Hash не подтверждает се
 - Backend — один модульный codebase; `api`/`worker`/`all` — runtime modes.
 - FK/schema details сверяются с entities и migrations; пунктирные связи ERD
   явно логические. Точные transition guards находятся в domain services.
-- Auth cleanup и production gates остаются открытыми; локальные исправления
-  private write, encrypted reference и outbox ожидают real-DB/worker проверок.
+- Production gates остаются открытыми; локальные исправления auth cleanup,
+  private write, encrypted reference и outbox ожидают browser/real-DB/worker
+  проверок.
   Актуальный рабочий аудит: [реестр находок](../audits/FULL_PROJECT_AUDIT_2026-10-03.md).
 - Production KMS/MFA, deployed topology, native clients и внешняя приёмка
   имеют собственные gates. Billing исключён из действующего pilot scope.

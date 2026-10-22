@@ -34,8 +34,8 @@ else access token no longer accepted
 end
 note over Front
   Session hint и expiry hint не содержат access token.
-  Denied sessionStorage может прервать cleanup:
-  открытая находка; защитные helpers не универсальны.
+  Denied sessionStorage не прерывает in-memory cleanup;
+  expiry hint имеет fallback в памяти вкладки.
 end note
 note over Auth, PG
   Для session-bound access проверяется persisted session;

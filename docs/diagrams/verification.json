@@ -161,10 +161,10 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "fbf0e76f5db494b789173c93e87af06401cabb0fe0ff207f3a6d6368414dc93f",
+      "sourceSha256": "dcd8d576d338f9546d79771a4393d4110902a87c2ef03fbc579f4ed514c098d8",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "7de7b6874174a74072a870b63148dccb5310354c42aa3d008e80a67c5a3812a4",
-      "width": "1057px",
+      "previewSha256": "b0dc85f97cb5db428a25e49e802233602265e6da86350eee0068bccdbcdba880",
+      "width": "1059px",
       "height": "1241px"
     },
     {
@@ -332,6 +332,18 @@
       "branch": "fix/request-chat-state-isolation-2026-10-20",
       "scope": "auth",
       "change": "N26 reject bcrypt-truncated secrets at creation and verification",
+      "sourceAnchorCount": 79,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "N28 storage-denied expiry hint cannot interrupt in-memory auth cleanup",
       "sourceAnchorCount": 79,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",

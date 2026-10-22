@@ -119,8 +119,10 @@
 - [x] N26: единый 72-byte UTF-8 limit на создание и проверку bcrypt пароля;
   длинные legacy secrets требуют email reset. Unit/build PASS, deployed recovery
   flow открыт.
-- [ ] N24/N25/N28: atomic review revision/evidence, fair trust worker,
-  cleanup при denied storage.
+- [x] N28: denied `sessionStorage` не прерывает in-memory auth cleanup;
+  expiry hint использует безопасный fallback. Unit/type/lint PASS, browser
+  denial на опубликованном кандидате открыт.
+- [ ] N24/N25: atomic review revision/evidence, fair trust worker.
 - [ ] N30/N32: отдельная current quote/latest history и notification identity
   по quote version с сохранением retry idempotency.
 - [ ] N27/N31: реальные domain endpoints в boundary guard, актуальные root

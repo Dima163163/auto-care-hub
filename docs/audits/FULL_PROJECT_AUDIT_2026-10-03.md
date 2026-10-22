@@ -173,6 +173,11 @@ migration/query и published candidate пока не проверены.
 секретов и проверяет отказ обоих, включая Unicode boundary. API build PASS;
 старым длинным паролям требуется email reset, deployed recovery не проверен.
 
+**Локальная disposition N28, 2026-10-22:** optional session expiry hint
+обрабатывает denied `sessionStorage` через in-memory fallback. `baseApi`
+очищает token/CSRF/cache до установки hint. Targeted unit, ESLint/TypeScript
+PASS; browser denial/deployed flow не проверен.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

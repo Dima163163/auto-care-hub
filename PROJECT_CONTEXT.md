@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление N28 — 2026-10-22
+
+`markSessionExpired`/`hasSessionExpired`/`clearSessionExpired` безопасно
+обрабатывают отказ `sessionStorage` и хранят короткий fallback во вкладке.
+`baseApi` очищает token, CSRF и API cache до записи optional expiry hint.
+Targeted unit, ESLint и TypeScript PASS; реальный browser denial/deployed flow
+не проверен. `07-auth-session.puml`, SVG и 79 anchors актуальны.
+
 ## Локальное исправление N26 — 2026-10-22
 
 Новые пароли и проверяемые login/change-password inputs ограничены 72 UTF-8

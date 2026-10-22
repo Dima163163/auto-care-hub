@@ -575,7 +575,7 @@
     },
     {
       "path": "src/shared/api/baseApi.ts",
-      "sha256": "b0847bc73e5a262dedf90879d7084d1017143bbe86829be87585db87a62cbce4",
+      "sha256": "5486720eac1fef55c7c7b1f84be35fe66185ab14012d9ea79e0c34db2b542d67",
       "scopes": [
         "frontend",
         "auth"
@@ -590,7 +590,7 @@
     },
     {
       "path": "src/shared/lib/auth-session-state.ts",
-      "sha256": "6d2e20eff893b50c42861c10088da2e1bd18354ddc8434c6855092814333d466",
+      "sha256": "86850556d40c6c6902cccbbbc03225094304a6284bf09591e86b9553172a9b00",
       "scopes": [
         "auth"
       ]
