@@ -272,12 +272,14 @@ scope в SQL до pagination и batch hydration вместо unbounded Promise.a
 1002 → 5016 queries, один sample 108/845 ms. Heap deltas зависят от GC;
 production memory budget/утечка не установлены. Статус: открыто.
 
-**Промежуточная порция N23, 2026-10-22:** добавлен opt-in cursor page
-контракт для client/owner списка, SQL scope до лимита и batch hydration
-связанных данных. Legacy array ответы ещё грузят всю историю для UI;
-owner/admin аналитика также остаётся unbounded. Unit 1459/1459, web
-657/657, API/Next builds и ESLint PASS. PostgreSQL budget/latency после
-исправления не измерены; пункт остаётся открытым.
+**Локальная disposition N23, 2026-10-22:** client/owner UI использует cursor
+pages по 50; SQL применяет branch scope до лимита, связанные данные
+загружаются пакетами. Legacy array ответ ограничен 100 и возвращает
+`X-Next-Cursor`. Owner/admin аналитика обрабатывает заявки блоками по 500,
+сообщения — блоками по 1000 metadata; SQL агрегирует бонусы и отзывы,
+наличие сметы. Точные lifetime счётчики сохраняются. Unit 1465/1465,
+web 659/659. PostgreSQL сценарий >1000 и реальное измерение query plan,
+latency/памяти после исправления не выполнены; приёмка бюджета открыта.
 
 ## Текущее состояние несрочной порции — 4 октября 2026
 

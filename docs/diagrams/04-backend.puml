@@ -57,8 +57,9 @@ note bottom of Routes
   сверяясь с docs/architecture/AUTOCARE_RESPONSIBILITIES.md.
 end note
 note bottom of Requests
-  N23 partial: scoped cursor pages hydrate relations in batches.
-  Legacy array routes still read full history for existing clients.
+  N23: scoped cursor pages hydrate relations in batches.
+  Legacy array routes cap at 100 and expose X-Next-Cursor.
+  Owner/admin analytics scan requests and message metadata in pages.
 end note
 footer Показаны зависимости уровня ответственности, не полный import graph
 @enduml

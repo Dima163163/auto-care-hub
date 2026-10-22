@@ -36,5 +36,6 @@ export function getCorsOptions(origins: string[]) {
         credentials: true,
         methods: [...CORS_METHODS],
         allowedHeaders: [...CORS_ALLOWED_HEADERS],
+        exposedHeaders: ['X-Next-Cursor'],
     }
 }

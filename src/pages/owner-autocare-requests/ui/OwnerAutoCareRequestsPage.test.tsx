@@ -54,7 +54,7 @@ vi.mock('@/entities/automotive-service', () => ({
     }),
     useGetOwnerAutoCareCapacityReservationsQuery: () => ({ data: [], isLoading: false, isFetching: false, isError: false }),
     useGetOwnerAutoCareCapacityResourcesQuery: () => ({ data: [], isLoading: false, isError: false }),
-    useGetOwnerAutoCareServiceRequestsQuery: () => ({ data: mocks.requestList ?? [mocks.request], isLoading: false, error: null }),
+    useAutoCareRequestPages: () => ({ data: mocks.requestList ?? [mocks.request], hasMore: false, loadMore: vi.fn(), isLoading: false, isFetching: false, error: null }),
     useMarkAutoCareServiceRequestNoShowMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useRequestAutoCareServiceRescheduleMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useUpdateOwnerAutoCareCapacityResourceMutation: () => [mocks.updateResource, { isLoading: false }],

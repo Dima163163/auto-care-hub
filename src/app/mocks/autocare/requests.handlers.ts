@@ -13,6 +13,22 @@ import { pushMockAutoCareNotification } from './mock-notifications'
 import { expireMockAutoCareQuotes } from './mock-requests'
 import { invalidMockBodyResponse } from './mock-validation'
 
+function mockRequestListResponse<T extends { id: string; createdAt: string }>(items: T[], request: Request) {
+    const params = new URL(request.url).searchParams
+    const paged = params.has('cursor') || params.has('limit')
+    const limit = params.has('limit') ? Number(params.get('limit')) : paged ? 50 : 100
+    const offset = params.has('cursor') ? Number(params.get('cursor')) : 0
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100 || !Number.isInteger(offset) || offset < 0) {
+        return HttpResponse.json({ message: 'Invalid pagination.' }, { status: 400 })
+    }
+    const ordered = [...items].sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id))
+    const page = ordered.slice(offset, offset + limit)
+    const nextCursor = offset + limit < ordered.length ? String(offset + limit) : null
+    return paged
+        ? HttpResponse.json({ items: page, nextCursor })
+        : HttpResponse.json(page, { headers: { 'X-Next-Cursor': nextCursor ?? '' } })
+}
+
 export const requestsHandlers = [
 { order: 97, handler: http.post('/api/v1/service-requests', async ({ request }) => {
         const user = currentMockUser()
@@ -112,7 +128,7 @@ export const requestsHandlers = [
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         expireMockAutoCareQuotes()
         const items = isMockEmpty(request) ? [] : mockAutoCareServiceRequests.filter((item) => item.clientId === user.id).map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
-        return HttpResponse.json(items)
+        return mockRequestListResponse(items, request)
     }) },
 { order: 112, handler: http.get('/api/v1/service-requests/:requestId', ({ params }) => {
         const user = currentMockUser()
@@ -476,7 +492,7 @@ export const requestsHandlers = [
         const items = isMockEmpty(request) ? [] : mockAutoCareServiceRequests
             .filter((item) => hasMockProviderPermission(user.id, item.providerId, 'requests', item.locationId))
             .map(({ clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...item }) => item)
-        return HttpResponse.json(items)
+        return mockRequestListResponse(items, request)
     }) },
 { order: 129, handler: http.post('/api/owner/service-requests/:requestId/confirm', ({ params }) => {
         const user = currentMockUser()

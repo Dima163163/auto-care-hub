@@ -1,8 +1,9 @@
 # Карта проекта AutoCare Hub
 
-**N23, промежуточная порция, 2026-10-22:** `04-backend.puml` и SVG показывают
-курсорные страницы заявок с SQL scope и batch hydration. Старые array
-маршруты и аналитика ещё загружают полную историю; N23 открыт.
+**N23, локальная реализация, 2026-10-22:** `03-frontend.puml` и
+`04-backend.puml` с SVG показывают cursor pages заявок с SQL scope и batch
+hydration, bounded legacy array и streaming owner/admin analytics.
+PostgreSQL budget/latency после исправления ещё не измерены.
 
 **Локальное исправление N22, 2026-10-22:** `04-backend.puml` и SVG показывают
 общую политику первого ответа для owner/admin/trust. Она использует текущее

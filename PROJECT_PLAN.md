@@ -150,9 +150,10 @@
   и public trust score; негативные случаи system/чужой филиал/отзыв доступа/
   ответ до заявки покрыты unit. Историческая семантика использует актуальное
   membership, пока нет audit intervals; PostgreSQL flow остаётся открытым.
-- [ ] N23: bounded или SQL-агрегированная аналитика на большой истории,
-  scoped pagination/batch hydration списка заявок;
-  измерить latency/память и сохранить точность lifetime/period метрик.
+- [x] N23 (код): cursor pages и batch hydration списка заявок, legacy array
+  cap 100, bounded request/message scan и SQL aggregates для аналитики.
+  Unit/web regression и build/lint проверяются; PostgreSQL >1000, query plan,
+  latency/память и production budget остаются отдельной приёмкой.
 
 ## Дополнение после публикации — 2026-10-04
 

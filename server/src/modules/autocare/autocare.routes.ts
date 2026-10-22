@@ -11,7 +11,7 @@ import { createAutoCareReview, createOwnerAutoCareCapacityResource, createOwnerA
 import { vehicleCatalogRoutes } from './vehicle-catalog.routes.js'
 import { decodeAutoCareProviderLogo } from './autocare-provider-logo-storage.js'
 import { decodeAutoCareProviderMedia, readAutoCareProviderMedia, type AutoCareProviderMediaKind } from './autocare-provider-media-storage.js'
-import { acceptAutoCareServiceQuote, assertAutoCareServiceRequestRealtimeAccess, cancelAutoCareServiceRequest, completeAutoCareServiceRequest, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceOffer, createAutoCareServiceQuote, createAutoCareServiceRequest, decideAutoCareServiceOffer, decideAutoCareServiceReschedule, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequests, getMyAutoCareServiceRequestPage, getOwnerAutoCareServiceRequests, getOwnerAutoCareServiceRequestPage, markAutoCareServiceConversationRead, markAutoCareServiceRequestNoShow, requestAutoCareServiceReschedule } from './autocare-request.service.js'
+import { acceptAutoCareServiceQuote, assertAutoCareServiceRequestRealtimeAccess, cancelAutoCareServiceRequest, completeAutoCareServiceRequest, confirmAutoCareServiceRequest, confirmOwnerAutoCareServiceRequest, createAutoCareServiceAttachment, createAutoCareServiceMessage, createAutoCareServiceOffer, createAutoCareServiceQuote, createAutoCareServiceRequest, decideAutoCareServiceOffer, decideAutoCareServiceReschedule, declineAutoCareServiceQuote, getAutoCareAvailability, getAutoCareServiceAttachment, getAutoCareServiceRequest, getAutoCareServiceRequestConversation, getMyAutoCareServiceRequestPage, getOwnerAutoCareServiceRequestPage, markAutoCareServiceConversationRead, markAutoCareServiceRequestNoShow, requestAutoCareServiceReschedule } from './autocare-request.service.js'
 import { closeServiceChatGateway, sendServiceChatEvent, subscribeServiceChat } from './service-chat.gateway.js'
 import { assertAutoCareChatRealtimeAccess, createAutoCareChat, createAutoCareChatAttachment, createAutoCareChatBlock, createAutoCareChatMessage, createAutoCareChatReport, deleteAutoCareChatMessage, getAutoCareChat, getAutoCareChatAccessContext, getAutoCareChatAttachment, getAutoCareChatThreadForRequest, listMyAutoCareChatReports, getMyAutoCareChats, markAutoCareChatRead, revokeAutoCareChatBlock } from './autocare-chat.service.js'
 import { createAutoCareBroadcastOffer, createAutoCareBroadcastRequest, createAutoCareExpertQuestion, createAutoCareFleet, createAutoCareFleetVehicle, createAutoCareGuaranteeClaim, getAutoCareFairPrice, getAutoCareProviderTrust, getAutoCareRepairTimeline, getMyAutoCareBroadcastRequests, getMyAutoCareExpertQuestions, getMyAutoCareFleets, getMyAutoCareGuaranteeClaims, getOwnerAutoCareBroadcastRequests, getAutoCareBroadcastRequest } from './autocare-marketplace.service.js'
@@ -376,12 +376,14 @@ export async function autoCareRoutes(app: FastifyInstance) {
             userAgent: request.headers['user-agent'],
         },
     }))
-    app.get('/v1/service-requests/my', async (request) => {
+    app.get('/v1/service-requests/my', async (request, reply) => {
         const user = await requireAuth(request)
         const query = validateQuery(autoCareServiceRequestListQuerySchema, request.query)
-        return query.cursor !== undefined || query.limit !== undefined
-            ? getMyAutoCareServiceRequestPage(user, query)
-            : getMyAutoCareServiceRequests(user)
+        const paged = query.cursor !== undefined || query.limit !== undefined
+        const page = await getMyAutoCareServiceRequestPage(user, paged ? query : { limit: 100 })
+        if (paged) return page
+        reply.header('X-Next-Cursor', page.nextCursor ?? '')
+        return page.items
     })
     app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/broadcast-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareBroadcastRequest(await requireVerifiedEmail(request), validateBody(createAutoCareBroadcastRequestSchema, request.body)))
@@ -740,15 +742,15 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
         return declineAutoCareServiceQuote(user, requestId, validateBody(autoCareQuoteDecisionSchema, request.body))
     })
-    app.get('/owner/service-requests', async (request) => {
+    app.get('/owner/service-requests', async (request, reply) => {
         const user = await requireAuth(request)
         const query = validateQuery(autoCareServiceRequestListQuerySchema, request.query)
         const paged = query.cursor !== undefined || query.limit !== undefined
-        const result = paged
-            ? await getOwnerAutoCareServiceRequestPage(user, query)
-            : await getOwnerAutoCareServiceRequests(user)
-        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCarePhoneContactViewed, targetType: 'autocare_service_requests', metadata: { accessorRole: user.role, itemCount: Array.isArray(result) ? result.length : result.items.length }, request })
-        return result
+        const page = await getOwnerAutoCareServiceRequestPage(user, paged ? query : { limit: 100 })
+        await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCarePhoneContactViewed, targetType: 'autocare_service_requests', metadata: { accessorRole: user.role, itemCount: page.items.length }, request })
+        if (paged) return page
+        reply.header('X-Next-Cursor', page.nextCursor ?? '')
+        return page.items
     })
     app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requireAuth(request)))
     app.post('/owner/broadcast-requests/:broadcastId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareBroadcastOffer(await requireVerifiedEmail(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId, validateBody(createAutoCareBroadcastOfferSchema, request.body)))

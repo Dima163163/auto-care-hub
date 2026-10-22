@@ -9,10 +9,13 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/entities/automotive-service', () => ({
-    useGetOwnerAutoCareServiceRequestsQuery: () => ({
+    useAutoCareRequestPages: () => ({
         data: mocks.requests,
+        hasMore: false,
+        loadMore: vi.fn(),
         error: null,
         isLoading: false,
+        isFetching: false,
         refetch: vi.fn(),
     }),
 }))

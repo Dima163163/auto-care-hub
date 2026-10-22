@@ -37,7 +37,7 @@ vi.mock('@/entities/automotive-service', () => ({
     useDecideAutoCareServiceRescheduleMutation: () => [mocks.decideReschedule, { isLoading: false, error: null }],
     useDeclineAutoCareServiceQuoteMutation: () => [mocks.declineQuote, { isLoading: false }],
     useGetMyAutoCareBonusAccountsQuery: () => ({ data: [], isLoading: false, error: null }),
-    useGetMyAutoCareServiceRequestsQuery: () => ({ data: [request, ...mocks.historyRequests], isLoading: false, isFetching: false, isError: false, error: null, refetch: vi.fn() }),
+    useAutoCareRequestPages: () => ({ data: [request, ...mocks.historyRequests], hasMore: false, loadMore: vi.fn(), isLoading: false, isFetching: false, isError: false, error: null, refetch: vi.fn() }),
     useRedeemAutoCareBonusMutation: () => [vi.fn(), { isLoading: false, error: null }],
 }))
 

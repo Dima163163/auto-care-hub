@@ -55,6 +55,11 @@ note bottom of Factories
   N27: CI находит 10 зарегистрированных factories через AST
   и проверяет transformResponse у каждого domain endpoint.
 end note
+note right of Entities
+  N23: client/owner request screens read cursor pages.
+  Only requested pages are kept in the screen state;
+  older requests load on demand.
+end note
 note right of Client
   Vite — compatibility/development entry.
   Реальный production graph исключает MSW fixtures.

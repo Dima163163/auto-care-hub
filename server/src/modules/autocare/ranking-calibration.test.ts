@@ -29,4 +29,28 @@ describe('ranking calibration report', () => {
         expect(report.buckets).toContainEqual({ label: '50-64', providerCount: 1, confirmedVisits: 0, noShowRatePercent: 0, verifiedReviewAverage: null })
         expect(report.buckets).toContainEqual({ label: '0-49', providerCount: 0, confirmedVisits: 0, noShowRatePercent: 0, verifiedReviewAverage: null })
     })
+
+    it('preserves calibration results when requests are reduced page by page', () => {
+        const now = new Date('2026-08-24T12:00:00.000Z')
+        const shared = {
+            snapshots: [{ providerId: 'provider-a', score: 82, computedAt: now }],
+            reviews: [{ providerId: 'provider-a', rating: 5, verifiedVisit: true }],
+            minimumRecommendedSample: 1,
+        }
+        const requests = [
+            { providerId: 'provider-a', status: ServiceRequestStatus.Closed, clientConfirmedAt: now, providerConfirmedAt: now },
+            { providerId: 'provider-a', status: ServiceRequestStatus.NoShow, clientConfirmedAt: null, providerConfirmedAt: null },
+            { providerId: 'provider-b', status: ServiceRequestStatus.Closed, clientConfirmedAt: now, providerConfirmedAt: now },
+        ]
+        const direct = buildRankingCalibrationReport({ ...shared, requests })
+        const reduced = buildRankingCalibrationReport({
+            ...shared,
+            requests: [],
+            requestSummary: [
+                { providerId: 'provider-a', confirmedVisits: 1, noShows: 1 },
+                { providerId: 'provider-b', confirmedVisits: 1, noShows: 0 },
+            ],
+        })
+        expect(reduced).toEqual(direct)
+    })
 })

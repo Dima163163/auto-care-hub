@@ -125,19 +125,19 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "be8632bdc408faf9beaac63a9847df5d275ff4562598f91c0b069b924697e43d",
+      "sourceSha256": "8afd3b9c6c88822f5e1f70ed6a422347720c2ae58ac0c3ebad729cd6dd729e4d",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "100198803dab996de34896df9c879be605ade046b28b679d1e5f422fd06260f3",
+      "previewSha256": "6a05419e1a4f93124ef619f7cad1ce21dc613446401214d05c3f829f6d77bc78",
       "width": "1917px",
-      "height": "1212px"
+      "height": "1215px"
     },
     {
       "scope": "backend",
       "source": "04-backend.puml",
-      "sourceSha256": "0f01920df112d8647407c84b086da3c58edf9be8e209388cb7ca15f8e5e71c48",
+      "sourceSha256": "8606358456d979d8f0e181d0f3731274ea5b272859d7020d310df2c87d25b867",
       "preview": "rendered/04-backend.svg",
-      "previewSha256": "2b22eaba6d184cf542a710bbba00623e6c5247af66752a5cfee3b864313f5ab5",
-      "width": "2021px",
+      "previewSha256": "65db4fd23648dd4c09f7e884ff3208ac1ebaa330502dfe46778fa435acb556b3",
+      "width": "2076px",
       "height": "827px"
     },
     {
@@ -487,6 +487,18 @@
       "scope": "backend,requests,frontend",
       "change": "N23 partial cursor request pages with SQL branch scope and batched relation hydration; legacy array routes remain full",
       "sourceAnchorCount": 118,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "backend,requests,frontend",
+      "change": "N23 bounded legacy arrays, paged client and owner screens, request and message analytics scans, SQL aggregate counts",
+      "sourceAnchorCount": 129,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

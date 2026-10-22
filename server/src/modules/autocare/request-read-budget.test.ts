@@ -15,6 +15,7 @@ import {
     ServiceRequestEntity,
 } from '../../entities/index.js'
 import { UserEntity, UserRole } from '../../entities/user/user.entity.js'
+import { encodeCursor } from '../../shared/http/cursor-pagination.js'
 import { getMyAutoCareServiceRequestPage, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequestPage } from './request-read.service.js'
 
 function query(rows: unknown[] = []) {
@@ -30,13 +31,12 @@ describe('bounded service request pages', () => {
         const requestQuery = query(rows)
         const quoteQuery = query([])
         const find = vi.fn().mockResolvedValue([])
-        const requestFind = vi.fn().mockResolvedValue(rows)
         const providers = rows.map((row) => ({ id: row.providerId, name: 'Provider' }))
         const locations = rows.map((row) => ({ id: row.locationId, address: 'Address' }))
         const definitions = rows.map((row) => ({ id: row.definitionId, slug: 'service', labels: { en: 'Service' } }))
         const providerFind = vi.fn().mockResolvedValue(providers)
         mocks.getRepository.mockImplementation((entity: unknown) => {
-            if (entity === ServiceRequestEntity) return { createQueryBuilder: () => requestQuery, find: requestFind }
+            if (entity === ServiceRequestEntity) return { createQueryBuilder: () => requestQuery }
             if (entity === AutoCareServiceQuoteEntity) return { createQueryBuilder: () => quoteQuery }
             if (entity === AutomotiveProviderEntity) return { find: providerFind }
             if (entity === AutomotiveServiceLocationEntity) return { find: vi.fn().mockResolvedValue(locations) }
@@ -44,7 +44,7 @@ describe('bounded service request pages', () => {
             if (entity === AutomotiveServiceOfferingEntity || entity === AutoCareRescheduleRequestEntity) return { find }
             throw new Error('Unexpected repository')
         })
-        return { requestQuery, quoteQuery, providerFind, requestFind }
+        return { requestQuery, quoteQuery, providerFind }
     }
 
     const row = (id: string) => Object.assign(new ServiceRequestEntity(), {
@@ -74,15 +74,24 @@ describe('bounded service request pages', () => {
         expect(requestQuery.take).toHaveBeenCalledWith(26)
     })
 
-    it('hydrates a legacy 102-request list in three fixed-query batches', async () => {
+    it('rejects a malformed cursor id before the database read', async () => {
+        const { requestQuery } = setup([])
+        const client = Object.assign(new UserEntity(), { id: 'client-1', role: UserRole.Client })
+        await expect(getMyAutoCareServiceRequestPage(client, {
+            cursor: encodeCursor({ createdAt: '2026-10-22T10:00:00.000Z', id: 'not-a-uuid' }),
+        })).rejects.toMatchObject({ statusCode: 400 })
+        expect(requestQuery.getMany).not.toHaveBeenCalled()
+    })
+
+    it('caps the legacy array response at 100 requests before hydration', async () => {
         const rows = Array.from({ length: 102 }, (_, index) => row(`request-${index}`))
-        const { requestFind, providerFind, quoteQuery } = setup(rows)
+        const { requestQuery, providerFind, quoteQuery } = setup(rows)
         const client = Object.assign(new UserEntity(), { id: 'client-1', role: UserRole.Client })
         const items = await getMyAutoCareServiceRequests(client)
 
-        expect(items).toHaveLength(102)
-        expect(requestFind).toHaveBeenCalledOnce()
-        expect(providerFind).toHaveBeenCalledTimes(3)
-        expect(quoteQuery.getMany).toHaveBeenCalledTimes(3)
+        expect(items).toHaveLength(100)
+        expect(requestQuery.take).toHaveBeenCalledWith(101)
+        expect(providerFind).toHaveBeenCalledOnce()
+        expect(quoteQuery.getMany).toHaveBeenCalledOnce()
     })
 })

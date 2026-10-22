@@ -3,6 +3,8 @@ import type { SelectQueryBuilder } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
 import { AutomotiveProviderEntity, AutomotiveServiceDefinitionEntity, AutomotiveServiceLocationEntity, AutomotiveServiceOfferingEntity, AutoCareServiceQuoteEntity, AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus, ServiceRequestEntity } from '../../entities/index.js'
 import { type UserEntity } from '../../entities/user/user.entity.js'
+import { AppError } from '../../shared/errors/app-error.js'
+import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
 import type { AutoCareQuoteLineItemResponse, AutoCareServiceQuoteHistoryResponse } from './autocare.types.js'
 import { getManagedProviderPermissionScopes } from './provider-access.service.js'
@@ -86,19 +88,14 @@ async function hydrateRequestPage(requests: ServiceRequestEntity[]) {
     })
 }
 
-async function hydrateRequestList(requests: ServiceRequestEntity[]) {
-    const hydrated = []
-    for (let index = 0; index < requests.length; index += 50) {
-        hydrated.push(...await hydrateRequestPage(requests.slice(index, index + 50)))
-    }
-    return hydrated
-}
-
 type RequestPageInput = { cursor?: string; limit?: number }
 
 function applyRequestCursor(query: SelectQueryBuilder<ServiceRequestEntity>, cursor?: string) {
     if (!cursor) return query
     const value = decodeCursor(cursor, ['createdAt', 'id'])
+    if (typeof value.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.id)) {
+        throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Cursor is invalid or expired.' })
+    }
     return query.andWhere('(serviceRequest.createdAt < :cursorCreatedAt OR (serviceRequest.createdAt = :cursorCreatedAt AND serviceRequest.id < :cursorId))', {
         cursorCreatedAt: assertCursorDate(value, 'createdAt'),
         cursorId: value.id,
@@ -126,9 +123,7 @@ export async function getMyAutoCareServiceRequestPage(user: UserEntity, input: R
 }
 
 export async function getMyAutoCareServiceRequests(user: UserEntity) {
-    clientOnly(user)
-    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { clientId: user.id }, order: { createdAt: 'DESC', id: 'DESC' } })
-    return hydrateRequestList(requests)
+    return (await getMyAutoCareServiceRequestPage(user, { limit: 100 })).items
 }
 
 export async function getOwnerAutoCareServiceRequestPage(user: UserEntity, input: RequestPageInput = {}) {
@@ -157,20 +152,7 @@ export async function getOwnerAutoCareServiceRequestPage(user: UserEntity, input
 }
 
 export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
-    const scopes = await getManagedProviderPermissionScopes(user.id, 'requests')
-    const clauses: string[] = []
-    const parameters: Record<string, string | string[]> = {}
-    for (const [index, scope] of scopes.entries()) {
-        if (scope.locationIds?.length === 0) continue
-        parameters[`provider${index}`] = scope.providerId
-        if (scope.locationIds) parameters[`locations${index}`] = scope.locationIds
-        clauses.push(`(serviceRequest.providerId = :provider${index}${scope.locationIds ? ` AND serviceRequest.locationId IN (:...locations${index})` : ''})`)
-    }
-    if (clauses.length === 0) return []
-    const requests = await AppDataSource.getRepository(ServiceRequestEntity).createQueryBuilder('serviceRequest')
-        .where(`(${clauses.join(' OR ')})`, parameters)
-        .orderBy('serviceRequest.createdAt', 'DESC').addOrderBy('serviceRequest.id', 'DESC').getMany()
-    return hydrateRequestList(requests)
+    return (await getOwnerAutoCareServiceRequestPage(user, { limit: 100 })).items
 }
 
 export async function getAutoCareServiceRequest(user: UserEntity, requestId: string, emergencyReason?: string) {

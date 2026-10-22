@@ -1164,6 +1164,8 @@ export const enTranslations = {
         heroEyebrow: 'Automotive service marketplace',
         ownerRequestsEyebrow: 'Customer requests',
         ownerRequestsTitle: 'AutoCare request inbox',
+        loadMoreRequests: 'Load older requests',
+        loadedRequestMetricsHint: 'Request counts and estimates reflect the loaded pages. Load older requests for the full history.',
         ownerRequestsDescription: 'Reply to drivers, clarify the scope and send a transparent preliminary estimate from one workspace.',
         ownerRequestsOpen: 'Needs a reply',
         ownerRequestsEstimates: 'Estimates awaiting answer',

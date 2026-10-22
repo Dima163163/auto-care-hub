@@ -81,6 +81,7 @@ export function buildQualityMetrics(input: {
     offers: QualityOffer[]
     requests: QualityRequest[]
     messages: QualityMessage[]
+    reliabilityOverride?: AutoCareReliabilityQualityMetrics
 }): {
     catalog: AutoCareCatalogQualityMetrics
     supply: AutoCareSupplyQualityMetrics
@@ -99,7 +100,7 @@ export function buildQualityMetrics(input: {
             && activeDefinitionIds.has(offer.definitionId)
     })
     const providerIdsWithOffers = new Set(activeOffers.map((offer) => locationById.get(offer.locationId)?.providerId).filter((id): id is string => Boolean(id)))
-    const responseMinutes = [...getFirstProviderResponseMinutes({
+    const responseMinutes = input.reliabilityOverride ? [] : [...getFirstProviderResponseMinutes({
         providers: input.providers,
         memberships: input.providerMemberships,
         requests: input.requests,
@@ -135,7 +136,7 @@ export function buildQualityMetrics(input: {
             activeMarkets: markets.size,
             averageLocationsPerProvider: providerCount === 0 ? 0 : Number((activeLocations.length / providerCount).toFixed(1)),
         },
-        reliability: {
+        reliability: input.reliabilityOverride ?? {
             responseSamples: responseMinutes.length,
             averageResponseMinutes: responseMinutes.length === 0 ? null : Number((responseMinutes.reduce((sum, value) => sum + value, 0) / responseMinutes.length).toFixed(1)),
             p95ResponseMinutes: percentile(responseMinutes, 95),

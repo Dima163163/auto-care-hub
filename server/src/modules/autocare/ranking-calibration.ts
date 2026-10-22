@@ -21,6 +21,8 @@ export type RankingCalibrationReview = {
     verifiedVisit: boolean
 }
 
+export type RankingCalibrationRequestSummary = { providerId: string; confirmedVisits: number; noShows: number }
+
 export type RankingCalibrationBucket = {
     label: '0-49' | '50-64' | '65-79' | '80-100'
     providerCount: number
@@ -66,6 +68,7 @@ export function buildRankingCalibrationReport(input: {
     snapshots: readonly RankingCalibrationSnapshot[]
     requests: readonly RankingCalibrationRequest[]
     reviews: readonly RankingCalibrationReview[]
+    requestSummary?: readonly RankingCalibrationRequestSummary[]
     minimumRecommendedSample?: number
 }): RankingCalibrationReport {
     const latestSnapshotByProvider = new Map<string, RankingCalibrationSnapshot>()
@@ -79,12 +82,19 @@ export function buildRankingCalibrationReport(input: {
     const latestSnapshots = [...latestSnapshotByProvider.values()]
     const confirmedByProvider = new Map<string, number>()
     const noShowByProvider = new Map<string, number>()
-    for (const request of input.requests) {
-        if (isVerifiedCompletedVisit(request)) {
-            confirmedByProvider.set(request.providerId, (confirmedByProvider.get(request.providerId) ?? 0) + 1)
+    if (input.requestSummary) {
+        for (const summary of input.requestSummary) {
+            confirmedByProvider.set(summary.providerId, summary.confirmedVisits)
+            noShowByProvider.set(summary.providerId, summary.noShows)
         }
-        if (request.status === ServiceRequestStatus.NoShow) {
-            noShowByProvider.set(request.providerId, (noShowByProvider.get(request.providerId) ?? 0) + 1)
+    } else {
+        for (const request of input.requests) {
+            if (isVerifiedCompletedVisit(request)) {
+                confirmedByProvider.set(request.providerId, (confirmedByProvider.get(request.providerId) ?? 0) + 1)
+            }
+            if (request.status === ServiceRequestStatus.NoShow) {
+                noShowByProvider.set(request.providerId, (noShowByProvider.get(request.providerId) ?? 0) + 1)
+            }
         }
     }
     const verifiedRatingsByProvider = new Map<string, number[]>()

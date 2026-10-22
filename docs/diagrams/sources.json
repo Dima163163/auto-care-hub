@@ -305,7 +305,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare.routes.ts",
-      "sha256": "71ccadb0d41327b25530c08a1fb359320015ea69bbe95491b10b21315078d552",
+      "sha256": "7079f8d43023e233e1fbbddef791fc4e044925245e4024f9f11f3bb70407012f",
       "scopes": [
         "backend"
       ]
@@ -518,7 +518,7 @@
     },
     {
       "path": "src/entities/automotive-service/index.ts",
-      "sha256": "c933f8802d0b3ba2c251e955a4f276f0f72971da562c7f35b89cdeb87b00da1a",
+      "sha256": "a5588a9f842552c53a30e4183f93ea0493a2ff6273dd38620833ea42e73733f1",
       "scopes": [
         "frontend"
       ]
@@ -690,7 +690,7 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "a76319230cf4f56b7952864779b9924db40b995e07c3d071cfae84c36403239a",
+      "sha256": "ca4139bec910c4c53f81661161b85b4b874dd07f0bb18a122bda766a213d6687",
       "scopes": [
         "frontend"
       ]
@@ -760,7 +760,7 @@
     },
     {
       "path": "server/src/modules/autocare/request-read.service.ts",
-      "sha256": "2f0bdf8a80339900361786e8176b3b5a7583d63cd5f5ac14cbb55090e9622df7",
+      "sha256": "c9f29d39340717337e4e9545fcc8e079d33f23df953dacd430b786daf4281109",
       "scopes": [
         "requests"
       ]
@@ -816,7 +816,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare-quality-monitoring.service.ts",
-      "sha256": "32028972f764ae80b3305831613700580dae828d17892a231d2239ab2f1b9c21",
+      "sha256": "d07b4fdf0d8460bab7bac581d5d60803601d01cc05901da7fad1f286a4af8d91",
       "scopes": [
         "backend",
         "data"
@@ -845,14 +845,14 @@
     },
     {
       "path": "server/src/modules/autocare/autocare-analytics.service.ts",
-      "sha256": "ab68d5110c46f253a3c04ba81831a144e8a9eb0e3a1fa3834fb31181b070af23",
+      "sha256": "ca7c94de6565793b99651f6a2140ee7d2eecb696bbb1a2031dc016a65635f163",
       "scopes": [
         "backend"
       ]
     },
     {
       "path": "server/src/modules/autocare/quality-metrics.ts",
-      "sha256": "7c6ad35f7cb8ccd47dd714818c95c1d9d3f1d372367f26e6da64e5f908fa06b3",
+      "sha256": "8250ffb37668759deb0bdde33e55569ca64ce6bb525403cbec047bf04f59d70c",
       "scopes": [
         "backend"
       ]
@@ -895,6 +895,84 @@
       "scopes": [
         "frontend",
         "requests"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/first-provider-response-reader.ts",
+      "sha256": "3befe4d0b9198ed0176c8e1f95725f455f9608af5dc21da835f6b46c7f4f2b4e",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/ranking-calibration.ts",
+      "sha256": "14f7f833fb85a816456799896b3f11db146d5380d11af746ee210efa83f1f5f3",
+      "scopes": [
+        "backend",
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/routes/openapi.route.ts",
+      "sha256": "656bc169914394207c30a29346ac553e00bd224f69bb8879826cbbe553ed7a73",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/cors.ts",
+      "sha256": "9b67fe36bba09eccce6c7ef10d652f385167b5cc6af7d3012dd01ed286ce7dd4",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/lib/useAutoCareRequestPages.ts",
+      "sha256": "3038a9ee0636142d9b7fa7de62c7af79e87f1c6905c151597cd8c057c152e984",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-autocare-requests/ui/OwnerAutoCareRequestsPage.tsx",
+      "sha256": "c39bd15ae470e4a74a633101e5ed7278be114dcd82257eb4c25b54867694a107",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/profile-bookings/ui/AutoCareRequestsPanel.tsx",
+      "sha256": "56bd4bb92067d283a75f176ac1506118c83a041a30c5dc78505c7a31ebe6afe4",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-clients/ui/OwnerClientsPage.tsx",
+      "sha256": "ea30c08ac89e7c24a6dd7754fe20f8592b5b849b3c0055e03f61bf19233515f0",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-dashboard/ui/OwnerAutoCareDashboardPage.tsx",
+      "sha256": "40ef1b5be65a95f8cb2c1618fe6c58986648864b7b3a8c64a99dc9b83547df8b",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-autocare-provider-reviews/ui/OwnerAutoCareProviderReviewsPage.tsx",
+      "sha256": "0a727cf9b17c53d2297f341ceec1839383645292e6b8d79ad0a75df525538e0d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/mocks/autocare/requests.handlers.ts",
+      "sha256": "000ce23e29fbe565a3bc0a6cc885cdfaabf36de4d1f4659cfb68bc8a46a48802",
+      "scopes": [
+        "frontend"
       ]
     }
   ],

@@ -26,6 +26,7 @@ export { formatProviderPreviewAvailability, formatProviderPreviewPrice, formatPr
 export { ProviderLogo } from './ui/ProviderLogo'
 export { AutoCareCommunityBadgeList, type AutoCareCommunityBadgeCode } from './ui/AutoCareCommunityBadgeList'
 export { ServiceRequestChat } from './ui/ServiceRequestChat'
+export { useAutoCareRequestPages } from './lib/useAutoCareRequestPages'
 export type {
     AutoCareApiLocationZone,
     AutoCareApiMarket,
