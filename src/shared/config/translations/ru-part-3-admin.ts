@@ -9,6 +9,7 @@ export const ruPart3Admin = {
         pending: 'Ожидают',
         approved: 'Одобрены',
         rejected: 'Отклонены',
+        superseded: 'Заменены новой версией отзыва',
         empty: 'Материалов с выбранным статусом нет.',
         provider: 'Сервис',
         review: 'Отзыв',

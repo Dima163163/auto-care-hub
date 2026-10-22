@@ -372,7 +372,7 @@ export const decideAdminAutoCareAppealSchema = z.object({
 })
 
 export const adminAutoCareModerationEvidenceQuerySchema = z.object({
-    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+    status: z.enum(['pending', 'approved', 'rejected', 'superseded']).optional(),
 })
 
 export const adminAutoCareModerationEvidenceParamsSchema = z.object({

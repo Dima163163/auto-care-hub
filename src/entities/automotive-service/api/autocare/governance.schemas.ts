@@ -42,7 +42,7 @@ export const autoCareAppealsSchema = z.array(autoCareAppealSchema)
 
 export const adminAutoCareModerationEvidenceSchema = z.object({
     id: z.string(), providerId: z.string(), kind: z.enum(['provider_cover', 'provider_gallery', 'provider_document', 'registration_document', 'review']), label: z.string(),
-    status: z.enum(['pending', 'approved', 'rejected']), reference: z.string().nullable(), notes: z.string().nullable(),
+    status: z.enum(['pending', 'approved', 'rejected', 'superseded']), reference: z.string().nullable(), notes: z.string().nullable(),
     expiresAt: z.string().nullable(), createdAt: z.string(), verifiedAt: z.string().nullable(),
     provider: z.object({ id: z.string(), name: z.string(), address: z.string().nullable() }),
     review: z.object({ id: z.string(), authorName: z.string(), vehicleLabel: z.string(), rating: z.number().int().min(1).max(5), text: z.string(), photoUrls: z.array(z.string()), createdAt: z.string(), status: z.enum(['pending', 'approved', 'rejected']) }).nullable(),

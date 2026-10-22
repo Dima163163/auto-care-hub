@@ -23,4 +23,12 @@ describe('automotive review moderation boundaries', () => {
             { status: 'rejected' },
         )).rejects.toMatchObject({ statusCode: 422 })
     })
+
+    it('rejects an invalid direct moderation status before persistence', async () => {
+        await expect(decideAdminAutoCareReview(
+            { id: 'admin-1', role: UserRole.Admin } as never,
+            '11111111-1111-4111-8111-111111111111',
+            { status: 'pending' } as never,
+        )).rejects.toMatchObject({ statusCode: 422 })
+    })
 })

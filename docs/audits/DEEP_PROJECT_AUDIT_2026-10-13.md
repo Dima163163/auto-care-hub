@@ -267,6 +267,13 @@ initial creation это делает. Ранее decided evidence не пред�
 evidence для правки. Два concurrent edit → один успех/один 409; moderation
 решение не применяется к другой revision. Нужен DB race test.
 
+**Локальное исправление 22.10.** Правка блокирует review row в транзакции,
+расходует разрешение, увеличивает `contentRevision`, помечает старый pending
+evidence как `superseded` и создаёт новый с `reviewRevision`. Обе точки
+модерации блокируют review прежде evidence и не применяют решение к старой
+версии; public trust не учитывает approved evidence старой версии. Добавлен
+PostgreSQL integration race test, но локально он не запускался: БД недоступна.
+
 ### N25 · P2 · Worker пересчёта рейтинга может бесконечно пропускать новые сервисы
 
 **Доказательство.** `trust-score.service.ts:175–180` берёт первые 100 по

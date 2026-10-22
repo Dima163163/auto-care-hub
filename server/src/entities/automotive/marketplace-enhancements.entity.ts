@@ -41,6 +41,7 @@ export class AutoCareTrustEvidenceEntity {
     @Column({ type: 'timestamptz', nullable: true }) expiresAt!: Date | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_trust_evidence', 'reference', 'text') }) reference!: string | null
     @Column({ type: 'text', nullable: true, transformer: createBlindIndexTransformer('evidence-reference') }) referenceIndex!: string | null
+    @Column({ type: 'integer', nullable: true }) reviewRevision!: number | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_trust_evidence', 'notes', 'text') }) notes!: string | null
     @Column({ type: 'uuid', nullable: true }) verifiedById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) verifiedAt!: Date | null

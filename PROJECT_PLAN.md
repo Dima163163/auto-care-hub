@@ -122,7 +122,8 @@
 - [x] N28: denied `sessionStorage` не прерывает in-memory auth cleanup;
   expiry hint использует безопасный fallback. Unit/type/lint PASS, browser
   denial на опубликованном кандидате открыт.
-- [ ] N24: atomic review revision/evidence.
+- [x] N24: review row lock, revision-scoped moderation evidence and stale
+  decision guard; unit/build/frontend tests PASS, PostgreSQL race gate open.
 - [x] N25: due trust queue with NULLS FIRST, successful scan watermark and
   failed-provider retry; unit/build PASS, PostgreSQL scheduling gate open.
 - [ ] N30/N32: отдельная current quote/latest history и notification identity

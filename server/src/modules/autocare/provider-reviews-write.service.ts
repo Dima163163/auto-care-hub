@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../database/data-source.js'
-import { AutomotiveReviewEntity, AutomotiveReviewStatus } from '../../entities/index.js'
+import { AutoCareTrustEvidenceEntity, AutomotiveReviewEntity, AutomotiveReviewStatus } from '../../entities/index.js'
 import { type UserEntity } from '../../entities/user/user.entity.js'
 import { ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
@@ -61,6 +61,7 @@ export async function createAutoCareReview(client: UserEntity, input: CreateAuto
                 verifiedVisit: true,
                 serviceSlug: request.offeringSnapshot?.serviceSlug ?? null,
                 status: AutomotiveReviewStatus.Pending,
+                contentRevision: 1,
             }))
             await queueReviewModerationEvidence(manager, savedReview)
             return savedReview
@@ -80,14 +81,27 @@ export async function updateClientAutoCareReview(client: UserEntity, reviewId: s
     if (!normalizedReviewId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review id must be a valid UUID.' })
     const reviewContent = input && typeof input === 'object' ? normalizeAutoCareReviewContent(input) : null
     if (!reviewContent) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Review rating or text is invalid.' })
-    const repository = AppDataSource.getRepository(AutomotiveReviewEntity)
-    const review = await repository.findOneBy({ id: normalizedReviewId, clientId: client.id })
-    if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
-    if (!isReviewEditable(review)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review can only be edited after redeeming a valid service promo code.' })
-    review.rating = reviewContent.rating
-    review.text = reviewContent.text
-    review.status = AutomotiveReviewStatus.Pending
-    review.revisionUsedAt = new Date()
-    const savedReview = await repository.save(review)
+    const savedReview = await AppDataSource.transaction(async (manager) => {
+        const repository = manager.getRepository(AutomotiveReviewEntity)
+        const review = await repository.findOne({
+            where: { id: normalizedReviewId, clientId: client.id },
+            lock: { mode: 'pessimistic_write' },
+        })
+        if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive review not found.' })
+        if (!isReviewEditable(review)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review can only be edited after redeeming a valid service promo code.' })
+        review.rating = reviewContent.rating
+        review.text = reviewContent.text
+        review.status = AutomotiveReviewStatus.Pending
+        review.revisionUsedAt = new Date()
+        review.contentRevision += 1
+        const saved = await repository.save(review)
+        const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
+        await evidenceRepository.update(
+            { kind: 'review', referenceIndex: saved.id, status: 'pending' },
+            { status: 'superseded', notes: 'Отзыв изменён; это подтверждение относится к прежней версии.' },
+        )
+        await queueReviewModerationEvidence(manager, saved)
+        return saved
+    })
     return toAutoCareReviewResponse(savedReview, { exposeActions: true })
 }

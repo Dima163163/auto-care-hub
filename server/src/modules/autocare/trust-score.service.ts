@@ -56,8 +56,14 @@ export async function reassessAutoCareProviderTrust(
         getAutoCareTrustPolicy(),
     ])
     const nowMs = Date.now()
+    const approvedReviewById = new Map(reviews.map((review) => [review.id, review]))
     const verifiedEvidenceCount = evidence.filter((item) =>
-        isApprovedAutoCareEvidenceStatus(item.status) && (item.expiresAt === null || item.expiresAt.getTime() > nowMs),
+        isApprovedAutoCareEvidenceStatus(item.status)
+        && (item.expiresAt === null || item.expiresAt.getTime() > nowMs)
+        && (item.kind !== 'review' || Boolean(
+            item.reference
+            && approvedReviewById.get(item.reference)?.contentRevision === (item.reviewRevision ?? 1),
+        )),
     ).length
     const reviewCount = reviews.length
     const rating = reviewCount > 0

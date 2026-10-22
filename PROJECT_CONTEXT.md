@@ -1431,3 +1431,14 @@ the policy transaction. Unit tests and API build pass. PostgreSQL migration,
 several real worker passes and deployed maintenance behavior remain open. Local
 commit is not yet pushed; accumulated commits will go to dev then main after
 the correction batch and release gates.
+
+
+22 Oct — N24 local review revision fix:
+Migration 178646 adds `contentRevision` to reviews and `reviewRevision` to
+moderation evidence. Review edits lock the row, consume one allowance and
+replace old pending evidence with a new revision-specific item in one
+transaction. Both moderation paths check the current revision under locks;
+superseded evidence is visible separately in the admin queue. Approved old
+evidence no longer inflates the current trust score. Server and frontend unit
+tests/build pass; a real PostgreSQL parallel-edit and moderation test is added
+but not run locally. Nothing from this batch has been pushed yet.

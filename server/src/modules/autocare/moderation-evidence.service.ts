@@ -88,7 +88,7 @@ function toResponse(
             name: provider?.name ?? 'Unknown provider',
             address,
         },
-        review: review ? {
+        review: review && item.kind === 'review' && (item.reviewRevision ?? 1) === (review.contentRevision ?? 1) ? {
             id: review.id,
             authorName: review.authorName,
             vehicleLabel: review.vehicleLabel,
@@ -126,7 +126,7 @@ export async function queueProviderMediaModerationEvidence(
     })))
 }
 
-export async function queueReviewModerationEvidence(manager: EntityManager, review: Pick<AutomotiveReviewEntity, 'id' | 'providerId'>) {
+export async function queueReviewModerationEvidence(manager: EntityManager, review: Pick<AutomotiveReviewEntity, 'id' | 'providerId' | 'contentRevision'>) {
     const repository = manager.getRepository(AutoCareTrustEvidenceEntity)
     return repository.save(repository.create({
         providerId: review.providerId,
@@ -134,6 +134,7 @@ export async function queueReviewModerationEvidence(manager: EntityManager, revi
         label: 'Отзыв о подтверждённом визите',
         reference: review.id,
         referenceIndex: review.id,
+        reviewRevision: review.contentRevision,
         status: 'pending',
         notes: 'Ожидает модерации текста и приложенных материалов.',
     }))
@@ -277,12 +278,30 @@ export async function decideAdminAutoCareModerationEvidence(
     }
     const result = await AppDataSource.transaction(async (manager) => {
         const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
+        const candidate = await evidenceRepository.findOneBy({ id: normalizedEvidenceId })
+        if (!candidate || !isAutoCareModerationEvidenceKind(candidate.kind)) {
+            throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Moderation evidence not found.' })
+        }
+        // Review edits and both moderation entry points lock review before evidence.
+        const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
+        const review = candidate.kind === 'review' && candidate.reference
+            ? await reviewRepository.findOne({
+                where: { id: candidate.reference, providerId: candidate.providerId },
+                lock: { mode: 'pessimistic_write' },
+            })
+            : null
         const evidence = await evidenceRepository.findOne({ where: { id: normalizedEvidenceId }, lock: { mode: 'pessimistic_write' } })
         if (!evidence || !isAutoCareModerationEvidenceKind(evidence.kind)) {
             throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Moderation evidence not found.' })
         }
         if (!canDecideAutoCareModerationEvidence(evidence.status, normalizedInput.status)) {
             throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Moderation evidence has already been decided.' })
+        }
+        if (evidence.kind === 'review' && (!review || evidence.reference !== review.id || (evidence.reviewRevision ?? 1) !== review.contentRevision)) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This moderation item belongs to an older review revision.' })
+        }
+        if (evidence.kind === 'review' && review?.status !== AutomotiveReviewStatus.Pending) {
+            throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'This review has already been moderated.' })
         }
 
         evidence.status = normalizedInput.status
@@ -291,15 +310,11 @@ export async function decideAdminAutoCareModerationEvidence(
         evidence.verifiedAt = new Date()
         await evidenceRepository.save(evidence)
 
-        if (evidence.kind === 'review' && evidence.reference) {
-            const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
-            const review = await reviewRepository.findOneBy({ id: evidence.reference, providerId: evidence.providerId })
-            if (review) {
-                review.status = normalizedInput.status === 'approved'
-                    ? AutomotiveReviewStatus.Approved
-                    : AutomotiveReviewStatus.Rejected
-                await reviewRepository.save(review)
-            }
+        if (evidence.kind === 'review' && review) {
+            review.status = normalizedInput.status === 'approved'
+                ? AutomotiveReviewStatus.Approved
+                : AutomotiveReviewStatus.Rejected
+            await reviewRepository.save(review)
         }
 
         if (normalizedInput.status === 'rejected' && evidence.reference) {
@@ -325,11 +340,11 @@ export async function decideAdminAutoCareModerationEvidence(
             select: { providerId: true, address: true },
             order: { id: 'ASC' },
         })
-        const review = evidence.kind === 'review' && evidence.reference
+        const responseReview = evidence.kind === 'review' && evidence.reference
             ? await manager.getRepository(AutomotiveReviewEntity).findOneBy({ id: evidence.reference })
             : undefined
 
-        return toResponse(evidence, provider ?? undefined, location?.address ?? null, review ?? undefined)
+        return toResponse(evidence, provider ?? undefined, location?.address ?? null, responseReview ?? undefined)
     })
     if (normalizedInput.status === 'rejected' && (result.kind === 'provider_cover' || result.kind === 'provider_gallery') && result.reference) {
         const kind: AutoCareProviderMediaKind = result.kind === 'provider_cover' ? 'cover' : 'gallery'

@@ -67,12 +67,14 @@ entity "AutomotiveReview" as Review {
   * id : uuid
   providerId / clientId? / serviceRequestId?
   status / revision allowance
+  contentRevision : integer
 }
 entity "TrustEvidence" as Evidence {
   * id : uuid
   providerId / kind / status
   reference : encrypted text
   referenceIndex : HMAC blind index
+  reviewRevision : integer?
 }
 entity "GuaranteeClaim" as Claim {
   * id : uuid
@@ -140,6 +142,12 @@ note bottom of Evidence
   U16: exact lookup uses referenceIndex;
   reference remains randomly encrypted.
   Migration backfills existing references.
+end note
+note bottom of Review
+  N24: edit locks the review row, consumes allowance,
+  increments contentRevision and queues matching evidence.
+  Older pending evidence becomes superseded;
+  moderation checks the matching revision under row lock.
 end note
 Request ..> Outbox : effects; payload association
 note bottom of Evidence

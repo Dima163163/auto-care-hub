@@ -143,11 +143,11 @@
     {
       "scope": "data",
       "source": "05-domain-data.puml",
-      "sourceSha256": "d863fb7152df898cd5ecdb0ecabd0c8f1bdbf7cc89fea7746abdf45bf140f3e7",
+      "sourceSha256": "d3fba1a383e428b416f09d3bfba0de16a17d89a522477e86b0b2e7a9865a7934",
       "preview": "rendered/05-domain-data.svg",
-      "previewSha256": "2040a6d2aec99573365fd6a35e19c22d469d9e204d16f2f81bed5b7c8d62778d",
-      "width": "2383px",
-      "height": "904px"
+      "previewSha256": "a849408f281d8a54942d4a86ef6d4892cfe35097d26c48b77c308f66697ed715",
+      "width": "2473px",
+      "height": "914px"
     },
     {
       "scope": "requests",
@@ -357,6 +357,18 @@
       "scope": "data,outbox",
       "change": "N25 fair due trust reassessment queue with failed-provider backoff and policy invalidation",
       "sourceAnchorCount": 81,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "data,frontend",
+      "change": "N24 atomic review revision and version-scoped moderation evidence",
+      "sourceAnchorCount": 91,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

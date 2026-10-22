@@ -1,7 +1,7 @@
 # Индекс документации AutoCare Hub
 
 Срез remote dev `8840ae8`, локальная fix-ветка `26da803`, 21 октября 2026.
-Локальные порции U20/U15/U17/U18/U19/U21/U16/N26/N28/N25 от 22 октября описаны в `PROJECT_CONTEXT.md` и
+Локальные порции U20/U15/U17/U18/U19/U21/U16/N26/N28/N25/N24 от 22 октября описаны в `PROJECT_CONTEXT.md` и
 `docs/diagrams/README.md`; PostgreSQL race test ожидает выполнения в среде с БД.
 Начать с [карты PlantUML](diagrams/README.md) и
 [итоговой проверки пилота](audits/PILOT_READINESS_RECHECK_2026-10-21.md).

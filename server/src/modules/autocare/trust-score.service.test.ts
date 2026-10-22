@@ -15,16 +15,20 @@ const mocks = vi.hoisted(() => {
         findOneBy: vi.fn(),
         update: vi.fn(),
         find: vi.fn(),
+        findEvidence: vi.fn(),
+        findReviews: vi.fn(),
+        calculateScore: vi.fn(),
     }
 })
 
 vi.mock('../../database/data-source.js', () => ({
     AppDataSource: {
         manager: {
-            getRepository: () => ({
+            getRepository: (entity: { name: string }) => ({
                 findOneBy: mocks.findOneBy,
                 update: mocks.update,
-                find: mocks.find,
+                find: entity.name === 'AutoCareTrustEvidenceEntity' ? mocks.findEvidence
+                    : entity.name === 'AutomotiveReviewEntity' ? mocks.findReviews : mocks.find,
             }),
         },
         getRepository: () => ({
@@ -37,7 +41,7 @@ vi.mock('../admin/super-admin-trust-policy.service.js', () => ({
     getAutoCareTrustPolicy: async () => ({ reassessmentIntervalHours: 24, policyVersion: 'test' }),
 }))
 vi.mock('./trust-score.js', () => ({
-    calculateAutoCareTrustScore: () => ({ score: 0, badge: null }),
+    calculateAutoCareTrustScore: mocks.calculateScore,
 }))
 
 const { reassessAutoCareProviderTrust, reassessAutoCareTrustScores } = await import('./trust-score.service.js')
@@ -62,6 +66,9 @@ const provider = (id: string) => ({
 beforeEach(() => {
     vi.clearAllMocks()
     mocks.find.mockResolvedValue([])
+    mocks.findEvidence.mockResolvedValue([])
+    mocks.findReviews.mockResolvedValue([])
+    mocks.calculateScore.mockReturnValue({ score: 0, badge: null })
     mocks.update.mockResolvedValue({ affected: 1 })
 })
 
@@ -103,6 +110,24 @@ describe('AutoCare trust reassessment queue', () => {
         })
         expect(mocks.update).toHaveBeenCalledWith({ id: 'new' }, expect.objectContaining({
             trustReassessedAt: expect.any(Date),
+        }))
+    })
+
+    it('does not count approved evidence from a superseded review revision', async () => {
+        mocks.findOneBy.mockResolvedValue(provider('revised'))
+        mocks.findReviews.mockResolvedValue([{
+            id: 'review-1', providerId: 'revised', contentRevision: 2,
+            rating: 5, createdAt: new Date(),
+        }])
+        mocks.findEvidence.mockResolvedValue([
+            { kind: 'review', reference: 'review-1', reviewRevision: 1, status: 'approved', expiresAt: null },
+            { kind: 'review', reference: 'review-1', reviewRevision: 2, status: 'approved', expiresAt: null },
+        ])
+
+        await reassessAutoCareProviderTrust('revised')
+
+        expect(mocks.calculateScore).toHaveBeenCalledWith(expect.objectContaining({
+            verifiedEvidenceCount: 1,
         }))
     })
 })

@@ -478,6 +478,7 @@ export const enTranslations = {
         pending: 'Pending',
         approved: 'Approved',
         rejected: 'Rejected',
+        superseded: 'Superseded by a newer review',
         empty: 'No evidence matches this status.',
         provider: 'Provider',
         review: 'Review',

@@ -61,7 +61,7 @@ export type AdminAutoCareModerationEvidence = {
     providerId: string
     kind: 'provider_cover' | 'provider_gallery' | 'provider_document' | 'registration_document' | 'review'
     label: string
-    status: 'pending' | 'approved' | 'rejected'
+    status: 'pending' | 'approved' | 'rejected' | 'superseded'
     reference: string | null
     notes: string | null
     expiresAt: string | null

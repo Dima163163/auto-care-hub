@@ -9,10 +9,10 @@ export const AUTOCARE_MODERATION_EVIDENCE_KINDS = [
 
 export type AutoCareModerationEvidenceKind = (typeof AUTOCARE_MODERATION_EVIDENCE_KINDS)[number]
 export type AutoCareModerationDecision = 'approved' | 'rejected'
-export type AutoCareModerationEvidenceStatus = 'pending' | 'approved' | 'rejected'
+export type AutoCareModerationEvidenceStatus = 'pending' | 'approved' | 'rejected' | 'superseded'
 
 const AUTOCARE_MODERATION_DECISIONS = new Set<AutoCareModerationDecision>(['approved', 'rejected'])
-const AUTOCARE_MODERATION_STATUSES = new Set<AutoCareModerationEvidenceStatus>(['pending', 'approved', 'rejected'])
+const AUTOCARE_MODERATION_STATUSES = new Set<AutoCareModerationEvidenceStatus>(['pending', 'approved', 'rejected', 'superseded'])
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export type NormalizedAutoCareModerationEvidenceDecision = {

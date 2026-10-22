@@ -92,6 +92,12 @@ Source anchors остались 79; browser denial flow на production не п�
 раздельные timestamps успешной и неудачной попытки и backoff. Добавлены
 anchors миграции и policy editor; PostgreSQL worker passes ещё не проверены.
 
+**Локальное исправление N24, 2026-10-22:** `05-domain-data.puml` и SVG
+показывают content revision отзыва и version-scoped moderation evidence.
+Старая pending версия становится `superseded`; решение проверяет номер
+версии под lock. Добавлены anchors реализации, миграции и UI статуса.
+PostgreSQL race integration test написан, но локально не запущен.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |

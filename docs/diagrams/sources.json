@@ -106,7 +106,7 @@
     },
     {
       "path": "server/src/entities/automotive/automotive.entity.ts",
-      "sha256": "1a86d0be7fd9f22aad0028fbb6f9fb8dd0c0b5fa22d2b6354a8b2818c3235f38",
+      "sha256": "6e22f438d3543c7030ee1c8086d8c4b3715ef02d87fd3a9eaf422bb668ae3900",
       "scopes": [
         "data"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "f88f5f6ef0e3d883346ce6dc58ae919bafbc6fe6cac379d191be3e1e51bd304c",
+      "sha256": "cb90b1023ab407269dcf8075063bf8e8f78d9a29d3a2500238777d4864b19fb7",
       "scopes": [
         "data"
       ]
@@ -254,21 +254,21 @@
     },
     {
       "path": "server/src/modules/autocare/trust-score.service.ts",
-      "sha256": "cb2e347e6447ece00e4d862e9899e105fdf584262fbd1aad02b073a1cf2b9c5f",
+      "sha256": "d44b7cd4a7b2b511f9f520492576730710164aa89ab6e62b39802e8e46dd9743",
       "scopes": [
         "data"
       ]
     },
     {
       "path": "server/src/modules/autocare/moderation-evidence.service.ts",
-      "sha256": "681e711a3af33e4634ca8557170bee717a452cea6f2628c608ee2c2385e6472a",
+      "sha256": "bf6e11bf741c53c259b5acf2249243ad1ef32384c92ec6878b4585e22e9d597e",
       "scopes": [
         "data"
       ]
     },
     {
       "path": "server/src/modules/autocare/review-moderation.service.ts",
-      "sha256": "9e845c93b7e442348eba0e230d47f0b7aee573a7dd83a306c4788eaa9cd4e5c5",
+      "sha256": "b55a7f7bf2bfc00e99dd220ab2f09211c1fa337d0152bb27c5111d005dbe1f52",
       "scopes": [
         "data"
       ]
@@ -630,6 +630,76 @@
       "scopes": [
         "data",
         "outbox"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786460000000-VersionReviewModerationEvidence.ts",
+      "sha256": "333632ccd3707edcb4b1d8a62f7fc1e64bddd0176571ef22400b7b5ca0e2968c",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/admin.schemas.ts",
+      "sha256": "6c069b611237bbc2c05731285d1bccf8a6093d6e7ae6e17b2df64365b3242172",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/provider-reviews-write.service.ts",
+      "sha256": "618cefa4bb967280cda3fc50ba7717595ae6439a3783401cd5e199447fe7125b",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/provider-review-promo.service.ts",
+      "sha256": "1d09cf71131029e908825f3d3912e966092bac9adca04e22670504b47980ce06",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/moderation-evidence-policy.ts",
+      "sha256": "bc19a90bb815572cbeb4c6469613511d6aef0991ebdf8d1b960e475a21715807",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/governance.schemas.ts",
+      "sha256": "3b07c9d570279b3d56984d34c22b456ad3453f4486fdaad880a035c6339ea64f",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/governance.types.ts",
+      "sha256": "741a14e1e36294c8b16087516ce950e61fec8605bd9bb6f217eaeb4ffc50af70",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/admin-dashboard/ui/AdminModerationEvidencePanel.tsx",
+      "sha256": "9493fa979d2fe1471be487234396547f4d46b5b501678e6595e1ad31428cdc00",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/translations/en.ts",
+      "sha256": "a8df3df85d655b0e4e134670a83cf2b2f1099bd056e19107594ed9c04d4cdae5",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/translations/ru-part-3-admin.ts",
+      "sha256": "9dc5e1441677aafd5053a4fb13ef97176afc0bd855f60834c75d4785b258d084",
+      "scopes": [
+        "frontend"
       ]
     }
   ],
