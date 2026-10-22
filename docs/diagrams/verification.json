@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "b39ab3b160480247df61eccda5ef5025cd1a2e7fe2fad4b33b3a226ebe509019",
+      "sourceSha256": "be8632bdc408faf9beaac63a9847df5d275ff4562598f91c0b069b924697e43d",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "12f5488b5515bf77e82a77e339ac6ed76a01b0b2b139042ad1573578e377346f",
-      "width": "1586px",
-      "height": "1190px"
+      "previewSha256": "100198803dab996de34896df9c879be605ade046b28b679d1e5f422fd06260f3",
+      "width": "1917px",
+      "height": "1212px"
     },
     {
       "scope": "backend",
@@ -439,6 +439,18 @@
       "scope": "frontend",
       "change": "N33 safe localized parsing, timeout and server error presentation with retry",
       "sourceAnchorCount": 101,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N34 shared SSR/client auth metadata policy with SeoHead above all route layouts",
+      "sourceAnchorCount": 107,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

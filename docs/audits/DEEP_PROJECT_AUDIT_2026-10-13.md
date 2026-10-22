@@ -473,6 +473,13 @@ Server metadata policy `src/app/metadata.ts:62–63` для login коррект
 server/client policy. Public → auth и guest protected → login после hydration
 дают те же canonical/robots, что direct visit, без потери provider-specific SEO.
 
+**Локальное исправление 2026-10-22.** `SeoHead` монтируется один раз над всеми
+layout в `AppRouter`; auth copy и noindex решаются общим pure policy для
+Next metadata и client navigation. Canonical не сохраняет `lang` query на
+auth маршрутах, устаревшие hreflang/structured data удаляются. Тест
+`/services → /login` проверяет title/canonical/robots; тесты Next metadata и
+provider copy прошли. Production browser chain после публикации ещё не проверен.
+
 ## Расширенные существующие пункты
 
 - **N22:** first response policy нужна также в `trust-score.service.ts:72–77`:

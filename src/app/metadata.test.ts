@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getAppMetadata, getRouteMetadata } from './metadata'
+import { getAuthRouteCopy, shouldNoIndexRoute } from '../shared/config/route-metadata-policy'
 
 describe('route metadata SEO boundaries', () => {
     it('indexes the canonical service discovery landing page', () => {
@@ -18,6 +19,19 @@ describe('route metadata SEO boundaries', () => {
         expect(getRouteMetadata('/verify-email').robots).toMatchObject({ index: false, follow: true })
         expect(getRouteMetadata('/favorites').robots).toMatchObject({ index: false, follow: true })
         expect(getRouteMetadata('/community/clients/10000000-0000-4000-8000-000000000001').robots).toMatchObject({ index: false, follow: true })
+    })
+
+    it('uses the same auth copy and noindex policy as client navigation', () => {
+        for (const locale of ['en', 'ru'] as const) {
+            const direct = getRouteMetadata('/login', { locale })
+            expect(direct.title).toEqual({ absolute: getAuthRouteCopy('/login', locale)?.title })
+            expect(direct.description).toBe(getAuthRouteCopy('/login', locale)?.description)
+            expect(direct.robots).toMatchObject({ index: false, follow: true })
+        }
+        expect(shouldNoIndexRoute('/services', false)).toBe(false)
+        expect(shouldNoIndexRoute('/services', true)).toBe(true)
+        expect(shouldNoIndexRoute('/services/provider/request')).toBe(true)
+        expect(shouldNoIndexRoute('/favorites')).toBe(true)
     })
 
     it('provides Open Graph metadata for provider profiles', () => {

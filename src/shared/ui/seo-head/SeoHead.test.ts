@@ -22,4 +22,9 @@ describe('localized route SEO titles', () => {
         expect(getProviderSeoCopy({ name: 'ProService', description: null }, 'en').description).toContain('ProService')
         expect(getProviderSeoCopy({ name: 'ProService', description: null }, 'ru').description).toContain('«ProService»')
     })
+
+    it('uses dedicated auth titles after client navigation', () => {
+        expect(getSeoCopy('/login', 'en').title).toBe('Sign in | AutoCare Hub')
+        expect(getSeoCopy('/login', 'ru').title).toBe('Вход | AutoCare Hub')
+    })
 })

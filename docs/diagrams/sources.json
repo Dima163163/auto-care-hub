@@ -771,6 +771,48 @@
       "scopes": [
         "frontend"
       ]
+    },
+    {
+      "path": "src/app/routes/AppRouter.tsx",
+      "sha256": "1dd39a99955adf05ddc6b89fb752e6cd7acaefa60788401eeca3c80270dc8c77",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/layouts/public-layout/PublicLayout.tsx",
+      "sha256": "f043c613c09cabe62c1d285c08116d3fa07ccb708a37432f73493c654a36bd7a",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/metadata.ts",
+      "sha256": "ff1c9458572f28e702b40b4988598f47f36c63cf88bfa021de020b00a23c377d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/ui/seo-head/SeoHead.tsx",
+      "sha256": "4278ada4d4e2bbb0c2740acfe4cdea5bc51636a17dec6ae86c8da2b55d10af1e",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/route-metadata-policy.ts",
+      "sha256": "f9b7f8b86744cd1c1aceb39ffc034473555e502e626b2b3a1e999fff10e6818a",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/runtime-env.ts",
+      "sha256": "26bf65a46f725119334acaf12bb713980710731109553235bf85c84a2b4530c6",
+      "scopes": [
+        "frontend"
+      ]
     }
   ],
   "inventories": [

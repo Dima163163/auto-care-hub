@@ -3,6 +3,8 @@ import { useLocation } from 'react-router'
 
 import { useGetAutoCareProviderProfileQuery, type AutoCareApiProviderProfile } from '@/entities/automotive-service'
 import { LOCALE_OPTIONS, type SupportedLocale } from '@/shared/config/i18n'
+import { getAuthRouteCopy, isAuthRoute, shouldNoIndexRoute } from '@/shared/config/route-metadata-policy'
+import { readPublicEnv } from '@/shared/config/runtime-env'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
@@ -56,6 +58,8 @@ const sectionLabels: Record<SupportedLocale, { search: string; provider: string;
 
 // eslint-disable-next-line react-refresh/only-export-components -- Export the pure copy resolver for focused tests.
 export function getSeoCopy(pathname: string, locale: SupportedLocale): SeoCopy {
+    const auth = getAuthRouteCopy(pathname, locale)
+    if (auth) return auth
     const home = homeCopy[locale]
     const labels = sectionLabels[locale]
 
@@ -129,17 +133,16 @@ export function SeoHead() {
         const copy = providerQuery.data && providerId
             ? getProviderSeoCopy(providerQuery.data, locale)
             : getSeoCopy(pathname, locale)
-        const canonical = new URL(pathname, window.location.origin)
-        if (locale !== 'en') canonical.searchParams.set('lang', locale)
+        const authRoute = isAuthRoute(pathname)
+        const canonical = new URL(pathname, readPublicEnv('VITE_SITE_URL') ?? window.location.origin)
         const canonicalUrl = canonical.href
-        const isPrivate = pathname.startsWith('/profile') || pathname.startsWith('/owner') || pathname.startsWith('/admin') || pathname.startsWith('/chats') || pathname.startsWith('/onboarding') || pathname === ROUTES.notifications || pathname.startsWith('/community/clients/')
         // The canonical discovery landing page is indexable; only filtered
         // result states carry query parameters and should be noindex.
-        const isSearch = pathname === ROUTES.serviceDiscovery && window.location.search.length > 0
+        const isNoIndex = shouldNoIndexRoute(pathname, window.location.search.length > 0)
 
         document.title = copy.title
         setMeta('name', 'description', copy.description)
-        setMeta('name', 'robots', isPrivate || isSearch ? 'noindex,follow' : 'index,follow,max-image-preview:large')
+        setMeta('name', 'robots', isNoIndex ? 'noindex, follow' : 'index,follow,max-image-preview:large')
         setMeta('property', 'og:type', 'website')
         setMeta('property', 'og:site_name', 'AutoCare Hub')
         setMeta('property', 'og:title', copy.title)
@@ -155,13 +158,21 @@ export function SeoHead() {
         setMeta('name', 'twitter:image', imageUrl)
         setLink('canonical', canonicalUrl)
 
-        for (const option of LOCALE_OPTIONS) {
-            const alternate = new URL(pathname, window.location.origin)
-            if (option.value !== 'en') alternate.searchParams.set('lang', option.value)
-            setLink('alternate', alternate.href, option.value)
+        if (authRoute) {
+            document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((element) => element.remove())
+        } else {
+            for (const option of LOCALE_OPTIONS) {
+                const alternate = new URL(pathname, window.location.origin)
+                if (option.value !== 'en') alternate.searchParams.set('lang', option.value)
+                setLink('alternate', alternate.href, option.value)
+            }
         }
 
         const id = 'autocare-hub-structured-data'
+        if (authRoute) {
+            document.head.querySelector(`script#${id}`)?.remove()
+            return
+        }
         const script = document.head.querySelector<HTMLScriptElement>(`script#${id}`) ?? document.head.appendChild(document.createElement('script'))
         script.id = id
         script.type = 'application/ld+json'

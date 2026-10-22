@@ -140,7 +140,8 @@
   build PASS, PostgreSQL rotation integration ожидает среды с БД.
 - [x] N33: parsing/timeout/5xx показывают локализованный текст с retry;
   централизованная клиентская telemetry остаётся открытой.
-- [ ] N34: согласовать direct/client auth metadata.
+- [x] N34: SeoHead на уровне маршрутизатора и общая server/client политика
+  auth copy/noindex; browser chain после публикации остаётся открытым.
 - [ ] N21: считать полный статусный backlog отзывов отдельно от bounded анализа
   аномалий/калибровки; проверить >1000 записей.
 - [ ] N22: единая политика первого ответа для owner analytics, admin quality

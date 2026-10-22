@@ -9,6 +9,7 @@ package "Next production shell" {
 }
 package "Существующее React application tree" {
   component "NextApp → AppRouter\nroute-groups.tsx" as Router
+  component "SeoHead + shared route metadata policy\ncanonical / robots / auth copy" as Seo
   component "Public / Auth / Workspace layouts\nprotected routes / lazy pages" as Routes
   component "src/pages + src/widgets\nэкраны и композиция" as Screens
   component "src/features\nпользовательские действия" as Features
@@ -28,6 +29,7 @@ component "MSW browser + handlers\nтолько mock runtime" as Mock
 Layout --> Pages
 Pages --> Client : initial path / public provider DTO
 Client --> Router
+Router --> Seo : every client route transition
 Router --> Routes
 Routes --> Screens
 Screens --> Features
@@ -56,6 +58,11 @@ end note
 note right of Client
   Vite — compatibility/development entry.
   Реальный production graph исключает MSW fixtures.
+end note
+note right of Seo
+  N34: SEO lifecycle живёт выше всех layouts.
+  Auth SSR и client navigation используют общие copy/noindex;
+  provider-specific metadata сохраняется после hydration.
 end note
 note right of Shared
   N33: parsing/timeout/5xx и SyntaxError не выводят

@@ -4,6 +4,7 @@ import { Routes, useLocation } from 'react-router'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AutoCareResultsRouteSkeleton, PageContentSkeleton } from '@/shared/ui/loading-skeleton'
+import { SeoHead } from '@/shared/ui/seo-head'
 
 import {
     renderAdminRoutes,
@@ -28,18 +29,21 @@ function RouteFallback() {
 
 export function AppRouter() {
     return (
-        <Suspense fallback={<RouteFallback />}>
-            <Routes>
-                {renderPublicRoutes()}
-                {renderAuthenticatedPublicRoutes()}
-                {renderClientRoutes()}
-                {renderGuestRoutes()}
-                {renderAuthUtilityRoutes()}
-                {renderOwnerRoutes()}
-                {renderAdminRoutes()}
-                {renderSuperAdminRoutes()}
-                {renderNotFoundRoute()}
-            </Routes>
-        </Suspense>
+        <>
+            <SeoHead />
+            <Suspense fallback={<RouteFallback />}>
+                <Routes>
+                    {renderPublicRoutes()}
+                    {renderAuthenticatedPublicRoutes()}
+                    {renderClientRoutes()}
+                    {renderGuestRoutes()}
+                    {renderAuthUtilityRoutes()}
+                    {renderOwnerRoutes()}
+                    {renderAdminRoutes()}
+                    {renderSuperAdminRoutes()}
+                    {renderNotFoundRoute()}
+                </Routes>
+            </Suspense>
+        </>
     )
 }

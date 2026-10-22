@@ -1491,3 +1491,11 @@ fragments or exception strings. QueryStateCard still exposes an accessible
 retry action. Focused helper/UI tests and the Next build passed locally.
 Centralized client telemetry is not present yet; RTK error objects remain
 available to callers for diagnostics. `03-frontend.puml` was updated.
+
+22 Oct — N34 route metadata lifecycle:
+`SeoHead` now sits above every layout in `AppRouter` so auth and workspace
+navigation update title, canonical and robots. Next SSR metadata and the client
+share pure auth copy/noindex rules. Auth navigation clears stale alternate links
+and structured data; public provider-specific copy remains in place. Tests for
+server metadata and `/services` to `/login` client transition and the Next
+production build passed. The deployed browser chain is still unverified.
