@@ -170,11 +170,11 @@
     {
       "scope": "outbox",
       "source": "08-outbox-maintenance.puml",
-      "sourceSha256": "a84372488a672585d1df28bbfab2c24166185cc1d946584412afb8b12510ce1a",
+      "sourceSha256": "6f0efd081a935f5951154aa9f39e548b0e14804671e363c4072ed1f1d4127cc1",
       "preview": "rendered/08-outbox-maintenance.svg",
-      "previewSha256": "001a5abd6e91b1331586c8c5ab777ea5b1af003979bc00e2a510abb76aac93b5",
-      "width": "1327px",
-      "height": "1010px"
+      "previewSha256": "aafd6a77a876481e07209959e5c83a34a708b984a8492ccea0551b3e7535a0a6",
+      "width": "1618px",
+      "height": "1090px"
     },
     {
       "scope": "security",
@@ -263,6 +263,18 @@
       "scope": "security",
       "change": "U15 shared private chat write policy across chat and request APIs",
       "sourceAnchorCount": 66,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "outbox",
+      "change": "U17 atomic provider invitation email with encrypted one-time token",
+      "sourceAnchorCount": 68,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

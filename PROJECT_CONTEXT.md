@@ -1,5 +1,16 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление U17 — 2026-10-22
+
+Создание provider invitation теперь в одной DB transaction ставит `email.send`
+с encrypted одноразовым токеном. Worker строит ссылку на
+`/owner/invitations/accept`, отправляет письмо и удаляет token из завершённого
+outbox payload. Existing user получает также уведомление с указанием проверить
+почту; незарегистрированный адрес получает письмо. Production API по-прежнему
+возвращает `inviteToken: null`. Unit и API build PASS; реальный PostgreSQL,
+worker и SMTP локально не проверены. Обновлены `08-outbox-maintenance.puml`, SVG
+и 68 source anchors. Pilot production acceptance остаётся открытой.
+
 ## Локальное исправление U15 — 2026-10-22
 
 Новый `chat-write-policy.ts` задаёт единое правило для chat и request API:

@@ -9,6 +9,7 @@ import type { Mailer } from '../../shared/mail/mailer.js'
 import { createPasswordResetEmail } from '../../shared/mail/password-reset-email.js'
 import { createEmailVerificationEmail } from '../../shared/mail/email-verification-email.js'
 import { createPasswordSetupEmail } from '../../shared/mail/password-setup-email.js'
+import { createProviderInvitationEmail } from '../../shared/mail/provider-invitation-email.js'
 import { createBookingEmail } from '../../shared/mail/booking-email.js'
 import { createAutoCareVisitReminderEmail } from '../../shared/mail/autocare-visit-reminder-email.js'
 import { SUPPORTED_LOCALES } from '../../config/i18n.js'
@@ -83,6 +84,14 @@ const emailPayloadSchema = z.discriminatedUnion('template', [
     }),
     z.object({
         template: z.literal('password_setup'),
+        email: z.string().transform(normalizeEmailAddress),
+        expiresAt: z.string().datetime(),
+        frontendOrigin: z.string().transform((value) => normalizeFrontendOrigin(value, { allowHttpLoopback: true })),
+        encryptedToken: z.string().min(32),
+        locale: z.enum(SUPPORTED_LOCALES).nullable(),
+    }),
+    z.object({
+        template: z.literal('provider_invitation'),
         email: z.string().transform(normalizeEmailAddress),
         expiresAt: z.string().datetime(),
         frontendOrigin: z.string().transform((value) => normalizeFrontendOrigin(value, { allowHttpLoopback: true })),
@@ -282,6 +291,8 @@ async function dispatchOutboxEvent(event: OutboxEventEntity, mailer?: Mailer) {
             await mailer.send(createPasswordResetEmail(input))
         } else if (payload.template === 'email_verification') {
             await mailer.send(createEmailVerificationEmail(input))
+        } else if (payload.template === 'provider_invitation') {
+            await mailer.send(createProviderInvitationEmail(input))
         } else {
             await mailer.send(createPasswordSetupEmail(input))
         }

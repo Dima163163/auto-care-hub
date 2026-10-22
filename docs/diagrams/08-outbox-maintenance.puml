@@ -15,6 +15,8 @@ Queue -> PG : findOne by idempotency key
 PG --> Queue : decoded entity / existing event
 note over API, PG
   Переданный EntityManager позволяет общий business transaction.
+  Provider invitation и email.send с encryptedToken ставятся
+  в одной transaction; enqueue failure откатывает приглашение.
   Safely/after-commit callers нужно проверять отдельно.
   Raw INSERT вызывает transformer явно до записи.
   Миграция 178642 шифрует legacy plaintext recipients;
@@ -26,6 +28,10 @@ loop scheduled cycle (60s interval)
     Worker -> PG : recover stale locks / claim outbox batch
     PG --> Worker : processing events
     Worker -> Delivery : bounded payload / template validation
+    note right of Delivery
+      Provider invitation email содержит одноразовую ссылку;
+      после успеха encryptedToken удаляется из outbox payload.
+    end note
     alt dispatched
       Delivery -> PG : notification row (if notification event)
       Delivery --> Worker : mail/notification result

@@ -137,6 +137,12 @@ chat и legacy request message/attachment paths до записи и повто�
 Admin/superadmin private write отклоняется 403; targeted unit 45/45 и API
 build PASS. HTTP/DB regression и published candidate ещё не проверены.
 
+**Локальная disposition U17, 2026-10-22:** invitation и `email.send` с
+зашифрованным одноразовым токеном ставятся в одной транзакции; письмо содержит
+acceptance link, а production response остаётся без token. Unit и API build
+PASS. Интеграционный тест добавлен, но локально без PostgreSQL/Redis не
+выполнялся; фактическая SMTP доставка и published candidate не проверены.
+
 ### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
 
 **Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`

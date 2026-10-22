@@ -31,7 +31,10 @@
   messages/attachments; admin/superadmin не пишут private request thread.
   Targeted unit 45/45, полный backend unit 1419/1419 и API build PASS;
   реальный HTTP/DB regression ожидает CI.
-- [ ] Исправить U17/U18/U19 и runtime dependencies; подтвердить
+- [x] U17: доставлять acceptance link письмом через encrypted outbox в одной
+  транзакции с invitation; production response не раскрывает token. Unit/build
+  PASS; DB/SMTP интеграционная приёмка ожидает CI/staging.
+- [ ] Исправить U18/U19 и runtime dependencies; подтвердить
   U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
 
 ## Повторный UI / security аудит — 2026-10-20
@@ -97,7 +100,9 @@
   PostgreSQL race acceptance остаётся до запуска integration в CI/staging.
 - [ ] U18/U19: корректное истечение bonus lots, уникальные guarantee cases
   и отделение complaint от доказанного нарушения в trust score.
-- [ ] U16/U17: searchable encrypted evidence reference и production invite delivery.
+- [ ] U16: searchable encrypted evidence reference.
+- [x] U17: production invite delivery подготовлена через encrypted outbox;
+  фактическая SMTP доставка и published acceptance остаются открыты.
 - [ ] N24/N25/N26/N28: atomic review revision/evidence, fair trust worker,
   согласованный password byte policy, cleanup при denied storage.
 - [ ] N30/N32: отдельная current quote/latest history и notification identity

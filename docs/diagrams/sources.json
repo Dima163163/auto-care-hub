@@ -182,6 +182,13 @@
       ]
     },
     {
+      "path": "server/src/modules/autocare/provider-membership.service.ts",
+      "sha256": "d47b8bdba3dab796511fe844f4979a855024bc3131082f98d696cdc1a7043d8b",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
       "path": "server/src/modules/auth/require-auth.ts",
       "sha256": "cde3915b17178484e641071d089408e6f47a94ce5cf13cf34f288c63e6e9846c",
       "scopes": [
@@ -334,7 +341,14 @@
     },
     {
       "path": "server/src/modules/outbox/outbox.service.ts",
-      "sha256": "dad5f85a3ebe81c52173d174197c6aea7926a1b00633561a6d0cd4a55bf1a428",
+      "sha256": "fd7195ccf0eea327b073d9765701b95bd7aa79bcc44037f5681097b98699d978",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/shared/mail/provider-invitation-email.ts",
+      "sha256": "666f2adc21b9b2afa882c3db114434ca9fb18d27359b796e00e8455596532c01",
       "scopes": [
         "outbox"
       ]
