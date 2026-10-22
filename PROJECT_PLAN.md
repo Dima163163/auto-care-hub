@@ -153,8 +153,9 @@
   membership, пока нет audit intervals; PostgreSQL flow остаётся открытым.
 - [x] N23 (код): cursor pages и batch hydration списка заявок, legacy array
   cap 100, bounded request/message scan и SQL aggregates для аналитики.
-  Unit/web regression и build/lint проверяются; PostgreSQL >1000, query plan,
-  latency/память и production budget остаются отдельной приёмкой.
+  Частичные UI счётчики помечены `+` и пояснением. PostgreSQL >1000,
+  query plan, latency/память и production budget остаются отдельной приёмкой;
+  приоритетную серверную выборку старых активных заявок нужно добавить для пилота.
 
 ## Дополнение после публикации — 2026-10-04
 

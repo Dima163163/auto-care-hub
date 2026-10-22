@@ -935,14 +935,14 @@
     },
     {
       "path": "src/pages/owner-autocare-requests/ui/OwnerAutoCareRequestsPage.tsx",
-      "sha256": "c39bd15ae470e4a74a633101e5ed7278be114dcd82257eb4c25b54867694a107",
+      "sha256": "ab76498e74d7d68c1714f8eb1bcd35a4cca7d9e93656a14a02350a54298a7fb5",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/pages/profile-bookings/ui/AutoCareRequestsPanel.tsx",
-      "sha256": "56bd4bb92067d283a75f176ac1506118c83a041a30c5dc78505c7a31ebe6afe4",
+      "sha256": "42a08650751b020a60bc4eace89f4dbfa71c2a85a1a758c894f1f2560bc2efdf",
       "scopes": [
         "frontend"
       ]

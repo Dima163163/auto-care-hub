@@ -9,6 +9,9 @@ SQL scope филиала до лимита и пакетную загрузку 
 счётчики lifetime сохраняются, SQL считает сумму бонусов/отзывов и наличие
 смет. Unit 1465/1465, web 659/659, API/Next builds, ESLint и
 API runtime boundary PASS.
+Queue counters on paginated screens now show `+` and an explanation until
+older pages are loaded, avoiding false totals. Active older requests still
+require explicit pagination; prioritised server filtering is a pilot follow-up.
 PostgreSQL измерение latency/памяти и проверка большой истории после
 исправления ещё не выполнены. `03-frontend`/`04-backend` схемы обновляются.
 

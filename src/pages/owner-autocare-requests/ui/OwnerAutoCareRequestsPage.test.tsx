@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
     const rejectedTrigger = vi.fn(() => ({ unwrap: vi.fn().mockRejectedValue(new Error('temporary failure')) }))
     return {
         requestList: undefined as AutoCareServiceRequest[] | undefined,
+        hasMore: false,
         rejectedTrigger,
         confirm: vi.fn(() => Promise.resolve({ error: { status: 503, data: { message: 'temporary failure' } } })),
         createResource: vi.fn(() => ({ unwrap: vi.fn().mockResolvedValue({}) })),
@@ -54,7 +55,7 @@ vi.mock('@/entities/automotive-service', () => ({
     }),
     useGetOwnerAutoCareCapacityReservationsQuery: () => ({ data: [], isLoading: false, isFetching: false, isError: false }),
     useGetOwnerAutoCareCapacityResourcesQuery: () => ({ data: [], isLoading: false, isError: false }),
-    useAutoCareRequestPages: () => ({ data: mocks.requestList ?? [mocks.request], hasMore: false, loadMore: vi.fn(), isLoading: false, isFetching: false, error: null }),
+    useAutoCareRequestPages: () => ({ data: mocks.requestList ?? [mocks.request], hasMore: mocks.hasMore, loadMore: vi.fn(), isLoading: false, isFetching: false, error: null }),
     useMarkAutoCareServiceRequestNoShowMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useRequestAutoCareServiceRescheduleMutation: () => [mocks.rejectedTrigger, { isLoading: false, error: { status: 503 } }],
     useUpdateOwnerAutoCareCapacityResourceMutation: () => [mocks.updateResource, { isLoading: false }],
@@ -73,6 +74,7 @@ function renderPage(path = '/owner/autocare-requests') {
 describe('OwnerAutoCareRequestsPage', () => {
     beforeEach(() => {
         mocks.requestList = undefined
+        mocks.hasMore = false
         mocks.rejectedTrigger.mockClear()
         mocks.confirm.mockClear()
     })
@@ -119,6 +121,13 @@ describe('OwnerAutoCareRequestsPage', () => {
 
         expect(screen.getByText(/15:00 GMT\+3/)).toBeInTheDocument()
         expect(screen.queryByText(/12:00 UTC/)).not.toBeInTheDocument()
+    })
+    it('marks queue counts as partial while older requests remain', () => {
+        mocks.hasMore = true
+        renderPage()
+        expect(screen.getByText('autocare.loadedRequestMetricsHint')).toBeVisible()
+        expect(screen.getAllByText('1+').length).toBeGreaterThan(0)
+        expect(screen.getAllByText('0+').length).toBeGreaterThan(0)
     })
     it('filters the existing authorized request list by provider and restores it when cleared', async () => {
         mocks.requestList = [{ ...mocks.request, providerId: 'provider-1' }, { ...mocks.request, id: 'request-2', providerId: 'provider-2', providerName: 'Other authorized provider', locationId: 'other-branch' }]

@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "8afd3b9c6c88822f5e1f70ed6a422347720c2ae58ac0c3ebad729cd6dd729e4d",
+      "sourceSha256": "17c54408d860b210785b34748492c6537cce2006b5eab67ac107b58b4214f450",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "6a05419e1a4f93124ef619f7cad1ce21dc613446401214d05c3f829f6d77bc78",
+      "previewSha256": "bdf792e79356d347b36b92bff57b5e604e5063bde453c08f51b0253885852669",
       "width": "1917px",
-      "height": "1215px"
+      "height": "1222px"
     },
     {
       "scope": "backend",
@@ -498,6 +498,18 @@
       "branch": "fix/request-chat-state-isolation-2026-10-20",
       "scope": "backend,requests,frontend",
       "change": "N23 bounded legacy arrays, paged client and owner screens, request and message analytics scans, SQL aggregate counts",
+      "sourceAnchorCount": 129,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N23 paginated request counters explicitly marked partial until all pages load",
       "sourceAnchorCount": 129,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",

@@ -59,6 +59,7 @@ note right of Entities
   N23: client/owner request screens read cursor pages.
   Only requested pages are kept in the screen state;
   older requests load on demand.
+  Counts are marked partial while more pages remain.
 end note
 note right of Client
   Vite — compatibility/development entry.

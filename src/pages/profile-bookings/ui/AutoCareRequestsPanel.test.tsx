@@ -8,6 +8,7 @@ import { AutoCareRequestsPanel } from './AutoCareRequestsPanel'
 
 const mocks = vi.hoisted(() => ({
     historyRequests: [] as AutoCareServiceRequest[],
+    hasMore: false,
     acceptQuote: vi.fn(),
     declineQuote: vi.fn(),
     decideReschedule: vi.fn(),
@@ -37,7 +38,7 @@ vi.mock('@/entities/automotive-service', () => ({
     useDecideAutoCareServiceRescheduleMutation: () => [mocks.decideReschedule, { isLoading: false, error: null }],
     useDeclineAutoCareServiceQuoteMutation: () => [mocks.declineQuote, { isLoading: false }],
     useGetMyAutoCareBonusAccountsQuery: () => ({ data: [], isLoading: false, error: null }),
-    useAutoCareRequestPages: () => ({ data: [request, ...mocks.historyRequests], hasMore: false, loadMore: vi.fn(), isLoading: false, isFetching: false, isError: false, error: null, refetch: vi.fn() }),
+    useAutoCareRequestPages: () => ({ data: [request, ...mocks.historyRequests], hasMore: mocks.hasMore, loadMore: vi.fn(), isLoading: false, isFetching: false, isError: false, error: null, refetch: vi.fn() }),
     useRedeemAutoCareBonusMutation: () => [vi.fn(), { isLoading: false, error: null }],
 }))
 
@@ -61,6 +62,7 @@ vi.mock('@/shared/lib/useTranslation', () => ({
 describe('AutoCareRequestsPanel quote decisions', () => {
     beforeEach(() => {
         mocks.historyRequests = []
+        mocks.hasMore = false
         mocks.acceptQuote.mockReset().mockImplementation(() => ({
             unwrap: vi.fn().mockRejectedValue({ data: { message: 'Смета уже обработана.' } }),
         }))
@@ -104,6 +106,12 @@ describe('AutoCareRequestsPanel quote decisions', () => {
         await user.click(screen.getByRole('button', { name: 'Принять новое время' }))
 
         expect(mocks.decideReschedule).toHaveBeenCalledWith({ requestId: 'request-1', rescheduleId: 'reschedule-1', decision: 'accept' })
+    })
+    it('marks request counts as partial while older pages remain', () => {
+        mocks.hasMore = true
+        render(<AutoCareRequestsPanel />)
+        expect(screen.getByText('autocare.loadedRequestMetricsHint')).toBeVisible()
+        expect(screen.getByText('1+')).toBeVisible()
     })
     it('keeps completed requests in a collapsed history while pending decisions stay visible', async () => {
         mocks.historyRequests = [{ ...request, id: 'closed-request', status: 'closed', reschedule: null, serviceLabels: { ru: 'Завершённая диагностика' } }]
