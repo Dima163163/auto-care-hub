@@ -360,6 +360,13 @@ N29 с `jwtRefreshExpiresIn=1h`: JWT 3600 секунд, cookie 604800, DB expiry
 согласовать поля или документировать отдельные настройки; 1h/7d/30d дают
 предсказуемые expire/refresh/cleanup результаты, включая OAuth.
 
+**Локальное исправление 2026-10-22.** Новые login/register/setup/OAuth сессии
+берут expiry из `JWT_REFRESH_EXPIRES_IN`; JWT `exp` равен сохранённому expiry,
+cookie `Max-Age` не больше оставшегося срока JWT. Rotation сохраняет
+исходный expiry (absolute lifetime). Unit проверки 1h/7d/30d и build прошли;
+PostgreSQL rotation integration test дополнен проверкой expiry, но локально
+не запущен. Сессии, созданные старой версией, сохраняют прежний expiry в БД.
+
 ### N30 · P2 · Первые 50 смет скрывают актуальную 51-ю версию
 
 **Доказательство.** `request-read.service.ts:19–22` version ASC + take 50;

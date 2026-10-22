@@ -10,7 +10,7 @@ User -> Front : sign in
 Front -> API : CSRF bootstrap / auth/login\ncredentials + browser mutation guards
 API -> Auth : validate input / password / account status
 Auth -> PG : load user / persist refresh session
-Auth --> API : access token + refresh token
+Auth --> API : access token + refresh token\nJWT exp = persisted session expiry
 API --> Front : access DTO + HttpOnly refresh cookie
 Front -> Front : access token в памяти\nRTK auth/cache state
 Front -> API : protected request\nBearer access token
@@ -23,9 +23,9 @@ else access token no longer accepted
   Front -> Front : refresh-access-token single flight
   Front -> API : /auth/refresh\nrefresh cookie + CSRF/Origin policy
   API -> Auth : validate / rotate refresh session
-  Auth -> PG : session lock / rotate / revoke on reuse
+  Auth -> PG : session lock / rotate with original expiry / revoke on reuse
   alt refresh succeeds
-    API --> Front : new access DTO + rotated cookie
+    API --> Front : new access DTO + rotated cookie\nMax-Age <= remaining JWT lifetime
     Front -> API : retry original request
   else refresh fails
     API --> Front : unauthorized / session-expired
@@ -45,7 +45,9 @@ note over Auth, PG
   смена пароля блокирует User row и отзывает сессии в той же transaction.
   Bcrypt принимает максимум 72 UTF-8 bytes при создании и проверке;
   старым длинным паролям требуется email reset.
-  Refresh/cookie TTL остаётся открытой находкой.
+  Refresh session TTL абсолютный: настройка JWT_REFRESH_EXPIRES_IN
+  определяет DB expiry, JWT exp и cookie Max-Age для новых сессий,
+  в том числе OAuth; rotation не продлевает expiry.
   MFA/KMS production acceptance этой схемой не подтверждается.
 end note
 footer baseApi.ts / refresh-access-token.ts / auth.service.ts / require-auth.ts / session.service.ts

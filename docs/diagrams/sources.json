@@ -198,7 +198,7 @@
     },
     {
       "path": "server/src/modules/auth/auth-cookie.ts",
-      "sha256": "4bab7dfb0f55f977f43acd71f1413e2d73587dff91c0dd6d397cf26d59ae9677",
+      "sha256": "7ca2c57c55ff41f3e1145b29a765f3a6741cb2cc05833b5e1e499630be22e23a",
       "scopes": [
         "auth"
       ]
@@ -219,7 +219,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.service.ts",
-      "sha256": "94a813f38a0079f813a34104cbb4d7a58cafaccc94e1766d6be21189394ac9cc",
+      "sha256": "651c5129413927dcaa4777a65e74a993298ef569a483e705bc39be339773276d",
       "scopes": [
         "auth"
       ]
@@ -735,6 +735,27 @@
       "sha256": "e09bdee8bf9c0853807490605444d6226dd1ba8f4e63fec489e76bbc2bec9b0a",
       "scopes": [
         "runtime"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/auth-token.ts",
+      "sha256": "e11f87e2a5b6889de3296cedcff8a80581695516f6c1a638eb8225dc0836610f",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/refresh-session-lifetime.ts",
+      "sha256": "1eef7f61f8409d28462bbc8fe2be46831bb3eaf6b72d0961cd1b5dd2563a2c5c",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/oauth/oauth.service.ts",
+      "sha256": "bea35d806f01b22bb812086ee797670a9303f9c63961903f7ba142eb94189781",
+      "scopes": [
+        "auth"
       ]
     }
   ],

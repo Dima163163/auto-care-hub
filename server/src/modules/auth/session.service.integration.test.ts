@@ -8,6 +8,7 @@ import { createUserSession, rotateUserSession } from './session.service.js'
 describe('refresh session rotation integration', () => {
     let userId: string
     let sessionId: string
+    let originalExpiry: Date
 
     beforeAll(async () => {
         const user = await AppDataSource.getRepository(UserEntity).save(
@@ -29,6 +30,7 @@ describe('refresh session rotation integration', () => {
             expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         })
         sessionId = session.id
+        originalExpiry = session.expiresAt
     })
 
     afterAll(async () => {
@@ -50,5 +52,6 @@ describe('refresh session rotation integration', () => {
         const sessions = await AppDataSource.getRepository(UserSessionEntity).findBy({ userId })
         expect(sessions).toHaveLength(1)
         expect(sessions[0]?.id).not.toBe(sessionId)
+        expect(sessions[0]?.expiresAt.getTime()).toBe(originalExpiry.getTime())
     })
 })

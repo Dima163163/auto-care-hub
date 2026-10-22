@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "dcd8d576d338f9546d79771a4393d4110902a87c2ef03fbc579f4ed514c098d8",
+      "sourceSha256": "8c2dd024001c24f65f535fb62dbad14f780483bc37c09c112b0167bbf5eb77db",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "b0dc85f97cb5db428a25e49e802233602265e6da86350eee0068bccdbcdba880",
-      "width": "1059px",
-      "height": "1241px"
+      "previewSha256": "c1e65d766ea558dcc2565e79b04a9bc96ce43b2e89454ad5a3b69aef493fbef8",
+      "width": "1122px",
+      "height": "1301px"
     },
     {
       "scope": "outbox",
@@ -396,6 +396,18 @@
       "sourceFreshness": "PASS",
       "diagramSourceChange": false,
       "previewChange": false
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "auth",
+      "change": "N29 absolute refresh expiry aligned across persisted session, JWT and cookie, including OAuth",
+      "sourceAnchorCount": 99,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
     }
   ],
   "limitations": [

@@ -1458,3 +1458,12 @@ connection prehandler and Render readiness/origin contract. A new root test
 command runs all 52 tooling test files (172 tests PASS locally) and is the
 first command in `quality:backend`, which the Quality workflow invokes.
 Published CI confirmation remains open.
+
+22 Oct — N29 refresh lifetime alignment:
+`JWT_REFRESH_EXPIRES_IN` now sets the absolute expiry for newly created
+password, registration, setup and OAuth sessions. Issued refresh JWTs use the
+persisted expiry and cookie Max-Age uses the remaining JWT lifetime. Rotation
+retains the original session deadline. Unit cases for 1h, 7d and 30d and the
+API build passed locally. A PostgreSQL rotation integration assertion was added
+but cannot run without a local database; existing sessions keep their stored
+expiry. `07-auth-session.puml` and its preview were refreshed.

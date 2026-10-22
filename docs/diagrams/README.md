@@ -109,6 +109,12 @@ CI step и negative tests добавлены; опубликованный CI е
 WebSocket connection-rate limit и Render readiness/origin. Архитектурные
 связи схем не изменились; обновлены только source anchors для quality scripts.
 
+**Локальное исправление N29, 2026-10-22:** `07-auth-session.puml` и SVG
+показывают абсолютный срок новых refresh сессий. Настройка задаёт DB expiry,
+JWT `exp` и оставшийся cookie `Max-Age`; rotation не продлевает сессию.
+OAuth использует тот же расчёт. Unit 1h/7d/30d и build прошли локально,
+PostgreSQL integration ожидает среды с БД.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |

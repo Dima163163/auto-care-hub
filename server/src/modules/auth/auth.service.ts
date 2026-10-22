@@ -14,6 +14,7 @@ import { UserSessionEntity } from '../../entities/user-session/user-session.enti
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { createAccessToken, createRefreshToken } from './auth-token.js'
+import { getRefreshSessionExpiry } from './refresh-session-lifetime.js'
 import { toPublicUser } from './public-user.js'
 import {
     createSecurityToken,
@@ -212,15 +213,7 @@ async function recordSecurityEvent(
     }
 }
 
-function getRefreshTokenExpiry() {
-    // jwtRefreshExpiresIn is '7d' by default
-    const days = 7
-    const date = new Date()
-    date.setDate(date.getDate() + days)
-    return date
-}
-
-export function createAuthTokens(user: UserEntity, sessionId?: string) {
+export function createAuthTokens(user: UserEntity, sessionId?: string, sessionExpiresAt?: Date) {
     const payload = {
         userId: user.id,
         role: user.role,
@@ -230,7 +223,7 @@ export function createAuthTokens(user: UserEntity, sessionId?: string) {
 
     return {
         accessToken: createAccessToken(payload),
-        refreshToken: createRefreshToken(payload),
+        refreshToken: createRefreshToken(payload, sessionExpiresAt),
     }
 }
 
@@ -298,10 +291,10 @@ export async function registerUser(input: RegisterInput) {
         userId: savedUser.id,
         userAgent: input.userAgent,
         ipAddress: input.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(savedUser, session.id)
+    const tokens = createAuthTokens(savedUser, session.id, session.expiresAt)
 
     return {
         userEntity: savedUser,
@@ -386,10 +379,10 @@ export async function loginUser(input: LoginInput) {
         userId: user.id,
         userAgent: input.userAgent,
         ipAddress: input.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(user, session.id)
+    const tokens = createAuthTokens(user, session.id, session.expiresAt)
 
     return {
         user: toPublicUser(user),
@@ -426,10 +419,10 @@ export async function loginUser(input: LoginInput) {
         userId: user.id,
         userAgent: sessionInfo.userAgent,
         ipAddress: sessionInfo.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(user, session.id)
+    const tokens = createAuthTokens(user, session.id, session.expiresAt)
 
     return {
         user: toPublicUser(user),
@@ -474,6 +467,7 @@ export async function refreshAuth(
 ) {
     const user = await getUserById(userId, tokenVersion)
 
+    let sessionExpiresAt: Date | undefined
     if (sessionId) {
         const session = await rotateUserSession(sessionId, userId)
 
@@ -503,9 +497,10 @@ export async function refreshAuth(
         }
 
         sessionId = session.id
+        sessionExpiresAt = session.expiresAt
     }
 
-    const tokens = createAuthTokens(user, sessionId)
+    const tokens = createAuthTokens(user, sessionId, sessionExpiresAt)
 
     return {
         user: toPublicUser(user),
@@ -600,13 +595,13 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
                     userAgent: metadata.userAgent,
                     ipAddress: metadata.ipAddress,
                     lastActiveAt: new Date(),
-                    expiresAt: getRefreshTokenExpiry(),
+                    expiresAt: getRefreshSessionExpiry(),
                     revokedAt: null,
                     revocationReason: null,
                 }),
             )
 
-            return { user: savedUser, sessionId: session.id }
+            return { user: savedUser, sessionId: session.id, sessionExpiresAt: session.expiresAt }
         },
     )
 
@@ -618,7 +613,7 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
         })
     }
 
-    const tokens = createAuthTokens(setup.user, setup.sessionId)
+    const tokens = createAuthTokens(setup.user, setup.sessionId, setup.sessionExpiresAt)
 
     return {
         user: toPublicUser(setup.user),

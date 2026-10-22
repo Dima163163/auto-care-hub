@@ -45,16 +45,20 @@ export function createAccessToken(
 }
 
 export function createRefreshToken(
-    payload: Omit<RefreshTokenPayload, 'tokenType'>
+    payload: Omit<RefreshTokenPayload, 'tokenType'>,
+    sessionExpiresAt?: Date,
 ) {
-    const options: SignOptions = {
-        expiresIn: env.auth.jwtRefreshExpiresIn,
+    const options: SignOptions = sessionExpiresAt ? {} : { expiresIn: env.auth.jwtRefreshExpiresIn }
+    const expiresAtSeconds = sessionExpiresAt ? Math.floor(sessionExpiresAt.getTime() / 1_000) : undefined
+    if (expiresAtSeconds !== undefined && expiresAtSeconds <= Math.floor(Date.now() / 1_000)) {
+        throw new Error('Refresh session has expired.')
     }
 
     return jwt.sign(
         {
             ...payload,
             tokenType: 'refresh',
+            ...(expiresAtSeconds === undefined ? {} : { exp: expiresAtSeconds }),
         },
         env.auth.jwtRefreshSecret as Secret,
         options
