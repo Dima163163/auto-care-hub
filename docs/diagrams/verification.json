@@ -170,11 +170,11 @@
     {
       "scope": "outbox",
       "source": "08-outbox-maintenance.puml",
-      "sourceSha256": "836ed6aa23ba454b8ddba3cb3a15e559fea75ba4badfd4f7e0269f45a13cca30",
+      "sourceSha256": "da904f08625daf6e0e44361b5199b2860e3c75ec26fbc7c2acf4a2c1c68ec92b",
       "preview": "rendered/08-outbox-maintenance.svg",
-      "previewSha256": "fbe2f15bec5df2706454af86f22c8e22284f39bfca9f449566840bc5e04d7c3e",
-      "width": "1589px",
-      "height": "1259px"
+      "previewSha256": "cd5d208226f9a9f7e29c5fb0e6426615d8fe49a32566c16de6d56e23a89c0ae7",
+      "width": "1646px",
+      "height": "1304px"
     },
     {
       "scope": "security",
@@ -414,6 +414,18 @@
       "branch": "fix/request-chat-state-isolation-2026-10-20",
       "scope": "requests",
       "change": "N30 current quote retained in latest 50 revisions with stale quote decision guard",
+      "sourceAnchorCount": 100,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "requests,outbox",
+      "change": "N32 quote revision notification identity preserves event type and retry deduplication",
       "sourceAnchorCount": 100,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",

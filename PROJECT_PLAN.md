@@ -128,7 +128,8 @@
   failed-provider retry; unit/build PASS, PostgreSQL scheduling gate open.
 - [x] N30: последние 50 quote revisions сохраняют current в конце истории;
   проверка 51-й версии и stale decision добавлена, PostgreSQL gate открыт.
-- [ ] N32: notification identity по quote version с сохранением retry idempotency.
+- [x] N32: notification identity включает quote ID, retry одной версии
+  дедуплицируется; PostgreSQL/outbox delivery gate открыт.
 - [x] N27: AST runtime-boundary guard покрывает зарегистрированные domain
   factories (136 endpoints), отказывает при пропущенном transform или нулевом
   coverage; negative fixtures и CI step PASS локально.

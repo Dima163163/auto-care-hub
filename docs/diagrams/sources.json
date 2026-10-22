@@ -369,7 +369,7 @@
     },
     {
       "path": "server/src/modules/autocare/request-effects.service.ts",
-      "sha256": "2f11d8d9a0e8a1ac95e5910162d5dcf3188b7a14ec6ff8e8c4b3fe9e4226d84c",
+      "sha256": "91d80309677ec75d0a90c047282633940fd25c4e13a8f5f49321b0314bd08da3",
       "scopes": [
         "outbox"
       ]
@@ -383,7 +383,7 @@
     },
     {
       "path": "server/src/modules/autocare/request-quote.service.ts",
-      "sha256": "04ef943e61cc164e60ac116cf80d7271013aab49de49b355a1637bb80c59acec",
+      "sha256": "c6832d98cee16e8aa62e3a72153abe5f631a12930b72f3b45d2dd166024da57a",
       "scopes": [
         "requests"
       ]

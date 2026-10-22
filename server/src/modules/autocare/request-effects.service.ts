@@ -16,6 +16,7 @@ export async function notifyAutoCareParticipant(input: {
     userId: string
     requestId: string
     event: string
+    eventIdentity?: string
     title: string
     message: string
     role: 'client' | 'owner'
@@ -26,9 +27,14 @@ export async function notifyAutoCareParticipant(input: {
         title: input.title,
         message: input.message,
         link: input.role === 'owner' ? `/owner/autocare-requests?request=${input.requestId}` : `/profile/bookings?request=${input.requestId}`,
-        metadata: { serviceRequestId: input.requestId, event: input.event, domain: 'autocare' },
+        metadata: {
+            serviceRequestId: input.requestId,
+            event: input.event,
+            domain: 'autocare',
+            ...(input.eventIdentity ? { eventIdentity: input.eventIdentity } : {}),
+        },
     }
-    const idempotencyKey = `notification:autocare:${input.requestId}:${input.event}:${input.userId}`
+    const idempotencyKey = `notification:autocare:${input.requestId}:${input.event}${input.eventIdentity ? `:${input.eventIdentity}` : ''}:${input.userId}`
     if (manager) {
         await enqueueNotification(notification, idempotencyKey, manager)
         return

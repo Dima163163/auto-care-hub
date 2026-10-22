@@ -8,13 +8,15 @@ participant "Worker / all runtime\nmaintenance-jobs" as Worker
 database "Redis" as Redis
 participant "Mailer / Notification writer" as Delivery
 API -> PG : business mutation
-API -> Queue : enqueue(payload, key, manager?)
+API -> Queue : enqueue(payload, event identity, manager?)
 Queue -> Queue : transformer.to(payload)\nemail blind index + encrypted PII
 Queue -> PG : INSERT pending encrypted JSONB\nON CONFLICT idempotency DO NOTHING
 Queue -> PG : findOne by idempotency key
 PG --> Queue : decoded entity / existing event
 note over API, PG
   Переданный EntityManager позволяет общий business transaction.
+  Для новой сметы notification key включает persisted quote ID;
+  retry одной версии дедуплицируется, разные версии независимы.
   Provider invitation и email.send с encryptedToken ставятся
   в одной transaction; enqueue failure откатывает приглашение.
   Safely/after-commit callers нужно проверять отдельно.
@@ -56,7 +58,8 @@ end
 note over Worker, Delivery
   Claim/lease дают повторную обработку при сбое.
   Event identity и downstream idempotency требуют проверки.
-  Повторные quote versions сейчас делят один notification key.
+  Quote notification key различает версии; production delivery
+  и downstream deduplication ещё не подтверждены.
 end note
 footer outbox.service.ts / maintenance-jobs.service.ts / maintenance-lease.service.ts
 @enduml

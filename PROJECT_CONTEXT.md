@@ -1475,3 +1475,11 @@ both client decision views. A PostgreSQL integration case seeds 51 versions,
 checks the current status/identity and rejects a stale quote decision with 409.
 The API build passed; that database scenario is not locally runnable.
 `06-request-workflow.puml` records the read/decision contract.
+
+22 Oct — N32 quote notification identity:
+The outbox key for an estimate now includes the persisted quote ID while the
+public event type remains `estimate-shared`. The quote and notification enqueue
+share a transaction. A PostgreSQL integration case verifies two revisions
+produce two events and retrying one revision remains idempotent. The API build
+passed; database execution and actual worker delivery remain open.
+`08-outbox-maintenance.puml` and preview describe this boundary.

@@ -39,6 +39,7 @@ import {
     requestAutoCareServiceReschedule,
 } from './autocare-request.service.js'
 import { expireAutoCareServiceQuotes } from './quote-expiry.service.js'
+import { notifyAutoCareParticipant } from './request-effects.service.js'
 
 describe('AutoCare appointment capacity integration', () => {
     const suffix = `${Date.now()}`
@@ -553,6 +554,40 @@ describe('AutoCare appointment capacity integration', () => {
             quoteVersion: firstQuote.version,
         })).rejects.toMatchObject({ statusCode: 409 })
         expect((await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: request.id })).status).toBe(ServiceRequestStatus.EstimateShared)
+    })
+
+    it('enqueues one notification per quote revision and deduplicates its retry', async () => {
+        const preferredAt = new Date(Date.now() + 42 * 24 * 60 * 60 * 1_000)
+        preferredAt.setUTCHours(14, 0, 0, 0)
+        const request = await createAutoCareServiceRequest(client, {
+            providerId: provider.id,
+            locationId: location.id,
+            offeringId: offering.id,
+            preferredAt: preferredAt.toISOString(),
+            contactSnapshot: { name: client.name, phone: '+10000000000' },
+            note: 'Quote notification revisions',
+            idempotencyKey: `quote-notification-${suffix}`,
+        })
+        createdRequestIds.push(request.id)
+        const first = await createAutoCareServiceQuote(owner, request.id, { amountMinor: 120_000, currencyCode: 'RUB' })
+        const second = await createAutoCareServiceQuote(owner, request.id, { amountMinor: 125_000, currencyCode: 'RUB' })
+        const firstQuote = first.quoteHistory.at(-1)!
+        const secondQuote = second.quoteHistory.at(-1)!
+        const key = (quoteId: string) => `notification:autocare:${request.id}:estimate-shared:${quoteId}:${client.id}`
+        const outboxRepository = AppDataSource.getRepository(OutboxEventEntity)
+        expect(await outboxRepository.countBy({ idempotencyKey: key(firstQuote.id) })).toBe(1)
+        expect(await outboxRepository.countBy({ idempotencyKey: key(secondQuote.id) })).toBe(1)
+
+        await AppDataSource.transaction((manager) => notifyAutoCareParticipant({
+            userId: client.id,
+            requestId: request.id,
+            event: 'estimate-shared',
+            eventIdentity: secondQuote.id,
+            role: 'client',
+            title: 'Сервис прислал предварительную смету',
+            message: 'Повторная постановка одной версии',
+        }, manager))
+        expect(await outboxRepository.countBy({ idempotencyKey: key(secondQuote.id) })).toBe(1)
     })
 
     it('makes repeated quote acceptance idempotent and preserves the accepted price', async () => {

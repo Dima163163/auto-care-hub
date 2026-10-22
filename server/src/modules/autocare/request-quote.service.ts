@@ -60,7 +60,7 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
             { requestId, status: AutoCareQuoteStatus.Pending },
             { status: AutoCareQuoteStatus.Superseded },
         )
-        await quoteRepository.save(quoteRepository.create({
+        const savedQuote = await quoteRepository.save(quoteRepository.create({
             requestId,
             providerId: lockedRequest.providerId,
             version: (latestQuote?.version ?? 0) + 1,
@@ -75,6 +75,7 @@ export async function createAutoCareServiceQuote(user: UserEntity, requestId: st
             userId: lockedRequest.clientId,
             requestId,
             event: 'estimate-shared',
+            eventIdentity: savedQuote.id,
             role: 'client',
             title: 'Сервис прислал предварительную смету',
             message: `Проверьте предварительную стоимость услуги: ${(amountMinor / 100).toFixed(2)} ${currencyCode}.`,
