@@ -38,3 +38,13 @@ Checkout: `autocare-hub-weakness-audit`, branch
 PostgreSQL/Redis integration, SMTP, authenticated real E2E и staging smoke
 на exact published candidate не запускались. Нулевой npm audit означает
 только отсутствие известных advisories в момент проверки.
+
+## Дополнение 22 октября: Fastify
+
+Повторный полный API audit после первоначального обновления обнаружил одну
+новую запись низкой степени риска:
+[GHSA-389g-gv7q-r4x8](https://github.com/advisories/GHSA-389g-gv7q-r4x8)
+для Fastify 5.12.5. Прямую зависимость и lockfile обновили до 5.12.7.
+После установки API `npm audit` показал 0 уязвимостей; root audit тоже 0.
+Сборка API и 1465 unit tests прошли повторно на этом кандидате; опубликованный
+Quality CI остаётся критерием принятия PR.

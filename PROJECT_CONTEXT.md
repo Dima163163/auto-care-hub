@@ -1540,3 +1540,8 @@ server metadata and `/services` to `/login` client transition and the Next
 production build passed. The SEO quality guard now checks the extracted
 shared noindex policy and passes its root tooling test. The deployed browser
 chain is still unverified.
+
+22 Oct — dependency follow-up:
+API Fastify was raised from 5.12.5 to 5.12.7 for the newly reported
+GHSA-389g-gv7q-r4x8. Fresh root and API npm audits report zero findings.
+Published Quality CI on the final PR candidate remains the release gate.
