@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "35e5eb56090a19e27f2abd7515b6ef4c18a531a0e10d63b39174c5ab21164e89",
+      "sourceSha256": "b39ab3b160480247df61eccda5ef5025cd1a2e7fe2fad4b33b3a226ebe509019",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "56b668c356808fa2b1014bc1e5f5fc57457c4c34c9352df67a223ee59686bc85",
-      "width": "1810px",
-      "height": "1185px"
+      "previewSha256": "12f5488b5515bf77e82a77e339ac6ed76a01b0b2b139042ad1573578e377346f",
+      "width": "1586px",
+      "height": "1190px"
     },
     {
       "scope": "backend",
@@ -427,6 +427,18 @@
       "scope": "requests,outbox",
       "change": "N32 quote revision notification identity preserves event type and retry deduplication",
       "sourceAnchorCount": 100,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N33 safe localized parsing, timeout and server error presentation with retry",
+      "sourceAnchorCount": 101,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

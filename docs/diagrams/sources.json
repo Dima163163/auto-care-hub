@@ -764,6 +764,13 @@
       "scopes": [
         "requests"
       ]
+    },
+    {
+      "path": "src/shared/api/getApiErrorMessage.ts",
+      "sha256": "a2f598e91cc10107d57d1d6e67dcf73426779bc5c6c9fec1697283a4ec2ba001",
+      "scopes": [
+        "frontend"
+      ]
     }
   ],
   "inventories": [

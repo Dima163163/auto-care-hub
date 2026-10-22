@@ -1483,3 +1483,11 @@ share a transaction. A PostgreSQL integration case verifies two revisions
 produce two events and retrying one revision remains idempotent. The API build
 passed; database execution and actual worker delivery remain open.
 `08-outbox-maintenance.puml` and preview describe this boundary.
+
+22 Oct — N33 safe transport error presentation:
+The shared API error formatter now displays localized neutral text for malformed
+JSON, timeout, HTTP 5xx and direct SyntaxError failures instead of response
+fragments or exception strings. QueryStateCard still exposes an accessible
+retry action. Focused helper/UI tests and the Next build passed locally.
+Centralized client telemetry is not present yet; RTK error objects remain
+available to callers for diagnostics. `03-frontend.puml` was updated.

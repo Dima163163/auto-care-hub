@@ -15,7 +15,7 @@ package "Существующее React application tree" {
   component "src/entities\nданные и API hooks" as Entities
   component "ServiceRequestChat\nсостояние по userId + requestId" as RequestChat
   component "RequestForm\nчерновик визита с абсолютной датой" as BookingForm
-  component "src/shared + src/components/ui\nUI / i18n / helpers" as Shared
+  component "src/shared + src/components/ui\nUI / i18n / safe error messages" as Shared
 }
 package "Данные" {
   component "Redux store\nRTK Query cache" as Store
@@ -56,6 +56,11 @@ end note
 note right of Client
   Vite — compatibility/development entry.
   Реальный production graph исключает MSW fixtures.
+end note
+note right of Shared
+  N33: parsing/timeout/5xx и SyntaxError не выводят
+  raw response в UI. Локализованное сообщение и retry
+  сохраняют понятный сценарий при сбое API.
 end note
 note right of RequestChat
   При смене пользователя или заявки дочерний компонент

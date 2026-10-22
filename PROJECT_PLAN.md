@@ -138,7 +138,9 @@
   опубликованный CI ещё открыт.
 - [x] N29: для новых сессий absolute expiry согласован с JWT/cookie; unit и
   build PASS, PostgreSQL rotation integration ожидает среды с БД.
-- [ ] N33/N34: понятные transport errors и согласованные direct/client auth metadata.
+- [x] N33: parsing/timeout/5xx показывают локализованный текст с retry;
+  централизованная клиентская telemetry остаётся открытой.
+- [ ] N34: согласовать direct/client auth metadata.
 - [ ] N21: считать полный статусный backlog отзывов отдельно от bounded анализа
   аномалий/калибровки; проверить >1000 записей.
 - [ ] N22: единая политика первого ответа для owner analytics, admin quality
