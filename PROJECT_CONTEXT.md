@@ -1450,3 +1450,11 @@ factories from `autocareApi.ts`, and checks all 256 endpoints including 136
 domain endpoints. It fails on zero coverage, an orphan factory and a missing
 `transformResponse`. Three positive/negative fixture tests pass and are wired
 into the Quality workflow. This is local evidence; published CI has not run.
+
+
+22 Oct — N31 local tooling-test repair:
+Threat-surface and MVP readiness fixtures now match the current WebSocket
+connection prehandler and Render readiness/origin contract. A new root test
+command runs all 52 tooling test files (172 tests PASS locally) and is the
+first command in `quality:backend`, which the Quality workflow invokes.
+Published CI confirmation remains open.

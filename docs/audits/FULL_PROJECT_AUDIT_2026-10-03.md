@@ -121,7 +121,7 @@ run action_required не заявлен PASS. Рабочая developer БД не
 | N28 | P2 | Denied sessionStorage прерывает auth cleanup | Исходный helper в VM + порядок cleanup |
 | N29 | P3 | Configurable JWT refresh TTL и фиксированные cookie/DB TTL | Реальный login: 1h / 7d / 7d |
 | N30 | P2 | Quote history first 50 исключает current 51-ю смету | Реальный hydrate/DTO: pending → superseded |
-| N31 | P2 | Два root tooling tests устарели и не исполняются стандартной цепочкой | Полный Node test run: 188 PASS, 2 FAIL |
+| N31 | P2 | Два root tooling tests устарели и не исполняются стандартной цепочкой | Локально исправлено: 52 files / 172 PASS, обязательный quality:backend; CI gate открыт |
 | N32 | P2 | Idempotency key подавляет уведомление о следующей смете | Реальный notify: один key для двух versions |
 | N33 | P3 | Parsing/internal transport error показывается пользователю | Browser + исходный error helper |
 | N34 | P3 | Public → auth client navigation оставляет старые metadata | Browser head до/после direct reload + layouts |

@@ -386,6 +386,16 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "runtime",
+      "change": "N31 root tooling fixtures and mandatory quality:backend suite",
+      "sourceAnchorCount": 96,
+      "sourceFreshness": "PASS",
+      "diagramSourceChange": false,
+      "previewChange": false
     }
   ],
   "limitations": [

@@ -392,6 +392,12 @@ quality:backend вызывает checker, но не эти `.test.mjs`. Server t
 root tooling inventory в обязательную автоматическую проверку. Полный suite
 PASS; намеренное удаление required controls ловится fixture тестом.
 
+**Локальное исправление 22.10.** Positive fixture WebSocket обновлён с
+connection-rate prehandler; negative fixture проверяет удаление этого guard.
+Render fixture включает health readiness и frontend origin. Команда
+`test:tooling:root` выполняет все 52 root test files, 172 tests PASS, и теперь
+стоит в начале обязательного `quality:backend`. CI после push ещё не запускался.
+
 ### N32 · P2 · Уведомление о следующей смете подавляется idempotency key первой
 
 **Доказательство.** `request-quote.service.ts:77` всегда event='estimate-shared';

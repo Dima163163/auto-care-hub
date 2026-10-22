@@ -8,6 +8,7 @@ key: NODE_ENV
         value: production
 preDeployCommand: "npm run release:migrate"
 startCommand: "npm run start:server"
+healthCheckPath: /health/ready
 key: MAIL_MODE
         value: smtp
 key: BOOTSTRAP_SUPER_ADMIN_EMAIL
@@ -16,6 +17,7 @@ key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
 key: CABINET_UPLOADS_DIR
         sync: false
+https://autocarehub.app
 `
 
 const completeEnvironment = {

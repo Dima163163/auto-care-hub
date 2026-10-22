@@ -131,8 +131,9 @@
 - [x] N27: AST runtime-boundary guard покрывает зарегистрированные domain
   factories (136 endpoints), отказывает при пропущенном transform или нулевом
   coverage; negative fixtures и CI step PASS локально.
-- [ ] N31: актуальные root tooling fixtures и автоматическая цепочка их
-  исполнения.
+- [x] N31: обновлены threat/Render fixtures; полный root tooling inventory
+  (172 tests) включён в обязательный `quality:backend`. Локальный suite PASS,
+  опубликованный CI ещё открыт.
 - [ ] N29/N33/N34: явные session/token TTL, понятные transport errors,
   согласованные direct/client auth metadata.
 - [ ] N21: считать полный статусный backlog отзывов отдельно от bounded анализа

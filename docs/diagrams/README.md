@@ -104,6 +104,11 @@ Checker покрывает 256 endpoint declarations (136 доменных) и �
 нулевом coverage, незарегистрированном factory или отсутствующем transform.
 CI step и negative tests добавлены; опубликованный CI ещё не запускался.
 
+**Локальное исправление N31, 2026-10-22:** полный набор root tooling tests
+включён в обязательный backend quality job. Обновлены fixture contracts для
+WebSocket connection-rate limit и Render readiness/origin. Архитектурные
+связи схем не изменились; обновлены только source anchors для quality scripts.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |

@@ -68,7 +68,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "3eafa617d2f413c2482f1c9b7335a069e1afa30943ca520ebe48ca6e9e0a11bc",
+      "sha256": "78e87e9c03469168198f875e49f41e07af4b5c02ec0066329a93ef6b9e3a0acd",
       "scopes": [
         "frontend"
       ]
@@ -721,6 +721,20 @@
       "sha256": "8f17c38573e2550e6c83594411980ffec46212a92bd084a9e57ce772f7c6cd52",
       "scopes": [
         "frontend"
+      ]
+    },
+    {
+      "path": "scripts/check-threat-surface.test.mjs",
+      "sha256": "11ec2c10af8e321cf951de8ca5f1f5ec18eedacf226f831028311b7a38d3fa41",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "scripts/check-mvp-readiness.test.mjs",
+      "sha256": "e09bdee8bf9c0853807490605444d6226dd1ba8f4e63fec489e76bbc2bec9b0a",
+      "scopes": [
+        "runtime"
       ]
     }
   ],
