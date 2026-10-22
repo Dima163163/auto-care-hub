@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**Проверка anchors, 2026-10-23:** после обновления Fastify обновлён fingerprint
+`server/package.json`; все 129 source anchors соответствуют текущему коду.
+Рёбра PlantUML и SVG не менялись. Поле `baseline` и footer схемы сохраняют
+исторический исходный срез `8840ae8`; актуальность anchors проверяется отдельно.
+
 **N23, локальная реализация, 2026-10-22:** `03-frontend.puml` и
 `04-backend.puml` с SVG показывают cursor pages заявок с SQL scope и batch
 hydration, bounded legacy array и streaming owner/admin analytics.
