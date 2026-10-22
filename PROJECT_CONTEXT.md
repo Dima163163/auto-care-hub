@@ -1545,3 +1545,9 @@ chain is still unverified.
 API Fastify was raised from 5.12.5 to 5.12.7 for the newly reported
 GHSA-389g-gv7q-r4x8. Fresh root and API npm audits report zero findings.
 Published Quality CI on the final PR candidate remains the release gate.
+
+23 Oct — promotion workflow event selection:
+The early Quality wait now accepts only a push-triggered run for the exact dev
+SHA. The later required-check gate already requires both push and PR events.
+The CI policy contract has a negative test for a missing event filter. Local
+checks pass; the published candidate and code-owner review remain open.
