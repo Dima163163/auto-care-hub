@@ -7,6 +7,8 @@ import {
     AutoCareTrustEvidenceEntity,
     AutoCareTrustSnapshotEntity,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveProviderStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
@@ -22,6 +24,7 @@ import { getAutoCareTrustPolicy } from '../admin/super-admin-trust-policy.servic
 import { countActiveGuaranteeCases } from './guarantee-claim-policy.js'
 import { logError } from '../../shared/observability/logger.js'
 import { metrics } from '../../shared/observability/metrics.js'
+import { getFirstProviderResponseMinutes } from './first-provider-response-policy.js'
 
 const FAILED_REASSESSMENT_RETRY_MS = 15 * 60_000
 
@@ -48,12 +51,16 @@ export async function reassessAutoCareProviderTrust(
     const provider = await providerRepository.findOneBy({ id: providerId })
     if (!provider) return null
 
-    const [evidence, reviews, claims, interactions, policy] = await Promise.all([
+    const [evidence, reviews, claims, interactions, policy, memberships] = await Promise.all([
         manager.getRepository(AutoCareTrustEvidenceEntity).find({ where: { providerId } }),
         manager.getRepository(AutomotiveReviewEntity).find({ where: { providerId, status: AutomotiveReviewStatus.Approved, verifiedVisit: true } }),
         manager.getRepository(AutoCareGuaranteeClaimEntity).find({ where: { providerId } }),
         manager.getRepository(ServiceRequestEntity).find({ where: { providerId } }),
         getAutoCareTrustPolicy(),
+        manager.getRepository(AutomotiveProviderMembershipEntity).find({
+            where: { providerId, status: AutomotiveProviderMembershipStatus.Active },
+            select: { providerId: true, userId: true, locationId: true, status: true },
+        }),
     ])
     const nowMs = Date.now()
     const approvedReviewById = new Map(reviews.map((review) => [review.id, review]))
@@ -80,10 +87,12 @@ export async function reassessAutoCareProviderTrust(
             where: { requestId: In(requestIds) },
             order: { createdAt: 'ASC' },
         })
-    const firstResponseMinutes = interactions.flatMap((request) => {
-        const response = messages.find((message) => message.requestId === request.id && message.senderId !== request.clientId)
-        return response ? [(response.createdAt.getTime() - request.createdAt.getTime()) / 60_000] : []
-    })
+    const firstResponseMinutes = [...getFirstProviderResponseMinutes({
+        providers: [provider],
+        memberships,
+        requests: interactions,
+        messages,
+    }).values()]
     const responseTimeMinutes = firstResponseMinutes.length > 0
         ? firstResponseMinutes.reduce((sum, value) => sum + value, 0) / firstResponseMinutes.length
         : undefined

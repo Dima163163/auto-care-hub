@@ -146,9 +146,10 @@
   аномалий/калибровки помечен в API и интерфейсе. Server unit/build, web
   focused test/lint/build PASS; повторная проверка >1000 на PostgreSQL ожидает
   доступной БД.
-- [ ] N22: единая политика первого ответа для owner analytics, admin quality
-  и public trust score;
-  негативные случаи system/чужой филиал/отзыв доступа/ответ до заявки.
+- [x] N22: единая политика первого ответа для owner analytics, admin quality
+  и public trust score; негативные случаи system/чужой филиал/отзыв доступа/
+  ответ до заявки покрыты unit. Историческая семантика использует актуальное
+  membership, пока нет audit intervals; PostgreSQL flow остаётся открытым.
 - [ ] N23: bounded или SQL-агрегированная аналитика на большой истории,
   scoped pagination/batch hydration списка заявок;
   измерить latency/память и сохранить точность lifetime/period метрик.

@@ -13,6 +13,7 @@ package "modules/autocare" {
   component "Requests\nrequest-create / read / quote\ntransition / reschedule / availability" as Requests
   component "Chat\nchat-read / messaging / attachment\nrequest-conversation / gateway" as Chat
   component "Quality / marketplace\nreviews / moderation / trust-score\nbonus / guarantee / broadcast" as Quality
+  component "Analytics / response policy\nowner + admin + trust\ncurrent member / branch / time checks" as Analytics
   component "Access policy\nprovider-access / request-access\nchat-access + input policy helpers" as Access
 }
 component "outbox + notifications\nqueued effects / delivery" as Outbox
@@ -28,10 +29,12 @@ Routes --> Providers
 Routes --> Requests
 Routes --> Chat
 Routes --> Quality
+Routes --> Analytics
 Providers --> Access
 Requests --> Access
 Chat --> Access
 Quality --> Access
+Quality --> Analytics : first response
 Requests --> Quality : bonus / trust transitions
 Requests --> Outbox
 Chat --> Outbox
@@ -42,6 +45,7 @@ Providers --> ORM
 Requests --> ORM
 Chat --> ORM
 Quality --> ORM
+Analytics --> ORM
 Identity --> ORM
 Admin --> ORM
 Legacy --> ORM

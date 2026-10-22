@@ -6,6 +6,8 @@ import {
     AutoCareProviderDailyMetricEntity,
     AutoCareServiceQuoteEntity,
     AutomotiveProviderEntity,
+    AutomotiveProviderMembershipEntity,
+    AutomotiveProviderMembershipStatus,
     AutomotiveReviewEntity,
     AutomotiveReviewStatus,
     ServiceMessageEntity,
@@ -21,6 +23,7 @@ import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import { normalizeProviderMembershipUuid } from './provider-membership-policy.js'
 import type { AutoCareProviderAnalyticsResponse } from './autocare.types.js'
 import { env } from '../../config/env.js'
+import { getFirstProviderResponseMinutes } from './first-provider-response-policy.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -61,7 +64,7 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
 
     const requestIds = requests.map((request) => request.id)
     const requestIdSet = new Set(requestIds)
-    const [quotes, allReviews, accounts, metrics] = await Promise.all([
+    const [quotes, allReviews, accounts, metrics, memberships] = await Promise.all([
         requestIds.length === 0
             ? Promise.resolve([])
             : AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({ where: { requestId: In(requestIds) } }),
@@ -76,6 +79,10 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
                 .where('metric.providerId = :providerId', { providerId: normalizedProviderId })
                 .getRawOne<{ impressions: string; profileOpens: string }>()
             : Promise.resolve(null),
+        AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({
+            where: { providerId: normalizedProviderId, status: AutomotiveProviderMembershipStatus.Active },
+            select: { providerId: true, userId: true, locationId: true, status: true },
+        }),
     ])
     const reviews = isProviderWide
         ? allReviews
@@ -83,18 +90,12 @@ export async function getOwnerAutoCareProviderAnalytics(owner: UserEntity, provi
     const messages = requestIds.length === 0
         ? []
         : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, order: { createdAt: 'ASC' } })
-    const clientByRequest = new Map(requests.map((request) => [request.id, request.clientId]))
-    const firstProviderMessage = new Map<string, Date>()
-    for (const message of messages) {
-        if (message.requestId && message.senderId !== clientByRequest.get(message.requestId) && !firstProviderMessage.has(message.requestId)) {
-            firstProviderMessage.set(message.requestId, message.createdAt)
-        }
-    }
-    const responseTimes = requests.flatMap((request) => {
-        const firstMessage = firstProviderMessage.get(request.id)
-        if (!firstMessage) return []
-        return [Math.max(0, (firstMessage.getTime() - request.createdAt.getTime()) / 60_000)]
-    })
+    const responseTimes = [...getFirstProviderResponseMinutes({
+        providers: [provider],
+        memberships,
+        requests,
+        messages,
+    }).values()]
 
     const eligibleQuoteRequests = new Set(quotes.map((quote) => quote.requestId))
     for (const request of requests) {

@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## Локальное исправление N22 — 2026-10-22
+
+Owner analytics, admin quality и public trust теперь используют единое
+правило первого ответа сервиса с проверкой автора, active membership,
+филиала и времени. Историческая семантика доступа основана на текущем
+membership до появления audit intervals. Targeted unit и API build PASS;
+PostgreSQL HTTP flow ожидает среды с БД. Обновлены `04-backend.puml` и SVG.
+
 ## Локальное исправление N21 — 2026-10-22
 
 Административные счётчики статусов отзывов теперь берутся из полной SQL

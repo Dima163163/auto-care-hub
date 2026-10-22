@@ -254,7 +254,7 @@
     },
     {
       "path": "server/src/modules/autocare/trust-score.service.ts",
-      "sha256": "d44b7cd4a7b2b511f9f520492576730710164aa89ab6e62b39802e8e46dd9743",
+      "sha256": "19f06cd6d61b5e54bcbf2684dfb776442e843508d4b52a08f0e9e368e742d200",
       "scopes": [
         "data"
       ]
@@ -834,6 +834,27 @@
       "sha256": "6aa7ca8e9dd7014b7acac1daba6b66d3d620bf124eb7a4068752d2b3fc077d34",
       "scopes": [
         "frontend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/first-provider-response-policy.ts",
+      "sha256": "57218bcf1e7e5396a0388c7e00237f29bd8bb72b8f201a4ee622f9963018ac44",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-analytics.service.ts",
+      "sha256": "ab68d5110c46f253a3c04ba81831a144e8a9eb0e3a1fa3834fb31181b070af23",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/quality-metrics.ts",
+      "sha256": "7c6ad35f7cb8ccd47dd714818c95c1d9d3f1d372367f26e6da64e5f908fa06b3",
+      "scopes": [
+        "backend"
       ]
     }
   ],

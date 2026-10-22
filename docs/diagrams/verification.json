@@ -134,11 +134,11 @@
     {
       "scope": "backend",
       "source": "04-backend.puml",
-      "sourceSha256": "c190e5b670316896f43fe2ed86f6ef060c06f2c4d6b94f6569a7bef39bfbc34b",
+      "sourceSha256": "6e6042a6f5eb15442b3bd154109fa92a8e13b919c39aa769db0af103f6733f2a",
       "preview": "rendered/04-backend.svg",
-      "previewSha256": "d9ce98426f8c03bba8731b71802ce85cfb5852ea2584522a5f4c6252773a6de4",
-      "width": "1702px",
-      "height": "858px"
+      "previewSha256": "f811b9d4388945603ae1ad1a37b40a6e8ec9a70ed6a66dc695d61cc59652da22",
+      "width": "1618px",
+      "height": "827px"
     },
     {
       "scope": "data",
@@ -463,6 +463,18 @@
       "scope": "backend,data,frontend",
       "change": "N21 full review status aggregation and disclosed bounded anomaly/calibration window",
       "sourceAnchorCount": 110,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "backend",
+      "change": "N22 shared first provider response policy across owner, admin and public trust",
+      "sourceAnchorCount": 113,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",
