@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "cac7d87671ae3e95a0a380dda91e02323849d6cbd4d1c68c5bbd613d2c38c2c4",
+      "sourceSha256": "35e5eb56090a19e27f2abd7515b6ef4c18a531a0e10d63b39174c5ab21164e89",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "05d186d9e7e6b041d5f9fcb1859c06755551f44d779596060e699ba739177c43",
+      "previewSha256": "56b668c356808fa2b1014bc1e5f5fc57457c4c34c9352df67a223ee59686bc85",
       "width": "1810px",
-      "height": "1155px"
+      "height": "1185px"
     },
     {
       "scope": "backend",
@@ -369,6 +369,18 @@
       "scope": "data,frontend",
       "change": "N24 atomic review revision and version-scoped moderation evidence",
       "sourceAnchorCount": 91,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-22",
+      "branch": "fix/request-chat-state-isolation-2026-10-20",
+      "scope": "frontend",
+      "change": "N27 AST checker covers registered domain endpoint factories and CI negative tests",
+      "sourceAnchorCount": 94,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

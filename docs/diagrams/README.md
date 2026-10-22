@@ -98,6 +98,12 @@ anchors миграции и policy editor; PostgreSQL worker passes ещё не 
 версии под lock. Добавлены anchors реализации, миграции и UI статуса.
 PostgreSQL race integration test написан, но локально не запущен.
 
+**Локальное исправление N27, 2026-10-22:** `03-frontend.puml` и SVG
+отражают AST проверку всех 10 зарегистрированных AutoCare endpoint factories.
+Checker покрывает 256 endpoint declarations (136 доменных) и отказывает при
+нулевом coverage, незарегистрированном factory или отсутствующем transform.
+CI step и negative tests добавлены; опубликованный CI ещё не запускался.
+
 ## Выбрать схему
 
 | Задача | PlantUML | Просмотр | Первые исходники от корня repo |

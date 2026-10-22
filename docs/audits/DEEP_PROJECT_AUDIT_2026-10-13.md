@@ -325,6 +325,12 @@ hashing scheme с migration/compatibility. Два разных допустим�
 AST или устойчивый parser; нулевой неожиданный coverage — fail. Удаление одного
 реального доменного transformResponse обязано сделать guard красным.
 
+**Локальное исправление 22.10.** Checker теперь разбирает AST `injectEndpoints`
+и зарегистрированные `.endpoints.ts`, проверяет 256 endpoints, из них 136
+доменных в 10 factories. Пустой factory, незарегистрированный файл и отсутствие
+`transformResponse` дают failure; negative fixtures и запуск на проекте PASS.
+CI запускает checker и его negative tests. Опубликованный CI результат ещё открыт.
+
 ### N28 · P2 · Недоступный sessionStorage прерывает auth cleanup
 
 **Доказательство.** `auth-session-state.ts:47–60` читает/меняет storage без catch.

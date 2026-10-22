@@ -68,7 +68,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "dbea27c823eb792c3dd95c07901fd460d4e4fb0e9332473108dbffdd3fc21ecc",
+      "sha256": "3eafa617d2f413c2482f1c9b7335a069e1afa30943ca520ebe48ca6e9e0a11bc",
       "scopes": [
         "frontend"
       ]
@@ -698,6 +698,27 @@
     {
       "path": "src/shared/config/translations/ru-part-3-admin.ts",
       "sha256": "9dc5e1441677aafd5053a4fb13ef97176afc0bd855f60834c75d4785b258d084",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": ".github/workflows/quality.yml",
+      "sha256": "99c01823456a4fdcffcca770dddf9441ead93376b8b5a393cafa18a27b70468d",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "scripts/check-api-runtime-boundaries.mjs",
+      "sha256": "b0e1d0bb03cb15f271e9d3da51725774aefb250dc720f80440eaa23611d0f797",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "scripts/check-api-runtime-boundaries.test.mjs",
+      "sha256": "8f17c38573e2550e6c83594411980ffec46212a92bd084a9e57ce772f7c6cd52",
       "scopes": [
         "frontend"
       ]

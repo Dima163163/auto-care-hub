@@ -112,6 +112,9 @@ jobs:
       - name: Check frontend API runtime boundaries
         run: npm run check:api-runtime-boundaries
 
+      - name: Test frontend API runtime boundary checker
+        run: npm run test:api-runtime-boundaries
+
       - name: Check staging/API compatibility contract
         run: npm run check:staging-api
 

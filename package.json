@@ -96,6 +96,7 @@
     "test:discovery-form": "node --test scripts/check-discovery-form-contract.test.mjs",
     "check:pwa-update": "node scripts/check-pwa-update-contract.mjs",
     "check:api-runtime-boundaries": "node scripts/check-api-runtime-boundaries.mjs",
+    "test:api-runtime-boundaries": "node --test scripts/check-api-runtime-boundaries.test.mjs",
     "check:staging-api": "node scripts/check-staging-api-compatibility.mjs",
     "test:staging-api": "node --test scripts/check-staging-api-compatibility.test.mjs",
     "check:openapi-shape": "node scripts/check-openapi-shape.mjs",

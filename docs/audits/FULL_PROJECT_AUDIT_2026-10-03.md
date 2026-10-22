@@ -117,7 +117,7 @@ run action_required не заявлен PASS. Рабочая developer БД не
 | N24 | P2 | Concurrent edits дважды используют review revision; новая evidence не ставится | Локально исправлено: row lock/versioned evidence; PostgreSQL race gate открыт |
 | N25 | P2 | Trust worker пропускает null providers и повторяет неизменный batch | Локально исправлено: due/NULLS FIRST/attemptedAt и unit; PostgreSQL gate открыт |
 | N26 | P2 | Разные допустимые пароли после 72 bytes bcrypt совпадают | Реальные policy/hash/compare |
-| N27 | P2 | Runtime-boundary guard не сканирует domain factories | Negative fixture: PASS при 0 checked endpoints |
+| N27 | P2 | Runtime-boundary guard не сканирует domain factories | Локально исправлено: AST 256/136, negative fixtures fail; CI gate ожидает push |
 | N28 | P2 | Denied sessionStorage прерывает auth cleanup | Исходный helper в VM + порядок cleanup |
 | N29 | P3 | Configurable JWT refresh TTL и фиксированные cookie/DB TTL | Реальный login: 1h / 7d / 7d |
 | N30 | P2 | Quote history first 50 исключает current 51-ю смету | Реальный hydrate/DTO: pending → superseded |

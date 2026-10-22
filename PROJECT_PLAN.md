@@ -128,8 +128,11 @@
   failed-provider retry; unit/build PASS, PostgreSQL scheduling gate open.
 - [ ] N30/N32: отдельная current quote/latest history и notification identity
   по quote version с сохранением retry idempotency.
-- [ ] N27/N31: реальные domain endpoints в boundary guard, актуальные root
-  tooling fixtures и автоматическая цепочка их исполнения.
+- [x] N27: AST runtime-boundary guard покрывает зарегистрированные domain
+  factories (136 endpoints), отказывает при пропущенном transform или нулевом
+  coverage; negative fixtures и CI step PASS локально.
+- [ ] N31: актуальные root tooling fixtures и автоматическая цепочка их
+  исполнения.
 - [ ] N29/N33/N34: явные session/token TTL, понятные transport errors,
   согласованные direct/client auth metadata.
 - [ ] N21: считать полный статусный backlog отзывов отдельно от bounded анализа

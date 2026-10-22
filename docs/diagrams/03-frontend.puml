@@ -50,6 +50,8 @@ note bottom of Factories
   catalog / providers / requests / chat / workspace
   resources / reviews / bonuses / governance / marketplace
   Фабрики — первый адрес поиска endpoint implementation.
+  N27: CI находит 10 зарегистрированных factories через AST
+  и проверяет transformResponse у каждого domain endpoint.
 end note
 note right of Client
   Vite — compatibility/development entry.

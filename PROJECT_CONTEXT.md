@@ -1442,3 +1442,11 @@ superseded evidence is visible separately in the admin queue. Approved old
 evidence no longer inflates the current trust score. Server and frontend unit
 tests/build pass; a real PostgreSQL parallel-edit and moderation test is added
 but not run locally. Nothing from this batch has been pushed yet.
+
+
+22 Oct — N27 local API runtime-boundary checker fix:
+The checker parses TypeScript AST to discover registered AutoCare endpoint
+factories from `autocareApi.ts`, and checks all 256 endpoints including 136
+domain endpoints. It fails on zero coverage, an orphan factory and a missing
+`transformResponse`. Three positive/negative fixture tests pass and are wired
+into the Quality workflow. This is local evidence; published CI has not run.
