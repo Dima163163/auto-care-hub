@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## CI secret scan, 2026-10-22
+
+PR #16 обнаружил один false positive: Gitleaks принял сохранённый SHA-256
+`npm-api-audit.json` за API key. Хэш побайтно сверён с evidence-файлом;
+`.gitleaksignore` исключает только fingerprint конкретной находки старого
+коммита. Проверка нового CI ожидается.
+
 ## Локальное исправление N23 — 2026-10-22
 
 Клиентские и owner списки заявок используют cursor pages (50 на странице),
