@@ -1,0 +1,8 @@
+{
+  "markdownFiles": 141,
+  "localLinks": 412,
+  "missingTargets": [],
+  "untrackedTargets": [],
+  "externalOrAnchorOnly": 46,
+  "limits": "Regex checks file existence; does not validate anchors, rendered Markdown, or external URLs. Includes tracked and new nonignored worktree documents."
+}

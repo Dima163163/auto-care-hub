@@ -1,7 +1,7 @@
 import { BadgeCheck, Clock3, MapPin, ShieldCheck, Star } from 'lucide-react'
 
-import type { ProviderPreview } from '@/entities/automotive-service'
-import { formatAutoCareSlot, formatCurrency, formatDistanceKm, parseDistanceKm } from '@/shared/lib/locale-format'
+import { formatProviderPreviewAvailability, formatProviderPreviewPrice, formatProviderPreviewWarranty, type ProviderPreview } from '@/entities/automotive-service'
+import { formatDistanceKm, parseDistanceKm } from '@/shared/lib/locale-format'
 import { useTranslation } from '@/shared/lib/useTranslation'
 
 type ComparisonTableProps = { providers: readonly ProviderPreview[] }
@@ -11,11 +11,11 @@ export function ComparisonTable({ providers }: ComparisonTableProps) {
     if (providers.length < 2) return null
 
     const rows = [
-        { label: t('autocare.comparisonPrice'), icon: null, value: (provider: ProviderPreview) => formatCurrency(provider.price, provider.currency, locale) },
+        { label: t('autocare.comparisonPrice'), icon: null, value: (provider: ProviderPreview) => formatProviderPreviewPrice(provider, locale, { from: (price) => t('autocare.fromPrice', { price }), quoteRequired: t('autocare.quoteRequiredPrice') }) },
         { label: t('autocare.comparisonRating'), icon: Star, value: (provider: ProviderPreview) => `${provider.rating.toFixed(1)} (${provider.reviewCount})` },
         { label: t('autocare.comparisonDistance'), icon: MapPin, value: (provider: ProviderPreview) => formatDistanceKm(provider.distanceKm ?? parseDistanceKm(provider.distance), locale) },
-        { label: t('autocare.comparisonNextSlot'), icon: Clock3, value: (provider: ProviderPreview) => provider.nextSlot ? formatAutoCareSlot(provider.nextSlot, locale) : t('autocare.availabilityOnRequest') },
-        { label: t('autocare.comparisonWarranty'), icon: ShieldCheck, value: (provider: ProviderPreview) => provider.warrantyMonths ? t('autocare.warrantyMonths', { count: provider.warrantyMonths }) : t('common.notProvided') },
+        { label: t('autocare.comparisonNextSlot'), icon: Clock3, value: (provider: ProviderPreview) => formatProviderPreviewAvailability(provider, locale, t('autocare.availabilityOnRequest')) },
+        { label: t('autocare.comparisonWarranty'), icon: ShieldCheck, value: (provider: ProviderPreview) => formatProviderPreviewWarranty(provider, (count) => t('autocare.warrantyMonths', { count })) ?? t('common.notProvided') },
         { label: t('autocare.comparisonVerification'), icon: BadgeCheck, value: (provider: ProviderPreview) => provider.verified ? t('autocare.trustedBadge') : t('common.notProvided') },
     ] as const
 

@@ -30,7 +30,7 @@ jobs:
           for attempt in $(seq 1 270); do
             run_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/quality.yml/runs?branch=dev&per_page=100")"
             quality_run="$(printf '%s' "$run_json" | jq -r --arg sha "$SOURCE_SHA" '
-              [.workflow_runs[] | select(.name == "Quality" and .head_sha == $sha)]
+              [.workflow_runs[] | select(.name == "Quality" and .event == "push" and .head_sha == $sha)]
               | sort_by(.created_at)
               | last // empty
             ')"

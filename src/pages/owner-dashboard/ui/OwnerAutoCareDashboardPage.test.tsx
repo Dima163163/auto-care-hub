@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
 vi.mock('@/features/auth', () => ({ useGetMeQuery: () => ({ data: { role: state.role, name: 'Ilya' } }) }))
 vi.mock('@/entities/automotive-service', () => ({
     useGetOwnerAutoCareProvidersQuery: () => ({ data: state.providers, isLoading: false, error: null, refetch: vi.fn() }),
-    useGetOwnerAutoCareServiceRequestsQuery: () => ({ data: state.requests, isLoading: false, error: null, refetch: vi.fn() }),
+    useAutoCareRequestPages: () => ({ data: state.requests, hasMore: false, loadMore: vi.fn(), isLoading: false, isFetching: false, error: null, refetch: vi.fn() }),
     useGetOwnerAutoCareWorkspaceAccessQuery: () => ({ data: { allowed: true, scopes: state.scopes }, isLoading: false, error: null, refetch: vi.fn() }),
     useGetOwnerAutoCareProviderAnalyticsQuery: (id: string, options: { skip: boolean }) => state.analytics(id, options),
     useGetAutoCareProviderProfileQuery: (id: string, options: { skip: boolean }) => state.publicProfile(id, options),

@@ -19,7 +19,7 @@ export type { AcceptAutoCareProviderInvitationInput, AutoCareOwnerWorkspaceAcces
 export type { AdminAutoCareReview, AutoCareApiProviderReviews, AutoCareApiReview, AutoCareCommunityMetrics, AutoCareCommunityProfile, AutoCareReviewPromo, CreateAutoCareReviewInput, IssueAutoCareReviewPromoInput, OwnerAutoCareReviews, OwnerAutoCareReviewsProvider, PublicAutoCareCommunityProfile, RedeemAutoCareReviewPromoInput, UpdateAdminAutoCareReviewStatusInput, UpdateAutoCareReviewInput } from './autocare/reviews.types'
 export { autoCareOfferSchema } from './autocare/providers.schemas'
 export { autoCareQuoteSchema, autoCareServiceAttachmentSchema } from './autocare/requests.schemas'
-export type { AutoCareAvailability, AutoCareBookingSnapshot, AutoCareQuoteDecisionInput, AutoCareQuoteLineItem, AutoCareRepairEvent, AutoCareReschedule, AutoCareServiceAttachment, AutoCareServiceConversation, AutoCareServiceMessage, AutoCareServiceMessageOffer, AutoCareServiceQuote, AutoCareServiceRequest, CompleteAutoCareServiceRequestInput, CreateAutoCareServiceAttachmentInput, CreateAutoCareServiceMessageInput, CreateAutoCareServiceOfferInput, CreateAutoCareServiceQuoteInput, CreateAutoCareServiceRequestInput, DecideAutoCareServiceOfferInput, GetAutoCareAttachmentObjectUrlInput, GetAutoCareServiceConversationInput } from './autocare/requests.types'
+export type { AutoCareAvailability, AutoCareBookingSnapshot, AutoCareQuoteDecisionInput, AutoCareQuoteLineItem, AutoCareRepairEvent, AutoCareReschedule, AutoCareServiceAttachment, AutoCareServiceConversation, AutoCareServiceMessage, AutoCareServiceMessageOffer, AutoCareServiceQuote, AutoCareServiceRequest, AutoCareServiceRequestPage, CompleteAutoCareServiceRequestInput, CreateAutoCareServiceAttachmentInput, CreateAutoCareServiceMessageInput, CreateAutoCareServiceOfferInput, CreateAutoCareServiceQuoteInput, CreateAutoCareServiceRequestInput, DecideAutoCareServiceOfferInput, GetAutoCareAttachmentObjectUrlInput, GetAutoCareServiceConversationInput } from './autocare/requests.types'
 export type { AdminAutoCareChatReportQuery, AssignAutoCareChatReportInput, AutoCareChatBlock, AutoCareChatConversation, AutoCareChatReport, AutoCareChatReportListQuery, AutoCareChatReportPage, AutoCareChatRestriction, AutoCareChatThread, AutoCareChatThreadType, CreateAutoCareChatAttachmentInput, CreateAutoCareChatBlockInput, CreateAutoCareChatInput, CreateAutoCareChatMessageInput, CreateAutoCareChatReportInput, DecideAutoCareChatReportInput, DeleteAutoCareChatMessageResponse, ExtendAutoCareChatReportAccessInput, RevokeAutoCareChatBlockInput } from './autocare/chat.types'
 export type { AutoCareBroadcastOffer, AutoCareBroadcastRequest, AutoCareExpertQuestion, AutoCareFleet, AutoCareFleetVehicle, AutoCareGuaranteeClaim, CreateAutoCareBroadcastOfferInput, CreateAutoCareBroadcastRequestInput, CreateAutoCareExpertQuestionInput, CreateAutoCareFleetInput, CreateAutoCareFleetVehicleInput, CreateAutoCareGuaranteeClaimInput } from './autocare/marketplace.types'
 export type { AutoCareCapacityReservation, AutoCareCapacityResource, CreateAutoCareCapacityResourceInput, UpdateAutoCareCapacityResourceInput } from './autocare/resources.types'
@@ -131,6 +131,7 @@ export const {
     useCreateOwnerAutoCareProviderMutation,
     useCreateAutoCareServiceRequestMutation,
     useGetMyAutoCareServiceRequestsQuery,
+    useGetMyAutoCareServiceRequestPageQuery,
     useGetAutoCareChatsQuery,
     useGetAutoCareRequestChatThreadQuery,
     useCreateAutoCareChatMutation,
@@ -171,6 +172,7 @@ export const {
     useAcceptAutoCareServiceQuoteMutation,
     useDeclineAutoCareServiceQuoteMutation,
     useGetOwnerAutoCareServiceRequestsQuery,
+    useGetOwnerAutoCareServiceRequestPageQuery,
     useRevokeAutoCareProviderMembershipMutation,
     useRedeemAutoCareBonusMutation,
     useGrantAutoCareBonusMutation,

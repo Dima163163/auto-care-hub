@@ -19,7 +19,7 @@ vi.mock('@/shared/lib/useTranslation', () => ({
     }),
 }))
 
-function renderForm(initialEntry: string, onSubmit = vi.fn(), onAppointmentSelectionChange = vi.fn()) {
+function renderForm(initialEntry: string, onSubmit = vi.fn(), onAppointmentSelectionChange = vi.fn(), draftKey: string | null = null) {
     return {
         onSubmit,
         ...render(
@@ -29,6 +29,7 @@ function renderForm(initialEntry: string, onSubmit = vi.fn(), onAppointmentSelec
                     locationId="location-1"
                     offeringId="offering-1"
                     serviceTimezone="Europe/Moscow"
+                    draftKey={draftKey}
                     onSubmit={onSubmit}
                     onAppointmentSelectionChange={onAppointmentSelectionChange}
                 />
@@ -39,6 +40,7 @@ function renderForm(initialEntry: string, onSubmit = vi.fn(), onAppointmentSelec
 
 describe('RequestForm appointment slot contract', () => {
     beforeEach(() => {
+        localStorage.clear()
         mocks.getAvailability.mockReset().mockImplementation(({ date }: { date: string }) => ({
             data: {
                 date,
@@ -52,6 +54,57 @@ describe('RequestForm appointment slot contract', () => {
             isError: false,
             isFetching: false,
         }))
+    })
+
+    it('restores a saved appointment time and reports it to the summary', async () => {
+        localStorage.setItem('request-draft-test', JSON.stringify({ version: 1, data: { selectedDate: 'today', customDate: '', selectedTime: '10:30' } }))
+        const onAppointmentSelectionChange = vi.fn()
+
+        renderForm('/services/provider-1/request', vi.fn(), onAppointmentSelectionChange, 'request-draft-test')
+
+        expect(screen.getByRole('button', { name: '10:30' })).toHaveAttribute('aria-pressed', 'true')
+        await waitFor(() => expect(onAppointmentSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({ time: '10:30' })))
+    })
+
+    it('lets the URL appointment override an unrelated saved draft', async () => {
+        localStorage.setItem('request-draft-test', JSON.stringify({ version: 1, data: { selectedDate: 'today', customDate: '', selectedTime: '10:00' } }))
+
+        renderForm('/services/provider-1/request?date=2026-09-05&time=10:30', vi.fn(), vi.fn(), 'request-draft-test')
+
+        expect(screen.getByRole('button', { name: '10:30' })).toHaveAttribute('aria-pressed', 'true')
+        expect(mocks.getAvailability.mock.calls[0]?.[0].date).toBe('2026-09-05')
+    })
+
+    it('keeps the original service date after a relative draft rolls into the next day', () => {
+        vi.useFakeTimers()
+        vi.setSystemTime(new Date('2026-03-29T22:30:00.000Z'))
+        localStorage.setItem('request-draft-test', JSON.stringify({ version: 1, data: { selectedDate: 'today', customDate: '', selectedTime: '10:30', appointmentDate: '2026-03-29' } }))
+
+        try {
+            renderForm('/services/provider-1/request', vi.fn(), vi.fn(), 'request-draft-test')
+
+            expect(mocks.getAvailability.mock.calls[0]?.[0].date).toBe('2026-03-29')
+            expect(screen.getByRole('button', { name: '10:30' })).toHaveAttribute('aria-pressed', 'true')
+        } finally {
+            vi.useRealTimers()
+        }
+    })
+
+    it('requires a new choice when the saved time is no longer available', async () => {
+        localStorage.setItem('request-draft-test', JSON.stringify({ version: 1, data: { selectedDate: 'today', customDate: '', selectedTime: '09:00' } }))
+        const onAppointmentSelectionChange = vi.fn()
+
+        renderForm('/services/provider-1/request', vi.fn(), onAppointmentSelectionChange, 'request-draft-test')
+
+        expect(screen.getByRole('button', { name: '10:00' })).toHaveAttribute('aria-pressed', 'false')
+        expect(screen.getByRole('button', { name: '10:30' })).toHaveAttribute('aria-pressed', 'false')
+        expect(screen.getByRole('button', { name: 'autocare.requestSubmit' })).toBeDisabled()
+        expect(screen.getByRole('alert')).toHaveTextContent('errors.SLOT_UNAVAILABLE')
+        await waitFor(() => expect(onAppointmentSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({ time: '' })))
+
+        fireEvent.click(screen.getByRole('button', { name: '10:30' }))
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'autocare.requestSubmit' })).toBeEnabled()
     })
 
     it('submits the server slot instant instead of browser-local Date arithmetic', () => {

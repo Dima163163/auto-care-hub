@@ -18,8 +18,8 @@ vi.mock('../autocare/provider-access.service.js', () => ({
 
 import { BookingEntity } from '../../entities/booking/booking.entity.js'
 import { ServiceRequestEntity } from '../../entities/automotive/service-request.entity.js'
-import { UserEntity, UserRole } from '../../entities/user/user.entity.js'
-import { getOwnerClients } from './users.service.js'
+import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
+import { getOwnerClients, updateUserPreferences } from './users.service.js'
 
 describe('getOwnerClients branch access', () => {
     beforeEach(() => {
@@ -70,5 +70,45 @@ describe('getOwnerClients branch access', () => {
         expect(requestQuery.where).toHaveBeenCalledWith('request.providerId IN (:...providerIds)', {
             providerIds: ['provider-branch-scoped', 'provider-wide'],
         })
+    })
+})
+
+describe('updateUserPreferences security state', () => {
+    beforeEach(() => {
+        mocks.getRepository.mockReset()
+    })
+
+    it('writes only preference columns and returns the current user', async () => {
+        const snapshot = {
+            id: 'user-1', status: UserStatus.Active, tokenVersion: 1,
+            passwordHash: 'old-hash', locale: null,
+        } as UserEntity
+        const current = { ...snapshot, locale: 'de' } as UserEntity
+        const update = vi.fn().mockResolvedValue({ affected: 1 })
+        const findOneBy = vi.fn().mockResolvedValue(current)
+        mocks.getRepository.mockReturnValue({ update, findOneBy })
+
+        const result = await updateUserPreferences(snapshot, { locale: 'de' })
+
+        expect(update).toHaveBeenCalledWith(
+            { id: snapshot.id, status: UserStatus.Active, tokenVersion: 1 },
+            { locale: 'de' },
+        )
+        expect(findOneBy).toHaveBeenCalledWith({
+            id: snapshot.id, status: UserStatus.Active, tokenVersion: 1,
+        })
+        expect(result.locale).toBe('de')
+        expect(snapshot.locale).toBeNull()
+    })
+
+    it('rejects a snapshot invalidated by blocking before it can write', async () => {
+        const snapshot = { id: 'user-1', status: UserStatus.Active, tokenVersion: 1 } as UserEntity
+        const update = vi.fn().mockResolvedValue({ affected: 0 })
+        const findOneBy = vi.fn()
+        mocks.getRepository.mockReturnValue({ update, findOneBy })
+
+        await expect(updateUserPreferences(snapshot, { locale: 'de' }))
+            .rejects.toMatchObject({ statusCode: 401 })
+        expect(findOneBy).not.toHaveBeenCalled()
     })
 })

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { getAuthRouteCopy, shouldNoIndexRoute } from '../shared/config/route-metadata-policy'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -59,8 +60,6 @@ const russianPublicCopy: Record<string, { title: string; description: string }> 
     '/privacy': { title: 'Политика конфиденциальности | AutoCare Hub', description: 'Как AutoCare Hub обрабатывает данные аккаунта, автомобиля, заявок, переписки, фотографий и отзывов.' },
 }
 
-const privatePrefixes = ['/admin', '/super-admin', '/owner', '/profile', '/chats', '/onboarding', '/notifications']
-const noIndexRoutes = ['/login', '/register', '/forgot-password', '/password', '/verify-email', '/favorites', '/community/clients']
 const indexRobots = { index: true, follow: true, other: { 'max-image-preview': 'large' } }
 
 type RouteMetadataOptions = {
@@ -75,14 +74,10 @@ function normalizePathname(pathname: string) {
 
 export function getRouteMetadata(pathname: string, options: RouteMetadataOptions = {}): Metadata {
     const path = normalizePathname(pathname)
-    const isPrivate = privatePrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
-    const isServiceRequest = /^\/services\/[^/]+\/request$/.test(path)
-    const isSearchResult = path === '/services' && options.hasSearchParams === true
-    const isNoIndex = isPrivate || isServiceRequest || isSearchResult || noIndexRoutes.some((prefix) =>
-        path === prefix || path.startsWith(`${prefix}/`))
+    const isNoIndex = shouldNoIndexRoute(path, options.hasSearchParams)
     const isProvider = path.startsWith('/services/') && path !== '/services'
     const localizedCopy = options.locale === 'ru' ? russianPublicCopy : publicCopy
-    const copy = localizedCopy[path] ?? (isProvider
+    const copy = getAuthRouteCopy(path, options.locale ?? 'en') ?? localizedCopy[path] ?? (isProvider
         ? {
             title: options.locale === 'ru' ? 'Автосервис | AutoCare Hub' : 'Trusted automotive service | AutoCare Hub',
             description: options.locale === 'ru'

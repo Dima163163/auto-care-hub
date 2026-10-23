@@ -48,14 +48,6 @@ function getApiErrorData(error: unknown) {
     return parsedData
 }
 
-function getNetworkError(error: unknown) {
-    if (!isRecord(error)) {
-        return undefined
-    }
-
-    return typeof error.error === 'string' ? error.error : undefined
-}
-
 function isFetchError(error: unknown) {
     return isRecord(error) && error.status === 'FETCH_ERROR'
 }
@@ -147,25 +139,23 @@ export const getApiErrorMessage = (
         }
     }
 
+    if (isFetchError(error)) {
+        const translatedMessage = t('errors.NETWORK_ERROR', undefined, locale)
+        return translatedMessage === 'errors.NETWORK_ERROR' ? fallbackMessage : translatedMessage
+    }
+
+    const status = isRecord(error) ? error.status : undefined
+    if (error instanceof SyntaxError || status === 'PARSING_ERROR' || status === 'TIMEOUT_ERROR' || (typeof status === 'number' && status >= 500)) {
+        const translatedMessage = t('errors.INTERNAL_SERVER_ERROR', undefined, locale)
+        return translatedMessage === 'errors.INTERNAL_SERVER_ERROR' ? fallbackMessage : translatedMessage
+    }
+
     const data = getApiErrorData(error)
     const message = data?.message
         ?? (typeof data?.error === 'object' ? data.error.message : data?.error)
 
     if (typeof message === 'string' && message.trim().length > 0) {
         return message
-    }
-
-    if (isFetchError(error)) {
-        const translatedMessage = t('errors.NETWORK_ERROR', undefined, locale)
-
-        return translatedMessage === 'errors.NETWORK_ERROR'
-            ? fallbackMessage
-            : translatedMessage
-    }
-
-    const networkError = getNetworkError(error)
-    if (networkError && networkError.trim().length > 0) {
-        return networkError
     }
 
     if (error instanceof Error && error.message.trim().length > 0) {

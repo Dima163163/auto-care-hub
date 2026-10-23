@@ -9,6 +9,9 @@ const REQUIRED_FRAGMENTS = [
     ['SMTP delivery', 'key: MAIL_MODE\n        value: smtp'],
     ['explicit bootstrap email', 'key: BOOTSTRAP_SUPER_ADMIN_EMAIL\n        sync: false'],
     ['outbox encryption key', 'key: OUTBOX_TOKEN_ENCRYPTION_KEY\n        sync: false'],
+    ['KMS region', 'key: DATA_ENCRYPTION_AWS_KMS_REGION\n        sync: false'],
+    ['KMS key ID', 'key: DATA_ENCRYPTION_AWS_KMS_KEY_ID\n        sync: false'],
+    ['KMS keyring ciphertext', 'key: DATA_ENCRYPTION_AWS_KMS_KEYRING\n        sync: false'],
     ['explicit cabinet uploads root', 'key: CABINET_UPLOADS_DIR\n        sync: false'],
     ['canonical frontend origin', 'https://autocarehub.app'],
 ]
@@ -20,6 +23,13 @@ export function assertRenderProductionConfig(source) {
 
     if (source.includes('key: MAIL_MODE\n        value: logger')) {
         missing.push('no production logger mail mode')
+    }
+    for (const [name, key] of [
+        ['KMS region on API and worker', 'DATA_ENCRYPTION_AWS_KMS_REGION'],
+        ['KMS key ID on API and worker', 'DATA_ENCRYPTION_AWS_KMS_KEY_ID'],
+        ['KMS keyring on API and worker', 'DATA_ENCRYPTION_AWS_KMS_KEYRING'],
+    ]) {
+        if (source.split(`key: ${key}\n        sync: false`).length - 1 < 2) missing.push(name)
     }
 
     if (missing.length > 0) {

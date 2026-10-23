@@ -89,6 +89,8 @@ export const ruPart3Autocare1 = {
         workshopServices: "В автосервисе",
         ownerRequestsEyebrow: 'Заявки клиентов',
         ownerRequestsTitle: 'Входящие заявки AutoCare',
+        loadMoreRequests: 'Загрузить более старые заявки',
+        loadedRequestMetricsHint: 'Число заявок и суммы рассчитаны по загруженным страницам. Загрузите старые заявки для полной истории.',
         ownerRequestsDescription: 'Отвечайте водителям, уточняйте объём работ и отправляйте предварительную смету из одного рабочего пространства.',
         ownerRequestsOpen: 'Ждут ответа',
         ownerRequestsEstimates: 'Сметы на согласовании',

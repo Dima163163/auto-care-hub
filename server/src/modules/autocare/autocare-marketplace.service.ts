@@ -50,6 +50,7 @@ import { normalizeAutoCareRepairEventInput } from './repair-event-input-policy.j
 import { normalizeAutoCareBroadcastRequestInput } from './broadcast-request-input-policy.js'
 import { normalizeAutoCareBroadcastOfferInput } from './broadcast-offer-input-policy.js'
 import { normalizeAutoCareGuaranteeClaimInput } from './guarantee-claim-input-policy.js'
+import { isEligibleGuaranteeClaimRequest } from './guarantee-claim-policy.js'
 
 function forbidden(message: string): never {
     throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message })
@@ -594,9 +595,32 @@ export async function createAutoCareGuaranteeClaim(user: UserEntity, input: unkn
     requireClient(user)
     const normalizedInput = normalizeAutoCareGuaranteeClaimInput(input)
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Guarantee claim payload is invalid.' })
-    const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: normalizedInput.requestId, clientId: user.id })
-    if (!request) notFound('Service request not found.')
-    const claim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).save(AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).create({ requestId: request.id, clientId: user.id, providerId: request.providerId, claimType: normalizedInput.claimType, summary: normalizedInput.summary, evidenceUrls: normalizedInput.evidenceUrls, status: 'submitted', resolution: null, resolvedById: null, resolvedAt: null }))
+    const claim = await AppDataSource.transaction(async (manager) => {
+        const request = await manager.getRepository(ServiceRequestEntity).findOne({
+            where: { id: normalizedInput.requestId, clientId: user.id },
+            lock: { mode: 'pessimistic_write' },
+        })
+        if (!request) notFound('Service request not found.')
+        const repository = manager.getRepository(AutoCareGuaranteeClaimEntity)
+        const existing = await repository.findOne({
+            where: { requestId: request.id }, order: { createdAt: 'ASC', id: 'ASC' },
+        })
+        if (existing) {
+            if (existing.claimType === normalizedInput.claimType
+                && existing.summary === normalizedInput.summary
+                && JSON.stringify(existing.evidenceUrls) === JSON.stringify(normalizedInput.evidenceUrls)) return existing
+            conflict('A guarantee case already exists for this service request.')
+        }
+        if (!isEligibleGuaranteeClaimRequest(request.status, normalizedInput.claimType)) {
+            conflict('A guarantee claim requires an accepted or completed visit, or a recorded no-show.')
+        }
+        return repository.save(repository.create({
+            requestId: request.id, caseKey: request.id, clientId: user.id, providerId: request.providerId,
+            claimType: normalizedInput.claimType, summary: normalizedInput.summary,
+            evidenceUrls: normalizedInput.evidenceUrls, status: 'submitted', resolution: null,
+            resolvedById: null, resolvedAt: null,
+        }))
+    })
     return { id: claim.id, requestId: claim.requestId, claimType: claim.claimType, status: claim.status, summary: claim.summary, evidenceUrls: claim.evidenceUrls, resolution: claim.resolution, createdAt: claim.createdAt.toISOString(), updatedAt: claim.updatedAt.toISOString() }
 }
 

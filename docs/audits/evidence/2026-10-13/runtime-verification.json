@@ -1,0 +1,141 @@
+{
+  "date": "2026-10-13",
+  "baseline": "8840ae8",
+  "remoteDevIdentical": true,
+  "runtime": {
+    "postgresImage": "postgres:17-alpine",
+    "redisImage": "redis:7-alpine",
+    "postgresPort": 29442,
+    "redisPort": 29389,
+    "apiPort": 4196,
+    "nextHttpPort": 3200,
+    "nextE2ePort": 5174,
+    "mail": "logger",
+    "keys": "local synthetic keyring; not production KMS",
+    "nodeVerifiedAtFinalCheck": "24.13.1",
+    "individualChildNodeVersions": "not individually recorded"
+  },
+  "checks": {
+    "freshMigrations": 139,
+    "repeatMigrations": "no pending",
+    "constraintsValidated": 30,
+    "integration": {
+      "files": 23,
+      "passed": 88,
+      "skipped": 0,
+      "localGithubActionsFlag": "true only for guarded disposable admin fixture"
+    },
+    "postgresDefectCases": 10,
+    "postgresSmoke": {
+      "committed": 1,
+      "conflict": 1
+    },
+    "redisSmoke": {
+      "allowed": 1,
+      "denied": 1,
+      "mode": "fail-closed"
+    },
+    "backupRestore": {
+      "encryptedBackup": true,
+      "checksumVerified": true,
+      "restoredDatabase": "disposable audit restore target",
+      "tablesWithMatchingCountsAndContentDigests": 76,
+      "rows": 3742,
+      "encryptedNameDecryptsWithRetainedLocalAuditKey": true,
+      "productionRecovery": false
+    },
+    "realE2e": {
+      "passed": 29,
+      "retries": 0,
+      "profile": "Desktop Chromium"
+    },
+    "http": {
+      "metadataPassed": 17,
+      "initialJavaScriptPassed": 17,
+      "cspSamplesPassed": 5,
+      "fixtureFilesScanned": 192
+    },
+    "discoveryBenchmark": {
+      "strategy": "http-discovery-route",
+      "baseUrl": "http://127.0.0.1:4196",
+      "market": "moscow",
+      "concurrency": 8,
+      "radiuses": [
+        5,
+        25,
+        100,
+        500
+      ],
+      "p95BudgetMs": 350,
+      "p99BudgetMs": 700,
+      "maxFailureRatePercent": 0,
+      "cache": "included",
+      "passed": true,
+      "samples": 80,
+      "failedSamples": 0,
+      "p50Ms": 12.1,
+      "p95Ms": 118.8,
+      "p99Ms": 158,
+      "maxMs": 158
+    },
+    "advisories": {
+      "frontend": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 3,
+        "critical": 2,
+        "total": 5
+      },
+      "api": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 2,
+        "critical": 0,
+        "total": 2
+      },
+      "exploitability": "not inferred from package severity"
+    },
+    "hostedPRQuality": {
+      "runId": 37226572467,
+      "conclusion": "action_required",
+      "jobs": [],
+      "notDeclaredPass": true
+    }
+  },
+  "logs": [
+    "runtime-migrations.log",
+    "runtime-migrations-repeat.log",
+    "runtime-integration.log",
+    "runtime-integrity.log",
+    "runtime-postgres-smoke.log",
+    "runtime-redis-smoke.log",
+    "runtime-postgres-reproductions.log",
+    "runtime-backup.log",
+    "runtime-restore.log",
+    "runtime-next-build.log",
+    "runtime-fixture-guard.log",
+    "runtime-csp-http.log",
+    "runtime-seo-http.log",
+    "runtime-real-e2e.log",
+    "runtime-http-benchmark.log"
+  ],
+  "notVerified": [
+    "Hosted Node22/PostgreSQL16 exact run",
+    "Production KMS/MFA",
+    "Production recovery/off-site/PITR",
+    "Production load/CWV",
+    "Native devices/screen readers",
+    "Reason for hosted action_required and push-run status"
+  ],
+  "productionChanges": false,
+  "pilot": "54 gates / NO-GO unchanged",
+  "cleanup": {
+    "ownApiStopped": true,
+    "ownNextServersStopped": true,
+    "ownDisposableContainersStoppedAndAutoRemoved": true,
+    "developerDatabaseUnchanged": true,
+    "syntheticEncryptedBackupAndLocalKeysLocation": "private tmp; not committed"
+  }
+}

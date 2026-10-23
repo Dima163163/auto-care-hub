@@ -24,6 +24,16 @@ services:
         sync: false
       - key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_REGION
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEY_ID
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEYRING
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
       - key: CORS_ORIGINS
         value: https://autocarehub.app,https://autocare-hub.vercel.app,https://autocare-hub-client.onrender.com
       - key: FRONTEND_ORIGIN
@@ -77,6 +87,16 @@ services:
       - key: JWT_REFRESH_SECRET
         sync: false
       - key: OUTBOX_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_REGION
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEY_ID
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEYRING
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
         sync: false
       - key: CABINET_UPLOADS_DIR
         sync: false

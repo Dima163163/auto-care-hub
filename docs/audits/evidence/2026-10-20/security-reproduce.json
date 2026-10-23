@@ -1,0 +1,29 @@
+{
+  "verifiedOn": "2026-10-20",
+  "baseline": "8840ae8",
+  "fixtures": "synthetic repositories and ORM metadata only; no database/network",
+  "findings": [
+    {
+      "id": "U14",
+      "reproduced": true,
+      "rawInsertHasPlaintextRecipient": true,
+      "transformerWasBypassed": true
+    },
+    {
+      "id": "U15",
+      "reproduced": true,
+      "legacyRequestMessageSaved": true,
+      "modernChatRejectedWith403": true
+    },
+    {
+      "id": "U20",
+      "reproduced": true,
+      "preferenceSaveRevertsConcurrentSecurityFields": [
+        "passwordHash",
+        "status",
+        "tokenVersion"
+      ],
+      "ormDiffProofOnly": true
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { AppDataSource } from '../../database/data-source.js'
-import { ServiceAttachmentEntity, ServiceAttachmentStatus, ServiceRequestEntity } from '../../entities/index.js'
+import { AutoCareChatThreadType, ServiceAttachmentEntity, ServiceAttachmentStatus, ServiceRequestEntity } from '../../entities/index.js'
 import { UserRole, type UserEntity } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
@@ -9,11 +9,13 @@ import { broadcastServiceChat } from './service-chat.gateway.js'
 import { assertAutoCareAttachmentQuota, decodeAutoCareAttachment, normalizeAutoCareAttachment, normalizeAutoCareAttachmentInput, resolveAutoCareAttachmentContentType } from './attachment-content.js'
 import { assertAutoCareAttachmentObjectKeyOwnedBy, createAutoCareAttachmentObjectKey, getAutoCareAttachmentSignedDownloadUrl, readAutoCareAttachmentObject, removeAutoCareAttachmentObject, saveAutoCareAttachmentObject } from './autocare-attachment-storage.js'
 import { normalizeAutoCareRequestUuid } from './request-input-policy.js'
+import { assertChatMessageWriteAccess } from './chat-write-policy.js'
 import { assertParticipantWithManager, getParticipantRequest, lockRequestChatThreadForWrite } from './request-access.service.js'
 import { forbidden, notFound, requireAutoCareRequestUuid } from './request-errors.js'
 
 export async function createAutoCareServiceAttachment(user: UserEntity, requestId: string, input: CreateAutoCareServiceAttachmentInput) {
     requestId = requireAutoCareRequestUuid(requestId)
+    assertChatMessageWriteAccess(user, { type: AutoCareChatThreadType.ServiceRequest })
     const normalizedInput = normalizeAutoCareAttachmentInput(input)
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Attachment payload is invalid.' })
     const request = await getParticipantRequest(user, requestId)

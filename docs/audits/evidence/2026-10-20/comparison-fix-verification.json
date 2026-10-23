@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-20",
+  "branch": "fix/request-chat-state-isolation-2026-10-20",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "unit": {
+    "files": ["ComparisonTable.test.tsx", "providerPreviewFormat.test.ts", "providerOfferingFormat.test.ts"],
+    "preFixNewCase": "Failed: from USD shown as unqualified fixed $1,700",
+    "postFix": "9/9 passed",
+    "coverage": "fixed/from/range/quote_required, request/instant, warranty text/months, English and Russian"
+  },
+  "browserDesktop": {
+    "runtime": "production Next build, synthetic MSW API",
+    "provider": "Prime Wheels Алексеевский",
+    "price": "Quote required",
+    "nextTime": "Time to be confirmed by the service",
+    "warranty": "Гарантия на работы по условиям сервиса",
+    "result": "PASS"
+  },
+  "browserMobile": {
+    "viewportWidth": 360,
+    "documentWidth": 360,
+    "comparisonWrapperWidth": 326,
+    "comparisonScrollWidth": 640,
+    "lastHeaderReachableByScroll": true,
+    "result": "PASS"
+  },
+  "limits": ["real API not exercised", "not deployed"]
+}

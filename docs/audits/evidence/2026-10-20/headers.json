@@ -1,0 +1,55 @@
+{
+  "rows": [
+    {
+      "route": "/",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "frameOptions": "DENY",
+      "noSniff": "nosniff",
+      "nonceReplaced": true,
+      "noncePresent": true,
+      "unsafeEval": false
+    },
+    {
+      "route": "/login",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "frameOptions": "DENY",
+      "noSniff": "nosniff",
+      "nonceReplaced": true,
+      "noncePresent": true,
+      "unsafeEval": false
+    },
+    {
+      "route": "/profile",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "frameOptions": "DENY",
+      "noSniff": "nosniff",
+      "nonceReplaced": true,
+      "noncePresent": true,
+      "unsafeEval": false
+    },
+    {
+      "route": "/owner/dashboard",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "frameOptions": "DENY",
+      "noSniff": "nosniff",
+      "nonceReplaced": true,
+      "noncePresent": true,
+      "unsafeEval": false
+    },
+    {
+      "route": "/admin/dashboard",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "frameOptions": "DENY",
+      "noSniff": "nosniff",
+      "nonceReplaced": true,
+      "noncePresent": true,
+      "unsafeEval": false
+    }
+  ],
+  "nonceChangesPerResponse": true
+}

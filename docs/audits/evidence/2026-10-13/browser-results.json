@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-13",
+  "baseline": "8840ae8",
+  "frontend": "production Next, real API mode, own loopback 127.0.0.1:3199",
+  "upstream": "intentionally unavailable 127.0.0.1:1",
+  "observations": [
+    {
+      "id": "N33",
+      "routes": [
+        "/services",
+        "/login"
+      ],
+      "actions": [
+        "services retry",
+        "synthetic login submission"
+      ],
+      "visibleError": "SyntaxError: Unexpected token 'I', \"Internal S\"... is not valid JSON",
+      "helperReproduction": "results.json N33",
+      "consoleErrorsOrWarningsObserved": []
+    },
+    {
+      "id": "N34",
+      "navigation": [
+        "/services",
+        "footer bookings link /profile/bookings",
+        "guest redirect /login"
+      ],
+      "clientNavigationHead": {
+        "title": "AutoCare Hub — Сравнение автосервисов рядом | Поиск",
+        "canonical": "http://127.0.0.1:3199/services?lang=ru",
+        "robots": "index,follow,max-image-preview:large"
+      },
+      "reloadHead": {
+        "title": "AutoCare Hub — проверенные автосервисы рядом",
+        "canonical": "https://autocare-audit.example.test/login",
+        "robots": "noindex, follow"
+      }
+    }
+  ],
+  "limits": [
+    "No successful real authentication",
+    "No denied-storage browser injection",
+    "No deployed crawler verification"
+  ]
+}

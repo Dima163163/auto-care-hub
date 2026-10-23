@@ -81,7 +81,10 @@ export async function redeemAutoCareReviewPromo(client: UserEntity, input: Redee
         promo.redeemedAt = now
         promo.redeemedById = client.id
         const reviewRepository = manager.getRepository(AutomotiveReviewEntity)
-        const review = await reviewRepository.findOneBy({ id: promo.reviewId, clientId: client.id })
+        const review = await reviewRepository.findOne({
+            where: { id: promo.reviewId, clientId: client.id },
+            lock: { mode: 'pessimistic_write' },
+        })
         if (!review) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Review linked to this promo was not found.' })
         review.revisionAllowedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1_000)
         review.revisionUsedAt = null

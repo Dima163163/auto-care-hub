@@ -15,13 +15,16 @@ async function startServer() {
     let startupStage: StartupStage = 'build_app'
 
     try {
-        const [{ buildApp }, { env }, database, encryption] = await Promise.all([
+        const encryption = await import('./shared/security/data-encryption/field-encryption.js')
+        const { loadProductionKmsKeyProvider } = await import('./shared/security/data-encryption/production-kms-provider.js')
+        await loadProductionKmsKeyProvider()
+        encryption.assertDataEncryptionProviderReady()
+
+        const [{ buildApp }, { env }, database] = await Promise.all([
             import('./app.js'),
             import('./config/env.js'),
             import('./database/database.js'),
-            import('./shared/security/data-encryption/field-encryption.js'),
         ])
-        encryption.assertDataEncryptionProviderReady()
         disconnectDatabase = database.disconnectDatabaseGracefully
         app = await buildApp()
 

@@ -1,0 +1,72 @@
+{
+  "repository": "Dima163163/auto-care-hub",
+  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+  "remoteDevCompare": {
+    "repository_full_name": "Dima163163/auto-care-hub",
+    "base": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+    "head": "dev",
+    "status": "identical",
+    "ahead_by": 0,
+    "behind_by": 0,
+    "total_commits": 0,
+    "too_large": null,
+    "base_commit": {
+      "sha": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+      "url": "https://api.github.com/repos/Dima163163/auto-care-hub/commits/8840ae830a641626bcd1d1735d3324bb6f923a77",
+      "html_url": "https://github.com/Dima163163/auto-care-hub/commit/8840ae830a641626bcd1d1735d3324bb6f923a77"
+    },
+    "merge_base_commit": {
+      "sha": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+      "url": "https://api.github.com/repos/Dima163163/auto-care-hub/commits/8840ae830a641626bcd1d1735d3324bb6f923a77",
+      "html_url": "https://github.com/Dima163163/auto-care-hub/commit/8840ae830a641626bcd1d1735d3324bb6f923a77"
+    },
+    "files": []
+  },
+  "remoteMainCompare": {
+    "repository_full_name": "Dima163163/auto-care-hub",
+    "base": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+    "head": "main",
+    "status": "behind",
+    "ahead_by": 0,
+    "behind_by": 160,
+    "total_commits": 0,
+    "too_large": null,
+    "base_commit": {
+      "sha": "8840ae830a641626bcd1d1735d3324bb6f923a77",
+      "url": "https://api.github.com/repos/Dima163163/auto-care-hub/commits/8840ae830a641626bcd1d1735d3324bb6f923a77",
+      "html_url": "https://github.com/Dima163163/auto-care-hub/commit/8840ae830a641626bcd1d1735d3324bb6f923a77"
+    },
+    "merge_base_commit": {
+      "sha": "6d1e6b6843e13b2e0315934fb3b29a3429866130",
+      "url": "https://api.github.com/repos/Dima163163/auto-care-hub/commits/6d1e6b6843e13b2e0315934fb3b29a3429866130",
+      "html_url": "https://github.com/Dima163163/auto-care-hub/commit/6d1e6b6843e13b2e0315934fb3b29a3429866130"
+    },
+    "files": []
+  },
+  "prWorkflowRuns": {
+    "workflow_runs": [
+      {
+        "id": 37226572467,
+        "name": "Quality",
+        "status": "completed",
+        "conclusion": "action_required",
+        "run_number": 467,
+        "jobs_url": "https://api.github.com/repos/Dima163163/auto-care-hub/actions/runs/37226572467/jobs",
+        "logs_url": "https://api.github.com/repos/Dima163163/auto-care-hub/actions/runs/37226572467/logs",
+        "workflow_id": 332731170
+      }
+    ]
+  },
+  "combinedStatus": {
+    "statuses": []
+  },
+  "jobs": {
+    "run_id": 37226572467,
+    "jobs": []
+  },
+  "limits": [
+    "Workflow runs wrapper filters to PR-triggered runs and first page",
+    "Empty status/job lists do not confirm PASS",
+    "No hosted jobs were triggered by this audit"
+  ]
+}

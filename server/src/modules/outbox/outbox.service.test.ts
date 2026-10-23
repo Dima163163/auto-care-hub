@@ -8,6 +8,7 @@ import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outb
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { enqueueOutboxEvent, processOutboxBatch } from './outbox.service.js'
 import { encryptOutboxSecret } from './outbox-secret.js'
+import { createEmailBlindIndex } from '../../shared/security/data-encryption/field-encryption.js'
 
 async function processOutboxUntilCompleted(
     idempotencyKey: string,
@@ -27,16 +28,57 @@ describe('outbox processing', () => {
     const suffix = `${Date.now()}`
     const idempotencyKey = `test-booking-reminder:${suffix}`
     const deletedRecipientKey = `test-notification-deleted-user:${suffix}`
+    const encryptedRecipientKey = `test-encrypted-recipient:${suffix}`
     let userId: string | null = null
 
     afterAll(async () => {
         if (!AppDataSource.isInitialized) return
         await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey })
         await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey: deletedRecipientKey })
+        await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey: encryptedRecipientKey })
         if (userId) {
             await AppDataSource.getRepository(NotificationEntity).delete({ userId })
             await AppDataSource.getRepository(UserEntity).delete({ id: userId })
         }
+    })
+
+    it('stores raw pending recipient JSON without plaintext and keeps retries idempotent', async () => {
+        const toEmail = `private-outbox-${suffix}@example.com`
+        const recipientName = 'Private Outbox Client'
+        const input = {
+            type: 'email.send' as const,
+            idempotencyKey: encryptedRecipientKey,
+            payload: {
+                template: 'booking' as const,
+                bookingId: '123e4567-e89b-42d3-a456-426614174000',
+                toEmail,
+                recipientName,
+                bookingDetails: {
+                    date: '2026-10-20',
+                    startTime: '10:00',
+                    endTime: '11:00',
+                    cabinetTitle: 'Cabinet',
+                    serviceTitle: 'Service',
+                },
+                status: 'created' as const,
+                isForOwner: false,
+                frontendOrigin: 'https://autocarehub.example.com',
+                locale: null,
+            },
+        }
+
+        await enqueueOutboxEvent(input)
+        await enqueueOutboxEvent(input)
+        const [raw] = await AppDataSource.query(
+            `SELECT "payload" FROM "outbox_events" WHERE "idempotencyKey" = $1`,
+            [encryptedRecipientKey],
+        ) as Array<{ payload: Record<string, unknown> }>
+        expect(JSON.stringify(raw?.payload)).not.toContain(toEmail)
+        expect(JSON.stringify(raw?.payload)).not.toContain(recipientName)
+        expect(raw?.payload.toEmail).toBe(createEmailBlindIndex(toEmail))
+        expect(await AppDataSource.getRepository(OutboxEventEntity).countBy({ idempotencyKey: encryptedRecipientKey })).toBe(1)
+        const event = await AppDataSource.getRepository(OutboxEventEntity).findOneByOrFail({ idempotencyKey: encryptedRecipientKey })
+        expect(event.payload).toMatchObject({ toEmail, recipientName })
     })
 
     it('deduplicates a booking reminder across an outbox retry after notification creation', async () => {
@@ -263,5 +305,44 @@ describe('outbox processing', () => {
         await AppDataSource.getRepository(OutboxEventEntity).delete({
             idempotencyKey: authEmailIdempotencyKey,
         })
+    })
+
+    it('delivers an encrypted provider invitation link and redacts its token after dispatch', async () => {
+        const key = `test-provider-invitation:${suffix}`
+        const token = 'provider-invitation-token-long-enough-for-the-security-flow'
+        const mailer = {
+            send: vi.fn().mockResolvedValue(undefined),
+            verify: vi.fn().mockResolvedValue(undefined),
+        }
+        await enqueueOutboxEvent({
+            type: 'email.send',
+            idempotencyKey: key,
+            payload: {
+                template: 'provider_invitation',
+                email: `provider-invite-${suffix}@example.com`,
+                expiresAt: new Date(Date.now() + 60_000).toISOString(),
+                frontendOrigin: 'https://autocarehub.example.com',
+                encryptedToken: encryptOutboxSecret(token),
+                locale: null,
+            },
+        })
+        try {
+            const [raw] = await AppDataSource.query(
+                'SELECT "payload" FROM "outbox_events" WHERE "idempotencyKey" = $1',
+                [key],
+            ) as Array<{ payload: Record<string, unknown> }>
+            expect(JSON.stringify(raw?.payload)).not.toContain(token)
+            expect(JSON.stringify(raw?.payload)).not.toContain(`provider-invite-${suffix}@example.com`)
+
+            const event = await processOutboxUntilCompleted(key, mailer)
+            expect(event.status).toBe(OutboxEventStatus.Completed)
+            expect(event.payload).not.toHaveProperty('encryptedToken')
+            expect(mailer.send).toHaveBeenCalledWith(expect.objectContaining({
+                to: `provider-invite-${suffix}@example.com`,
+                text: expect.stringContaining(`/owner/invitations/accept?token=${token}`),
+            }))
+        } finally {
+            await AppDataSource.getRepository(OutboxEventEntity).delete({ idempotencyKey: key })
+        }
     })
 })

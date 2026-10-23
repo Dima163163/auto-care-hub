@@ -32,6 +32,16 @@ test('rejects promotion that does not bind Quality to the exact dev commit', asy
     assert.ok(checks.some(({ name, passed }) => name === 'Promotion is limited to the trusted dev branch' && !passed))
 })
 
+test('rejects promotion that could select a pull-request Quality run', async () => {
+    const sources = await readCiCdPolicySources()
+    const checks = validateCiCdPolicy({
+        ...sources,
+        promotion: sources.promotion.replace('and .event == "push"', ''),
+    })
+
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion selects a push Quality run' && !passed))
+})
+
 test('rejects promotion without a protected pull-request path to main', async () => {
     const sources = await readCiCdPolicySources()
     const checks = validateCiCdPolicy({

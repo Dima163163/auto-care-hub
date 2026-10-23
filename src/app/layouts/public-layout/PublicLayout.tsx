@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router'
 
 import { useGetMeQuery } from '@/features/auth'
 import { ROUTES } from '@/shared/constants/routes'
-import { SeoHead } from '@/shared/ui/seo-head'
 import { AutoCareResultsRouteSkeleton, PageContentSkeleton } from '@/shared/ui/loading-skeleton'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { AppHeader } from '@/widgets/app-header'
@@ -40,7 +39,6 @@ export function PublicLayout() {
             data-workspace-icon-theme={isWorkspaceRoute ? 'true' : undefined}
         >
             <WorkspaceIconDefinitions />
-            <SeoHead />
             <DesktopPublicHeader />
             <div className="md:hidden">
                 {isWorkspaceRoute && user ? <WorkspaceMobileHeader role={workspaceRole} /> : <AppHeader />}

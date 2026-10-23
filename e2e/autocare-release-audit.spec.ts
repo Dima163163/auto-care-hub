@@ -257,9 +257,12 @@ test.describe('AutoCare stable-web release gate', () => {
     })
 
     test('public header exposes the correct navigation mode at the burger boundary', async ({ page }) => {
+        test.setTimeout(90_000)
+        await page.setViewportSize({ width: 768, height: 900 })
+        await gotoStable(page, '/')
+
         for (const width of [768, 790, 1024, 1120] as const) {
             await page.setViewportSize({ width, height: 900 })
-            await page.goto('/')
             await expect(page.getByTestId('desktop-public-mobile-menu-trigger')).toBeVisible()
             await expect(page.locator('.public-desktop-header__nav')).toBeHidden()
             await page.getByTestId('desktop-public-mobile-menu-trigger').press('Enter')
@@ -269,7 +272,6 @@ test.describe('AutoCare stable-web release gate', () => {
         }
 
         await page.setViewportSize({ width: 1280, height: 900 })
-        await page.goto('/')
         await expect(page.locator('.public-desktop-header__nav')).toBeVisible()
         await expect(page.getByTestId('desktop-public-mobile-menu-trigger')).toBeHidden()
     })

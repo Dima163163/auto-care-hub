@@ -11,6 +11,18 @@ envVars:
         sync: false
       - key: OUTBOX_TOKEN_ENCRYPTION_KEY
         sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_REGION
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEY_ID
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEYRING
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_REGION
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEY_ID
+        sync: false
+      - key: DATA_ENCRYPTION_AWS_KMS_KEYRING
+        sync: false
       - key: CABINET_UPLOADS_DIR
         sync: false
       - key: MAIL_MODE
@@ -43,5 +55,12 @@ test('rejects an implicit bootstrap email', () => {
     assert.throws(
         () => assertRenderProductionConfig(validConfig.replace('sync: false', 'value: admin@example.com')),
         /explicit bootstrap email/,
+    )
+})
+
+test('requires the KMS keyring on both API and worker', () => {
+    assert.throws(
+        () => assertRenderProductionConfig(validConfig.replace('      - key: DATA_ENCRYPTION_AWS_KMS_KEYRING\n        sync: false\n', '')),
+        /KMS keyring on API and worker/,
     )
 })

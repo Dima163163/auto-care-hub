@@ -1,5 +1,3 @@
-import { In } from 'typeorm'
-
 import { AppDataSource } from '../../database/data-source.js'
 import {
     AutoCareTrustSnapshotEntity,
@@ -14,7 +12,6 @@ import {
     AutomotiveServiceDefinitionEntity,
     AutomotiveServiceLocationEntity,
     AutomotiveServiceOfferingEntity,
-    ServiceMessageEntity,
     ServiceRequestEntity,
     ServiceRequestStatus,
 } from '../../entities/index.js'
@@ -27,11 +24,12 @@ import { buildRankingCalibrationReport, type RankingCalibrationReport } from './
 import type { UserEntity } from '../../entities/user/user.entity.js'
 import { isVerifiedCompletedVisit } from './completed-visit-policy.js'
 import { getAutoCareTrustRollout } from '../admin/super-admin-trust-policy.service.js'
+import { readFirstProviderResponseMinutes } from './first-provider-response-reader.js'
 
 export type AutoCareQualityMonitoringResponse = {
     generatedAt: string
     providers: { total: number; active: number; verified: number; trusted: number; suspended: number }
-    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number }
+    reviews: { approved: number; pending: number; rejected: number; anomalyCandidates: number; analysisWindow: { recentLimit: number; sampled: number; truncated: boolean } }
     requests: { total: number; completed: number; cancelled: number; noShows: number }
     ranking: {
         trustSnapshots: number
@@ -54,14 +52,59 @@ function percent(value: number, total: number) {
     return total === 0 ? 0 : Number(((value / total) * 100).toFixed(1))
 }
 
+const REVIEW_ANALYSIS_LIMIT = 1_000
+const RELIABILITY_PAGE_SIZE = 500
+
+async function* qualityRequestPages(generatedAt: Date) {
+    let cursor: { createdAt: Date; id: string } | null = null
+    while (true) {
+        const query = AppDataSource.getRepository(ServiceRequestEntity).createQueryBuilder('request')
+            .select([
+                'request.id', 'request.providerId', 'request.locationId', 'request.clientId',
+                'request.status', 'request.completedAt', 'request.clientConfirmedAt',
+                'request.providerConfirmedAt', 'request.createdAt',
+            ])
+            .where('request.createdAt <= :generatedAt', { generatedAt })
+        if (cursor) query.andWhere('(request.createdAt < :cursorCreatedAt OR (request.createdAt = :cursorCreatedAt AND request.id < :cursorId))', {
+            cursorCreatedAt: cursor.createdAt, cursorId: cursor.id,
+        })
+        const rows = await query.orderBy('request.createdAt', 'DESC').addOrderBy('request.id', 'DESC')
+            .take(RELIABILITY_PAGE_SIZE + 1).getMany()
+        const page = rows.slice(0, RELIABILITY_PAGE_SIZE)
+        if (page.length === 0) return
+        yield page
+        if (rows.length <= RELIABILITY_PAGE_SIZE) return
+        const last = page.at(-1)!
+        cursor = { createdAt: last.createdAt, id: last.id }
+    }
+}
+
+async function getFullReviewStatusCounts() {
+    const rows = await AppDataSource.getRepository(AutomotiveReviewEntity)
+        .createQueryBuilder('review')
+        .select('review.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('review.status')
+        .getRawMany<{ status: AutomotiveReviewStatus; count: string }>()
+
+    const counts = { approved: 0, pending: 0, rejected: 0 }
+    for (const row of rows) {
+        if (row.status === AutomotiveReviewStatus.Approved) counts.approved = Number(row.count)
+        if (row.status === AutomotiveReviewStatus.Pending) counts.pending = Number(row.count)
+        if (row.status === AutomotiveReviewStatus.Rejected) counts.rejected = Number(row.count)
+    }
+    return counts
+}
+
 /** Aggregate-only telemetry; private review/chat content is never returned. */
 export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<AutoCareQualityMonitoringResponse> {
     assertAdmin(user)
-    const [providers, memberships, reviews, requests, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
+    const generatedAt = new Date()
+    const [providers, memberships, reviews, reviewCounts, trustSnapshots, definitions, locations, offers, pendingAppeals, rollout] = await Promise.all([
         AppDataSource.getRepository(AutomotiveProviderEntity).find({ select: { id: true, ownerId: true, status: true, verified: true, trustBadge: true, trustReassessedAt: true } }),
         AppDataSource.getRepository(AutomotiveProviderMembershipEntity).find({ where: { status: AutomotiveProviderMembershipStatus.Active }, select: { providerId: true, userId: true, locationId: true, status: true } }),
-        AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: 1_000 }),
-        AppDataSource.getRepository(ServiceRequestEntity).find({ select: { id: true, clientId: true, providerId: true, locationId: true, status: true, completedAt: true, createdAt: true, clientConfirmedAt: true, providerConfirmedAt: true } }),
+        AppDataSource.getRepository(AutomotiveReviewEntity).find({ select: { id: true, clientId: true, providerId: true, serviceRequestId: true, text: true, rating: true, status: true, verifiedVisit: true, createdAt: true }, order: { createdAt: 'DESC' }, take: REVIEW_ANALYSIS_LIMIT }),
+        getFullReviewStatusCounts(),
         AppDataSource.getRepository(AutoCareTrustSnapshotEntity).find({ select: { providerId: true, score: true, computedAt: true } }),
         AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ select: { id: true, active: true } }),
         AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ select: { id: true, providerId: true, marketId: true } }),
@@ -69,18 +112,54 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
         AppDataSource.getRepository(AutoCareAppealEntity).countBy({ status: AutoCareAppealStatus.Pending }),
         getAutoCareTrustRollout(),
     ])
-    const requestIds = requests.map((request) => request.id)
-    const messages = requestIds.length === 0
-        ? []
-        : await AppDataSource.getRepository(ServiceMessageEntity).find({ where: { requestId: In(requestIds) }, select: { requestId: true, senderId: true, kind: true, createdAt: true }, order: { createdAt: 'ASC' } })
+    let totalRequests = 0
+    let completedRequests = 0
+    let cancelledRequests = 0
+    let noShowRequests = 0
+    let confirmedBookings = 0
+    let confirmationSamples = 0
+    let bookingConflicts = 0
+    const responseMinutes: number[] = []
+    const calibrationByProvider = new Map<string, { providerId: string; confirmedVisits: number; noShows: number }>()
+    for await (const requests of qualityRequestPages(generatedAt)) {
+        responseMinutes.push(...(await readFirstProviderResponseMinutes({ providers, memberships, requests })).values())
+        for (const request of requests) {
+            totalRequests += 1
+            const calibration = calibrationByProvider.get(request.providerId) ?? { providerId: request.providerId, confirmedVisits: 0, noShows: 0 }
+            if (isVerifiedCompletedVisit(request)) {
+                completedRequests += 1
+                calibration.confirmedVisits += 1
+            }
+            if (request.status === ServiceRequestStatus.Cancelled) cancelledRequests += 1
+            if (request.status === ServiceRequestStatus.NoShow) {
+                noShowRequests += 1
+                calibration.noShows += 1
+            }
+            calibrationByProvider.set(request.providerId, calibration)
+            if (request.providerConfirmedAt || request.clientConfirmedAt) confirmationSamples += 1
+            if (request.providerConfirmedAt && request.clientConfirmedAt) confirmedBookings += 1
+            if (request.status === ServiceRequestStatus.Declined || request.status === ServiceRequestStatus.Cancelled) bookingConflicts += 1
+        }
+    }
+    const sortedResponseMinutes = [...responseMinutes].sort((left, right) => left - right)
+    const p95 = sortedResponseMinutes.length === 0 ? null : Number(sortedResponseMinutes[Math.ceil(0.95 * sortedResponseMinutes.length) - 1]!.toFixed(1))
     const quality = buildQualityMetrics({
         providers,
         providerMemberships: memberships,
         definitions,
         locations,
         offers,
-        requests,
-        messages,
+        requests: [],
+        messages: [],
+        reliabilityOverride: {
+            responseSamples: responseMinutes.length,
+            averageResponseMinutes: responseMinutes.length === 0 ? null : Number((responseMinutes.reduce((sum, value) => sum + value, 0) / responseMinutes.length).toFixed(1)),
+            p95ResponseMinutes: p95,
+            confirmedBookings,
+            confirmationSamples,
+            confirmationReliabilityPercent: percent(confirmedBookings, confirmationSamples),
+            bookingConflicts,
+        },
     })
     const recent = reviews.map((review): ReviewIntegritySample => ({
         clientId: review.clientId,
@@ -95,7 +174,7 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
     const totalProviders = providers.length
 
     return {
-        generatedAt: new Date().toISOString(),
+        generatedAt: generatedAt.toISOString(),
         providers: {
             total: totalProviders,
             active: providers.filter((provider) => provider.status === AutomotiveProviderStatus.Active).length,
@@ -104,16 +183,19 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
             suspended: providers.filter((provider) => provider.status === AutomotiveProviderStatus.Suspended).length,
         },
         reviews: {
-            approved: reviews.filter((review) => review.status === AutomotiveReviewStatus.Approved).length,
-            pending: reviews.filter((review) => review.status === AutomotiveReviewStatus.Pending).length,
-            rejected: reviews.filter((review) => review.status === AutomotiveReviewStatus.Rejected).length,
+            ...reviewCounts,
             anomalyCandidates,
+            analysisWindow: {
+                recentLimit: REVIEW_ANALYSIS_LIMIT,
+                sampled: reviews.length,
+                truncated: reviewCounts.approved + reviewCounts.pending + reviewCounts.rejected > reviews.length,
+            },
         },
         requests: {
-            total: requests.length,
-            completed: requests.filter(isVerifiedCompletedVisit).length,
-            cancelled: requests.filter((request) => request.status === ServiceRequestStatus.Cancelled).length,
-            noShows: requests.filter((request) => request.status === ServiceRequestStatus.NoShow).length,
+            total: totalRequests,
+            completed: completedRequests,
+            cancelled: cancelledRequests,
+            noShows: noShowRequests,
         },
         ranking: {
             trustSnapshots: trustSnapshots.length,
@@ -121,8 +203,9 @@ export async function getAutoCareQualityMonitoring(user: UserEntity): Promise<Au
             evidenceCoveragePercent: percent(reassessedProviders, totalProviders),
             calibration: buildRankingCalibrationReport({
                 snapshots: trustSnapshots,
-                requests,
+                requests: [],
                 reviews,
+                requestSummary: [...calibrationByProvider.values()],
             }),
             rollout,
         },

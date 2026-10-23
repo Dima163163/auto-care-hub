@@ -5,6 +5,9 @@ import { env } from '../config/env.js'
 import { entities } from '../entities/index.js'
 import { DatabaseLogger } from './database-logger.js'
 import { SensitiveDataSubscriber } from '../shared/security/data-encryption/sensitive-data-subscriber.js'
+import { loadProductionKmsKeyProvider } from '../shared/security/data-encryption/production-kms-provider.js'
+
+await loadProductionKmsKeyProvider()
 
 export function getMigrationPaths(nodeEnv: 'development' | 'test' | 'production', runtime: 'source' | 'compiled' = 'source') {
     return [

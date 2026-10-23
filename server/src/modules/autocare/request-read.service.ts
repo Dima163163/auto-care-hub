@@ -1,9 +1,13 @@
 import { In } from 'typeorm'
+import type { SelectQueryBuilder } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
 import { AutomotiveProviderEntity, AutomotiveServiceDefinitionEntity, AutomotiveServiceLocationEntity, AutomotiveServiceOfferingEntity, AutoCareServiceQuoteEntity, AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus, ServiceRequestEntity } from '../../entities/index.js'
 import { type UserEntity } from '../../entities/user/user.entity.js'
-import type { AutoCareQuoteLineItemResponse } from './autocare.types.js'
-import { getManagedProviderPermissionScopes, isManagedProviderLocationAllowed } from './provider-access.service.js'
+import { AppError } from '../../shared/errors/app-error.js'
+import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
+import type { AutoCareQuoteLineItemResponse, AutoCareServiceQuoteHistoryResponse } from './autocare.types.js'
+import { getManagedProviderPermissionScopes } from './provider-access.service.js'
 import { getAutoCareQuoteLifecycleStatus } from './quote-policy.js'
 import { assertParticipant, getRequest, requireSuperAdminRequestAccessReason } from './request-access.service.js'
 import { clientOnly, notFound, requireAutoCareRequestUuid } from './request-errors.js'
@@ -16,17 +20,21 @@ export async function hydrateRequest(request: ServiceRequestEntity) {
     const offering = request.offeringId
         ? await AppDataSource.getRepository(AutomotiveServiceOfferingEntity).findOneBy({ id: request.offeringId })
         : null
-    const quoteHistory = await AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({
+    const quoteHistory = (await AppDataSource.getRepository(AutoCareServiceQuoteEntity).find({
         where: { requestId: request.id },
-        order: { version: 'ASC' },
+        order: { version: 'DESC' },
         take: 50,
-    })
+    })).reverse()
     const pendingReschedule = await AppDataSource.getRepository(AutoCareRescheduleRequestEntity).findOne({
         where: { requestId: request.id, status: AutoCareRescheduleStatus.Pending },
         order: { createdAt: 'DESC' },
     })
     if (!provider || !location || !definition) notFound('Service request references missing service data.')
-    return requestResponse(request, provider, location, definition, offering, quoteHistory.map((quote) => ({
+    return requestResponse(request, provider, location, definition, offering, quoteHistory.map(quoteResponse), pendingReschedule ? rescheduleResponse(pendingReschedule) : null)
+}
+
+function quoteResponse(quote: AutoCareServiceQuoteEntity): AutoCareServiceQuoteHistoryResponse {
+    return {
         id: quote.id,
         version: quote.version,
         amountMinor: quote.amountMinor,
@@ -40,25 +48,111 @@ export async function hydrateRequest(request: ServiceRequestEntity) {
         priceLocked: quote.snapshot.priceLocked === true,
         status: getAutoCareQuoteLifecycleStatus(quote.status, quote.validUntil),
         createdAt: quote.createdAt.toISOString(),
-    })), pendingReschedule ? rescheduleResponse(pendingReschedule) : null)
+    }
+}
+
+/** Hydrate one bounded page with a fixed number of relation queries. */
+async function hydrateRequestPage(requests: ServiceRequestEntity[]) {
+    if (requests.length === 0) return []
+    const ids = requests.map((request) => request.id)
+    const [providers, locations, definitions, offerings, quotes, reschedules] = await Promise.all([
+        AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In([...new Set(requests.map((request) => request.providerId))]) } }),
+        AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ where: { id: In([...new Set(requests.map((request) => request.locationId))]) } }),
+        AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).find({ where: { id: In([...new Set(requests.map((request) => request.definitionId))]) } }),
+        AppDataSource.getRepository(AutomotiveServiceOfferingEntity).find({ where: { id: In([...new Set(requests.map((request) => request.offeringId).filter((id): id is string => id !== null))]) } }),
+        AppDataSource.getRepository(AutoCareServiceQuoteEntity).createQueryBuilder('quote')
+            .where('quote.id IN (SELECT ranked.id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY "requestId" ORDER BY version DESC) AS row_number FROM autocare_service_quotes WHERE "requestId" IN (:...ids)) ranked WHERE ranked.row_number <= 50)', { ids })
+            .orderBy('quote.requestId', 'ASC').addOrderBy('quote.version', 'ASC').getMany(),
+        AppDataSource.getRepository(AutoCareRescheduleRequestEntity).find({ where: { requestId: In(ids), status: AutoCareRescheduleStatus.Pending } }),
+    ])
+    const providerById = new Map(providers.map((provider) => [provider.id, provider]))
+    const locationById = new Map(locations.map((location) => [location.id, location]))
+    const definitionById = new Map(definitions.map((definition) => [definition.id, definition]))
+    const offeringById = new Map(offerings.map((offering) => [offering.id, offering]))
+    const quotesByRequest = new Map<string, AutoCareServiceQuoteEntity[]>()
+    for (const quote of quotes) {
+        const history = quotesByRequest.get(quote.requestId) ?? []
+        history.push(quote)
+        quotesByRequest.set(quote.requestId, history)
+    }
+    const rescheduleByRequest = new Map(reschedules.map((reschedule) => [reschedule.requestId, reschedule]))
+    return requests.map((request) => {
+        const provider = providerById.get(request.providerId)
+        const location = locationById.get(request.locationId)
+        const definition = definitionById.get(request.definitionId)
+        if (!provider || !location || !definition) notFound('Service request references missing service data.')
+        const offering = request.offeringId ? offeringById.get(request.offeringId) ?? null : null
+        const quoteHistory = (quotesByRequest.get(request.id) ?? []).map(quoteResponse)
+        const reschedule = rescheduleByRequest.get(request.id)
+        return requestResponse(request, provider, location, definition, offering, quoteHistory, reschedule ? rescheduleResponse(reschedule) : null)
+    })
+}
+
+type RequestPageInput = { cursor?: string; limit?: number }
+
+function applyRequestCursor(query: SelectQueryBuilder<ServiceRequestEntity>, cursor?: string) {
+    if (!cursor) return query
+    const value = decodeCursor(cursor, ['createdAt', 'id'])
+    if (typeof value.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.id)) {
+        throw new AppError({ statusCode: 400, code: ERROR_CODES.BadRequest, message: 'Cursor is invalid or expired.' })
+    }
+    return query.andWhere('(serviceRequest.createdAt < :cursorCreatedAt OR (serviceRequest.createdAt = :cursorCreatedAt AND serviceRequest.id < :cursorId))', {
+        cursorCreatedAt: assertCursorDate(value, 'createdAt'),
+        cursorId: value.id,
+    })
+}
+
+async function toRequestPage(query: SelectQueryBuilder<ServiceRequestEntity>, input: RequestPageInput) {
+    const limit = getCursorLimit(input.limit, 50)
+    const rows = await applyRequestCursor(query, input.cursor)
+        .orderBy('serviceRequest.createdAt', 'DESC').addOrderBy('serviceRequest.id', 'DESC')
+        .take(limit + 1).getMany()
+    const page = rows.slice(0, limit)
+    const last = page.at(-1)
+    return {
+        items: await hydrateRequestPage(page),
+        nextCursor: rows.length > limit && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null,
+    }
+}
+
+export async function getMyAutoCareServiceRequestPage(user: UserEntity, input: RequestPageInput = {}) {
+    clientOnly(user)
+    const query = AppDataSource.getRepository(ServiceRequestEntity).createQueryBuilder('serviceRequest')
+        .where('serviceRequest.clientId = :clientId', { clientId: user.id })
+    return toRequestPage(query, input)
 }
 
 export async function getMyAutoCareServiceRequests(user: UserEntity) {
-    clientOnly(user)
-    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { clientId: user.id }, order: { createdAt: 'DESC' } })
-    return Promise.all(requests.map(hydrateRequest))
+    return (await getMyAutoCareServiceRequestPage(user, { limit: 100 })).items
 }
 
-export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
+export async function getOwnerAutoCareServiceRequestPage(user: UserEntity, input: RequestPageInput = {}) {
     const scopes = await getManagedProviderPermissionScopes(user.id, 'requests')
     const providerIds = scopes.map(({ providerId }) => providerId)
     const providers = providerIds.length === 0
         ? []
         : await AppDataSource.getRepository(AutomotiveProviderEntity).find({ where: { id: In(providerIds) } })
-    if (providers.length === 0) return []
-    const requests = await AppDataSource.getRepository(ServiceRequestEntity).find({ where: { providerId: In(providers.map((provider) => provider.id)) }, order: { createdAt: 'DESC' } })
-    const visibleRequests = requests.filter((request) => isManagedProviderLocationAllowed(scopes, request.providerId, request.locationId))
-    return Promise.all(visibleRequests.map(hydrateRequest))
+    if (providers.length === 0) return { items: [], nextCursor: null }
+    const existingProviderIds = new Set(providers.map((provider) => provider.id))
+    const clauses = scopes.flatMap((scope, index) => {
+        if (!existingProviderIds.has(scope.providerId)) return []
+        return scope.locationIds === null
+            ? [`serviceRequest.providerId = :provider${index}`]
+            : scope.locationIds.length > 0 ? [`(serviceRequest.providerId = :provider${index} AND serviceRequest.locationId IN (:...locations${index}))`] : []
+    })
+    if (clauses.length === 0) return { items: [], nextCursor: null }
+    const parameters: Record<string, string | string[]> = {}
+    for (const [index, scope] of scopes.entries()) {
+        parameters[`provider${index}`] = scope.providerId
+        if (scope.locationIds) parameters[`locations${index}`] = scope.locationIds
+    }
+    const query = AppDataSource.getRepository(ServiceRequestEntity).createQueryBuilder('serviceRequest')
+        .where(`(${clauses.join(' OR ')})`, parameters)
+    return toRequestPage(query, input)
+}
+
+export async function getOwnerAutoCareServiceRequests(user: UserEntity) {
+    return (await getOwnerAutoCareServiceRequestPage(user, { limit: 100 })).items
 }
 
 export async function getAutoCareServiceRequest(user: UserEntity, requestId: string, emergencyReason?: string) {

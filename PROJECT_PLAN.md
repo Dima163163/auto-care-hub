@@ -1,5 +1,192 @@
 # AutoCare Hub — Project Plan
 
+## Production KMS — 2026-10-23
+
+- [x] Добавить fail-closed AWS KMS загрузку versioned keyring до API/worker
+  startup и TypeORM migrations, конфигурацию Render и негативные тесты.
+- [ ] Подтвердить U01 на staging: реальные KMS/IAM, один keyring в API/worker/
+  migrations/restore, отказ KMS, restart и восстановление. Не запускать
+  provisioning заново для базы с зашифрованными строками.
+- [ ] Завершить U02 row/owner AAD и U03 privileged MFA/step-up до pilot GO.
+
+## Продвижение dev → main — 2026-10-23
+
+- [x] Закрепить выбор именно push-события в раннем ожидании Quality по точному
+  SHA: PR-событие для того же SHA больше не может завершить этот этап раньше.
+  Поздний gate уже требовал оба события. Локальная policy-проверка и негативный
+  тест PASS; опубликованный CI на новом кандидате и code-owner review открыты.
+
+## Повторная проверка всех файлов — 2026-10-21
+
+- [x] Инвентаризировать и механически проверить 2 585 tracked files: текст,
+  JSON/SVG/YAML/PlantUML, 195 изображений, JS/shell syntax и локальные ссылки.
+- [x] Повторить frontend 647/647, backend 1408/1408, lint, Next/Vite builds,
+  статические contracts и production fixture leakage; сохранить границы
+  в `docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md`.
+- [x] Повторить 15 прежних synthetic defect cases без устаревшего U14
+  assertion; подтвердить открытые U15–U20/N24–N30/N32–N33 без live-DB claims.
+- [x] Исправить неверные security claims, неразбираемый YAML и непереносимую
+  ссылку на внешний отчёт; обновить `docs/INDEX.md` и coverage evidence.
+- [ ] Проверить открытые code blockers и 54 pilot gates на опубликованном
+  exact candidate с PostgreSQL+Redis/staging/real users; локальный unit PASS
+  не закрывает этот пункт.
+
+## Финальная локальная проверка пилота — 2026-10-21
+
+- [x] Прогнать полные frontend/backend unit suites, lint, production Next real
+  build, boundary/design/CI checks, mock leakage и карту PlantUML; результаты
+  и пределы зафиксировать в `docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md`.
+- [x] Сверить pilot readiness и operations gates, доступность реального pilot
+  evidence, migration manifest и свежие npm advisories; зафиксировать NO-GO
+  для реальных данных и порядок исправлений.
+- [x] U20: заменить stale full-entity writes предпочтений/логина на narrow CAS,
+  смену пароля сериализовать row lock и отзывом сессий в одной транзакции;
+  пересмотреть остальные UserEntity saves. Unit 1410/1410 и build PASS; PostgreSQL race
+  integration добавлен, локально не запущен без server PostgreSQL/Redis.
+- [x] U15: единая chat write policy для нового chat API и legacy request
+  messages/attachments; admin/superadmin не пишут private request thread.
+  Targeted unit 45/45, полный backend unit 1419/1419 и API build PASS;
+  реальный HTTP/DB regression ожидает CI.
+- [x] U17: доставлять acceptance link письмом через encrypted outbox в одной
+  транзакции с invitation; production response не раскрывает token. Unit/build
+  PASS; DB/SMTP интеграционная приёмка ожидает CI/staging.
+- [x] U18: истечение учитывает FIFO по ближайшему expiresAt и потраченный
+  остаток каждого lot; возврат создаёт отдельный бессрочный credit. Unit/build
+  PASS; PostgreSQL integration добавлен, но локально не запущен.
+- [x] U19: одна каноническая жалоба на заявку, проверка booking state,
+  повтор возвращает тот же case; public trust считает только канонические
+  открытые cases, неподтверждённый тип не становится moderation violation.
+  Unit/build и migration filename PASS; реальная migration/DB gate открыта.
+- [x] U21: обновить web/API lockfiles и прямые версии до исправленных;
+  оба npm audit 0, `npm ci`, 647/647 web, 1436/1436 API, lint,
+  Vite/API/Next real builds и fixture leakage PASS. Integration/E2E/staging
+  на exact candidate остаются открыты.
+- [ ] Подтвердить
+  U01–U03 и остальные 54 pilot gates на точном опубликованном кандидате.
+
+## Повторный UI / security аудит — 2026-10-20
+
+- [x] Сверить remote dev, карту и выбранные UI/security contracts; явно
+  перечислить непроверенные документы и ограничения в docs/INDEX.md/evidence.
+- [x] Собрать отдельный production Next mock artifact; выполнить 240/240
+  route/role/profile cases, сохранить 120 screenshots и targeted interactions.
+- [x] Добавить U22/UX16–UX18: wrong-recipient chat draft, clipped report dialog,
+  booking time restore и semantic mismatch comparison. Runtime не менять.
+- [x] Перепроверить U14/U15/U20 synthetic service/ORM cases, npm audit U21,
+  104 security unit tests, 5 source contracts, 5 HTTP CSP samples и API build.
+- [x] U22: изолировать composer/pending/offer/cursor/preview по user/request;
+  проверить два разных сервиса, A→B→A, failed send, поздний ответ и identity
+  switch. Локальный fix branch, unit и production Next mock browser PASS;
+  публикация и real-API приёмка отдельно.
+- [x] UX16: ограничить высоту ConfirmDialog, дать содержимому прокрутку поверх
+  мобильной навигации и перенос действий на узком экране. Production Next mock
+  browser: пять viewport, hit-testing обеих кнопок, axe 0, Escape/focus PASS;
+  targeted unit 26/26. Real device/zoom и deployed проверка отдельно.
+- [x] UX17: восстановить selectedTime из draft; URL имеет приоритет, абсолютная
+  дата сервиса сохраняется против перехода через полночь. Недоступный слот
+  требует нового выбора и блокирует submit. Unit и production Next mock browser
+  PASS; real-API/deployed проверка остаётся отдельно.
+- [x] UX18: единый formatter для price types, bookingMode и warranty в карточке,
+  таблице и карте; таблица прокручивается внутри мобильной grid column.
+  Unit RU/EN и production Next mock browser 1440/360 PASS; публикация и
+  real-API/deployed приёмка отдельно.
+- [x] U14: raw outbox enqueue применяет шифрующий transformer до INSERT;
+  миграция 178642 backfill шифрует legacy email/name. Unit 13/13,
+  API build, 140 миграций на собственной disposable PostgreSQL16 и raw JSONB /
+  retry / account-deletion index smoke PASS. Production backfill отдельно.
+
+## Карта PlantUML — 2026-10-15
+
+- [x] Создать `docs/diagrams/` с 9 схемами текущего dev: система/runtime,
+  frontend/backend, данные, заявки, auth, outbox и privacy boundaries.
+- [x] Добавить task-to-file index, source fingerprints и scoped drift checker;
+  привязать первый просмотр к карте через repository/workspace AGENTS.
+- [x] Завершить local PlantUML syntax/render и проверку previews/links; сохранить
+  verification metadata вместе с картой. Ранее сделанные audit-файлы сохранить.
+
+## Дополнение аудита — 2026-10-13
+
+- [x] Сверить текущую ветку `origin/dev` и рабочий реестр, добавить три
+  подтверждённые source-based находки N21–N23 с последствиями, приёмкой и
+  ограничением проверки в `docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md`.
+- [x] Углублённый аудит локального dev `8840ae8`: U14–U20/N24–N34,
+  16 synthetic reproductions, browser failure/metadata checks, unit/build/lint
+  и tooling coverage. Отчёт: `docs/audits/DEEP_PROJECT_AUDIT_2026-10-13.md`.
+- [x] Продолжение на собственных PostgreSQL17/Redis7: 139 migrations,
+  23/88 integration без skip, 10 реальных defect cases, 30 VALIDATE,
+  encrypted backup/restore 76 tables, PG/Redis multi-process smoke, 29/29
+  production real E2E, 17/17 metadata + 17/17 JS + 5 CSP; load samples.
+  Remote dev равен baseline; PR CI action_required не заявлен PASS.
+  Отчёт: `docs/audits/RUNTIME_VERIFICATION_2026-10-13.md`.
+- [x] U21: обновлены vulnerable dependency entries в обоих lockfiles,
+  audit/build/unit и real-mode Next artifact PASS; integration/real E2E
+  ожидают PostgreSQL/Redis и staging exact candidate.
+- [x] U15: единая private write policy для request/chat messages и attachments;
+  локальные unit/сборка PASS, real-stack acceptance открыта.
+- [x] U20: narrow/CAS user writes и row locks для security transitions;
+  PostgreSQL race acceptance остаётся до запуска integration в CI/staging.
+- [x] U18: корректное истечение bonus lots по остатку; real-DB gate открыт.
+- [x] U19: уникальные guarantee cases и отделение complaint от доказанного
+  нарушения в trust score; real-DB gate открыт.
+- [x] U16: searchable HMAC index для encrypted evidence reference;
+  backfill migration и unit/API build PASS, PostgreSQL lookup открыт.
+- [x] U17: production invite delivery подготовлена через encrypted outbox;
+  фактическая SMTP доставка и published acceptance остаются открыты.
+- [x] N26: единый 72-byte UTF-8 limit на создание и проверку bcrypt пароля;
+  длинные legacy secrets требуют email reset. Unit/build PASS, deployed recovery
+  flow открыт.
+- [x] N28: denied `sessionStorage` не прерывает in-memory auth cleanup;
+  expiry hint использует безопасный fallback. Unit/type/lint PASS, browser
+  denial на опубликованном кандидате открыт.
+- [x] N24: review row lock, revision-scoped moderation evidence and stale
+  decision guard; unit/build/frontend tests PASS, PostgreSQL race gate open.
+- [x] N25: due trust queue with NULLS FIRST, successful scan watermark and
+  failed-provider retry; unit/build PASS, PostgreSQL scheduling gate open.
+- [x] N30: последние 50 quote revisions сохраняют current в конце истории;
+  проверка 51-й версии и stale decision добавлена, PostgreSQL gate открыт.
+- [x] N32: notification identity включает quote ID, retry одной версии
+  дедуплицируется; PostgreSQL/outbox delivery gate открыт.
+- [x] N27: AST runtime-boundary guard покрывает зарегистрированные domain
+  factories (136 endpoints), отказывает при пропущенном transform или нулевом
+  coverage; negative fixtures и CI step PASS локально.
+- [x] N31: обновлены threat/Render fixtures; полный root tooling inventory
+  (172 tests) включён в обязательный `quality:backend`. Локальный suite PASS,
+  опубликованный CI ещё открыт.
+- [x] N29: для новых сессий absolute expiry согласован с JWT/cookie; unit и
+  build PASS, PostgreSQL rotation integration ожидает среды с БД.
+- [x] N33: parsing/timeout/5xx показывают локализованный текст с retry;
+  централизованная клиентская telemetry остаётся открытой.
+- [x] N34: SeoHead на уровне маршрутизатора и общая server/client политика
+  auth copy/noindex; SEO quality guard сверяет вынесенную shared policy;
+  browser chain после публикации остаётся открытым.
+- [x] N21: полный статусный backlog считается SQL-агрегацией; bounded анализ
+  аномалий/калибровки помечен в API и интерфейсе. Server unit/build, web
+  focused test/lint/build PASS; повторная проверка >1000 на PostgreSQL ожидает
+  доступной БД.
+- [x] N22: единая политика первого ответа для owner analytics, admin quality
+  и public trust score; негативные случаи system/чужой филиал/отзыв доступа/
+  ответ до заявки покрыты unit. Историческая семантика использует актуальное
+  membership, пока нет audit intervals; PostgreSQL flow остаётся открытым.
+- [x] N23 (код): cursor pages и batch hydration списка заявок, legacy array
+  cap 100, bounded request/message scan и SQL aggregates для аналитики.
+  Частичные UI счётчики помечены `+` и пояснением. PostgreSQL >1000,
+  query plan, latency/память и production budget остаются отдельной приёмкой;
+  приоритетную серверную выборку старых активных заявок нужно добавить для пилота.
+- [x] CI secret scan: исторический SHA-256 `npm-api-audit.json` подтверждён
+  хэшем evidence-файла; точечный fingerprint внесён в `.gitleaksignore`.
+  Новый exact-candidate CI должен подтвердить результат.
+
+## Дополнение после публикации — 2026-10-04
+
+- [x] PR #14 слит в protected main; tree equality, push/PR Quality и promotion PASS.
+- [x] UX15: accessible onboarding progress group; отдельный локальный коммит.
+- [x] QA02: verified role/locale/theme, обычный admin и client/owner onboarding;
+  240/240, 120 screenshots, full axe, build/types/lint и 635 unit PASS.
+- [ ] Опубликовать дополнительные UX15/QA02 следующей порцией по новому
+  указанию пользователя «доделывай»: один atomic push feature/dev, protected
+  dev→main PR и обязательные exact-candidate CI. Фактический результат —
+  PR/Actions/publication.json; основной checkout сохраняется без изменений.
+
 ## Автономная UI/UX-порция — 2026-10-04
 
 - [x] U08: mock graph, login fixtures и demo favorites исключены из real Next/Vite;

@@ -19,6 +19,7 @@ export function validateCiCdPolicy({ quality, promotion, promotionWait, protecti
         ].every((job) => new RegExp(`\\n\\s+- ${job}\\s*$`, 'm').test(quality))],
         ['Promotion waits for the completed Quality workflow', /push:[\t ]*\n[\t ]+branches:[\t ]*\n[\t ]+- dev/.test(promotion) && /actions\/workflows\/quality\.yml\/runs/.test(promotion) && /status.*completed/.test(promotion)],
         ['Promotion is limited to the trusted dev branch', /branches:[\t ]*\n[\t ]+- dev/.test(promotion) && /branch=dev/.test(promotion) && /head_sha/.test(promotion)],
+        ['Promotion selects a push Quality run', /\.event\s*==\s*"push"/.test(promotion)],
         ['Promotion requires successful CI', /conclusion.*success/.test(promotion) && /'pr', 'checks'/.test(promotionWait ?? '')],
         ['Promotion waits only for required checks and both Quality events', /'--required'/.test(promotionWait ?? '') && /\['push', 'pull_request'\]/.test(promotionWait ?? '') && /maxAttempts = 270/.test(promotionWait ?? '')],
         ['Promotion pins merge to the verified head', /--match-head-commit "\$SOURCE_SHA"/.test(promotion) && !/--admin(?:\s|$)/.test(promotion)],

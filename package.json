@@ -59,13 +59,14 @@
     "check:local-mvp": "node scripts/check-local-mvp.mjs",
     "smoke:server:redis-rate-limit": "npm --prefix server run smoke:redis-rate-limit",
     "smoke:server:postgres-transition": "npm --prefix server run smoke:autocare-postgres-transition",
-    "quality:backend": "npm run test:migration-check && npm run check:migration-inventory && npm run check:migration-validation && npm run check:legacy-cleanup && npm run test:legacy-cleanup && npm run check:legacy-files && npm run test:legacy-files && npm run check:demo-reset && npm run test:demo-reset && npm run test:integration-prerequisites && npm run check:render-production-config && npm run check:no-legacy-provider && npm run check:no-bookly-runtime && npm run check:ops-harness && npm run test:ops-harness && npm run check:owner-route-auth && npm run test:owner-route-auth && npm run check:api-contract && npm run check:api-parity && npm run check:route-snapshot && npm run check:openapi-shape && npm run check:openapi-structure && npm run test:openapi-structure && npm run test:staging-api && npm run check:media-pipeline && npm run test:media-pipeline && npm run check:backup-restore && npm run test:backup-restore && npm run check:mvp-interaction && npm run test:mvp-interaction && npm run check:redis-rate-limit && npm run test:redis-rate-limit && npm run check:concurrency-matrix && npm run test:concurrency-matrix && npm run check:pilot-evidence-toolkit && npm run test:pilot-evidence-toolkit && npm run check:error-codes && npm run test:error-codes && npm run check:release-summary && npm run test:release-summary && npm run test:release-promotion && npm run test:release-provenance && npm run check:pilot-autonomous-plan && npm run test:pilot-autonomous-plan && npm run check:pilot-autonomous-next && npm run test:pilot-autonomous-next && npm run check:pilot-autonomous-200 && npm run test:pilot-autonomous-200 && npm run check:mvp-remaining-blocks && npm run test:mvp-remaining-blocks && npm run check:next-route-inventory && npm run test:next-route-inventory && npm run check:next-runtime-boundary && npm run check:next-route-contract && npm run check:threat-surface && npm run check:loading-shell && npm run check:state-matrix && npm run check:client-path && npm run check:capacity-ui && npm run check:discovery-form && npm run test:discovery-form && npm --prefix server run check:migrations && npm --prefix server run test:tooling && npm --prefix server run test:unit && npm --prefix server run build",
+    "quality:backend": "npm run test:tooling:root && npm run test:migration-check && npm run check:migration-inventory && npm run check:migration-validation && npm run check:legacy-cleanup && npm run test:legacy-cleanup && npm run check:legacy-files && npm run test:legacy-files && npm run check:demo-reset && npm run test:demo-reset && npm run test:integration-prerequisites && npm run check:render-production-config && npm run check:no-legacy-provider && npm run check:no-bookly-runtime && npm run check:ops-harness && npm run test:ops-harness && npm run check:owner-route-auth && npm run test:owner-route-auth && npm run check:api-contract && npm run check:api-parity && npm run check:route-snapshot && npm run check:openapi-shape && npm run check:openapi-structure && npm run test:openapi-structure && npm run test:staging-api && npm run check:media-pipeline && npm run test:media-pipeline && npm run check:backup-restore && npm run test:backup-restore && npm run check:mvp-interaction && npm run test:mvp-interaction && npm run check:redis-rate-limit && npm run test:redis-rate-limit && npm run check:concurrency-matrix && npm run test:concurrency-matrix && npm run check:pilot-evidence-toolkit && npm run test:pilot-evidence-toolkit && npm run check:error-codes && npm run test:error-codes && npm run check:release-summary && npm run test:release-summary && npm run test:release-promotion && npm run test:release-provenance && npm run check:pilot-autonomous-plan && npm run test:pilot-autonomous-plan && npm run check:pilot-autonomous-next && npm run test:pilot-autonomous-next && npm run check:pilot-autonomous-200 && npm run test:pilot-autonomous-200 && npm run check:mvp-remaining-blocks && npm run test:mvp-remaining-blocks && npm run check:next-route-inventory && npm run test:next-route-inventory && npm run check:next-runtime-boundary && npm run check:next-route-contract && npm run check:threat-surface && npm run check:loading-shell && npm run check:state-matrix && npm run check:client-path && npm run check:capacity-ui && npm run check:discovery-form && npm run test:discovery-form && npm --prefix server run check:migrations && npm --prefix server run test:tooling && npm --prefix server run test:unit && npm --prefix server run build",
     "check:api-contract": "node scripts/check-api-contract.mjs",
     "check:ci-cd-policy": "node scripts/check-ci-cd-policy.mjs",
     "check:api-parity": "node scripts/check-api-parity.mjs",
     "check:route-snapshot": "node scripts/check-route-snapshot.mjs",
     "test:route-snapshot": "node --test scripts/check-route-snapshot.test.mjs",
     "test:ci-cd-policy": "node --test scripts/check-ci-cd-policy.test.mjs",
+    "test:tooling:root": "node --test scripts/*.test.mjs",
     "check:media-pipeline": "node scripts/check-media-pipeline-contract.mjs",
     "test:media-pipeline": "node --test scripts/check-media-pipeline-contract.test.mjs",
     "check:backup-restore": "node scripts/check-backup-restore-contract.mjs",
@@ -96,6 +97,7 @@
     "test:discovery-form": "node --test scripts/check-discovery-form-contract.test.mjs",
     "check:pwa-update": "node scripts/check-pwa-update-contract.mjs",
     "check:api-runtime-boundaries": "node scripts/check-api-runtime-boundaries.mjs",
+    "test:api-runtime-boundaries": "node --test scripts/check-api-runtime-boundaries.test.mjs",
     "check:staging-api": "node scripts/check-staging-api-compatibility.mjs",
     "test:staging-api": "node --test scripts/check-staging-api-compatibility.test.mjs",
     "check:openapi-shape": "node scripts/check-openapi-shape.mjs",
@@ -141,7 +143,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "leaflet": "^1.9.4",
-    "next": "16.3.6",
+    "next": "16.4.2",
     "react": "19.2.8",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.8",
@@ -149,7 +151,7 @@
     "react-intersection-observer": "^10.0.3",
     "react-redux": "^9.2.0",
     "react-router": "^7.18.3",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tw-animate-css": "^1.4.0",
@@ -170,7 +172,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "concurrently": "^9.2.4",
+    "concurrently": "^9.2.5",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -182,9 +184,9 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.2.2",
+    "vite": "^8.2.4",
     "vite-plugin-pwa": "^1.3.0",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.12"
   },
   "msw": {
     "workerDirectory": [
@@ -193,6 +195,6 @@
   },
   "overrides": {
     "baseline-browser-mapping": "2.11.0",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   }
 }

@@ -1,0 +1,162 @@
+@startuml
+!include _style.puml
+title Основные данные — выбранные ключи и связи
+left to right direction
+entity "User" as User {
+  * id : uuid
+  --
+  role / status / tokenVersion
+}
+entity "UserSession" as Session {
+  * id : uuid
+  userId / expiresAt
+}
+entity "Provider" as Provider {
+  * id : uuid
+  ownerId : legacy compatibility
+  trustReassessedAt : successful scan?
+  trustReassessmentAttemptedAt : queue order?
+}
+entity "ProviderMembership" as Membership {
+  * id : uuid
+  userId / providerId
+  locationId : nullable
+  role / status
+}
+entity "ServiceLocation" as Location {
+  * id : uuid
+  providerId / marketId
+  timezone / schedule / capacity
+}
+entity "ServiceDefinition" as Definition {
+  * id : uuid
+  slug / comparison attributes
+}
+entity "ServiceOffering" as Offering {
+  * id : uuid
+  locationId / definitionId
+  bookingMode / price / duration
+}
+entity "ServiceRequest" as Request {
+  * id : uuid
+  clientId / providerId / locationId
+  definitionId / offeringId?
+  status / historical snapshots
+}
+entity "ServiceQuote" as Quote {
+  * id : uuid
+  requestId / version / status
+  amountMinor / currencyCode
+}
+entity "ChatThread" as Thread {
+  * id : uuid
+  requestId? / providerId? / clientId?
+  type / status
+}
+entity "ServiceMessage" as Message {
+  * id : uuid
+  requestId? / threadId? / senderId
+  encrypted body / offer
+}
+entity "ServiceAttachment" as Attachment {
+  * id : uuid
+  requestId? / threadId? / uploadedById
+  private storage object key
+}
+entity "AutomotiveReview" as Review {
+  * id : uuid
+  providerId / clientId? / serviceRequestId?
+  status / revision allowance
+  contentRevision : integer
+}
+entity "TrustEvidence" as Evidence {
+  * id : uuid
+  providerId / kind / status
+  reference : encrypted text
+  referenceIndex : HMAC blind index
+  reviewRevision : integer?
+}
+entity "GuaranteeClaim" as Claim {
+  * id : uuid
+  requestId / clientId / providerId
+  caseKey : unique canonical request?
+  status / resolution
+}
+entity "BonusAccount" as Account {
+  * id : uuid
+  clientId / providerId
+  cached balance projection
+}
+entity "BonusLedger" as Ledger {
+  * id : uuid
+  accountId / requestId?
+  type / points / idempotencyKey
+  expiresAt / createdAt
+}
+entity "OutboxEvent" as Outbox {
+  * id : uuid
+  type / payload / idempotencyKey
+  status / attempts / availableAt
+}
+User ||--o{ Session
+User ||--o{ Membership
+Provider ||--o{ Membership
+Location |o--o{ Membership : optional scope
+Provider ||--o{ Location
+Location ||--o{ Offering
+Definition ||--o{ Offering
+User ||--o{ Request : client
+Location ||--o{ Request
+Offering |o--o{ Request
+Request ||--o{ Quote
+Request |o--o{ Thread
+Thread |o--o{ Message
+Thread |o--o{ Attachment
+Request |o--o{ Attachment
+Request |o--o{ Review
+Provider ||--o{ Review
+Provider ||--o{ Evidence
+Review ..> Evidence : logical encrypted reference
+Request ||--o{ Claim
+Provider ||--o{ Account
+User ||--o{ Account
+Account ||--o{ Ledger
+note bottom of Ledger
+  U18: positive earn/adjustment/refund entries form lots.
+  Redemption consumes earliest expiry first;
+  expiry applies only to the unspent amount of its lot.
+  Refund is a new non-expiring credit.
+end note
+note bottom of Claim
+  U19: one canonical case per request.
+  Historic duplicates retain null caseKey;
+  only the canonical case affects trust.
+  Allegations never count as proven violations.
+end note
+note bottom of Provider
+  N25: successful trust scans advance both timestamps,
+  failed scans advance only attemptedAt.
+  A policy change clears both watermarks.
+end note
+note bottom of Evidence
+  U16: exact lookup uses referenceIndex;
+  reference remains randomly encrypted.
+  Migration backfills existing references.
+end note
+note bottom of Review
+  N24: edit locks the review row, consumes allowance,
+  increments contentRevision and queues matching evidence.
+  Older pending evidence becomes superseded;
+  moderation checks the matching revision under row lock.
+  N21: admin status counts aggregate the full table;
+  anomaly signals and calibration use the latest 1000 reviews.
+end note
+Request ..> Outbox : effects; payload association
+note bottom of Evidence
+  Пунктир — логическая связь, не FK.
+  Reference lookup fix требует применения migration и проверки DB.
+  Snapshot и FK нельзя восстанавливать из этой сокращённой карты:
+  authoritative schema — entities + migrations.
+end note
+footer Полная schema также содержит market hierarchy / vehicles / capacity / appeals / audit
+@enduml

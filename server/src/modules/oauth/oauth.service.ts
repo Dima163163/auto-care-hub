@@ -20,6 +20,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { fetchWithRetry } from '../../shared/http/fetch-with-retry.js'
 import { createAuthTokens } from '../auth/auth.service.js'
+import { getRefreshSessionExpiry } from '../auth/refresh-session-lifetime.js'
 import { createUserSession } from '../auth/session.service.js'
 import { toPublicUser } from '../auth/public-user.js'
 import type { OAuthProvider } from './oauth.types.js'
@@ -205,13 +206,6 @@ async function fetchOAuthProfile(provider: OAuthProvider, code: string) {
     return fetchYandexProfile(tokenRes.access_token)
 }
 
-function getRefreshTokenExpiry() {
-    const days = 7
-    const date = new Date()
-    date.setDate(date.getDate() + days)
-    return date
-}
-
 export async function processOAuthCallback(
     provider: OAuthProvider,
     code: string,
@@ -241,6 +235,7 @@ export async function processOAuthCallback(
         if (identity) {
             const linkedUser = await userRepository.findOne({
                 where: { id: identity.userId },
+                lock: { mode: 'pessimistic_write' },
             })
 
             if (!linkedUser) {
@@ -326,10 +321,10 @@ export async function processOAuthCallback(
         userId: user.id,
         userAgent: sessionInfo.userAgent,
         ipAddress: sessionInfo.ipAddress,
-        expiresAt: getRefreshTokenExpiry(),
+        expiresAt: getRefreshSessionExpiry(),
     })
 
-    const tokens = createAuthTokens(user, session.id)
+    const tokens = createAuthTokens(user, session.id, session.expiresAt)
 
     return {
         user: toPublicUser(user),
@@ -373,6 +368,7 @@ export async function processOAuthLinkCallback(
         const identityRepository = manager.getRepository(OAuthIdentityEntity)
         const user = await userRepository.findOne({
             where: { id: linkRequest.userId },
+            lock: { mode: 'pessimistic_write' },
         })
 
         if (!user) {

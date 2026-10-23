@@ -4,16 +4,18 @@ import type { DeepPartial, FindOneOptions } from 'typeorm'
 import { ConnectionMetadataBuilder } from 'typeorm/connection/ConnectionMetadataBuilder.js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ getRepository: vi.fn(), transaction: vi.fn(), notify: vi.fn(), canManage: vi.fn() }))
+const mocks = vi.hoisted(() => ({ getRepository: vi.fn(), transaction: vi.fn(), notify: vi.fn(), enqueue: vi.fn(), canManage: vi.fn() }))
 vi.mock('../../database/data-source.js', () => ({ AppDataSource: { getRepository: mocks.getRepository, transaction: mocks.transaction } }))
 vi.mock('./provider-access.service.js', () => ({ canManageProvider: mocks.canManage }))
 vi.mock('../outbox/notification-outbox.service.js', () => ({ enqueueNotificationSafely: mocks.notify }))
+vi.mock('../outbox/outbox.service.js', () => ({ enqueueOutboxEvent: mocks.enqueue }))
 
 import { AutomotiveProviderEntity } from '../../entities/index.js'
 import { AutomotiveProviderInvitationEntity, AutomotiveProviderInvitationRole, AutomotiveProviderInvitationStatus } from '../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity, UserRole } from '../../entities/user/user.entity.js'
 import { createEmailBlindIndex, setDataEncryptionKeyProviderForTests } from '../../shared/security/data-encryption/field-encryption.js'
 import { createOwnerProviderInvitation } from './provider-membership.service.js'
+import { decryptOutboxSecret } from '../outbox/outbox-secret.js'
 
 const providerId = '11111111-1111-4111-8111-111111111111'
 const owner = Object.assign(new UserEntity(), { id: '22222222-2222-4222-8222-222222222222', role: UserRole.Owner })
@@ -40,6 +42,7 @@ beforeEach(() => {
         : entity === AutomotiveProviderInvitationEntity ? repository : { findOne: vi.fn().mockResolvedValue(null) })
     mocks.transaction.mockImplementation((callback) => callback({ getRepository: () => repository }))
     mocks.canManage.mockResolvedValue(true)
+    mocks.enqueue.mockResolvedValue({})
     setDataEncryptionKeyProviderForTests({
         activeKeyId: 'synthetic-key',
         getKey: () => ({ kek: Buffer.alloc(32, 11) }),
@@ -66,6 +69,39 @@ describe('Encrypted provider invitation deduplication', () => {
         expect(repository.save).toHaveBeenNthCalledWith(2, expect.objectContaining({ status: AutomotiveProviderInvitationStatus.Pending, email: 'staff@example.test' }))
         expect(result.status).toBe(AutomotiveProviderInvitationStatus.Pending)
         expect(mocks.transaction).toHaveBeenCalledOnce()
+        expect(mocks.enqueue).toHaveBeenCalledOnce()
+    })
+
+    it('enqueues an encrypted acceptance link for an unregistered email without exposing its token in production', async () => {
+        vi.stubEnv('NODE_ENV', 'production')
+        try {
+            const result = await createOwnerProviderInvitation(owner, providerId, input)
+            expect(result.inviteToken).toBeNull()
+            expect(mocks.enqueue).toHaveBeenCalledOnce()
+            const [event, manager] = mocks.enqueue.mock.calls[0] ?? []
+            expect(event).toMatchObject({
+                type: 'email.send',
+                idempotencyKey: `email:provider-invitation:${result.id}`,
+                payload: {
+                    template: 'provider_invitation',
+                    email: 'staff@example.test',
+                    expiresAt: result.expiresAt,
+                },
+            })
+            expect(manager).toBeDefined()
+            expect(event.payload.encryptedToken).not.toContain('staff@example.test')
+            expect(decryptOutboxSecret(event.payload.encryptedToken)).toMatch(/^[A-Za-z0-9_-]+$/)
+            expect(mocks.notify).not.toHaveBeenCalled()
+        } finally {
+            vi.unstubAllEnvs()
+        }
+    })
+
+    it('fails invitation creation if the transactional email enqueue fails', async () => {
+        mocks.enqueue.mockRejectedValueOnce(new Error('outbox unavailable'))
+        await expect(createOwnerProviderInvitation(owner, providerId, input))
+            .rejects.toThrow('outbox unavailable')
+        expect(mocks.notify).not.toHaveBeenCalled()
     })
 
     it('maps the pending-scope unique race to 409 after transaction rejection', async () => {

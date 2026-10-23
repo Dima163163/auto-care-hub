@@ -16,4 +16,21 @@ describe('auth session state', () => {
         clearSessionExpired()
         expect(hasSessionExpired()).toBe(false)
     })
+
+    it('preserves the in-memory expiry signal when sessionStorage is denied', () => {
+        const descriptor = Object.getOwnPropertyDescriptor(window, 'sessionStorage')
+        Object.defineProperty(window, 'sessionStorage', {
+            configurable: true,
+            get() { throw new DOMException('Storage denied', 'SecurityError') },
+        })
+        try {
+            expect(hasSessionExpired()).toBe(false)
+            expect(() => markSessionExpired()).not.toThrow()
+            expect(hasSessionExpired()).toBe(true)
+            expect(() => clearSessionExpired()).not.toThrow()
+            expect(hasSessionExpired()).toBe(false)
+        } finally {
+            if (descriptor) Object.defineProperty(window, 'sessionStorage', descriptor)
+        }
+    })
 })

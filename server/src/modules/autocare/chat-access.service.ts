@@ -34,8 +34,8 @@ export async function ensureAutoCareRequestChatThread(request: ServiceRequestEnt
 type AutoCareChatAccessScope = 'super_admin' | 'operational_support' | 'pending_report_moderation' | 'client_or_creator' | 'provider_workspace'
 
 export async function assertThreadAccess(user: UserEntity, thread: AutoCareChatThreadEntity): Promise<AutoCareChatAccessScope> {
-    // The super administrator is the final escalation point and may inspect
-    // and answer any conversation, including service-request attachments.
+    // The super administrator is the final escalation point for audited read
+    // access. Private request writes are checked separately by the shared policy.
     // Regular admins remain limited to operational support/escalation threads
     // or a conversation with an active pending moderation report.
     if (user.role === UserRole.SuperAdmin) return 'super_admin'
@@ -59,11 +59,7 @@ export async function assertThreadAccess(user: UserEntity, thread: AutoCareChatT
     fail(403, 'You do not have access to this chat.')
 }
 
-export function assertChatMessageWriteAccess(user: UserEntity, thread: AutoCareChatThreadEntity) {
-    if ([UserRole.Admin, UserRole.SuperAdmin].includes(user.role) && ![AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) {
-        fail(403, 'Administrators may review private conversations but cannot send messages to participants.')
-    }
-}
+export { assertChatMessageWriteAccess } from './chat-write-policy.js'
 
 async function getAuthorizedThread(user: UserEntity, chatId: string) {
     const normalizedChatId = normalizeAutoCareChatUuid(chatId)

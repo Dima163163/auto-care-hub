@@ -6,7 +6,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import {
     useGetOwnerAutoCareReviewsQuery,
     useGetOwnerAutoCareWorkspaceAccessQuery,
-    useGetOwnerAutoCareServiceRequestsQuery,
+    useAutoCareRequestPages,
     useIssueOwnerAutoCareReviewPromoMutation,
 } from '@/entities/automotive-service'
 import type { AutoCareApiReview, AutoCareServiceRequest, OwnerAutoCareReviews, OwnerAutoCareReviewsProvider } from '@/entities/automotive-service'
@@ -67,7 +67,7 @@ export function OwnerAutoCareProviderReviewsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const selectedProviderId = searchParams.get('provider') ?? id ?? undefined
     const reviews = useGetOwnerAutoCareReviewsQuery(selectedProviderId)
-    const requests = useGetOwnerAutoCareServiceRequestsQuery()
+    const requests = useAutoCareRequestPages('owner')
     const access = useGetOwnerAutoCareWorkspaceAccessQuery()
     const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
     const provider = reviews.data?.providers.find((item) => item.id === selectedProviderId)
@@ -102,6 +102,7 @@ export function OwnerAutoCareProviderReviewsPage() {
             <ProviderReviewOverview provider={provider} stats={reviews.data} copy={copy} />
             {provider && access.data?.scopes.some((scope) => scope.providerId === provider.id && scope.roles.includes('owner')) ? <Link to={`${routePaths.ownerAutoCareProviderDetails(provider.id)}?section=bonuses`} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-border bg-card px-4 text-sm font-medium text-primary"><Gift className="size-4" />{t('autocare.bonusActionHistory')}</Link> : null}
             <ReviewsList reviews={filteredReviews} requests={requests.data ?? []} ratingFilter={ratingFilter} onRatingFilterChange={setRatingFilter} copy={copy} locale={locale} />
+            {requests.hasMore && <button type="button" disabled={requests.isFetching} onClick={requests.loadMore} className="min-h-11 rounded-[var(--radius-control)] border border-primary px-4 text-sm font-bold text-primary disabled:opacity-50">{t('autocare.loadMoreRequests')}</button>}
         </ReviewsShell>
     )
 }

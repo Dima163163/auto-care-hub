@@ -182,13 +182,19 @@ export function checkOgImageExistence() {
 export function checkCanonicalRobotsConsistency() {
     const metadataSource = readFileSync(resolve(projectRoot, 'src/app/metadata.ts'), 'utf8')
     const clientSeoSource = readFileSync(resolve(projectRoot, 'src/shared/ui/seo-head/SeoHead.tsx'), 'utf8')
+    const routePolicySource = readFileSync(resolve(projectRoot, 'src/shared/config/route-metadata-policy.ts'), 'utf8')
     const requiredMetadataFragments = [
+        "import { getAuthRouteCopy, shouldNoIndexRoute } from '../shared/config/route-metadata-policy'",
+        'shouldNoIndexRoute(path, options.hasSearchParams)',
         'alternates: { canonical }',
         'robots: isNoIndex ? { index: false, follow: true } : indexRobots',
-        'const isSearchResult = path === \'/services\' && options.hasSearchParams === true',
-        'const privatePrefixes =',
     ]
     const missing = requiredMetadataFragments.filter((fragment) => !metadataSource.includes(fragment))
+    if (!routePolicySource.includes('const privatePrefixes =')
+        || !routePolicySource.includes('export function shouldNoIndexRoute(')
+        || !routePolicySource.includes("pathname === '/services' && hasSearchParams")) {
+        missing.push('shared route noindex policy')
+    }
     if (!clientSeoSource.includes("setMeta('name', 'robots'") || !clientSeoSource.includes("setLink('canonical'")) {
         missing.push('SeoHead canonical/robots client parity')
     }

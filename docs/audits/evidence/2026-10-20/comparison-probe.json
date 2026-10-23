@@ -1,0 +1,277 @@
+{
+  "items": [
+    {
+      "name": "ProService",
+      "priceType": "from",
+      "from": 290000,
+      "to": null
+    },
+    {
+      "name": "AutoLux",
+      "priceType": "from",
+      "from": 320000,
+      "to": null
+    },
+    {
+      "name": "Formula Motion",
+      "priceType": "from",
+      "from": 280000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "fixed",
+      "from": 165000,
+      "to": null
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "from",
+      "from": 165000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "range",
+      "from": 170000,
+      "to": 204000
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "quote_required",
+      "from": 170000,
+      "to": null
+    },
+    {
+      "name": "Vector Garage Хорошёво",
+      "priceType": "range",
+      "from": 180000,
+      "to": 216000
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "fixed",
+      "from": 175000,
+      "to": null
+    },
+    {
+      "name": "Motors Lab Филёвский парк",
+      "priceType": "quote_required",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "from",
+      "from": 175000,
+      "to": null
+    },
+    {
+      "name": "Vector Garage Хорошёво",
+      "priceType": "fixed",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "range",
+      "from": 175000,
+      "to": 210000
+    },
+    {
+      "name": "Motors Lab Филёвский парк",
+      "priceType": "from",
+      "from": 185000,
+      "to": null
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "quote_required",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "Route 7 Auto Марьино",
+      "priceType": "fixed",
+      "from": 190000,
+      "to": null
+    },
+    {
+      "name": "Vector Garage Хорошёво",
+      "priceType": "range",
+      "from": 185000,
+      "to": 222000
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "fixed",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "BlueLine Garage Даниловский",
+      "priceType": "from",
+      "from": 195000,
+      "to": null
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "from",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "Route 7 Auto Марьино",
+      "priceType": "range",
+      "from": 195000,
+      "to": 234000
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "range",
+      "from": 185000,
+      "to": 222000
+    },
+    {
+      "name": "Nova Service Раменки",
+      "priceType": "range",
+      "from": 175000,
+      "to": 210000
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "quote_required",
+      "from": 185000,
+      "to": null
+    },
+    {
+      "name": "WestRing Отрадное",
+      "priceType": "quote_required",
+      "from": 175000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "fixed",
+      "from": 185000,
+      "to": null
+    },
+    {
+      "name": "Nova Service Раменки",
+      "priceType": "fixed",
+      "from": 175000,
+      "to": null
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "from",
+      "from": 190000,
+      "to": null
+    },
+    {
+      "name": "WestRing Отрадное",
+      "priceType": "from",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "range",
+      "from": 190000,
+      "to": 228000
+    },
+    {
+      "name": "DrivePoint Сокол",
+      "priceType": "fixed",
+      "from": 185000,
+      "to": null
+    },
+    {
+      "name": "Nova Service Раменки",
+      "priceType": "range",
+      "from": 180000,
+      "to": 216000
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "quote_required",
+      "from": 195000,
+      "to": null
+    },
+    {
+      "name": "Urban Torque Таганский",
+      "priceType": "from",
+      "from": 185000,
+      "to": null
+    },
+    {
+      "name": "WestRing Отрадное",
+      "priceType": "quote_required",
+      "from": 180000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "fixed",
+      "from": 195000,
+      "to": null
+    },
+    {
+      "name": "DrivePoint Сокол",
+      "priceType": "range",
+      "from": 190000,
+      "to": 228000
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "from",
+      "from": 165000,
+      "to": null
+    },
+    {
+      "name": "Urban Torque Таганский",
+      "priceType": "quote_required",
+      "from": 190000,
+      "to": null
+    },
+    {
+      "name": "Atlas Auto Хамовники",
+      "priceType": "range",
+      "from": 165000,
+      "to": 198000
+    },
+    {
+      "name": "Prime Wheels Алексеевский",
+      "priceType": "quote_required",
+      "from": 170000,
+      "to": null
+    }
+  ],
+  "probeErrors": [],
+  "quoteIndex": 6,
+  "cardBefore": "PW\nPrime Wheels Алексеевский\nNo reviews for this service yet.\n3.9 km\n·\nМосква, Комсомольский пр-т, 45\n\nQuote required\n\nQuote required\n\nПредварительная оценка · Фотоотчёт по запросу\n\nГарантия на работы по условиям сервиса\nView on map\nTime to be confirmed by the service\nRequest this service",
+  "table": "Parameter\tProService\tPrime Wheels Алексеевский\nPrice\tRUB 2,900\tRUB 1,700\n\nRating\t5.0 (2)\t0.0 (0)\n\nDistance\t2.1 km\t3.9 km\n\nNext available time\tToday, 11:30\tToday, 11:30\n\nWarranty\tNot provided\tNot provided\n\nVerification\tVerified\tVerified",
+  "afterCompareAction": {
+    "scrollY": 3278,
+    "table": {
+      "x": 66.265625,
+      "y": 292.5,
+      "width": 740.703125,
+      "height": 314,
+      "top": 292.5,
+      "right": 806.96875,
+      "bottom": 606.5,
+      "left": 66.265625
+    },
+    "map": {
+      "x": 831.96875,
+      "y": -2431,
+      "width": 542.765625,
+      "height": 630,
+      "top": -2431,
+      "right": 1374.734375,
+      "bottom": -1801,
+      "left": 831.96875
+    }
+  }
+}

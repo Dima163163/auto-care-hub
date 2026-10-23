@@ -1,0 +1,3 @@
+# This historical finding is the verified SHA-256 of the audit evidence file,
+# not an API credential. Keep the exception scoped to one commit/path/rule/line.
+365e0870c2799509bd61ed60ece217a03c850bbc:docs/audits/evidence/2026-10-20/verification.json:generic-api-key:89

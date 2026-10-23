@@ -1,5 +1,289 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## Локальный статус U14 — 21 октября 2026
+
+Raw outbox enqueue теперь шифрует payload перед INSERT; migration 178642
+backfill обрабатывает legacy plaintext email/name. На собственной disposable
+PostgreSQL16 применены 140 миграций, проверены raw JSONB, blind index для
+account deletion и повтор enqueue с одним idempotency key. Unit 13/13,
+API build PASS. **Исправлено локально; production backfill, реальный worker,
+KMS/restore и deployment не проверены.** Исходный defect ниже относится к dev.
+
+## Локальный статус UX16 — 20 октября 2026
+
+Длинный `ConfirmDialog` теперь прокручивается внутри viewport поверх мобильной
+навигации, а действия переносятся на сверхузком экране. Production Next mock
+browser подтвердил доступность обеих кнопок на пяти viewport, axe 0,
+Escape/возврат фокуса; targeted unit 26/26. **Исправлено локально; реальное
+устройство, browser zoom и deployed проверка не выполнены.** Исходное
+воспроизведение ниже относится к dev до исправления.
+
+## Локальный статус UX18 — 20 октября 2026
+
+Цена fixed/from/range/quote_required, режим request/instant и условия гарантии
+теперь согласованы между карточкой и сравнением; карта использует тот же
+price formatter. Мобильная таблица 360px прокручивается в пределах своей
+колонки. Unit RU/EN 9/9, production Next mock browser: quote card/table
+согласованы, последний столбец доступен. **Исправлено локально, не
+опубликовано / real-API не проверено.** Историческое воспроизведение ниже
+относится к dev до исправления.
+
+## Локальный статус UX17 — 20 октября 2026
+
+На `fix/request-chat-state-isolation-2026-10-20` время из draft восстановлено;
+новые черновики сохраняют абсолютную дату сервиса, недоступный слот требует
+повторного выбора до submit. Unit 12/12 и production Next mock reload
+20:00→20:00 PASS. **Исправлено локально, не опубликовано / real-API не
+проверено.** Для старых черновиков без абсолютной даты день до сохранения
+невосстановим: относительная дата трактуется по текущему дню сервиса.
+Исходный defect ниже относится к dev до исправления.
+
+## Локальный статус U22 — 20 октября 2026
+
+На ветке `fix/request-chat-state-isolation-2026-10-20` устранён перенос
+состояния `ServiceRequestChat` между `userId + requestId`. Unit regression
+проверяет A→B→A, повтор того же текста после failed send, смену пользователя
+и поздний ответ старой отправки. Production Next mock browser подтвердил пустой
+черновик B и корректный POST в B. Статус U22: **исправлено локально,
+не опубликовано / real-API не проверено**. UX16–UX18 остаются открытыми.
+Исходное воспроизведение ниже описывает состояние dev до исправления.
+
+## Повторная проверка UI / design / security — 20 октября 2026
+
+Срез dev `8840ae8` заново сверен с remote. Добавлены **4 новые открытые
+находки: 1 P1 / 3 P2**. Полный отчёт, воспроизведение, screenshots и границы:
+[UI_SECURITY_RECHECK_2026-10-20.md](UI_SECURITY_RECHECK_2026-10-20.md).
+
+| ID | Приоритет | Проблема | Подтверждение |
+| --- | --- | --- | --- |
+| U22 | P1 | Черновик request-чата переносится в заявку другого сервиса и отправляется ему | Chromium / production Next frontend / synthetic MSW, исходящий POST в другой request |
+| UX16 | P2 | Диалог жалобы обрезан на 360×568; действия уходят под нижнюю навигацию | Dialog 688px, top −60, кнопки y=567…603; screenshot |
+| UX17 | P2 | Reload игнорирует сохранённое время записи и выбирает первый слот | Draft 20:00 → UI 11:30 |
+| UX18 | P2 | Comparison теряет priceType и режим подтверждения; условия расходятся с карточкой | Quote required → RUB 1,700; time confirmation → Today 11:30 |
+
+Повторно подтверждены U14/U15/U20 на service functions с synthetic repositories
+и ORM metadata; это не новый PostgreSQL concurrency run. U21 сохраняется:
+fresh npm audit web 5 entries (2 critical / 3 high), API 2 high; applicability
+отделена от severity. Новыми эти старые пункты не считаются.
+
+Матрица страниц **240/240**, 120 screenshots, 0 axe violations (есть incomplete);
+отдельные четыре interaction cases выявили defects. Security unit **104/104**,
+11 files; 5 source contracts, backend build и production Next build PASS.
+HTTP CSP **5/5**, fresh nonce/caller override/no-store. Реальные DB/Redis,
+deployed pentest, native devices/screen reader/200% zoom 20 октября не запускались.
+Production-код не менялся. Статусы прежних findings и 54 pilot gates сохранены.
+
+## Дополнение к рабочему реестру — 13 октября 2026
+
+На ветке `audit/project-weaknesses-2026-10-13` от локального `origin/dev` (`8840ae8`)
+проверены действующие backend-агрегации и их потребители, затем выполнен
+углублённый проход по доступу, шифрованию, auth, бонусам, рейтингу, отзывам,
+приглашениям, сметам, frontend и автоматическим проверкам.
+Всего за 13 октября добавлены **22 новые находки: 7 P1, 12 P2, 3 P3**:
+N21–N23 первого прохода, U14–U21 и N24–N34 продолжений.
+N22/N23 расширены без дублирования. Все новые пункты открыты.
+
+Подробные подтверждения, последствия, варианты исправления и приёмка:
+[DEEP_PROJECT_AUDIT_2026-10-13.md](DEEP_PROJECT_AUDIT_2026-10-13.md).
+Доступны 16 изолированных воспроизведений и browser evidence.
+Frontend 635/backend unit 1406 PASS; Node tooling 188/190 PASS, два FAIL — N31.
+Next/API builds и lint PASS. В продолжении выполнены **23/88 integration**,
+**10 real PostgreSQL defect cases**, 139 fresh migrations/30 validated constraints,
+двухпроцессные PG/Redis smoke, encrypted restore с совпадением 76 таблиц,
+29/29 real E2E, 17/17 metadata + 17/17 JS и 5 CSP samples.
+На 1002 заявках подтверждены 5016 queries; свежий полный npm audit — 5 frontend
+и 2 API entries, U21. Remote dev совпал с source baseline; доступный PR Quality
+run action_required не заявлен PASS. Рабочая developer БД не использовалась.
+
+Актуальная runtime-приёмка и её внешние ограничения:
+[RUNTIME_VERIFICATION_2026-10-13.md](RUNTIME_VERIFICATION_2026-10-13.md).
+Исторические числа, 54 ворот и NO-GO сохраняются.
+
+### Новые пункты углублённого прохода
+
+Все строки ниже имеют статус **открыто**; подробная приёмка находится в
+отдельном отчёте выше. Production исправления этой audit-порцией не выполнялись.
+
+| ID | Приоритет | Слабое место | Доказательство |
+| --- | --- | --- | --- |
+| U14 | P1 | Raw outbox INSERT обходит encryption; fresh email-only event не совпадает с deletion blind index | Реальный enqueue / SQL params |
+| U15 | P1 | Superadmin private message write через старый request API | Реальные old/new API functions: save vs 403 |
+| U16 | P2 | Randomized encrypted reference ломает evidence equality/dedup | Реальные TypeORM query parameters |
+| U17 | P1 | Production invite не доставляет acceptance token | Реальный create, response null, notification без token/link |
+| U18 | P1 | Уже потраченный expired earn списывает свежие бонусы | Реальный reconciliation: 100 → 0 |
+| U19 | P1 | Дубликаты неподтверждённых claims снижают public trust | Реальный create + score policy, 4 claims одного request |
+| U20 | P1 | Full stale UserEntity save возвращает прежние security fields | Реальный preference save + TypeORM update diff |
+| U21 | P1 | Fresh high/critical dependency advisories в текущих lockfiles | Полный npm audit, upstream advisories и применимость в runtime-отчёте |
+| N24 | P2 | Concurrent edits дважды используют review revision; новая evidence не ставится | Локально исправлено: row lock/versioned evidence; PostgreSQL race gate открыт |
+| N25 | P2 | Trust worker пропускает null providers и повторяет неизменный batch | Локально исправлено: due/NULLS FIRST/attemptedAt и unit; PostgreSQL gate открыт |
+| N26 | P2 | Разные допустимые пароли после 72 bytes bcrypt совпадают | Реальные policy/hash/compare |
+| N27 | P2 | Runtime-boundary guard не сканирует domain factories | Локально исправлено: AST 256/136, negative fixtures fail; CI gate ожидает push |
+| N28 | P2 | Denied sessionStorage прерывает auth cleanup | Исходный helper в VM + порядок cleanup |
+| N29 | P3 | Configurable JWT refresh TTL и фиксированные cookie/DB TTL | Реальный login: 1h / 7d / 7d |
+| N30 | P2 | Quote history first 50 исключает current 51-ю смету | Реальный hydrate/DTO: pending → superseded |
+| N31 | P2 | Два root tooling tests устарели и не исполняются стандартной цепочкой | Локально исправлено: 52 files / 172 PASS, обязательный quality:backend; CI gate открыт |
+| N32 | P2 | Idempotency key подавляет уведомление о следующей смете | Реальный notify: один key для двух versions |
+| N33 | P3 | Parsing/internal transport error показывается пользователю | Browser + исходный error helper |
+| N34 | P3 | Public → auth client navigation оставляет старые metadata | Browser head до/после direct reload + layouts |
+
+**Локальная disposition U20, 2026-10-22:** код исправлен узкими CAS updates
+и row locks для чувствительных переходов; добавлен PostgreSQL concurrency test.
+API build и целевые unit 3/3 PASS. Локальный DB race не запущен из-за отсутствия
+серверного PostgreSQL/Redis, поэтому runtime/production приёмка ещё открыта.
+Таблица выше сохраняет историческое доказательство исходного дефекта.
+
+**Локальная disposition U15, 2026-10-22:** общий write guard применяется к
+chat и legacy request message/attachment paths до записи и повторно под lock.
+Admin/superadmin private write отклоняется 403; targeted unit 45/45 и API
+build PASS. HTTP/DB regression и published candidate ещё не проверены.
+
+**Локальная disposition U17, 2026-10-22:** invitation и `email.send` с
+зашифрованным одноразовым токеном ставятся в одной транзакции; письмо содержит
+acceptance link, а production response остаётся без token. Unit и API build
+PASS. Интеграционный тест добавлен, но локально без PostgreSQL/Redis не
+выполнялся; фактическая SMTP доставка и published candidate не проверены.
+
+**Локальная disposition U18, 2026-10-22:** expiration теперь рассчитывает
+остатки начислений после распределения redemption по ближайшему expiresAt.
+Refund создаёт новый бессрочный lot. Unit 1429/1429 и API build PASS;
+PostgreSQL regression добавлен, но без server PostgreSQL/Redis локально не
+запускался. Исторические ошибочные списания и published candidate не сверены.
+
+**Локальная disposition U19, 2026-10-22:** request row lock и уникальный
+`caseKey` дают один канонический guarantee case на заявку; одинаковый retry
+возвращает прежний результат. Eligibility исключает неподтверждённый запрос.
+Trust score учитывает один канонический открытый case и не считает allegation
+по типу доказанным нарушением. Unit 1436/1436, API build и migration filename
+PASS; PostgreSQL migration/concurrency и published candidate не проверены.
+
+**Локальная disposition U21, 2026-10-22:** web/API lockfiles обновлены;
+`npm audit` 0/0, clean `npm ci`, web 647/647, API 1436/1436, lint,
+Vite/API/Next real build и fixture leakage PASS. Integration/E2E, опубликованная
+миграция и staging acceptance остаются открыты. Подробности:
+[dependency upgrade](DEPENDENCY_UPGRADE_2026-10-22.md).
+
+**Локальная disposition U16, 2026-10-22:** добавлен HMAC blind index для
+`autocare_trust_evidence.reference`; review moderation и document dedup
+используют индекс вместо randomized ciphertext. Миграция 178644 заполняет
+индекс старых encrypted rows. Targeted unit/API build PASS; PostgreSQL
+migration/query и published candidate пока не проверены.
+
+**Локальная disposition N26, 2026-10-22:** password create/login/change
+ограничены 72 UTF-8 bytes. Unit воспроизводит bcrypt collision двух 73-byte
+секретов и проверяет отказ обоих, включая Unicode boundary. API build PASS;
+старым длинным паролям требуется email reset, deployed recovery не проверен.
+
+**Локальная disposition N28, 2026-10-22:** optional session expiry hint
+обрабатывает denied `sessionStorage` через in-memory fallback. `baseApi`
+очищает token/CSRF/cache до установки hint. Targeted unit, ESLint/TypeScript
+PASS; browser denial/deployed flow не проверен.
+
+### N21 · P2 · Разделить общие счётчики отзывов и ограниченную выборку для поиска аномалий
+
+**Подтверждение:** `server/src/modules/autocare/autocare-quality-monitoring.service.ts:63`
+читает только последние 1000 отзывов, а строки 106–110 вычисляют `approved`,
+`pending` и `rejected` из той же выборки. `src/pages/admin-dashboard/ui/AdminDataQualityPanel.tsx:41`
+показывает `pending` как число отзывов, требующих внимания, без обозначения лимита.
+При 1001-м и следующих отзывах старые pending исчезают из счётчика, хотя
+остаются в БД. Калибровка рейтинга в строках 122–126 использует ту же выборку;
+её окно также не обозначено в API.
+
+**Последствия:** администратор получает неполный счётчик очереди и может принять
+его за полный. Масштаб >1000 отзывов и фактическое расхождение на рабочей БД
+не воспроизводились.
+
+**Улучшение:** считать статусы отдельными SQL-агрегациями по всей разрешённой
+выборке. Для детектора аномалий и калибровки явно задать окно/лимит и отразить
+его в контракте, если это не общие показатели.
+
+**Приёмка:** при более чем 1000 отзывах старый pending учитывается в общем
+счётчике; bounded anomaly/calibration выборка не выдаётся за полный охват.
+**Runtime подтверждение:** собственный PostgreSQL: 1000 последних approved,
+общий pending counter=0 при DB pending=3 до исправления.
+
+**Локальная disposition N21, 2026-10-22:** статусы `approved/pending/rejected`
+считаются отдельной SQL-агрегацией по всей таблице; 1000 последних отзывов
+остаются только для сигналов аномалий и калибровки. Контракт и интерфейс
+передают размер окна и показывают его при усечении. Server unit 1457/1457,
+server build, web focused test, ESLint и Next build PASS. Повторный сценарий
+PostgreSQL >1000 после изменения не выполнен: БД недоступна в этой среде.
+
+### N22 · P2 · Согласовать время первого ответа владельца с проверенной политикой автора
+
+**Подтверждение:** `server/src/modules/autocare/autocare-analytics.service.ts:83-96`
+принимает первым ответом любое сообщение, чей `senderId` отличается от
+`clientId`, включая `kind=system` и автора без активного доступа к филиалу;
+сообщение до создания заявки превращается в ноль через `Math.max(0, ...)`.
+Соседний агрегатор качества `quality-metrics.ts:112-131` уже исключает system,
+сообщения до заявки и проверяет owner/активное membership нужного филиала.
+Показатель из первой функции отображается владельцу в
+`OwnerAutoCareAnalyticsCard.tsx:36`.
+`trust-score.service.ts:72-77` также выбирает любого sender != client без этой
+политики и передаёт время в публичный trust score, без отсечения отрицательного
+интервала. Углублённый проход расширяет N22 на этот третий потребитель.
+
+**Последствия:** среднее время ответа владельца может быть занижено или
+отличаться от показателя качества платформы на одинаковых заявках; публичный
+trust score использует такой же непроверенный sample. Наличие таких сообщений
+в рабочей БД не проверялось.
+
+**Улучшение:** переиспользовать одну проверенную политику первого ответа для
+всех трёх агрегаторов, учитывая вид сообщения, полномочия автора, филиал и время
+создания заявки; явно определить историческую семантику отозванного membership.
+
+**Приёмка:** system, посторонний, отозванный и предшествующий заявке автор не
+дают образец ответа; один и тот же набор заявок даёт согласованные owner/admin
+показатели и trust response factor.
+
+**Локальная disposition N22, 2026-10-22:** owner analytics, admin quality и
+public trust используют `getFirstProviderResponseMinutes`. Правило исключает
+system/client/постороннего/отозванного/чужой филиал и сообщения до заявки;
+выбирает самое раннее допустимое сообщение независимо от порядка выборки.
+Исторические сообщения оцениваются по **текущему** active membership; точные
+интервалы доступа потребуют отдельного журнала. Targeted unit и API build PASS;
+PostgreSQL HTTP flow не выполнен без локальной БД.
+
+### N23 · P2 · Ограничить чтение истории при расчёте операционной аналитики
+
+**Подтверждение:** `autocare-analytics.service.ts:57-85` загружает все заявки
+сервиса, все связанные сметы, отзывы, бонусные счета и сообщения в память на
+каждый запрос owner analytics. `autocare-quality-monitoring.service.ts:60-75`
+аналогично читает все заявки платформы и все связанные сообщения для admin
+dashboard. Ни один из этих запросов истории не имеет временного окна, cursor,
+`take` или серверной агрегации; список ID целиком передаётся в `In(requestIds)`.
+Ограничение N04 касалось чтения чатов и не закрывает эти маршруты.
+`request-read.service.ts:46-61` аналогично читает полный client/owner список,
+отсекает branch scope после SQL и вызывает `Promise.all(hydrateRequest)`.
+Hydration `:12-27` выполняет 5–6 запросов на каждую заявку, без batch loading.
+
+**Последствия:** время ответа, память процесса и число SQL-параметров растут
+вместе с полной историей, даже если UI запрашивает лишь несколько чисел. Сбой
+на конкретном объёме не воспроизводился и порог не измерен.
+
+**Улучшение:** определить период и семантику lifetime-метрик, считать агрегаты
+в БД или поддерживать проверяемые materialized counters; ограничить выборку для
+детекторов с явным окном и проверить индексы/план запроса. Для списков заявок —
+scope в SQL до pagination и batch hydration вместо unbounded Promise.all.
+
+**Приёмка:** API сохраняет корректные значения на большой синтетической истории
+без загрузки всех заявок/сообщений в процесс; latency и память укладываются в
+согласованный бюджет, а превышение даёт управляемый ответ.
+**Runtime подтверждение:** собственный PostgreSQL: 102 заявки → 516 queries,
+1002 → 5016 queries, один sample 108/845 ms. Heap deltas зависят от GC;
+production memory budget/утечка не установлены. Статус: открыто.
+
+**Локальная disposition N23, 2026-10-22:** client/owner UI использует cursor
+pages по 50; SQL применяет branch scope до лимита, связанные данные
+загружаются пакетами. Legacy array ответ ограничен 100 и возвращает
+`X-Next-Cursor`. Owner/admin аналитика обрабатывает заявки блоками по 500,
+сообщения — блоками по 1000 metadata; SQL агрегирует бонусы и отзывы,
+наличие сметы. Точные lifetime счётчики сохраняются. Unit 1465/1465,
+web 659/659. PostgreSQL сценарий >1000 и реальное измерение query plan,
+latency/памяти после исправления не выполнены; приёмка бюджета открыта.
+На paginated экранах счётчики загруженной части помечаются `+` и пояснением.
+Старые активные заявки доступны через загрузку следующих страниц, но для
+операторской очереди нужна отдельная приоритетная server-side выборка.
+
 ## Текущее состояние несрочной порции — 4 октября 2026
 
 N01–N20 получили отдельные implementation commits. **18 программных пунктов
@@ -154,7 +438,7 @@ status-only push не требуется. Каждый runtime finding и его
 
 **Подтверждение:** `server/src/test/setup.ts:7-12` открывает общий `AppDataSource` из обычной конфигурации, комментарий допускает ту же БД «with care». `test:integration` вызывает Vitest напрямую, setup не требует отдельной test DB или подтверждения; отдельная команда prerequisite-check не вызывается автоматически.
 
-**Дополнительное подтверждение 03.10:** `src/test/rate-limit-cleanup.ts` сканирует `ratelimit:*` и удаляет все найденные ключи в настроенном Redis перед каждым тестом. Даже отдельный PostgreSQL target не изолирует такой cleanup от обычного Redis URL/DB.
+**Дополнительное подтверждение 03.10:** `server/src/test/rate-limit-cleanup.ts` сканирует `ratelimit:*` и удаляет все найденные ключи в настроенном Redis перед каждым тестом. Даже отдельный PostgreSQL target не изолирует такой cleanup от обычного Redis URL/DB.
 
 **Последствия:** запуск стандартной команды с рабочим env выполняет создающие/изменяющие/удаляющие данные тесты против выбранной рабочей БД. В этом аудите интеграционная команда не запускалась из-за отсутствия безопасной БД.
 

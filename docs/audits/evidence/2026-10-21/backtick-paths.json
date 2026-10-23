@@ -1,0 +1,41 @@
+{
+  "checked": 166,
+  "missing": [
+    {
+      "file": "docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md",
+      "line": 44,
+      "reference": "docs/operations/pilot-evidence.json"
+    },
+    {
+      "file": "docs/operations/LEGACY_CLEANUP_EVIDENCE_2026-08-27.md",
+      "line": 34,
+      "reference": "server/src/modules/commission/commission.service.ts"
+    },
+    {
+      "file": "docs/operations/LEGACY_CLEANUP_EVIDENCE_2026-08-27.md",
+      "line": 35,
+      "reference": "server/src/modules/commission/commission.service.test.ts"
+    },
+    {
+      "file": "docs/operations/PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md",
+      "line": 2119,
+      "reference": "docs/operations/pilot-evidence.json"
+    },
+    {
+      "file": "docs/operations/PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md",
+      "line": 3018,
+      "reference": "docs/operations/pilot-evidence.json"
+    },
+    {
+      "file": "docs/operations/PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md",
+      "line": 3026,
+      "reference": "docs/operations/pilot-evidence.json"
+    },
+    {
+      "file": "docs/operations/PILOT_LOCAL_GATE_EVIDENCE_2026-08-31.md",
+      "line": 4466,
+      "reference": "docs/operations/pilot-evidence.json"
+    }
+  ],
+  "limits": "Literal backtick path references only; intentionally absent pilot evidence and removed legacy files are reported without treating them as active source regressions."
+}

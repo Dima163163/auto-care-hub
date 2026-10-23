@@ -34,6 +34,12 @@ export function getMvpReadinessChecks(environment = process.env, renderSource = 
         ? check('PostgreSQL, Redis, and JWT configuration', 'pass', 'provider URLs or host configuration are present')
         : check('PostgreSQL, Redis, and JWT configuration', 'blocked', formatIntegrationPrerequisiteFailure(integrationMissing).split('\n')[0]))
 
+    const kmsNames = ['DATA_ENCRYPTION_AWS_KMS_REGION', 'DATA_ENCRYPTION_AWS_KMS_KEY_ID', 'DATA_ENCRYPTION_AWS_KMS_KEYRING']
+    const missingKms = kmsNames.filter((name) => !hasConfiguredValue(environment[name]))
+    checks.push(missingKms.length === 0
+        ? check('Production KMS keyring configuration', 'pass', 'KMS key and encrypted keyring are declared; live Decrypt and restore remain external gates')
+        : check('Production KMS keyring configuration', 'blocked', `missing or placeholder values: ${missingKms.join(', ')}`))
+
     const smtpNames = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'MAIL_FROM']
     const missingSmtp = environment.MAIL_MODE !== 'smtp'
         ? ['MAIL_MODE=smtp']

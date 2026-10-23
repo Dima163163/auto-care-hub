@@ -1,6 +1,6 @@
 // Public compatibility facade. Use cases own authorization, transactions and response mapping.
 export { assertAutoCareServiceRequestRealtimeAccess } from './request-access.service.js'
-export { getAutoCareServiceRequest, getMyAutoCareServiceRequests, getOwnerAutoCareServiceRequests } from './request-read.service.js'
+export { getAutoCareServiceRequest, getMyAutoCareServiceRequests, getMyAutoCareServiceRequestPage, getOwnerAutoCareServiceRequests, getOwnerAutoCareServiceRequestPage } from './request-read.service.js'
 export { createAutoCareServiceMessage, createAutoCareServiceOffer, decideAutoCareServiceOffer, getAutoCareServiceRequestConversation, markAutoCareServiceConversationRead } from './request-conversation.service.js'
 export { createAutoCareServiceAttachment, getAutoCareServiceAttachment } from './request-attachment.service.js'
 export { acceptAutoCareServiceQuote, createAutoCareServiceQuote, declineAutoCareServiceQuote } from './request-quote.service.js'
