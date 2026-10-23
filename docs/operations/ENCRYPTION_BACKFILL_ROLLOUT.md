@@ -18,7 +18,8 @@ through AWS KMS before accessing encrypted fields. Set
 and `DATA_ENCRYPTION_AWS_KMS_KEYRING` (base64 KMS ciphertext) on every process.
 The AWS SDK credential chain must grant `kms:Decrypt` for this key and the
 `application=autocare-hub`, `purpose=field-encryption-keyring`, `version=1`
-encryption context. A missing setting, invalid blob or KMS denial stops startup.
+encryption context. A missing setting, invalid blob, KMS denial or 15-second
+Decrypt timeout stops startup.
 The local keyring remains development/test only.
 
 For a **new empty database only**, an operator with `kms:Encrypt` may run

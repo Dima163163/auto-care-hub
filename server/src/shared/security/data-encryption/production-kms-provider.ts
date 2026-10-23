@@ -9,7 +9,7 @@ export const KEYRING_ENCRYPTION_CONTEXT = {
 } as const
 
 type KmsDecryptClient = {
-    send(command: DecryptCommand): Promise<{ Plaintext?: Uint8Array }>
+    send(command: DecryptCommand, options?: { abortSignal?: AbortSignal }): Promise<{ Plaintext?: Uint8Array }>
 }
 
 type KmsKeyringConfig = {
@@ -56,7 +56,7 @@ export async function loadProductionKmsKeyProvider(
                 CiphertextBlob: decodeCiphertext(ciphertextBase64),
                 KeyId: keyId,
                 EncryptionContext: KEYRING_ENCRYPTION_CONTEXT,
-            }))
+            }), { abortSignal: AbortSignal.timeout(15_000) })
             plaintext = result.Plaintext
             if (!plaintext?.length) throw new Error('empty KMS response')
             configureDataEncryptionKeyProvider(parseDataEncryptionKeyring(Buffer.from(plaintext).toString('utf8')))

@@ -30,7 +30,8 @@ afterEach(() => vi.unstubAllEnvs())
 describe('production AWS KMS key provider', () => {
     it('loads before synchronous field encryption and binds decrypt to the configured key and context', async () => {
         const plaintext = keyring()
-        const send = vi.fn(async (command: { input: Record<string, unknown> }) => {
+        const send = vi.fn(async (command: { input: Record<string, unknown> }, options?: { abortSignal?: AbortSignal }) => {
+            expect(options?.abortSignal).toBeInstanceOf(AbortSignal)
             expect(command.input).toMatchObject({
                 KeyId: 'arn:aws:kms:eu-central-1:111122223333:key/example',
                 CiphertextBlob: ciphertext,
