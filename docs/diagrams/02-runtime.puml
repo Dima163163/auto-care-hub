@@ -10,15 +10,17 @@ node "Next.js process" {
   component "/api/* rewrite\nnext.config.ts" as Proxy
 }
 node "Backend entrypoint: server/src/server.ts" {
-  component "assertDataEncryptionProviderReady\nbuildApp / DB schema contract" as Startup
+  component "Preload production KMS keyring\nassert readiness / buildApp" as Startup
   component "RUNTIME_MODE=api или all\nFastify HTTP + WebSocket" as API
   component "RUNTIME_MODE=worker или all\nbackground-jobs → maintenance" as Worker
 }
+component "TypeORM migration CLI\nDataSource initialization" as Migration
 database "PostgreSQL\nentities / migrations / outbox" as PG
 database "Redis" as Redis
 folder "Private objects\nS3 or local attachment adapter" as Storage
 component "Mailer adapter\nSMTP / logger" as Mail
-component "Key provider boundary\nlocal keyring: dev/test\nexternal KMS wiring: открыто" as Keys
+component "Key provider boundary\nlocal keyring: dev/test\nKMS keyring: production" as Keys
+cloud "AWS KMS\nDecrypt keyring at startup" as KMS
 Browser --> Next : HTML / JS
 Browser --> Proxy : HTTP /api/...\nWS при relative API base
 Proxy --> API : backend origin + original path
@@ -26,7 +28,10 @@ Next --> API : server public-provider fetch
 Browser ..> API : HTTP/WS при absolute API base
 Startup --> API : shouldStartApi(mode)
 Startup --> Worker : shouldStartWorker(mode)
-Startup --> Keys : readiness before startup
+Startup --> Keys : preload before buildApp
+Migration --> Keys : preload before DB access
+Keys --> KMS : production Decrypt\nfixed key + context
+Migration --> PG : migration:run
 API --> PG
 API --> Redis
 API --> Storage
@@ -34,6 +39,10 @@ Worker --> PG
 Worker --> Redis
 Worker --> Mail
 PG .. Keys : transformers / sensitive-data subscriber
+note right of Keys
+  Plaintext KEK/HMAC key cached in process for synchronous ORM transformers.
+  Missing config or KMS failure stops startup; live KMS acceptance pending.
+end note
 note bottom of Startup
   worker mode тоже вызывает buildApp и DB setup,
   но не открывает HTTP listener.
@@ -44,5 +53,5 @@ note right of Next
   NEXT_PUBLIC_API_ORIGIN задаёт upstream.
   TLS/proxy/production topology зависят от deployment.
 end note
-footer Источники: server.ts / app.ts / runtime-mode-policy.ts / next.config.ts
+footer Источники: server.ts / data-source.ts / production-kms-provider.ts / next.config.ts
 @enduml

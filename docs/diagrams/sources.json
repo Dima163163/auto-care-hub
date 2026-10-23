@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "7aa38a774a7f80b3a388ea8b7440fbb1fa054bab38971c033e20fce5634693f2",
+      "sha256": "b940132f6609ae7e25ead26fc75e1e6627eafcf771b4a474fdb22d3d32f40488",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "672fbe1e79ff019253c960d8ffe9b52d46d08c2112c8b76805fa388f6c3f4601",
+      "sha256": "5d0b4be0d3845a6d6581b5bdcba45498c2b4a78dc7e8e9cc71e3fac56902a796",
       "scopes": [
         "runtime",
         "backend"
@@ -454,14 +454,14 @@
     },
     {
       "path": "server/src/server.ts",
-      "sha256": "53d702200d8777210d3e4e9db23f666e4a68dc446293922e228efe5a964cb5c0",
+      "sha256": "edecceb715f6caee82c5e14dc854588f5eac761a8f506bcae144660d1d1705c4",
       "scopes": [
         "runtime"
       ]
     },
     {
       "path": "server/src/shared/security/data-encryption/field-encryption.ts",
-      "sha256": "0311fe65cdaf76c57140dc5bfa4425b59755cb8411cadc5cf2c87505b8bab984",
+      "sha256": "6c00352d56d45294e51d1099dc7cb8105a34394ead0da975db8f78da36e8a682",
       "scopes": [
         "runtime",
         "security"
@@ -710,6 +710,13 @@
       ]
     },
     {
+      "path": "render.yaml",
+      "sha256": "1dc8b9de6603e80e4b9c9521708fd84c5fba4847d014c6fa1809398b40722e14",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
       "path": "scripts/check-api-runtime-boundaries.mjs",
       "sha256": "b0e1d0bb03cb15f271e9d3da51725774aefb250dc720f80440eaa23611d0f797",
       "scopes": [
@@ -732,7 +739,21 @@
     },
     {
       "path": "scripts/check-mvp-readiness.test.mjs",
-      "sha256": "e09bdee8bf9c0853807490605444d6226dd1ba8f4e63fec489e76bbc2bec9b0a",
+      "sha256": "fe23225df126cb3ae12080ca08a5d1635433c86eadefb080528a7420072a6a88",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "scripts/check-render-production-config.mjs",
+      "sha256": "e4cc5b124dadf68f3d120c5a0632541ececb8c7e3b2a8cce0e41907f0878bf7c",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
+      "path": "server/.env.example",
+      "sha256": "df297f70a91da66d2f37ad0e757d33ee48798bb40e48f67922537ab8eef500d4",
       "scopes": [
         "runtime"
       ]
@@ -920,10 +941,25 @@
       ]
     },
     {
+      "path": "server/src/scripts/provision-production-keyring.ts",
+      "sha256": "9d09c15ee3dbf13a6591f8a435f5a7ddf7595720e53acd100d69bbecf8b700a1",
+      "scopes": [
+        "runtime"
+      ]
+    },
+    {
       "path": "server/src/shared/security/cors.ts",
       "sha256": "9b67fe36bba09eccce6c7ef10d652f385167b5cc6af7d3012dd01ed286ce7dd4",
       "scopes": [
         "backend"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/production-kms-provider.ts",
+      "sha256": "25339acfbdd042211291e668e4ae4c4f8dc9a9b23c474d5b168ff1bb9f2bb257",
+      "scopes": [
+        "runtime",
+        "security"
       ]
     },
     {

@@ -1,7 +1,9 @@
 # Индекс документации AutoCare Hub
 
 Срез remote dev `8840ae8`, локальная fix-ветка `26da803`, 21 октября 2026.
-Локальные порции U20/U15/U17/U18/U19/U21/U16/N26/N28/N25/N24/N27/N31/N29/N30/N32/N33/N34/N21/N22/N23 от 22 октября описаны в `PROJECT_CONTEXT.md` и
+Локальная U01 KMS wiring от 23 октября описана в `PROJECT_CONTEXT.md`,
+`docs/operations/ENCRYPTION_BACKFILL_ROLLOUT.md` и runtime-схеме; staging/KMS
+приёмка остаётся открытой. Локальные порции U20/U15/U17/U18/U19/U21/U16/N26/N28/N25/N24/N27/N31/N29/N30/N32/N33/N34/N21/N22/N23 от 22 октября описаны в `PROJECT_CONTEXT.md` и
 `docs/diagrams/README.md`; PostgreSQL race test ожидает выполнения в среде с БД.
 Начать с [карты PlantUML](diagrams/README.md) и
 [итоговой проверки пилота](audits/PILOT_READINESS_RECHECK_2026-10-21.md).
@@ -159,7 +161,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | Документ / назначение | Тип | Покрытие | Связь с кодом |
 | --- | --- | --- | --- |
 | [docs/diagrams/01-system-context.puml](diagrams/01-system-context.puml) — 01-system-context | PlantUML architecture map | не проверено | docs/diagrams/sources.json |
-| [docs/diagrams/02-runtime.puml](diagrams/02-runtime.puml) — 02-runtime | PlantUML architecture map | не проверено | docs/diagrams/sources.json |
+| [docs/diagrams/02-runtime.puml](diagrams/02-runtime.puml) — 02-runtime | PlantUML architecture map | U01 поток сверён и локально отрисован 2026-10-23 | server/src/server.ts; server/src/database/data-source.ts; server/src/shared/security/data-encryption/production-kms-provider.ts |
 | [docs/diagrams/03-frontend.puml](diagrams/03-frontend.puml) — 03-frontend | PlantUML architecture map | сверено частично | src/app/routes/route-groups.tsx; src/entities/automotive-service/api/ |
 | [docs/diagrams/04-backend.puml](diagrams/04-backend.puml) — 04-backend | PlantUML architecture map | не проверено | docs/diagrams/sources.json |
 | [docs/diagrams/05-domain-data.puml](diagrams/05-domain-data.puml) — 05-domain-data | PlantUML architecture map | не проверено | docs/diagrams/sources.json |
@@ -190,7 +192,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/operations/BROWSER_RELEASE_AUDIT_2026-08-25.md](operations/BROWSER_RELEASE_AUDIT_2026-08-25.md) — Browser release audit — 2026-08-25 | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/CONCURRENCY_MATRIX.md](operations/CONCURRENCY_MATRIX.md) — Booking concurrency matrix | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/DISCOVERY_BENCHMARK.md](operations/DISCOVERY_BENCHMARK.md) — Discovery benchmark | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/operations/ENCRYPTION_BACKFILL_ROLLOUT.md](operations/ENCRYPTION_BACKFILL_ROLLOUT.md) — Encryption backfill rollout — N09 | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
+| [docs/operations/ENCRYPTION_BACKFILL_ROLLOUT.md](operations/ENCRYPTION_BACKFILL_ROLLOUT.md) — Encryption backfill rollout — N09/U01 | текущий runbook и граница внешней приёмки | частично сверено 2026-10-23 | U01 code path сверён с KMS loader, startup, TypeORM и Render; настоящий KMS и U02/backfill rollout не проверены. |
 | [docs/operations/FINAL_PROJECT_AUDIT_2026-09-05.md](operations/FINAL_PROJECT_AUDIT_2026-09-05.md) — Финальная ревизия AutoCare Hub — 05.09.2026 | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/GEO_SEARCH_STRATEGY.md](operations/GEO_SEARCH_STRATEGY.md) — Production geo-search strategy | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/GITHUB_ACTION_PINS.md](operations/GITHUB_ACTION_PINS.md) — GitHub Actions: immutable references | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |

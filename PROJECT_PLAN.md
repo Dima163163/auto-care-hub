@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## Production KMS — 2026-10-23
+
+- [x] Добавить fail-closed AWS KMS загрузку versioned keyring до API/worker
+  startup и TypeORM migrations, конфигурацию Render и негативные тесты.
+- [ ] Подтвердить U01 на staging: реальные KMS/IAM, один keyring в API/worker/
+  migrations/restore, отказ KMS, restart и восстановление. Не запускать
+  provisioning заново для базы с зашифрованными строками.
+- [ ] Завершить U02 row/owner AAD и U03 privileged MFA/step-up до pilot GO.
+
 ## Продвижение dev → main — 2026-10-23
 
 - [x] Закрепить выбор именно push-события в раннем ожидании Quality по точному

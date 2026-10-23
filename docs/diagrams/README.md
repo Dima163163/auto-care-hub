@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U01, кодовая подготовка 2026-10-23:** `02-runtime.puml` и SVG показывают
+загрузку зашифрованного набора ключей через AWS KMS до API/worker startup и
+TypeORM migrations. Схема пересобрана локальным PlantUML 1.2026.2; 134 source
+anchors совпадают. Настоящий KMS, staging restart/restore и production доступ
+к данным ещё не проверены; U02 row-bound encryption остаётся открытым.
+
 **Проверка anchors, 2026-10-23:** после обновления Fastify обновлён fingerprint
 `server/package.json`; все 129 source anchors соответствуют текущему коду.
 Рёбра PlantUML и SVG не менялись. Поле `baseline` и footer схемы сохраняют

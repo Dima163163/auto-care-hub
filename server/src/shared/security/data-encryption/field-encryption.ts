@@ -61,7 +61,7 @@ function decode(value: unknown, expectedBytes?: number) {
     return decoded
 }
 
-function parseKeyring(text: string): DataEncryptionKeyProvider {
+export function parseDataEncryptionKeyring(text: string): DataEncryptionKeyProvider {
     const parsed = JSON.parse(text) as LocalKeyring
     if (parsed.version !== 1 || typeof parsed.activeKeyId !== 'string' || !parsed.keys?.[parsed.activeKeyId]) {
         throw new Error('Local data encryption keyring is invalid.')
@@ -97,7 +97,7 @@ function loadLocalKeyProvider(): DataEncryptionKeyProvider {
         const metadata = lstatSync(keyringPath)
         if (!metadata.isFile() || metadata.isSymbolicLink()) throw new Error('Local data encryption keyring must be a regular file.')
         if ((metadata.mode & 0o077) !== 0) chmodSync(keyringPath, 0o600)
-        return parseKeyring(readFileSync(keyringPath, 'utf8'))
+        return parseDataEncryptionKeyring(readFileSync(keyringPath, 'utf8'))
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
         const runtime = process.env.NODE_ENV ?? 'development'
@@ -117,11 +117,11 @@ function loadLocalKeyProvider(): DataEncryptionKeyProvider {
         try {
             writeFileSync(keyringPath, `${JSON.stringify(keyring, null, 2)}\n`, { mode: 0o600, flag: 'wx' })
         } catch (writeError) {
-            if ((writeError as NodeJS.ErrnoException).code === 'EEXIST') return parseKeyring(readFileSync(keyringPath, 'utf8'))
+            if ((writeError as NodeJS.ErrnoException).code === 'EEXIST') return parseDataEncryptionKeyring(readFileSync(keyringPath, 'utf8'))
             throw writeError
         }
         chmodSync(keyringPath, 0o600)
-        return parseKeyring(JSON.stringify(keyring))
+        return parseDataEncryptionKeyring(JSON.stringify(keyring))
     }
 }
 

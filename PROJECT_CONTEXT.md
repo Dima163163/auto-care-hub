@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## U01 production KMS code path — 2026-10-23
+
+API/worker и TypeORM CLI теперь загружают KMS-encrypted keyring до работы с
+шифрованными полями. Отсутствие конфигурации, malformed ciphertext и отказ
+Decrypt останавливают startup; локальный keyring по-прежнему запрещён в
+production. Provisioning создаёт случайные KEK/HMAC только для новой пустой БД;
+существующую базу нельзя переключать на новый keyring. AWS KMS/IAM, staging
+restart/restore и U02 row-bound envelope ещё не приняты. Runtime PlantUML/SVG
+и 134 source anchors обновлены.
+
 ## CI secret scan, 2026-10-22
 
 PR #16 обнаружил один false positive: Gitleaks принял сохранённый SHA-256
