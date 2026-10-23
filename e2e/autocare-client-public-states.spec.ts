@@ -119,10 +119,10 @@ test.describe('public and client AutoCare states', () => {
         // The second navigation compiles the dynamic provider route on a cold
         // Next dev server; keep this browser smoke deterministic without
         // relaxing timeouts for the rest of the suite.
-        test.setTimeout(60_000)
+        test.setTimeout(90_000)
         await page.goto('/services?service=oil-change')
         const compareButtons = page.getByRole('button', { name: /compare selected|сравнить выбранные/i })
-        await expect(compareButtons.first()).toBeVisible()
+        await expect(compareButtons.first()).toBeVisible({ timeout: 30_000 })
         await compareButtons.nth(0).click()
         await compareButtons.nth(1).click()
         await expect(page.locator('table')).toBeVisible()
