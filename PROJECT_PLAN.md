@@ -1,13 +1,21 @@
 # AutoCare Hub — Project Plan
 
+## U02 outbox identity integrity — 2026-10-24
+
+- [x] Сверять outbox email/toEmail ciphertext с HMAC index при чтении;
+  покрыть mismatch/missing pair unit и PostgreSQL regression.
+- [ ] Привязать согласованную пару и recipientName к event ID/owner через
+  versioned envelope и staged migration. U02 остаётся открытым.
+
 ## CI dependency gate — 2026-10-24
 
 - [x] Обновить четыре уязвимые версии в web lockfile после отказа проверки PR #17;
   локальный npm audit показывает 0.
 - [x] Обновить API fast-uri, zod и nodemailer после следующего отказа CI;
   `npm --prefix server audit` показывает 0.
-- [ ] Дождаться полного CI на новом SHA, затем объединить PR в dev и провести
-  защищённое продвижение в main с обязательным code-owner review.
+- [x] PR #17 прошёл Application CI и объединён в dev как `0186aa5`.
+- [ ] Дождаться push Quality dev SHA и провести защищённое продвижение в main
+  с обязательным code-owner review.
 
 ## U02 identity integrity — 2026-10-24
 

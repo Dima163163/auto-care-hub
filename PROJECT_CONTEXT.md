@@ -1,13 +1,21 @@
 # AutoCare Hub Project Context
 
+## U02 outbox identity integrity — 2026-10-24
+
+Outbox transformer при чтении сверяет расшифрованный email/toEmail с
+сохранённым HMAC blind index; несовпадение или отсутствие пары index/ciphertext прерывает
+доставку. Добавлены negative unit и PostgreSQL integration cases. Перенос
+согласованной пары между событиями и recipientName без record/owner AAD
+остаётся открытым. `08-outbox-maintenance.puml` и SVG обновлены.
+
 ## CI dependency gate — 2026-10-24
 
 PR #17 выявил новые advisory в web lockfile; минимальный npm audit fix
 обновляет fast-uri 3.1.8→3.1.9, serialize-javascript 7.0.5→7.1.4,
 undici 7.30.0→7.30.1 и zod 4.4.3→4.6.7 без изменения прямых диапазонов
 версий. Локально npm audit показывает 0; web unit 661/661, ESLint, Next и
-Vite production builds прошли. Повторный CI нового коммита нужен до
-объединения в dev.
+Vite production builds прошли. PR #17 прошёл Application CI и объединён
+в dev как `0186aa5`; push Quality и защищённое продвижение в main выполняются.
 Следующий CI обнаружил отдельные advisories API: server lockfile обновляет
 fast-uri до 3.1.9/4.2.3 и zod до 4.6.7, а прямой nodemailer — до 10.2.1.
 `npm --prefix server audit` показывает 0; повторный backend quality прошёл

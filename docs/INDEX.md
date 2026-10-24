@@ -1,6 +1,6 @@
 # Индекс документации AutoCare Hub
 
-U02 partial fix от 24 октября: ORM-чтение email сверяет HMAC blind index;
+U02 partial fix от 24 октября: ORM и outbox чтение email сверяют HMAC blind index;
 перенос согласованной пары и остальных полей ещё открыт. См.
 [реестр](audits/FULL_PROJECT_AUDIT_2026-10-03.md),
 [карту](diagrams/README.md) и
@@ -82,7 +82,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/notification-delivery-semantics.md](notification-delivery-semantics.md) — Notification Delivery Semantics | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/specs/MVP_BOOKING_QUOTE_SPEC.md](specs/MVP_BOOKING_QUOTE_SPEC.md) — Спецификация MVP: дата записи и согласие с версией сметы | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [server/README.md](../server/README.md) — AutoCare Hub Server — Migration Baseline | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [server/docs/security/FIELD_ENCRYPTION.md](../server/docs/security/FIELD_ENCRYPTION.md) — Field encryption status | текущий security baseline | сверено частично | outbox transformer, migration 178642, U01/U02 external limits |
+| [server/docs/security/FIELD_ENCRYPTION.md](../server/docs/security/FIELD_ENCRYPTION.md) — Field encryption status | текущий security baseline | U01/U02 slice сверены 2026-10-24 | AWS KMS startup path, outbox index check, migration 178642; live KMS/row AAD открыты |
 | [src/shared/styles/vendor/README.md](../src/shared/styles/vendor/README.md) — Vendored static stylesheet | текущий документ / статус реализации не сверён | исключено | src/shared/styles/vendor/ |
 | [src/shared/styles/vendor/shadcn-LICENSE.md](../src/shared/styles/vendor/shadcn-LICENSE.md) — shadcn-LICENSE | текущий документ / статус реализации не сверён | исключено | src/shared/styles/vendor/ |
 
