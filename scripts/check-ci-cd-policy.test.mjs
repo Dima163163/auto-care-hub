@@ -51,3 +51,13 @@ test('rejects promotion without a protected pull-request path to main', async ()
 
     assert.ok(checks.some(({ name, passed }) => name === 'Promotion targets main through a protected pull request' && !passed))
 })
+
+test('rejects squash promotion that drops dev ancestry', async () => {
+    const sources = await readCiCdPolicySources()
+    const checks = validateCiCdPolicy({
+        ...sources,
+        promotion: sources.promotion.replace('--auto --merge', '--auto --squash'),
+    })
+
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion preserves dev ancestry' && !passed))
+})
