@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 partial identity integrity — 2026-10-24
+
+ORM read сверяет users/provider-invitations email ciphertext с сохранённым
+HMAC blind index; несоответствие прерывает чтение. Unit и PostgreSQL
+integration negative paths добавлены для подмены одного ciphertext. Перенос
+согласованной пары и прочих encrypted columns по-прежнему возможен без
+row/owner AAD; U02 и pilot NO-GO остаются открыты. `09-access-privacy.puml`
+и SVG обновлены.
+
 ## U01 production KMS code path — 2026-10-23
 
 API/worker и TypeORM CLI теперь загружают KMS-encrypted keyring до работы с

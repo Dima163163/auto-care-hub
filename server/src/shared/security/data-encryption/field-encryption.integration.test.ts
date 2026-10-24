@@ -10,7 +10,7 @@ import { UserEntity, UserRole, UserStatus } from '../../../entities/user/user.en
 import { UserSessionEntity } from '../../../entities/user-session/user-session.entity.js'
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
-import { getDataEncryptionKeyProvider, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { encryptFieldValue, getDataEncryptionKeyProvider, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -58,6 +58,15 @@ describe('sensitive field encryption ORM integration', () => {
         expect(loadedUser.name).toBe(`Private Name ${suffix}`)
         expect(loadedUser.phone).toBe('+7 999 123-45-67')
         expect(loadedUser.preferredCity).toBe('Казань')
+
+        const wrongEmailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', `other-${email}`))
+        await AppDataSource.query('UPDATE "users" SET "emailCiphertext" = $1 WHERE "id" = $2', [wrongEmailCiphertext, user.id])
+        try {
+            await expect(users.findOneByOrFail({ id: user.id }))
+                .rejects.toThrow('Encrypted users.email index authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "users" SET "emailCiphertext" = $1 WHERE "id" = $2', [storedUser.emailCiphertext, user.id])
+        }
 
         const identities = AppDataSource.getRepository(OAuthIdentityEntity)
         const identity = await identities.save(identities.create({

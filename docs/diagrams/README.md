@@ -1,8 +1,14 @@
 # Карта проекта AutoCare Hub
 
+**U02, частичная проверка 2026-10-24:** `09-access-privacy.puml` и SVG
+показывают сверку расшифрованного email с HMAC blind index для users и
+provider invitations. Проверка отвергает подмену одного ciphertext;
+перенос согласованной пары и остальных зашифрованных полей остаётся риском
+до versioned row/owner AAD и миграции. Добавлен source anchor subscriber.
+
 **U01, кодовая подготовка 2026-10-23:** `02-runtime.puml` и SVG показывают
 загрузку зашифрованного набора ключей через AWS KMS до API/worker startup и
-TypeORM migrations. Схема пересобрана локальным PlantUML 1.2026.2; 134 source
+TypeORM migrations. Схема пересобрана локальным PlantUML 1.2026.2; 135 source
 anchors совпадают. Настоящий KMS, staging restart/restore и production доступ
 к данным ещё не проверены; U02 row-bound encryption остаётся открытым.
 

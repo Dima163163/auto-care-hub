@@ -31,6 +31,12 @@ note right of Provider
   Глобальный owner — ещё compatibility роль;
   один frontend guard не является backend authorization.
 end note
+note right of Resource
+  User/invitation afterLoad сверяет расшифрованный email
+  с HMAC blind index и отвергает подмену одного ciphertext.
+  Пара index + ciphertext и другие поля пока не привязаны
+  к record/owner: U02 остаётся открытым.
+end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.
   Оба message/attachment API вызывают общую write policy до сохранения;
@@ -40,5 +46,5 @@ note bottom of Object
   S3/private storage adapter и scan/quarantine поддержаны кодом.
   Production storage policy / KMS / MFA — отдельные acceptance gates.
 end note
-footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-write-policy.ts
+footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
 @enduml

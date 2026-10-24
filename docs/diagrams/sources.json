@@ -468,6 +468,13 @@
       ]
     },
     {
+      "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
+      "sha256": "d0b4ccdef4d0d2f8948366ecb365aaa47cd953aa036ee02ed10d89c3952d8a5e",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
       "path": "src/app/[[...slug]]/page.page.tsx",
       "sha256": "f14d35a88c104a32c57777271b3f28dd5db7b9eb208a9e4ffad8693333f452da",
       "scopes": [

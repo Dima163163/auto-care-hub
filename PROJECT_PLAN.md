@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## U02 identity integrity — 2026-10-24
+
+- [x] Проверять соответствие расшифрованного email сохранённому HMAC index
+  при ORM-чтении users и provider invitations; добавить negative unit и
+  PostgreSQL integration test подмены только ciphertext.
+- [ ] Ввести versioned row/owner AAD для остальных полей и защитить перенос
+  согласованной пары email index + ciphertext; подготовить миграцию/backfill,
+  прямые SQL-пути и restore evidence. U02 не закрыт.
+
 ## Production KMS — 2026-10-23
 
 - [x] Добавить fail-closed AWS KMS загрузку versioned keyring до API/worker
