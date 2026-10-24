@@ -8,6 +8,10 @@ undici 7.30.0→7.30.1 и zod 4.4.3→4.6.7 без изменения прямы
 версий. Локально npm audit показывает 0; web unit 661/661, ESLint, Next и
 Vite production builds прошли. Повторный CI нового коммита нужен до
 объединения в dev.
+Следующий CI обнаружил отдельные advisories API: server lockfile обновляет
+fast-uri до 3.1.9/4.2.3 и zod до 4.6.7, а прямой nodemailer — до 10.2.1.
+`npm --prefix server audit` показывает 0; повторный backend quality прошёл
+1472/1472 unit, миграционные/контрактные проверки и TypeScript build.
 
 ## U02 partial identity integrity — 2026-10-24
 

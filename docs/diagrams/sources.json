@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "b940132f6609ae7e25ead26fc75e1e6627eafcf771b4a474fdb22d3d32f40488",
+      "sha256": "754bec9b9058d1df20c9be81398bdb963f52b9c3297682634e25f9abe72b65d5",
       "scopes": [
         "backend"
       ]
