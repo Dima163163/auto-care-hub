@@ -1591,3 +1591,18 @@ The early Quality wait now accepts only a push-triggered run for the exact dev
 SHA. The later required-check gate already requires both push and PR events.
 The CI policy contract has a negative test for a missing event filter. Local
 checks pass; the published candidate and code-owner review remain open.
+# Продвижение dev → main, восстановление общей истории — 2026-10-24
+
+PR #18 прошёл все проверки Quality, включая backend PostgreSQL integration и
+browser E2E, и объединён в `dev` как `c51eeb5`. Push Quality для PR #17 на
+`dev` `0186aa5` прошёл, но workflow продвижения остановился на PR #19:
+предыдущий выпуск PR #15 был squash в `main`. GitHub показывает конфликт,
+потому что его commit не является предком `dev`, хотя дерево `main` `49bdf1b`
+побайтно совпадает с деревом проверенного `dev` `4a16c2d`.
+
+Ветка исправления объединила этот `main` в текущий `dev` стратегией ours:
+проверено, что дерево результата в точности равно дереву исходного `dev`.
+Promotion workflow переводится с squash на merge commit, чтобы сохранить
+достижимость проверенного SHA в `main` и не повторять конфликт при следующем
+выпуске. PR #19 остаётся открытым; новый `dev` и его CI ещё должны пройти,
+а защищённый `main` требует независимого code-owner review.

@@ -1,5 +1,16 @@
 # AutoCare Hub — Project Plan
 
+## Защищённое продвижение dev → main — 2026-10-24
+
+- [x] PR #18 прошёл Application CI и объединён в `dev` как `c51eeb5`.
+- [x] Подтвердить, что дерево `main` после squash PR #15 совпадает с
+  проверенным `dev` `4a16c2d`; записать `main` в историю `dev` без изменения
+  файлов проекта.
+- [x] Перевести будущие promotion PR на merge commit и добавить контрактную
+  проверку, чтобы squash снова не разорвал общую историю веток.
+- [ ] Дождаться CI нового `dev` и PR #19, затем обязательного code-owner review
+  для защищённого `main`.
+
 ## U02 outbox identity integrity — 2026-10-24
 
 - [x] Сверять outbox email/toEmail ciphertext с HMAC index при чтении;

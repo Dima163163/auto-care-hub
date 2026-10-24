@@ -23,6 +23,7 @@ export function validateCiCdPolicy({ quality, promotion, promotionWait, protecti
         ['Promotion requires successful CI', /conclusion.*success/.test(promotion) && /'pr', 'checks'/.test(promotionWait ?? '')],
         ['Promotion waits only for required checks and both Quality events', /'--required'/.test(promotionWait ?? '') && /\['push', 'pull_request'\]/.test(promotionWait ?? '') && /maxAttempts = 270/.test(promotionWait ?? '')],
         ['Promotion pins merge to the verified head', /--match-head-commit "\$SOURCE_SHA"/.test(promotion) && !/--admin(?:\s|$)/.test(promotion)],
+        ['Promotion preserves dev ancestry', /gh pr merge "\$PR_NUMBER"[^\n]*--merge(?:\s|$)/.test(promotion) && !/gh pr merge "\$PR_NUMBER"[^\n]*--squash(?:\s|$)/.test(promotion)],
         ['Promotion targets main through a protected pull request', /--base main/.test(promotion) && /--head dev/.test(promotion) && /gh pr merge/.test(promotion) && /pull request/.test(promotion) && !/mode=direct/.test(promotion)],
         ['Repository protection names the aggregate required check', /Quality \/ Application CI/.test(protection)],
         ['Repository documentation describes automated promotion', /automated promotion|auto.?merge|automatic promotion/i.test(protection) && /dev.*main|main.*dev/i.test(readme)],
