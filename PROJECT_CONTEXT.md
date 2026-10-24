@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## CI dependency gate — 2026-10-24
+
+PR #17 выявил новые advisory в web lockfile; минимальный npm audit fix
+обновляет fast-uri 3.1.8→3.1.9, serialize-javascript 7.0.5→7.1.4,
+undici 7.30.0→7.30.1 и zod 4.4.3→4.6.7 без изменения прямых диапазонов
+версий. Локально npm audit показывает 0; web unit 661/661, ESLint, Next и
+Vite production builds прошли. Повторный CI нового коммита нужен до
+объединения в dev.
+
 ## U02 partial identity integrity — 2026-10-24
 
 ORM read сверяет users/provider-invitations email ciphertext с сохранённым

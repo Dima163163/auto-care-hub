@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## CI dependency gate — 2026-10-24
+
+- [x] Обновить четыре уязвимые версии в web lockfile после отказа проверки PR #17;
+  локальный npm audit показывает 0.
+- [ ] Дождаться полного CI на новом SHA, затем объединить PR в dev и провести
+  защищённое продвижение в main с обязательным code-owner review.
+
 ## U02 identity integrity — 2026-10-24
 
 - [x] Проверять соответствие расшифрованного email сохранённому HMAC index
