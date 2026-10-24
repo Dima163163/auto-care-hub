@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "b940132f6609ae7e25ead26fc75e1e6627eafcf771b4a474fdb22d3d32f40488",
+      "sha256": "754bec9b9058d1df20c9be81398bdb963f52b9c3297682634e25f9abe72b65d5",
       "scopes": [
         "backend"
       ]
@@ -464,6 +464,13 @@
       "sha256": "6c00352d56d45294e51d1099dc7cb8105a34394ead0da975db8f78da36e8a682",
       "scopes": [
         "runtime",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
+      "sha256": "d0b4ccdef4d0d2f8948366ecb365aaa47cd953aa036ee02ed10d89c3952d8a5e",
+      "scopes": [
         "security"
       ]
     },

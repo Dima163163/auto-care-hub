@@ -1,5 +1,23 @@
 # AutoCare Hub — Project Plan
 
+## CI dependency gate — 2026-10-24
+
+- [x] Обновить четыре уязвимые версии в web lockfile после отказа проверки PR #17;
+  локальный npm audit показывает 0.
+- [x] Обновить API fast-uri, zod и nodemailer после следующего отказа CI;
+  `npm --prefix server audit` показывает 0.
+- [ ] Дождаться полного CI на новом SHA, затем объединить PR в dev и провести
+  защищённое продвижение в main с обязательным code-owner review.
+
+## U02 identity integrity — 2026-10-24
+
+- [x] Проверять соответствие расшифрованного email сохранённому HMAC index
+  при ORM-чтении users и provider invitations; добавить negative unit и
+  PostgreSQL integration test подмены только ciphertext.
+- [ ] Ввести versioned row/owner AAD для остальных полей и защитить перенос
+  согласованной пары email index + ciphertext; подготовить миграцию/backfill,
+  прямые SQL-пути и restore evidence. U02 не закрыт.
+
 ## Production KMS — 2026-10-23
 
 - [x] Добавить fail-closed AWS KMS загрузку versioned keyring до API/worker

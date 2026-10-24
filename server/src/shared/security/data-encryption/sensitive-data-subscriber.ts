@@ -8,8 +8,7 @@ import {
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
-import { createBlindIndex, isEmailBlindIndex } from './field-encryption.js'
-import { decryptFieldValue, encryptFieldValue } from './field-encryption.js'
+import { createBlindIndex, decryptFieldValue, encryptFieldValue, isEmailBlindIndex, verifyEmailBlindIndex } from './field-encryption.js'
 
 type EmailRecord = {
     email?: string | null
@@ -31,7 +30,15 @@ function openEmail(record: EmailRecord, table: string) {
     if (record.emailCiphertext === null || record.emailCiphertext === undefined) {
         throw new Error(`Encrypted ${table}.email is missing; data-encryption migration is required.`)
     }
-    record.email = decryptFieldValue<string>(table, 'email', record.emailCiphertext)
+    const blindIndex = record.email
+    if (typeof blindIndex !== 'string' || !isEmailBlindIndex(blindIndex)) {
+        throw new Error(`Encrypted ${table}.email index is invalid.`)
+    }
+    const plaintext = decryptFieldValue<string>(table, 'email', record.emailCiphertext)
+    if (!verifyEmailBlindIndex(plaintext, blindIndex)) {
+        throw new Error(`Encrypted ${table}.email index authentication failed.`)
+    }
+    record.email = plaintext
 }
 
 function sealProviderSubject(record: ProviderIdentityRecord) {

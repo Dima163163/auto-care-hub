@@ -3,6 +3,14 @@
 AutoCare Hub uses Git Flow with `dev` as the integration branch and `main` as
 the production branch.
 
+On 2026-10-23 the remote `main` protection was verified and corrected: one
+approving code-owner review is required, stale approvals are dismissed,
+`Application CI` is required on an up-to-date branch, and force pushes and
+deletion are disabled. Repository auto-merge is enabled so the promotion pull
+request can merge after all checks and the human review. Promotion PR #15
+merged before this correction without an approving review; its CI passed, but
+that historical review gap cannot be repaired retroactively.
+
 ## Required GitHub settings for `main`
 
 These settings must be applied by a repository administrator in GitHub because

@@ -378,6 +378,12 @@ status-only push не требуется. Каждый runtime finding и его
 
 **Уточнение следующей порции 03.10:** TypeORM `SubjectChangedColumnsComputer` вызывает transformer.to ещё до beforeUpdate subscriber; простая передача row ID только в subscriber не покрывает этот путь. Admin account-deletion также шифрует redaction values для прямых SQL UPDATE (`account-deletion-admin.service.ts:80-85`); новый AAD требует отдельного envelope для каждого record ID. Поэтому rollout должен включать versioned envelope/backfill, проверку ожидаемого row/parent scope при ORM-чтении, scoped insert/update и прямую redaction, identity↔HMAC consistency, outbox, partial selects, rollback/restore и отрицательные swap tests. Выбор production KMS (U01) определяет ключевую границу: controlled preload/cache для существующего синхронного интерфейса либо asynchronous repository/service encryption. Вопрос о KMS направлен владельцу и остаётся без ответа; готовый U05 не выбирает эту архитектуру за него. Изменения формата/БД U02 ещё не начаты, закрытие не заявляется.
 
+**Частичный прогресс 24.10:** при ORM-чтении users/provider invitations email
+сверяется с HMAC blind index. Подмена одного ciphertext вызывает отказ;
+negative unit и PostgreSQL integration test добавлены. Подмена согласованной
+пары index+ciphertext и иных полей всё ещё не обнаруживается без row/owner
+AAD. Versioned envelope, migration/backfill и production acceptance открыты.
+
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
 **Подтверждение:** текущие auth/OAuth/session modules не содержат обязательного второго фактора и проверки свежей step-up аутентификации для admin/super-admin. Проблема остаётся в `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md:26`.
