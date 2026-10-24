@@ -13,6 +13,11 @@ Queue -> Queue : transformer.to(payload)\nemail blind index + encrypted PII
 Queue -> PG : INSERT pending encrypted JSONB\nON CONFLICT idempotency DO NOTHING
 Queue -> PG : findOne by idempotency key
 PG --> Queue : decoded entity / existing event
+note right of Queue
+  При чтении email/toEmail plaintext сверяется с HMAC index.
+  Подмена одного ciphertext или index прерывает обработку;
+  согласованная пара ещё не привязана к event ID (U02).
+end note
 note over API, PG
   Переданный EntityManager позволяет общий business transaction.
   Для новой сметы notification key включает persisted quote ID;
@@ -61,5 +66,5 @@ note over Worker, Delivery
   Quote notification key различает версии; production delivery
   и downstream deduplication ещё не подтверждены.
 end note
-footer outbox.service.ts / maintenance-jobs.service.ts / maintenance-lease.service.ts
+footer outbox.service.ts / field-encryption.ts / maintenance-jobs.service.ts / maintenance-lease.service.ts
 @enduml

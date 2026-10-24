@@ -384,6 +384,12 @@ negative unit и PostgreSQL integration test добавлены. Подмена 
 пары index+ciphertext и иных полей всё ещё не обнаруживается без row/owner
 AAD. Versioned envelope, migration/backfill и production acceptance открыты.
 
+**Следующий частичный шаг 24.10:** outbox `email`/`toEmail` теперь также
+сверяются с HMAC index при чтении; mismatch/missing pair прерывает
+обработку. Unit и PostgreSQL integration regressions добавлены. Перенос
+согласованной пары между событиями и `recipientName` остаётся уязвимым
+для сценария DB write attacker до row/owner AAD.
+
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
 **Подтверждение:** текущие auth/OAuth/session modules не содержат обязательного второго фактора и проверки свежей step-up аутентификации для admin/super-admin. Проблема остаётся в `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md:26`.

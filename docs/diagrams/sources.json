@@ -461,10 +461,11 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/field-encryption.ts",
-      "sha256": "6c00352d56d45294e51d1099dc7cb8105a34394ead0da975db8f78da36e8a682",
+      "sha256": "dbefff9454358c65097ef8160171ebab57c430d299e12252999c28daaa11148d",
       "scopes": [
         "runtime",
-        "security"
+        "security",
+        "outbox"
       ]
     },
     {

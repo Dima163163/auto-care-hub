@@ -10,7 +10,7 @@ import { UserEntity, UserRole, UserStatus } from '../../../entities/user/user.en
 import { UserSessionEntity } from '../../../entities/user-session/user-session.entity.js'
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
-import { encryptFieldValue, getDataEncryptionKeyProvider, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -110,6 +110,15 @@ describe('sensitive field encryption ORM integration', () => {
         const loadedOutbox = await outbox.findOneByOrFail({ id: outboxEvent.id })
         expect(loadedOutbox.payload).toMatchObject({ email, recipientName: `Private Name ${suffix}` })
         expect(loadedOutbox.payload).not.toHaveProperty('emailCiphertext')
+
+        const wrongOutboxPayload = { ...storedOutbox.payload, email: createEmailBlindIndex(`other-${email}`) }
+        await AppDataSource.query('UPDATE "outbox_events" SET "payload" = $1::jsonb WHERE "id" = $2', [JSON.stringify(wrongOutboxPayload), outboxEvent.id])
+        try {
+            await expect(outbox.findOneByOrFail({ id: outboxEvent.id }))
+                .rejects.toThrow('Encrypted outbox email index authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "outbox_events" SET "payload" = $1::jsonb WHERE "id" = $2', [JSON.stringify(storedOutbox.payload), outboxEvent.id])
+        }
     })
 
     it('preserves password login, OAuth, email uniqueness and invitation conflicts after KEK rotation', async () => {

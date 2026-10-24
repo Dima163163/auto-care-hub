@@ -320,7 +320,16 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'
     if (!value || typeof value !== 'object') return value
     const result: Record<string, unknown> = { ...(value as Record<string, unknown>) }
     for (const [key, raw] of Object.entries(result)) {
-        if (key.endsWith('Ciphertext')) continue
+        if (key.endsWith('Ciphertext')) {
+            if (!(key in result)) continue
+            if (direction === 'from' && (key === 'emailCiphertext' || key === 'toEmailCiphertext')) {
+                const index = result[key === 'emailCiphertext' ? 'email' : 'toEmail']
+                if (typeof index !== 'string' || !isEmailBlindIndex(index)) {
+                    throw new Error('Encrypted outbox email index is invalid.')
+                }
+            }
+            continue
+        }
         const nestedPath = `${path}.${key}`
         const ciphertextKey = `${key}Ciphertext`
         if (direction === 'to' && (key === 'email' || key === 'toEmail') && typeof raw === 'string') {
@@ -330,8 +339,20 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'
             result[ciphertextKey] = encryptFieldValue('outbox_events', nestedPath, raw)
             result[key] = null
         } else if (direction === 'from' && result[ciphertextKey] !== undefined) {
-            result[key] = decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
+            const plaintext = decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
+            if (key === 'email' || key === 'toEmail') {
+                if (typeof raw !== 'string' || !isEmailBlindIndex(raw)) {
+                    throw new Error('Encrypted outbox email index is invalid.')
+                }
+                if (typeof plaintext !== 'string' || !verifyEmailBlindIndex(plaintext, raw)) {
+                    throw new Error('Encrypted outbox email index authentication failed.')
+                }
+            }
+            result[key] = plaintext
             delete result[ciphertextKey]
+        } else if (direction === 'from' && (key === 'email' || key === 'toEmail')
+            && typeof raw === 'string' && isEmailBlindIndex(raw)) {
+            throw new Error('Encrypted outbox email ciphertext is missing.')
         } else {
             result[key] = mapOutboxPii(raw, direction, nestedPath)
         }

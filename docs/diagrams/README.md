@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U02, следующий частичный шаг 2026-10-24:** `08-outbox-maintenance.puml`
+и SVG отражают сверку outbox email/toEmail с HMAC blind index при чтении.
+Перенос согласованной пары index+ciphertext между событиями остаётся открытым.
+
 **U02, частичная проверка 2026-10-24:** `09-access-privacy.puml` и SVG
 показывают сверку расшифрованного email с HMAC blind index для users и
 provider invitations. Проверка отвергает подмену одного ciphertext;

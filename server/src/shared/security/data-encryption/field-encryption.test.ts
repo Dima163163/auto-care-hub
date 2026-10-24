@@ -60,5 +60,22 @@ describe('field encryption', () => {
         expect(JSON.stringify(storedPayload)).not.toContain('Private Client')
         expect(storedPayload.toEmail).toBe(createEmailBlindIndex('client@example.test'))
         expect(outboxPayloadEncryptionTransformer.from(storedPayload)).toEqual(payload)
+        expect(outboxPayloadEncryptionTransformer.from(Object.fromEntries(Object.entries(storedPayload).reverse())))
+            .toEqual(payload)
+
+        const swappedIndex = { ...storedPayload, toEmail: createEmailBlindIndex('other@example.test') }
+        expect(() => outboxPayloadEncryptionTransformer.from(swappedIndex))
+            .toThrow('Encrypted outbox email index authentication failed.')
+        const missingIndex = { ...storedPayload, toEmail: null }
+        expect(() => outboxPayloadEncryptionTransformer.from(missingIndex))
+            .toThrow('Encrypted outbox email index is invalid.')
+        const absentIndex = { ...storedPayload }
+        Reflect.deleteProperty(absentIndex, 'toEmail')
+        expect(() => outboxPayloadEncryptionTransformer.from(absentIndex))
+            .toThrow('Encrypted outbox email index is invalid.')
+        const missingCiphertext = { ...storedPayload }
+        Reflect.deleteProperty(missingCiphertext, 'toEmailCiphertext')
+        expect(() => outboxPayloadEncryptionTransformer.from(missingCiphertext))
+            .toThrow('Encrypted outbox email ciphertext is missing.')
     })
 })
