@@ -148,7 +148,7 @@
     },
     {
       "path": "server/src/entities/outbox/outbox-event.entity.ts",
-      "sha256": "d36df983968af02bed3480d5113e88201f8f0888427192ea34ac8dbe297014ba",
+      "sha256": "27f57000cd2f0b722522378f8a71113b3cc9cfd2147431c8e2071734fbdebe3e",
       "scopes": [
         "data"
       ]

@@ -137,6 +137,15 @@ describe('encrypted outbox record binding', () => {
         expect(loadEvent(event.id, stored).payload).toEqual({ email: 'source@example.test', recipientName: 'Private Client' })
     })
 
+    it('sets the scope before TypeORM transforms an ORM insert', () => {
+        const event = new OutboxEventEntity()
+        event.payload = { email: 'orm@example.test' }
+        const stored = outboxPayloadEncryptionTransformer.to(event.payload) as Record<string, unknown>
+        expect(stored.$recordId).toBe(event.id)
+        expect(stored.emailCiphertext).toHaveProperty('recordBinding')
+        expect(JSON.stringify(event)).not.toContain('_payload')
+    })
+
     it('rejects a complete payload moved to another event', () => {
         const source = storedEvent('source@example.test')
         const target = storedEvent('target@example.test')
