@@ -1,9 +1,10 @@
-import type { LoadEvent } from 'typeorm'
+import { randomUUID } from 'node:crypto'
+import type { InsertEvent, LoadEvent } from 'typeorm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
-import { createEmailBlindIndex, encryptFieldValue, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
 const subscriber = new SensitiveDataSubscriber()
@@ -24,8 +25,13 @@ function loadEmail<T extends UserEntity | AutomotiveProviderInvitationEntity>(en
 }
 
 function storedEmail<T extends UserEntity | AutomotiveProviderInvitationEntity>(entity: T, table: string, email: string) {
+    entity.id = randomUUID()
+    if (entity instanceof AutomotiveProviderInvitationEntity) entity.providerId = randomUUID()
     entity.email = createEmailBlindIndex(email)
-    entity.emailCiphertext = JSON.stringify(encryptFieldValue(table, 'email', email))
+    entity.emailCiphertext = JSON.stringify(encryptRecordBoundFieldValue(table, 'email', email, {
+        rowId: entity.id,
+        ...(entity instanceof AutomotiveProviderInvitationEntity ? { ownerId: entity.providerId } : {}),
+    }))
     return entity
 }
 
@@ -53,5 +59,42 @@ describe('encrypted identity index binding', () => {
         swapped.emailCiphertext = JSON.stringify(encryptFieldValue('autocare_provider_invitations', 'email', 'staff@example.test'))
         expect(() => loadEmail(swapped, 'autocare_provider_invitations'))
             .toThrow('Encrypted autocare_provider_invitations.email index authentication failed.')
+    })
+
+    it('rejects a complete ciphertext and index moved to another user row', () => {
+        const source = storedEmail(new UserEntity(), 'users', 'source@example.test')
+        const target = storedEmail(new UserEntity(), 'users', 'target@example.test')
+        target.email = source.email
+        target.emailCiphertext = source.emailCiphertext
+        expect(() => loadEmail(target, 'users')).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rejects a complete pair moved to another invitation or provider', () => {
+        const source = storedEmail(new AutomotiveProviderInvitationEntity(), 'autocare_provider_invitations', 'source@example.test')
+        const target = storedEmail(new AutomotiveProviderInvitationEntity(), 'autocare_provider_invitations', 'target@example.test')
+        target.email = source.email
+        target.emailCiphertext = source.emailCiphertext
+        expect(() => loadEmail(target, 'autocare_provider_invitations'))
+            .toThrow('Encrypted record binding authentication failed.')
+
+        target.id = source.id
+        expect(() => loadEmail(target, 'autocare_provider_invitations'))
+            .toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('writes a bound email after assigning the insert ID', () => {
+        const user = new UserEntity()
+        user.email = 'new@example.test'
+        subscriber.beforeInsert({ metadata: { tableName: 'users' }, entity: user } as InsertEvent<UserEntity>)
+        expect(user.id).toMatch(/^[0-9a-f-]{36}$/)
+        expect(JSON.parse(user.emailCiphertext)).toHaveProperty('recordBinding')
+        user.email = createEmailBlindIndex('new@example.test')
+        expect(loadEmail(user, 'users')).toBe('new@example.test')
+    })
+
+    it('keeps legacy rows readable during the expansion phase', () => {
+        const user = storedEmail(new UserEntity(), 'users', 'legacy@example.test')
+        user.emailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', 'legacy@example.test'))
+        expect(loadEmail(user, 'users')).toBe('legacy@example.test')
     })
 })

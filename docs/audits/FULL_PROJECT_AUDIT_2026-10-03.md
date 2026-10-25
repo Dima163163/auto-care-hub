@@ -384,6 +384,13 @@ negative unit и PostgreSQL integration test добавлены. Подмена 
 пары index+ciphertext и иных полей всё ещё не обнаруживается без row/owner
 AAD. Versioned envelope, migration/backfill и production acceptance открыты.
 
+**Expansion 25.10:** новые email envelopes users/invitations содержат
+отдельный HMAC по ciphertext, row UUID и provider UUID invitation. ORM-чтение
+проверяет привязку перед расшифровкой; unit и PostgreSQL regression покрывают
+перенос согласованной пары. Это не закрывает U02: legacy envelopes читаются,
+маркер пока можно удалить, прочие поля и прямые SQL-пути не привязаны.
+Нужны backfill, strict switch, restore и production acceptance.
+
 **Следующий частичный шаг 24.10:** outbox `email`/`toEmail` теперь также
 сверяются с HMAC index при чтении; mismatch/missing pair прерывает
 обработку. Unit и PostgreSQL integration regressions добавлены. Перенос

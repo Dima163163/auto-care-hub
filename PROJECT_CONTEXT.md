@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## U02 email binding expansion — 2026-10-25
+
+Новые `users` и `autocare_provider_invitations` email envelopes получают HMAC,
+связывающий ciphertext с row UUID; invitation также с provider UUID. ORM-чтение
+проверяет MAC и HMAC blind index. Старый reader игнорирует новое поле, а новый
+временно читает legacy envelopes для rolling deployment. Поэтому backfill,
+strict switch и остальные поля U02 ещё открыты; удаление MAC пока допускает
+downgrade. Unit/build проверены локально; PostgreSQL integration ждёт CI.
+`09-access-privacy.puml` и SVG отражают этот этап.
+
 ## U02 outbox identity integrity — 2026-10-24
 
 Outbox transformer при чтении сверяет расшифрованный email/toEmail с
