@@ -385,17 +385,23 @@ export function createBlindIndexTransformer(domain: string) {
 }
 
 const OUTBOX_RECORD_ID_KEY = '$recordId'
-const outboxRecordId = Symbol('outboxRecordId')
+const outboxLoadedPayload = Symbol('outboxLoadedPayload')
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function setOutboxPayloadRecordId(payload: Record<string, unknown>, rowId: string) {
     if (!UUID_PATTERN.test(rowId)) throw new Error('Encrypted outbox record ID is invalid.')
-    Object.defineProperty(payload, outboxRecordId, { value: rowId.toLowerCase(), configurable: true })
+    // TypeORM deep-merges JSONB before applying column transformers.
+    // An enumerable marker survives that merge; a hidden property does not.
+    payload[OUTBOX_RECORD_ID_KEY] = rowId.toLowerCase()
     return payload
 }
 
 export function getOutboxPayloadRecordId(payload: Record<string, unknown>) {
-    return (payload as Record<symbol, unknown>)[outboxRecordId] as string | undefined
+    return payload[OUTBOX_RECORD_ID_KEY] as string | undefined
+}
+
+export function isOutboxPayloadFromStorage(payload: Record<string, unknown>) {
+    return Boolean((payload as Record<symbol, unknown>)[outboxLoadedPayload])
 }
 
 function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, path = 'payload'): unknown {
@@ -475,7 +481,11 @@ export const outboxPayloadEncryptionTransformer = {
         const plaintext = { ...stored }
         delete plaintext[OUTBOX_RECORD_ID_KEY]
         const opened = mapOutboxPii(plaintext, 'from', rowId as string | undefined) as Record<string, unknown>
-        return rowId ? setOutboxPayloadRecordId(opened, rowId as string) : opened
+        if (rowId) {
+            setOutboxPayloadRecordId(opened, rowId as string)
+            Object.defineProperty(opened, outboxLoadedPayload, { value: true })
+        }
+        return opened
     },
 }
 

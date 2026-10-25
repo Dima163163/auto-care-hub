@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 import { randomUUID } from 'node:crypto'
-import { getOutboxPayloadRecordId, outboxPayloadEncryptionTransformer, setOutboxPayloadRecordId } from '../../shared/security/data-encryption/field-encryption.js'
+import { getOutboxPayloadRecordId, isOutboxPayloadFromStorage, outboxPayloadEncryptionTransformer, setOutboxPayloadRecordId } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum OutboxEventStatus {
     Pending = 'pending',
@@ -28,6 +28,9 @@ export class OutboxEventEntity {
     }
 
     set payload(value: Record<string, unknown>) {
+        if (value && this.id && (!isOutboxPayloadFromStorage(value) || !getOutboxPayloadRecordId(value))) {
+            setOutboxPayloadRecordId(value, this.id)
+        }
         Object.defineProperty(this, '_payload', {
             value,
             writable: true,
@@ -39,7 +42,9 @@ export class OutboxEventEntity {
     private _payload!: Record<string, unknown>
 
     toJSON() {
-        return { ...this, payload: this.payload }
+        const payload = { ...this.payload }
+        delete payload.$recordId
+        return { ...this, payload }
     }
 
     @Column({ type: 'text', unique: true, nullable: true })

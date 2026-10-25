@@ -61,7 +61,7 @@ describe('raw outbox recipient encryption', () => {
         expect(stored.$recordId).toBe(insert?.parameters[0])
         expect(stored.toEmailCiphertext).toHaveProperty('recordBinding')
         expect(stored.recipientNameCiphertext).toHaveProperty('recordBinding')
-        expect(outboxPayloadEncryptionTransformer.from(stored)).toEqual(payload)
+        expect(outboxPayloadEncryptionTransformer.from(stored)).toMatchObject(payload)
         expect(getOutboxPayloadRecordId(outboxPayloadEncryptionTransformer.from(stored) as Record<string, unknown>))
             .toBe(insert?.parameters[0])
     })

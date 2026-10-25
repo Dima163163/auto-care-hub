@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
-import { createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
 const subscriber = new SensitiveDataSubscriber()
@@ -134,16 +134,19 @@ describe('encrypted outbox record binding', () => {
         const { event, stored } = storedEvent('source@example.test')
         expect(stored.emailCiphertext).toHaveProperty('recordBinding')
         expect(stored.recipientNameCiphertext).toHaveProperty('recordBinding')
-        expect(loadEvent(event.id, stored).payload).toEqual({ email: 'source@example.test', recipientName: 'Private Client' })
+        expect(loadEvent(event.id, stored).payload).toMatchObject({ email: 'source@example.test', recipientName: 'Private Client' })
     })
 
     it('sets the scope before TypeORM transforms an ORM insert', () => {
         const event = new OutboxEventEntity()
-        event.payload = { email: 'orm@example.test' }
+        const payload = { email: 'orm@example.test', $recordId: randomUUID() }
+        event.payload = payload
+        expect(getOutboxPayloadRecordId(payload)).toBe(event.id)
         const stored = outboxPayloadEncryptionTransformer.to(event.payload) as Record<string, unknown>
         expect(stored.$recordId).toBe(event.id)
         expect(stored.emailCiphertext).toHaveProperty('recordBinding')
         expect(JSON.stringify(event)).not.toContain('_payload')
+        expect(JSON.stringify(event)).not.toContain('$recordId')
     })
 
     it('rejects a complete payload moved to another event', () => {
@@ -169,6 +172,6 @@ describe('encrypted outbox record binding', () => {
     it('keeps a legacy event readable during expansion', () => {
         const id = randomUUID()
         const stored = outboxPayloadEncryptionTransformer.to({ email: 'legacy@example.test' }) as Record<string, unknown>
-        expect(loadEvent(id, stored).payload).toEqual({ email: 'legacy@example.test' })
+        expect(loadEvent(id, stored).payload).toMatchObject({ email: 'legacy@example.test' })
     })
 })
