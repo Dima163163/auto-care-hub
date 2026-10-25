@@ -35,8 +35,9 @@ note right of Resource
   Новые user/invitation email envelopes содержат MAC
   с row ID, а invitation также с provider ID.
   afterLoad сверяет MAC и email с HMAC blind index.
-  Старые envelopes читаются до backfill и strict switch;
-  иные поля/снятие MAC оставляют U02 открытым.
+  Бounded backfill дописывает MAC старым envelopes.
+  Strict flag отвергает отсутствие MAC после cutover;
+  до него downgrade и иные поля оставляют U02 открытым.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.

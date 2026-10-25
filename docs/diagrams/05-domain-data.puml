@@ -98,6 +98,12 @@ entity "OutboxEvent" as Outbox {
   type / payload / idempotencyKey
   status / attempts / availableAt
 }
+entity "EmailBindingCheckpoint" as EmailCheckpoint {
+  * name : users / invitations
+  --
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -152,6 +158,13 @@ note bottom of Review
   anomaly signals and calibration use the latest 1000 reviews.
 end note
 Request ..> Outbox : effects; payload association
+EmailCheckpoint ..> User : bounded email backfill
+EmailCheckpoint ..> Provider : invitation provider scope
+note bottom of EmailCheckpoint
+  U02: compare-write and checkpoint commit together.
+  Verify full row/owner MAC coverage before strict reads.
+  Production backfill and restore remain unverified.
+end note
 note bottom of Evidence
   Пунктир — логическая связь, не FK.
   Reference lookup fix требует применения migration и проверки DB.

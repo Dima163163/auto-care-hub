@@ -1,5 +1,17 @@
 # AutoCare Hub Project Context
 
+## U02 email backfill preparation — 2026-10-25
+
+PR #21 прошёл полный Quality CI, включая PostgreSQL integration и browser E2E,
+и объединён в `dev` как `d66007c`. Promotion PR #19 обновлён на этот SHA;
+защищённый `main` ждёт нового CI и независимого code-owner review.
+
+Следующая локальная порция добавляет миграцию checkpoint-таблицы, пакетную
+команду для users/invitations с compare-write транзакциями, полный verify-проход
+и `DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING=true` для строгого чтения после
+cutover. До настоящего KMS/staging backfill, проверки restore и переключения
+production это только подготовка; остальные поля U02 и U03 ещё открыты.
+
 ## U02 email binding expansion — 2026-10-25
 
 Новые `users` и `autocare_provider_invitations` email envelopes получают HMAC,

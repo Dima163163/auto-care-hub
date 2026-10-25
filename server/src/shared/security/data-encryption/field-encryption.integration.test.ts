@@ -11,6 +11,7 @@ import { UserSessionEntity } from '../../../entities/user-session/user-session.e
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
 import { createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -162,6 +163,18 @@ describe('sensitive field encryption ORM integration', () => {
                 expiresAt: new Date(Date.now() + 86_400_000), acceptedAt: null, revokedAt: null,
             }))
 
+            await AppDataSource.query(
+                'UPDATE "autocare_provider_invitations" SET "emailCiphertext" = $1 WHERE "id" = $2',
+                [JSON.stringify(encryptFieldValue('autocare_provider_invitations', 'email', invitationEmail)), invitation.id],
+            )
+            await resetEmailBindingBackfill(AppDataSource, 'autocare_provider_invitations')
+            expect((await runIdentityEmailBindingBackfill(AppDataSource, 'autocare_provider_invitations', {
+                batchSize: 500, maxBatches: 10_000,
+            })).exhausted).toBe(true)
+            expect((await verifyIdentityEmailBindings(AppDataSource, 'autocare_provider_invitations', {
+                batchSize: 500, maxBatches: 10_000,
+            })).exhausted).toBe(true)
+
             rotatingProvider.activeKeyId = nextKeyId
             const login = await loginUser({ email: rotationEmail.toUpperCase(), password })
             expect(login.user.id).toBe(owner.id)
@@ -197,6 +210,7 @@ describe('sensitive field encryption ORM integration', () => {
             expect((await users.findOneByOrFail({ email: rotationEmail })).name).toBe('Synthetic owner after rotation')
         } finally {
             try {
+                await resetEmailBindingBackfill(AppDataSource, 'autocare_provider_invitations')
                 if (rotationProviderId) {
                     await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).delete({ providerId: rotationProviderId })
                     await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: rotationProviderId })
@@ -250,6 +264,37 @@ describe('sensitive field encryption ORM integration', () => {
         } finally {
             if (rightId) await users.delete({ id: rightId })
             await users.delete({ id: left.id })
+        }
+    })
+
+    it('backfills legacy email records in bounded batches and supports strict reads', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const legacyEmail = `legacy-binding-${suffix}@example.test`
+        const user = await users.save(users.create({
+            name: 'Synthetic legacy binding user', email: legacyEmail,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+        }))
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING
+        try {
+            await AppDataSource.query(
+                'UPDATE "users" SET "emailCiphertext" = $1 WHERE "id" = $2',
+                [JSON.stringify(encryptFieldValue('users', 'email', legacyEmail)), user.id],
+            )
+            await resetEmailBindingBackfill(AppDataSource, 'users')
+            await expect(verifyIdentityEmailBindings(AppDataSource, 'users', { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            await runIdentityEmailBindingBackfill(AppDataSource, 'users', { batchSize: 1, maxBatches: 1 })
+            const completed = await runIdentityEmailBindingBackfill(AppDataSource, 'users', { batchSize: 500, maxBatches: 10_000 })
+            expect(completed.exhausted).toBe(true)
+            expect((await verifyIdentityEmailBindings(AppDataSource, 'users', { batchSize: 500, maxBatches: 10_000 })).exhausted)
+                .toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING = 'true'
+            expect((await users.findOneByOrFail({ id: user.id })).email).toBe(legacyEmail)
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING = previous
+            await resetEmailBindingBackfill(AppDataSource, 'users')
+            await users.delete({ id: user.id })
         }
     })
 })

@@ -56,5 +56,43 @@ The approved rollout must implement:
 An exhausted iterator is not cutover approval: concurrent writes, indexes and
 restore must be independently verified. HMAC index-key rotation requires a separate
 versioned index migration; replacing only a KEK must preserve h1 uniqueness.
-Production backfill adapter/rollout remains pending U02 and isolated DB
+Full production backfill rollout remains pending U02 and isolated DB
 scale/recovery evidence. No current database or historical archive was touched.
+
+## User and invitation email binding expansion
+
+New email writes contain a record binding MAC while old readers can still read
+the envelope. Migration `1786470000000` adds a durable checkpoint table; it
+does not rewrite identity rows. The operator command adds a MAC to existing
+authenticated email envelopes without changing their DEK or blind index. Its
+compare-write update and checkpoint advance share one transaction per batch.
+It prints progress counts and no plaintext. This covers only `users.email` and
+`autocare_provider_invitations.email`, not the remaining U02 fields.
+
+After old API/worker instances have drained, the approved keyring is available
+to the migration and command, and a tested backup exists:
+
+1. Apply the new migration. For each of `users` and
+   `autocare_provider_invitations`, run
+   `npm --prefix server run encryption:backfill-email-binding -- --table users --mode apply --batch-size 100 --max-batches 100`
+   (substitute the invitation table for the second run). Repeat until the
+   command reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` for each table. It authenticates
+   every email envelope against row/provider ID and blind index. A successful
+   full pass reports `exhausted:true`; failure or budget exhaustion blocks
+   cutover. Use a budget large enough for a full pass without exceeding the
+   approved database window.
+3. If an old writer was observed during the scan, run `--mode reset` for that
+   table, repeat apply and verify after it has drained. Reset removes only
+   progress metadata, not ciphertext. Coordinate this operation so no other
+   backfill process is active.
+4. Only after a complete verify, deploy
+   `DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING=true` to every API/worker
+   instance. Any missing or altered binding then fails reads. Rehearse login,
+   invitations, account deletion, key rotation and backup restore. Reverting
+   the flag temporarily restores legacy reads; do not remove key material.
+
+This cutover requires staging evidence with the real KMS keyring, production
+data scale/lock measurements and a restore rehearsal. The command and CI tests
+alone are not approval to enable strict mode on live data. Other encrypted
+fields and outbox payloads still need the wider versioned U02 rollout above.

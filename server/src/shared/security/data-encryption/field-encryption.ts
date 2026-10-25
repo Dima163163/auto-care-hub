@@ -244,6 +244,22 @@ export function encryptRecordBoundFieldValue(table: string, column: string, valu
     return { ...envelope, recordBinding: `r1_${encode(recordBindingDigest(table, column, envelope, scope))}` }
 }
 
+/** Authenticates a legacy envelope before adding record scope without changing its DEK. */
+export function bindExistingEncryptedFieldValue(table: string, column: string, value: unknown, scope: EncryptedRecordScope): EncryptedFieldEnvelope {
+    let envelope: unknown = value
+    if (typeof envelope === 'string') {
+        try { envelope = JSON.parse(envelope) } catch { throw new Error('Encrypted field is not migrated or is invalid.') }
+    }
+    if (!isEncryptedFieldEnvelope(envelope)) throw new Error('Encrypted field is not migrated or is invalid.')
+    const candidate = envelope as EncryptedFieldEnvelope
+    if (Object.hasOwn(candidate, 'recordBinding')) {
+        decryptRecordBoundFieldValue(table, column, candidate, scope)
+        return candidate
+    }
+    decryptFieldValue(table, column, candidate)
+    return { ...candidate, recordBinding: `r1_${encode(recordBindingDigest(table, column, candidate, scope))}` }
+}
+
 export function decryptRecordBoundFieldValue<T = unknown>(
     table: string,
     column: string,

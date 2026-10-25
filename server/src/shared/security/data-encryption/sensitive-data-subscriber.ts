@@ -10,6 +10,7 @@ import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { createBlindIndex, decryptFieldValue, decryptRecordBoundFieldValue, encryptFieldValue, encryptRecordBoundFieldValue, isEmailBlindIndex, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
+import { requireEmailRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -47,7 +48,9 @@ function openEmail(record: EmailRecord, table: string) {
     if (typeof blindIndex !== 'string' || !isEmailBlindIndex(blindIndex)) {
         throw new Error(`Encrypted ${table}.email index is invalid.`)
     }
-    const plaintext = decryptRecordBoundFieldValue<string>(table, 'email', record.emailCiphertext, emailScope(record, table), { allowLegacy: true })
+    const plaintext = decryptRecordBoundFieldValue<string>(table, 'email', record.emailCiphertext, emailScope(record, table), {
+        allowLegacy: !requireEmailRecordBinding(),
+    })
     if (!verifyEmailBlindIndex(plaintext, blindIndex)) {
         throw new Error(`Encrypted ${table}.email index authentication failed.`)
     }

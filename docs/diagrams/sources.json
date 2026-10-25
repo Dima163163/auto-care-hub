@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
-  "verifiedOn": "2026-10-23",
+  "verifiedOn": "2026-10-25",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "754bec9b9058d1df20c9be81398bdb963f52b9c3297682634e25f9abe72b65d5",
+      "sha256": "9d7425f417516c9dd5526ce210fe6880a5dcc9c054dad11b2c6275e86d58f7d8",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "5d0b4be0d3845a6d6581b5bdcba45498c2b4a78dc7e8e9cc71e3fac56902a796",
+      "sha256": "1c9ea65667859100db3317f7a4a1045935f6f715abba53a17d537d3f4ddf1484",
       "scopes": [
         "runtime",
         "backend"
@@ -461,7 +461,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/field-encryption.ts",
-      "sha256": "a270f8e9d384f8e6eb2e7588f3753c0bb8e17adf31fae2a8b9111501d4eb5a42",
+      "sha256": "e0c0815a50b0088f93f9529614d1b9b65f3bf8c94fe1cdfc7ae4ce1ecab2e055",
       "scopes": [
         "runtime",
         "security",
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "428e85c3c050b0c0df8dbdf4b2f27a6834a4366c5399117b50fb322872f17256",
+      "sha256": "5feafbfcc302d46c22a5545308224e6549766f6b9599cffedece3c74f521bdf3",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "df297f70a91da66d2f37ad0e757d33ee48798bb40e48f67922537ab8eef500d4",
+      "sha256": "4bcdbd55ba44e6fb2738275b2b5a9bb19e939828a6a9af7fe9ba8776fc40c415",
       "scopes": [
         "runtime"
       ]
@@ -1017,6 +1017,59 @@
       "sha256": "000ce23e29fbe565a3bc0a6cc885cdfaabf36de4d1f4659cfb68bc8a46a48802",
       "scopes": [
         "frontend"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786470000000-CreateEmailBindingBackfillCheckpoints.ts",
+      "sha256": "1618ebe070bdeb63b75029290a2d96f386dceef5de280ba3b342854a9311d146",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/schema-contract.ts",
+      "sha256": "9300fe71c61b9cf7e5af5656f3f40626e1eafe9f96c0125939beda4f6eb94cce",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/database/schema-contract-policy.ts",
+      "sha256": "ae37248ad9da03c0426dd8b5329cf31dd767456d0f6e7531fd26d41bff327367",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-email-record-binding.ts",
+      "sha256": "268d229d8a2258ad98bbe9c481bb62476e225bc393a9c36847e25e43942fd374",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/bounded-backfill.ts",
+      "sha256": "8bc55109df02d7333047a7d19fe48f0f7b0582d05382253f440522a4a06d36f7",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/identity-email-binding-backfill.ts",
+      "sha256": "b9e8a637a737d98cc1ef3d1f4c3c8aef6c230343c2dc1cb501dfb3ea4ab136e0",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
+      "sha256": "bd4166d00b3604d04a81b45cb7ff52d43e692bfe4f1e72f8d0f5c1d5c0858afe",
+      "scopes": [
+        "security"
       ]
     }
   ],
