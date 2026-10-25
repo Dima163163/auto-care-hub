@@ -5,7 +5,10 @@
 Новые OAuth subject envelopes связаны с identity UUID, user UUID и провайдером.
 ORM-чтение сверяет MAC и blind index, сохраняя чтение старых envelopes до
 отдельного backfill и strict cutover. Перенос полной пары index+ciphertext
-между строками теперь выявляется. U02 и pilot NO-GO остаются открытыми.
+между строками теперь выявляется. Следующая порция добавляет миграцию
+checkpoint-таблицы 178649, пакетный compare-write backfill, полный verify и
+`DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING=true` для opt-in strict reader.
+Без staging KMS/restore это лишь подготовка; U02 и pilot NO-GO остаются открытыми.
 
 ## U02 outbox backfill preparation — 2026-10-25
 

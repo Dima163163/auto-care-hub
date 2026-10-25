@@ -13,6 +13,7 @@ import { createOwnerProviderInvitation } from '../../../modules/autocare/provide
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
 import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
+import { resetOAuthBindingBackfill, runOAuthBindingBackfill, verifyOAuthBindings } from './oauth-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -121,6 +122,22 @@ describe('sensitive field encryption ORM integration', () => {
             await AppDataSource.query('UPDATE "oauth_identities" SET "provider_subject" = $1 WHERE "id" = $2', [
                 storedIdentity.provider_subject, identity.id,
             ])
+        }
+
+        await AppDataSource.query('UPDATE "oauth_identities" SET "provider_subject_ciphertext" = $1 WHERE "id" = $2', [
+            JSON.stringify(encryptFieldValue('oauth_identities', 'providerSubject', providerSubject)), identity.id,
+        ])
+        await resetOAuthBindingBackfill(AppDataSource)
+        try {
+            expect((await runOAuthBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyOAuthBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            const [backfilled] = await AppDataSource.query(
+                'SELECT "provider_subject_ciphertext" FROM "oauth_identities" WHERE "id" = $1', [identity.id],
+            ) as Array<{ provider_subject_ciphertext: string }>
+            expect(JSON.parse(backfilled?.provider_subject_ciphertext ?? '{}')).toHaveProperty('recordBinding')
+            expect((await identities.findOneByOrFail({ id: identity.id })).providerSubject).toBe(providerSubject)
+        } finally {
+            await resetOAuthBindingBackfill(AppDataSource)
         }
 
         const outbox = AppDataSource.getRepository(OutboxEventEntity)

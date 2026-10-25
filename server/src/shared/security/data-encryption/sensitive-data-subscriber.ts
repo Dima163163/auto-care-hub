@@ -11,7 +11,7 @@ import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
-import { requireEmailRecordBinding } from './record-binding-policy.js'
+import { requireEmailRecordBinding, requireOAuthRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -85,7 +85,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
     if (!isEmailBlindIndex(blindIndex)) throw new Error('Encrypted OAuth subject index is invalid.')
     const plaintext = decryptRecordBoundFieldValue<string>(
         'oauth_identities', 'providerSubject', record.providerSubjectCiphertext, providerSubjectScope(record),
-        { allowLegacy: true },
+        { allowLegacy: !requireOAuthRecordBinding() },
     )
     record.providerSubject = plaintext
     if (createBlindIndex(plaintext, 'oauth-provider-subject') !== blindIndex) {

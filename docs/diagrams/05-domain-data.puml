@@ -110,6 +110,12 @@ entity "OutboxBindingCheckpoint" as OutboxCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "OAuthBindingCheckpoint" as OAuthCheckpoint {
+  * name : oauth_identities
+  --
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -134,6 +140,7 @@ Provider ||--o{ Account
 User ||--o{ Account
 Account ||--o{ Ledger
 Outbox ..> OutboxCheckpoint : bounded keyset progress
+OAuthCheckpoint ..> User : identity owner scope
 note bottom of Ledger
   U18: positive earn/adjustment/refund entries form lots.
   Redemption consumes earliest expiry first;
@@ -171,6 +178,11 @@ note bottom of EmailCheckpoint
   U02: compare-write and checkpoint commit together.
   Verify full row/owner MAC coverage before strict reads.
   Production backfill and restore remain unverified.
+end note
+note bottom of OAuthCheckpoint
+  U02: bounded compare-write and checkpoint commit together.
+  Verify subject MAC by identity/user UUID and provider.
+  Real KMS/restore and strict cutover remain unverified.
 end note
 note bottom of Evidence
   Пунктир — логическая связь, не FK.

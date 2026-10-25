@@ -5,7 +5,9 @@
 Новые OAuth subject ciphertext получают MAC по identity UUID, user UUID и
 провайдеру. Чтение сверяет MAC и HMAC blind index; перестановка полной пары
 между записями отвергается. Старые envelopes читаются для совместимости до
-пакетного переноса, полного verify и строгого переключения. Остальные поля,
+пакетного переноса, полного verify и строгого переключения. Миграция 178649,
+bounded compare-write команда и opt-in strict reader подготовлены в следующей
+порции; production cutover пока не выполнен. Остальные поля,
 реальный KMS/restore и pilot acceptance открыты. **U02 открыт; pilot NO-GO.**
 
 ## U02 — подготовка переноса старых outbox событий, 25 октября 2026

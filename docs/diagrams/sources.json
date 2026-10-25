@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "f6d2c976b7eb1f9c895f5a2befc7927b0f5f3421ce06898e09186e3fbd360034",
+      "sha256": "33e3c04f1231e78c459a95d8b7187dffc7eae4ca12336d31fbf68135c9e7b4c3",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "95f4c4b31133f7113910d2d94236db07110432a24cc11848afcd810e6a1fa36c",
+      "sha256": "ababa1ab2061621684d8642e768e7c0981a8824a08d71af67d3d326ab6da0b27",
       "scopes": [
         "runtime",
         "backend"
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "91328426d7cfd7a56f54384d179ba485fa258cc01c0596dff6427ef3d8e3f1f1",
+      "sha256": "d7dedfda182c5f67e8e89d9855476f7106f5fcf094c43dd52d2d210858bbc77d",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "4bcdbd55ba44e6fb2738275b2b5a9bb19e939828a6a9af7fe9ba8776fc40c415",
+      "sha256": "3e6c1a5a653ab75a004826cea666b1f0282e62f8a5ca7faa2c75f7224d2c25ac",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "32c7d52fe10e198bda32da0ece83af0bf5668f47c6854165b40baade1a9e5b80",
+      "sha256": "fe9808f956553db7da4b4a412087aad56304628c273b07513174aedc740292e1",
       "scopes": [
         "security"
       ]
@@ -1101,6 +1101,30 @@
       "sha256": "bb4fefe90e5f57e27ec5eec15d7dda108c42df0e1ea5f9bd7b0bcfca233eefde",
       "scopes": [
         "outbox"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786490000000-CreateOAuthBindingBackfillCheckpoint.ts",
+      "sha256": "783851ecfa757f1b5d06c05f0616863646581b6e0268b989e43f2e1d08ebe644",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/oauth-binding-backfill.ts",
+      "sha256": "c10c17f805197a62e140c5816175fb944f9a4137a051cb4ac7ad49c0042e1540",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-oauth-record-binding.ts",
+      "sha256": "410d0922797bf559bd977636ecd5004d5a4915bbff7b0629e92fd9e053efd615",
+      "scopes": [
+        "data",
+        "security"
       ]
     }
   ],

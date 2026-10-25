@@ -2,7 +2,9 @@
 
 **U02, OAuth subject expansion 2026-10-25:** `09-access-privacy.puml` и SVG
 показывают MAC по identity/user UUID и провайдеру, с проверкой HMAC index при
-чтении. Legacy backfill, strict cutover и staging KMS/restore ещё открыты.
+чтении. `05-domain-data.puml` и SVG показывают checkpoint-таблицу для
+ограниченного compare-write backfill. Полный verify и opt-in strict reader
+подготовлены; staging KMS/restore и включение strict ещё открыты.
 
 **U02, outbox backfill/cutover подготовка 2026-10-25:**
 `05-domain-data.puml` и `08-outbox-maintenance.puml` с SVG показывают
