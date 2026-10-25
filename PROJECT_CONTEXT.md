@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U02 outbox record binding expansion — 2026-10-25
+
+Новые outbox email/toEmail и recipientName envelopes получают MAC по UUID
+события. ORM и атомарный raw INSERT создают UUID до шифрования; при чтении
+проверяются MAC и соответствие UUID строки. Режим совместимости читает старые
+события до отдельного пакетного переноса и строгого переключения. PostgreSQL
+worker flow должен пройти CI; U02 и pilot NO-GO остаются открытыми.
+
 ## U02 email backfill preparation — 2026-10-25
 
 PR #21 прошёл полный Quality CI, включая PostgreSQL integration и browser E2E,

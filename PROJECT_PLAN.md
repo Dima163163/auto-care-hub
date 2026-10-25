@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## U02 outbox record binding expansion — 2026-10-25
+
+- [x] Новые ORM и atomic raw outbox INSERT заранее получают event UUID;
+  email/toEmail и recipientName envelopes подписываются с этим UUID.
+- [x] При чтении проверяются MAC поля и соответствие сохранённого UUID строке;
+  secret redaction сохраняет scope при повторной записи.
+- [ ] Проверить PostgreSQL/worker цикл в CI; перенести legacy события пакетами,
+  затем включить строгий отказ от unbound envelopes. До этого U02 открыт.
+
 ## U02 identity email backfill and strict cutover — 2026-10-25
 
 - [x] PR #21 прошёл полный CI, включая PostgreSQL и browser E2E, и объединён

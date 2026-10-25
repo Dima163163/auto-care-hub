@@ -433,7 +433,7 @@
     },
     {
       "path": "server/src/modules/outbox/outbox.service.ts",
-      "sha256": "fd7195ccf0eea327b073d9765701b95bd7aa79bcc44037f5681097b98699d978",
+      "sha256": "df31a9498ff3da5978fb8daab3d02cfadf3fea8347c78ddd22324f7b23d9487c",
       "scopes": [
         "outbox"
       ]
@@ -461,7 +461,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/field-encryption.ts",
-      "sha256": "e0c0815a50b0088f93f9529614d1b9b65f3bf8c94fe1cdfc7ae4ce1ecab2e055",
+      "sha256": "66d9189193208b0acaeb94dfbd24c42a15d3b6ce13ec5f69525ee65188ff4d5c",
       "scopes": [
         "runtime",
         "security",
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "5feafbfcc302d46c22a5545308224e6549766f6b9599cffedece3c74f521bdf3",
+      "sha256": "01842cad6b4272a172236e7ecde8ca6704c8e66f871373c5d300e6deb9b8ff53",
       "scopes": [
         "security"
       ]
@@ -1070,6 +1070,13 @@
       "sha256": "bd4166d00b3604d04a81b45cb7ff52d43e692bfe4f1e72f8d0f5c1d5c0858afe",
       "scopes": [
         "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/outbox/outbox-secret.ts",
+      "sha256": "0b8623b0022dbceffc5f083d3ea4b5065516583031c06b57eefba0a6d4fa8533",
+      "scopes": [
+        "outbox"
       ]
     }
   ],

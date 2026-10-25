@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, outbox expansion 2026-10-25:** `08-outbox-maintenance.puml` и SVG
+показывают UUID события до шифрования, MAC email/toEmail/recipientName и
+проверку строки при чтении. Legacy события пока читаются; backfill и strict
+cutover остаются открытыми. Source anchors обновлены.
+
 **U02, backfill/cutover подготовка 2026-10-25:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают checkpoint-таблицу, пакетный перенос
 email MAC и opt-in strict reader. Реальный KMS/staging перенос, restore и

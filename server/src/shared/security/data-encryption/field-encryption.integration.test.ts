@@ -19,10 +19,12 @@ describe('sensitive field encryption ORM integration', () => {
     const providerSubject = `oauth-private-subject-${suffix}`
     let userId: string | undefined
     let outboxEventId: string | undefined
+    let secondOutboxEventId: string | undefined
 
     afterAll(async () => {
         if (!AppDataSource.isInitialized) return
         if (outboxEventId) await AppDataSource.getRepository(OutboxEventEntity).delete({ id: outboxEventId })
+        if (secondOutboxEventId) await AppDataSource.getRepository(OutboxEventEntity).delete({ id: secondOutboxEventId })
         if (userId) {
             await AppDataSource.getRepository(OAuthIdentityEntity).delete({ userId })
             await AppDataSource.getRepository(UserEntity).delete({ id: userId })
@@ -108,9 +110,29 @@ describe('sensitive field encryption ORM integration', () => {
         expect(storedOutbox.payload.recipientName).toBeNull()
         expect(storedOutbox.payload.emailCiphertext).toBeDefined()
         expect(storedOutbox.payload.recipientNameCiphertext).toBeDefined()
+        expect(storedOutbox.payload.emailCiphertext).toHaveProperty('recordBinding')
+        expect(storedOutbox.payload.recipientNameCiphertext).toHaveProperty('recordBinding')
+        expect((storedOutbox.payload as Record<string, unknown>).$recordId).toBe(outboxEvent.id)
         const loadedOutbox = await outbox.findOneByOrFail({ id: outboxEvent.id })
         expect(loadedOutbox.payload).toMatchObject({ email, recipientName: `Private Name ${suffix}` })
         expect(loadedOutbox.payload).not.toHaveProperty('emailCiphertext')
+
+        const secondOutboxEvent = await outbox.save(outbox.create({
+            type: 'field-encryption.integration',
+            payload: { email: `other-${email}`, recipientName: `Other Private Name ${suffix}` },
+            status: OutboxEventStatus.Pending,
+            idempotencyKey: `field-encryption-other-${suffix}`,
+        }))
+        secondOutboxEventId = secondOutboxEvent.id
+        const [secondRaw] = await AppDataSource.query('SELECT "payload" FROM "outbox_events" WHERE "id" = $1', [secondOutboxEvent.id]) as Array<{ payload: Record<string, unknown> }>
+        if (!secondRaw) throw new Error('Second encrypted outbox event was not stored.')
+        await AppDataSource.query('UPDATE "outbox_events" SET "payload" = $1::jsonb WHERE "id" = $2', [JSON.stringify(storedOutbox.payload), secondOutboxEvent.id])
+        try {
+            await expect(outbox.findOneByOrFail({ id: secondOutboxEvent.id }))
+                .rejects.toThrow('Encrypted outbox record binding authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "outbox_events" SET "payload" = $1::jsonb WHERE "id" = $2', [JSON.stringify(secondRaw.payload), secondOutboxEvent.id])
+        }
 
         const wrongOutboxPayload = { ...storedOutbox.payload, email: createEmailBlindIndex(`other-${email}`) }
         await AppDataSource.query('UPDATE "outbox_events" SET "payload" = $1::jsonb WHERE "id" = $2', [JSON.stringify(wrongOutboxPayload), outboxEvent.id])

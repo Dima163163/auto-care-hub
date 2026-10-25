@@ -4,10 +4,13 @@ import type { EntityManager, QueryRunner } from 'typeorm'
 import { EncryptRawOutboxRecipients1786420000000 } from '../../database/migrations/1786420000000-EncryptRawOutboxRecipients.js'
 import {
     createEmailBlindIndex,
+    getOutboxPayloadRecordId,
     outboxPayloadEncryptionTransformer,
+    setOutboxPayloadRecordId,
     setDataEncryptionKeyProviderForTests,
 } from '../../shared/security/data-encryption/field-encryption.js'
 import { enqueueOutboxEvent } from './outbox.service.js'
+import { redactOutboxSecrets } from './outbox-secret.js'
 
 beforeEach(() => {
     setDataEncryptionKeyProviderForTests({
@@ -50,12 +53,17 @@ describe('raw outbox recipient encryption', () => {
         await enqueueOutboxEvent({ type: 'email.send', payload, idempotencyKey: 'booking:private-1' }, manager)
         const [insert] = queries
         expect(insert?.sql).toContain('ON CONFLICT ("idempotencyKey") DO NOTHING')
-        const raw = String(insert?.parameters[1])
+        const raw = String(insert?.parameters[2])
         expect(raw).not.toContain(payload.toEmail)
         expect(raw).not.toContain(payload.recipientName)
         const stored = JSON.parse(raw) as Record<string, unknown>
         expect(stored.toEmail).toBe(createEmailBlindIndex(payload.toEmail))
+        expect(stored.$recordId).toBe(insert?.parameters[0])
+        expect(stored.toEmailCiphertext).toHaveProperty('recordBinding')
+        expect(stored.recipientNameCiphertext).toHaveProperty('recordBinding')
         expect(outboxPayloadEncryptionTransformer.from(stored)).toEqual(payload)
+        expect(getOutboxPayloadRecordId(outboxPayloadEncryptionTransformer.from(stored) as Record<string, unknown>))
+            .toBe(insert?.parameters[0])
     })
 
     it('backfills plaintext rows, including mixed encrypted/plaintext recipients', async () => {
@@ -82,5 +90,16 @@ describe('raw outbox recipient encryption', () => {
         }
         expect(outboxPayloadEncryptionTransformer.from(updates[0]?.payload)).toEqual(rows[0]?.payload)
         expect(outboxPayloadEncryptionTransformer.from(updates[1]?.payload)).toEqual({ email: 'mixed@example.test', recipientName: 'Mixed Client' })
+    })
+
+    it('preserves the event binding when a secret is redacted before save', () => {
+        const id = '123e4567-e89b-42d3-a456-426614174000'
+        const payload = setOutboxPayloadRecordId({ email: 'client@example.test', encryptedToken: 'secret' }, id)
+        const stored = outboxPayloadEncryptionTransformer.to(payload)
+        const opened = outboxPayloadEncryptionTransformer.from(stored) as Record<string, unknown>
+        const redacted = redactOutboxSecrets(opened)
+        expect(redacted).not.toHaveProperty('encryptedToken')
+        expect(getOutboxPayloadRecordId(redacted)).toBe(id)
+        expect(outboxPayloadEncryptionTransformer.to(redacted)).toHaveProperty('emailCiphertext.recordBinding')
     })
 })

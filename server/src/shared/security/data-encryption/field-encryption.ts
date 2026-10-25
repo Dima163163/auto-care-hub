@@ -384,13 +384,30 @@ export function createBlindIndexTransformer(domain: string) {
     }
 }
 
-function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'): unknown {
-    if (Array.isArray(value)) return value.map((item, index) => mapOutboxPii(item, direction, `${path}[${index}]`))
+const OUTBOX_RECORD_ID_KEY = '$recordId'
+const outboxRecordId = Symbol('outboxRecordId')
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function setOutboxPayloadRecordId(payload: Record<string, unknown>, rowId: string) {
+    if (!UUID_PATTERN.test(rowId)) throw new Error('Encrypted outbox record ID is invalid.')
+    Object.defineProperty(payload, outboxRecordId, { value: rowId.toLowerCase(), configurable: true })
+    return payload
+}
+
+export function getOutboxPayloadRecordId(payload: Record<string, unknown>) {
+    return (payload as Record<symbol, unknown>)[outboxRecordId] as string | undefined
+}
+
+function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, path = 'payload'): unknown {
+    if (Array.isArray(value)) return value.map((item, index) => mapOutboxPii(item, direction, rowId, `${path}[${index}]`))
     if (!value || typeof value !== 'object') return value
     const result: Record<string, unknown> = { ...(value as Record<string, unknown>) }
     for (const [key, raw] of Object.entries(result)) {
         if (key.endsWith('Ciphertext')) {
             if (!(key in result)) continue
+            if (direction === 'from' && key === 'recipientNameCiphertext' && !('recipientName' in result)) {
+                throw new Error('Encrypted outbox field pair is invalid.')
+            }
             if (direction === 'from' && (key === 'emailCiphertext' || key === 'toEmailCiphertext')) {
                 const index = result[key === 'emailCiphertext' ? 'email' : 'toEmail']
                 if (typeof index !== 'string' || !isEmailBlindIndex(index)) {
@@ -402,13 +419,22 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'
         const nestedPath = `${path}.${key}`
         const ciphertextKey = `${key}Ciphertext`
         if (direction === 'to' && (key === 'email' || key === 'toEmail') && typeof raw === 'string') {
-            result[ciphertextKey] = encryptFieldValue('outbox_events', nestedPath, raw)
+            result[ciphertextKey] = rowId
+                ? encryptRecordBoundFieldValue('outbox_events', nestedPath, raw, { rowId })
+                : encryptFieldValue('outbox_events', nestedPath, raw)
             result[key] = createEmailBlindIndex(raw)
         } else if (direction === 'to' && key === 'recipientName' && typeof raw === 'string') {
-            result[ciphertextKey] = encryptFieldValue('outbox_events', nestedPath, raw)
+            result[ciphertextKey] = rowId
+                ? encryptRecordBoundFieldValue('outbox_events', nestedPath, raw, { rowId })
+                : encryptFieldValue('outbox_events', nestedPath, raw)
             result[key] = null
         } else if (direction === 'from' && result[ciphertextKey] !== undefined) {
-            const plaintext = decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
+            const plaintext = rowId
+                ? decryptRecordBoundFieldValue('outbox_events', nestedPath, result[ciphertextKey], { rowId }, { allowLegacy: true })
+                : decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
+            if (!rowId && (result[ciphertextKey] as EncryptedFieldEnvelope)?.recordBinding !== undefined) {
+                throw new Error('Encrypted outbox record ID is missing.')
+            }
             if (key === 'email' || key === 'toEmail') {
                 if (typeof raw !== 'string' || !isEmailBlindIndex(raw)) {
                     throw new Error('Encrypted outbox email index is invalid.')
@@ -423,7 +449,7 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'
             && typeof raw === 'string' && isEmailBlindIndex(raw)) {
             throw new Error('Encrypted outbox email ciphertext is missing.')
         } else {
-            result[key] = mapOutboxPii(raw, direction, nestedPath)
+            result[key] = mapOutboxPii(raw, direction, rowId, nestedPath)
         }
     }
     return result
@@ -432,11 +458,24 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'
 export const outboxPayloadEncryptionTransformer = {
     to(value: unknown) {
         if (value === null || value === undefined) return value
-        return mapOutboxPii(value, 'to')
+        const payload = value as Record<string, unknown>
+        const rowId = getOutboxPayloadRecordId(payload)
+        if (rowId === undefined) return mapOutboxPii(value, 'to')
+        const stored = mapOutboxPii(value, 'to', rowId) as Record<string, unknown>
+        stored[OUTBOX_RECORD_ID_KEY] = rowId
+        return stored
     },
     from(value: unknown) {
         if (value === null || value === undefined) return value
-        return mapOutboxPii(value, 'from')
+        const stored = value as Record<string, unknown>
+        const rowId = stored[OUTBOX_RECORD_ID_KEY]
+        if (rowId !== undefined && (typeof rowId !== 'string' || !UUID_PATTERN.test(rowId))) {
+            throw new Error('Encrypted outbox record ID is invalid.')
+        }
+        const plaintext = { ...stored }
+        delete plaintext[OUTBOX_RECORD_ID_KEY]
+        const opened = mapOutboxPii(plaintext, 'from', rowId as string | undefined) as Record<string, unknown>
+        return rowId ? setOutboxPayloadRecordId(opened, rowId as string) : opened
     },
 }
 
