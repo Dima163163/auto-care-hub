@@ -1,5 +1,13 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — частичное исправление outbox, 25 октября 2026
+
+Новые события outbox получают UUID до шифрования; email/toEmail и
+recipientName связываются с UUID через HMAC, чтение сверяет его с ID строки.
+Unit проверяет перестановку полей и целого payload. Legacy записи ещё читаются,
+PostgreSQL/worker регрессия ожидает CI, backfill и strict cutover не проведены.
+**U02 открыт; pilot NO-GO.**
+
 ## Локальный статус U14 — 21 октября 2026
 
 Raw outbox enqueue теперь шифрует payload перед INSERT; migration 178642

@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { z } from 'zod'
 
 import { env } from '../../config/env.js'
+import { getOutboxPayloadRecordId, setOutboxPayloadRecordId } from '../../shared/security/data-encryption/field-encryption.js'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_BYTES = 12
@@ -81,5 +82,8 @@ export function redactOutboxSecrets(payload: Record<string, unknown>) {
     const sanitized = { ...payload }
     delete sanitized.token
     delete sanitized.encryptedToken
+    // Keep the hidden row scope when a processed event is saved again.
+    const rowId = getOutboxPayloadRecordId(payload)
+    if (rowId) setOutboxPayloadRecordId(sanitized, rowId)
     return sanitized
 }

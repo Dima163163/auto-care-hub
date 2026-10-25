@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
-import { createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
+import { createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
 const subscriber = new SensitiveDataSubscriber()
@@ -109,5 +110,68 @@ describe('encrypted identity index binding', () => {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING = previous
         }
+    })
+})
+
+describe('encrypted outbox record binding', () => {
+    function storedEvent(email: string) {
+        const event = new OutboxEventEntity()
+        event.payload = { email, recipientName: 'Private Client' }
+        subscriber.beforeInsert({ metadata: { tableName: 'outbox_events' }, entity: event } as InsertEvent<OutboxEventEntity>)
+        const stored = outboxPayloadEncryptionTransformer.to(event.payload) as Record<string, unknown>
+        return { event, stored }
+    }
+
+    function loadEvent(id: string, stored: Record<string, unknown>) {
+        const event = new OutboxEventEntity()
+        event.id = id
+        event.payload = outboxPayloadEncryptionTransformer.from(stored) as Record<string, unknown>
+        subscriber.afterLoad(event, { metadata: { tableName: 'outbox_events' } } as LoadEvent<OutboxEventEntity>)
+        return event
+    }
+
+    it('binds both encrypted fields to the event UUID', () => {
+        const { event, stored } = storedEvent('source@example.test')
+        expect(stored.emailCiphertext).toHaveProperty('recordBinding')
+        expect(stored.recipientNameCiphertext).toHaveProperty('recordBinding')
+        expect(loadEvent(event.id, stored).payload).toMatchObject({ email: 'source@example.test', recipientName: 'Private Client' })
+    })
+
+    it('sets the scope before TypeORM transforms an ORM insert', () => {
+        const event = new OutboxEventEntity()
+        const payload = { email: 'orm@example.test', $recordId: randomUUID() }
+        event.payload = payload
+        expect(getOutboxPayloadRecordId(payload)).toBe(event.id)
+        const stored = outboxPayloadEncryptionTransformer.to(event.payload) as Record<string, unknown>
+        expect(stored.$recordId).toBe(event.id)
+        expect(stored.emailCiphertext).toHaveProperty('recordBinding')
+        expect(JSON.stringify(event)).not.toContain('_payload')
+        expect(JSON.stringify(event)).not.toContain('$recordId')
+    })
+
+    it('rejects a complete payload moved to another event', () => {
+        const source = storedEvent('source@example.test')
+        const target = storedEvent('target@example.test')
+        expect(() => loadEvent(target.event.id, source.stored))
+            .toThrow('Encrypted outbox record binding authentication failed.')
+    })
+
+    it('rejects a ciphertext and blind index moved without its record marker', () => {
+        const source = storedEvent('source@example.test')
+        const target = storedEvent('target@example.test')
+        const swapped = {
+            ...target.stored,
+            email: source.stored.email,
+            emailCiphertext: source.stored.emailCiphertext,
+        }
+        expect(() => loadEvent(target.event.id, swapped)).toThrow('Encrypted record binding authentication failed.')
+        const swappedName = { ...target.stored, recipientNameCiphertext: source.stored.recipientNameCiphertext }
+        expect(() => loadEvent(target.event.id, swappedName)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('keeps a legacy event readable during expansion', () => {
+        const id = randomUUID()
+        const stored = outboxPayloadEncryptionTransformer.to({ email: 'legacy@example.test' }) as Record<string, unknown>
+        expect(loadEvent(id, stored).payload).toMatchObject({ email: 'legacy@example.test' })
     })
 })

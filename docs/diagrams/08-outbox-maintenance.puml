@@ -9,14 +9,14 @@ database "Redis" as Redis
 participant "Mailer / Notification writer" as Delivery
 API -> PG : business mutation
 API -> Queue : enqueue(payload, event identity, manager?)
-Queue -> Queue : transformer.to(payload)\nemail blind index + encrypted PII
-Queue -> PG : INSERT pending encrypted JSONB\nON CONFLICT idempotency DO NOTHING
+Queue -> Queue : assign event UUID; transformer.to(payload)\nemail index + PII MAC bound to UUID
+Queue -> PG : INSERT pending encrypted JSONB + UUID\nON CONFLICT idempotency DO NOTHING
 Queue -> PG : findOne by idempotency key
 PG --> Queue : decoded entity / existing event
 note right of Queue
-  При чтении email/toEmail plaintext сверяется с HMAC index.
-  Подмена одного ciphertext или index прерывает обработку;
-  согласованная пара ещё не привязана к event ID (U02).
+  При чтении email/toEmail сверяется с HMAC index.
+  MAC email/toEmail/recipientName проверяет UUID события.
+  Legacy события пока читаются до backfill/strict switch (U02).
 end note
 note over API, PG
   Переданный EntityManager позволяет общий business transaction.
