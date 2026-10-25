@@ -28,7 +28,7 @@ export type EncryptedFieldEnvelope = {
     recordBinding?: string
 }
 
-export type EncryptedRecordScope = { rowId: string; ownerId?: string }
+export type EncryptedRecordScope = { rowId: string; ownerId?: string; context?: string }
 
 export type DataEncryptionKeyProvider = {
     activeKeyId: string
@@ -227,15 +227,19 @@ export function encryptRedactedFieldValue(table: string, column: string, value: 
 
 function recordBindingDigest(table: string, column: string, envelope: EncryptedFieldEnvelope, scope: EncryptedRecordScope) {
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuid.test(scope.rowId) || (scope.ownerId !== undefined && !uuid.test(scope.ownerId))) {
+    if (!uuid.test(scope.rowId) || (scope.ownerId !== undefined && !uuid.test(scope.ownerId))
+        || (scope.context !== undefined && !/^[a-z][a-z0-9_-]{0,63}$/.test(scope.context))) {
         throw new Error('Encrypted record scope is invalid.')
     }
-    const message = JSON.stringify([
+    const parts = [
         'autocarehub:record-binding:v1', table, column, scope.rowId.toLowerCase(), scope.ownerId?.toLowerCase() ?? null,
         envelope.$encrypted, envelope.algorithm, envelope.keyId, envelope.redacted === true,
         envelope.nonce, envelope.tag, envelope.ciphertext,
         envelope.wrappedDek.nonce, envelope.wrappedDek.tag, envelope.wrappedDek.ciphertext,
-    ])
+    ] as Array<string | number | boolean | null>
+    // Preserve the original MAC format for existing email and outbox envelopes.
+    if (scope.context !== undefined) parts.push('context', scope.context)
+    const message = JSON.stringify(parts)
     return createHmac('sha256', getDataEncryptionKeyProvider().getIndexKey()).update(message, 'utf8').digest()
 }
 

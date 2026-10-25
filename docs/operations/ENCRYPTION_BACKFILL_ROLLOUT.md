@@ -97,6 +97,15 @@ data scale/lock measurements and a restore rehearsal. The command and CI tests
 alone are not approval to enable strict mode on live data. Other encrypted
 fields and non-recipient outbox content still need the wider U02 rollout above.
 
+## OAuth provider subject binding expansion
+
+New `oauth_identities.provider_subject_ciphertext` envelopes carry a MAC over
+the identity UUID, user UUID and provider (`google` or `yandex`). Reads verify
+that MAC and the existing HMAC blind index. Existing envelopes remain readable
+during expansion. An operator must not enable a strict reader or treat this as
+complete U02 protection until a bounded legacy backfill, full verification and
+real KMS/restore rehearsal are implemented and accepted.
+
 ## Outbox recipient record binding expansion
 
 New outbox email/toEmail and recipientName envelopes are bound to the event

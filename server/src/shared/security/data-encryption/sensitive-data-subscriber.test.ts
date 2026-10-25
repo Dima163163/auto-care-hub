@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
-import { createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
+import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
 const subscriber = new SensitiveDataSubscriber()
@@ -173,5 +174,47 @@ describe('encrypted outbox record binding', () => {
         const id = randomUUID()
         const stored = outboxPayloadEncryptionTransformer.to({ email: 'legacy@example.test' }) as Record<string, unknown>
         expect(loadEvent(id, stored).payload).toMatchObject({ email: 'legacy@example.test' })
+    })
+})
+
+describe('encrypted OAuth subject record binding', () => {
+    function storedIdentity(subject: string, provider = OAuthIdentityProvider.Google) {
+        const identity = new OAuthIdentityEntity()
+        identity.provider = provider
+        identity.providerSubject = subject
+        identity.userId = randomUUID()
+        subscriber.beforeInsert({ metadata: { tableName: 'oauth_identities' }, entity: identity } as InsertEvent<OAuthIdentityEntity>)
+        identity.providerSubject = createBlindIndex(subject, 'oauth-provider-subject')
+        return identity
+    }
+
+    function loadIdentity(identity: OAuthIdentityEntity) {
+        subscriber.afterLoad(identity, { metadata: { tableName: 'oauth_identities' } } as LoadEvent<OAuthIdentityEntity>)
+        return identity.providerSubject
+    }
+
+    it('writes a bound subject and opens it on the matching identity', () => {
+        const identity = storedIdentity('private-subject')
+        expect(JSON.parse(identity.providerSubjectCiphertext)).toHaveProperty('recordBinding')
+        expect(loadIdentity(identity)).toBe('private-subject')
+    })
+
+    it('rejects a complete index and ciphertext moved across rows, owners or providers', () => {
+        const source = storedIdentity('private-source')
+        const target = storedIdentity('private-target')
+        target.providerSubject = source.providerSubject
+        target.providerSubjectCiphertext = source.providerSubjectCiphertext
+        expect(() => loadIdentity(target)).toThrow('Encrypted record binding authentication failed.')
+        target.id = source.id
+        expect(() => loadIdentity(target)).toThrow('Encrypted record binding authentication failed.')
+        target.userId = source.userId
+        target.provider = OAuthIdentityProvider.Yandex
+        expect(() => loadIdentity(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('reads old authenticated subjects during expansion', () => {
+        const identity = storedIdentity('legacy-subject')
+        identity.providerSubjectCiphertext = JSON.stringify(encryptFieldValue('oauth_identities', 'providerSubject', 'legacy-subject'))
+        expect(loadIdentity(identity)).toBe('legacy-subject')
     })
 })
