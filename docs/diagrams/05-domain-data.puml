@@ -104,6 +104,12 @@ entity "EmailBindingCheckpoint" as EmailCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "OutboxBindingCheckpoint" as OutboxCheckpoint {
+  * name : outbox_events
+  --
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -127,6 +133,7 @@ Request ||--o{ Claim
 Provider ||--o{ Account
 User ||--o{ Account
 Account ||--o{ Ledger
+Outbox ..> OutboxCheckpoint : bounded keyset progress
 note bottom of Ledger
   U18: positive earn/adjustment/refund entries form lots.
   Redemption consumes earliest expiry first;

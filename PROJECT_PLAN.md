@@ -1,13 +1,25 @@
 # AutoCare Hub — Project Plan
 
+## U02 outbox binding backfill and strict cutover — 2026-10-25
+
+- [x] PR #23 прошёл полный CI, включая PostgreSQL и browser E2E, и объединён
+  в `dev` как `ff48fda`; promotion PR #19 обновлён.
+- [x] Подготовить ограниченный возобновляемый перенос legacy outbox recipients
+  с JSONB compare-write и checkpoint в одной транзакции на партию.
+- [x] Добавить полный verify-проход и opt-in strict reader для outbox;
+  флаг по умолчанию выключен.
+- [ ] Проверить новую миграцию и backfill в CI/PostgreSQL, затем выполнить
+  staging прогон с реальным KMS/restore и переключить strict на всех процессах.
+  До этого legacy downgrade и остальные поля U02 остаются открытыми.
+
 ## U02 outbox record binding expansion — 2026-10-25
 
 - [x] Новые ORM и atomic raw outbox INSERT заранее получают event UUID;
   email/toEmail и recipientName envelopes подписываются с этим UUID.
 - [x] При чтении проверяются MAC поля и соответствие сохранённого UUID строке;
   secret redaction сохраняет scope при повторной записи.
-- [ ] Проверить PostgreSQL/worker цикл в CI; перенести legacy события пакетами,
-  затем включить строгий отказ от unbound envelopes. До этого U02 открыт.
+- [x] Проверить PostgreSQL/worker цикл в CI; следующий пакет переноса legacy
+  событий подготовлен отдельно. U02 остаётся открытым.
 
 ## U02 identity email backfill and strict cutover — 2026-10-25
 

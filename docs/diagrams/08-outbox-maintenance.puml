@@ -3,6 +3,7 @@
 title Durable effects — outbox и периодическая maintenance
 participant "API use case" as API
 participant "Outbox enqueue" as Queue
+participant "Binding backfill CLI" as Backfill
 database "PostgreSQL" as PG
 participant "Worker / all runtime\nmaintenance-jobs" as Worker
 database "Redis" as Redis
@@ -16,7 +17,16 @@ PG --> Queue : decoded entity / existing event
 note right of Queue
   При чтении email/toEmail сверяется с HMAC index.
   MAC email/toEmail/recipientName проверяет UUID события.
-  Legacy события пока читаются до backfill/strict switch (U02).
+  Legacy события читаются до opt-in strict switch (U02).
+end note
+Backfill -> PG : bounded UUID keyset read (<=500)
+Backfill -> PG : JSONB compare-write + checkpoint\nв одной transaction
+Backfill -> PG : full verification pass before strict switch
+note right of Backfill
+  Миграция 178648 добавляет checkpoint-таблицу.
+  DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING=true
+  требует MAC после полного verify и staging restore.
+  По умолчанию старые события ещё читаются.
 end note
 note over API, PG
   Переданный EntityManager позволяет общий business transaction.

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, outbox backfill/cutover подготовка 2026-10-25:**
+`05-domain-data.puml` и `08-outbox-maintenance.puml` с SVG показывают
+checkpoint-таблицу, пакетную JSONB compare-write и opt-in strict reader.
+Staging KMS/restore и включение флага остаются открытыми; anchors обновлены.
+
 **U02, outbox expansion 2026-10-25:** `08-outbox-maintenance.puml` и SVG
 показывают UUID события до шифрования, MAC email/toEmail/recipientName и
 проверку строки при чтении. Legacy события пока читаются; backfill и strict

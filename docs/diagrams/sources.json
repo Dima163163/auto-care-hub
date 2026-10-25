@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "9d7425f417516c9dd5526ce210fe6880a5dcc9c054dad11b2c6275e86d58f7d8",
+      "sha256": "f6d2c976b7eb1f9c895f5a2befc7927b0f5f3421ce06898e09186e3fbd360034",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "1c9ea65667859100db3317f7a4a1045935f6f715abba53a17d537d3f4ddf1484",
+      "sha256": "95f4c4b31133f7113910d2d94236db07110432a24cc11848afcd810e6a1fa36c",
       "scopes": [
         "runtime",
         "backend"
@@ -461,7 +461,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/field-encryption.ts",
-      "sha256": "565cecada69361052f943a6d8419ce17ceafb66678e15eaf63ccbf03c57525a9",
+      "sha256": "75b031d2f1d6dba5e9d8aff5fca284d033c468a75b3270ac2b842b4a544d9781",
       "scopes": [
         "runtime",
         "security",
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "bd4166d00b3604d04a81b45cb7ff52d43e692bfe4f1e72f8d0f5c1d5c0858afe",
+      "sha256": "32c7d52fe10e198bda32da0ece83af0bf5668f47c6854165b40baade1a9e5b80",
       "scopes": [
         "security"
       ]
@@ -1075,6 +1075,30 @@
     {
       "path": "server/src/modules/outbox/outbox-secret.ts",
       "sha256": "0b8623b0022dbceffc5f083d3ea4b5065516583031c06b57eefba0a6d4fa8533",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786480000000-CreateOutboxBindingBackfillCheckpoint.ts",
+      "sha256": "58f81c0eddceda8391b3d7ec04466080039d65a52bdf635fe69e02ba84153771",
+      "scopes": [
+        "data",
+        "outbox"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/outbox-binding-backfill.ts",
+      "sha256": "a9734038a0cda1bf73223db89a64a752251222ff2b132d0be48e8cb959af301e",
+      "scopes": [
+        "data",
+        "outbox",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-outbox-record-binding.ts",
+      "sha256": "bb4fefe90e5f57e27ec5eec15d7dda108c42df0e1ea5f9bd7b0bcfca233eefde",
       "scopes": [
         "outbox"
       ]
