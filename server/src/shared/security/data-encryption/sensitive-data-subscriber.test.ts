@@ -217,4 +217,17 @@ describe('encrypted OAuth subject record binding', () => {
         identity.providerSubjectCiphertext = JSON.stringify(encryptFieldValue('oauth_identities', 'providerSubject', 'legacy-subject'))
         expect(loadIdentity(identity)).toBe('legacy-subject')
     })
+
+    it('rejects an old subject after strict cutover', () => {
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING = 'true'
+        try {
+            const identity = storedIdentity('legacy-subject')
+            identity.providerSubjectCiphertext = JSON.stringify(encryptFieldValue('oauth_identities', 'providerSubject', 'legacy-subject'))
+            expect(() => loadIdentity(identity)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING = previous
+        }
+    })
 })

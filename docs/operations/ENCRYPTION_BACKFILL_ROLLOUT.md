@@ -102,9 +102,32 @@ fields and non-recipient outbox content still need the wider U02 rollout above.
 New `oauth_identities.provider_subject_ciphertext` envelopes carry a MAC over
 the identity UUID, user UUID and provider (`google` or `yandex`). Reads verify
 that MAC and the existing HMAC blind index. Existing envelopes remain readable
-during expansion. An operator must not enable a strict reader or treat this as
-complete U02 protection until a bounded legacy backfill, full verification and
-real KMS/restore rehearsal are implemented and accepted.
+during expansion. Migration `1786490000000` adds a durable checkpoint table
+without modifying identity rows. The operator command reads UUID keysets of at
+most 500 identities. It authenticates the old ciphertext and blind index,
+adds a record MAC without changing the DEK, then compare-writes the ciphertext
+and advances the checkpoint in one transaction. It prints counts only.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786490000000`. Run
+   `npm --prefix server run encryption:backfill-oauth-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   complete pass. It checks every row against identity UUID, user UUID,
+   provider and blind index. Budget exhaustion or authentication failure blocks
+   cutover.
+3. If an old writer was active during the scan, run `--mode reset`, repeat
+   apply and verify after it has drained. Reset removes only progress metadata;
+   coordinate it so no other backfill process is running.
+4. Only after successful staging KMS/restore and complete verification, deploy
+   `DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING=true` to every API/worker.
+   Rehearse OAuth login, link/unlink, key rotation and restore. Reverting this
+   switch temporarily restores legacy reads; retain the historical keys.
+
+This code and CI are preparation, not production acceptance. Other encrypted
+fields still require the wider U02 rollout.
 
 ## Outbox recipient record binding expansion
 

@@ -5,8 +5,10 @@
 - [x] Новые OAuth subject envelopes привязаны MAC к identity UUID, user UUID
   и Google/Yandex provider; чтение отвергает перестановку согласованной пары
   blind index + ciphertext между строками.
-- [ ] Подготовить bounded backfill старых OAuth subjects, полный verify и
-  opt-in strict reader. До staging KMS/restore и cutover legacy rows читаются;
+- [x] Подготовить bounded backfill старых OAuth subjects, полный verify и
+  opt-in strict reader. Флаг по умолчанию выключен.
+- [ ] Проверить migration/backfill в CI/PostgreSQL, затем выполнить staging
+  KMS/restore и cutover. До этого legacy rows читаются;
   остальные поля U02 и pilot NO-GO остаются открытыми.
 
 ## U02 outbox binding backfill and strict cutover — 2026-10-25

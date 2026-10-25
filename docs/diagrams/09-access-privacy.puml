@@ -40,7 +40,8 @@ note right of Resource
   до него downgrade и иные поля оставляют U02 открытым.
   Новые OAuth subjects имеют MAC по identity/user UUID и
   провайдеру; после чтения сверяются с HMAC index.
-  Legacy OAuth subjects читаются до отдельного backfill.
+  Bounded backfill дописывает MAC старым subjects;
+  opt-in strict flag отвергает отсутствие MAC после cutover.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.
