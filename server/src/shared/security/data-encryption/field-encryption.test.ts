@@ -81,6 +81,25 @@ describe('field encryption', () => {
             .toThrow('Encrypted field authentication failed.')
     })
 
+    it('binds OAuth subject to its row, user and provider without changing existing MACs', () => {
+        const scope = {
+            rowId: '9c02f302-02bb-4e17-a7de-46c8cf6ea482',
+            ownerId: '4314975e-9dfc-4ca4-94c6-a8c45a210a28',
+            context: 'google',
+        }
+        const envelope = encryptRecordBoundFieldValue('oauth_identities', 'providerSubject', 'oauth-subject', scope)
+        expect(decryptRecordBoundFieldValue('oauth_identities', 'providerSubject', envelope, scope)).toBe('oauth-subject')
+        expect(() => decryptRecordBoundFieldValue('oauth_identities', 'providerSubject', envelope, {
+            ...scope, context: 'yandex',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => decryptRecordBoundFieldValue('oauth_identities', 'providerSubject', envelope, {
+            ...scope, ownerId: '066036ad-1e66-40c6-bc90-3d6021ced9ea',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => encryptRecordBoundFieldValue('oauth_identities', 'providerSubject', 'oauth-subject', {
+            ...scope, context: 'GOOGLE',
+        })).toThrow('Encrypted record scope is invalid.')
+    })
+
     it('keeps email lookup deterministic without storing the email in the index', () => {
         const index = createEmailBlindIndex('  USER@Example.com ')
         expect(index).toBe(createEmailBlindIndex('user@example.COM'))

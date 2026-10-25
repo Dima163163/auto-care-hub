@@ -10,7 +10,7 @@ import { UserEntity, UserRole, UserStatus } from '../../../entities/user/user.en
 import { UserSessionEntity } from '../../../entities/user-session/user-session.entity.js'
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
-import { createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
 import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
 
@@ -86,11 +86,42 @@ describe('sensitive field encryption ORM integration', () => {
         if (!storedIdentity) throw new Error('Synthetic encrypted identity was not stored.')
         expect(storedIdentity.provider_subject).not.toContain(providerSubject)
         expect(storedIdentity.provider_subject_ciphertext).not.toContain(providerSubject)
+        expect(JSON.parse(storedIdentity.provider_subject_ciphertext)).toHaveProperty('recordBinding')
         const loadedIdentity = await identities.findOneByOrFail({
             provider: OAuthIdentityProvider.Google,
             providerSubject,
         })
         expect(loadedIdentity.providerSubject).toBe(providerSubject)
+
+        const secondIdentity = await identities.save(identities.create({
+            provider: OAuthIdentityProvider.Google,
+            providerSubject: `other-${providerSubject}`,
+            userId: user.id,
+        }))
+        const [secondStoredIdentity] = await AppDataSource.query(
+            'SELECT "provider_subject", "provider_subject_ciphertext" FROM "oauth_identities" WHERE "id" = $1',
+            [secondIdentity.id],
+        ) as Array<{ provider_subject: string; provider_subject_ciphertext: string }>
+        if (!secondStoredIdentity) throw new Error('Second encrypted OAuth identity was not stored.')
+        await AppDataSource.query('UPDATE "oauth_identities" SET "provider_subject" = $1 WHERE "id" = $2', [
+            createBlindIndex(`temporary-${providerSubject}`, 'oauth-provider-subject'), identity.id,
+        ])
+        try {
+            await AppDataSource.query(
+                'UPDATE "oauth_identities" SET "provider_subject" = $1, "provider_subject_ciphertext" = $2 WHERE "id" = $3',
+                [storedIdentity.provider_subject, storedIdentity.provider_subject_ciphertext, secondIdentity.id],
+            )
+            await expect(identities.findOneByOrFail({ id: secondIdentity.id }))
+                .rejects.toThrow('Encrypted record binding authentication failed.')
+        } finally {
+            await AppDataSource.query(
+                'UPDATE "oauth_identities" SET "provider_subject" = $1, "provider_subject_ciphertext" = $2 WHERE "id" = $3',
+                [secondStoredIdentity.provider_subject, secondStoredIdentity.provider_subject_ciphertext, secondIdentity.id],
+            )
+            await AppDataSource.query('UPDATE "oauth_identities" SET "provider_subject" = $1 WHERE "id" = $2', [
+                storedIdentity.provider_subject, identity.id,
+            ])
+        }
 
         const outbox = AppDataSource.getRepository(OutboxEventEntity)
         const outboxEvent = await outbox.save(outbox.create({

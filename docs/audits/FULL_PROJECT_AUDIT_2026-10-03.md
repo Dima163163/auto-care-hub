@@ -1,5 +1,13 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка OAuth subject к записи и пользователю, 25 октября 2026
+
+Новые OAuth subject ciphertext получают MAC по identity UUID, user UUID и
+провайдеру. Чтение сверяет MAC и HMAC blind index; перестановка полной пары
+между записями отвергается. Старые envelopes читаются для совместимости до
+пакетного переноса, полного verify и строгого переключения. Остальные поля,
+реальный KMS/restore и pilot acceptance открыты. **U02 открыт; pilot NO-GO.**
+
 ## U02 — подготовка переноса старых outbox событий, 25 октября 2026
 
 Добавлены bounded checkpoint backfill, JSONB compare-write, полный verify и

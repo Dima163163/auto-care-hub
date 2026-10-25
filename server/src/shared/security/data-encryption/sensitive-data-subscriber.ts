@@ -10,7 +10,7 @@ import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
-import { createBlindIndex, decryptFieldValue, decryptRecordBoundFieldValue, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
+import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { requireEmailRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -30,9 +30,20 @@ function emailScope(record: EmailRecord, table: string): EncryptedRecordScope {
 }
 
 type ProviderIdentityRecord = {
+    id?: string
+    userId?: string
     provider?: string
     providerSubject?: string
     providerSubjectCiphertext?: string
+}
+
+function providerSubjectScope(record: ProviderIdentityRecord): EncryptedRecordScope {
+    if (typeof record.id !== 'string') throw new Error('Encrypted OAuth subject record ID is missing.')
+    if (typeof record.userId !== 'string') throw new Error('Encrypted OAuth subject owner ID is missing.')
+    if (record.provider !== 'google' && record.provider !== 'yandex') {
+        throw new Error('Encrypted OAuth subject provider is invalid.')
+    }
+    return { rowId: record.id, ownerId: record.userId, context: record.provider }
 }
 
 function sealEmail(record: EmailRecord, table: string) {
@@ -60,7 +71,10 @@ function openEmail(record: EmailRecord, table: string) {
 
 function sealProviderSubject(record: ProviderIdentityRecord) {
     if (typeof record.providerSubject !== 'string' || !record.provider) return
-    record.providerSubjectCiphertext = JSON.stringify(encryptFieldValue('oauth_identities', 'providerSubject', record.providerSubject))
+    if (isEmailBlindIndex(record.providerSubject)) throw new Error('Encrypted OAuth subject plaintext is missing.')
+    record.providerSubjectCiphertext = JSON.stringify(encryptRecordBoundFieldValue(
+        'oauth_identities', 'providerSubject', record.providerSubject, providerSubjectScope(record),
+    ))
 }
 
 function openProviderSubject(record: ProviderIdentityRecord) {
@@ -69,7 +83,10 @@ function openProviderSubject(record: ProviderIdentityRecord) {
     }
     const blindIndex = record.providerSubject
     if (!isEmailBlindIndex(blindIndex)) throw new Error('Encrypted OAuth subject index is invalid.')
-    const plaintext = decryptFieldValue<string>('oauth_identities', 'providerSubject', record.providerSubjectCiphertext)
+    const plaintext = decryptRecordBoundFieldValue<string>(
+        'oauth_identities', 'providerSubject', record.providerSubjectCiphertext, providerSubjectScope(record),
+        { allowLegacy: true },
+    )
     record.providerSubject = plaintext
     if (createBlindIndex(plaintext, 'oauth-provider-subject') !== blindIndex) {
         throw new Error('Encrypted OAuth subject index authentication failed.')
@@ -83,6 +100,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
         } else if (event.metadata.tableName === 'oauth_identities') {
+            if (!event.entity.id) event.entity.id = randomUUID()
             sealProviderSubject(event.entity as ProviderIdentityRecord)
         } else if (event.metadata.tableName === 'outbox_events') {
             const outbox = event.entity as OutboxEventEntity
@@ -102,7 +120,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OutboxEventEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OutboxEventEntity>) {
+    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
