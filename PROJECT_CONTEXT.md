@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## U02 user name/phone binding preparation — 2026-10-25
+
+Новые users.name/phone получают отдельный HMAC по plaintext, полю и user UUID;
+после AES-GCM расшифровки ORM сверяет его и обнаруживает перестановку
+корректных ciphertext между пользователями. Migration 178650 добавляет nullable
+binding-поля и checkpoint; команда ограниченно переносит legacy строки с
+compare-write, а полный verify и opt-in strict reader готовят cutover. До
+staging KMS/restore и включения флага старые строки читаются, остальные поля
+U02 и pilot NO-GO открыты.
+
 ## U02 OAuth subject binding expansion — 2026-10-25
 
 Новые OAuth subject envelopes связаны с identity UUID, user UUID и провайдером.
@@ -8,6 +18,7 @@ ORM-чтение сверяет MAC и blind index, сохраняя чтени�
 между строками теперь выявляется. Следующая порция добавляет миграцию
 checkpoint-таблицы 178649, пакетный compare-write backfill, полный verify и
 `DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING=true` для opt-in strict reader.
+PR #25/#26 прошли полный CI и объединены в `dev` как `8351f89`/`109b07e`.
 Без staging KMS/restore это лишь подготовка; U02 и pilot NO-GO остаются открытыми.
 
 ## U02 outbox backfill preparation — 2026-10-25

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireEmailRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding } from './record-binding-policy.js'
+import { requireEmailRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -28,5 +28,15 @@ describe('OAuth record binding policy', () => {
         expect(requireOAuthRecordBinding({ DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireOAuthRecordBinding({ DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('user profile record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireUserProfileRecordBinding({})).toBe(false)
+        expect(requireUserProfileRecordBinding({ DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireUserProfileRecordBinding({ DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireUserProfileRecordBinding({ DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING must be true or false.')
     })
 })

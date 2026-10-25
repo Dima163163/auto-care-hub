@@ -42,6 +42,8 @@ note right of Resource
   провайдеру; после чтения сверяются с HMAC index.
   Bounded backfill дописывает MAC старым subjects;
   opt-in strict flag отвергает отсутствие MAC после cutover.
+  User name/phone имеют companion HMAC по user UUID;
+  bounded backfill и opt-in strict reader подготовлены.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.

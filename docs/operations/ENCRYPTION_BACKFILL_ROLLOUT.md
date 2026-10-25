@@ -129,6 +129,38 @@ command and a tested backup exists:
 This code and CI are preparation, not production acceptance. Other encrypted
 fields still require the wider U02 rollout.
 
+## User name and phone binding expansion
+
+New `users.name` and non-null `users.phone` writes carry companion HMACs in
+`nameBinding` and `phoneBinding`. The MAC covers the decrypted value, field
+name and user UUID, so moving an authenticated ciphertext between users fails
+ORM reads. Migration `1786500000000` adds nullable bindings and a durable
+checkpoint. The command reads UUID keysets of at most 500 users, authenticates
+the existing AES-GCM values and any MACs, then compare-writes missing bindings
+with checkpoint progress in one transaction. It prints counts only.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786500000000`. Run
+   `npm --prefix server run encryption:backfill-user-profile-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   complete pass. It authenticates each name and non-null phone against its
+   user UUID. Budget exhaustion or mismatch blocks cutover.
+3. If an old writer was active during the scan, use `--mode reset`, then
+   repeat apply and verify after it has drained. Reset removes only progress
+   metadata; coordinate it so no other backfill process is running.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse registration, OAuth login, account deletion and backup
+   restore. Queries selecting `users.name` must also select `nameBinding`;
+   current owner/bonus user projections do. Reverting the flag
+   temporarily restores legacy reads; retain old keys throughout the recovery
+   window.
+
+This does not cover other encrypted user columns or the remaining U02 fields.
+
 ## Outbox recipient record binding expansion
 
 New outbox email/toEmail and recipientName envelopes are bound to the event
