@@ -10,8 +10,9 @@ import { UserEntity, UserRole, UserStatus } from '../../../entities/user/user.en
 import { UserSessionEntity } from '../../../entities/user-session/user-session.entity.js'
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
-import { createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
+import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -317,6 +318,43 @@ describe('sensitive field encryption ORM integration', () => {
             else process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING = previous
             await resetEmailBindingBackfill(AppDataSource, 'users')
             await users.delete({ id: user.id })
+        }
+    })
+
+    it('backfills legacy outbox recipients and supports strict reads', async () => {
+        const outbox = AppDataSource.getRepository(OutboxEventEntity)
+        const legacyEmail = `legacy-outbox-binding-${suffix}@example.test`
+        const event = await outbox.save(outbox.create({
+            type: 'field-encryption.integration',
+            payload: { email: legacyEmail, recipientName: 'Legacy Client' },
+            status: OutboxEventStatus.Pending,
+            idempotencyKey: `legacy-outbox-binding-${suffix}`,
+        }))
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING
+        try {
+            const legacyPayload = outboxPayloadEncryptionTransformer.to({ email: legacyEmail, recipientName: 'Legacy Client' })
+            await AppDataSource.query('UPDATE "outbox_events" SET "payload" = $1::jsonb WHERE "id" = $2',
+                [JSON.stringify(legacyPayload), event.id])
+            await resetOutboxBindingBackfill(AppDataSource)
+            await expect(verifyOutboxBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted outbox record binding authentication failed.')
+            process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING = 'true'
+            await expect(outbox.findOneByOrFail({ id: event.id }))
+                .rejects.toThrow('Encrypted outbox record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING
+            const completed = await runOutboxBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })
+            expect(completed.exhausted).toBe(true)
+            expect((await verifyOutboxBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING = 'true'
+            expect((await outbox.findOneByOrFail({ id: event.id })).payload).toMatchObject({
+                email: legacyEmail,
+                recipientName: 'Legacy Client',
+            })
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING = previous
+            await resetOutboxBindingBackfill(AppDataSource)
+            await outbox.delete({ id: event.id })
         }
     })
 })

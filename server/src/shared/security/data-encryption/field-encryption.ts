@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEq
 import { chmodSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { requireOutboxRecordBinding } from './record-binding-policy.js'
 
 const ENVELOPE_VERSION = 1
 const ENVELOPE_ALGORITHM = 'A256GCM'
@@ -404,8 +405,8 @@ export function isOutboxPayloadFromStorage(payload: Record<string, unknown>) {
     return Boolean((payload as Record<symbol, unknown>)[outboxLoadedPayload])
 }
 
-function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, path = 'payload'): unknown {
-    if (Array.isArray(value)) return value.map((item, index) => mapOutboxPii(item, direction, rowId, `${path}[${index}]`))
+function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, path = 'payload', allowLegacy = true): unknown {
+    if (Array.isArray(value)) return value.map((item, index) => mapOutboxPii(item, direction, rowId, `${path}[${index}]`, allowLegacy))
     if (!value || typeof value !== 'object') return value
     const result: Record<string, unknown> = { ...(value as Record<string, unknown>) }
     for (const [key, raw] of Object.entries(result)) {
@@ -436,7 +437,7 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, 
             result[key] = null
         } else if (direction === 'from' && result[ciphertextKey] !== undefined) {
             const plaintext = rowId
-                ? decryptRecordBoundFieldValue('outbox_events', nestedPath, result[ciphertextKey], { rowId }, { allowLegacy: true })
+                ? decryptRecordBoundFieldValue('outbox_events', nestedPath, result[ciphertextKey], { rowId }, { allowLegacy })
                 : decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
             if (!rowId && (result[ciphertextKey] as EncryptedFieldEnvelope)?.recordBinding !== undefined) {
                 throw new Error('Encrypted outbox record ID is missing.')
@@ -451,14 +452,66 @@ function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, 
             }
             result[key] = plaintext
             delete result[ciphertextKey]
+        } else if (direction === 'from' && !allowLegacy
+            && (key === 'email' || key === 'toEmail' || key === 'recipientName') && typeof raw === 'string'
+            && result[ciphertextKey] === undefined) {
+            throw new Error('Encrypted outbox recipient binding is missing.')
         } else if (direction === 'from' && (key === 'email' || key === 'toEmail')
             && typeof raw === 'string' && isEmailBlindIndex(raw)) {
             throw new Error('Encrypted outbox email ciphertext is missing.')
         } else {
-            result[key] = mapOutboxPii(raw, direction, rowId, nestedPath)
+            result[key] = mapOutboxPii(raw, direction, rowId, nestedPath, allowLegacy)
         }
     }
     return result
+}
+
+export function hasOutboxRecipientFields(value: unknown): boolean {
+    if (Array.isArray(value)) return value.some(hasOutboxRecipientFields)
+    if (!value || typeof value !== 'object') return false
+    return Object.entries(value as Record<string, unknown>).some(([key, item]) =>
+        ['emailCiphertext', 'toEmailCiphertext', 'recipientNameCiphertext'].includes(key)
+            || (['email', 'toEmail', 'recipientName'].includes(key) && typeof item === 'string')
+            || hasOutboxRecipientFields(item))
+}
+
+function openOutboxPayload(value: unknown, allowLegacy: boolean) {
+    const stored = value as Record<string, unknown>
+    const rowId = stored[OUTBOX_RECORD_ID_KEY]
+    if (rowId !== undefined && (typeof rowId !== 'string' || !UUID_PATTERN.test(rowId))) {
+        throw new Error('Encrypted outbox record ID is invalid.')
+    }
+    if (!allowLegacy && rowId === undefined && hasOutboxRecipientFields(stored)) {
+        throw new Error('Encrypted outbox record binding is missing.')
+    }
+    const plaintext = { ...stored }
+    delete plaintext[OUTBOX_RECORD_ID_KEY]
+    const opened = mapOutboxPii(plaintext, 'from', rowId as string | undefined, 'payload', allowLegacy) as Record<string, unknown>
+    if (rowId) {
+        setOutboxPayloadRecordId(opened, rowId as string)
+        Object.defineProperty(opened, outboxLoadedPayload, { value: true })
+    }
+    return opened
+}
+
+export function openOutboxPayloadForBindingBackfill(value: Record<string, unknown>, rowId: string) {
+    if (!UUID_PATTERN.test(rowId)) throw new Error('Encrypted outbox record ID is invalid.')
+    const storedId = value[OUTBOX_RECORD_ID_KEY]
+    if (storedId !== undefined && storedId !== rowId) {
+        throw new Error('Encrypted outbox record binding authentication failed.')
+    }
+    return openOutboxPayload({ ...value, [OUTBOX_RECORD_ID_KEY]: rowId }, true)
+}
+
+export function verifyOutboxPayloadRecordBinding(value: Record<string, unknown>, rowId: string) {
+    if (value[OUTBOX_RECORD_ID_KEY] !== undefined && value[OUTBOX_RECORD_ID_KEY] !== rowId) {
+        throw new Error('Encrypted outbox record binding authentication failed.')
+    }
+    if (!hasOutboxRecipientFields(value)) return
+    if (value[OUTBOX_RECORD_ID_KEY] !== rowId) {
+        throw new Error('Encrypted outbox record binding authentication failed.')
+    }
+    openOutboxPayload(value, false)
 }
 
 export const outboxPayloadEncryptionTransformer = {
@@ -473,19 +526,7 @@ export const outboxPayloadEncryptionTransformer = {
     },
     from(value: unknown) {
         if (value === null || value === undefined) return value
-        const stored = value as Record<string, unknown>
-        const rowId = stored[OUTBOX_RECORD_ID_KEY]
-        if (rowId !== undefined && (typeof rowId !== 'string' || !UUID_PATTERN.test(rowId))) {
-            throw new Error('Encrypted outbox record ID is invalid.')
-        }
-        const plaintext = { ...stored }
-        delete plaintext[OUTBOX_RECORD_ID_KEY]
-        const opened = mapOutboxPii(plaintext, 'from', rowId as string | undefined) as Record<string, unknown>
-        if (rowId) {
-            setOutboxPayloadRecordId(opened, rowId as string)
-            Object.defineProperty(opened, outboxLoadedPayload, { value: true })
-        }
-        return opened
+        return openOutboxPayload(value, !requireOutboxRecordBinding())
     },
 }
 

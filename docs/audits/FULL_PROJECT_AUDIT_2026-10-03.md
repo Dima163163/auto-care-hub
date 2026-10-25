@@ -1,5 +1,13 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — подготовка переноса старых outbox событий, 25 октября 2026
+
+Добавлены bounded checkpoint backfill, JSONB compare-write, полный verify и
+opt-in strict reader для зашифрованных получателей outbox. Миграция 178648
+создаёт только checkpoint; реальные строки меняет отдельная команда.
+PostgreSQL CI, staging KMS/restore и production cutover ещё не выполнены.
+**U02 открыт; pilot NO-GO.**
+
 ## U02 — частичное исправление outbox, 25 октября 2026
 
 Новые события outbox получают UUID до шифрования; email/toEmail и

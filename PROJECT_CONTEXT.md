@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 outbox backfill preparation — 2026-10-25
+
+PR #23 прошёл полный CI и объединён в `dev` как `ff48fda`.
+Новая порция добавляет checkpoint-миграцию 178648, пакетную команду с
+JSONB compare-write, полный verify-проход и флаг
+`DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING=true`. До staging переноса с
+реальным KMS, restore и переключения флага старые outbox envelopes продолжают
+читаться. U02 и pilot NO-GO остаются открытыми.
+
 ## U02 outbox record binding expansion — 2026-10-25
 
 Новые outbox email/toEmail и recipientName envelopes получают MAC по UUID

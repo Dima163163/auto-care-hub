@@ -95,4 +95,39 @@ to the migration and command, and a tested backup exists:
 This cutover requires staging evidence with the real KMS keyring, production
 data scale/lock measurements and a restore rehearsal. The command and CI tests
 alone are not approval to enable strict mode on live data. Other encrypted
-fields and outbox payloads still need the wider versioned U02 rollout above.
+fields and non-recipient outbox content still need the wider U02 rollout above.
+
+## Outbox recipient record binding expansion
+
+New outbox email/toEmail and recipientName envelopes are bound to the event
+UUID. Migration `1786480000000` adds only a checkpoint table. The operator
+command reads UUID keysets of at most 500 events and updates legacy recipient
+JSONB only when the original payload still matches. Each batch update and
+checkpoint advance share a short transaction. It does not log recipient data.
+
+After old API/worker writers have drained and the approved KMS keyring and a
+tested backup are available:
+
+1. Apply the migration, then run
+   `npm --prefix server run encryption:backfill-outbox-binding -- --mode apply --batch-size 100 --max-batches 100`.
+   Repeat until `exhausted:true`. Interrupted runs resume from the checkpoint.
+   Concurrent changes to a payload abort the batch without advancing it;
+   rerun after resolving the writer overlap.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   complete pass. It authenticates every recipient envelope against the event
+   UUID and the email blind index. Only `exhausted:true` confirms full scan
+   coverage at that moment.
+3. If an old writer created more unbound events during the scan, run
+   `--mode reset`, then repeat apply and verify after the writer has drained.
+   Reset deletes only checkpoint metadata. Never run reset concurrently with
+   another backfill process.
+4. After a full clean verification and restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING=true` to all API/worker
+   instances. Missing or altered recipient bindings then fail reads. Rehearse
+   retry, dead letter, redaction, deletion and worker delivery. Reverting the
+   flag temporarily restores legacy reads; keep all historical keys available.
+
+This command and CI coverage are preparation, not permission to switch a live
+database. Verify throughput, locks, WAL lag, backup restore and old writer
+drain on staging with the real KMS keyring. Other U02 encrypted fields remain
+outside this outbox recipient cutover.
