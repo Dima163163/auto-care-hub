@@ -32,10 +32,11 @@ note right of Provider
   один frontend guard не является backend authorization.
 end note
 note right of Resource
-  User/invitation afterLoad сверяет расшифрованный email
-  с HMAC blind index и отвергает подмену одного ciphertext.
-  Пара index + ciphertext и другие поля пока не привязаны
-  к record/owner: U02 остаётся открытым.
+  Новые user/invitation email envelopes содержат MAC
+  с row ID, а invitation также с provider ID.
+  afterLoad сверяет MAC и email с HMAC blind index.
+  Старые envelopes читаются до backfill и strict switch;
+  иные поля/снятие MAC оставляют U02 открытым.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.

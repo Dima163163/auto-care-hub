@@ -5,14 +5,26 @@ import {
     type LoadEvent,
     type UpdateEvent,
 } from 'typeorm'
+import { randomUUID } from 'node:crypto'
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
-import { createBlindIndex, decryptFieldValue, encryptFieldValue, isEmailBlindIndex, verifyEmailBlindIndex } from './field-encryption.js'
+import { createBlindIndex, decryptFieldValue, decryptRecordBoundFieldValue, encryptFieldValue, encryptRecordBoundFieldValue, isEmailBlindIndex, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 
 type EmailRecord = {
+    id?: string
+    providerId?: string
     email?: string | null
     emailCiphertext?: string | null
+}
+
+function emailScope(record: EmailRecord, table: string): EncryptedRecordScope {
+    if (typeof record.id !== 'string') throw new Error(`Encrypted ${table}.email record ID is missing.`)
+    if (table === 'autocare_provider_invitations') {
+        if (typeof record.providerId !== 'string') throw new Error('Encrypted invitation owner ID is missing.')
+        return { rowId: record.id, ownerId: record.providerId }
+    }
+    return { rowId: record.id }
 }
 
 type ProviderIdentityRecord = {
@@ -23,7 +35,8 @@ type ProviderIdentityRecord = {
 
 function sealEmail(record: EmailRecord, table: string) {
     if (typeof record.email !== 'string' || record.email.length === 0) return
-    record.emailCiphertext = JSON.stringify(encryptFieldValue(table, 'email', record.email))
+    if (isEmailBlindIndex(record.email)) throw new Error(`Encrypted ${table}.email plaintext is missing.`)
+    record.emailCiphertext = JSON.stringify(encryptRecordBoundFieldValue(table, 'email', record.email, emailScope(record, table)))
 }
 
 function openEmail(record: EmailRecord, table: string) {
@@ -34,7 +47,7 @@ function openEmail(record: EmailRecord, table: string) {
     if (typeof blindIndex !== 'string' || !isEmailBlindIndex(blindIndex)) {
         throw new Error(`Encrypted ${table}.email index is invalid.`)
     }
-    const plaintext = decryptFieldValue<string>(table, 'email', record.emailCiphertext)
+    const plaintext = decryptRecordBoundFieldValue<string>(table, 'email', record.emailCiphertext, emailScope(record, table), { allowLegacy: true })
     if (!verifyEmailBlindIndex(plaintext, blindIndex)) {
         throw new Error(`Encrypted ${table}.email index authentication failed.`)
     }
@@ -63,6 +76,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
     beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
+            if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
         } else if (event.metadata.tableName === 'oauth_identities') {
             sealProviderSubject(event.entity as ProviderIdentityRecord)

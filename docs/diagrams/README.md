@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, expansion 2026-10-25:** `09-access-privacy.puml` и SVG показывают
+MAC для новых user/invitation email envelopes по row UUID и invitation provider
+UUID. Legacy envelopes временно читаются; backfill, strict switch и остальные
+зашифрованные поля остаются открытыми. Source anchors обновлены.
+
 **U02, следующий частичный шаг 2026-10-24:** `08-outbox-maintenance.puml`
 и SVG отражают сверку outbox email/toEmail с HMAC blind index при чтении.
 Перенос согласованной пары index+ciphertext между событиями остаётся открытым.

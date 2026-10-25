@@ -1,5 +1,15 @@
 # AutoCare Hub — Project Plan
 
+## U02 user/invitation email binding expansion — 2026-10-25
+
+- [x] Добавить MAC по ciphertext, row ID и provider ID invitation для новых
+  записей, сохранив совместимость старого reader при rolling deployment.
+- [x] Проверить перестановку согласованной пары index+ciphertext между строками
+  на unit и добавить PostgreSQL integration regression.
+- [ ] Выполнить bounded backfill старых email envelopes, затем запретить
+  отсутствие binding; защитить прямые SQL и остальные поля. До этого downgrade
+  и legacy row swaps сохраняют U02 открытым.
+
 ## Защищённое продвижение dev → main — 2026-10-24
 
 - [x] PR #18 прошёл Application CI и объединён в `dev` как `c51eeb5`.

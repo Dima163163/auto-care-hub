@@ -193,7 +193,7 @@ describe('sensitive field encryption ORM integration', () => {
             const row = rows[0]
             if (!row) throw new Error('Synthetic rotated user was not stored.')
             expect(JSON.parse(row.name)).toMatchObject({ keyId: nextKeyId })
-            expect(JSON.parse(row.emailCiphertext)).toMatchObject({ keyId: nextKeyId })
+            expect(JSON.parse(row.emailCiphertext)).toMatchObject({ keyId: nextKeyId, recordBinding: expect.stringMatching(/^r1_[A-Za-z0-9_-]{43}$/) })
             expect((await users.findOneByOrFail({ email: rotationEmail })).name).toBe('Synthetic owner after rotation')
         } finally {
             try {
@@ -209,6 +209,47 @@ describe('sensitive field encryption ORM integration', () => {
             } finally {
                 setDataEncryptionKeyProviderForTests(null)
             }
+        }
+    })
+
+    it('rejects moving a matching email index and ciphertext to another user row', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const left = await users.save(users.create({
+            name: 'Synthetic left user', email: `left-${suffix}@example.test`,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+        }))
+        let rightId: string | undefined
+        try {
+            const right = await users.save(users.create({
+                name: 'Synthetic right user', email: `right-${suffix}@example.test`,
+                role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+            }))
+            rightId = right.id
+            const source = await AppDataSource.query(
+                'SELECT "email", "emailCiphertext" FROM "users" WHERE "id" = $1', [left.id],
+            ) as Array<{ email: string; emailCiphertext: string }>
+            const original = await AppDataSource.query(
+                'SELECT "email", "emailCiphertext" FROM "users" WHERE "id" = $1', [right.id],
+            ) as Array<{ email: string; emailCiphertext: string }>
+            if (!source[0] || !original[0]) throw new Error('Synthetic encrypted email rows are missing.')
+            expect(JSON.parse(source[0].emailCiphertext)).toHaveProperty('recordBinding')
+            await users.delete({ id: left.id })
+            await AppDataSource.query(
+                'UPDATE "users" SET "email" = $1, "emailCiphertext" = $2 WHERE "id" = $3',
+                [source[0].email, source[0].emailCiphertext, right.id],
+            )
+            try {
+                await expect(users.findOneByOrFail({ id: right.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "users" SET "email" = $1, "emailCiphertext" = $2 WHERE "id" = $3',
+                    [original[0].email, original[0].emailCiphertext, right.id],
+                )
+            }
+        } finally {
+            if (rightId) await users.delete({ id: rightId })
+            await users.delete({ id: left.id })
         }
     })
 })

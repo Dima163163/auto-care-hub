@@ -23,7 +23,11 @@ export type EncryptedFieldEnvelope = {
         tag: string
         ciphertext: string
     }
+    /** Expansion-phase record MAC. Legacy envelopes remain readable until backfill. */
+    recordBinding?: string
 }
+
+export type EncryptedRecordScope = { rowId: string; ownerId?: string }
 
 export type DataEncryptionKeyProvider = {
     activeKeyId: string
@@ -218,6 +222,55 @@ export function encryptFieldValue(table: string, column: string, value: unknown)
 
 export function encryptRedactedFieldValue(table: string, column: string, value: unknown): EncryptedFieldEnvelope {
     return { ...encryptFieldValue(table, column, value), redacted: true }
+}
+
+function recordBindingDigest(table: string, column: string, envelope: EncryptedFieldEnvelope, scope: EncryptedRecordScope) {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuid.test(scope.rowId) || (scope.ownerId !== undefined && !uuid.test(scope.ownerId))) {
+        throw new Error('Encrypted record scope is invalid.')
+    }
+    const message = JSON.stringify([
+        'autocarehub:record-binding:v1', table, column, scope.rowId.toLowerCase(), scope.ownerId?.toLowerCase() ?? null,
+        envelope.$encrypted, envelope.algorithm, envelope.keyId, envelope.redacted === true,
+        envelope.nonce, envelope.tag, envelope.ciphertext,
+        envelope.wrappedDek.nonce, envelope.wrappedDek.tag, envelope.wrappedDek.ciphertext,
+    ])
+    return createHmac('sha256', getDataEncryptionKeyProvider().getIndexKey()).update(message, 'utf8').digest()
+}
+
+/** Adds a domain-separated record/owner MAC without changing the legacy AES-GCM envelope. */
+export function encryptRecordBoundFieldValue(table: string, column: string, value: unknown, scope: EncryptedRecordScope): EncryptedFieldEnvelope {
+    const envelope = encryptFieldValue(table, column, value)
+    return { ...envelope, recordBinding: `r1_${encode(recordBindingDigest(table, column, envelope, scope))}` }
+}
+
+export function decryptRecordBoundFieldValue<T = unknown>(
+    table: string,
+    column: string,
+    value: unknown,
+    scope: EncryptedRecordScope,
+    options: { allowLegacy?: boolean } = {},
+): T {
+    let envelope: unknown = value
+    if (typeof envelope === 'string') {
+        try { envelope = JSON.parse(envelope) } catch { throw new Error('Encrypted field is not migrated or is invalid.') }
+    }
+    if (!isEncryptedFieldEnvelope(envelope)) throw new Error('Encrypted field is not migrated or is invalid.')
+    const candidate = envelope as EncryptedFieldEnvelope
+    if (!Object.hasOwn(candidate, 'recordBinding')) {
+        if (!options.allowLegacy) throw new Error('Encrypted record binding is missing.')
+        return decryptFieldValue<T>(table, column, candidate)
+    }
+    const binding = candidate.recordBinding
+    if (typeof binding !== 'string' || !/^r1_[A-Za-z0-9_-]{43}$/.test(binding)) {
+        throw new Error('Encrypted record binding is invalid.')
+    }
+    const expected = Buffer.from(`r1_${encode(recordBindingDigest(table, column, candidate, scope))}`, 'utf8')
+    const actual = Buffer.from(binding, 'utf8')
+    if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+        throw new Error('Encrypted record binding authentication failed.')
+    }
+    return decryptFieldValue<T>(table, column, candidate)
 }
 
 export function decryptFieldValue<T = unknown>(table: string, column: string, value: unknown): T {

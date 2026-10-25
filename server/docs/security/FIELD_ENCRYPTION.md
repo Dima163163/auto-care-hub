@@ -8,6 +8,7 @@ This document describes the application-layer encryption currently implemented f
 - The DEK is separately wrapped with an AES-256-GCM key-encryption key (KEK). The database stores the authenticated envelope, key ID, nonce, tag, ciphertext, and wrapped DEK.
 - Email and OAuth subject lookups use a separate HMAC-SHA-256 blind index. The provider exposes its stable 32-byte lookup key through `getIndexKey()`, separately from `activeKeyId` and `getKey(keyId)` used for encryption KEKs. Rotating the active KEK preserves email/OAuth/invitation lookup and uniqueness. Equal values produce equal indexes within one key domain, so an attacker with a database can still observe equality and frequency.
 - TypeORM transformers preserve the application-facing entity shape for ordinary reads and writes. Raw SQL, exports, search, and background workers need explicit handling; the regression test covers the core ORM path.
+- New user and provider-invitation email envelopes carry a domain-separated HMAC over the envelope, row UUID and (for invitations) provider UUID. Reads verify this binding and the email blind index. The existing AES-GCM envelope version remains readable by old application instances during the expansion release.
 
 ## Encrypted fields
 
@@ -56,7 +57,7 @@ The `down()` migration decrypts data back into clear-text columns. Do not use it
 
 This control is intended to protect against a copy of the database or a database snapshot being stolen without the application key material. It does not protect against a compromised application process, an attacker with both database and key-provider access, an authorized application administrator, plaintext in process memory, screenshots/exports, or values copied into application logs, traces, analytics, email delivery, or object storage. The operational telemetry listed above also remains clear text. Authorization, audit, least privilege, retention limits, secret management, TLS, and incident response remain necessary.
 
-AES-GCM authenticates the field and its table/column context. User and provider-invitation email, OAuth subject, and outbox email reads also verify their ciphertext against the stored HMAC blind index. The current envelope is not bound to a specific row ID or market/tenant ID; a matching index+ciphertext pair and other fields can still be moved between rows. Blind-index key rotation also needs a versioned backfill and dual-index rollout before production.
+AES-GCM authenticates the field and its table/column context. User and provider-invitation email, OAuth subject, and outbox email reads also verify their ciphertext against the stored HMAC blind index. New user and provider-invitation email writes additionally authenticate their row ID and invitation provider ID with a separate HMAC. This is an expansion phase only: reads still accept legacy envelopes, and the current envelope format allows a database writer to remove the binding marker. A backfill and strict reader switch are required before this property can be relied on. Other encrypted fields and outbox payloads are not bound to a row or owner. Blind-index key rotation also needs a versioned backfill and dual-index rollout before production.
 
 ## Required before production data
 
