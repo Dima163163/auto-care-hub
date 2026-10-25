@@ -97,4 +97,17 @@ describe('encrypted identity index binding', () => {
         user.emailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', 'legacy@example.test'))
         expect(loadEmail(user, 'users')).toBe('legacy@example.test')
     })
+
+    it('rejects legacy rows when strict binding is enabled', () => {
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING = 'true'
+        try {
+            const user = storedEmail(new UserEntity(), 'users', 'legacy@example.test')
+            user.emailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', 'legacy@example.test'))
+            expect(() => loadEmail(user, 'users')).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING = previous
+        }
+    })
 })

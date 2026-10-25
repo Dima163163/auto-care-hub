@@ -391,6 +391,12 @@ AAD. Versioned envelope, migration/backfill и production acceptance откры�
 маркер пока можно удалить, прочие поля и прямые SQL-пути не привязаны.
 Нужны backfill, strict switch, restore и production acceptance.
 
+**Подготовка backfill 25.10:** добавлены bounded compare-write команда с
+checkpoint-таблицей для users/invitations, полный verify-проход и opt-in
+strict reader. PR #21 прошёл PostgreSQL/browser CI и объединён в dev.
+Новая порция требует собственного PostgreSQL CI и staging с KMS/restore;
+пока production strict не включён, U02 остаётся открытым.
+
 **Следующий частичный шаг 24.10:** outbox `email`/`toEmail` теперь также
 сверяются с HMAC index при чтении; mismatch/missing pair прерывает
 обработку. Unit и PostgreSQL integration regressions добавлены. Перенос

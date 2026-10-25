@@ -1,5 +1,17 @@
 # AutoCare Hub — Project Plan
 
+## U02 identity email backfill and strict cutover — 2026-10-25
+
+- [x] PR #21 прошёл полный CI, включая PostgreSQL и browser E2E, и объединён
+  в `dev` как `d66007c`; promotion PR #19 обновился на новый SHA.
+- [x] Подготовить bounded compare-write backfill с durable checkpoint для
+  users/invitations; проверять AES, row/provider MAC и blind index до записи.
+- [x] Добавить полный verify-проход и opt-in strict reader, который отвергает
+  envelopes без binding после подтверждённого cutover.
+- [ ] Проверить миграцию и backfill в CI/PostgreSQL, затем применить на staging
+  с реальным KMS и восстановлением. До этого strict режим в production не
+  включён и U02 остаётся открытым.
+
 ## U02 user/invitation email binding expansion — 2026-10-25
 
 - [x] Добавить MAC по ciphertext, row ID и provider ID invitation для новых

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+    bindExistingEncryptedFieldValue,
     createEmailBlindIndex,
     createEncryptedFieldTransformer,
     decryptFieldValue,
@@ -63,6 +64,21 @@ describe('field encryption', () => {
             .toThrow('Encrypted record binding is missing.')
         expect(decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', legacy, scope, { allowLegacy: true }))
             .toBe('staff@example.test')
+    })
+
+    it('backfills only authenticated legacy envelopes and preserves the original ciphertext', () => {
+        const scope = { rowId: '9c02f302-02bb-4e17-a7de-46c8cf6ea482' }
+        const legacy = encryptFieldValue('users', 'email', 'user@example.test')
+        const bound = bindExistingEncryptedFieldValue('users', 'email', legacy, scope)
+        expect(bound.ciphertext).toBe(legacy.ciphertext)
+        expect(bound.wrappedDek).toEqual(legacy.wrappedDek)
+        expect(decryptRecordBoundFieldValue('users', 'email', bound, scope)).toBe('user@example.test')
+        expect(bindExistingEncryptedFieldValue('users', 'email', bound, scope)).toEqual(bound)
+        expect(() => bindExistingEncryptedFieldValue('users', 'email', bound, {
+            rowId: '066036ad-1e66-40c6-bc90-3d6021ced9ea',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => bindExistingEncryptedFieldValue('users', 'email', { ...legacy, tag: Buffer.alloc(16).toString('base64url') }, scope))
+            .toThrow('Encrypted field authentication failed.')
     })
 
     it('keeps email lookup deterministic without storing the email in the index', () => {

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, backfill/cutover подготовка 2026-10-25:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают checkpoint-таблицу, пакетный перенос
+email MAC и opt-in strict reader. Реальный KMS/staging перенос, restore и
+остальные encrypted поля не приняты. Source anchors обновлены.
+
 **U02, expansion 2026-10-25:** `09-access-privacy.puml` и SVG показывают
 MAC для новых user/invitation email envelopes по row UUID и invitation provider
 UUID. Legacy envelopes временно читаются; backfill, strict switch и остальные
