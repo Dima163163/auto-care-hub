@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "4aa90e7ce60e6ad91675537f503c3e0847ac9211d9f7801c6dd3448c51ffcce8",
+      "sha256": "66a964a79053d59b2f8d70b68350335d3e64c5a6d1b591a74aef2eaa34fc922e",
       "scopes": [
         "runtime"
       ]
@@ -1186,6 +1186,13 @@
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
       "sha256": "59245f0c4e37ca63271469054abcf0a312957d7b4f2a5e9b9f12c6053ee3a6b3",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/docs/security/FIELD_ENCRYPTION.md",
+      "sha256": "d0dbf8249ed54ae445caf47679e85fbfb422963b277923245aafcf3bb0024135",
       "scopes": [
         "security"
       ]
