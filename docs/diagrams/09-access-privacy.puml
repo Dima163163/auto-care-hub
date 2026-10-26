@@ -49,6 +49,9 @@ note right of Resource
   bounded backfill и opt-in strict reader подготовлены.
   Offer JSON имеет companion HMAC по тем же UUID и kind;
   bounded backfill и opt-in strict reader подготовлены.
+  Тема чата имеет HMAC по thread UUID, type и связям доступа;
+  анонимизация пересчитывает binding после очистки client/creator.
+  Bounded backfill и opt-in strict reader подготовлены.
   Остальные поля U02 пока не связаны со строкой.
 end note
 note bottom of Admin

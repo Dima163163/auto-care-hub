@@ -18,6 +18,7 @@ import { resetOAuthBindingBackfill, runOAuthBindingBackfill, verifyOAuthBindings
 import { resetUserProfileBindingBackfill, runUserProfileBindingBackfill, verifyUserProfileBindings } from './user-profile-binding-backfill.js'
 import { resetMessageBodyBindingBackfill, runMessageBodyBindingBackfill, verifyMessageBodyBindings } from './message-body-binding-backfill.js'
 import { resetMessageOfferBindingBackfill, runMessageOfferBindingBackfill, verifyMessageOfferBindings } from './message-offer-binding-backfill.js'
+import { resetChatSubjectBindingBackfill, runChatSubjectBindingBackfill, verifyChatSubjectBindings } from './chat-subject-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -627,6 +628,76 @@ describe('sensitive field encryption ORM integration', () => {
             else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = previousStrict
             await resetMessageOfferBindingBackfill(AppDataSource)
             if (messageIds.length) await messages.delete(messageIds)
+            if (threadIds.length) await threads.delete(threadIds)
+            await users.delete({ id: user.id })
+        }
+    })
+
+    it('binds private chat subjects to their rows and access links', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const threads = AppDataSource.getRepository(AutoCareChatThreadEntity)
+        const user = await users.save(users.create({
+            name: 'Synthetic chat subject owner', email: `subject-binding-${suffix}@example.test`,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+        }))
+        const threadIds: string[] = []
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+        try {
+            const source = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Source private subject',
+            }))
+            const target = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Target private subject',
+            }))
+            threadIds.push(source.id, target.id)
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "subject", "subjectBinding" FROM "autocare_chat_threads" WHERE "id" = $1', [source.id],
+            ) as Array<{ subject: string; subjectBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "subject", "subjectBinding" FROM "autocare_chat_threads" WHERE "id" = $1', [target.id],
+            ) as Array<{ subject: string; subjectBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted chat subjects are missing.')
+            expect(storedSource.subject).not.toContain('Source private subject')
+            expect(storedSource.subjectBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_chat_threads" SET "subject" = $1, "subjectBinding" = $2 WHERE "id" = $3',
+                [storedSource.subject, storedSource.subjectBinding, target.id],
+            )
+            try {
+                await expect(threads.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "autocare_chat_threads" SET "subject" = $1, "subjectBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.subject, storedTarget.subjectBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "autocare_chat_threads" SET "clientId" = NULL WHERE "id" = $1', [target.id])
+            try {
+                await expect(threads.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query('UPDATE "autocare_chat_threads" SET "clientId" = $1 WHERE "id" = $2', [user.id, target.id])
+            }
+
+            await AppDataSource.query('UPDATE "autocare_chat_threads" SET "subjectBinding" = NULL WHERE "id" = $1', [source.id])
+            await resetChatSubjectBindingBackfill(AppDataSource)
+            await expect(verifyChatSubjectBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = 'true'
+            await expect(threads.findOneByOrFail({ id: source.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+            expect((await runChatSubjectBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyChatSubjectBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = 'true'
+            expect((await threads.findOneByOrFail({ id: source.id })).subject).toBe('Source private subject')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = previousStrict
+            await resetChatSubjectBindingBackfill(AppDataSource)
             if (threadIds.length) await threads.delete(threadIds)
             await users.delete({ id: user.id })
         }

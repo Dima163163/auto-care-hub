@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## U02 private chat subject binding preparation — 2026-10-26
+
+Новые `autocare_chat_threads.subject` получают HMAC по plaintext, thread UUID,
+type и связям request/provider/client/creator. ORM проверяет его после AES-GCM
+и отвергает перенос ciphertext или изменение связей доступа. Migration 178653,
+bounded compare-write backfill, полный verify и opt-in strict reader готовят
+legacy перенос. Анонимизация аккаунта пересчитывает binding каждой темы после
+обнуления client/creator ID. До PostgreSQL CI, staging KMS/restore и strict
+cutover U02 и pilot NO-GO остаются открытыми.
+
 ## U02 encrypted service offer binding preparation — 2026-10-26
 
 Новые `autocare_service_messages.offer` получают HMAC по JSON, message UUID,
@@ -8,8 +18,9 @@ request/thread UUID, sender UUID и kind. ORM проверяет его посл
 Migration 178652 добавляет nullable `offerBinding` и checkpoint; bounded
 compare-write backfill, полный verify и opt-in strict reader готовят перенос
 старых предложений. Raw SQL account deletion очищает binding вместе с offer.
-До PostgreSQL CI, staging KMS/restore и включения флага это подготовка; U02 и
-pilot NO-GO остаются открытыми.
+PR #29 прошёл PostgreSQL/browser CI и объединён в `dev` как `6ce7be0`;
+promotion PR #30 открыт для защищённого `main`. До staging KMS/restore и
+включения флага U02 и pilot NO-GO остаются открытыми.
 
 ## U02 private message body binding preparation — 2026-10-26
 

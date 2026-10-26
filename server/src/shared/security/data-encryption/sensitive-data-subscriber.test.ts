@@ -6,7 +6,7 @@ import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
-import { ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
+import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
@@ -412,6 +412,60 @@ describe('encrypted message offer record binding', () => {
         } finally {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = previous
+        }
+    })
+})
+
+describe('encrypted chat subject record binding', () => {
+    function storedThread(subject: string) {
+        const thread = new AutoCareChatThreadEntity()
+        thread.type = AutoCareChatThreadType.Support
+        thread.requestId = null
+        thread.providerId = null
+        thread.clientId = randomUUID()
+        thread.createdById = thread.clientId
+        thread.subject = subject
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_chat_threads' }, entity: thread } as InsertEvent<AutoCareChatThreadEntity>)
+        return thread
+    }
+
+    function loadThread(thread: AutoCareChatThreadEntity) {
+        subscriber.afterLoad(thread, { metadata: { tableName: 'autocare_chat_threads' } } as LoadEvent<AutoCareChatThreadEntity>)
+        return thread
+    }
+
+    it('rejects a swapped subject and binding pair or changed access links', () => {
+        const source = storedThread('Private source')
+        const target = storedThread('Private target')
+        expect(source.subjectBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadThread(source).subject).toBe('Private source')
+        target.subject = source.subject
+        target.subjectBinding = source.subjectBinding
+        expect(() => loadThread(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadThread(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds an anonymized subject after client and creator links are cleared', () => {
+        const thread = storedThread('Private source')
+        thread.subject = '[deleted]'
+        thread.clientId = null
+        thread.createdById = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_threads' }, entity: thread } as UpdateEvent<AutoCareChatThreadEntity>)
+        expect(loadThread(thread).subject).toBe('[deleted]')
+    })
+
+    it('keeps legacy threads readable until strict cutover', () => {
+        const thread = storedThread('Legacy subject')
+        thread.subjectBinding = null
+        expect(loadThread(thread).subject).toBe('Legacy subject')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadThread(thread)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = previous
         }
     })
 })

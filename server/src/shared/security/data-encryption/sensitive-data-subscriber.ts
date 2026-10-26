@@ -10,12 +10,13 @@ import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
-import { ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
+import { AutoCareChatThreadEntity, ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
 import { messageRecordContext, type MessageRecordScope } from './message-record-scope.js'
 import { serializeMessageOffer, type MessageOfferRecord } from './message-offer-value.js'
-import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { chatThreadRecordContext, type ChatThreadRecordScope } from './chat-thread-record-scope.js'
+import { requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -53,6 +54,27 @@ type MessageRecord = MessageRecordScope & MessageOfferRecord & {
     id?: string
     body?: string | null
     bodyBinding?: string | null
+}
+
+type ChatThreadRecord = ChatThreadRecordScope & { id?: string; subject?: string; subjectBinding?: string | null }
+
+function sealChatSubject(record: ChatThreadRecord) {
+    if (record.subject === undefined) return
+    if (typeof record.id !== 'string' || typeof record.subject !== 'string') {
+        throw new Error('Encrypted autocare_chat_threads.subject record scope is invalid.')
+    }
+    record.subjectBinding = createPlaintextRecordBinding('autocare_chat_threads', 'subject', record.subject, record.id, chatThreadRecordContext(record))
+}
+
+function openChatSubject(record: ChatThreadRecord) {
+    if (record.subject === undefined) return
+    if (typeof record.id !== 'string' || typeof record.subject !== 'string') {
+        throw new Error('Encrypted autocare_chat_threads.subject record scope is invalid.')
+    }
+    verifyPlaintextRecordBinding('autocare_chat_threads', 'subject', record.subject, record.id, record.subjectBinding, {
+        allowLegacy: !requireChatSubjectRecordBinding(),
+        context: chatThreadRecordContext(record),
+    })
 }
 
 function sealMessageBody(record: MessageRecord) {
@@ -207,7 +229,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -225,10 +247,14 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             if (message.kind === undefined) message.kind = ServiceMessageKind.Text
             sealMessageBody(message)
             sealMessageOffer(message)
+        } else if (event.metadata.tableName === 'autocare_chat_threads') {
+            const thread = event.entity as AutoCareChatThreadEntity
+            if (!thread.id) thread.id = randomUUID()
+            sealChatSubject(thread)
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
@@ -240,10 +266,12 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
             sealMessageBody(event.entity as MessageRecord)
             sealMessageOffer(event.entity as MessageRecord)
+        } else if (event.entity && event.metadata.tableName === 'autocare_chat_threads') {
+            sealChatSubject(event.entity as ChatThreadRecord)
         }
     }
 
-    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
+    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
@@ -266,5 +294,6 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openMessageBody(entity as MessageRecord)
             openMessageOffer(entity as MessageRecord)
         }
+        if (table === 'autocare_chat_threads') openChatSubject(entity as ChatThreadRecord)
     }
 }

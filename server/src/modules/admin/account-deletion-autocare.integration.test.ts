@@ -7,6 +7,8 @@ import {
     AutoCareBonusAccountEntity,
     AutoCareBonusLedgerEntity,
     AutoCareBonusLedgerType,
+    AutoCareChatThreadEntity,
+    AutoCareChatThreadType,
     AutoCareRepairEventEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
@@ -83,6 +85,7 @@ describe('AutoCare account deletion retention invariants', () => {
     let attachment: ServiceAttachmentEntity
     let providerAttachment: ServiceAttachmentEntity
     let providerMessage: ServiceMessageEntity
+    let privateThread: AutoCareChatThreadEntity
     let repairEvent: AutoCareRepairEventEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
@@ -262,6 +265,14 @@ describe('AutoCare account deletion retention invariants', () => {
             senderId: superAdmin.id,
             body: 'Provider response contains private client context',
         })
+        privateThread = await AppDataSource.getRepository(AutoCareChatThreadEntity).save({
+            type: AutoCareChatThreadType.Support,
+            requestId: null,
+            providerId: null,
+            clientId: null,
+            createdById: deletedOwner.id,
+            subject: 'Private deletion chat subject',
+        })
         repairEvent = await AppDataSource.getRepository(AutoCareRepairEventEntity).save({
             requestId: serviceRequest.id,
             eventType: 'note_added',
@@ -376,6 +387,7 @@ describe('AutoCare account deletion retention invariants', () => {
         await AppDataSource.getRepository(AccountDeletionRequestEntity).delete({ id: deletionRequest?.id })
         await AppDataSource.getRepository(OutboxEventEntity).delete([pendingOutboxId, completedOutboxId].filter(Boolean))
         await AppDataSource.getRepository(CabinetEntity).delete({ id: legacyCabinet?.id })
+        await AppDataSource.getRepository(AutoCareChatThreadEntity).delete({ id: privateThread?.id })
         await AppDataSource.getRepository(ServiceRequestEntity).delete({ id: serviceRequest?.id })
         await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider?.id })
         await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).delete({ id: definition?.id })
@@ -409,6 +421,18 @@ describe('AutoCare account deletion retention invariants', () => {
         await expect(readAutoCareAttachmentObject(providerAttachment.objectKey)).rejects.toMatchObject({ statusCode: 404 })
         const redactedProviderMessage = await AppDataSource.getRepository(ServiceMessageEntity).findOneByOrFail({ id: providerMessage.id })
         expect(redactedProviderMessage.body).toBeNull()
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = 'true'
+        try {
+            const redactedThread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneByOrFail({ id: privateThread.id })
+            expect(redactedThread).toMatchObject({
+                subject: 'Review removed after account deletion.', clientId: null, createdById: null,
+            })
+            expect(redactedThread.subjectBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = previousStrict
+        }
         const redactedRequest = await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: serviceRequest.id })
         expect(redactedRequest).toMatchObject({
             cancelledById: null,

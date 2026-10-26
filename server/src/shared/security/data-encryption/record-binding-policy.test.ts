@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -58,5 +58,15 @@ describe('message offer record binding policy', () => {
         expect(requireMessageOfferRecordBinding({ DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireMessageOfferRecordBinding({ DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('chat subject record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireChatSubjectRecordBinding({})).toBe(false)
+        expect(requireChatSubjectRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireChatSubjectRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireChatSubjectRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING must be true or false.')
     })
 })
