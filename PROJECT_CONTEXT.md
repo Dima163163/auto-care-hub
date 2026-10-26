@@ -1,5 +1,16 @@
 # AutoCare Hub Project Context
 
+## U02 encrypted service offer binding preparation — 2026-10-26
+
+Новые `autocare_service_messages.offer` получают HMAC по JSON, message UUID,
+request/thread UUID, sender UUID и kind. ORM проверяет его после AES-GCM и
+отвергает перенос ciphertext между строками или изменение связей доступа.
+Migration 178652 добавляет nullable `offerBinding` и checkpoint; bounded
+compare-write backfill, полный verify и opt-in strict reader готовят перенос
+старых предложений. Raw SQL account deletion очищает binding вместе с offer.
+До PostgreSQL CI, staging KMS/restore и включения флага это подготовка; U02 и
+pilot NO-GO остаются открытыми.
+
 ## U02 private message body binding preparation — 2026-10-26
 
 Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
@@ -10,9 +21,10 @@ ORM insert материализует default kind=`text` до вычислен�
 Migration 178651 добавляет nullable
 `bodyBinding` и checkpoint; bounded compare-write команда переносит legacy
 сообщения, полный verify и opt-in strict reader готовят cutover. Удаление
-сообщения и raw SQL account deletion обнуляют binding. До PostgreSQL CI,
-staging KMS/restore и включения флага старые строки читаются; offer JSON и
-остальные поля U02, pilot NO-GO открыты.
+сообщения и raw SQL account deletion обнуляют binding. PR #28 прошёл
+PostgreSQL/browser CI и объединён в `dev` как `f3d06a4`. До staging
+KMS/restore и включения флага старые строки читаются; остальные поля U02 и
+pilot NO-GO открыты.
 
 PR #27 (имя/телефон) прошёл полный CI и объединён в `dev` как `ba04e68`;
 защищённый promotion PR #19 ждёт независимого code-owner review.

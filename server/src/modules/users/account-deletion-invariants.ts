@@ -112,7 +112,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             LEFT JOIN "autocare_service_requests" request ON request."id" = message."requestId"
             LEFT JOIN "autocare_chat_threads" thread ON thread."id" = message."threadId"
             WHERE (message."senderId" = $1 OR request."clientId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
-              AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
+              AND (message."body" IS NOT NULL OR message."bodyBinding" IS NOT NULL OR message."offer" IS NOT NULL OR message."offerBinding" IS NOT NULL)`,
     },
     { name: 'repair event payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" event JOIN "autocare_service_requests" request ON request."id" = event."requestId" WHERE request."clientId" = $1 AND (event."title" NOT LIKE \'%"redacted":true%\' OR event."notes" IS NOT NULL OR COALESCE(event."metadata" ->> \'redacted\', \'false\') <> \'true\')' },
     { name: 'repair event actor references are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" WHERE "actorId" = $1' },
@@ -190,7 +190,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_service_messages" message
             JOIN "autocare_chat_threads" thread ON thread."id" = message."threadId"
             WHERE thread."subject" LIKE '%"redacted":true%'
-              AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
+              AND (message."body" IS NOT NULL OR message."bodyBinding" IS NOT NULL OR message."offer" IS NOT NULL OR message."offerBinding" IS NOT NULL)`,
         parameterMode: 'none',
     },
     {

@@ -352,3 +352,66 @@ describe('encrypted message body record binding', () => {
         }
     })
 })
+
+describe('encrypted message offer record binding', () => {
+    function storedOffer(discountPercent = 10) {
+        const message = new ServiceMessageEntity()
+        message.body = 'Offer title'
+        message.offer = {
+            type: 'discount', title: 'Offer title', description: null, discountPercent,
+            couponCode: null, amountMinor: null, currencyCode: null, expiresAt: null, status: 'pending',
+        }
+        message.requestId = null
+        message.threadId = randomUUID()
+        message.senderId = randomUUID()
+        message.kind = ServiceMessageKind.Offer
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as InsertEvent<ServiceMessageEntity>)
+        return message
+    }
+
+    function loadOffer(message: ServiceMessageEntity) {
+        subscriber.afterLoad(message, { metadata: { tableName: 'autocare_service_messages' } } as LoadEvent<ServiceMessageEntity>)
+        return message
+    }
+
+    it('rejects swapping offers and changing their access scope', () => {
+        const source = storedOffer()
+        const target = storedOffer(15)
+        expect(source.offerBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadOffer(source).offer?.status).toBe('pending')
+        target.offer = source.offer
+        target.offerBinding = source.offerBinding
+        expect(() => loadOffer(target)).toThrow('Encrypted record binding authentication failed.')
+        source.threadId = randomUUID()
+        expect(() => loadOffer(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds a legitimate status change and clears a deleted offer', () => {
+        const message = storedOffer()
+        const originalBinding = message.offerBinding
+        message.offer = { ...message.offer!, status: 'accepted' }
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as UpdateEvent<ServiceMessageEntity>)
+        expect(message.offerBinding).not.toBe(originalBinding)
+        expect(loadOffer(message).offer?.status).toBe('accepted')
+        message.offer = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as UpdateEvent<ServiceMessageEntity>)
+        expect(message.offerBinding).toBeNull()
+        loadOffer(message)
+        message.offerBinding = originalBinding
+        expect(() => loadOffer(message)).toThrow('Encrypted autocare_service_messages.offer record binding is invalid.')
+    })
+
+    it('keeps legacy offers readable until strict cutover', () => {
+        const message = storedOffer()
+        message.offerBinding = null
+        expect(loadOffer(message).offer?.status).toBe('pending')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadOffer(message)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = previous
+        }
+    })
+})

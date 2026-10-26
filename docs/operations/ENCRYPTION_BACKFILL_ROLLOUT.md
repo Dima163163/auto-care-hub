@@ -192,7 +192,36 @@ command and a tested backup exists:
    select `body` must also select `bodyBinding`; current chat reads load the
    full entity. Keep old keys during the recovery window.
 
-This does not bind encrypted `offer` JSON or other U02 fields.
+## Encrypted service offer binding expansion
+
+New non-null `autocare_service_messages.offer` writes carry a companion HMAC
+in `offerBinding`. The MAC covers the decrypted JSON, column, message UUID,
+request/thread UUIDs, sender UUID and message kind. ORM reads reject ciphertext
+moved between messages or changed access-control links. A null offer has a null
+binding. Migration `1786520000000` adds the nullable binding and a durable
+checkpoint. The operator command reads UUID keysets of at most 500 messages,
+authenticates AES-GCM and existing MACs, and compare-writes missing bindings
+with checkpoint progress in one transaction. It prints counts only.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786520000000`. Run
+   `npm --prefix server run encryption:backfill-message-offer-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks the request/thread and sender links and kind.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse creating, reading, accepting and declining offers,
+   message deletion, account deletion/export and backup restore. Queries that
+   select `offer` must also select `offerBinding`. Keep old keys during the
+   recovery window.
+
+This does not bind other U02 encrypted fields.
 
 ## Outbox recipient record binding expansion
 
