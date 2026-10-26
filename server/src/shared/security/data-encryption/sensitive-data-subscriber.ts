@@ -10,7 +10,7 @@ import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
-import { ServiceMessageEntity } from '../../../entities/automotive/service-request.entity.js'
+import { ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
 import { messageBodyRecordContext, type MessageBodyRecordScope } from './message-body-record-scope.js'
@@ -194,8 +194,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             if (!outbox.id) outbox.id = randomUUID()
             setOutboxPayloadRecordId(outbox.payload, outbox.id)
         } else if (event.metadata.tableName === 'autocare_service_messages') {
-            if (!event.entity.id) event.entity.id = randomUUID()
-            sealMessageBody(event.entity as MessageBodyRecord)
+            const message = event.entity as ServiceMessageEntity
+            if (!message.id) message.id = randomUUID()
+            if (message.kind === undefined) message.kind = ServiceMessageKind.Text
+            sealMessageBody(message)
         }
     }
 

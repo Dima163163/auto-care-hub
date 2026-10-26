@@ -294,7 +294,6 @@ describe('encrypted message body record binding', () => {
         message.requestId = null
         message.threadId = randomUUID()
         message.senderId = randomUUID()
-        message.kind = ServiceMessageKind.Text
         subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as InsertEvent<ServiceMessageEntity>)
         return message
     }
@@ -308,6 +307,7 @@ describe('encrypted message body record binding', () => {
         const source = storedMessage('Private source message')
         const target = storedMessage('Private target message')
         expect(source.id).toMatch(/^[0-9a-f-]{36}$/)
+        expect(source.kind).toBe(ServiceMessageKind.Text)
         expect(source.bodyBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(loadMessage(source).body).toBe('Private source message')
         target.body = source.body

@@ -5,6 +5,8 @@
 Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
 полю, message UUID, request/thread UUID, sender UUID и kind; ORM проверяет его после
 AES-GCM и обнаруживает подмену ciphertext другой строки или связей доступа.
+ORM insert материализует default kind=`text` до вычисления HMAC, чтобы старые
+вызовы сохранения без явного kind остались совместимы.
 Migration 178651 добавляет nullable
 `bodyBinding` и checkpoint; bounded compare-write команда переносит legacy
 сообщения, полный verify и opt-in strict reader готовят cutover. Удаление
