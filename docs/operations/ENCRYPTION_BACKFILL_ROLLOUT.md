@@ -221,6 +221,36 @@ command and a tested backup exists:
    select `offer` must also select `offerBinding`. Keep old keys during the
    recovery window.
 
+## Private chat subject binding expansion
+
+New `autocare_chat_threads.subject` writes carry a companion HMAC in
+`subjectBinding`. The MAC covers the decrypted subject, thread UUID, type,
+request/provider/client/creator UUIDs. ORM reads reject a moved ciphertext or
+changed access-control link. Migration `1786530000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 threads, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion rebinds each redacted subject after
+clearing client/creator links.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786530000000`. Run
+   `npm --prefix server run encryption:backfill-chat-subject-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks the thread type and all access links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse chat creation/list/read, messages/read receipts,
+   account deletion/export and backup restore. Queries selecting `subject`
+   must also select `subjectBinding` and all access links. Keep old keys during
+   the recovery window.
+
 This does not bind other U02 encrypted fields.
 
 ## Outbox recipient record binding expansion

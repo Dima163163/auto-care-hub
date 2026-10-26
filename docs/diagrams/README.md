@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U02, private chat subject binding 2026-10-26:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают HMAC темы по thread UUID,
+type и request/provider/client/creator UUID, bounded checkpoint и opt-in
+strict reader. Анонимизация пересчитывает binding после очистки client/creator.
+Остальные поля U02, staging KMS/restore и strict cutover открыты.
+
 **U02, encrypted service offer binding 2026-10-26:** `05-domain-data.puml`
 и `09-access-privacy.puml` с SVG показывают companion HMAC предложения по
 message/request/thread/sender UUID и kind, nullable binding, bounded checkpoint

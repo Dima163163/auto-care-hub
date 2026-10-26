@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baseline": "f3d06a4ab0aaac8abb195cb313a31e7c11299236",
+  "baseline": "8f13bbf4880b0df3a2ca4ce5ff2252bc1b099dfb",
   "verifiedOn": "2026-10-26",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "dde21da4d7b87e9781282dd12d64d8f9bacfd4d174f9dfb95195d52d4e1aaae0",
+      "sha256": "3af8c9541f5021cd5556493528d11643b48ce13ddd6b52ed525680f0b44af45a",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "ca10e17e744af71ba15ec877a6bf3095937878bc9780222bc7bfa5866755feb2",
+      "sha256": "7317c5dc94ae0dc336fb8d77eaada8cc6e6ae81fefe1c5ff7253bbc897a1197e",
       "scopes": [
         "runtime",
         "backend"
@@ -141,7 +141,7 @@
     },
     {
       "path": "server/src/entities/automotive/service-request.entity.ts",
-      "sha256": "87552ba4d9ae0116bb795e9a3091b16fc8da485dafc215a8a38beeaa41356ff5",
+      "sha256": "b7dd06e079a0c3df8cbd2179764e596f02a14ed07460bae5b74f7e03e9f3f004",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "4205b036d432600080213a7a9af7fd1560a69aa16282937b78dbf7165b34548f",
+      "sha256": "3ed22c5aa3ad0fe1c4282fd0c632ebca8e9039aeefbeef0e32052c2267426aaa",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "5170fd919632fb1965fabbf4d01b1816c34f21cd00b028ea14a136e16eb2978d",
+      "sha256": "cadc2c7d364b320cc75a5811ec95439b58b2d910884d89800ad33fcee530c9dd",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "d2cc9622e7a439e27e5d56f93bd7a4694152dab5e771a01cdd2a7f4f9729cb47",
+      "sha256": "56f68f7bf3665e527f21f0026def5f4f588e5f589855ea3eb040059388cce8fb",
       "scopes": [
         "security"
       ]
@@ -1185,14 +1185,14 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "ed5a955c6efa5bbfdb58a503f72aa4193f8f9c83ede636f038ebb2f8f49b7327",
+      "sha256": "4c7363aa259046edda4db4c035b3c2fc0ceb63d73ff796ad1340f19cf5f23678",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/docs/security/FIELD_ENCRYPTION.md",
-      "sha256": "f30616da5bf861d3b38f39f4be0beb3670889d45d480c11203a331d9bd7fe6ef",
+      "sha256": "2160b4d866bf5c14d4442cf0efabe5df34c7d31e1f4252c4ec2133ce097fefa7",
       "scopes": [
         "security"
       ]
@@ -1240,6 +1240,45 @@
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
       "sha256": "e0918fcf06f98e7ba912f75ffc1036119d11f2bb1035263117d9121767681442",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786530000000-CreateChatSubjectBindingBackfillCheckpoint.ts",
+      "sha256": "cb638c4ea450eae5438d684dca4372bed6df5d3f1ca594281f3032368c3131ad",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/chat-subject-binding-backfill.ts",
+      "sha256": "204a786b5feb8b6f3d093fa30a1394f0571949d5fa66131623637d2810fd1a8b",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-chat-subject-record-binding.ts",
+      "sha256": "31ffee360e431277efc3ce4fc0ca5400f187d29991f3e70ff7a5344943b0499a",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/chat-thread-record-scope.ts",
+      "sha256": "73c6c2cd85c9b75c0842a48e5f9d0e130a5b2147ee4808d4a5049ca9f5e5493e",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
+      "sha256": "8a0b883f5ab1db847b3181aae72ed5ee70e385d2c32600d65accb5487fdd5a8a",
       "scopes": [
         "security"
       ]

@@ -1,13 +1,24 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка темы приватного чата, 26 октября 2026
+
+Новые `autocare_chat_threads.subject` получают HMAC по plaintext, thread UUID,
+type и связям request/provider/client/creator. ORM отвергает перенос
+ciphertext и изменение связей доступа. Migration 178653, bounded compare-write
+backfill, полный verify и opt-in strict reader подготовлены для legacy тем.
+Raw SQL анонимизация пересчитывает binding каждой темы после обнуления client
+и creator ID. PostgreSQL CI, staging KMS/restore и strict cutover ещё не
+подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка зашифрованных предложений сервиса, 26 октября 2026
 
 Новые `autocare_service_messages.offer` получают HMAC по расшифрованному JSON,
 message UUID, request/thread UUID, sender UUID и kind. ORM отвергает перенос
 корректного ciphertext между сообщениями и изменение связей доступа. Миграция
 178652, bounded compare-write backfill, полный verify и opt-in strict reader
-подготовлены для старых предложений. PostgreSQL CI и staging KMS/restore ещё
-не подтверждены. Остальные encrypted поля не все связаны со строкой.
+подготовлены для старых предложений. PR #29 прошёл PostgreSQL/browser CI и
+объединён в `dev` как `6ce7be0`; PR #30 продвигает его в защищённый `main`.
+Staging KMS/restore ещё не подтверждены. Остальные encrypted поля не все связаны со строкой.
 **U02 открыт; pilot NO-GO.**
 
 ## U02 — привязка приватного текста сообщения, 26 октября 2026

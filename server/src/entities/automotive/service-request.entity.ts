@@ -45,6 +45,7 @@ export class AutoCareChatThreadEntity {
     @Column({ type: 'uuid', nullable: true }) clientId!: string | null
     @Column({ type: 'uuid', nullable: true }) createdById!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_chat_threads', 'subject', 'text') }) subject!: string
+    @Column({ type: 'text', nullable: true }) subjectBinding!: string | null
     @Column({ type: 'enum', enum: AutoCareChatThreadStatus, enumName: 'autocare_chat_thread_status', default: AutoCareChatThreadStatus.Open }) status!: AutoCareChatThreadStatus
     @Column({ type: 'timestamptz', nullable: true }) lastMessageAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
