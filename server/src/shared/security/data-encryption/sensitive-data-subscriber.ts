@@ -10,9 +10,10 @@ import { UserEntity } from '../../../entities/user/user.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
+import { ServiceMessageEntity } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
-import { requireEmailRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -44,6 +45,40 @@ type UserProfileRecord = {
     nameBinding?: string | null
     phone?: string | null
     phoneBinding?: string | null
+}
+
+type MessageBodyRecord = {
+    id?: string
+    body?: string | null
+    bodyBinding?: string | null
+}
+
+function sealMessageBody(record: MessageBodyRecord) {
+    if (record.body === undefined) return
+    if (record.body === null) {
+        record.bodyBinding = null
+        return
+    }
+    if (typeof record.body !== 'string' || typeof record.id !== 'string') {
+        throw new Error('Encrypted autocare_service_messages.body record scope is invalid.')
+    }
+    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id)
+}
+
+function openMessageBody(record: MessageBodyRecord) {
+    if (record.body === undefined) return
+    if (record.body === null) {
+        if (record.bodyBinding !== null && record.bodyBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_messages.body record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.body !== 'string' || typeof record.id !== 'string') {
+        throw new Error('Encrypted autocare_service_messages.body record scope is invalid.')
+    }
+    verifyPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, record.bodyBinding, {
+        allowLegacy: !requireMessageBodyRecordBinding(),
+    })
 }
 
 function sealUserProfile(record: UserProfileRecord) {
@@ -144,7 +179,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -156,10 +191,13 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const outbox = event.entity as OutboxEventEntity
             if (!outbox.id) outbox.id = randomUUID()
             setOutboxPayloadRecordId(outbox.payload, outbox.id)
+        } else if (event.metadata.tableName === 'autocare_service_messages') {
+            if (!event.entity.id) event.entity.id = randomUUID()
+            sealMessageBody(event.entity as MessageBodyRecord)
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
@@ -168,10 +206,12 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         } else if (event.entity && event.metadata.tableName === 'outbox_events') {
             const outbox = event.entity as OutboxEventEntity
             if (outbox.id && outbox.payload) setOutboxPayloadRecordId(outbox.payload, outbox.id)
+        } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
+            sealMessageBody(event.entity as MessageBodyRecord)
         }
     }
 
-    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity>) {
+    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
@@ -190,5 +230,6 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
                 }
             }
         }
+        if (table === 'autocare_service_messages') openMessageBody(entity as MessageBodyRecord)
     }
 }

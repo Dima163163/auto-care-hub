@@ -44,6 +44,9 @@ note right of Resource
   opt-in strict flag отвергает отсутствие MAC после cutover.
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
+  Текст нового chat message имеет companion HMAC по message UUID;
+  bounded backfill и opt-in strict reader подготовлены.
+  Offer JSON и остальные поля U02 пока не связаны со строкой.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.

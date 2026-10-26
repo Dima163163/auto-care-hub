@@ -1,5 +1,16 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка приватного текста сообщения, 26 октября 2026
+
+Новый `autocare_service_messages.body` получает отдельный HMAC по полю,
+plaintext и message UUID. ORM проверяет HMAC после AES-GCM чтения:
+перенос корректного ciphertext другой строки вызывает отказ. Миграция 178651,
+bounded compare-write backfill с checkpoint, полный verify и opt-in strict
+reader готовят перенос старых сообщений. Удаление body очищает binding,
+включая raw SQL account deletion. PostgreSQL CI и staging KMS/restore ещё
+не подтверждены. `offer` JSON и остальные encrypted поля не связаны со
+строкой. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка имени и телефона пользователя, 25 октября 2026
 
 Новые users.name и users.phone сохраняют отдельный HMAC по полю, plaintext

@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto'
-import type { InsertEvent, LoadEvent } from 'typeorm'
+import type { InsertEvent, LoadEvent, UpdateEvent } from 'typeorm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
+import { ServiceMessageEntity } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
@@ -282,6 +283,54 @@ describe('encrypted user profile record binding', () => {
         } finally {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING = previous
+        }
+    })
+})
+
+describe('encrypted message body record binding', () => {
+    function storedMessage(body: string | null) {
+        const message = new ServiceMessageEntity()
+        message.body = body
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as InsertEvent<ServiceMessageEntity>)
+        return message
+    }
+
+    function loadMessage(message: ServiceMessageEntity) {
+        subscriber.afterLoad(message, { metadata: { tableName: 'autocare_service_messages' } } as LoadEvent<ServiceMessageEntity>)
+        return message
+    }
+
+    it('binds a new body to its message ID and rejects a swapped body', () => {
+        const source = storedMessage('Private source message')
+        const target = storedMessage('Private target message')
+        expect(source.id).toMatch(/^[0-9a-f-]{36}$/)
+        expect(source.bodyBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(loadMessage(source).body).toBe('Private source message')
+        target.body = source.body
+        expect(() => loadMessage(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('clears the binding when a message is deleted', () => {
+        const message = storedMessage('Delete me')
+        message.body = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as UpdateEvent<ServiceMessageEntity>)
+        expect(message.bodyBinding).toBeNull()
+        expect(loadMessage(message).body).toBeNull()
+        message.bodyBinding = 'p1_' + 'A'.repeat(43)
+        expect(() => loadMessage(message)).toThrow('Encrypted autocare_service_messages.body record binding is invalid.')
+    })
+
+    it('keeps legacy message bodies readable until strict cutover', () => {
+        const message = storedMessage('Legacy message')
+        message.bodyBinding = null
+        expect(loadMessage(message).body).toBe('Legacy message')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadMessage(message)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = previous
         }
     })
 })

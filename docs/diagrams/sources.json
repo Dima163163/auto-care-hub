@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
-  "verifiedOn": "2026-10-25",
+  "baseline": "ba04e6867fa011b559f16ff3a574f9d2aa99ec96",
+  "verifiedOn": "2026-10-26",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "4dd2a8081863b5cd63c6bc12f18e93ef14d846e7bb3ce50098969f1a26ecd8a5",
+      "sha256": "d35a5d5157f553728a7aa85366dad9da2037cac43a0ef0c927fc2dbcf43fda62",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "e558076256271b50e674139ac009acf3d2b1d156d4254dc29bc3c46d0378cfbe",
+      "sha256": "372091a3868778c82c0de977f3429010cac5f3b079c46d17670e9727193c27c9",
       "scopes": [
         "runtime",
         "backend"
@@ -141,7 +141,7 @@
     },
     {
       "path": "server/src/entities/automotive/service-request.entity.ts",
-      "sha256": "af917912b4f9e01253aea3b9b6b8094a6347ad5c33714572f3d8d80f03e4007f",
+      "sha256": "f1dfca19bd20d5068bb2fb034248a6987f78edfb4332ac98032a317b6f10423a",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "6889142c1de048fc549246b40c293525a1902cb683a809b9faa87b150a832bd3",
+      "sha256": "21829ef4971856e98a8003a5e4a285dfb7c19d4d6fac51b00a43ea92b0e88732",
       "scopes": [
         "security"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "2dec61a31cf619720fd383ba8c9ac30ee2ab5b7465be7231260262bd2b9b6689",
+      "sha256": "550e9c74acb3cc59fef2bf1054c75c25fca1fc451c7831745d470bc4dc18af6b",
       "scopes": [
         "security"
       ]
@@ -1156,6 +1156,37 @@
       "sha256": "6dc8f41b3fe97c9bd08019ccca94d67134251396bcba5e5bd17266cce25d169f",
       "scopes": [
         "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786510000000-CreateMessageBodyBindingBackfillCheckpoint.ts",
+      "sha256": "37efaa67487a0b02260ae6fcb497491490558e7e64597d912d8878ef7e34ca4d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/message-body-binding-backfill.ts",
+      "sha256": "861d5d54a960c1413c13e9abfb64443bdb68dcc7edaa2088c5b659a72902ceab",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-message-body-record-binding.ts",
+      "sha256": "56ef5e9be2a159e6f2daa01004ad1388cbd7381cdf44ac15f7fa8c08687decf0",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/account-deletion-admin.service.ts",
+      "sha256": "59245f0c4e37ca63271469054abcf0a312957d7b4f2a5e9b9f12c6053ee3a6b3",
+      "scopes": [
         "security"
       ]
     }
