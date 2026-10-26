@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEq
 import { chmodSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { requireOutboxRecordBinding } from './record-binding-policy.js'
 
 const ENVELOPE_VERSION = 1
 const ENVELOPE_ALGORITHM = 'A256GCM'
@@ -23,7 +24,11 @@ export type EncryptedFieldEnvelope = {
         tag: string
         ciphertext: string
     }
+    /** Expansion-phase record MAC. Legacy envelopes remain readable until backfill. */
+    recordBinding?: string
 }
+
+export type EncryptedRecordScope = { rowId: string; ownerId?: string; context?: string }
 
 export type DataEncryptionKeyProvider = {
     activeKeyId: string
@@ -220,6 +225,75 @@ export function encryptRedactedFieldValue(table: string, column: string, value: 
     return { ...encryptFieldValue(table, column, value), redacted: true }
 }
 
+function recordBindingDigest(table: string, column: string, envelope: EncryptedFieldEnvelope, scope: EncryptedRecordScope) {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuid.test(scope.rowId) || (scope.ownerId !== undefined && !uuid.test(scope.ownerId))
+        || (scope.context !== undefined && !/^[a-z][a-z0-9_-]{0,63}$/.test(scope.context))) {
+        throw new Error('Encrypted record scope is invalid.')
+    }
+    const parts = [
+        'autocarehub:record-binding:v1', table, column, scope.rowId.toLowerCase(), scope.ownerId?.toLowerCase() ?? null,
+        envelope.$encrypted, envelope.algorithm, envelope.keyId, envelope.redacted === true,
+        envelope.nonce, envelope.tag, envelope.ciphertext,
+        envelope.wrappedDek.nonce, envelope.wrappedDek.tag, envelope.wrappedDek.ciphertext,
+    ] as Array<string | number | boolean | null>
+    // Preserve the original MAC format for existing email and outbox envelopes.
+    if (scope.context !== undefined) parts.push('context', scope.context)
+    const message = JSON.stringify(parts)
+    return createHmac('sha256', getDataEncryptionKeyProvider().getIndexKey()).update(message, 'utf8').digest()
+}
+
+/** Adds a domain-separated record/owner MAC without changing the legacy AES-GCM envelope. */
+export function encryptRecordBoundFieldValue(table: string, column: string, value: unknown, scope: EncryptedRecordScope): EncryptedFieldEnvelope {
+    const envelope = encryptFieldValue(table, column, value)
+    return { ...envelope, recordBinding: `r1_${encode(recordBindingDigest(table, column, envelope, scope))}` }
+}
+
+/** Authenticates a legacy envelope before adding record scope without changing its DEK. */
+export function bindExistingEncryptedFieldValue(table: string, column: string, value: unknown, scope: EncryptedRecordScope): EncryptedFieldEnvelope {
+    let envelope: unknown = value
+    if (typeof envelope === 'string') {
+        try { envelope = JSON.parse(envelope) } catch { throw new Error('Encrypted field is not migrated or is invalid.') }
+    }
+    if (!isEncryptedFieldEnvelope(envelope)) throw new Error('Encrypted field is not migrated or is invalid.')
+    const candidate = envelope as EncryptedFieldEnvelope
+    if (Object.hasOwn(candidate, 'recordBinding')) {
+        decryptRecordBoundFieldValue(table, column, candidate, scope)
+        return candidate
+    }
+    decryptFieldValue(table, column, candidate)
+    return { ...candidate, recordBinding: `r1_${encode(recordBindingDigest(table, column, candidate, scope))}` }
+}
+
+export function decryptRecordBoundFieldValue<T = unknown>(
+    table: string,
+    column: string,
+    value: unknown,
+    scope: EncryptedRecordScope,
+    options: { allowLegacy?: boolean } = {},
+): T {
+    let envelope: unknown = value
+    if (typeof envelope === 'string') {
+        try { envelope = JSON.parse(envelope) } catch { throw new Error('Encrypted field is not migrated or is invalid.') }
+    }
+    if (!isEncryptedFieldEnvelope(envelope)) throw new Error('Encrypted field is not migrated or is invalid.')
+    const candidate = envelope as EncryptedFieldEnvelope
+    if (!Object.hasOwn(candidate, 'recordBinding')) {
+        if (!options.allowLegacy) throw new Error('Encrypted record binding is missing.')
+        return decryptFieldValue<T>(table, column, candidate)
+    }
+    const binding = candidate.recordBinding
+    if (typeof binding !== 'string' || !/^r1_[A-Za-z0-9_-]{43}$/.test(binding)) {
+        throw new Error('Encrypted record binding is invalid.')
+    }
+    const expected = Buffer.from(`r1_${encode(recordBindingDigest(table, column, candidate, scope))}`, 'utf8')
+    const actual = Buffer.from(binding, 'utf8')
+    if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+        throw new Error('Encrypted record binding authentication failed.')
+    }
+    return decryptFieldValue<T>(table, column, candidate)
+}
+
 export function decryptFieldValue<T = unknown>(table: string, column: string, value: unknown): T {
     let envelope: unknown = value
     if (typeof envelope === 'string') {
@@ -315,38 +389,148 @@ export function createBlindIndexTransformer(domain: string) {
     }
 }
 
-function mapOutboxPii(value: unknown, direction: 'to' | 'from', path = 'payload'): unknown {
-    if (Array.isArray(value)) return value.map((item, index) => mapOutboxPii(item, direction, `${path}[${index}]`))
+const OUTBOX_RECORD_ID_KEY = '$recordId'
+const outboxLoadedPayload = Symbol('outboxLoadedPayload')
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function setOutboxPayloadRecordId(payload: Record<string, unknown>, rowId: string) {
+    if (!UUID_PATTERN.test(rowId)) throw new Error('Encrypted outbox record ID is invalid.')
+    // TypeORM deep-merges JSONB before applying column transformers.
+    // An enumerable marker survives that merge; a hidden property does not.
+    payload[OUTBOX_RECORD_ID_KEY] = rowId.toLowerCase()
+    return payload
+}
+
+export function getOutboxPayloadRecordId(payload: Record<string, unknown>) {
+    return payload[OUTBOX_RECORD_ID_KEY] as string | undefined
+}
+
+export function isOutboxPayloadFromStorage(payload: Record<string, unknown>) {
+    return Boolean((payload as Record<symbol, unknown>)[outboxLoadedPayload])
+}
+
+function mapOutboxPii(value: unknown, direction: 'to' | 'from', rowId?: string, path = 'payload', allowLegacy = true): unknown {
+    if (Array.isArray(value)) return value.map((item, index) => mapOutboxPii(item, direction, rowId, `${path}[${index}]`, allowLegacy))
     if (!value || typeof value !== 'object') return value
     const result: Record<string, unknown> = { ...(value as Record<string, unknown>) }
     for (const [key, raw] of Object.entries(result)) {
-        if (key.endsWith('Ciphertext')) continue
+        if (key.endsWith('Ciphertext')) {
+            if (!(key in result)) continue
+            if (direction === 'from' && key === 'recipientNameCiphertext' && !('recipientName' in result)) {
+                throw new Error('Encrypted outbox field pair is invalid.')
+            }
+            if (direction === 'from' && (key === 'emailCiphertext' || key === 'toEmailCiphertext')) {
+                const index = result[key === 'emailCiphertext' ? 'email' : 'toEmail']
+                if (typeof index !== 'string' || !isEmailBlindIndex(index)) {
+                    throw new Error('Encrypted outbox email index is invalid.')
+                }
+            }
+            continue
+        }
         const nestedPath = `${path}.${key}`
         const ciphertextKey = `${key}Ciphertext`
         if (direction === 'to' && (key === 'email' || key === 'toEmail') && typeof raw === 'string') {
-            result[ciphertextKey] = encryptFieldValue('outbox_events', nestedPath, raw)
+            result[ciphertextKey] = rowId
+                ? encryptRecordBoundFieldValue('outbox_events', nestedPath, raw, { rowId })
+                : encryptFieldValue('outbox_events', nestedPath, raw)
             result[key] = createEmailBlindIndex(raw)
         } else if (direction === 'to' && key === 'recipientName' && typeof raw === 'string') {
-            result[ciphertextKey] = encryptFieldValue('outbox_events', nestedPath, raw)
+            result[ciphertextKey] = rowId
+                ? encryptRecordBoundFieldValue('outbox_events', nestedPath, raw, { rowId })
+                : encryptFieldValue('outbox_events', nestedPath, raw)
             result[key] = null
         } else if (direction === 'from' && result[ciphertextKey] !== undefined) {
-            result[key] = decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
+            const plaintext = rowId
+                ? decryptRecordBoundFieldValue('outbox_events', nestedPath, result[ciphertextKey], { rowId }, { allowLegacy })
+                : decryptFieldValue('outbox_events', nestedPath, result[ciphertextKey])
+            if (!rowId && (result[ciphertextKey] as EncryptedFieldEnvelope)?.recordBinding !== undefined) {
+                throw new Error('Encrypted outbox record ID is missing.')
+            }
+            if (key === 'email' || key === 'toEmail') {
+                if (typeof raw !== 'string' || !isEmailBlindIndex(raw)) {
+                    throw new Error('Encrypted outbox email index is invalid.')
+                }
+                if (typeof plaintext !== 'string' || !verifyEmailBlindIndex(plaintext, raw)) {
+                    throw new Error('Encrypted outbox email index authentication failed.')
+                }
+            }
+            result[key] = plaintext
             delete result[ciphertextKey]
+        } else if (direction === 'from' && !allowLegacy
+            && (key === 'email' || key === 'toEmail' || key === 'recipientName') && typeof raw === 'string'
+            && result[ciphertextKey] === undefined) {
+            throw new Error('Encrypted outbox recipient binding is missing.')
+        } else if (direction === 'from' && (key === 'email' || key === 'toEmail')
+            && typeof raw === 'string' && isEmailBlindIndex(raw)) {
+            throw new Error('Encrypted outbox email ciphertext is missing.')
         } else {
-            result[key] = mapOutboxPii(raw, direction, nestedPath)
+            result[key] = mapOutboxPii(raw, direction, rowId, nestedPath, allowLegacy)
         }
     }
     return result
 }
 
+export function hasOutboxRecipientFields(value: unknown): boolean {
+    if (Array.isArray(value)) return value.some(hasOutboxRecipientFields)
+    if (!value || typeof value !== 'object') return false
+    return Object.entries(value as Record<string, unknown>).some(([key, item]) =>
+        ['emailCiphertext', 'toEmailCiphertext', 'recipientNameCiphertext'].includes(key)
+            || (['email', 'toEmail', 'recipientName'].includes(key) && typeof item === 'string')
+            || hasOutboxRecipientFields(item))
+}
+
+function openOutboxPayload(value: unknown, allowLegacy: boolean) {
+    const stored = value as Record<string, unknown>
+    const rowId = stored[OUTBOX_RECORD_ID_KEY]
+    if (rowId !== undefined && (typeof rowId !== 'string' || !UUID_PATTERN.test(rowId))) {
+        throw new Error('Encrypted outbox record ID is invalid.')
+    }
+    if (!allowLegacy && rowId === undefined && hasOutboxRecipientFields(stored)) {
+        throw new Error('Encrypted outbox record binding is missing.')
+    }
+    const plaintext = { ...stored }
+    delete plaintext[OUTBOX_RECORD_ID_KEY]
+    const opened = mapOutboxPii(plaintext, 'from', rowId as string | undefined, 'payload', allowLegacy) as Record<string, unknown>
+    if (rowId) {
+        setOutboxPayloadRecordId(opened, rowId as string)
+        Object.defineProperty(opened, outboxLoadedPayload, { value: true })
+    }
+    return opened
+}
+
+export function openOutboxPayloadForBindingBackfill(value: Record<string, unknown>, rowId: string) {
+    if (!UUID_PATTERN.test(rowId)) throw new Error('Encrypted outbox record ID is invalid.')
+    const storedId = value[OUTBOX_RECORD_ID_KEY]
+    if (storedId !== undefined && storedId !== rowId) {
+        throw new Error('Encrypted outbox record binding authentication failed.')
+    }
+    return openOutboxPayload({ ...value, [OUTBOX_RECORD_ID_KEY]: rowId }, true)
+}
+
+export function verifyOutboxPayloadRecordBinding(value: Record<string, unknown>, rowId: string) {
+    if (value[OUTBOX_RECORD_ID_KEY] !== undefined && value[OUTBOX_RECORD_ID_KEY] !== rowId) {
+        throw new Error('Encrypted outbox record binding authentication failed.')
+    }
+    if (!hasOutboxRecipientFields(value)) return
+    if (value[OUTBOX_RECORD_ID_KEY] !== rowId) {
+        throw new Error('Encrypted outbox record binding authentication failed.')
+    }
+    openOutboxPayload(value, false)
+}
+
 export const outboxPayloadEncryptionTransformer = {
     to(value: unknown) {
         if (value === null || value === undefined) return value
-        return mapOutboxPii(value, 'to')
+        const payload = value as Record<string, unknown>
+        const rowId = getOutboxPayloadRecordId(payload)
+        if (rowId === undefined) return mapOutboxPii(value, 'to')
+        const stored = mapOutboxPii(value, 'to', rowId) as Record<string, unknown>
+        stored[OUTBOX_RECORD_ID_KEY] = rowId
+        return stored
     },
     from(value: unknown) {
         if (value === null || value === undefined) return value
-        return mapOutboxPii(value, 'from')
+        return openOutboxPayload(value, !requireOutboxRecordBinding())
     },
 }
 

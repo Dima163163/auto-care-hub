@@ -1,5 +1,52 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка приватного текста сообщения, 26 октября 2026
+
+Новый `autocare_service_messages.body` получает отдельный HMAC по полю,
+plaintext, message UUID, request/thread UUID, sender UUID и kind. ORM проверяет HMAC
+после AES-GCM чтения: перенос ciphertext или смена связей доступа вызывает
+отказ. Миграция 178651,
+bounded compare-write backfill с checkpoint, полный verify и opt-in strict
+reader готовят перенос старых сообщений. Удаление body очищает binding,
+включая raw SQL account deletion. PostgreSQL CI и staging KMS/restore ещё
+не подтверждены. `offer` JSON и остальные encrypted поля не связаны со
+строкой. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка имени и телефона пользователя, 25 октября 2026
+
+Новые users.name и users.phone сохраняют отдельный HMAC по полю, plaintext
+и user UUID. ORM проверяет HMAC после AES-GCM чтения: подмена корректного
+ciphertext из другой строки вызывает отказ. Миграция 178650 и bounded
+compare-write команда с checkpoint готовят перенос старых строк; полный verify
+и opt-in strict reader доступны после staging KMS/restore. **U02 открыт;
+pilot NO-GO.**
+
+## U02 — привязка OAuth subject к записи и пользователю, 25 октября 2026
+
+Новые OAuth subject ciphertext получают MAC по identity UUID, user UUID и
+провайдеру. Чтение сверяет MAC и HMAC blind index; перестановка полной пары
+между записями отвергается. Старые envelopes читаются для совместимости до
+пакетного переноса, полного verify и строгого переключения. Миграция 178649,
+bounded compare-write команда и opt-in strict reader подготовлены в следующей
+порции; production cutover пока не выполнен. Остальные поля,
+реальный KMS/restore и pilot acceptance открыты. **U02 открыт; pilot NO-GO.**
+
+## U02 — подготовка переноса старых outbox событий, 25 октября 2026
+
+Добавлены bounded checkpoint backfill, JSONB compare-write, полный verify и
+opt-in strict reader для зашифрованных получателей outbox. Миграция 178648
+создаёт только checkpoint; реальные строки меняет отдельная команда.
+PostgreSQL CI, staging KMS/restore и production cutover ещё не выполнены.
+**U02 открыт; pilot NO-GO.**
+
+## U02 — частичное исправление outbox, 25 октября 2026
+
+Новые события outbox получают UUID до шифрования; email/toEmail и
+recipientName связываются с UUID через HMAC, чтение сверяет его с ID строки.
+Unit проверяет перестановку полей и целого payload. Legacy записи ещё читаются,
+PostgreSQL/worker регрессия ожидает CI, backfill и strict cutover не проведены.
+**U02 открыт; pilot NO-GO.**
+
 ## Локальный статус U14 — 21 октября 2026
 
 Raw outbox enqueue теперь шифрует payload перед INSERT; migration 178642
@@ -377,6 +424,31 @@ status-only push не требуется. Каждый runtime finding и его
 **Приёмка:** перестановка envelope между двумя записями/провайдерами отклоняется; корректное чтение, удаление и восстановление сохраняются. Статус: открыто, новая находка.
 
 **Уточнение следующей порции 03.10:** TypeORM `SubjectChangedColumnsComputer` вызывает transformer.to ещё до beforeUpdate subscriber; простая передача row ID только в subscriber не покрывает этот путь. Admin account-deletion также шифрует redaction values для прямых SQL UPDATE (`account-deletion-admin.service.ts:80-85`); новый AAD требует отдельного envelope для каждого record ID. Поэтому rollout должен включать versioned envelope/backfill, проверку ожидаемого row/parent scope при ORM-чтении, scoped insert/update и прямую redaction, identity↔HMAC consistency, outbox, partial selects, rollback/restore и отрицательные swap tests. Выбор production KMS (U01) определяет ключевую границу: controlled preload/cache для существующего синхронного интерфейса либо asynchronous repository/service encryption. Вопрос о KMS направлен владельцу и остаётся без ответа; готовый U05 не выбирает эту архитектуру за него. Изменения формата/БД U02 ещё не начаты, закрытие не заявляется.
+
+**Частичный прогресс 24.10:** при ORM-чтении users/provider invitations email
+сверяется с HMAC blind index. Подмена одного ciphertext вызывает отказ;
+negative unit и PostgreSQL integration test добавлены. Подмена согласованной
+пары index+ciphertext и иных полей всё ещё не обнаруживается без row/owner
+AAD. Versioned envelope, migration/backfill и production acceptance открыты.
+
+**Expansion 25.10:** новые email envelopes users/invitations содержат
+отдельный HMAC по ciphertext, row UUID и provider UUID invitation. ORM-чтение
+проверяет привязку перед расшифровкой; unit и PostgreSQL regression покрывают
+перенос согласованной пары. Это не закрывает U02: legacy envelopes читаются,
+маркер пока можно удалить, прочие поля и прямые SQL-пути не привязаны.
+Нужны backfill, strict switch, restore и production acceptance.
+
+**Подготовка backfill 25.10:** добавлены bounded compare-write команда с
+checkpoint-таблицей для users/invitations, полный verify-проход и opt-in
+strict reader. PR #21 прошёл PostgreSQL/browser CI и объединён в dev.
+Новая порция требует собственного PostgreSQL CI и staging с KMS/restore;
+пока production strict не включён, U02 остаётся открытым.
+
+**Следующий частичный шаг 24.10:** outbox `email`/`toEmail` теперь также
+сверяются с HMAC index при чтении; mismatch/missing pair прерывает
+обработку. Unit и PostgreSQL integration regressions добавлены. Перенос
+согласованной пары между событиями и `recipientName` остаётся уязвимым
+для сценария DB write attacker до row/owner AAD.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 

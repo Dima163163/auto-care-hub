@@ -1,5 +1,120 @@
 # AutoCare Hub — Project Plan
 
+## U02 private message body binding — 2026-10-26
+
+- [x] Новые непустые message body привязаны HMAC к UUID сообщения, заявки,
+  чата, отправителя и виду сообщения; ORM-чтение отвергает перенос ciphertext или смену
+  нешифрованных связей доступа.
+- [x] Подготовить migration 178651, bounded compare-write backfill,
+  полный verify и opt-in strict reader; при удалении body binding очищается.
+- [ ] Подтвердить PostgreSQL и browser CI, затем staging KMS/restore и
+  включение strict на всех процессах. Offer JSON и остальные поля U02 открыты.
+
+## U02 user name/phone binding — 2026-10-25
+
+- [x] PR #27 прошёл PostgreSQL/browser CI и объединён в `dev` как `ba04e68`.
+  Staging KMS/restore, strict cutover и остальные поля U02 остаются открытыми.
+- [x] Для новых users.name/phone сохранять HMAC по расшифрованному значению,
+  полю и user UUID; на ORM-чтении отклонять переставленный ciphertext.
+- [x] Подготовить migration 178650, bounded compare-write backfill, полный
+  verify и opt-in strict reader для старых users; флаг по умолчанию выключен.
+- [ ] Выполнить staging KMS/restore и включить strict на всех процессах.
+  Остальные поля U02 и pilot NO-GO открыты.
+
+## U02 OAuth subject record binding expansion — 2026-10-25
+
+- [x] Новые OAuth subject envelopes привязаны MAC к identity UUID, user UUID
+  и Google/Yandex provider; чтение отвергает перестановку согласованной пары
+  blind index + ciphertext между строками.
+- [x] Подготовить bounded backfill старых OAuth subjects, полный verify и
+  opt-in strict reader. Флаг по умолчанию выключен.
+- [x] PR #25 прошёл полный CI и объединён в `dev` как `8351f89`; PR #26
+  проверил migration/backfill в CI/PostgreSQL/browser и объединён как `109b07e`.
+- [ ] Выполнить staging KMS/restore и cutover. До этого legacy rows читаются;
+  остальные поля U02 и pilot NO-GO остаются открытыми.
+
+## U02 outbox binding backfill and strict cutover — 2026-10-25
+
+- [x] PR #23 прошёл полный CI, включая PostgreSQL и browser E2E, и объединён
+  в `dev` как `ff48fda`; promotion PR #19 обновлён.
+- [x] Подготовить ограниченный возобновляемый перенос legacy outbox recipients
+  с JSONB compare-write и checkpoint в одной транзакции на партию.
+- [x] Добавить полный verify-проход и opt-in strict reader для outbox;
+  флаг по умолчанию выключен.
+- [x] PR #24 прошёл полный CI/PostgreSQL/browser E2E и объединён в `dev`
+  как `2407982`.
+- [ ] Выполнить staging прогон с реальным KMS/restore и переключить strict на
+  всех процессах.
+  До этого legacy downgrade и остальные поля U02 остаются открытыми.
+
+## U02 outbox record binding expansion — 2026-10-25
+
+- [x] Новые ORM и atomic raw outbox INSERT заранее получают event UUID;
+  email/toEmail и recipientName envelopes подписываются с этим UUID.
+- [x] При чтении проверяются MAC поля и соответствие сохранённого UUID строке;
+  secret redaction сохраняет scope при повторной записи.
+- [x] Проверить PostgreSQL/worker цикл в CI; следующий пакет переноса legacy
+  событий подготовлен отдельно. U02 остаётся открытым.
+
+## U02 identity email backfill and strict cutover — 2026-10-25
+
+- [x] PR #21 прошёл полный CI, включая PostgreSQL и browser E2E, и объединён
+  в `dev` как `d66007c`; promotion PR #19 обновился на новый SHA.
+- [x] Подготовить bounded compare-write backfill с durable checkpoint для
+  users/invitations; проверять AES, row/provider MAC и blind index до записи.
+- [x] Добавить полный verify-проход и opt-in strict reader, который отвергает
+  envelopes без binding после подтверждённого cutover.
+- [ ] Проверить миграцию и backfill в CI/PostgreSQL, затем применить на staging
+  с реальным KMS и восстановлением. До этого strict режим в production не
+  включён и U02 остаётся открытым.
+
+## U02 user/invitation email binding expansion — 2026-10-25
+
+- [x] Добавить MAC по ciphertext, row ID и provider ID invitation для новых
+  записей, сохранив совместимость старого reader при rolling deployment.
+- [x] Проверить перестановку согласованной пары index+ciphertext между строками
+  на unit и добавить PostgreSQL integration regression.
+- [ ] Выполнить bounded backfill старых email envelopes, затем запретить
+  отсутствие binding; защитить прямые SQL и остальные поля. До этого downgrade
+  и legacy row swaps сохраняют U02 открытым.
+
+## Защищённое продвижение dev → main — 2026-10-24
+
+- [x] PR #18 прошёл Application CI и объединён в `dev` как `c51eeb5`.
+- [x] Подтвердить, что дерево `main` после squash PR #15 совпадает с
+  проверенным `dev` `4a16c2d`; записать `main` в историю `dev` без изменения
+  файлов проекта.
+- [x] Перевести будущие promotion PR на merge commit и добавить контрактную
+  проверку, чтобы squash снова не разорвал общую историю веток.
+- [ ] Дождаться CI нового `dev` и PR #19, затем обязательного code-owner review
+  для защищённого `main`.
+
+## U02 outbox identity integrity — 2026-10-24
+
+- [x] Сверять outbox email/toEmail ciphertext с HMAC index при чтении;
+  покрыть mismatch/missing pair unit и PostgreSQL regression.
+- [ ] Привязать согласованную пару и recipientName к event ID/owner через
+  versioned envelope и staged migration. U02 остаётся открытым.
+
+## CI dependency gate — 2026-10-24
+
+- [x] Обновить четыре уязвимые версии в web lockfile после отказа проверки PR #17;
+  локальный npm audit показывает 0.
+- [x] Обновить API fast-uri, zod и nodemailer после следующего отказа CI;
+  `npm --prefix server audit` показывает 0.
+- [x] PR #17 прошёл Application CI и объединён в dev как `0186aa5`.
+- [ ] Дождаться push Quality dev SHA и провести защищённое продвижение в main
+  с обязательным code-owner review.
+
+## U02 identity integrity — 2026-10-24
+
+- [x] Проверять соответствие расшифрованного email сохранённому HMAC index
+  при ORM-чтении users и provider invitations; добавить negative unit и
+  PostgreSQL integration test подмены только ciphertext.
+- [ ] Ввести versioned row/owner AAD для остальных полей и защитить перенос
+  согласованной пары email index + ciphertext; подготовить миграцию/backfill,
+  прямые SQL-пути и restore evidence. U02 не закрыт.
+
 ## Production KMS — 2026-10-23
 
 - [x] Добавить fail-closed AWS KMS загрузку versioned keyring до API/worker

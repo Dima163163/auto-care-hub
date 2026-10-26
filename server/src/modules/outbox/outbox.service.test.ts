@@ -76,9 +76,12 @@ describe('outbox processing', () => {
         expect(JSON.stringify(raw?.payload)).not.toContain(toEmail)
         expect(JSON.stringify(raw?.payload)).not.toContain(recipientName)
         expect(raw?.payload.toEmail).toBe(createEmailBlindIndex(toEmail))
+        expect(raw?.payload.toEmailCiphertext).toHaveProperty('recordBinding')
+        expect(raw?.payload.recipientNameCiphertext).toHaveProperty('recordBinding')
         expect(await AppDataSource.getRepository(OutboxEventEntity).countBy({ idempotencyKey: encryptedRecipientKey })).toBe(1)
         const event = await AppDataSource.getRepository(OutboxEventEntity).findOneByOrFail({ idempotencyKey: encryptedRecipientKey })
         expect(event.payload).toMatchObject({ toEmail, recipientName })
+        expect(raw?.payload.$recordId).toBe(event.id)
     })
 
     it('deduplicates a booking reminder across an outbox retry after notification creation', async () => {

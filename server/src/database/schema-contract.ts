@@ -53,6 +53,7 @@ const REQUIRED_COLUMNS_QUERY = `
         OR (table_name = 'security_events' AND column_name IN ('type', 'correlation_id', 'createdAt', 'severity', 'route', 'status_code', 'metadata', 'actor_role', 'auth_outcome', 'rate_limit_result', 'request_size_bytes', 'reason_code', 'proxy_provenance'))
         OR (table_name = 'security_event_actions' AND column_name IN ('security_event_id', 'actor_id', 'assignee_id', 'status', 'created_at'))
         OR (table_name = 'outbox_events' AND column_name IN ('idempotencyKey', 'status', 'attempts', 'availableAt', 'createdAt'))
+        OR (table_name = 'email_binding_backfill_checkpoints' AND column_name IN ('name', 'afterId', 'processed'))
         OR (table_name = 'users' AND column_name = 'emailCiphertext')
         OR (table_name = 'autocare_provider_invitations' AND column_name = 'emailCiphertext')
         OR (table_name = 'oauth_identities' AND column_name = 'provider_subject_ciphertext')

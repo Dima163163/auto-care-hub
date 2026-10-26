@@ -1,8 +1,54 @@
 # Карта проекта AutoCare Hub
 
+**U02, private message body binding 2026-10-26:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC по message/request/thread/sender UUID и kind, nullable
+binding, bounded checkpoint и opt-in strict reader. Offer JSON и остальные
+поля U02, staging KMS/restore и включение strict открыты.
+
+**U02, user name/phone binding 2026-10-25:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC по user UUID, nullable
+binding-поля, checkpoint и opt-in strict reader. Реальный KMS/restore и
+включение strict остаются открытыми; source anchors обновлены.
+
+**U02, OAuth subject expansion 2026-10-25:** `09-access-privacy.puml` и SVG
+показывают MAC по identity/user UUID и провайдеру, с проверкой HMAC index при
+чтении. `05-domain-data.puml` и SVG показывают checkpoint-таблицу для
+ограниченного compare-write backfill. Полный verify и opt-in strict reader
+подготовлены; staging KMS/restore и включение strict ещё открыты.
+
+**U02, outbox backfill/cutover подготовка 2026-10-25:**
+`05-domain-data.puml` и `08-outbox-maintenance.puml` с SVG показывают
+checkpoint-таблицу, пакетную JSONB compare-write и opt-in strict reader.
+Staging KMS/restore и включение флага остаются открытыми; anchors обновлены.
+
+**U02, outbox expansion 2026-10-25:** `08-outbox-maintenance.puml` и SVG
+показывают UUID события до шифрования, MAC email/toEmail/recipientName и
+проверку строки при чтении. Legacy события пока читаются; backfill и strict
+cutover остаются открытыми. Source anchors обновлены.
+
+**U02, backfill/cutover подготовка 2026-10-25:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают checkpoint-таблицу, пакетный перенос
+email MAC и opt-in strict reader. Реальный KMS/staging перенос, restore и
+остальные encrypted поля не приняты. Source anchors обновлены.
+
+**U02, expansion 2026-10-25:** `09-access-privacy.puml` и SVG показывают
+MAC для новых user/invitation email envelopes по row UUID и invitation provider
+UUID. Legacy envelopes временно читаются; backfill, strict switch и остальные
+зашифрованные поля остаются открытыми. Source anchors обновлены.
+
+**U02, следующий частичный шаг 2026-10-24:** `08-outbox-maintenance.puml`
+и SVG отражают сверку outbox email/toEmail с HMAC blind index при чтении.
+Перенос согласованной пары index+ciphertext между событиями остаётся открытым.
+
+**U02, частичная проверка 2026-10-24:** `09-access-privacy.puml` и SVG
+показывают сверку расшифрованного email с HMAC blind index для users и
+provider invitations. Проверка отвергает подмену одного ciphertext;
+перенос согласованной пары и остальных зашифрованных полей остаётся риском
+до versioned row/owner AAD и миграции. Добавлен source anchor subscriber.
+
 **U01, кодовая подготовка 2026-10-23:** `02-runtime.puml` и SVG показывают
 загрузку зашифрованного набора ключей через AWS KMS до API/worker startup и
-TypeORM migrations. Схема пересобрана локальным PlantUML 1.2026.2; 134 source
+TypeORM migrations. Схема пересобрана локальным PlantUML 1.2026.2; 135 source
 anchors совпадают. Настоящий KMS, staging restart/restore и production доступ
 к данным ещё не проверены; U02 row-bound encryption остаётся открытым.
 

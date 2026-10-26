@@ -6,6 +6,7 @@ entity "User" as User {
   * id : uuid
   --
   role / status / tokenVersion
+  nameBinding / phoneBinding : HMAC?
 }
 entity "UserSession" as Session {
   * id : uuid
@@ -57,6 +58,7 @@ entity "ServiceMessage" as Message {
   * id : uuid
   requestId? / threadId? / senderId
   encrypted body / offer
+  bodyBinding : HMAC?
 }
 entity "ServiceAttachment" as Attachment {
   * id : uuid
@@ -98,6 +100,36 @@ entity "OutboxEvent" as Outbox {
   type / payload / idempotencyKey
   status / attempts / availableAt
 }
+entity "EmailBindingCheckpoint" as EmailCheckpoint {
+  * name : users / invitations
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "OutboxBindingCheckpoint" as OutboxCheckpoint {
+  * name : outbox_events
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "OAuthBindingCheckpoint" as OAuthCheckpoint {
+  * name : oauth_identities
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "UserProfileBindingCheckpoint" as ProfileCheckpoint {
+  * name : users
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "MessageBodyBindingCheckpoint" as MessageCheckpoint {
+  * name : autocare_service_messages
+  --
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -121,6 +153,10 @@ Request ||--o{ Claim
 Provider ||--o{ Account
 User ||--o{ Account
 Account ||--o{ Ledger
+Outbox ..> OutboxCheckpoint : bounded keyset progress
+OAuthCheckpoint ..> User : identity owner scope
+ProfileCheckpoint ..> User : bounded name / phone backfill
+MessageCheckpoint ..> Message : bounded body backfill
 note bottom of Ledger
   U18: positive earn/adjustment/refund entries form lots.
   Redemption consumes earliest expiry first;
@@ -152,6 +188,29 @@ note bottom of Review
   anomaly signals and calibration use the latest 1000 reviews.
 end note
 Request ..> Outbox : effects; payload association
+EmailCheckpoint ..> User : bounded email backfill
+EmailCheckpoint ..> Provider : invitation provider scope
+note bottom of EmailCheckpoint
+  U02: compare-write and checkpoint commit together.
+  Verify full row/owner MAC coverage before strict reads.
+  Production backfill and restore remain unverified.
+end note
+note bottom of OAuthCheckpoint
+  U02: bounded compare-write and checkpoint commit together.
+  Verify subject MAC by identity/user UUID and provider.
+  Real KMS/restore and strict cutover remain unverified.
+end note
+note bottom of ProfileCheckpoint
+  U02: name and non-null phone HMAC bind plaintext to user UUID.
+  Compare-write and checkpoint commit together; full verify precedes
+  opt-in strict read. Real KMS/restore remains unverified.
+end note
+note bottom of MessageCheckpoint
+  U02: non-null body HMAC binds plaintext to message,
+  request/thread and sender UUIDs and message kind.
+  Compare-write and checkpoint commit together; full verify precedes
+  opt-in strict read. Null body has null binding.
+end note
 note bottom of Evidence
   Пунктир — логическая связь, не FK.
   Reference lookup fix требует применения migration и проверки DB.

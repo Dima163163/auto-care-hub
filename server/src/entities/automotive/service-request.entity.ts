@@ -138,6 +138,7 @@ export class ServiceMessageEntity {
     @Column({ type: 'uuid' }) senderId!: string
     @Column({ type: 'enum', enum: ServiceMessageKind, enumName: 'autocare_service_message_kind', default: ServiceMessageKind.Text }) kind!: ServiceMessageKind
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_messages', 'body', 'text') }) body!: string | null
+    @Column({ type: 'text', nullable: true }) bodyBinding!: string | null
     @Column({ type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'char', length: 64, nullable: true }) idempotencyFingerprint!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_messages', 'offer', 'jsonb') }) offer!: ServiceMessageOffer | null

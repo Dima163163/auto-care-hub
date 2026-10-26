@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
-import { outboxPayloadEncryptionTransformer } from '../../shared/security/data-encryption/field-encryption.js'
+import { randomUUID } from 'node:crypto'
+import { getOutboxPayloadRecordId, isOutboxPayloadFromStorage, outboxPayloadEncryptionTransformer, setOutboxPayloadRecordId } from '../../shared/security/data-encryption/field-encryption.js'
 
 export enum OutboxEventStatus {
     Pending = 'pending',
@@ -13,13 +14,38 @@ export enum OutboxEventStatus {
 @Index(['status', 'availableAt'])
 export class OutboxEventEntity {
     @PrimaryGeneratedColumn('uuid')
-    id!: string
+    id: string = randomUUID()
 
     @Column({ type: 'text' })
     type!: string
 
     @Column({ type: 'jsonb', transformer: outboxPayloadEncryptionTransformer })
-    payload!: Record<string, unknown>
+    get payload(): Record<string, unknown> {
+        if (this._payload && this.id && !getOutboxPayloadRecordId(this._payload)) {
+            setOutboxPayloadRecordId(this._payload, this.id)
+        }
+        return this._payload
+    }
+
+    set payload(value: Record<string, unknown>) {
+        if (value && this.id && (!isOutboxPayloadFromStorage(value) || !getOutboxPayloadRecordId(value))) {
+            setOutboxPayloadRecordId(value, this.id)
+        }
+        Object.defineProperty(this, '_payload', {
+            value,
+            writable: true,
+            configurable: true,
+            enumerable: false,
+        })
+    }
+
+    private _payload!: Record<string, unknown>
+
+    toJSON() {
+        const payload = { ...this.payload }
+        delete payload.$recordId
+        return { ...this, payload }
+    }
 
     @Column({ type: 'text', unique: true, nullable: true })
     idempotencyKey!: string | null

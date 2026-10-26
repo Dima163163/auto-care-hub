@@ -1,5 +1,113 @@
 # AutoCare Hub Project Context
 
+## U02 private message body binding preparation — 2026-10-26
+
+Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
+полю, message UUID, request/thread UUID, sender UUID и kind; ORM проверяет его после
+AES-GCM и обнаруживает подмену ciphertext другой строки или связей доступа.
+ORM insert материализует default kind=`text` до вычисления HMAC, чтобы старые
+вызовы сохранения без явного kind остались совместимы.
+Migration 178651 добавляет nullable
+`bodyBinding` и checkpoint; bounded compare-write команда переносит legacy
+сообщения, полный verify и opt-in strict reader готовят cutover. Удаление
+сообщения и raw SQL account deletion обнуляют binding. До PostgreSQL CI,
+staging KMS/restore и включения флага старые строки читаются; offer JSON и
+остальные поля U02, pilot NO-GO открыты.
+
+PR #27 (имя/телефон) прошёл полный CI и объединён в `dev` как `ba04e68`;
+защищённый promotion PR #19 ждёт независимого code-owner review.
+
+## U02 user name/phone binding preparation — 2026-10-25
+
+Новые users.name/phone получают отдельный HMAC по plaintext, полю и user UUID;
+после AES-GCM расшифровки ORM сверяет его и обнаруживает перестановку
+корректных ciphertext между пользователями. Migration 178650 добавляет nullable
+binding-поля и checkpoint; команда ограниченно переносит legacy строки с
+compare-write, а полный verify и opt-in strict reader готовят cutover. До
+staging KMS/restore и включения флага старые строки читаются, остальные поля
+U02 и pilot NO-GO открыты.
+
+## U02 OAuth subject binding expansion — 2026-10-25
+
+Новые OAuth subject envelopes связаны с identity UUID, user UUID и провайдером.
+ORM-чтение сверяет MAC и blind index, сохраняя чтение старых envelopes до
+отдельного backfill и strict cutover. Перенос полной пары index+ciphertext
+между строками теперь выявляется. Следующая порция добавляет миграцию
+checkpoint-таблицы 178649, пакетный compare-write backfill, полный verify и
+`DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING=true` для opt-in strict reader.
+PR #25/#26 прошли полный CI и объединены в `dev` как `8351f89`/`109b07e`.
+Без staging KMS/restore это лишь подготовка; U02 и pilot NO-GO остаются открытыми.
+
+## U02 outbox backfill preparation — 2026-10-25
+
+PR #23 прошёл полный CI и объединён в `dev` как `ff48fda`.
+Новая порция добавляет checkpoint-миграцию 178648, пакетную команду с
+JSONB compare-write, полный verify-проход и флаг
+`DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING=true`. До staging переноса с
+реальным KMS, restore и переключения флага старые outbox envelopes продолжают
+читаться. PR #24 прошёл полный CI/PostgreSQL/browser E2E и объединён в `dev`
+как `2407982`; U02 и pilot NO-GO остаются открытыми.
+
+## U02 outbox record binding expansion — 2026-10-25
+
+Новые outbox email/toEmail и recipientName envelopes получают MAC по UUID
+события. ORM и атомарный raw INSERT создают UUID до шифрования; при чтении
+проверяются MAC и соответствие UUID строки. Режим совместимости читает старые
+события до отдельного пакетного переноса и строгого переключения. PostgreSQL
+worker flow должен пройти CI; U02 и pilot NO-GO остаются открытыми.
+
+## U02 email backfill preparation — 2026-10-25
+
+PR #21 прошёл полный Quality CI, включая PostgreSQL integration и browser E2E,
+и объединён в `dev` как `d66007c`. Promotion PR #19 обновлён на этот SHA;
+защищённый `main` ждёт нового CI и независимого code-owner review.
+
+Следующая локальная порция добавляет миграцию checkpoint-таблицы, пакетную
+команду для users/invitations с compare-write транзакциями, полный verify-проход
+и `DATA_ENCRYPTION_REQUIRE_EMAIL_RECORD_BINDING=true` для строгого чтения после
+cutover. До настоящего KMS/staging backfill, проверки restore и переключения
+production это только подготовка; остальные поля U02 и U03 ещё открыты.
+
+## U02 email binding expansion — 2026-10-25
+
+Новые `users` и `autocare_provider_invitations` email envelopes получают HMAC,
+связывающий ciphertext с row UUID; invitation также с provider UUID. ORM-чтение
+проверяет MAC и HMAC blind index. Старый reader игнорирует новое поле, а новый
+временно читает legacy envelopes для rolling deployment. Поэтому backfill,
+strict switch и остальные поля U02 ещё открыты; удаление MAC пока допускает
+downgrade. Unit/build проверены локально; PostgreSQL integration ждёт CI.
+`09-access-privacy.puml` и SVG отражают этот этап.
+
+## U02 outbox identity integrity — 2026-10-24
+
+Outbox transformer при чтении сверяет расшифрованный email/toEmail с
+сохранённым HMAC blind index; несовпадение или отсутствие пары index/ciphertext прерывает
+доставку. Добавлены negative unit и PostgreSQL integration cases. Перенос
+согласованной пары между событиями и recipientName без record/owner AAD
+остаётся открытым. `08-outbox-maintenance.puml` и SVG обновлены.
+
+## CI dependency gate — 2026-10-24
+
+PR #17 выявил новые advisory в web lockfile; минимальный npm audit fix
+обновляет fast-uri 3.1.8→3.1.9, serialize-javascript 7.0.5→7.1.4,
+undici 7.30.0→7.30.1 и zod 4.4.3→4.6.7 без изменения прямых диапазонов
+версий. Локально npm audit показывает 0; web unit 661/661, ESLint, Next и
+Vite production builds прошли. PR #17 прошёл Application CI и объединён
+в dev как `0186aa5`; push Quality и защищённое продвижение в main выполняются.
+Следующий CI обнаружил отдельные advisories API: server lockfile обновляет
+fast-uri до 3.1.9/4.2.3 и zod до 4.6.7, а прямой nodemailer — до 10.2.1.
+`npm --prefix server audit` показывает 0; повторный backend quality прошёл
+1472/1472 unit, миграционные/контрактные проверки и TypeScript build.
+
+## U02 partial identity integrity — 2026-10-24
+
+ORM read сверяет users/provider-invitations email ciphertext с сохранённым
+HMAC blind index; несоответствие прерывает чтение. Unit и PostgreSQL
+integration negative paths добавлены для подмены одного ciphertext. Перенос
+согласованной пары и прочих encrypted columns по-прежнему возможен без
+row/owner AAD; U02 и pilot NO-GO остаются открыты. `09-access-privacy.puml`
+и SVG обновлены.
+
 ## U01 production KMS code path — 2026-10-23
 
 API/worker и TypeORM CLI теперь загружают KMS-encrypted keyring до работы с
@@ -1561,3 +1669,18 @@ The early Quality wait now accepts only a push-triggered run for the exact dev
 SHA. The later required-check gate already requires both push and PR events.
 The CI policy contract has a negative test for a missing event filter. Local
 checks pass; the published candidate and code-owner review remain open.
+# Продвижение dev → main, восстановление общей истории — 2026-10-24
+
+PR #18 прошёл все проверки Quality, включая backend PostgreSQL integration и
+browser E2E, и объединён в `dev` как `c51eeb5`. Push Quality для PR #17 на
+`dev` `0186aa5` прошёл, но workflow продвижения остановился на PR #19:
+предыдущий выпуск PR #15 был squash в `main`. GitHub показывает конфликт,
+потому что его commit не является предком `dev`, хотя дерево `main` `49bdf1b`
+побайтно совпадает с деревом проверенного `dev` `4a16c2d`.
+
+Ветка исправления объединила этот `main` в текущий `dev` стратегией ours:
+проверено, что дерево результата в точности равно дереву исходного `dev`.
+Promotion workflow переводится с squash на merge commit, чтобы сохранить
+достижимость проверенного SHA в `main` и не повторять конфликт при следующем
+выпуске. PR #19 остаётся открытым; новый `dev` и его CI ещё должны пройти,
+а защищённый `main` требует независимого code-owner review.

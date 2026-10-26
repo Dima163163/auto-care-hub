@@ -1,4 +1,5 @@
 import { In, MoreThanOrEqual, type EntityManager } from 'typeorm'
+import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import { AppDataSource } from '../../database/data-source.js'
@@ -33,7 +34,7 @@ import { normalizeNotificationLink } from '../notifications/notification-link-po
 import { normalizeOutboxErrorMessage } from './outbox-error-policy.js'
 import { renderNotificationTemplate } from '../notifications/notification-renderer.js'
 import { decryptOutboxSecret, redactOutboxSecrets } from './outbox-secret.js'
-import { outboxPayloadEncryptionTransformer } from '../../shared/security/data-encryption/field-encryption.js'
+import { outboxPayloadEncryptionTransformer, setOutboxPayloadRecordId } from '../../shared/security/data-encryption/field-encryption.js'
 
 export const OUTBOX_MAX_ATTEMPTS = 5
 export { MAX_OUTBOX_ERROR_LENGTH as OUTBOX_MAX_ERROR_LENGTH } from './outbox-error-policy.js'
@@ -166,15 +167,17 @@ export async function enqueueOutboxEvent(
     const repository = manager.getRepository(OutboxEventEntity)
     // Raw SQL preserves the atomic ON CONFLICT path, but bypasses TypeORM's
     // column transformer. Apply the same storage format before the INSERT.
-    const storedPayload = outboxPayloadEncryptionTransformer.to(input.payload)
+    const eventId = randomUUID()
+    const storedPayload = outboxPayloadEncryptionTransformer.to(setOutboxPayloadRecordId({ ...input.payload }, eventId))
 
     await manager.query(
         `INSERT INTO "outbox_events"
-            ("type", "payload", "idempotencyKey", "status", "attempts",
+            ("id", "type", "payload", "idempotencyKey", "status", "attempts",
              "availableAt", "lockedAt", "processedAt", "lastError")
-         VALUES ($1, $2::jsonb, $3, $4, $5, $6, $7, $8, $9)
+         VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10)
          ON CONFLICT ("idempotencyKey") DO NOTHING`,
         [
+            eventId,
             input.type,
             JSON.stringify(storedPayload),
             idempotencyKey,

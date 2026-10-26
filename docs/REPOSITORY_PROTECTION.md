@@ -3,6 +3,14 @@
 AutoCare Hub uses Git Flow with `dev` as the integration branch and `main` as
 the production branch.
 
+On 2026-10-23 the remote `main` protection was verified and corrected: one
+approving code-owner review is required, stale approvals are dismissed,
+`Application CI` is required on an up-to-date branch, and force pushes and
+deletion are disabled. Repository auto-merge is enabled so the promotion pull
+request can merge after all checks and the human review. Promotion PR #15
+merged before this correction without an approving review; its CI passed, but
+that historical review gap cannot be repaired retroactively.
+
 ## Required GitHub settings for `main`
 
 These settings must be applied by a repository administrator in GitHub because
@@ -26,7 +34,10 @@ Git commit alone:
 The checked-in `.github/workflows/promote-dev-to-main.yml` starts on a push to
 `dev`, waits for a successful push-triggered `Quality` run for that exact commit, creates or
 reuses the `dev` → `main` pull request, waits for the pull-request checks, and
-enables GitHub auto-merge. The workflow fails closed if the repository setting
+enables GitHub auto-merge with a merge commit so the verified `dev` commit remains
+in `main` history. Squashing the promotion previously made later `dev` → `main`
+pull requests conflict even when the released trees matched. The workflow fails
+closed if the repository setting
 disallows the workflow token from creating pull requests; it never attempts to
 bypass protected `main` with a direct push. A failed check leaves promotion
 incomplete; fix the source branch and push a new commit to run the gates again.

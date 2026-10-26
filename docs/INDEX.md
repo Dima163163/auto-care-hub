@@ -1,6 +1,18 @@
 # Индекс документации AutoCare Hub
 
-Срез remote dev `8840ae8`, локальная fix-ветка `26da803`, 21 октября 2026.
+U02 partial fix от 24 октября: ORM и outbox чтение email сверяют HMAC blind index;
+перенос согласованной пары и остальных полей ещё открыт. См.
+[реестр](audits/FULL_PROJECT_AUDIT_2026-10-03.md),
+[карту](diagrams/README.md) и
+[схему доступа](diagrams/09-access-privacy.puml). Защита `main` с обязательным
+code-owner review проверена 23 октября и описана в
+[политике репозитория](REPOSITORY_PROTECTION.md).
+Новые advisories web и API lockfiles, выявленные CI 24 октября, закрыты
+обновлением затронутых версий; статус опубликованной проверки указан в
+[PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md).
+
+Первичный аудитный срез: remote dev `8840ae8`, локальная fix-ветка `26da803`,
+21 октября 2026. Текущие дополнения датированы ниже.
 Локальная U01 KMS wiring от 23 октября описана в `PROJECT_CONTEXT.md`,
 `docs/operations/ENCRYPTION_BACKFILL_ROLLOUT.md` и runtime-схеме; staging/KMS
 приёмка остаётся открытой. Локальные порции U20/U15/U17/U18/U19/U21/U16/N26/N28/N25/N24/N27/N31/N29/N30/N32/N33/N34/N21/N22/N23 от 22 октября описаны в `PROJECT_CONTEXT.md` и
@@ -58,7 +70,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) — Production Readiness Checklist | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/PROVIDER_CONFIGURATION.md](PROVIDER_CONFIGURATION.md) — Provider Configuration Handoff | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — Release Checklist | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md) — Repository protection policy | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
+| [docs/REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md) — Repository protection policy | текущая политика | remote main проверен 2026-10-23 | GitHub branch protection / promotion workflow; PR #15 исторически без review |
 | [docs/SEO_PRERENDER_MEDIA_BUDGET.md](SEO_PRERENDER_MEDIA_BUDGET.md) — SEO, prerender and media budget gate | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/archive/bookly/commission-removal-2026-08-27.md](archive/bookly/commission-removal-2026-08-27.md) — Legacy commission module removal | исторический архив | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/archive/bookly/e2e/README.md](archive/bookly/e2e/README.md) — Archived Bookly browser checks | исторический архив | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
@@ -70,7 +82,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/notification-delivery-semantics.md](notification-delivery-semantics.md) — Notification Delivery Semantics | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/specs/MVP_BOOKING_QUOTE_SPEC.md](specs/MVP_BOOKING_QUOTE_SPEC.md) — Спецификация MVP: дата записи и согласие с версией сметы | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [server/README.md](../server/README.md) — AutoCare Hub Server — Migration Baseline | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [server/docs/security/FIELD_ENCRYPTION.md](../server/docs/security/FIELD_ENCRYPTION.md) — Field encryption status | текущий security baseline | сверено частично | outbox transformer, migration 178642, U01/U02 external limits |
+| [server/docs/security/FIELD_ENCRYPTION.md](../server/docs/security/FIELD_ENCRYPTION.md) — Field encryption status | текущий security baseline | U01/U02 slice сверены 2026-10-24 | AWS KMS startup path, outbox index check, migration 178642; live KMS/row AAD открыты |
 | [src/shared/styles/vendor/README.md](../src/shared/styles/vendor/README.md) — Vendored static stylesheet | текущий документ / статус реализации не сверён | исключено | src/shared/styles/vendor/ |
 | [src/shared/styles/vendor/shadcn-LICENSE.md](../src/shared/styles/vendor/shadcn-LICENSE.md) — shadcn-LICENSE | текущий документ / статус реализации не сверён | исключено | src/shared/styles/vendor/ |
 
@@ -168,7 +180,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/diagrams/06-request-workflow.puml](diagrams/06-request-workflow.puml) — 06-request-workflow | PlantUML architecture map | не проверено | docs/diagrams/sources.json |
 | [docs/diagrams/07-auth-session.puml](diagrams/07-auth-session.puml) — 07-auth-session | PlantUML architecture map | сверено частично | server/src/modules/auth/; src/shared/api/ |
 | [docs/diagrams/08-outbox-maintenance.puml](diagrams/08-outbox-maintenance.puml) — 08-outbox-maintenance | PlantUML architecture map | сверено частично | server/src/modules/outbox/outbox.service.ts |
-| [docs/diagrams/09-access-privacy.puml](diagrams/09-access-privacy.puml) — 09-access-privacy | PlantUML architecture map | сверено частично | server/src/modules/autocare/{request,chat}-access.service.ts |
+| [docs/diagrams/09-access-privacy.puml](diagrams/09-access-privacy.puml) — 09-access-privacy | PlantUML architecture map | security slice обновлён 2026-10-24 | server/src/modules/autocare/{request,chat}-access.service.ts; sensitive-data-subscriber.ts |
 | [docs/diagrams/README.md](diagrams/README.md) — Карта проекта AutoCare Hub | текущий документ / статус реализации не сверён | сверено частично | docs/diagrams/sources.json |
 | [docs/diagrams/_style.puml](diagrams/_style.puml) — _style | PlantUML source / shared style | не проверено | docs/diagrams/sources.json |
 | [docs/diagrams/rendered/01-system-context.svg](diagrams/rendered/01-system-context.svg) — 01-system-context | производный SVG preview | структурная проверка | docs/diagrams/01-system-context.puml |

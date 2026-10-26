@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+    bindExistingEncryptedFieldValue,
     createEmailBlindIndex,
     createEncryptedFieldTransformer,
     decryptFieldValue,
+    decryptRecordBoundFieldValue,
     encryptFieldValue,
+    encryptRecordBoundFieldValue,
     isEncryptedFieldEnvelope,
     outboxPayloadEncryptionTransformer,
     setDataEncryptionKeyProviderForTests,
@@ -40,6 +43,63 @@ describe('field encryption', () => {
         expect(() => decryptFieldValue('chat', 'body', 'legacy plaintext')).toThrow('Encrypted field is not migrated or is invalid.')
     })
 
+    it('binds a compatible envelope to its record and rejects tampering', () => {
+        const scope = { rowId: '9c02f302-02bb-4e17-a7de-46c8cf6ea482', ownerId: '4314975e-9dfc-4ca4-94c6-a8c45a210a28' }
+        const envelope = encryptRecordBoundFieldValue('autocare_provider_invitations', 'email', 'staff@example.test', scope)
+        expect(decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', envelope, scope))
+            .toBe('staff@example.test')
+        expect(decryptFieldValue('autocare_provider_invitations', 'email', envelope)).toBe('staff@example.test')
+        expect(() => decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', envelope, {
+            ...scope, rowId: '066036ad-1e66-40c6-bc90-3d6021ced9ea',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', envelope, {
+            ...scope, ownerId: '066036ad-1e66-40c6-bc90-3d6021ced9ea',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', {
+            ...envelope, recordBinding: 'r1_invalid',
+        }, scope)).toThrow('Encrypted record binding is invalid.')
+
+        const legacy = encryptFieldValue('autocare_provider_invitations', 'email', 'staff@example.test')
+        expect(() => decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', legacy, scope))
+            .toThrow('Encrypted record binding is missing.')
+        expect(decryptRecordBoundFieldValue('autocare_provider_invitations', 'email', legacy, scope, { allowLegacy: true }))
+            .toBe('staff@example.test')
+    })
+
+    it('backfills only authenticated legacy envelopes and preserves the original ciphertext', () => {
+        const scope = { rowId: '9c02f302-02bb-4e17-a7de-46c8cf6ea482' }
+        const legacy = encryptFieldValue('users', 'email', 'user@example.test')
+        const bound = bindExistingEncryptedFieldValue('users', 'email', legacy, scope)
+        expect(bound.ciphertext).toBe(legacy.ciphertext)
+        expect(bound.wrappedDek).toEqual(legacy.wrappedDek)
+        expect(decryptRecordBoundFieldValue('users', 'email', bound, scope)).toBe('user@example.test')
+        expect(bindExistingEncryptedFieldValue('users', 'email', bound, scope)).toEqual(bound)
+        expect(() => bindExistingEncryptedFieldValue('users', 'email', bound, {
+            rowId: '066036ad-1e66-40c6-bc90-3d6021ced9ea',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => bindExistingEncryptedFieldValue('users', 'email', { ...legacy, tag: Buffer.alloc(16).toString('base64url') }, scope))
+            .toThrow('Encrypted field authentication failed.')
+    })
+
+    it('binds OAuth subject to its row, user and provider without changing existing MACs', () => {
+        const scope = {
+            rowId: '9c02f302-02bb-4e17-a7de-46c8cf6ea482',
+            ownerId: '4314975e-9dfc-4ca4-94c6-a8c45a210a28',
+            context: 'google',
+        }
+        const envelope = encryptRecordBoundFieldValue('oauth_identities', 'providerSubject', 'oauth-subject', scope)
+        expect(decryptRecordBoundFieldValue('oauth_identities', 'providerSubject', envelope, scope)).toBe('oauth-subject')
+        expect(() => decryptRecordBoundFieldValue('oauth_identities', 'providerSubject', envelope, {
+            ...scope, context: 'yandex',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => decryptRecordBoundFieldValue('oauth_identities', 'providerSubject', envelope, {
+            ...scope, ownerId: '066036ad-1e66-40c6-bc90-3d6021ced9ea',
+        })).toThrow('Encrypted record binding authentication failed.')
+        expect(() => encryptRecordBoundFieldValue('oauth_identities', 'providerSubject', 'oauth-subject', {
+            ...scope, context: 'GOOGLE',
+        })).toThrow('Encrypted record scope is invalid.')
+    })
+
     it('keeps email lookup deterministic without storing the email in the index', () => {
         const index = createEmailBlindIndex('  USER@Example.com ')
         expect(index).toBe(createEmailBlindIndex('user@example.COM'))
@@ -60,5 +120,22 @@ describe('field encryption', () => {
         expect(JSON.stringify(storedPayload)).not.toContain('Private Client')
         expect(storedPayload.toEmail).toBe(createEmailBlindIndex('client@example.test'))
         expect(outboxPayloadEncryptionTransformer.from(storedPayload)).toEqual(payload)
+        expect(outboxPayloadEncryptionTransformer.from(Object.fromEntries(Object.entries(storedPayload).reverse())))
+            .toEqual(payload)
+
+        const swappedIndex = { ...storedPayload, toEmail: createEmailBlindIndex('other@example.test') }
+        expect(() => outboxPayloadEncryptionTransformer.from(swappedIndex))
+            .toThrow('Encrypted outbox email index authentication failed.')
+        const missingIndex = { ...storedPayload, toEmail: null }
+        expect(() => outboxPayloadEncryptionTransformer.from(missingIndex))
+            .toThrow('Encrypted outbox email index is invalid.')
+        const absentIndex = { ...storedPayload }
+        Reflect.deleteProperty(absentIndex, 'toEmail')
+        expect(() => outboxPayloadEncryptionTransformer.from(absentIndex))
+            .toThrow('Encrypted outbox email index is invalid.')
+        const missingCiphertext = { ...storedPayload }
+        Reflect.deleteProperty(missingCiphertext, 'toEmailCiphertext')
+        expect(() => outboxPayloadEncryptionTransformer.from(missingCiphertext))
+            .toThrow('Encrypted outbox email ciphertext is missing.')
     })
 })

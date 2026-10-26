@@ -31,6 +31,24 @@ note right of Provider
   Глобальный owner — ещё compatibility роль;
   один frontend guard не является backend authorization.
 end note
+note right of Resource
+  Новые user/invitation email envelopes содержат MAC
+  с row ID, а invitation также с provider ID.
+  afterLoad сверяет MAC и email с HMAC blind index.
+  Бounded backfill дописывает MAC старым envelopes.
+  Strict flag отвергает отсутствие MAC после cutover;
+  до него downgrade и иные поля оставляют U02 открытым.
+  Новые OAuth subjects имеют MAC по identity/user UUID и
+  провайдеру; после чтения сверяются с HMAC index.
+  Bounded backfill дописывает MAC старым subjects;
+  opt-in strict flag отвергает отсутствие MAC после cutover.
+  User name/phone имеют companion HMAC по user UUID;
+  bounded backfill и opt-in strict reader подготовлены.
+  Текст нового chat message имеет companion HMAC по message UUID,
+  request/thread UUID, sender UUID и kind;
+  bounded backfill и opt-in strict reader подготовлены.
+  Offer JSON и остальные поля U02 пока не связаны со строкой.
+end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.
   Оба message/attachment API вызывают общую write policy до сохранения;
@@ -40,5 +58,5 @@ note bottom of Object
   S3/private storage adapter и scan/quarantine поддержаны кодом.
   Production storage policy / KMS / MFA — отдельные acceptance gates.
 end note
-footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-write-policy.ts
+footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
 @enduml
