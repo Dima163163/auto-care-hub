@@ -16,6 +16,7 @@ import {
     ServiceRequestStatus,
 } from '../../entities/index.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
+import { resetBookingSnapshotBindingBackfill, runBookingSnapshotBindingBackfill, verifyBookingSnapshotBindings } from '../../shared/security/data-encryption/booking-snapshot-binding-backfill.js'
 import {
     getMyAutoCareBonusAccounts,
     redeemAutoCareBonus,
@@ -158,6 +159,60 @@ describe('AutoCare bonus transaction invariants', () => {
         await AppDataSource.getRepository(AutomotiveMarketEntity).delete({ id: market?.id })
         await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: country?.id })
         await AppDataSource.getRepository(UserEntity).delete({ id: client?.id })
+    })
+
+    it('binds booking snapshots to request ownership and backfills legacy rows', async () => {
+        const requests = AppDataSource.getRepository(ServiceRequestEntity)
+        const target = await requests.save(requests.create({
+            clientId: client.id, providerId: provider.id, locationId: location.id, definitionId: definition.id,
+            offeringId: null, offeringSnapshot: null, vehicleSnapshot: null, contactSnapshot: null,
+            preferredAt: null, note: null, idempotencyKey: `bonus-binding-target-${suffix}`,
+            estimateSnapshot: null, acceptedQuoteVersion: null, acceptedQuoteSnapshot: null,
+            acceptedQuoteAt: null, bookingSnapshot: { amountMinor: 99_000 }, bookingCreatedAt: new Date(),
+            status: ServiceRequestStatus.Accepted, clientConfirmedAt: new Date(), providerConfirmedAt: new Date(),
+        }))
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
+        try {
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "bookingSnapshot", "bookingSnapshotBinding" FROM "autocare_service_requests" WHERE "id" = $1', [request.id],
+            ) as Array<{ bookingSnapshot: object; bookingSnapshotBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "bookingSnapshot", "bookingSnapshotBinding" FROM "autocare_service_requests" WHERE "id" = $1', [target.id],
+            ) as Array<{ bookingSnapshot: object; bookingSnapshotBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted booking snapshots are missing.')
+            expect(storedSource.bookingSnapshot).not.toHaveProperty('amountMinor')
+            expect(storedSource.bookingSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "bookingSnapshot" = $1::jsonb, "bookingSnapshotBinding" = $2 WHERE "id" = $3',
+                [storedSource.bookingSnapshot, storedSource.bookingSnapshotBinding, target.id],
+            )
+            try {
+                await expect(requests.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "autocare_service_requests" SET "bookingSnapshot" = $1::jsonb, "bookingSnapshotBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.bookingSnapshot, storedTarget.bookingSnapshotBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "autocare_service_requests" SET "bookingSnapshotBinding" = NULL WHERE "id" = $1', [request.id])
+            await resetBookingSnapshotBindingBackfill(AppDataSource)
+            await expect(verifyBookingSnapshotBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING = 'true'
+            await expect(requests.findOneByOrFail({ id: request.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
+            expect((await runBookingSnapshotBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyBookingSnapshotBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING = 'true'
+            expect((await requests.findOneByOrFail({ id: request.id })).bookingSnapshot?.amountMinor).toBe(290_000)
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING = previousStrict
+            await resetBookingSnapshotBindingBackfill(AppDataSource)
+            await requests.delete({ id: target.id })
+        }
     })
 
     it('serializes concurrent redemption and records one immutable discount snapshot', async () => {

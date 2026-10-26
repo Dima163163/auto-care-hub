@@ -93,6 +93,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'timestamptz', nullable: true }) acceptedQuoteAt!: Date | null
     /** Immutable booking contract derived from the accepted quote. */
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'bookingSnapshot', 'jsonb') }) bookingSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) bookingSnapshotBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) bookingCreatedAt!: Date | null
     @Column({ type: 'enum', enum: ServiceRequestStatus, enumName: 'autocare_service_request_status', default: ServiceRequestStatus.Draft }) status!: ServiceRequestStatus
     @Column({ type: 'timestamptz', nullable: true }) clientConfirmedAt!: Date | null

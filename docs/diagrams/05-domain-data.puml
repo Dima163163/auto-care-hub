@@ -43,6 +43,7 @@ entity "ServiceRequest" as Request {
   clientId / providerId / locationId
   definitionId / offeringId?
   status / historical snapshots
+  encrypted bookingSnapshot / binding : HMAC?
 }
 entity "ServiceQuote" as Quote {
   * id : uuid
@@ -144,6 +145,12 @@ entity "ChatSubjectBindingCheckpoint" as ChatCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "BookingSnapshotBindingCheckpoint" as BookingCheckpoint {
+  * name : autocare_service_requests
+  --
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -173,6 +180,7 @@ ProfileCheckpoint ..> User : bounded name / phone backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
+BookingCheckpoint ..> Request : bounded booking backfill
 note bottom of Ledger
   U18: positive earn/adjustment/refund entries form lots.
   Redemption consumes earliest expiry first;
@@ -238,6 +246,12 @@ note bottom of ChatCheckpoint
   type and request/provider/client/creator UUIDs.
   Compare-write and checkpoint commit together; full verify precedes
   opt-in strict read. Account deletion rebinds redacted subjects.
+end note
+note bottom of BookingCheckpoint
+  U02: booking JSON HMAC binds plaintext to request UUID,
+  client/provider/location/definition UUIDs.
+  Compare-write and checkpoint commit together; full verify precedes
+  opt-in strict read. Account deletion clears snapshot and binding.
 end note
 note bottom of Evidence
   Пунктир — логическая связь, не FK.

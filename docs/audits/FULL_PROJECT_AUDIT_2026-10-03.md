@@ -1,5 +1,16 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка снимка бронирования к заявке, 26 октября 2026
+
+Новые `autocare_service_requests.bookingSnapshot` получают HMAC по
+расшифрованному JSON, request UUID и client/provider/location/definition UUID.
+ORM отвергает перенос корректного ciphertext между заявками и изменение
+нешифрованного owner/service scope. Migration 178654, bounded compare-write
+backfill, полный verify и opt-in strict reader подготовлены для старых
+снимков. Анонимизация очищает binding вместе с payload; deletion invariant
+теперь проверяет остаточные финансовые снимки. PostgreSQL CI, staging
+KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка темы приватного чата, 26 октября 2026
 
 Новые `autocare_chat_threads.subject` получают HMAC по plaintext, thread UUID,
@@ -7,8 +18,9 @@ type и связям request/provider/client/creator. ORM отвергает п�
 ciphertext и изменение связей доступа. Migration 178653, bounded compare-write
 backfill, полный verify и opt-in strict reader подготовлены для legacy тем.
 Raw SQL анонимизация пересчитывает binding каждой темы после обнуления client
-и creator ID. PostgreSQL CI, staging KMS/restore и strict cutover ещё не
-подтверждены. **U02 открыт; pilot NO-GO.**
+и creator ID. PR #31 прошёл PostgreSQL/browser CI и объединён в `dev` как
+`ec6e2df`. Staging KMS/restore и strict cutover ещё не подтверждены.
+**U02 открыт; pilot NO-GO.**
 
 ## U02 — привязка зашифрованных предложений сервиса, 26 октября 2026
 
