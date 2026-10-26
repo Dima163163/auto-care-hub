@@ -6,7 +6,7 @@ import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
-import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
+import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
 const subscriber = new SensitiveDataSubscriber()
@@ -228,6 +228,60 @@ describe('encrypted OAuth subject record binding', () => {
         } finally {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_OAUTH_RECORD_BINDING = previous
+        }
+    })
+})
+
+describe('encrypted user profile record binding', () => {
+    function storedUser(name: string, phone: string | null) {
+        const user = new UserEntity()
+        user.email = `${randomUUID()}@example.test`
+        user.name = name
+        user.phone = phone
+        subscriber.beforeInsert({ metadata: { tableName: 'users' }, entity: user } as InsertEvent<UserEntity>)
+        user.email = createEmailBlindIndex(user.email)
+        return user
+    }
+
+    function loadUser(user: UserEntity) {
+        if (!isEmailBlindIndex(user.email)) user.email = createEmailBlindIndex(user.email)
+        subscriber.afterLoad(user, { metadata: { tableName: 'users' } } as LoadEvent<UserEntity>)
+        return user
+    }
+
+    it('binds name and phone to the user ID and rejects swapped values', () => {
+        const source = storedUser('Source Name', '+79991111111')
+        const target = storedUser('Target Name', '+79992222222')
+        expect(source.nameBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(source.phoneBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(loadUser(source).name).toBe('Source Name')
+        target.name = source.name
+        expect(() => loadUser(target)).toThrow('Encrypted record binding authentication failed.')
+        target.name = 'Target Name'
+        target.phone = source.phone
+        expect(() => loadUser(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('accepts null phone and rejects a binding without a value', () => {
+        const user = storedUser('Private Name', null)
+        expect(user.phoneBinding).toBeNull()
+        expect(loadUser(user).phone).toBeNull()
+        user.phoneBinding = user.nameBinding
+        expect(() => loadUser(user)).toThrow('Encrypted users.phone record binding is invalid.')
+    })
+
+    it('reads legacy profile values until strict cutover', () => {
+        const user = storedUser('Legacy Name', '+79991111111')
+        user.nameBinding = null
+        user.phoneBinding = null
+        expect(loadUser(user).name).toBe('Legacy Name')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadUser(user)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING = previous
         }
     })
 })

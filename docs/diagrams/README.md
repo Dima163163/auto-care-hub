@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, user name/phone binding 2026-10-25:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC по user UUID, nullable
+binding-поля, checkpoint и opt-in strict reader. Реальный KMS/restore и
+включение strict остаются открытыми; source anchors обновлены.
+
 **U02, OAuth subject expansion 2026-10-25:** `09-access-privacy.puml` и SVG
 показывают MAC по identity/user UUID и провайдеру, с проверкой HMAC index при
 чтении. `05-domain-data.puml` и SVG показывают checkpoint-таблицу для

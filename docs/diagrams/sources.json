@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "33e3c04f1231e78c459a95d8b7187dffc7eae4ca12336d31fbf68135c9e7b4c3",
+      "sha256": "4dd2a8081863b5cd63c6bc12f18e93ef14d846e7bb3ce50098969f1a26ecd8a5",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "ababa1ab2061621684d8642e768e7c0981a8824a08d71af67d3d326ab6da0b27",
+      "sha256": "e558076256271b50e674139ac009acf3d2b1d156d4254dc29bc3c46d0378cfbe",
       "scopes": [
         "runtime",
         "backend"
@@ -184,7 +184,7 @@
     },
     {
       "path": "server/src/entities/user/user.entity.ts",
-      "sha256": "066bc0d7ad810e35061e5b723b98e577c1da13412650edf1b23dbac96c2c6df7",
+      "sha256": "a2f2829d070d295c94fba18b34d22cc7ba52a2e233627218fba6a1c7854cc444",
       "scopes": [
         "data"
       ]
@@ -226,7 +226,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare-bonus.service.ts",
-      "sha256": "f602edefa581e4c5b725fb164b8ed3c32db945ce11f54f4a41c74bec770578f1",
+      "sha256": "995d40badd57549f8f28ca337b518e3f012780175be50a02198ad79285b4abbc",
       "scopes": [
         "data"
       ]
@@ -275,7 +275,7 @@
     },
     {
       "path": "server/src/modules/autocare/provider-membership.service.ts",
-      "sha256": "d47b8bdba3dab796511fe844f4979a855024bc3131082f98d696cdc1a7043d8b",
+      "sha256": "076c02865bca1eda9d06049301543fbd224ccaa8638dcf5409a07772dd649e7d",
       "scopes": [
         "outbox"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "d7dedfda182c5f67e8e89d9855476f7106f5fcf094c43dd52d2d210858bbc77d",
+      "sha256": "6889142c1de048fc549246b40c293525a1902cb683a809b9faa87b150a832bd3",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "3e6c1a5a653ab75a004826cea666b1f0282e62f8a5ca7faa2c75f7224d2c25ac",
+      "sha256": "4aa90e7ce60e6ad91675537f503c3e0847ac9211d9f7801c6dd3448c51ffcce8",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "fe9808f956553db7da4b4a412087aad56304628c273b07513174aedc740292e1",
+      "sha256": "2dec61a31cf619720fd383ba8c9ac30ee2ab5b7465be7231260262bd2b9b6689",
       "scopes": [
         "security"
       ]
@@ -1122,6 +1122,38 @@
     {
       "path": "server/src/scripts/backfill-oauth-record-binding.ts",
       "sha256": "410d0922797bf559bd977636ecd5004d5a4915bbff7b0629e92fd9e053efd615",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786500000000-CreateUserProfileBindingBackfillCheckpoint.ts",
+      "sha256": "3cf48642725f227a439c7697d87aea40a4dbb1aa208ec2b29a4bdafbd8c6a9d2",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/plaintext-record-binding.ts",
+      "sha256": "5f1aa3bc2a6b208e65fb1de82f0db02e066ea38f8923dbd7ccce0e79b4dbbc00",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/user-profile-binding-backfill.ts",
+      "sha256": "33c7c6123a5bfb3a09125ecd31400a44f72d9e5acf761ed5e6b05205fd20ec51",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-user-profile-record-binding.ts",
+      "sha256": "6dc8f41b3fe97c9bd08019ccca94d67134251396bcba5e5bd17266cce25d169f",
       "scopes": [
         "data",
         "security"

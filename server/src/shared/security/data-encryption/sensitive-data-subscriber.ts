@@ -11,7 +11,8 @@ import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
-import { requireEmailRecordBinding, requireOAuthRecordBinding } from './record-binding-policy.js'
+import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
+import { requireEmailRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -35,6 +36,54 @@ type ProviderIdentityRecord = {
     provider?: string
     providerSubject?: string
     providerSubjectCiphertext?: string
+}
+
+type UserProfileRecord = {
+    id?: string
+    name?: string
+    nameBinding?: string | null
+    phone?: string | null
+    phoneBinding?: string | null
+}
+
+function sealUserProfile(record: UserProfileRecord) {
+    if (record.name !== undefined) {
+        if (typeof record.name !== 'string' || typeof record.id !== 'string') {
+            throw new Error('Encrypted users.name record scope is invalid.')
+        }
+        record.nameBinding = createPlaintextRecordBinding('users', 'name', record.name, record.id)
+    }
+    if (record.phone !== undefined) {
+        if (record.phone === null) record.phoneBinding = null
+        else {
+            if (typeof record.phone !== 'string' || typeof record.id !== 'string') {
+                throw new Error('Encrypted users.phone record scope is invalid.')
+            }
+            record.phoneBinding = createPlaintextRecordBinding('users', 'phone', record.phone, record.id)
+        }
+    }
+}
+
+function openUserProfile(record: UserProfileRecord) {
+    const allowLegacy = !requireUserProfileRecordBinding()
+    if (record.name !== undefined) {
+        if (typeof record.name !== 'string' || typeof record.id !== 'string') {
+            throw new Error('Encrypted users.name record scope is invalid.')
+        }
+        verifyPlaintextRecordBinding('users', 'name', record.name, record.id, record.nameBinding, { allowLegacy })
+    }
+    if (record.phone !== undefined) {
+        if (record.phone === null) {
+            if (record.phoneBinding !== null && record.phoneBinding !== undefined) {
+                throw new Error('Encrypted users.phone record binding is invalid.')
+            }
+        } else {
+            if (typeof record.phone !== 'string' || typeof record.id !== 'string') {
+                throw new Error('Encrypted users.phone record scope is invalid.')
+            }
+            verifyPlaintextRecordBinding('users', 'phone', record.phone, record.id, record.phoneBinding, { allowLegacy })
+        }
+    }
 }
 
 function providerSubjectScope(record: ProviderIdentityRecord): EncryptedRecordScope {
@@ -99,6 +148,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
+            if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
         } else if (event.metadata.tableName === 'oauth_identities') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealProviderSubject(event.entity as ProviderIdentityRecord)
@@ -112,6 +162,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
     beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
+            if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
         } else if (event.entity && event.metadata.tableName === 'oauth_identities') {
             sealProviderSubject(event.entity as ProviderIdentityRecord)
         } else if (event.entity && event.metadata.tableName === 'outbox_events') {
@@ -125,6 +176,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
             && (record.email !== undefined || record.emailCiphertext !== undefined)) openEmail(record, table)
+        if (table === 'users') openUserProfile(entity as UserProfileRecord)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)

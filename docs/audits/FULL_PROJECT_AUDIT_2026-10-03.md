@@ -1,5 +1,14 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка имени и телефона пользователя, 25 октября 2026
+
+Новые users.name и users.phone сохраняют отдельный HMAC по полю, plaintext
+и user UUID. ORM проверяет HMAC после AES-GCM чтения: подмена корректного
+ciphertext из другой строки вызывает отказ. Миграция 178650 и bounded
+compare-write команда с checkpoint готовят перенос старых строк; полный verify
+и opt-in strict reader доступны после staging KMS/restore. **U02 открыт;
+pilot NO-GO.**
+
 ## U02 — привязка OAuth subject к записи и пользователю, 25 октября 2026
 
 Новые OAuth subject ciphertext получают MAC по identity UUID, user UUID и

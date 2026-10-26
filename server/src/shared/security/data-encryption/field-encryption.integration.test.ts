@@ -14,12 +14,14 @@ import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, getDataEncr
 import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
 import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
 import { resetOAuthBindingBackfill, runOAuthBindingBackfill, verifyOAuthBindings } from './oauth-binding-backfill.js'
+import { resetUserProfileBindingBackfill, runUserProfileBindingBackfill, verifyUserProfileBindings } from './user-profile-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
     const email = `field-encryption-${suffix}@example.test`
     const providerSubject = `oauth-private-subject-${suffix}`
     let userId: string | undefined
+    let secondUserId: string | undefined
     let outboxEventId: string | undefined
     let secondOutboxEventId: string | undefined
 
@@ -27,6 +29,7 @@ describe('sensitive field encryption ORM integration', () => {
         if (!AppDataSource.isInitialized) return
         if (outboxEventId) await AppDataSource.getRepository(OutboxEventEntity).delete({ id: outboxEventId })
         if (secondOutboxEventId) await AppDataSource.getRepository(OutboxEventEntity).delete({ id: secondOutboxEventId })
+        if (secondUserId) await AppDataSource.getRepository(UserEntity).delete({ id: secondUserId })
         if (userId) {
             await AppDataSource.getRepository(OAuthIdentityEntity).delete({ userId })
             await AppDataSource.getRepository(UserEntity).delete({ id: userId })
@@ -47,9 +50,9 @@ describe('sensitive field encryption ORM integration', () => {
         userId = user.id
 
         const rawUser = await AppDataSource.query(
-            'SELECT "email", "emailCiphertext", "name", "phone" FROM "users" WHERE "id" = $1',
+            'SELECT "email", "emailCiphertext", "name", "phone", "nameBinding", "phoneBinding" FROM "users" WHERE "id" = $1',
             [user.id],
-        ) as Array<{ email: string; emailCiphertext: string; name: string; phone: string }>
+        ) as Array<{ email: string; emailCiphertext: string; name: string; phone: string; nameBinding: string; phoneBinding: string }>
         const storedUser = rawUser[0]
         if (!storedUser) throw new Error('Synthetic encrypted user was not stored.')
         expect(storedUser.email).not.toContain(email)
@@ -57,12 +60,65 @@ describe('sensitive field encryption ORM integration', () => {
         expect(storedUser.emailCiphertext).not.toContain(email)
         expect(storedUser.name).not.toContain(`Private Name ${suffix}`)
         expect(storedUser.phone).not.toContain('+7 999 123-45-67')
+        expect(storedUser.nameBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(storedUser.phoneBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
 
         const loadedUser = await users.findOneByOrFail({ email })
         expect(loadedUser.email).toBe(email)
         expect(loadedUser.name).toBe(`Private Name ${suffix}`)
         expect(loadedUser.phone).toBe('+7 999 123-45-67')
         expect(loadedUser.preferredCity).toBe('Казань')
+
+        const secondUser = await users.save(users.create({
+            name: `Other Private Name ${suffix}`,
+            email: `other-${email}`,
+            phone: '+7 999 765-43-21',
+            role: UserRole.Client,
+            status: UserStatus.Active,
+            passwordHash: 'test-password-hash',
+        }))
+        secondUserId = secondUser.id
+        const [secondStoredUser] = await AppDataSource.query(
+            'SELECT "name", "phone" FROM "users" WHERE "id" = $1', [secondUser.id],
+        ) as Array<{ name: string; phone: string }>
+        if (!secondStoredUser) throw new Error('Second synthetic encrypted user was not stored.')
+        await AppDataSource.query('UPDATE "users" SET "name" = $1 WHERE "id" = $2', [storedUser.name, secondUser.id])
+        try {
+            await expect(users.findOneByOrFail({ id: secondUser.id }))
+                .rejects.toThrow('Encrypted record binding authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "users" SET "name" = $1 WHERE "id" = $2', [secondStoredUser.name, secondUser.id])
+        }
+        await AppDataSource.query('UPDATE "users" SET "phone" = $1 WHERE "id" = $2', [storedUser.phone, secondUser.id])
+        try {
+            await expect(users.findOneByOrFail({ id: secondUser.id }))
+                .rejects.toThrow('Encrypted record binding authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "users" SET "phone" = $1 WHERE "id" = $2', [secondStoredUser.phone, secondUser.id])
+        }
+
+        await AppDataSource.query('UPDATE "users" SET "nameBinding" = NULL, "phoneBinding" = NULL WHERE "id" = $1', [user.id])
+        await resetUserProfileBindingBackfill(AppDataSource)
+        try {
+            expect((await runUserProfileBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyUserProfileBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await users.findOneByOrFail({ id: user.id })).name).toBe(`Private Name ${suffix}`)
+            const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING
+            process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING = 'true'
+            try {
+                const partial = await users.findOneOrFail({
+                    where: { id: user.id }, select: { id: true, name: true, nameBinding: true },
+                })
+                expect(partial.name).toBe(`Private Name ${suffix}`)
+                await expect(users.findOneOrFail({ where: { id: user.id }, select: { id: true, name: true } }))
+                    .rejects.toThrow('Encrypted record binding is missing.')
+            } finally {
+                if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING
+                else process.env.DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING = previousStrict
+            }
+        } finally {
+            await resetUserProfileBindingBackfill(AppDataSource)
+        }
 
         const wrongEmailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', `other-${email}`))
         await AppDataSource.query('UPDATE "users" SET "emailCiphertext" = $1 WHERE "id" = $2', [wrongEmailCiphertext, user.id])

@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## U02 user name/phone binding — 2026-10-25
+
+- [x] Для новых users.name/phone сохранять HMAC по расшифрованному значению,
+  полю и user UUID; на ORM-чтении отклонять переставленный ciphertext.
+- [x] Подготовить migration 178650, bounded compare-write backfill, полный
+  verify и opt-in strict reader для старых users; флаг по умолчанию выключен.
+- [ ] Подтвердить PostgreSQL и browser CI, затем staging KMS/restore и
+  включение strict на всех процессах. Остальные поля U02 и pilot NO-GO открыты.
+
 ## U02 OAuth subject record binding expansion — 2026-10-25
 
 - [x] Новые OAuth subject envelopes привязаны MAC к identity UUID, user UUID
@@ -7,8 +16,9 @@
   blind index + ciphertext между строками.
 - [x] Подготовить bounded backfill старых OAuth subjects, полный verify и
   opt-in strict reader. Флаг по умолчанию выключен.
-- [ ] Проверить migration/backfill в CI/PostgreSQL, затем выполнить staging
-  KMS/restore и cutover. До этого legacy rows читаются;
+- [x] PR #25 прошёл полный CI и объединён в `dev` как `8351f89`; PR #26
+  проверил migration/backfill в CI/PostgreSQL/browser и объединён как `109b07e`.
+- [ ] Выполнить staging KMS/restore и cutover. До этого legacy rows читаются;
   остальные поля U02 и pilot NO-GO остаются открытыми.
 
 ## U02 outbox binding backfill and strict cutover — 2026-10-25

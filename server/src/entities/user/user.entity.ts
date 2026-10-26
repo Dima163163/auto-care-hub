@@ -42,6 +42,9 @@ export class UserEntity {
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('users', 'name', 'text') })
     name!: string
 
+    @Column({ type: 'text', nullable: true })
+    nameBinding!: string | null
+
     @Column({ type: 'text', unique: true, transformer: emailBlindIndexTransformer })
     email!: string
 
@@ -54,6 +57,9 @@ export class UserEntity {
 
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'phone', 'text') })
     phone!: string | null
+
+    @Column({ type: 'text', nullable: true })
+    phoneBinding!: string | null
 
     @Column({
         type: 'enum',

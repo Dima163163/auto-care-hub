@@ -154,7 +154,7 @@ export async function getOwnerAutoCareBonusLiability(user: UserEntity, providerI
     })
     const clientIds = [...new Set(entries.map((entry) => entry.clientId))]
     const clients = clientIds.length === 0 ? [] : await AppDataSource.getRepository(UserEntity).find({
-        where: { id: In(clientIds) }, select: { id: true, name: true },
+        where: { id: In(clientIds) }, select: { id: true, name: true, nameBinding: true },
     })
     const names = new Map(clients.map((client) => [client.id, client.name]))
     return {
