@@ -3,7 +3,7 @@
 ## U02 — привязка приватного текста сообщения, 26 октября 2026
 
 Новый `autocare_service_messages.body` получает отдельный HMAC по полю,
-plaintext, message UUID, request/thread UUID и sender UUID. ORM проверяет HMAC
+plaintext, message UUID, request/thread UUID, sender UUID и kind. ORM проверяет HMAC
 после AES-GCM чтения: перенос ciphertext или смена связей доступа вызывает
 отказ. Миграция 178651,
 bounded compare-write backfill с checkpoint, полный verify и opt-in strict

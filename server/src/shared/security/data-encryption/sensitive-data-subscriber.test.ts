@@ -6,7 +6,7 @@ import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
-import { ServiceMessageEntity } from '../../../entities/automotive/service-request.entity.js'
+import { ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
@@ -294,6 +294,7 @@ describe('encrypted message body record binding', () => {
         message.requestId = null
         message.threadId = randomUUID()
         message.senderId = randomUUID()
+        message.kind = ServiceMessageKind.Text
         subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as InsertEvent<ServiceMessageEntity>)
         return message
     }
@@ -313,13 +314,17 @@ describe('encrypted message body record binding', () => {
         expect(() => loadMessage(target)).toThrow('Encrypted record binding authentication failed.')
     })
 
-    it('rejects a changed thread or sender even when the body and message ID are unchanged', () => {
+    it('rejects a changed thread, sender or kind even when the body and message ID are unchanged', () => {
         const message = storedMessage('Private message')
         const originalThreadId = message.threadId
+        const originalSenderId = message.senderId
         message.threadId = randomUUID()
         expect(() => loadMessage(message)).toThrow('Encrypted record binding authentication failed.')
         message.threadId = originalThreadId
         message.senderId = randomUUID()
+        expect(() => loadMessage(message)).toThrow('Encrypted record binding authentication failed.')
+        message.senderId = originalSenderId
+        message.kind = ServiceMessageKind.System
         expect(() => loadMessage(message)).toThrow('Encrypted record binding authentication failed.')
     })
 

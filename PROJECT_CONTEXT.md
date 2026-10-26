@@ -3,7 +3,7 @@
 ## U02 private message body binding preparation — 2026-10-26
 
 Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
-полю, message UUID, request/thread UUID и sender UUID; ORM проверяет его после
+полю, message UUID, request/thread UUID, sender UUID и kind; ORM проверяет его после
 AES-GCM и обнаруживает подмену ciphertext другой строки или связей доступа.
 Migration 178651 добавляет nullable
 `bodyBinding` и checkpoint; bounded compare-write команда переносит legacy

@@ -165,7 +165,7 @@ This does not cover other encrypted user columns or the remaining U02 fields.
 
 New non-null `autocare_service_messages.body` writes carry a companion HMAC in
 `bodyBinding`. The MAC covers the decrypted body, column, message UUID,
-request/thread UUIDs and sender UUID; ORM reads reject ciphertext moved to a
+request/thread UUIDs, sender UUID and message kind; ORM reads reject ciphertext moved to a
 different message row or an unencrypted access-control link changed. A null body
 has a null binding. Migration `1786510000000` adds the nullable
 binding and a durable checkpoint. The operator command reads UUID keysets of
@@ -181,7 +181,7 @@ command and a tested backup exists:
    until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
 2. Run the same command with `--mode verify` and a budget large enough for a
    complete pass. Mismatch or budget exhaustion blocks cutover. Compare-write
-   also checks that the request/thread and sender links have not changed.
+   also checks that the request/thread and sender links and kind have not changed.
 3. If old writers were active during the scan, coordinate `--mode reset`, then
    repeat apply and verify after they have drained. Reset removes only the
    progress checkpoint.

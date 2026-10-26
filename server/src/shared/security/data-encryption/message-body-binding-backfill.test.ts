@@ -16,9 +16,9 @@ afterEach(() => setDataEncryptionKeyProviderForTests(null))
 function fakeSource() {
     const rows = new Map([
         [firstId, { body: JSON.stringify(encryptFieldValue('autocare_service_messages', 'body', 'Private message')),
-            bodyBinding: null as string | null, requestId: null as string | null, threadId: firstId, senderId: secondId }],
+            bodyBinding: null as string | null, requestId: null as string | null, threadId: firstId, senderId: secondId, kind: 'text' }],
         [secondId, { body: null as string | null, bodyBinding: null as string | null,
-            requestId: null as string | null, threadId: firstId, senderId: secondId }],
+            requestId: null as string | null, threadId: firstId, senderId: secondId, kind: 'text' }],
     ])
     let checkpoint: { afterId: string | null; processed: number } | null = null
     let failCompare = false
@@ -44,7 +44,8 @@ function fakeSource() {
             const id = String(params[1])
             const current = rows.get(id)
             if (failCompare || !current || current.body !== params[2] || current.bodyBinding !== params[3]
-                || current.requestId !== params[4] || current.threadId !== params[5] || current.senderId !== params[6]) return [[], 0]
+                || current.requestId !== params[4] || current.threadId !== params[5] || current.senderId !== params[6]
+                || current.kind !== params[7]) return [[], 0]
             rows.set(id, { ...current, bodyBinding: String(params[0]) })
             return [[{ id }], 1]
         }

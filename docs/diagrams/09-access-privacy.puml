@@ -45,7 +45,7 @@ note right of Resource
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
   Текст нового chat message имеет companion HMAC по message UUID,
-  request/thread UUID и sender UUID;
+  request/thread UUID, sender UUID и kind;
   bounded backfill и opt-in strict reader подготовлены.
   Offer JSON и остальные поля U02 пока не связаны со строкой.
 end note
