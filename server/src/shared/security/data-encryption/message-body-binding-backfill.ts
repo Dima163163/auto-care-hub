@@ -1,13 +1,15 @@
 import type { DataSource } from 'typeorm'
 import { decryptFieldValue } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
+import { messageBodyRecordContext, type MessageBodyRecordScope } from './message-body-record-scope.js'
 import { runBoundedBackfill, type BackfillCheckpoint, type BackfillRow } from './bounded-backfill.js'
 
-type MessageBodyRow = { body: string | null; bodyBinding: string | null }
+type MessageBodyRow = MessageBodyRecordScope & { body: string | null; bodyBinding: string | null }
 type StoredCheckpoint = { afterId: string | null; processed: string }
 const CHECKPOINT_NAME = 'autocare_service_messages'
 
 function transformRow(row: BackfillRow<MessageBodyRow>, requireBinding: boolean): string | null {
+    const context = messageBodyRecordContext(row.value)
     if (row.value.body === null) {
         if (row.value.bodyBinding !== null) throw new Error('Encrypted autocare_service_messages.body record binding is invalid.')
         return null
@@ -16,14 +18,15 @@ function transformRow(row: BackfillRow<MessageBodyRow>, requireBinding: boolean)
     if (typeof body !== 'string') throw new Error('Encrypted autocare_service_messages.body is invalid.')
     verifyPlaintextRecordBinding('autocare_service_messages', 'body', body, row.id, row.value.bodyBinding, {
         allowLegacy: !requireBinding,
+        context,
     })
-    return row.value.bodyBinding ?? createPlaintextRecordBinding('autocare_service_messages', 'body', body, row.id)
+    return row.value.bodyBinding ?? createPlaintextRecordBinding('autocare_service_messages', 'body', body, row.id, context)
 }
 
 async function readBatch(source: DataSource, afterId: string | null, limit: number): Promise<BackfillRow<MessageBodyRow>[]> {
     const predicate = afterId ? 'WHERE "id" > $1::uuid' : ''
     const rows = await source.query(
-        `SELECT "id", "body", "bodyBinding" FROM "autocare_service_messages" ${predicate} ORDER BY "id" ASC LIMIT $${afterId ? 2 : 1}`,
+        `SELECT "id", "body", "bodyBinding", "requestId", "threadId", "senderId" FROM "autocare_service_messages" ${predicate} ORDER BY "id" ASC LIMIT $${afterId ? 2 : 1}`,
         afterId ? [afterId, limit] : [limit],
     ) as Array<{ id: string } & MessageBodyRow>
     return rows.map(({ id, ...value }) => ({ id, value }))
@@ -61,8 +64,8 @@ export async function runMessageBodyBindingBackfill(source: DataSource, options:
                 for (const { source: row, value } of rows) {
                     if (value === row.value.bodyBinding) continue
                     const updated = await manager.query(
-                        'UPDATE "autocare_service_messages" SET "bodyBinding" = $1 WHERE "id" = $2::uuid AND "body" IS NOT DISTINCT FROM $3 AND "bodyBinding" IS NOT DISTINCT FROM $4 RETURNING "id"',
-                        [value, row.id, row.value.body, row.value.bodyBinding],
+                        'UPDATE "autocare_service_messages" SET "bodyBinding" = $1 WHERE "id" = $2::uuid AND "body" IS NOT DISTINCT FROM $3 AND "bodyBinding" IS NOT DISTINCT FROM $4 AND "requestId" IS NOT DISTINCT FROM $5::uuid AND "threadId" IS NOT DISTINCT FROM $6::uuid AND "senderId" = $7::uuid RETURNING "id"',
+                        [value, row.id, row.value.body, row.value.bodyBinding, row.value.requestId, row.value.threadId, row.value.senderId],
                     ) as [Array<{ id: string }>, number]
                     if (updated[1] !== 1 || updated[0].length !== 1) {
                         throw new Error('Message body binding source row changed concurrently.')

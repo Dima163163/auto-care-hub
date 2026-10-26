@@ -2,8 +2,9 @@
 
 ## U02 private message body binding — 2026-10-26
 
-- [x] Новые непустые message body привязаны HMAC к UUID сообщения;
-  ORM-чтение отвергает перенос корректного ciphertext между строками.
+- [x] Новые непустые message body привязаны HMAC к UUID сообщения, заявки,
+  чата и отправителя; ORM-чтение отвергает перенос ciphertext или смену
+  нешифрованных связей доступа.
 - [x] Подготовить migration 178651, bounded compare-write backfill,
   полный verify и opt-in strict reader; при удалении body binding очищается.
 - [ ] Подтвердить PostgreSQL и browser CI, затем staging KMS/restore и

@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "21829ef4971856e98a8003a5e4a285dfb7c19d4d6fac51b00a43ea92b0e88732",
+      "sha256": "6516abe0f5675f8ec71090ce0592764c0622938bf11949494123f04435246928",
       "scopes": [
         "security"
       ]
@@ -1137,7 +1137,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/plaintext-record-binding.ts",
-      "sha256": "5f1aa3bc2a6b208e65fb1de82f0db02e066ea38f8923dbd7ccce0e79b4dbbc00",
+      "sha256": "38f861511e7417e9a200cd4832616dbb93b768c971a5f7dcc17f83a581b50a46",
       "scopes": [
         "data",
         "security"
@@ -1169,7 +1169,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/message-body-binding-backfill.ts",
-      "sha256": "861d5d54a960c1413c13e9abfb64443bdb68dcc7edaa2088c5b659a72902ceab",
+      "sha256": "99f0c637fc74fa8c42ff7174378451f1fbb529f912b0c576d1320f7d6abb7e42",
       "scopes": [
         "data",
         "security"
@@ -1192,8 +1192,16 @@
     },
     {
       "path": "server/docs/security/FIELD_ENCRYPTION.md",
-      "sha256": "d0dbf8249ed54ae445caf47679e85fbfb422963b277923245aafcf3bb0024135",
+      "sha256": "d47dfb8658f0fb6565b379db151f61ddc727b1b6e6ab40cf6c4089d622f5715d",
       "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/message-body-record-scope.ts",
+      "sha256": "ce2632e633beb9c8e6b80b6bdb6870116248f522eb1920bd1ad43159e210aada",
+      "scopes": [
+        "data",
         "security"
       ]
     }

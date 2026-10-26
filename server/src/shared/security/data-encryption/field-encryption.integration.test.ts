@@ -472,7 +472,7 @@ describe('sensitive field encryption ORM integration', () => {
             name: 'Synthetic chat sender', email: `chat-binding-${suffix}@example.test`,
             role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
         }))
-        let threadId: string | undefined
+        const threadIds: string[] = []
         const messageIds: string[] = []
         const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
         try {
@@ -480,7 +480,13 @@ describe('sensitive field encryption ORM integration', () => {
                 type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
                 clientId: user.id, createdById: user.id, subject: 'Synthetic private chat',
             }))
-            threadId = thread.id
+            const threadId = thread.id
+            threadIds.push(threadId)
+            const otherThread = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Other synthetic private chat',
+            }))
+            threadIds.push(otherThread.id)
             const source = await messages.save(messages.create({
                 requestId: null, threadId, senderId: user.id, kind: ServiceMessageKind.Text,
                 body: 'Source private message', offer: null,
@@ -498,13 +504,20 @@ describe('sensitive field encryption ORM integration', () => {
             ) as Array<{ body: string; bodyBinding: string }>
             if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted chat messages are missing.')
             expect(storedSource.body).not.toContain('Source private message')
-            expect(storedSource.bodyBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+            expect(storedSource.bodyBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
             await AppDataSource.query('UPDATE "autocare_service_messages" SET "body" = $1 WHERE "id" = $2', [storedSource.body, target.id])
             try {
                 await expect(messages.findOneByOrFail({ id: target.id }))
                     .rejects.toThrow('Encrypted record binding authentication failed.')
             } finally {
                 await AppDataSource.query('UPDATE "autocare_service_messages" SET "body" = $1 WHERE "id" = $2', [storedTarget.body, target.id])
+            }
+            await AppDataSource.query('UPDATE "autocare_service_messages" SET "threadId" = $1 WHERE "id" = $2', [otherThread.id, target.id])
+            try {
+                await expect(messages.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query('UPDATE "autocare_service_messages" SET "threadId" = $1 WHERE "id" = $2', [threadId, target.id])
             }
 
             await AppDataSource.query('UPDATE "autocare_service_messages" SET "bodyBinding" = NULL WHERE "id" = $1', [source.id])
@@ -533,7 +546,7 @@ describe('sensitive field encryption ORM integration', () => {
             else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = previousStrict
             await resetMessageBodyBindingBackfill(AppDataSource)
             if (messageIds.length) await messages.delete(messageIds)
-            if (threadId) await threads.delete({ id: threadId })
+            if (threadIds.length) await threads.delete(threadIds)
             await users.delete({ id: user.id })
         }
     })

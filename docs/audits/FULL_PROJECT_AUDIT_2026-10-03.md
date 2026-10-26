@@ -3,8 +3,9 @@
 ## U02 — привязка приватного текста сообщения, 26 октября 2026
 
 Новый `autocare_service_messages.body` получает отдельный HMAC по полю,
-plaintext и message UUID. ORM проверяет HMAC после AES-GCM чтения:
-перенос корректного ciphertext другой строки вызывает отказ. Миграция 178651,
+plaintext, message UUID, request/thread UUID и sender UUID. ORM проверяет HMAC
+после AES-GCM чтения: перенос ciphertext или смена связей доступа вызывает
+отказ. Миграция 178651,
 bounded compare-write backfill с checkpoint, полный verify и opt-in strict
 reader готовят перенос старых сообщений. Удаление body очищает binding,
 включая raw SQL account deletion. PostgreSQL CI и staging KMS/restore ещё

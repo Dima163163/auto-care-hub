@@ -13,6 +13,7 @@ import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.
 import { ServiceMessageEntity } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
+import { messageBodyRecordContext, type MessageBodyRecordScope } from './message-body-record-scope.js'
 import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -47,7 +48,7 @@ type UserProfileRecord = {
     phoneBinding?: string | null
 }
 
-type MessageBodyRecord = {
+type MessageBodyRecord = MessageBodyRecordScope & {
     id?: string
     body?: string | null
     bodyBinding?: string | null
@@ -62,7 +63,7 @@ function sealMessageBody(record: MessageBodyRecord) {
     if (typeof record.body !== 'string' || typeof record.id !== 'string') {
         throw new Error('Encrypted autocare_service_messages.body record scope is invalid.')
     }
-    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id)
+    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, messageBodyRecordContext(record))
 }
 
 function openMessageBody(record: MessageBodyRecord) {
@@ -78,6 +79,7 @@ function openMessageBody(record: MessageBodyRecord) {
     }
     verifyPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, record.bodyBinding, {
         allowLegacy: !requireMessageBodyRecordBinding(),
+        context: messageBodyRecordContext(record),
     })
 }
 

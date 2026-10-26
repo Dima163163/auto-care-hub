@@ -206,7 +206,8 @@ note bottom of ProfileCheckpoint
   opt-in strict read. Real KMS/restore remains unverified.
 end note
 note bottom of MessageCheckpoint
-  U02: non-null body HMAC binds plaintext to message UUID.
+  U02: non-null body HMAC binds plaintext to message,
+  request/thread and sender UUIDs.
   Compare-write and checkpoint commit together; full verify precedes
   opt-in strict read. Null body has null binding.
 end note

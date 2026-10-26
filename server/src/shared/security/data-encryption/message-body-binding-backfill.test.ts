@@ -16,8 +16,9 @@ afterEach(() => setDataEncryptionKeyProviderForTests(null))
 function fakeSource() {
     const rows = new Map([
         [firstId, { body: JSON.stringify(encryptFieldValue('autocare_service_messages', 'body', 'Private message')),
-            bodyBinding: null as string | null }],
-        [secondId, { body: null as string | null, bodyBinding: null as string | null }],
+            bodyBinding: null as string | null, requestId: null as string | null, threadId: firstId, senderId: secondId }],
+        [secondId, { body: null as string | null, bodyBinding: null as string | null,
+            requestId: null as string | null, threadId: firstId, senderId: secondId }],
     ])
     let checkpoint: { afterId: string | null; processed: number } | null = null
     let failCompare = false
@@ -42,7 +43,8 @@ function fakeSource() {
         if (sql.startsWith('UPDATE "autocare_service_messages" SET "bodyBinding"')) {
             const id = String(params[1])
             const current = rows.get(id)
-            if (failCompare || !current || current.body !== params[2] || current.bodyBinding !== params[3]) return [[], 0]
+            if (failCompare || !current || current.body !== params[2] || current.bodyBinding !== params[3]
+                || current.requestId !== params[4] || current.threadId !== params[5] || current.senderId !== params[6]) return [[], 0]
             rows.set(id, { ...current, bodyBinding: String(params[0]) })
             return [[{ id }], 1]
         }
@@ -64,7 +66,7 @@ describe('message body binding backfill', () => {
         const fake = fakeSource()
         expect(await runMessageBodyBindingBackfill(fake.source, { batchSize: 1, maxBatches: 1 }))
             .toMatchObject({ exhausted: false, checkpoint: { afterId: firstId, processed: 1 } })
-        expect(fake.rows.get(firstId)?.bodyBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(fake.rows.get(firstId)?.bodyBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await runMessageBodyBindingBackfill(fake.source, { batchSize: 1, maxBatches: 2 }))
             .toMatchObject({ exhausted: true, checkpoint: { afterId: secondId, processed: 2 } })
         expect(fake.rows.get(secondId)?.bodyBinding).toBeNull()

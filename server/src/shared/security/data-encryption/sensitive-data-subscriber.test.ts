@@ -291,6 +291,9 @@ describe('encrypted message body record binding', () => {
     function storedMessage(body: string | null) {
         const message = new ServiceMessageEntity()
         message.body = body
+        message.requestId = null
+        message.threadId = randomUUID()
+        message.senderId = randomUUID()
         subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_messages' }, entity: message } as InsertEvent<ServiceMessageEntity>)
         return message
     }
@@ -304,10 +307,20 @@ describe('encrypted message body record binding', () => {
         const source = storedMessage('Private source message')
         const target = storedMessage('Private target message')
         expect(source.id).toMatch(/^[0-9a-f-]{36}$/)
-        expect(source.bodyBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(source.bodyBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(loadMessage(source).body).toBe('Private source message')
         target.body = source.body
         expect(() => loadMessage(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rejects a changed thread or sender even when the body and message ID are unchanged', () => {
+        const message = storedMessage('Private message')
+        const originalThreadId = message.threadId
+        message.threadId = randomUUID()
+        expect(() => loadMessage(message)).toThrow('Encrypted record binding authentication failed.')
+        message.threadId = originalThreadId
+        message.senderId = randomUUID()
+        expect(() => loadMessage(message)).toThrow('Encrypted record binding authentication failed.')
     })
 
     it('clears the binding when a message is deleted', () => {

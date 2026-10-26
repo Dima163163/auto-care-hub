@@ -3,8 +3,9 @@
 ## U02 private message body binding preparation — 2026-10-26
 
 Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
-полю и message UUID; ORM проверяет его после AES-GCM и обнаруживает подмену
-корректного ciphertext другой строки. Migration 178651 добавляет nullable
+полю, message UUID, request/thread UUID и sender UUID; ORM проверяет его после
+AES-GCM и обнаруживает подмену ciphertext другой строки или связей доступа.
+Migration 178651 добавляет nullable
 `bodyBinding` и checkpoint; bounded compare-write команда переносит legacy
 сообщения, полный verify и opt-in strict reader готовят cutover. Удаление
 сообщения и raw SQL account deletion обнуляют binding. До PostgreSQL CI,
