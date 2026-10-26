@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
-  "verifiedOn": "2026-10-25",
+  "baseline": "ba04e6867fa011b559f16ff3a574f9d2aa99ec96",
+  "verifiedOn": "2026-10-26",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "4dd2a8081863b5cd63c6bc12f18e93ef14d846e7bb3ce50098969f1a26ecd8a5",
+      "sha256": "d35a5d5157f553728a7aa85366dad9da2037cac43a0ef0c927fc2dbcf43fda62",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "e558076256271b50e674139ac009acf3d2b1d156d4254dc29bc3c46d0378cfbe",
+      "sha256": "372091a3868778c82c0de977f3429010cac5f3b079c46d17670e9727193c27c9",
       "scopes": [
         "runtime",
         "backend"
@@ -141,7 +141,7 @@
     },
     {
       "path": "server/src/entities/automotive/service-request.entity.ts",
-      "sha256": "af917912b4f9e01253aea3b9b6b8094a6347ad5c33714572f3d8d80f03e4007f",
+      "sha256": "f1dfca19bd20d5068bb2fb034248a6987f78edfb4332ac98032a317b6f10423a",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "6889142c1de048fc549246b40c293525a1902cb683a809b9faa87b150a832bd3",
+      "sha256": "e5cae1fb5018c49a15d58fd774885cd7f4550c6b9fbc43108618c1db80d9dbe5",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "4aa90e7ce60e6ad91675537f503c3e0847ac9211d9f7801c6dd3448c51ffcce8",
+      "sha256": "66a964a79053d59b2f8d70b68350335d3e64c5a6d1b591a74aef2eaa34fc922e",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "2dec61a31cf619720fd383ba8c9ac30ee2ab5b7465be7231260262bd2b9b6689",
+      "sha256": "550e9c74acb3cc59fef2bf1054c75c25fca1fc451c7831745d470bc4dc18af6b",
       "scopes": [
         "security"
       ]
@@ -1137,7 +1137,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/plaintext-record-binding.ts",
-      "sha256": "5f1aa3bc2a6b208e65fb1de82f0db02e066ea38f8923dbd7ccce0e79b4dbbc00",
+      "sha256": "38f861511e7417e9a200cd4832616dbb93b768c971a5f7dcc17f83a581b50a46",
       "scopes": [
         "data",
         "security"
@@ -1154,6 +1154,52 @@
     {
       "path": "server/src/scripts/backfill-user-profile-record-binding.ts",
       "sha256": "6dc8f41b3fe97c9bd08019ccca94d67134251396bcba5e5bd17266cce25d169f",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786510000000-CreateMessageBodyBindingBackfillCheckpoint.ts",
+      "sha256": "37efaa67487a0b02260ae6fcb497491490558e7e64597d912d8878ef7e34ca4d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/message-body-binding-backfill.ts",
+      "sha256": "29c14bdc3cafc60a585e5ea7993bdeb468bcaff4f4d66a06aa6a59e90ca4ae2e",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-message-body-record-binding.ts",
+      "sha256": "56ef5e9be2a159e6f2daa01004ad1388cbd7381cdf44ac15f7fa8c08687decf0",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/account-deletion-admin.service.ts",
+      "sha256": "59245f0c4e37ca63271469054abcf0a312957d7b4f2a5e9b9f12c6053ee3a6b3",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/docs/security/FIELD_ENCRYPTION.md",
+      "sha256": "9898b473e86bbded2e541ec95ad6a26da5062d71cad7e4adf27494ea4702c932",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/message-body-record-scope.ts",
+      "sha256": "f85f196cd2966e1032e199346171b3b32341b1bdc2c8ceb64824497470d4e186",
       "scopes": [
         "data",
         "security"

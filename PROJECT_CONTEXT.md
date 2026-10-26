@@ -1,5 +1,22 @@
 # AutoCare Hub Project Context
 
+## U02 private message body binding preparation — 2026-10-26
+
+Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
+полю, message UUID, request/thread UUID, sender UUID и kind; ORM проверяет его после
+AES-GCM и обнаруживает подмену ciphertext другой строки или связей доступа.
+ORM insert материализует default kind=`text` до вычисления HMAC, чтобы старые
+вызовы сохранения без явного kind остались совместимы.
+Migration 178651 добавляет nullable
+`bodyBinding` и checkpoint; bounded compare-write команда переносит legacy
+сообщения, полный verify и opt-in strict reader готовят cutover. Удаление
+сообщения и raw SQL account deletion обнуляют binding. До PostgreSQL CI,
+staging KMS/restore и включения флага старые строки читаются; offer JSON и
+остальные поля U02, pilot NO-GO открыты.
+
+PR #27 (имя/телефон) прошёл полный CI и объединён в `dev` как `ba04e68`;
+защищённый promotion PR #19 ждёт независимого code-owner review.
+
 ## U02 user name/phone binding preparation — 2026-10-25
 
 Новые users.name/phone получают отдельный HMAC по plaintext, полю и user UUID;

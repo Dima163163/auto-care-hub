@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { hash } from 'bcryptjs'
 import { AppDataSource } from '../../../database/data-source.js'
 import { AutomotiveProviderEntity } from '../../../entities/automotive/automotive.entity.js'
+import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
 import { AutomotiveProviderInvitationEntity, AutomotiveProviderInvitationRole, AutomotiveProviderInvitationStatus } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../../entities/outbox/outbox-event.entity.js'
@@ -15,6 +16,7 @@ import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdent
 import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
 import { resetOAuthBindingBackfill, runOAuthBindingBackfill, verifyOAuthBindings } from './oauth-binding-backfill.js'
 import { resetUserProfileBindingBackfill, runUserProfileBindingBackfill, verifyUserProfileBindings } from './user-profile-binding-backfill.js'
+import { resetMessageBodyBindingBackfill, runMessageBodyBindingBackfill, verifyMessageBodyBindings } from './message-body-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -459,6 +461,93 @@ describe('sensitive field encryption ORM integration', () => {
             else process.env.DATA_ENCRYPTION_REQUIRE_OUTBOX_RECORD_BINDING = previous
             await resetOutboxBindingBackfill(AppDataSource)
             await outbox.delete({ id: event.id })
+        }
+    })
+
+    it('binds message bodies to their rows, backfills legacy bodies and clears bindings on deletion', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const threads = AppDataSource.getRepository(AutoCareChatThreadEntity)
+        const messages = AppDataSource.getRepository(ServiceMessageEntity)
+        const user = await users.save(users.create({
+            name: 'Synthetic chat sender', email: `chat-binding-${suffix}@example.test`,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+        }))
+        const threadIds: string[] = []
+        const messageIds: string[] = []
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
+        try {
+            const thread = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Synthetic private chat',
+            }))
+            const threadId = thread.id
+            threadIds.push(threadId)
+            const otherThread = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Other synthetic private chat',
+            }))
+            threadIds.push(otherThread.id)
+            const source = await messages.save(messages.create({
+                requestId: null, threadId, senderId: user.id, kind: ServiceMessageKind.Text,
+                body: 'Source private message', offer: null,
+            }))
+            const target = await messages.save(messages.create({
+                requestId: null, threadId, senderId: user.id, kind: ServiceMessageKind.Text,
+                body: 'Target private message', offer: null,
+            }))
+            messageIds.push(source.id, target.id)
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "body", "bodyBinding" FROM "autocare_service_messages" WHERE "id" = $1', [source.id],
+            ) as Array<{ body: string; bodyBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "body", "bodyBinding" FROM "autocare_service_messages" WHERE "id" = $1', [target.id],
+            ) as Array<{ body: string; bodyBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted chat messages are missing.')
+            expect(storedSource.body).not.toContain('Source private message')
+            expect(storedSource.bodyBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query('UPDATE "autocare_service_messages" SET "body" = $1 WHERE "id" = $2', [storedSource.body, target.id])
+            try {
+                await expect(messages.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query('UPDATE "autocare_service_messages" SET "body" = $1 WHERE "id" = $2', [storedTarget.body, target.id])
+            }
+            await AppDataSource.query('UPDATE "autocare_service_messages" SET "threadId" = $1 WHERE "id" = $2', [otherThread.id, target.id])
+            try {
+                await expect(messages.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query('UPDATE "autocare_service_messages" SET "threadId" = $1 WHERE "id" = $2', [threadId, target.id])
+            }
+
+            await AppDataSource.query('UPDATE "autocare_service_messages" SET "bodyBinding" = NULL WHERE "id" = $1', [source.id])
+            await resetMessageBodyBindingBackfill(AppDataSource)
+            await expect(verifyMessageBodyBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = 'true'
+            await expect(messages.findOneByOrFail({ id: source.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
+            expect((await runMessageBodyBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyMessageBodyBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = 'true'
+            expect((await messages.findOneByOrFail({ id: source.id })).body).toBe('Source private message')
+
+            const deleted = await messages.findOneByOrFail({ id: target.id })
+            deleted.body = null
+            deleted.deletedAt = new Date()
+            await messages.save(deleted)
+            const [storedDeleted] = await AppDataSource.query(
+                'SELECT "body", "bodyBinding" FROM "autocare_service_messages" WHERE "id" = $1', [target.id],
+            ) as Array<{ body: string | null; bodyBinding: string | null }>
+            expect(storedDeleted).toMatchObject({ body: null, bodyBinding: null })
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = previousStrict
+            await resetMessageBodyBindingBackfill(AppDataSource)
+            if (messageIds.length) await messages.delete(messageIds)
+            if (threadIds.length) await threads.delete(threadIds)
+            await users.delete({ id: user.id })
         }
     })
 })
