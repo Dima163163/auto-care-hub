@@ -13,8 +13,9 @@ import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.
 import { ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
-import { messageBodyRecordContext, type MessageBodyRecordScope } from './message-body-record-scope.js'
-import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { messageRecordContext, type MessageRecordScope } from './message-record-scope.js'
+import { serializeMessageOffer, type MessageOfferRecord } from './message-offer-value.js'
+import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -48,13 +49,13 @@ type UserProfileRecord = {
     phoneBinding?: string | null
 }
 
-type MessageBodyRecord = MessageBodyRecordScope & {
+type MessageRecord = MessageRecordScope & MessageOfferRecord & {
     id?: string
     body?: string | null
     bodyBinding?: string | null
 }
 
-function sealMessageBody(record: MessageBodyRecord) {
+function sealMessageBody(record: MessageRecord) {
     if (record.body === undefined) return
     if (record.body === null) {
         record.bodyBinding = null
@@ -63,10 +64,10 @@ function sealMessageBody(record: MessageBodyRecord) {
     if (typeof record.body !== 'string' || typeof record.id !== 'string') {
         throw new Error('Encrypted autocare_service_messages.body record scope is invalid.')
     }
-    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, messageBodyRecordContext(record))
+    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, messageRecordContext(record))
 }
 
-function openMessageBody(record: MessageBodyRecord) {
+function openMessageBody(record: MessageRecord) {
     if (record.body === undefined) return
     if (record.body === null) {
         if (record.bodyBinding !== null && record.bodyBinding !== undefined) {
@@ -79,7 +80,32 @@ function openMessageBody(record: MessageBodyRecord) {
     }
     verifyPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, record.bodyBinding, {
         allowLegacy: !requireMessageBodyRecordBinding(),
-        context: messageBodyRecordContext(record),
+        context: messageRecordContext(record),
+    })
+}
+
+function sealMessageOffer(record: MessageRecord) {
+    if (record.offer === undefined) return
+    if (record.offer === null) {
+        record.offerBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_messages.offer record scope is invalid.')
+    record.offerBinding = createPlaintextRecordBinding('autocare_service_messages', 'offer', serializeMessageOffer(record.offer), record.id, messageRecordContext(record))
+}
+
+function openMessageOffer(record: MessageRecord) {
+    if (record.offer === undefined) return
+    if (record.offer === null) {
+        if (record.offerBinding !== null && record.offerBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_messages.offer record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_messages.offer record scope is invalid.')
+    verifyPlaintextRecordBinding('autocare_service_messages', 'offer', serializeMessageOffer(record.offer), record.id, record.offerBinding, {
+        allowLegacy: !requireMessageOfferRecordBinding(),
+        context: messageRecordContext(record),
     })
 }
 
@@ -198,6 +224,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             if (!message.id) message.id = randomUUID()
             if (message.kind === undefined) message.kind = ServiceMessageKind.Text
             sealMessageBody(message)
+            sealMessageOffer(message)
         }
     }
 
@@ -211,7 +238,8 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const outbox = event.entity as OutboxEventEntity
             if (outbox.id && outbox.payload) setOutboxPayloadRecordId(outbox.payload, outbox.id)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
-            sealMessageBody(event.entity as MessageBodyRecord)
+            sealMessageBody(event.entity as MessageRecord)
+            sealMessageOffer(event.entity as MessageRecord)
         }
     }
 
@@ -234,6 +262,9 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
                 }
             }
         }
-        if (table === 'autocare_service_messages') openMessageBody(entity as MessageBodyRecord)
+        if (table === 'autocare_service_messages') {
+            openMessageBody(entity as MessageRecord)
+            openMessageOffer(entity as MessageRecord)
+        }
     }
 }

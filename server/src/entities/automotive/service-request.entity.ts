@@ -142,6 +142,7 @@ export class ServiceMessageEntity {
     @Column({ type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'char', length: 64, nullable: true }) idempotencyFingerprint!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_messages', 'offer', 'jsonb') }) offer!: ServiceMessageOffer | null
+    @Column({ type: 'text', nullable: true }) offerBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) deliveredAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) readAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) deletedAt!: Date | null

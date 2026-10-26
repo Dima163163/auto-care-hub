@@ -47,7 +47,9 @@ note right of Resource
   Текст нового chat message имеет companion HMAC по message UUID,
   request/thread UUID, sender UUID и kind;
   bounded backfill и opt-in strict reader подготовлены.
-  Offer JSON и остальные поля U02 пока не связаны со строкой.
+  Offer JSON имеет companion HMAC по тем же UUID и kind;
+  bounded backfill и opt-in strict reader подготовлены.
+  Остальные поля U02 пока не связаны со строкой.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.

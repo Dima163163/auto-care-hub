@@ -1,9 +1,15 @@
 # Карта проекта AutoCare Hub
 
+**U02, encrypted service offer binding 2026-10-26:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают companion HMAC предложения по
+message/request/thread/sender UUID и kind, nullable binding, bounded checkpoint
+и opt-in strict reader. Остальные поля U02, staging KMS/restore и strict cutover
+открыты.
+
 **U02, private message body binding 2026-10-26:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC по message/request/thread/sender UUID и kind, nullable
-binding, bounded checkpoint и opt-in strict reader. Offer JSON и остальные
-поля U02, staging KMS/restore и включение strict открыты.
+binding, bounded checkpoint и opt-in strict reader. Остальные поля U02,
+staging KMS/restore и включение strict открыты.
 
 **U02, user name/phone binding 2026-10-25:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC по user UUID, nullable

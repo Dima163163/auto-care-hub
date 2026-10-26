@@ -6,13 +6,14 @@ import { entities } from '../entities/index.js'
 import { DatabaseLogger } from './database-logger.js'
 import { SensitiveDataSubscriber } from '../shared/security/data-encryption/sensitive-data-subscriber.js'
 import { loadProductionKmsKeyProvider } from '../shared/security/data-encryption/production-kms-provider.js'
-import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from '../shared/security/data-encryption/record-binding-policy.js'
+import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from '../shared/security/data-encryption/record-binding-policy.js'
 
 requireEmailRecordBinding()
 requireOutboxRecordBinding()
 requireOAuthRecordBinding()
 requireUserProfileRecordBinding()
 requireMessageBodyRecordBinding()
+requireMessageOfferRecordBinding()
 await loadProductionKmsKeyProvider()
 
 export function getMigrationPaths(nodeEnv: 'development' | 'test' | 'production', runtime: 'source' | 'compiled' = 'source') {
