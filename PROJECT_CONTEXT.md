@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## U02 contact snapshot binding preparation — 2026-10-27
+
+Новые `autocare_service_requests.contactSnapshot` получают HMAC по JSON,
+request UUID и client/provider/location/definition UUID. ORM отвергает перенос
+контактов или смену owner/service scope после AES-GCM расшифровки. Migration
+178657, bounded compare-write backfill, полный verify и opt-in strict reader
+готовят старые строки. Анонимизация очищает binding вместе со снимком.
+До PostgreSQL CI, staging KMS/restore и strict cutover U02 и pilot NO-GO
+остаются открытыми.
+
 ## U02 estimate snapshot binding preparation — 2026-10-27
 
 Новые `autocare_service_requests.estimateSnapshot` получают HMAC по JSON,
@@ -8,7 +18,8 @@ request UUID и client/provider/location/definition UUID. ORM отвергает
 178656, bounded compare-write backfill, полный verify и opt-in strict reader
 готовят старые строки. Частичная выборка аналитики теперь выбирает binding
 и все UUID контекста. Анонимизация очищает binding вместе со снимком.
-До PostgreSQL CI, staging KMS/restore и strict cutover U02 и pilot NO-GO
+PR #34 прошёл PostgreSQL/browser CI и объединён в `dev` как `7a7224e`.
+До staging KMS/restore и strict cutover U02 и pilot NO-GO
 остаются открытыми.
 
 ## U02 accepted quote binding preparation — 2026-10-27

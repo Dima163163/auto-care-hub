@@ -83,6 +83,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'uuid', nullable: true }) vehicleId!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'contactSnapshot', 'jsonb') }) contactSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) contactSnapshotBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'note', 'text') }) note!: string | null
     @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null

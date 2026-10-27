@@ -20,7 +20,8 @@ import { serviceRequestRecordContext, type ServiceRequestRecordScope } from './s
 import { serializeBookingSnapshot } from './booking-snapshot-value.js'
 import { serializeAcceptedQuote } from './accepted-quote-value.js'
 import { serializeEstimateSnapshot } from './estimate-snapshot-value.js'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { serializeContactSnapshot } from './contact-snapshot-value.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -133,6 +134,40 @@ function openEstimateSnapshot(record: EstimateSnapshotRecord) {
     verifyPlaintextRecordBinding(
         'autocare_service_requests', 'estimateSnapshot', serializeEstimateSnapshot(record.estimateSnapshot), record.id,
         record.estimateSnapshotBinding, { allowLegacy: !requireEstimateSnapshotRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+type ContactSnapshotRecord = ServiceRequestRecordScope & {
+    id?: string
+    contactSnapshot?: Record<string, unknown> | null
+    contactSnapshotBinding?: string | null
+}
+
+function sealContactSnapshot(record: ContactSnapshotRecord) {
+    if (record.contactSnapshot === undefined) return
+    if (record.contactSnapshot === null) {
+        record.contactSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.contactSnapshot record scope is invalid.')
+    record.contactSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'contactSnapshot', serializeContactSnapshot(record.contactSnapshot), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openContactSnapshot(record: ContactSnapshotRecord) {
+    if (record.contactSnapshot === undefined) return
+    if (record.contactSnapshot === null) {
+        if (record.contactSnapshotBinding !== null && record.contactSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.contactSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.contactSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'contactSnapshot', serializeContactSnapshot(record.contactSnapshot), record.id,
+        record.contactSnapshotBinding, { allowLegacy: !requireContactSnapshotRecordBinding(), context: serviceRequestRecordContext(record) },
     )
 }
 
@@ -362,6 +397,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             if (!request.id) request.id = randomUUID()
             sealAcceptedQuote(request)
             sealEstimateSnapshot(request)
+            sealContactSnapshot(request)
             sealBookingSnapshot(request)
         }
     }
@@ -383,6 +419,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         } else if (event.entity && event.metadata.tableName === 'autocare_service_requests') {
             sealAcceptedQuote(event.entity as AcceptedQuoteRecord)
             sealEstimateSnapshot(event.entity as EstimateSnapshotRecord)
+            sealContactSnapshot(event.entity as ContactSnapshotRecord)
             sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
@@ -414,6 +451,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         if (table === 'autocare_service_requests') {
             openAcceptedQuote(entity as AcceptedQuoteRecord)
             openEstimateSnapshot(entity as EstimateSnapshotRecord)
+            openContactSnapshot(entity as ContactSnapshotRecord)
             openBookingSnapshot(entity as BookingSnapshotRecord)
         }
     }
