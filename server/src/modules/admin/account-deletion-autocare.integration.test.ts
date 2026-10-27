@@ -213,6 +213,7 @@ describe('AutoCare account deletion retention invariants', () => {
             definitionId: definition.id,
             offeringId: null,
             offeringSnapshot: null,
+            vehicleId: null,
             vehicleSnapshot: { vin: 'private-fixture' },
             contactSnapshot: { email: deletedOwner.email },
             preferredAt: null,
@@ -437,6 +438,7 @@ describe('AutoCare account deletion retention invariants', () => {
         expect(redactedRequest).toMatchObject({
             contactSnapshot: null,
             contactSnapshotBinding: null,
+            vehicleSnapshotBinding: null,
             estimateSnapshot: null,
             estimateSnapshotBinding: null,
             acceptedQuoteSnapshot: null,

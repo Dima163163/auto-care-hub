@@ -705,3 +705,69 @@ describe('encrypted contact snapshot record binding', () => {
         }
     })
 })
+
+describe('encrypted vehicle snapshot record binding', () => {
+    function storedRequest(amountMinor: number) {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.vehicleId = null
+        request.vehicleSnapshot = { brand: `Vehicle-${amountMinor}` }
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('rejects swapping snapshot and binding together or changing ownership', () => {
+        const source = storedRequest(50_000)
+        const target = storedRequest(90_000)
+        expect(source.vehicleSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).vehicleSnapshot?.brand).toBe('Vehicle-50000')
+        target.vehicleSnapshot = source.vehicleSnapshot
+        target.vehicleSnapshotBinding = source.vehicleSnapshotBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        const originalClientId = source.clientId
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = originalClientId
+        source.vehicleId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+        delete (source as Partial<ServiceRequestEntity>).vehicleId
+        expect(() => loadRequest(source)).toThrow('Encrypted service request vehicle scope is invalid.')
+    })
+
+    it('rebinds a legitimate vehicle update and clears a deleted snapshot', () => {
+        const request = storedRequest(50_000)
+        const previous = request.vehicleSnapshotBinding
+        request.vehicleSnapshot = { ...request.vehicleSnapshot, model: 'Camry' }
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.vehicleSnapshotBinding).not.toBe(previous)
+        expect(loadRequest(request).vehicleSnapshot?.model).toBe('Camry')
+        request.vehicleSnapshot = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.vehicleSnapshotBinding).toBeNull()
+        loadRequest(request)
+        request.vehicleSnapshotBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.vehicleSnapshot record binding is invalid.')
+    })
+
+    it('keeps legacy snapshots readable until strict cutover', () => {
+        const request = storedRequest(50_000)
+        request.vehicleSnapshotBinding = null
+        expect(loadRequest(request).vehicleSnapshot?.brand).toBe('Vehicle-50000')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING = previous
+        }
+    })
+})

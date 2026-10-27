@@ -1,5 +1,16 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка снимка автомобиля к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.vehicleSnapshot` получают HMAC по
+расшифрованному JSON, request UUID, client/provider/location/definition UUID и
+nullable vehicle UUID. ORM отвергает перенос корректного ciphertext между
+заявками и изменение owner/service/vehicle scope. Migration 178658, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены для
+старых снимков. Анонимизация очищает binding вместе с payload. PostgreSQL CI,
+staging KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot
+NO-GO.**
+
 ## U02 — привязка контактного снимка к заявке, 27 октября 2026
 
 Новые `autocare_service_requests.contactSnapshot` получают HMAC по
@@ -7,8 +18,9 @@
 ORM отвергает перенос корректного ciphertext между заявками и изменение
 owner/service scope. Migration 178657, bounded compare-write backfill, полный
 verify и opt-in strict reader подготовлены для старых контактов. Анонимизация
-очищает binding вместе с payload. PostgreSQL CI, staging KMS/restore и strict
-cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+очищает binding вместе с payload. PR #35 прошёл PostgreSQL/browser CI и
+объединён в `dev` как `c637e6b`. Staging KMS/restore и strict cutover ещё не
+подтверждены. **U02 открыт; pilot NO-GO.**
 
 ## U02 — привязка сметы к заявке, 27 октября 2026
 
