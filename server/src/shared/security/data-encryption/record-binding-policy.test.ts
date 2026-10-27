@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -88,5 +88,15 @@ describe('accepted quote record binding policy', () => {
         expect(requireAcceptedQuoteRecordBinding({ DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireAcceptedQuoteRecordBinding({ DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('estimate snapshot record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireEstimateSnapshotRecordBinding({})).toBe(false)
+        expect(requireEstimateSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireEstimateSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireEstimateSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING must be true or false.')
     })
 })

@@ -60,3 +60,10 @@ export function requireAcceptedQuoteRecordBinding(environment: NodeJS.ProcessEnv
     if (configured === 'true') return true
     throw new Error('DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING must be true or false.')
 }
+
+export function requireEstimateSnapshotRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING must be true or false.')
+}

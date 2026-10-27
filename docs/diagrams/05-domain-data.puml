@@ -45,6 +45,7 @@ entity "ServiceRequest" as Request {
   status / historical snapshots
   encrypted bookingSnapshot / binding : HMAC?
   encrypted acceptedQuoteSnapshot / binding : HMAC?
+  encrypted estimateSnapshot / binding : HMAC?
 }
 entity "ServiceQuote" as Quote {
   * id : uuid
@@ -158,6 +159,12 @@ entity "AcceptedQuoteBindingCheckpoint" as AcceptedQuoteCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "EstimateSnapshotBindingCheckpoint" as EstimateCheckpoint {
+  * name : autocare_service_requests
+  --
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -189,6 +196,7 @@ OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
 BookingCheckpoint ..> Request : bounded booking backfill
 AcceptedQuoteCheckpoint ..> Request : bounded accepted quote backfill
+EstimateCheckpoint ..> Request : bounded estimate backfill
 note bottom of Ledger
   U18: positive earn/adjustment/refund entries form lots.
   Redemption consumes earliest expiry first;
