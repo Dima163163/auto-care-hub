@@ -90,6 +90,7 @@ export class ServiceRequestEntity {
     /** Immutable price and scope captured when the client accepts a quote. */
     @Column({ type: 'integer', nullable: true }) acceptedQuoteVersion!: number | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'acceptedQuoteSnapshot', 'jsonb') }) acceptedQuoteSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) acceptedQuoteSnapshotBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) acceptedQuoteAt!: Date | null
     /** Immutable booking contract derived from the accepted quote. */
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'bookingSnapshot', 'jsonb') }) bookingSnapshot!: Record<string, unknown> | null

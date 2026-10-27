@@ -17,6 +17,7 @@ import {
 } from '../../entities/index.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { resetBookingSnapshotBindingBackfill, runBookingSnapshotBindingBackfill, verifyBookingSnapshotBindings } from '../../shared/security/data-encryption/booking-snapshot-binding-backfill.js'
+import { resetAcceptedQuoteBindingBackfill, runAcceptedQuoteBindingBackfill, verifyAcceptedQuoteBindings } from '../../shared/security/data-encryption/accepted-quote-binding-backfill.js'
 import {
     getMyAutoCareBonusAccounts,
     redeemAutoCareBonus,
@@ -211,6 +212,60 @@ describe('AutoCare bonus transaction invariants', () => {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING = previousStrict
             await resetBookingSnapshotBindingBackfill(AppDataSource)
+            await requests.delete({ id: target.id })
+        }
+    })
+
+    it('binds accepted quotes to request ownership and backfills legacy rows', async () => {
+        const requests = AppDataSource.getRepository(ServiceRequestEntity)
+        const target = await requests.save(requests.create({
+            clientId: client.id, providerId: provider.id, locationId: location.id, definitionId: definition.id,
+            offeringId: null, offeringSnapshot: null, vehicleSnapshot: null, contactSnapshot: null,
+            preferredAt: null, note: null, idempotencyKey: `bonus-accepted-binding-target-${suffix}`,
+            estimateSnapshot: null, acceptedQuoteVersion: 1, acceptedQuoteSnapshot: { amountMinor: 99_000 },
+            acceptedQuoteAt: new Date(), bookingSnapshot: null, bookingCreatedAt: null,
+            status: ServiceRequestStatus.Accepted, clientConfirmedAt: new Date(), providerConfirmedAt: new Date(),
+        }))
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
+        try {
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "acceptedQuoteSnapshot", "acceptedQuoteSnapshotBinding" FROM "autocare_service_requests" WHERE "id" = $1', [request.id],
+            ) as Array<{ acceptedQuoteSnapshot: object; acceptedQuoteSnapshotBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "acceptedQuoteSnapshot", "acceptedQuoteSnapshotBinding" FROM "autocare_service_requests" WHERE "id" = $1', [target.id],
+            ) as Array<{ acceptedQuoteSnapshot: object; acceptedQuoteSnapshotBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted accepted quotes are missing.')
+            expect(storedSource.acceptedQuoteSnapshot).not.toHaveProperty('amountMinor')
+            expect(storedSource.acceptedQuoteSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "acceptedQuoteSnapshot" = $1::jsonb, "acceptedQuoteSnapshotBinding" = $2 WHERE "id" = $3',
+                [storedSource.acceptedQuoteSnapshot, storedSource.acceptedQuoteSnapshotBinding, target.id],
+            )
+            try {
+                await expect(requests.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "autocare_service_requests" SET "acceptedQuoteSnapshot" = $1::jsonb, "acceptedQuoteSnapshotBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.acceptedQuoteSnapshot, storedTarget.acceptedQuoteSnapshotBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "autocare_service_requests" SET "acceptedQuoteSnapshotBinding" = NULL WHERE "id" = $1', [request.id])
+            await resetAcceptedQuoteBindingBackfill(AppDataSource)
+            await expect(verifyAcceptedQuoteBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING = 'true'
+            await expect(requests.findOneByOrFail({ id: request.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
+            expect((await runAcceptedQuoteBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyAcceptedQuoteBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING = 'true'
+            expect((await requests.findOneByOrFail({ id: request.id })).acceptedQuoteSnapshot?.amountMinor).toBe(290_000)
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING = previousStrict
+            await resetAcceptedQuoteBindingBackfill(AppDataSource)
             await requests.delete({ id: target.id })
         }
     })

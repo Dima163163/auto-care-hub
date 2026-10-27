@@ -528,3 +528,62 @@ describe('encrypted booking snapshot record binding', () => {
         }
     })
 })
+
+describe('encrypted accepted quote record binding', () => {
+    function storedRequest(amountMinor: number) {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.acceptedQuoteSnapshot = { amountMinor, currencyCode: 'RUB' }
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('rejects swapping snapshot and binding together or changing ownership', () => {
+        const source = storedRequest(50_000)
+        const target = storedRequest(90_000)
+        expect(source.acceptedQuoteSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).acceptedQuoteSnapshot?.amountMinor).toBe(50_000)
+        target.acceptedQuoteSnapshot = source.acceptedQuoteSnapshot
+        target.acceptedQuoteSnapshotBinding = source.acceptedQuoteSnapshotBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds a legitimate payment update and clears a deleted snapshot', () => {
+        const request = storedRequest(50_000)
+        const previous = request.acceptedQuoteSnapshotBinding
+        request.acceptedQuoteSnapshot = { ...request.acceptedQuoteSnapshot, payableAmountMinor: 45_000 }
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.acceptedQuoteSnapshotBinding).not.toBe(previous)
+        expect(loadRequest(request).acceptedQuoteSnapshot?.payableAmountMinor).toBe(45_000)
+        request.acceptedQuoteSnapshot = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.acceptedQuoteSnapshotBinding).toBeNull()
+        loadRequest(request)
+        request.acceptedQuoteSnapshotBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.acceptedQuoteSnapshot record binding is invalid.')
+    })
+
+    it('keeps legacy snapshots readable until strict cutover', () => {
+        const request = storedRequest(50_000)
+        request.acceptedQuoteSnapshotBinding = null
+        expect(loadRequest(request).acceptedQuoteSnapshot?.amountMinor).toBe(50_000)
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING = previous
+        }
+    })
+})
