@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U02, booking snapshot binding 2026-10-26:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC по request/client/provider/
+location/definition UUID, bounded checkpoint и opt-in strict reader.
+Анонимизация очищает snapshot и binding. Остальные поля U02, staging
+KMS/restore и strict cutover открыты.
+
 **U02, private chat subject binding 2026-10-26:** `05-domain-data.puml`
 и `09-access-privacy.puml` с SVG показывают HMAC темы по thread UUID,
 type и request/provider/client/creator UUID, bounded checkpoint и opt-in

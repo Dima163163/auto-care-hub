@@ -6,7 +6,7 @@ import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
-import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
+import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { SensitiveDataSubscriber } from './sensitive-data-subscriber.js'
 
@@ -466,6 +466,65 @@ describe('encrypted chat subject record binding', () => {
         } finally {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = previous
+        }
+    })
+})
+
+describe('encrypted booking snapshot record binding', () => {
+    function storedRequest(amountMinor: number) {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.bookingSnapshot = { amountMinor, currencyCode: 'RUB' }
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('rejects swapping snapshot and binding together or changing ownership', () => {
+        const source = storedRequest(50_000)
+        const target = storedRequest(90_000)
+        expect(source.bookingSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).bookingSnapshot?.amountMinor).toBe(50_000)
+        target.bookingSnapshot = source.bookingSnapshot
+        target.bookingSnapshotBinding = source.bookingSnapshotBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds a legitimate payment update and clears a deleted snapshot', () => {
+        const request = storedRequest(50_000)
+        const previous = request.bookingSnapshotBinding
+        request.bookingSnapshot = { ...request.bookingSnapshot, payableAmountMinor: 45_000 }
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.bookingSnapshotBinding).not.toBe(previous)
+        expect(loadRequest(request).bookingSnapshot?.payableAmountMinor).toBe(45_000)
+        request.bookingSnapshot = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.bookingSnapshotBinding).toBeNull()
+        loadRequest(request)
+        request.bookingSnapshotBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.bookingSnapshot record binding is invalid.')
+    })
+
+    it('keeps legacy snapshots readable until strict cutover', () => {
+        const request = storedRequest(50_000)
+        request.bookingSnapshotBinding = null
+        expect(loadRequest(request).bookingSnapshot?.amountMinor).toBe(50_000)
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING = previous
         }
     })
 })

@@ -242,6 +242,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
                 "estimateSnapshot" = NULL,
                 "acceptedQuoteSnapshot" = NULL,
                 "bookingSnapshot" = NULL,
+                "bookingSnapshotBinding" = NULL,
                 "cancelledById" = NULL,
                 "noShowById" = NULL,
                 "completedById" = NULL

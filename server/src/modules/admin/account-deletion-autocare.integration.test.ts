@@ -222,8 +222,8 @@ describe('AutoCare account deletion retention invariants', () => {
             acceptedQuoteVersion: null,
             acceptedQuoteSnapshot: null,
             acceptedQuoteAt: null,
-            bookingSnapshot: null,
-            bookingCreatedAt: null,
+            bookingSnapshot: { amountMinor: 50_000, currencyCode: 'RUB' },
+            bookingCreatedAt: new Date(),
             status: ServiceRequestStatus.Open,
             clientConfirmedAt: null,
             providerConfirmedAt: null,
@@ -435,6 +435,8 @@ describe('AutoCare account deletion retention invariants', () => {
         }
         const redactedRequest = await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: serviceRequest.id })
         expect(redactedRequest).toMatchObject({
+            bookingSnapshot: null,
+            bookingSnapshotBinding: null,
             cancelledById: null,
             cancellationReason: null,
             noShowById: null,
