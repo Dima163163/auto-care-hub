@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -98,5 +98,15 @@ describe('estimate snapshot record binding policy', () => {
         expect(requireEstimateSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireEstimateSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('contact snapshot record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireContactSnapshotRecordBinding({})).toBe(false)
+        expect(requireContactSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireContactSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireContactSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING must be true or false.')
     })
 })

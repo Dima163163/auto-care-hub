@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baseline": "2edb1b6b3287ecf3513a7eb67a66daab2b91d539",
+  "baseline": "7a7224e7bca8a9f32fc428bfd68f447704f80f9f",
   "verifiedOn": "2026-10-27",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "1bf61379ab9ffe0a475cb9fc6e77ad3e8598c3a4a7baed2556c25afbc87b2424",
+      "sha256": "b4f1ef67db39e3259ed14b1922bb66158f08935c057e62c7eb5575b0b1a655ef",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "d5cf284da0cc36819127fdb78d75e7a99201741701555cbb55a4e110ae8d25cb",
+      "sha256": "58c96ec90a5c0f2bc5771ee2969eae8fc6d815406742e59d9f59a7d0e172d471",
       "scopes": [
         "runtime",
         "backend"
@@ -141,7 +141,7 @@
     },
     {
       "path": "server/src/entities/automotive/service-request.entity.ts",
-      "sha256": "2bd8d82c6a69a18136eec1abdd4418250c9e03ed21ae654293348453f6ea5c7f",
+      "sha256": "5a73fad4caf259180b57e8b5fddb1157ef7189351ecb19456065b3824d9539fb",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "2e814579a1fbef0f497cd6baa90754110a559bb1a060e51ba39e4d98af06e6d3",
+      "sha256": "f9310c9d3613d3da028670eb815ca472e8734afdeac92903782a64e0f3556ff0",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "9edb6a608e7a04675926099e2ad8335f7ba6992406cebfeb60cf2a938c90f1e3",
+      "sha256": "86087c42c0df537aa58f5c5ec7464b2a2ac30941849bba1bc17098da0fc3ced6",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "1f4ec63b9ce62c89f9eb4415c552ec37f42af95441859b2c53ce77b9b65667cb",
+      "sha256": "7083ad772bb9b26ba79e3b151d06cb5437a80506ad5ca85c4ba1145d77b0944d",
       "scopes": [
         "security"
       ]
@@ -1185,14 +1185,14 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "e3139f43c896bd274930b372ac2c156f9055ff5abb0d98690b9ee97236384146",
+      "sha256": "4147d1f9bf13b5f13ba702deb7714a01d3bef4b3d96bbb247049962f1f1930fe",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/docs/security/FIELD_ENCRYPTION.md",
-      "sha256": "e4581243c0209d4f1fb99d7c8d43342ac7c03f9a640cde348170c2cf7af8ace4",
+      "sha256": "a961e33dab0355933f2c22f24bfd8d339d2a91ed51b075c401f89878cb06b081",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "3f86a1aff0df78cbc9416f01d5efa4892937f507569fd7d32290ebc868262785",
+      "sha256": "b2ccf635c1dc6c771ea23b01b6b87107581a271b56c1817c256831eb120ef783",
       "scopes": [
         "security"
       ]
@@ -1278,7 +1278,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "cc17318601c626bf88b0b5906165161e54eea3f2800e537834ab71babf6fde3c",
+      "sha256": "80d8b995a10d18f2a71b98462f73291c73beb857497bd525934483bd305980cd",
       "scopes": [
         "security"
       ]
@@ -1325,7 +1325,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare-bonus.integration.test.ts",
-      "sha256": "b97ffab59a5cc76b0076f09f69ed455b3ac3e4664b97fe5787a1cadaad7df01a",
+      "sha256": "3bc007539ed56e2c8e45cd51b222be9c021247cd6285c5b9cbebc85a2ea12deb",
       "scopes": [
         "data",
         "security"
@@ -1398,6 +1398,38 @@
     {
       "path": "server/src/modules/autocare/autocare-analytics-budget.test.ts",
       "sha256": "51ecd1fc32d869f83532e0fd20519f14f3dd2922d2e47a8186e559aee51c071b",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786570000000-CreateContactSnapshotBindingBackfillCheckpoint.ts",
+      "sha256": "bee3a6602a73108f10fdcc77aef7097f546a754a4f080fa53b7acec782ab5cdf",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/contact-snapshot-binding-backfill.ts",
+      "sha256": "3050dede0c4c2005436b5016afd420802964edbdf70031a29dc2ca5a5f6b81fd",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-contact-snapshot-record-binding.ts",
+      "sha256": "44c4d21362ab5a71afdc8cd3ec4f56b4181d5f0f191ef14d558debf3434b8d0a",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/contact-snapshot-value.ts",
+      "sha256": "cb861781af07ae966f5affc1f7ad7b27a38f89d81733a6b2618022747e58c25b",
       "scopes": [
         "data",
         "security"

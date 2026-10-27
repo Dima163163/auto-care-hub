@@ -237,6 +237,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query(
         `UPDATE "autocare_service_requests"
             SET "contactSnapshot" = NULL,
+                "contactSnapshotBinding" = NULL,
                 "vehicleSnapshot" = NULL,
                 "note" = NULL,
                 "estimateSnapshot" = NULL,

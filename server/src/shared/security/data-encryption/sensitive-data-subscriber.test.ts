@@ -646,3 +646,62 @@ describe('encrypted estimate snapshot record binding', () => {
         }
     })
 })
+
+describe('encrypted contact snapshot record binding', () => {
+    function storedRequest(amountMinor: number) {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.contactSnapshot = { email: `client-${amountMinor}@example.test` }
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('rejects swapping snapshot and binding together or changing ownership', () => {
+        const source = storedRequest(50_000)
+        const target = storedRequest(90_000)
+        expect(source.contactSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).contactSnapshot?.email).toBe('client-50000@example.test')
+        target.contactSnapshot = source.contactSnapshot
+        target.contactSnapshotBinding = source.contactSnapshotBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds a legitimate contact update and clears a deleted snapshot', () => {
+        const request = storedRequest(50_000)
+        const previous = request.contactSnapshotBinding
+        request.contactSnapshot = { ...request.contactSnapshot, phone: '+79990000000' }
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.contactSnapshotBinding).not.toBe(previous)
+        expect(loadRequest(request).contactSnapshot?.phone).toBe('+79990000000')
+        request.contactSnapshot = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.contactSnapshotBinding).toBeNull()
+        loadRequest(request)
+        request.contactSnapshotBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.contactSnapshot record binding is invalid.')
+    })
+
+    it('keeps legacy snapshots readable until strict cutover', () => {
+        const request = storedRequest(50_000)
+        request.contactSnapshotBinding = null
+        expect(loadRequest(request).contactSnapshot?.email).toBe('client-50000@example.test')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING = previous
+        }
+    })
+})

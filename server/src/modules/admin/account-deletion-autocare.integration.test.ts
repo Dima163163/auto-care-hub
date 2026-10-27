@@ -435,6 +435,8 @@ describe('AutoCare account deletion retention invariants', () => {
         }
         const redactedRequest = await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: serviceRequest.id })
         expect(redactedRequest).toMatchObject({
+            contactSnapshot: null,
+            contactSnapshotBinding: null,
             estimateSnapshot: null,
             estimateSnapshotBinding: null,
             acceptedQuoteSnapshot: null,
