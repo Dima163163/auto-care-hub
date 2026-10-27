@@ -49,7 +49,8 @@ async function* ownerRequestPages(providerId: string, locationIds: string[] | nu
                 'request.id', 'request.providerId', 'request.locationId', 'request.clientId',
                 'request.status', 'request.completedAt', 'request.clientConfirmedAt',
                 'request.providerConfirmedAt', 'request.acceptedQuoteAt',
-                'request.estimateSnapshot', 'request.createdAt',
+                'request.estimateSnapshot', 'request.estimateSnapshotBinding',
+                'request.definitionId', 'request.createdAt',
             ])
             .where('request.providerId = :providerId', { providerId })
             .andWhere('request.createdAt <= :generatedAt', { generatedAt })

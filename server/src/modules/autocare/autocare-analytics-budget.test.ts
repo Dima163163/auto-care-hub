@@ -64,5 +64,9 @@ describe('owner analytics request budget', () => {
         expect(requestQueries[0]!.take).toHaveBeenCalledWith(501)
         expect(requestQueries[1]!.andWhere).toHaveBeenCalledWith(expect.stringContaining('request.createdAt < :cursorCreatedAt'), expect.any(Object))
         expect(requestQueries[0]!.select).toHaveBeenCalledWith(expect.not.arrayContaining(['request.contactSnapshot', 'request.note']))
+        expect(requestQueries[0]!.select).toHaveBeenCalledWith(expect.arrayContaining([
+            'request.id', 'request.clientId', 'request.providerId', 'request.locationId',
+            'request.definitionId', 'request.estimateSnapshot', 'request.estimateSnapshotBinding',
+        ]))
     })
 })

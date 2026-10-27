@@ -18,6 +18,7 @@ import {
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { resetBookingSnapshotBindingBackfill, runBookingSnapshotBindingBackfill, verifyBookingSnapshotBindings } from '../../shared/security/data-encryption/booking-snapshot-binding-backfill.js'
 import { resetAcceptedQuoteBindingBackfill, runAcceptedQuoteBindingBackfill, verifyAcceptedQuoteBindings } from '../../shared/security/data-encryption/accepted-quote-binding-backfill.js'
+import { resetEstimateSnapshotBindingBackfill, runEstimateSnapshotBindingBackfill, verifyEstimateSnapshotBindings } from '../../shared/security/data-encryption/estimate-snapshot-binding-backfill.js'
 import {
     getMyAutoCareBonusAccounts,
     redeemAutoCareBonus,
@@ -129,7 +130,7 @@ describe('AutoCare bonus transaction invariants', () => {
             preferredAt: null,
             note: null,
             idempotencyKey: `bonus-request-${suffix}`,
-            estimateSnapshot: null,
+            estimateSnapshot: { amountMinor: 290_000, currencyCode: 'RUB' },
             acceptedQuoteVersion: 1,
             acceptedQuoteSnapshot: { amountMinor: 290_000 },
             acceptedQuoteAt: new Date(),
@@ -266,6 +267,60 @@ describe('AutoCare bonus transaction invariants', () => {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING = previousStrict
             await resetAcceptedQuoteBindingBackfill(AppDataSource)
+            await requests.delete({ id: target.id })
+        }
+    })
+
+    it('binds estimate snapshots to request ownership and backfills legacy rows', async () => {
+        const requests = AppDataSource.getRepository(ServiceRequestEntity)
+        const target = await requests.save(requests.create({
+            clientId: client.id, providerId: provider.id, locationId: location.id, definitionId: definition.id,
+            offeringId: null, offeringSnapshot: null, vehicleSnapshot: null, contactSnapshot: null,
+            preferredAt: null, note: null, idempotencyKey: `bonus-estimate-binding-target-${suffix}`,
+            estimateSnapshot: { amountMinor: 99_000 }, acceptedQuoteVersion: null, acceptedQuoteSnapshot: null,
+            acceptedQuoteAt: null, bookingSnapshot: null, bookingCreatedAt: null,
+            status: ServiceRequestStatus.Accepted, clientConfirmedAt: new Date(), providerConfirmedAt: new Date(),
+        }))
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING
+        try {
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "estimateSnapshot", "estimateSnapshotBinding" FROM "autocare_service_requests" WHERE "id" = $1', [request.id],
+            ) as Array<{ estimateSnapshot: object; estimateSnapshotBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "estimateSnapshot", "estimateSnapshotBinding" FROM "autocare_service_requests" WHERE "id" = $1', [target.id],
+            ) as Array<{ estimateSnapshot: object; estimateSnapshotBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted estimate snapshots are missing.')
+            expect(storedSource.estimateSnapshot).not.toHaveProperty('amountMinor')
+            expect(storedSource.estimateSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "estimateSnapshot" = $1::jsonb, "estimateSnapshotBinding" = $2 WHERE "id" = $3',
+                [storedSource.estimateSnapshot, storedSource.estimateSnapshotBinding, target.id],
+            )
+            try {
+                await expect(requests.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "autocare_service_requests" SET "estimateSnapshot" = $1::jsonb, "estimateSnapshotBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.estimateSnapshot, storedTarget.estimateSnapshotBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "autocare_service_requests" SET "estimateSnapshotBinding" = NULL WHERE "id" = $1', [request.id])
+            await resetEstimateSnapshotBindingBackfill(AppDataSource)
+            await expect(verifyEstimateSnapshotBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING = 'true'
+            await expect(requests.findOneByOrFail({ id: request.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING
+            expect((await runEstimateSnapshotBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyEstimateSnapshotBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING = 'true'
+            expect((await requests.findOneByOrFail({ id: request.id })).estimateSnapshot?.amountMinor).toBe(290_000)
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING = previousStrict
+            await resetEstimateSnapshotBindingBackfill(AppDataSource)
             await requests.delete({ id: target.id })
         }
     })

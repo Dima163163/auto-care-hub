@@ -87,6 +87,7 @@ export class ServiceRequestEntity {
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'note', 'text') }) note!: string | null
     @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true }) idempotencyKey!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'estimateSnapshot', 'jsonb') }) estimateSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) estimateSnapshotBinding!: string | null
     /** Immutable price and scope captured when the client accepts a quote. */
     @Column({ type: 'integer', nullable: true }) acceptedQuoteVersion!: number | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'acceptedQuoteSnapshot', 'jsonb') }) acceptedQuoteSnapshot!: Record<string, unknown> | null
