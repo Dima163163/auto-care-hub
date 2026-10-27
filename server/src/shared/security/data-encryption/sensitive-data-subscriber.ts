@@ -16,12 +16,13 @@ import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './pl
 import { messageRecordContext, type MessageRecordScope } from './message-record-scope.js'
 import { serializeMessageOffer, type MessageOfferRecord } from './message-offer-value.js'
 import { chatThreadRecordContext, type ChatThreadRecordScope } from './chat-thread-record-scope.js'
-import { serviceRequestRecordContext, type ServiceRequestRecordScope } from './service-request-record-scope.js'
+import { serviceRequestRecordContext, serviceRequestVehicleRecordContext, type ServiceRequestRecordScope, type ServiceRequestVehicleRecordScope } from './service-request-record-scope.js'
 import { serializeBookingSnapshot } from './booking-snapshot-value.js'
 import { serializeAcceptedQuote } from './accepted-quote-value.js'
 import { serializeEstimateSnapshot } from './estimate-snapshot-value.js'
 import { serializeContactSnapshot } from './contact-snapshot-value.js'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -168,6 +169,40 @@ function openContactSnapshot(record: ContactSnapshotRecord) {
     verifyPlaintextRecordBinding(
         'autocare_service_requests', 'contactSnapshot', serializeContactSnapshot(record.contactSnapshot), record.id,
         record.contactSnapshotBinding, { allowLegacy: !requireContactSnapshotRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+type VehicleSnapshotRecord = ServiceRequestVehicleRecordScope & {
+    id?: string
+    vehicleSnapshot?: Record<string, unknown> | null
+    vehicleSnapshotBinding?: string | null
+}
+
+function sealVehicleSnapshot(record: VehicleSnapshotRecord) {
+    if (record.vehicleSnapshot === undefined) return
+    if (record.vehicleSnapshot === null) {
+        record.vehicleSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.vehicleSnapshot record scope is invalid.')
+    record.vehicleSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'vehicleSnapshot', serializeVehicleSnapshot(record.vehicleSnapshot), record.id,
+        serviceRequestVehicleRecordContext(record),
+    )
+}
+
+function openVehicleSnapshot(record: VehicleSnapshotRecord) {
+    if (record.vehicleSnapshot === undefined) return
+    if (record.vehicleSnapshot === null) {
+        if (record.vehicleSnapshotBinding !== null && record.vehicleSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.vehicleSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.vehicleSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'vehicleSnapshot', serializeVehicleSnapshot(record.vehicleSnapshot), record.id,
+        record.vehicleSnapshotBinding, { allowLegacy: !requireVehicleSnapshotRecordBinding(), context: serviceRequestVehicleRecordContext(record) },
     )
 }
 
@@ -398,6 +433,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealAcceptedQuote(request)
             sealEstimateSnapshot(request)
             sealContactSnapshot(request)
+            sealVehicleSnapshot(request)
             sealBookingSnapshot(request)
         }
     }
@@ -420,6 +456,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealAcceptedQuote(event.entity as AcceptedQuoteRecord)
             sealEstimateSnapshot(event.entity as EstimateSnapshotRecord)
             sealContactSnapshot(event.entity as ContactSnapshotRecord)
+            sealVehicleSnapshot(event.entity as VehicleSnapshotRecord)
             sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
@@ -452,6 +489,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openAcceptedQuote(entity as AcceptedQuoteRecord)
             openEstimateSnapshot(entity as EstimateSnapshotRecord)
             openContactSnapshot(entity as ContactSnapshotRecord)
+            openVehicleSnapshot(entity as VehicleSnapshotRecord)
             openBookingSnapshot(entity as BookingSnapshotRecord)
         }
     }

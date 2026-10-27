@@ -47,6 +47,7 @@ entity "ServiceRequest" as Request {
   encrypted acceptedQuoteSnapshot / binding : HMAC?
   encrypted estimateSnapshot / binding : HMAC?
   encrypted contactSnapshot / binding : HMAC?
+  encrypted vehicleSnapshot / binding : HMAC?
 }
 entity "ServiceQuote" as Quote {
   * id : uuid

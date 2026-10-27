@@ -239,6 +239,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
             SET "contactSnapshot" = NULL,
                 "contactSnapshotBinding" = NULL,
                 "vehicleSnapshot" = NULL,
+                "vehicleSnapshotBinding" = NULL,
                 "note" = NULL,
                 "estimateSnapshot" = NULL,
                 "estimateSnapshotBinding" = NULL,
