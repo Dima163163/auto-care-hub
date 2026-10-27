@@ -21,6 +21,7 @@ import { resetAcceptedQuoteBindingBackfill, runAcceptedQuoteBindingBackfill, ver
 import { resetEstimateSnapshotBindingBackfill, runEstimateSnapshotBindingBackfill, verifyEstimateSnapshotBindings } from '../../shared/security/data-encryption/estimate-snapshot-binding-backfill.js'
 import { resetContactSnapshotBindingBackfill, runContactSnapshotBindingBackfill, verifyContactSnapshotBindings } from '../../shared/security/data-encryption/contact-snapshot-binding-backfill.js'
 import { resetVehicleSnapshotBindingBackfill, runVehicleSnapshotBindingBackfill, verifyVehicleSnapshotBindings } from '../../shared/security/data-encryption/vehicle-snapshot-binding-backfill.js'
+import { resetServiceRequestNoteBindingBackfill, runServiceRequestNoteBindingBackfill, verifyServiceRequestNoteBindings } from '../../shared/security/data-encryption/service-request-note-binding-backfill.js'
 import {
     getMyAutoCareBonusAccounts,
     redeemAutoCareBonus,
@@ -131,7 +132,7 @@ describe('AutoCare bonus transaction invariants', () => {
             vehicleSnapshot: { brand: 'Toyota', model: 'Camry' },
             contactSnapshot: { email: client.email, phone: '+79990000000' },
             preferredAt: null,
-            note: null,
+            note: 'Private client symptom',
             idempotencyKey: `bonus-request-${suffix}`,
             estimateSnapshot: { amountMinor: 290_000, currencyCode: 'RUB' },
             acceptedQuoteVersion: 1,
@@ -379,6 +380,61 @@ describe('AutoCare bonus transaction invariants', () => {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING = previousStrict
             await resetContactSnapshotBindingBackfill(AppDataSource)
+            await requests.delete({ id: target.id })
+        }
+    })
+
+    it('binds service request notes to request ownership and backfills legacy rows', async () => {
+        const requests = AppDataSource.getRepository(ServiceRequestEntity)
+        const target = await requests.save(requests.create({
+            clientId: client.id, providerId: provider.id, locationId: location.id, definitionId: definition.id,
+            offeringId: null, offeringSnapshot: null, vehicleSnapshot: null,
+            preferredAt: null, idempotencyKey: `bonus-note-binding-target-${suffix}`,
+            note: 'Target symptom', estimateSnapshot: null,
+            acceptedQuoteVersion: null, acceptedQuoteSnapshot: null,
+            acceptedQuoteAt: null, bookingSnapshot: null, bookingCreatedAt: null,
+            status: ServiceRequestStatus.Accepted, clientConfirmedAt: new Date(), providerConfirmedAt: new Date(),
+        }))
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
+        try {
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "note", "noteBinding" FROM "autocare_service_requests" WHERE "id" = $1', [request.id],
+            ) as Array<{ note: string; noteBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "note", "noteBinding" FROM "autocare_service_requests" WHERE "id" = $1', [target.id],
+            ) as Array<{ note: string; noteBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted service request notes are missing.')
+            expect(storedSource.note).not.toContain('Private client symptom')
+            expect(storedSource.noteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "note" = $1::text, "noteBinding" = $2 WHERE "id" = $3',
+                [storedSource.note, storedSource.noteBinding, target.id],
+            )
+            try {
+                await expect(requests.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "autocare_service_requests" SET "note" = $1::text, "noteBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.note, storedTarget.noteBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "autocare_service_requests" SET "noteBinding" = NULL WHERE "id" = $1', [request.id])
+            await resetServiceRequestNoteBindingBackfill(AppDataSource)
+            await expect(verifyServiceRequestNoteBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = 'true'
+            await expect(requests.findOneByOrFail({ id: request.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
+            expect((await runServiceRequestNoteBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyServiceRequestNoteBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = 'true'
+            expect((await requests.findOneByOrFail({ id: request.id })).note).toBe('Private client symptom')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = previousStrict
+            await resetServiceRequestNoteBindingBackfill(AppDataSource)
             await requests.delete({ id: target.id })
         }
     })

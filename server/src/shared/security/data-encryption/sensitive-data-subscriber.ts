@@ -22,7 +22,8 @@ import { serializeAcceptedQuote } from './accepted-quote-value.js'
 import { serializeEstimateSnapshot } from './estimate-snapshot-value.js'
 import { serializeContactSnapshot } from './contact-snapshot-value.js'
 import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { serializeServiceRequestNote } from './service-request-note-value.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -203,6 +204,40 @@ function openVehicleSnapshot(record: VehicleSnapshotRecord) {
     verifyPlaintextRecordBinding(
         'autocare_service_requests', 'vehicleSnapshot', serializeVehicleSnapshot(record.vehicleSnapshot), record.id,
         record.vehicleSnapshotBinding, { allowLegacy: !requireVehicleSnapshotRecordBinding(), context: serviceRequestVehicleRecordContext(record) },
+    )
+}
+
+type ServiceRequestNoteRecord = ServiceRequestRecordScope & {
+    id?: string
+    note?: string | null
+    noteBinding?: string | null
+}
+
+function sealServiceRequestNote(record: ServiceRequestNoteRecord) {
+    if (record.note === undefined) return
+    if (record.note === null) {
+        record.noteBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.note record scope is invalid.')
+    record.noteBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'note', serializeServiceRequestNote(record.note), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openServiceRequestNote(record: ServiceRequestNoteRecord) {
+    if (record.note === undefined) return
+    if (record.note === null) {
+        if (record.noteBinding !== null && record.noteBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.note record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.note record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'note', serializeServiceRequestNote(record.note), record.id,
+        record.noteBinding, { allowLegacy: !requireServiceRequestNoteRecordBinding(), context: serviceRequestRecordContext(record) },
     )
 }
 
@@ -434,6 +469,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealEstimateSnapshot(request)
             sealContactSnapshot(request)
             sealVehicleSnapshot(request)
+            sealServiceRequestNote(request)
             sealBookingSnapshot(request)
         }
     }
@@ -457,6 +493,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealEstimateSnapshot(event.entity as EstimateSnapshotRecord)
             sealContactSnapshot(event.entity as ContactSnapshotRecord)
             sealVehicleSnapshot(event.entity as VehicleSnapshotRecord)
+            sealServiceRequestNote(event.entity as ServiceRequestNoteRecord)
             sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
@@ -490,6 +527,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openEstimateSnapshot(entity as EstimateSnapshotRecord)
             openContactSnapshot(entity as ContactSnapshotRecord)
             openVehicleSnapshot(entity as VehicleSnapshotRecord)
+            openServiceRequestNote(entity as ServiceRequestNoteRecord)
             openBookingSnapshot(entity as BookingSnapshotRecord)
         }
     }

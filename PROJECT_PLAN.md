@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## U02 service request note record binding — 2026-10-27
+
+- [x] Новые примечания заявки привязаны HMAC к request UUID и UUID клиента,
+  сервиса, филиала и услуги; ORM отвергает перенос текста и смену scope.
+- [x] Подготовить migration 178659, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [ ] Подтвердить PostgreSQL/browser CI, затем staging KMS/restore и включить
+  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+
 ## U02 vehicle snapshot record binding — 2026-10-27
 
 - [x] Новые снимки автомобиля привязаны HMAC к request UUID, UUID клиента,
@@ -7,7 +16,8 @@
   ciphertext и смену owner/service/vehicle scope.
 - [x] Подготовить migration 178658, bounded compare-write backfill,
   полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
-- [ ] Подтвердить PostgreSQL/browser CI, затем staging KMS/restore и включить
+- [x] PR #36 прошёл PostgreSQL/browser CI и объединён в `dev` как `f13d72d`.
+- [ ] Провести staging KMS/restore и включить
   strict на всех процессах. Остальные зашифрованные поля U02 открыты.
 
 ## U02 contact snapshot record binding — 2026-10-27

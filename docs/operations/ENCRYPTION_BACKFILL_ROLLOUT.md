@@ -401,6 +401,35 @@ command and a tested backup exists:
    Queries selecting `vehicleSnapshot` must also select its binding and all
    owner/service links and vehicle UUID. Keep old keys during the recovery window.
 
+## Service request note binding expansion
+
+New non-null `autocare_service_requests.note` writes carry a companion HMAC in
+`noteBinding`. The MAC covers the decrypted text, request UUID and
+client/provider/location/definition UUIDs. ORM reads reject a note moved
+between requests or a changed owner/service link. A null note has a null
+binding. Migration `1786590000000` adds the nullable binding and a durable
+checkpoint. The operator command reads UUID keysets of at most 500 requests,
+authenticates AES-GCM and existing MACs, then compare-writes missing bindings
+with checkpoint progress in one transaction. It prints counts only. Account
+deletion clears the note and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786590000000`. Run
+   `npm --prefix server run encryption:backfill-service-request-note-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse request creation/read, data export, account
+   deletion and backup restore. Queries selecting `note` must also select its
+   binding and all owner/service links. Keep old keys during the recovery window.
+
 This does not bind other U02 encrypted fields.
 
 ## Outbox recipient record binding expansion

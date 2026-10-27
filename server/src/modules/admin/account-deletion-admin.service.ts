@@ -241,6 +241,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
                 "vehicleSnapshot" = NULL,
                 "vehicleSnapshotBinding" = NULL,
                 "note" = NULL,
+                "noteBinding" = NULL,
                 "estimateSnapshot" = NULL,
                 "estimateSnapshotBinding" = NULL,
                 "acceptedQuoteSnapshot" = NULL,
