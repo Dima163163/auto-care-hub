@@ -220,7 +220,7 @@ describe('AutoCare account deletion retention invariants', () => {
             idempotencyKey: `retention-request-${suffix}`,
             estimateSnapshot: null,
             acceptedQuoteVersion: null,
-            acceptedQuoteSnapshot: null,
+            acceptedQuoteSnapshot: { amountMinor: 50_000, currencyCode: 'RUB' },
             acceptedQuoteAt: null,
             bookingSnapshot: { amountMinor: 50_000, currencyCode: 'RUB' },
             bookingCreatedAt: new Date(),
@@ -435,6 +435,8 @@ describe('AutoCare account deletion retention invariants', () => {
         }
         const redactedRequest = await AppDataSource.getRepository(ServiceRequestEntity).findOneByOrFail({ id: serviceRequest.id })
         expect(redactedRequest).toMatchObject({
+            acceptedQuoteSnapshot: null,
+            acceptedQuoteSnapshotBinding: null,
             bookingSnapshot: null,
             bookingSnapshotBinding: null,
             cancelledById: null,

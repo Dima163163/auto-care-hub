@@ -281,6 +281,36 @@ command and a tested backup exists:
    Queries selecting `bookingSnapshot` must also select its binding and all
    owner/service links. Keep old keys during the recovery window.
 
+## Accepted quote binding expansion
+
+New non-null `autocare_service_requests.acceptedQuoteSnapshot` writes carry a
+companion HMAC in `acceptedQuoteSnapshotBinding`. The MAC covers the decrypted JSON,
+request UUID and client/provider/location/definition UUIDs. ORM reads reject a
+snapshot moved between requests or a changed owner/service link. A null
+snapshot has a null binding. Migration `1786550000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 requests, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion clears the snapshot and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786550000000`. Run
+   `npm --prefix server run encryption:backfill-accepted-quote-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse quote acceptance, booking, bonuses/refunds, account
+   deletion/export and backup restore.
+   Queries selecting `acceptedQuoteSnapshot` must also select its binding and all
+   owner/service links. Keep old keys during the recovery window.
+
 This does not bind other U02 encrypted fields.
 
 ## Outbox recipient record binding expansion

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -78,5 +78,15 @@ describe('booking snapshot record binding policy', () => {
         expect(requireBookingSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireBookingSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('accepted quote record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireAcceptedQuoteRecordBinding({})).toBe(false)
+        expect(requireAcceptedQuoteRecordBinding({ DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireAcceptedQuoteRecordBinding({ DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireAcceptedQuoteRecordBinding({ DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING must be true or false.')
     })
 })

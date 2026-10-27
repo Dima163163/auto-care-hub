@@ -1,5 +1,15 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка принятой котировки к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.acceptedQuoteSnapshot` получают HMAC по
+расшифрованному JSON, request UUID и client/provider/location/definition UUID.
+ORM отвергает перенос корректного ciphertext между заявками и изменение
+owner/service scope. Migration 178655, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены для старых котировок. Анонимизация
+очищает binding вместе с payload. PostgreSQL CI, staging KMS/restore и strict
+cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка снимка бронирования к заявке, 26 октября 2026
 
 Новые `autocare_service_requests.bookingSnapshot` получают HMAC по

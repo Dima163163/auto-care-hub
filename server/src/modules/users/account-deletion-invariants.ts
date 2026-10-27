@@ -68,7 +68,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
         sql: `SELECT COUNT(*)::int AS count FROM "autocare_service_requests"
             WHERE "clientId" = $1
               AND ("contactSnapshot" IS NOT NULL OR "vehicleSnapshot" IS NOT NULL OR "note" IS NOT NULL
-                OR "estimateSnapshot" IS NOT NULL OR "acceptedQuoteSnapshot" IS NOT NULL
+                OR "estimateSnapshot" IS NOT NULL OR "acceptedQuoteSnapshot" IS NOT NULL OR "acceptedQuoteSnapshotBinding" IS NOT NULL
                 OR "bookingSnapshot" IS NOT NULL OR "bookingSnapshotBinding" IS NOT NULL
                 OR "cancellationReason" IS NOT NULL OR "noShowReason" IS NOT NULL OR "completionNote" IS NOT NULL
                 OR "cancelledById" = $1 OR "noShowById" = $1 OR "completedById" = $1)`,

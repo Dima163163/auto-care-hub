@@ -18,7 +18,8 @@ import { serializeMessageOffer, type MessageOfferRecord } from './message-offer-
 import { chatThreadRecordContext, type ChatThreadRecordScope } from './chat-thread-record-scope.js'
 import { serviceRequestRecordContext, type ServiceRequestRecordScope } from './service-request-record-scope.js'
 import { serializeBookingSnapshot } from './booking-snapshot-value.js'
-import { requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { serializeAcceptedQuote } from './accepted-quote-value.js'
+import { requireAcceptedQuoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -64,6 +65,40 @@ type BookingSnapshotRecord = ServiceRequestRecordScope & {
     id?: string
     bookingSnapshot?: Record<string, unknown> | null
     bookingSnapshotBinding?: string | null
+}
+
+type AcceptedQuoteRecord = ServiceRequestRecordScope & {
+    id?: string
+    acceptedQuoteSnapshot?: Record<string, unknown> | null
+    acceptedQuoteSnapshotBinding?: string | null
+}
+
+function sealAcceptedQuote(record: AcceptedQuoteRecord) {
+    if (record.acceptedQuoteSnapshot === undefined) return
+    if (record.acceptedQuoteSnapshot === null) {
+        record.acceptedQuoteSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.acceptedQuoteSnapshot record scope is invalid.')
+    record.acceptedQuoteSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'acceptedQuoteSnapshot', serializeAcceptedQuote(record.acceptedQuoteSnapshot), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openAcceptedQuote(record: AcceptedQuoteRecord) {
+    if (record.acceptedQuoteSnapshot === undefined) return
+    if (record.acceptedQuoteSnapshot === null) {
+        if (record.acceptedQuoteSnapshotBinding !== null && record.acceptedQuoteSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.acceptedQuoteSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.acceptedQuoteSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'acceptedQuoteSnapshot', serializeAcceptedQuote(record.acceptedQuoteSnapshot), record.id,
+        record.acceptedQuoteSnapshotBinding, { allowLegacy: !requireAcceptedQuoteRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
 }
 
 function sealBookingSnapshot(record: BookingSnapshotRecord) {
@@ -290,6 +325,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         } else if (event.metadata.tableName === 'autocare_service_requests') {
             const request = event.entity as ServiceRequestEntity
             if (!request.id) request.id = randomUUID()
+            sealAcceptedQuote(request)
             sealBookingSnapshot(request)
         }
     }
@@ -309,6 +345,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         } else if (event.entity && event.metadata.tableName === 'autocare_chat_threads') {
             sealChatSubject(event.entity as ChatThreadRecord)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_requests') {
+            sealAcceptedQuote(event.entity as AcceptedQuoteRecord)
             sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
@@ -337,6 +374,9 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openMessageOffer(entity as MessageRecord)
         }
         if (table === 'autocare_chat_threads') openChatSubject(entity as ChatThreadRecord)
-        if (table === 'autocare_service_requests') openBookingSnapshot(entity as BookingSnapshotRecord)
+        if (table === 'autocare_service_requests') {
+            openAcceptedQuote(entity as AcceptedQuoteRecord)
+            openBookingSnapshot(entity as BookingSnapshotRecord)
+        }
     }
 }
