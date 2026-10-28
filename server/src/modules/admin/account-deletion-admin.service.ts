@@ -276,7 +276,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
         [userId],
     )
     await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "descriptionBinding" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL, "resolutionReasonBinding" = NULL, "assignmentReason" = NULL, "assignmentReasonBinding" = NULL, "extensionReason" = NULL, "extensionReasonBinding" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "assignedModeratorId" = $1 OR "assignedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
-    await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
+    await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL, "reasonBinding" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
     const threadsToRedact = await manager.query(
         'SELECT "id", "type", "requestId", "providerId" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1 ORDER BY "id" FOR UPDATE',
         [userId],

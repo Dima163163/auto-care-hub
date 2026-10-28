@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "0eeb39c356cdc937661791620cbe8038261df7f92b977278bd7ed86854999499",
+      "sha256": "71f25ccd861dc90f171fe2f57c193e0860e9d6940b005f7ffd8f46f4c57cd747",
       "scopes": [
         "backend"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "aa3484bb106d882cd23fead70ff44e84e9ea67ba4dd052b60246b25d24bc6f08",
+      "sha256": "7fbd4e95486fc135ea008cb862c4ff06bc8389284738e576250390a024a77199",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "b13f12aebb32335ecff99c6e4e155364a1d062c55ee0147e3ba75deca6d51df5",
+      "sha256": "98b555ebe72d5741b8203d71f6a50b58fd2bb1077341c50f8c12271fd382ced2",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "ef48533213dcbbe2531a9cf2cf8c7d21abc7ae23cb33aa27d173776a008658a1",
+      "sha256": "cf2427e5956364b69ef0dfee2fb1c5f348145ecef92175ade94b43793f459352",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "22c7346a8500b1e46c90c48760d44f24a0072451dd838ae68354b9719fa201bc",
+      "sha256": "eeb3b5c7d38b7709aaa2c331ff6ed35ed5c635414b9f9a4374e325c6dd486f73",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "1b0362a3e15a5bcd12af940e012f20a293dc8faac644468c044b4ec6979811df",
+      "sha256": "97e1c5d3922831c53053316637203ec020139c01c40d670ea4a80569a530ead7",
       "scopes": [
         "security"
       ]
@@ -1832,7 +1832,7 @@
         "data",
         "security"
       ],
-      "sha256": "b97fc5eaaa8b34d2786ea06278e14a70ea5d364db4583543b8f8fec553b192c5"
+      "sha256": "50c761b6604cfba178505eb4095d68f96d507608f5df07646702354b4d48691d"
     },
     {
       "path": "server/src/shared/security/data-encryption/chat-report-text-record-binding.ts",
@@ -1865,6 +1865,38 @@
         "security"
       ],
       "sha256": "0f7d60963826a3433599dd835cac7818099d16102eb9942391d570b6841fd853"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/chat-block-reason-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "fde504dbeb993e83a988e9956e7340b2dcb8ab126fde05bc7610f953bb2acc30"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/chat-block-reason-binding-backfill.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "a53fb1af5405c55f801b162fa9dcf09ed028a51e89179cb2e6c5190136af82a2"
+    },
+    {
+      "path": "server/src/scripts/backfill-chat-block-reason-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "0029d67cf09815983a04b1b0eb1a930ad4da4db070e414d5d58acfaefb52714e"
+    },
+    {
+      "path": "server/src/database/migrations/1786690000000-CreateChatBlockReasonBindingBackfillCheckpoint.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "26a785e34e9c56c0062bf2a688254d79fc0772f5d55c438b2f579c22cfc6715b"
     }
   ],
   "inventories": [

@@ -178,7 +178,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_blocks" block
             LEFT JOIN "autocare_chat_threads" thread ON thread."id" = block."threadId"
             WHERE (block."blockerId" = $1 OR block."blockedUserId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
-              AND block."reason" IS NOT NULL`,
+              AND (block."reason" IS NOT NULL OR block."reasonBinding" IS NOT NULL)`,
     },
     { name: 'guarantee claim resolvers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_guarantee_claims" WHERE "resolvedById" = $1' },
     { name: 'expert question answerers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_expert_questions" WHERE "answeredById" = $1' },
@@ -214,7 +214,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_blocks" block
             JOIN "autocare_chat_threads" thread ON thread."id" = block."threadId"
             WHERE thread."subject" LIKE '%"redacted":true%'
-              AND block."reason" IS NOT NULL`,
+              AND (block."reason" IS NOT NULL OR block."reasonBinding" IS NOT NULL)`,
         parameterMode: 'none',
     },
 ]

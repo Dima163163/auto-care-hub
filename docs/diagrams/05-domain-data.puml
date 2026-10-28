@@ -104,6 +104,11 @@ entity "ChatReport" as ChatReport {
   encrypted assignmentReason / extensionReason
   four companion bindings : HMAC?
 }
+entity "ChatBlock" as ChatBlock {
+  * id : uuid
+  threadId / blockerId / blockedUserId
+  encrypted reason / reasonBinding : HMAC?
+}
 entity "ServiceMessage" as Message {
   * id : uuid
   requestId? / threadId? / senderId
@@ -257,6 +262,11 @@ entity "ChatReportTextBindingCheckpoint" as ChatReportCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "ChatBlockReasonBindingCheckpoint" as ChatBlockCheckpoint {
+  * name : autocare_chat_blocks
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -296,7 +306,9 @@ BookingRescheduleCheckpoint ..> BookingReschedule : bounded reason backfill
 AutoCareRescheduleCheckpoint ..> AutoCareReschedule : bounded two-field backfill
 QuoteCheckpoint ..> Quote : bounded snapshot backfill
 ChatReportCheckpoint ..> ChatReport : bounded four-field backfill
+ChatBlockCheckpoint ..> ChatBlock : bounded reason backfill
 Thread ||--o{ ChatReport : threadId
+Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -386,6 +398,11 @@ note bottom of ChatReportCheckpoint
   U02: HMAC binds each moderation text to report/thread/reporter UUID.
   Status and assignment can change without breaking historical text.
   Bounded compare-write and full verify precede opt-in strict read.
+end note
+note bottom of ChatBlockCheckpoint
+  U02: HMAC binds reason to block/thread/blocker/blocked-user UUID.
+  Status can change without breaking the binding. Bounded compare-write
+  and full verify precede opt-in strict read; deletion clears both.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

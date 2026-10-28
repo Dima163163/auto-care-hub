@@ -79,6 +79,7 @@ export class AutoCareChatBlockEntity {
     @Column({ type: 'uuid' }) blockedUserId!: string
     @Column({ type: 'enum', enum: AutoCareChatBlockStatus, enumName: 'autocare_chat_block_status', default: AutoCareChatBlockStatus.Active }) status!: AutoCareChatBlockStatus
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_chat_blocks', 'reason', 'text') }) reason!: string | null
+    @Column({ type: 'text', nullable: true }) reasonBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) sourceReportId!: string | null
     @Column({ type: 'timestamptz', nullable: true }) expiresAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) revokedAt!: Date | null

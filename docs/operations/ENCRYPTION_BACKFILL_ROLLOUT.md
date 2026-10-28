@@ -485,6 +485,30 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## Chat block reason binding expansion
+
+New non-null `autocare_chat_blocks.reason` writes receive a companion HMAC
+over decrypted text, block UUID, thread UUID, blocker UUID and blocked-user
+UUID. Migration `1786690000000` adds the nullable binding and durable
+checkpoint. Account deletion clears reason and binding together.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786690000000`. Run
+   `npm --prefix server run encryption:backfill-chat-block-reason-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks all scope
+   UUIDs, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse restriction create/revoke/read, account
+   deletion and backup restore. Partial reads selecting reason must also
+   select its binding and block/thread/blocker/blocked UUIDs.
+
 ## Chat report text binding expansion
 
 New non-null `autocare_chat_reports.description`, `resolutionReason`,

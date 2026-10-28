@@ -11,7 +11,7 @@ import { BookingEntity } from '../../../entities/booking/booking.entity.js'
 import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../../entities/booking/booking-reschedule-request.entity.js'
 import { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
 import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
-import { AutoCareChatReportEntity, AutoCareChatReportCategory, AutoCareChatReportStatus } from '../../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareChatBlockEntity, AutoCareChatBlockStatus, AutoCareChatReportEntity, AutoCareChatReportCategory, AutoCareChatReportStatus } from '../../../entities/automotive/chat-moderation.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1268,6 +1268,54 @@ describe('encrypted chat report text record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted chat block reason record binding', () => {
+    function storedBlock(reason: string | null) {
+        const block = new AutoCareChatBlockEntity()
+        block.threadId = randomUUID()
+        block.blockerId = randomUUID()
+        block.blockedUserId = randomUUID()
+        block.status = AutoCareChatBlockStatus.Active
+        block.reason = reason
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_chat_blocks' }, entity: block } as InsertEvent<AutoCareChatBlockEntity>)
+        return block
+    }
+
+    function loadBlock(block: AutoCareChatBlockEntity) {
+        subscriber.afterLoad(block, { metadata: { tableName: 'autocare_chat_blocks' } } as LoadEvent<AutoCareChatBlockEntity>)
+        return block
+    }
+
+    it('binds reason to block, thread and both users across status changes', () => {
+        const source = storedBlock('Unsafe behavior')
+        const target = storedBlock('Other reason')
+        expect(source.reasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        source.status = AutoCareChatBlockStatus.Revoked
+        expect(loadBlock(source).reason).toBe('Unsafe behavior')
+        target.reason = source.reason
+        target.reasonBinding = source.reasonBinding
+        expect(() => loadBlock(target)).toThrow('Encrypted record binding authentication failed.')
+        source.blockedUserId = target.blockedUserId
+        expect(() => loadBlock(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('clears null binding and rejects legacy rows after strict cutover', () => {
+        const block = storedBlock('Original reason')
+        block.reason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_blocks' }, entity: block } as UpdateEvent<AutoCareChatBlockEntity>)
+        expect(block.reasonBinding).toBeNull()
+        block.reason = 'Legacy reason'
+        expect(loadBlock(block).reason).toBe('Legacy reason')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadBlock(block)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING = previousStrict
         }
     })
 })

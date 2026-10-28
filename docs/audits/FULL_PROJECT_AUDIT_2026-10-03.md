@@ -1,5 +1,13 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка причины блокировки чата, 28 октября 2026
+
+`autocare_chat_blocks.reason` получила HMAC по block/thread/blocker/blocked
+UUID. Migration 178669, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены локально. Удаление аккаунта очищает причину и
+подпись. Staging KMS/restore, PostgreSQL CI и strict cutover не подтверждены.
+**U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка текстов жалобы на чат, 28 октября 2026
 
 Четыре зашифрованных текста в `autocare_chat_reports` получили отдельные HMAC

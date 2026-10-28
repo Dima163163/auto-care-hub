@@ -62,6 +62,8 @@ note right of Resource
   Снимок сметы имеет HMAC по quote/request/provider UUID и version.
   Анонимизация создаёт шифротекст и binding для каждой строки отдельно;
   bounded backfill и opt-in strict reader подготовлены.
+  Причина chat block имеет HMAC по block/thread/blocker/blocked UUID;
+  bounded backfill и opt-in strict reader. Удаление очищает пару.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

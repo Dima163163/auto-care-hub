@@ -53,6 +53,7 @@
     "encryption:backfill-autocare-reschedule-text-binding": "tsx src/scripts/backfill-autocare-reschedule-text-record-binding.ts",
     "encryption:backfill-service-quote-snapshot-binding": "tsx src/scripts/backfill-service-quote-snapshot-record-binding.ts",
     "encryption:backfill-chat-report-text-binding": "tsx src/scripts/backfill-chat-report-text-record-binding.ts",
+    "encryption:backfill-chat-block-reason-binding": "tsx src/scripts/backfill-chat-block-reason-record-binding.ts",
     "benchmark:discovery": "tsx src/scripts/benchmark-autocare-discovery.ts",
     "benchmark:discovery:synthetic": "tsx src/scripts/benchmark-discovery-synthetic.ts",
     "benchmark:discovery:geospatial": "tsx src/scripts/benchmark-discovery-geospatial.ts",
