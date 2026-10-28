@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "baseline": "f13d72da687df02c4538ce4b4cdce6f353b616ff",
-  "verifiedOn": "2026-10-27",
+  "baseline": "a90a79b4082f0f86d0515c2a747beb11c30273e1",
+  "verifiedOn": "2026-10-28",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "80d571849d4350948c85ea9f1d62a3dcfcac07065bf29814a2ce681943057968",
+      "sha256": "e9a7b9cd88155d0f2d062e0554b7cd28b8782543faf6cdbf9b79ef151d2785d7",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "b9a85daf8a2ed8e201bdf27c71385ed3a5103e66264c1afa20eba00b7c331acf",
+      "sha256": "b9c06c4460b71d95747d3a6917b5940a3e42704638a3d2da23573e665aead8f3",
       "scopes": [
         "runtime",
         "backend"
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "cfd48c5937740476814be883155b0bf17f6c12f7f4f8015e131e99476b661cfd",
+      "sha256": "7c1fc6caae58fe747016790d3739b62ba29a9172bafa3a32030a6054d3f8c681",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "9517c33dfbedd66d745c70940d397f58b20bb8e96b0f89c8a259c840739963ce",
+      "sha256": "550643898cdf2eed1446f8e7ce4c9b266259fe70161ac1c727797cea1426cbe4",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "ee2866f05a084ca6c61b093996e4d5ba167b0c558bb8e9f0d284167822d15741",
+      "sha256": "e6277eea11abacc219d1eec272570980bd4b9fedb1b99f4a59ed2cba01dd1f40",
       "scopes": [
         "security"
       ]
@@ -1192,7 +1192,7 @@
     },
     {
       "path": "server/docs/security/FIELD_ENCRYPTION.md",
-      "sha256": "9b166d6a9156a959a1b64fc4f78a034069b81398cd74d01d23cea5a543da127a",
+      "sha256": "5cd3f8b52311333b0d3f6ce1724b377c8b2ade913ff16d4f53ee081a310270ad",
       "scopes": [
         "security"
       ]
@@ -1325,7 +1325,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare-bonus.integration.test.ts",
-      "sha256": "b57b9fb4f4ee0c72f164665ac45e67f068143fd85ea02fc3b2ff9bd482f13f45",
+      "sha256": "c578530b70de4a755d3fb348f89c80e141f5924942fc652efa1d704c50200df8",
       "scopes": [
         "data",
         "security"
@@ -1494,6 +1494,54 @@
     {
       "path": "server/src/shared/security/data-encryption/service-request-note-value.ts",
       "sha256": "067eadc8a33274b633dfe880acb8d220175339415ff2cc38581c5ca46e4cbce2",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/entities/user/client-vehicle.entity.ts",
+      "sha256": "c94ed4364108fcbea69f1fa4f8f52bab5e2885e98684a70a374995d10987809d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/users/client-vehicles.service.ts",
+      "sha256": "938fddd6beceb96cdc301c500efdd6d687478d63952a3641c38423f11473f6a0",
+      "scopes": [
+        "backend",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786600000000-CreateClientVehicleBindingBackfillCheckpoint.ts",
+      "sha256": "21554ff433c7f965671cdd788dc0ef9bcf055dc0f4c26180dcd66966be94aa6f",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/client-vehicle-record-binding.ts",
+      "sha256": "557bfedfa0663422bcdd538bb7afb2ba8f6e020d86588baa1287af85e4c4c286",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/client-vehicle-binding-backfill.ts",
+      "sha256": "79944952c4a864bfead7696c973259619544dfbd9ac5be3b3b14c47282aad6da",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-client-vehicle-record-binding.ts",
+      "sha256": "9cf93e90dea82c0db04e9d57e7d82abcaa5e9dbcf1f5088bc0ba71409766e9ef",
       "scopes": [
         "data",
         "security"

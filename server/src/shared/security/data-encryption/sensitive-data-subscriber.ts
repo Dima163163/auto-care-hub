@@ -7,6 +7,7 @@ import {
 } from 'typeorm'
 import { randomUUID } from 'node:crypto'
 import { UserEntity } from '../../../entities/user/user.entity.js'
+import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
@@ -23,6 +24,7 @@ import { serializeEstimateSnapshot } from './estimate-snapshot-value.js'
 import { serializeContactSnapshot } from './contact-snapshot-value.js'
 import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
 import { serializeServiceRequestNote } from './service-request-note-value.js'
+import { sealClientVehicleFields, openClientVehicleFields } from './client-vehicle-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -440,7 +442,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -452,6 +454,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const outbox = event.entity as OutboxEventEntity
             if (!outbox.id) outbox.id = randomUUID()
             setOutboxPayloadRecordId(outbox.payload, outbox.id)
+        } else if (event.metadata.tableName === 'client_vehicles') {
+            const vehicle = event.entity as ClientVehicleEntity
+            if (!vehicle.id) vehicle.id = randomUUID()
+            sealClientVehicleFields(vehicle)
         } else if (event.metadata.tableName === 'autocare_service_messages') {
             const message = event.entity as ServiceMessageEntity
             if (!message.id) message.id = randomUUID()
@@ -474,7 +480,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
@@ -483,6 +489,8 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         } else if (event.entity && event.metadata.tableName === 'outbox_events') {
             const outbox = event.entity as OutboxEventEntity
             if (outbox.id && outbox.payload) setOutboxPayloadRecordId(outbox.payload, outbox.id)
+        } else if (event.entity && event.metadata.tableName === 'client_vehicles') {
+            sealClientVehicleFields(event.entity as ClientVehicleEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
             sealMessageBody(event.entity as MessageRecord)
             sealMessageOffer(event.entity as MessageRecord)
@@ -498,12 +506,13 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    afterLoad(entity: UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
             && (record.email !== undefined || record.emailCiphertext !== undefined)) openEmail(record, table)
         if (table === 'users') openUserProfile(entity as UserProfileRecord)
+        if (table === 'client_vehicles') openClientVehicleFields(entity as ClientVehicleEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
+import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -827,6 +828,67 @@ describe('encrypted service request note record binding', () => {
         } finally {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = previous
+        }
+    })
+})
+
+describe('encrypted client vehicle record binding', () => {
+    function storedVehicle(vin: string) {
+        const vehicle = new ClientVehicleEntity()
+        vehicle.userId = randomUUID()
+        vehicle.vin = vin
+        vehicle.licensePlate = 'А123ВС63'
+        vehicle.internalNumber = null
+        vehicle.imageUrl = '/vehicle.png'
+        subscriber.beforeInsert({ metadata: { tableName: 'client_vehicles' }, entity: vehicle } as InsertEvent<ClientVehicleEntity>)
+        return vehicle
+    }
+
+    function loadVehicle(vehicle: ClientVehicleEntity) {
+        subscriber.afterLoad(vehicle, { metadata: { tableName: 'client_vehicles' } } as LoadEvent<ClientVehicleEntity>)
+        return vehicle
+    }
+
+    it('binds all four fields to row and owner and rejects a copied value and binding', () => {
+        const source = storedVehicle('JT123456789012345')
+        const target = storedVehicle('JT987654321098765')
+        expect(source.id).toMatch(/^[0-9a-f-]{36}$/)
+        expect(source.vinBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.licensePlateBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.internalNumberBinding).toBeNull()
+        expect(source.imageUrlBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        target.vin = source.vin
+        target.vinBinding = source.vinBinding
+        expect(() => loadVehicle(target)).toThrow('Encrypted record binding authentication failed.')
+        source.userId = randomUUID()
+        expect(() => loadVehicle(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds updates and rejects a leftover binding on a null field', () => {
+        const vehicle = storedVehicle('JT123456789012345')
+        const previous = vehicle.licensePlateBinding
+        vehicle.licensePlate = 'В456СА63'
+        subscriber.beforeUpdate({ metadata: { tableName: 'client_vehicles' }, entity: vehicle } as UpdateEvent<ClientVehicleEntity>)
+        expect(vehicle.licensePlateBinding).not.toBe(previous)
+        expect(loadVehicle(vehicle).licensePlate).toBe('В456СА63')
+        vehicle.licensePlate = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'client_vehicles' }, entity: vehicle } as UpdateEvent<ClientVehicleEntity>)
+        expect(vehicle.licensePlateBinding).toBeNull()
+        vehicle.licensePlateBinding = previous
+        expect(() => loadVehicle(vehicle)).toThrow('Encrypted client_vehicles.licensePlate record binding is invalid.')
+    })
+
+    it('keeps legacy values readable until strict cutover', () => {
+        const vehicle = storedVehicle('JT123456789012345')
+        vehicle.vinBinding = null
+        expect(loadVehicle(vehicle).vin).toBe('JT123456789012345')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadVehicle(vehicle)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING = previous
         }
     })
 })

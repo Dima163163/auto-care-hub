@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, client vehicle field binding 2026-10-28:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают HMAC четырёх полей по vehicle/owner
+UUID, bounded checkpoint и opt-in strict reader. API не возвращает binding.
+Другие поля U02, staging KMS/restore и strict cutover остаются открытыми.
+
 **U02, service request note binding 2026-10-27:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC по request/client/provider/
 location/definition UUID, bounded checkpoint и opt-in strict reader.

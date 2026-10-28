@@ -6,7 +6,7 @@ import { entities } from '../entities/index.js'
 import { DatabaseLogger } from './database-logger.js'
 import { SensitiveDataSubscriber } from '../shared/security/data-encryption/sensitive-data-subscriber.js'
 import { loadProductionKmsKeyProvider } from '../shared/security/data-encryption/production-kms-provider.js'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from '../shared/security/data-encryption/record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireClientVehicleRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from '../shared/security/data-encryption/record-binding-policy.js'
 
 requireEmailRecordBinding()
 requireOutboxRecordBinding()
@@ -21,6 +21,7 @@ requireEstimateSnapshotRecordBinding()
 requireContactSnapshotRecordBinding()
 requireVehicleSnapshotRecordBinding()
 requireServiceRequestNoteRecordBinding()
+requireClientVehicleRecordBinding()
 await loadProductionKmsKeyProvider()
 
 export function getMigrationPaths(nodeEnv: 'development' | 'test' | 'production', runtime: 'source' | 'compiled' = 'source') {
