@@ -64,6 +64,8 @@ entity "Booking" as LegacyBooking {
   * id : uuid
   clientId / cabinetId / serviceId
   status / date / time
+  encrypted comment / cancellationReason / ownerNote
+  three companion bindings : HMAC?
 }
 entity "BookingStatusHistory" as BookingHistory {
   * id : uuid
@@ -209,6 +211,11 @@ entity "BookingStatusReasonBindingCheckpoint" as HistoryCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "BookingTextBindingCheckpoint" as BookingTextCheckpoint {
+  * name : bookings
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -241,6 +248,7 @@ ProfileCheckpoint ..> User : bounded name / phone backfill
 SecondaryCheckpoint ..> User : bounded secondary-field backfill
 VehicleCheckpoint ..> Vehicle : bounded four-field backfill
 HistoryCheckpoint ..> BookingHistory : bounded reason backfill
+BookingTextCheckpoint ..> LegacyBooking : bounded three-field backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -305,6 +313,11 @@ note bottom of HistoryCheckpoint
   U02: HMAC binds reason to history UUID, booking UUID and status.
   Bounded compare-write and full verify precede opt-in strict read.
   Account deletion clears reason and binding together.
+end note
+note bottom of BookingTextCheckpoint
+  U02: HMAC binds each text field to booking UUID, client UUID,
+  cabinet UUID and service UUID. Bounded compare-write and full
+  verify precede opt-in strict read. Deletion clears text and MAC.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

@@ -50,6 +50,9 @@ note right of Resource
   API исключает binding из ответа.
   Причина в booking status history имеет HMAC по history/booking UUID и
   status; bounded backfill и opt-in strict reader. API скрывает binding.
+  Комментарий, причина отмены и заметка legacy booking имеют отдельные
+  HMAC по booking/client/cabinet/service UUID; bounded backfill и opt-in
+  strict reader. API скрывает binding, удаление очищает пару.
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
   Текст нового chat message имеет companion HMAC по message UUID,

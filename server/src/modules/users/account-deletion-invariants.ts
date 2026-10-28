@@ -153,7 +153,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
         name: 'legacy booking free text is redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "bookings"
             WHERE "clientId" = $1
-              AND ("comment" IS NOT NULL OR "cancellationReason" IS NOT NULL OR "ownerNote" IS NOT NULL)`,
+              AND ("comment" IS NOT NULL OR "commentBinding" IS NOT NULL OR "cancellationReason" IS NOT NULL OR "cancellationReasonBinding" IS NOT NULL OR "ownerNote" IS NOT NULL OR "ownerNoteBinding" IS NOT NULL)`,
     },
     {
         name: 'legacy booking reschedule references are detached',

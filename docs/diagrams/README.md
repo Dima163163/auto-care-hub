@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U02, booking text fields 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC комментария, причины отмены
+и заметки владельца по booking/client/cabinet/service UUID. Migration 178664,
+bounded checkpoint и opt-in strict reader подготовлены. API скрывает binding;
+другие поля U02 и staging KMS/restore остаются открытыми.
+
 **U02, booking status history reason 2026-10-28:** `05-domain-data.puml`
 и `09-access-privacy.puml` с SVG показывают HMAC причины по history/booking
 UUID и status, bounded checkpoint и opt-in strict reader. API не отдаёт

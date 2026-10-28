@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U02 — текстовые поля бронирования, 28 октября 2026
+
+Комментарий, причина отмены и заметка владельца в `bookings` получают отдельные
+HMAC по тексту, UUID записи и client/cabinet/service UUID. Migration 178664,
+bounded compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Ответ API исключает подписи, удаление аккаунта очищает значения и подписи.
+Staging KMS/restore и включение strict остаются открытыми.
+
 ## U02 — причина в истории бронирования, 28 октября 2026
 
 Новые `booking_status_history.reason` получают HMAC по тексту, UUID записи,

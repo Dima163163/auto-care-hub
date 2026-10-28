@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { BookingStatus } from '../../entities/booking/booking.entity.js'
 import { UserRole } from '../../entities/user/user.entity.js'
+import { toPublicBooking, toOwnerBooking } from './bookings.mappers.js'
 import {
     cancelClientBooking,
     createClientBooking,
@@ -30,6 +31,23 @@ const validReschedule = {
 }
 
 describe('Booking service boundaries', () => {
+    it('keeps booking text bindings out of client and owner responses', () => {
+        const entry = {
+            id: '44444444-4444-4444-8444-444444444444',
+            clientId: client.id, cabinetId: '55555555-5555-4555-8555-555555555555',
+            serviceId: '66666666-6666-4666-8666-666666666666',
+            date: '2026-09-10', startTime: '10:00:00', endTime: '11:00:00',
+            status: BookingStatus.Confirmed, comment: 'Call', cancellationReason: null,
+            ownerNote: 'Morning', commentBinding: 'internal-hmac',
+            cancellationReasonBinding: null, ownerNoteBinding: 'internal-hmac',
+            createdAt: new Date('2026-09-10T10:00:00.000Z'),
+            cabinet: { id: '55555555-5555-4555-8555-555555555555', title: 'Cabinet', address: 'Street', city: 'City' },
+            service: { id: '66666666-6666-4666-8666-666666666666', title: 'Service', durationMinutes: 60, price: 100 },
+            client: { id: client.id, name: 'Client', email: 'client@example.test', phone: null },
+        }
+        expect(JSON.stringify(toPublicBooking(entry as never))).not.toContain('Binding')
+        expect(JSON.stringify(toOwnerBooking(entry as never))).not.toContain('Binding')
+    })
     it('keeps the internal reason binding out of the history response', () => {
         const entry = {
             id: '44444444-4444-4444-8444-444444444444',

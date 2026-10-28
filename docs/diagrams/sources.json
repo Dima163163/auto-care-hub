@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "d67cae0e10c6d004fdea42feea2a4a7db9044309cba3b345483dd9f397975929",
+      "sha256": "747555318578b0782be1520dd32b320a52e930cbd80043aebe0492046ed90c8f",
       "scopes": [
         "backend"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "3ed7f65463b2682cf855ca981b8f8907e28b0712ca0116a4be2aa037997086ab",
+      "sha256": "02130b19f49408e0806a2fec5eb7d0a7cb909ff74ff98c813ac7f4f97ff020b2",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "bc9fce0f2cb98fcfa297ae8655cdd080728c31e764f9d98fae2330fa15c63b64",
+      "sha256": "0d42d35b6c95f37eeb5768a0a4afe197856711aed31fc100cb7f86c6362bb959",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "a519d72066f2d4f0c7d8bfe2e981d1e06ed7c7df5e1a99917f166a4bf804d02c",
+      "sha256": "735279b761fc45f4e568790a843631a0c2bfc3d3a809aa9c695dac248c16c09b",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "c81a9ec2948a794d480cd28275dc8f34812590c98433fc7ceb7602fd6775db35",
+      "sha256": "e49320d169a4492371cb3f8b235a327d3c34dfe89c942f10059685246a886bfc",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "9071217b53cbda6127d55d2e0930f4c6ca2aca72063959584ff05bd68e979852",
+      "sha256": "7c1d3ea90e83d45125421650886f350017ff9410e0dd7b1716d4ae76a9005f2f",
       "scopes": [
         "security"
       ]
@@ -1665,6 +1665,46 @@
         "data",
         "security"
       ]
+    },
+    {
+      "path": "server/src/entities/booking/booking.entity.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "4922438fb33f38f7a745b37b945f115bd53a2d042b267185b1e8f8d3c147dd34"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/booking-text-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "c080e8be02f6615ca1c14e0bb08fab3a2b3cce842a9a6d1e87bac3f1cff7eb23"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/booking-text-binding-backfill.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "d96906c517e053586f2afdf5580a115bd3a6cc81037a8868adfac1fb6c0ac0d5"
+    },
+    {
+      "path": "server/src/scripts/backfill-booking-text-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "c33b55a209334d0151e18a8b1de40274affa2b4bd6b8a769bd7e7615371dc5f2"
+    },
+    {
+      "path": "server/src/database/migrations/1786640000000-CreateBookingTextBindingBackfillCheckpoint.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "d954e13469ca04b973b05d499dea2c4e7a4c19b771bcafaa756b5d86ee6be5b7"
     }
   ],
   "inventories": [

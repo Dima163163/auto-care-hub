@@ -7,6 +7,7 @@ import { UserEntity } from '../../../entities/user/user.entity.js'
 import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entity.js'
 import { BookingStatusHistoryEntity } from '../../../entities/booking/booking-status-history.entity.js'
 import { BookingStatus } from '../../../entities/booking/booking.entity.js'
+import { BookingEntity } from '../../../entities/booking/booking.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1011,6 +1012,63 @@ describe('encrypted booking status reason record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted booking text record binding', () => {
+    function storedBooking() {
+        const booking = new BookingEntity()
+        booking.clientId = randomUUID()
+        booking.cabinetId = randomUUID()
+        booking.serviceId = randomUUID()
+        booking.comment = 'Please call me'
+        booking.cancellationReason = 'Schedule changed'
+        booking.ownerNote = 'Client prefers morning'
+        subscriber.beforeInsert({ metadata: { tableName: 'bookings' }, entity: booking } as InsertEvent<BookingEntity>)
+        return booking
+    }
+
+    function loadBooking(booking: BookingEntity) {
+        subscriber.afterLoad(booking, { metadata: { tableName: 'bookings' } } as LoadEvent<BookingEntity>)
+        return booking
+    }
+
+    it('binds all three fields to booking, client, cabinet and service', () => {
+        const source = storedBooking()
+        const target = storedBooking()
+        expect(source.commentBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.cancellationReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.ownerNoteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadBooking(source).comment).toBe('Please call me')
+        target.comment = source.comment
+        target.commentBinding = source.commentBinding
+        expect(() => loadBooking(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = target.clientId
+        expect(() => loadBooking(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('updates bindings, rejects stale null bindings and gates legacy reads', () => {
+        const booking = storedBooking()
+        const previous = booking.ownerNoteBinding
+        booking.ownerNote = 'Changed note'
+        subscriber.beforeUpdate({ metadata: { tableName: 'bookings' }, entity: booking } as UpdateEvent<BookingEntity>)
+        expect(booking.ownerNoteBinding).not.toBe(previous)
+        booking.ownerNote = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'bookings' }, entity: booking } as UpdateEvent<BookingEntity>)
+        expect(booking.ownerNoteBinding).toBeNull()
+        booking.ownerNoteBinding = previous
+        expect(() => loadBooking(booking)).toThrow('Encrypted bookings.ownerNote record binding is invalid.')
+        booking.ownerNoteBinding = null
+        booking.commentBinding = null
+        expect(loadBooking(booking).comment).toBe('Please call me')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadBooking(booking)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING = previousStrict
         }
     })
 })

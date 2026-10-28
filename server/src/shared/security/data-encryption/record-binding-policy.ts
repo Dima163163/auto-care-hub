@@ -116,3 +116,10 @@ export function requireBookingStatusReasonRecordBinding(environment: NodeJS.Proc
     if (configured === 'true') return true
     throw new Error('DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING must be true or false.')
 }
+
+export function requireBookingTextRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING must be true or false.')
+}

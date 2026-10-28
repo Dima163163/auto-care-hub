@@ -313,7 +313,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     )
     await manager.query('UPDATE "booking_reschedule_requests" SET "resolvedById" = NULL, "resolutionReason" = NULL WHERE "requestedById" = $1 OR "resolvedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
     await manager.query('UPDATE "booking_status_history" SET "changedById" = NULL, "reason" = NULL, "reasonBinding" = NULL WHERE "changedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
-    await manager.query('UPDATE "bookings" SET "comment" = NULL, "cancellationReason" = NULL, "ownerNote" = NULL WHERE "clientId" = $1', [userId])
+    await manager.query('UPDATE "bookings" SET "comment" = NULL, "commentBinding" = NULL, "cancellationReason" = NULL, "cancellationReasonBinding" = NULL, "ownerNote" = NULL, "ownerNoteBinding" = NULL WHERE "clientId" = $1', [userId])
     await manager.query('UPDATE "autocare_trust_policy" SET "updatedById" = NULL WHERE "updatedById" = $1', [userId])
     await manager.query('UPDATE "autocare_bonus_ledger" SET "actorId" = NULL WHERE "actorId" = $1', [userId])
     await manager.query('UPDATE "security_event_actions" SET "assignee_id" = NULL WHERE "assignee_id" = $1', [userId])

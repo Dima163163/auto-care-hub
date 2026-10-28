@@ -485,6 +485,31 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## Booking text field binding expansion
+
+New non-null `bookings.comment`, `cancellationReason` and `ownerNote` writes
+receive separate companion HMACs. Each covers decrypted text, booking UUID,
+client UUID, cabinet UUID and service UUID. Migration `1786640000000` adds the
+nullable bindings and durable checkpoint. Account deletion clears the value
+and binding together; client and owner responses omit binding columns.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786640000000`. Run
+   `npm --prefix server run encryption:backfill-booking-text-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Interrupted runs resume from the checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   complete pass. Any mismatch or incomplete scan blocks cutover. Compare-write
+   checks the three scope UUIDs and all three ciphertext/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse booking create/cancel/note/read, data export, account
+   deletion and backup restore. Partial entity reads selecting a text field
+   must also select the binding, booking ID and three scope UUIDs.
+
 ## Outbox recipient record binding expansion
 
 New outbox email/toEmail and recipientName envelopes are bound to the event

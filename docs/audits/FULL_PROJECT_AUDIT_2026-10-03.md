@@ -1,5 +1,14 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка текста legacy booking, 28 октября 2026
+
+`bookings.comment`, `cancellationReason` и `ownerNote` получили отдельные
+HMAC по расшифрованному тексту, booking UUID и client/cabinet/service UUID.
+Migration 178664, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены локально. Ответ API скрывает bindings; удаление
+аккаунта очищает текст и подписи. Staging KMS/restore, PostgreSQL CI и strict
+cutover не подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — вторичные поля пользователя, 28 октября 2026
 
 Новые `users.avatarUrl`, `communityDisplayName` и `preferredCity` получают HMAC
