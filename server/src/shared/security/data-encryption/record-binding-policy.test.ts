@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -168,6 +168,16 @@ describe('booking text record binding policy', () => {
         expect(requireBookingTextRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireBookingTextRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('booking reschedule reason record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireBookingRescheduleReasonRecordBinding({})).toBe(false)
+        expect(requireBookingRescheduleReasonRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireBookingRescheduleReasonRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireBookingRescheduleReasonRecordBinding({ DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING must be true or false.')
     })
 })
 

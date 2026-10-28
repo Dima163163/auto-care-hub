@@ -53,6 +53,9 @@ note right of Resource
   Комментарий, причина отмены и заметка legacy booking имеют отдельные
   HMAC по booking/client/cabinet/service UUID; bounded backfill и opt-in
   strict reader. API скрывает binding, удаление очищает пару.
+  Причина решения по переносу имеет HMAC по reschedule/booking/requester/
+  resolver UUID и status; bounded backfill и opt-in strict reader.
+  Удаление аккаунта очищает причину и binding вместе.
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
   Текст нового chat message имеет companion HMAC по message UUID,

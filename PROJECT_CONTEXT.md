@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U02 — причина решения по переносу бронирования, 28 октября 2026
+
+`booking_reschedule_requests.resolutionReason` получает HMAC по тексту,
+UUID записи, бронирования, инициатора и решающего, а также status. Migration
+178665, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены. Удаление аккаунта очищает причину и подпись. Staging KMS/restore
+и включение strict остаются открытыми.
+
 ## U02 — текстовые поля бронирования, 28 октября 2026
 
 Комментарий, причина отмены и заметка владельца в `bookings` получают отдельные

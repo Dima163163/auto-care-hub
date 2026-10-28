@@ -72,6 +72,12 @@ entity "BookingStatusHistory" as BookingHistory {
   bookingId / status / changedById?
   encrypted reason / reasonBinding : HMAC?
 }
+entity "BookingRescheduleRequest" as BookingReschedule {
+  * id : uuid
+  bookingId / requestedById / resolvedById?
+  status / resolutionReason : encrypted?
+  resolutionReasonBinding : HMAC?
+}
 entity "ServiceQuote" as Quote {
   * id : uuid
   requestId / version / status
@@ -216,9 +222,15 @@ entity "BookingTextBindingCheckpoint" as BookingTextCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "BookingRescheduleReasonBindingCheckpoint" as BookingRescheduleCheckpoint {
+  * name : booking_reschedule_requests
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
+LegacyBooking ||--o{ BookingReschedule : bookingId
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -249,6 +261,7 @@ SecondaryCheckpoint ..> User : bounded secondary-field backfill
 VehicleCheckpoint ..> Vehicle : bounded four-field backfill
 HistoryCheckpoint ..> BookingHistory : bounded reason backfill
 BookingTextCheckpoint ..> LegacyBooking : bounded three-field backfill
+BookingRescheduleCheckpoint ..> BookingReschedule : bounded reason backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -318,6 +331,11 @@ note bottom of BookingTextCheckpoint
   U02: HMAC binds each text field to booking UUID, client UUID,
   cabinet UUID and service UUID. Bounded compare-write and full
   verify precede opt-in strict read. Deletion clears text and MAC.
+end note
+note bottom of BookingRescheduleCheckpoint
+  U02: HMAC binds resolution reason to request/booking/requester/
+  resolver UUID and decision status. Compare-write and full verify
+  precede opt-in strict read; deletion clears reason and MAC.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

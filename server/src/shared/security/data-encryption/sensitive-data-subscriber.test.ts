@@ -8,6 +8,7 @@ import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entit
 import { BookingStatusHistoryEntity } from '../../../entities/booking/booking-status-history.entity.js'
 import { BookingStatus } from '../../../entities/booking/booking.entity.js'
 import { BookingEntity } from '../../../entities/booking/booking.entity.js'
+import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../../entities/booking/booking-reschedule-request.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1069,6 +1070,53 @@ describe('encrypted booking text record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted booking reschedule reason record binding', () => {
+    function storedRequest(reason: string | null) {
+        const request = new BookingRescheduleRequestEntity()
+        request.bookingId = randomUUID()
+        request.requestedById = randomUUID()
+        request.resolvedById = randomUUID()
+        request.status = BookingRescheduleStatus.Rejected
+        request.resolutionReason = reason
+        subscriber.beforeInsert({ metadata: { tableName: 'booking_reschedule_requests' }, entity: request } as InsertEvent<BookingRescheduleRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: BookingRescheduleRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'booking_reschedule_requests' } } as LoadEvent<BookingRescheduleRequestEntity>)
+        return request
+    }
+
+    it('binds reason to request, booking, client, resolver and decision', () => {
+        const source = storedRequest('Slot unavailable')
+        const target = storedRequest('Other reason')
+        expect(source.resolutionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).resolutionReason).toBe('Slot unavailable')
+        target.resolutionReason = source.resolutionReason
+        target.resolutionReasonBinding = source.resolutionReasonBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.resolvedById = target.resolvedById
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('handles null and strict legacy reads', () => {
+        const request = storedRequest('Original reason')
+        request.resolutionReason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'booking_reschedule_requests' }, entity: request } as UpdateEvent<BookingRescheduleRequestEntity>)
+        expect(request.resolutionReasonBinding).toBeNull()
+        request.resolutionReason = 'Legacy reason'
+        expect(loadRequest(request).resolutionReason).toBe('Legacy reason')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING = previousStrict
         }
     })
 })

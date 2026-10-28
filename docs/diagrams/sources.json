@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "747555318578b0782be1520dd32b320a52e930cbd80043aebe0492046ed90c8f",
+      "sha256": "1328a178045790f0d2f19a411220a6ba66b9739683dac72b5eb1c66fb8a0b477",
       "scopes": [
         "backend"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "02130b19f49408e0806a2fec5eb7d0a7cb909ff74ff98c813ac7f4f97ff020b2",
+      "sha256": "d92b080ab308c30811ea9c2f44606c5921f298531d709a3b51cb77b00b8e8271",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "0d42d35b6c95f37eeb5768a0a4afe197856711aed31fc100cb7f86c6362bb959",
+      "sha256": "7763313e8d033211e7c345d51ef9c935e4508275d986427f248e128f873134c1",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "735279b761fc45f4e568790a843631a0c2bfc3d3a809aa9c695dac248c16c09b",
+      "sha256": "643ec9f66f213644cf96d9408a3b466e7875f3050bd2c962310cb79cd8cdf6fb",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "e49320d169a4492371cb3f8b235a327d3c34dfe89c942f10059685246a886bfc",
+      "sha256": "e68f97e058df5328f9b5978d7819ac60124a69e9a763e6f0be95e606b134cf2d",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "7c1d3ea90e83d45125421650886f350017ff9410e0dd7b1716d4ae76a9005f2f",
+      "sha256": "080c6bfe01a145d057d0e6d993851e2d3ab7837bb0c96a5c074d19ff9b51a825",
       "scopes": [
         "security"
       ]
@@ -1705,6 +1705,46 @@
         "security"
       ],
       "sha256": "d954e13469ca04b973b05d499dea2c4e7a4c19b771bcafaa756b5d86ee6be5b7"
+    },
+    {
+      "path": "server/src/entities/booking/booking-reschedule-request.entity.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "02b799cb7a75c1a77b5fb8d97a3d59292bd2e61f9d852b4ef5d1ecfe20105c38"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/booking-reschedule-reason-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "d3aa4d28228ff735c8d67e7a0d1f3cfb96a6fa5dc9dbf76b4d3763e83632d41e"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/booking-reschedule-reason-binding-backfill.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "90859862c76ba95586bdf0c271669a1711e99789d82980f9aa8c32c8de03363f"
+    },
+    {
+      "path": "server/src/scripts/backfill-booking-reschedule-reason-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "ddbe698e337534852954f6c3f91a78915d8160cd0ece53bd49f2d570ee79d786"
+    },
+    {
+      "path": "server/src/database/migrations/1786650000000-CreateBookingRescheduleReasonBindingBackfillCheckpoint.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "1a265827a7663d5309c8238a07a1fd7efe35f1730edca8d61bccb5d0c8acb82e"
     }
   ],
   "inventories": [

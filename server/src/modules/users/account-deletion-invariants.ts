@@ -161,7 +161,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "booking_reschedule_requests" reschedule
             LEFT JOIN "bookings" booking ON booking."id" = reschedule."bookingId"
             WHERE (reschedule."requestedById" = $1 OR reschedule."resolvedById" = $1 OR booking."clientId" = $1)
-              AND (reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL)`,
+              AND (reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL OR reschedule."resolutionReasonBinding" IS NOT NULL)`,
     },
     {
         name: 'account-related chat report descriptions are redacted',

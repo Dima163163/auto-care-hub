@@ -485,6 +485,31 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## Booking reschedule resolution reason binding expansion
+
+New non-null `booking_reschedule_requests.resolutionReason` writes receive a
+companion HMAC over decrypted text, request UUID, booking UUID, requester UUID,
+nullable resolver UUID and decision status. Migration `1786650000000` adds the
+nullable binding and durable checkpoint. Account deletion clears the reason
+and binding together. The booking response excludes the internal binding.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786650000000`. Run
+   `npm --prefix server run encryption:backfill-booking-reschedule-reason-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a budget for a full pass.
+   Any mismatch or incomplete scan blocks cutover. Compare-write checks
+   booking/requester/resolver UUIDs, status, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING=true` to
+   all API/worker instances. Rehearse resolution, reads, account deletion and
+   backup restore. Partial reads selecting the reason must also select the
+   binding, request ID, all owner UUIDs and status.
+
 ## Booking text field binding expansion
 
 New non-null `bookings.comment`, `cancellationReason` and `ownerNote` writes

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, booking reschedule resolution 2026-10-28:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают HMAC причины по reschedule/
+booking/requester/resolver UUID и status. Migration 178665, bounded checkpoint
+и opt-in strict reader подготовлены. Staging KMS/restore остаётся открытым.
+
 **U02, booking text fields 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC комментария, причины отмены
 и заметки владельца по booking/client/cabinet/service UUID. Migration 178664,

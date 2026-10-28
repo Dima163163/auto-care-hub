@@ -1,5 +1,14 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка причины переноса бронирования, 28 октября 2026
+
+`booking_reschedule_requests.resolutionReason` получила HMAC по тексту,
+UUID записи, бронирования, инициатора и решающего, а также status. Migration
+178665, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены локально. Удаление аккаунта очищает причину и подпись.
+Staging KMS/restore, PostgreSQL CI и strict cutover не подтверждены.
+**U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка текста legacy booking, 28 октября 2026
 
 `bookings.comment`, `cancellationReason` и `ownerNote` получили отдельные
