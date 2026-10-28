@@ -147,7 +147,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "booking_status_history" history
             LEFT JOIN "bookings" booking ON booking."id" = history."bookingId"
             WHERE history."changedById" = $1
-               OR (booking."clientId" = $1 AND history."reason" IS NOT NULL)`,
+               OR (booking."clientId" = $1 AND (history."reason" IS NOT NULL OR history."reasonBinding" IS NOT NULL))`,
     },
     {
         name: 'legacy booking free text is redacted',

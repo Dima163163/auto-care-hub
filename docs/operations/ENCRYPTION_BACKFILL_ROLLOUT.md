@@ -458,6 +458,32 @@ available:
    API/worker instances. Rehearse request transitions/read, data export,
    account deletion and backup restore. Partial reads selecting an outcome field
    must also select its binding and all four owner/service UUIDs.
+## Booking status history reason binding expansion
+
+New non-null `booking_status_history.reason` writes receive a companion HMAC
+in `reasonBinding`. It covers decrypted text, history UUID, booking UUID and
+status. Migration `1786630000000` adds the nullable binding and durable
+checkpoint. The bounded command authenticates ciphertext and existing MACs,
+then compare-writes missing bindings with checkpoint progress in one short
+transaction. The status history API excludes the internal binding. Account
+deletion clears reason and binding together.
+
+After old writers have drained, an approved KMS keyring and tested backup are
+available:
+
+1. Apply migration `1786630000000`. Run
+   `npm --prefix server run encryption:backfill-booking-status-reason-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Interrupted runs resume from the checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Any mismatch or incomplete scan blocks cutover. Compare-write
+   checks booking UUID, status, ciphertext and existing binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse status writes/reads, account deletion and
+   backup restore. Partial reads selecting `reason` must also select its
+   binding, history ID, booking ID and status.
 
 ## Outbox recipient record binding expansion
 

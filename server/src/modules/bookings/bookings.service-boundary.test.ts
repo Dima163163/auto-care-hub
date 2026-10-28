@@ -7,6 +7,7 @@ import {
     createClientBooking,
     createOwnerBooking,
     getBookingStatusHistory,
+    toBookingStatusHistoryResponse,
     getClientBookings,
     getOccupiedSlots,
     getOwnerBookings,
@@ -29,6 +30,25 @@ const validReschedule = {
 }
 
 describe('Booking service boundaries', () => {
+    it('keeps the internal reason binding out of the history response', () => {
+        const entry = {
+            id: '44444444-4444-4444-8444-444444444444',
+            bookingId: '55555555-5555-4555-8555-555555555555',
+            status: BookingStatus.Cancelled,
+            changedById: client.id,
+            reason: 'Client changed plans',
+            reasonBinding: 'internal-hmac',
+            createdAt: new Date('2026-09-10T10:00:00.000Z'),
+        }
+        expect(toBookingStatusHistoryResponse(entry as never)).toEqual({
+            id: entry.id,
+            bookingId: entry.bookingId,
+            status: entry.status,
+            changedById: client.id,
+            reason: entry.reason,
+            createdAt: entry.createdAt,
+        })
+    })
     it('rejects malformed booking ids before history/reschedule/cancel lookup', async () => {
         await expect(getBookingStatusHistory(client, 'not-a-uuid')).rejects.toMatchObject({ statusCode: 422 })
         await expect(requestClientBookingReschedule(client, 'not-a-uuid', validReschedule)).rejects.toMatchObject({ statusCode: 422 })

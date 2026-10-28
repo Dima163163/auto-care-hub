@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baseline": "644175562bfe5161775aa6d5274d002996e1adad",
+  "baseline": "0b6a548c2787ff9c3a3f9e5a8985021714a74fe7",
   "verifiedOn": "2026-10-28",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "1c5bb181a4ae6e7782233bc7220bc7992606774ce6459d30e775ea0dcc696aff",
+      "sha256": "d67cae0e10c6d004fdea42feea2a4a7db9044309cba3b345483dd9f397975929",
       "scopes": [
         "backend"
       ]
@@ -98,7 +98,7 @@
     },
     {
       "path": "server/src/database/data-source.ts",
-      "sha256": "70590435ef8afce61f3c2d45dd401b1b57c845a46df4094ad2f2751f16a7ee17",
+      "sha256": "a0f09e5018a604500659b198be84b7823848787f5ecdd66813b3d1a9d8f9a9ef",
       "scopes": [
         "runtime",
         "backend"
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "597b6cfdbc91bbba2a225ed39ce4b49b5fcc29f2b2d5c8385c2598bdc96d7b70",
+      "sha256": "3ed7f65463b2682cf855ca981b8f8907e28b0712ca0116a4be2aa037997086ab",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "9917c72e4a328f3d589dc576186915eff1d6079eb0afc2fcb6586982275e5151",
+      "sha256": "bc9fce0f2cb98fcfa297ae8655cdd080728c31e764f9d98fae2330fa15c63b64",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "2b3fde917b3108c2e9de48d1621b721644aedb6cfea357b91d97bb62c9545b1c",
+      "sha256": "a519d72066f2d4f0c7d8bfe2e981d1e06ed7c7df5e1a99917f166a4bf804d02c",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "99c2d1ae04f348d34249b2b8803ad27c948cd464df1e21d3b5441e2a9fb13b13",
+      "sha256": "c81a9ec2948a794d480cd28275dc8f34812590c98433fc7ceb7602fd6775db35",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "fe433761026b34d2a7f9d8621b78e9a2e7d797eb1cb2869b6e17fca538645341",
+      "sha256": "9071217b53cbda6127d55d2e0930f4c6ca2aca72063959584ff05bd68e979852",
       "scopes": [
         "security"
       ]
@@ -1613,6 +1613,54 @@
     {
       "path": "server/src/shared/security/data-encryption/service-request-outcome-record-binding.ts",
       "sha256": "d75e6e29f7338504fe4265375ad48b87f02a33ba7cf378b7568e389ca70b2af3",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/entities/booking/booking-status-history.entity.ts",
+      "sha256": "202748fe1cfaba90d2a172073f2c48b6c2de0c5b4a96d2f4cf8040a9ae24f09d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/bookings/bookings.service.ts",
+      "sha256": "ac4c3335e98836efd883d1649abf4573ec29aa2eb69dde2b86d36e786547efb3",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786630000000-CreateBookingStatusReasonBindingBackfillCheckpoint.ts",
+      "sha256": "ccd72890ad3a30028b0fed30420f6c093f052ee091dacdf94f25ad95b49fce6d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/booking-status-reason-record-binding.ts",
+      "sha256": "e4a95e52f973ed7c7b48563f8a85e9fcbf8757e29f8c67cc1b065c639faa2055",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/booking-status-reason-binding-backfill.ts",
+      "sha256": "b481a0e19ac7680f89454cd3aeb6495377af6c366db0bfd64be8b42fc2feb3bd",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-booking-status-reason-record-binding.ts",
+      "sha256": "8062918d6889fc7fcab6568010ed517c4f4bd2acd80cdc58a5ce6b7e37ada3dd",
       "scopes": [
         "data",
         "security"

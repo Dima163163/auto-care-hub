@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U02, booking status history reason 2026-10-28:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают HMAC причины по history/booking
+UUID и status, bounded checkpoint и opt-in strict reader. API не отдаёт
+binding. Staging KMS/restore и другие поля U02 остаются открытыми.
 **U02, service request outcomes 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC причин отмены и неявки и
 заметки завершения по request/client/provider/location/definition UUID.

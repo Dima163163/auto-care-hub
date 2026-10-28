@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U02 — причина в истории бронирования, 28 октября 2026
+
+Новые `booking_status_history.reason` получают HMAC по тексту, UUID записи,
+UUID бронирования и status. Migration 178663, bounded compare-write backfill,
+полный verify и opt-in strict reader подготовлены. API истории скрывает
+служебную подпись; удаление аккаунта очищает её вместе с причиной.
+Staging KMS/restore и включение strict остаются открытыми.
 ## U02 — привязка результатов заявки, 28 октября 2026
 
 Причины отмены и неявки, а также заметка завершения в
