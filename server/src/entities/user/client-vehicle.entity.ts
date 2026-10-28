@@ -15,9 +15,13 @@ export class ClientVehicleEntity {
     @Column({ type: 'integer', nullable: true }) horsepower!: number | null
     @Column({ type: 'text' }) color!: string
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('client_vehicles', 'vin', 'text') }) vin!: string | null
+    @Column({ type: 'text', nullable: true }) vinBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('client_vehicles', 'licensePlate', 'text') }) licensePlate!: string | null
+    @Column({ type: 'text', nullable: true }) licensePlateBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('client_vehicles', 'internalNumber', 'text') }) internalNumber!: string | null
+    @Column({ type: 'text', nullable: true }) internalNumberBinding!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('client_vehicles', 'imageUrl', 'text') }) imageUrl!: string
+    @Column({ type: 'text', nullable: true }) imageUrlBinding!: string | null
     @Column({ type: 'boolean', default: false }) isPrimary!: boolean
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }

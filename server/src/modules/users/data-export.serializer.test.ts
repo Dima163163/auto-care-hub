@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ServiceAttachmentEntity, ServiceAttachmentStatus } from '../../entities/automotive/service-request.entity.js'
+import { ServiceAttachmentEntity, ServiceAttachmentStatus, ServiceRequestEntity } from '../../entities/automotive/service-request.entity.js'
 import { AutoCareAppealEntity, AutoCareAppealStatus, AutoCareAppealSubject } from '../../entities/automotive/appeal.entity.js'
 import { UserProvider, UserRole, UserStatus, UserEntity } from '../../entities/user/user.entity.js'
 import { FavoriteCabinetEntity } from '../../entities/favorite-cabinet/favorite-cabinet.entity.js'
@@ -95,6 +95,27 @@ describe('serializeUserDataExport', () => {
         expect(result.schemaVersion).toBe(2)
         expect(result.helpfulReviewVotes).toEqual([{ reviewId: vote.reviewId, createdAt: '2026-01-01T00:00:00.000Z' }])
         expect(JSON.stringify(result.helpfulReviewVotes)).not.toContain(user.id)
+    })
+
+    it('includes client-visible service request outcome details', () => {
+        const serviceRequest = {
+            id: '00000000-0000-0000-0000-000000000020',
+            cancellationReason: 'Client changed plans',
+            noShowReason: 'Client did not arrive',
+            completionNote: 'Work completed',
+        } as ServiceRequestEntity
+
+        const result = serializeUserDataExport(user, {
+            favorites: [], bookings: [], notifications: [], cabinets: [], vehicles: [], serviceRequests: [serviceRequest],
+            broadcasts: [], claims: [], questions: [], chats: [], messages: [], attachments: [], fleets: [],
+        })
+
+        expect(result.serviceRequests).toEqual([expect.objectContaining({
+            id: serviceRequest.id,
+            cancellationReason: serviceRequest.cancellationReason,
+            noShowReason: serviceRequest.noShowReason,
+            completionNote: serviceRequest.completionNote,
+        })])
     })
 
     it('does not export private attachment storage keys or content hashes', () => {

@@ -11,12 +11,16 @@ import { UserEntity, UserRole, UserStatus } from '../../../entities/user/user.en
 import { UserSessionEntity } from '../../../entities/user-session/user-session.entity.js'
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
+import { updateUserPreferences } from '../../../modules/users/users.service.js'
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
 import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
 import { resetOAuthBindingBackfill, runOAuthBindingBackfill, verifyOAuthBindings } from './oauth-binding-backfill.js'
 import { resetUserProfileBindingBackfill, runUserProfileBindingBackfill, verifyUserProfileBindings } from './user-profile-binding-backfill.js'
+import { resetUserSecondaryBindingBackfill, runUserSecondaryBindingBackfill, verifyUserSecondaryBindings } from './user-secondary-binding-backfill.js'
 import { resetMessageBodyBindingBackfill, runMessageBodyBindingBackfill, verifyMessageBodyBindings } from './message-body-binding-backfill.js'
+import { resetMessageOfferBindingBackfill, runMessageOfferBindingBackfill, verifyMessageOfferBindings } from './message-offer-binding-backfill.js'
+import { resetChatSubjectBindingBackfill, runChatSubjectBindingBackfill, verifyChatSubjectBindings } from './chat-subject-binding-backfill.js'
 
 describe('sensitive field encryption ORM integration', () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -44,6 +48,8 @@ describe('sensitive field encryption ORM integration', () => {
             name: `Private Name ${suffix}`,
             email,
             phone: '+7 999 123-45-67',
+            avatarUrl: '/private-avatar.png',
+            communityDisplayName: 'Private Public Name',
             preferredCity: 'Казань',
             role: UserRole.Client,
             status: UserStatus.Active,
@@ -120,6 +126,57 @@ describe('sensitive field encryption ORM integration', () => {
             }
         } finally {
             await resetUserProfileBindingBackfill(AppDataSource)
+        }
+
+        const [storedSecondary] = await AppDataSource.query(
+            'SELECT "avatarUrl", "avatarUrlBinding", "communityDisplayNameBinding", "preferredCityBinding" FROM "users" WHERE "id" = $1', [user.id],
+        ) as Array<{ avatarUrl: string; avatarUrlBinding: string; communityDisplayNameBinding: string; preferredCityBinding: string }>
+        if (!storedSecondary) throw new Error('Synthetic user secondary fields are missing.')
+        expect(storedSecondary.avatarUrl).not.toContain('/private-avatar.png')
+        expect(storedSecondary.avatarUrlBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(storedSecondary.communityDisplayNameBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(storedSecondary.preferredCityBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        await AppDataSource.query('UPDATE "users" SET "avatarUrl" = $1, "avatarUrlBinding" = $2 WHERE "id" = $3',
+            [storedSecondary.avatarUrl, storedSecondary.avatarUrlBinding, secondUser.id])
+        try {
+            await expect(users.findOneByOrFail({ id: secondUser.id }))
+                .rejects.toThrow('Encrypted record binding authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "users" SET "avatarUrl" = NULL, "avatarUrlBinding" = NULL WHERE "id" = $1', [secondUser.id])
+        }
+        await AppDataSource.query('UPDATE "users" SET "preferredCityBinding" = NULL WHERE "id" = $1', [user.id])
+        await resetUserSecondaryBindingBackfill(AppDataSource)
+        try {
+            await expect(verifyUserSecondaryBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+            process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = 'true'
+            try {
+                await expect(users.findOneByOrFail({ id: user.id }))
+                    .rejects.toThrow('Encrypted record binding is missing.')
+            } finally {
+                if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+                else process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = previousStrict
+            }
+            expect((await runUserSecondaryBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyUserSecondaryBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = 'true'
+            try {
+                const partial = await users.findOneOrFail({
+                    where: { id: user.id }, select: { id: true, avatarUrl: true, avatarUrlBinding: true },
+                })
+                expect(partial.avatarUrl).toBe('/private-avatar.png')
+                await expect(users.findOneOrFail({ where: { id: user.id }, select: { id: true, avatarUrl: true } }))
+                    .rejects.toThrow('Encrypted record binding is missing.')
+                const current = await users.findOneByOrFail({ id: user.id })
+                expect((await updateUserPreferences(current, { preferredCity: 'Самара' })).preferredCity).toBe('Самара')
+                expect((await users.findOneByOrFail({ id: user.id })).preferredCity).toBe('Самара')
+            } finally {
+                if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+                else process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = previousStrict
+            }
+        } finally {
+            await resetUserSecondaryBindingBackfill(AppDataSource)
         }
 
         const wrongEmailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', `other-${email}`))
@@ -546,6 +603,156 @@ describe('sensitive field encryption ORM integration', () => {
             else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING = previousStrict
             await resetMessageBodyBindingBackfill(AppDataSource)
             if (messageIds.length) await messages.delete(messageIds)
+            if (threadIds.length) await threads.delete(threadIds)
+            await users.delete({ id: user.id })
+        }
+    })
+
+    it('binds encrypted offers to messages, backfills legacy offers and rebinds decisions', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const threads = AppDataSource.getRepository(AutoCareChatThreadEntity)
+        const messages = AppDataSource.getRepository(ServiceMessageEntity)
+        const user = await users.save(users.create({
+            name: 'Synthetic offer sender', email: `offer-binding-${suffix}@example.test`,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+        }))
+        const threadIds: string[] = []
+        const messageIds: string[] = []
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
+        try {
+            const thread = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Synthetic offer chat',
+            }))
+            threadIds.push(thread.id)
+            const baseOffer = {
+                type: 'discount' as const, title: 'Private offer', description: null, discountPercent: 10,
+                couponCode: null, amountMinor: null, currencyCode: null, expiresAt: null, status: 'pending' as const,
+            }
+            const source = await messages.save(messages.create({
+                requestId: null, threadId: thread.id, senderId: user.id, kind: ServiceMessageKind.Offer,
+                body: 'Private offer', offer: baseOffer,
+            }))
+            const target = await messages.save(messages.create({
+                requestId: null, threadId: thread.id, senderId: user.id, kind: ServiceMessageKind.Offer,
+                body: 'Other offer', offer: { ...baseOffer, discountPercent: 20 },
+            }))
+            messageIds.push(source.id, target.id)
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "offer", "offerBinding" FROM "autocare_service_messages" WHERE "id" = $1', [source.id],
+            ) as Array<{ offer: object; offerBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "offer", "offerBinding" FROM "autocare_service_messages" WHERE "id" = $1', [target.id],
+            ) as Array<{ offer: object; offerBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted offers are missing.')
+            expect(storedSource.offer).not.toHaveProperty('discountPercent')
+            expect(storedSource.offerBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query('UPDATE "autocare_service_messages" SET "offer" = $1::jsonb, "offerBinding" = $2 WHERE "id" = $3', [storedSource.offer, storedSource.offerBinding, target.id])
+            try {
+                await expect(messages.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query('UPDATE "autocare_service_messages" SET "offer" = $1::jsonb, "offerBinding" = $2 WHERE "id" = $3', [storedTarget.offer, storedTarget.offerBinding, target.id])
+            }
+
+            await AppDataSource.query('UPDATE "autocare_service_messages" SET "offerBinding" = NULL WHERE "id" = $1', [source.id])
+            await resetMessageOfferBindingBackfill(AppDataSource)
+            await expect(verifyMessageOfferBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = 'true'
+            await expect(messages.findOneByOrFail({ id: source.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
+            expect((await runMessageOfferBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyMessageOfferBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = 'true'
+            const accepted = await messages.findOneByOrFail({ id: source.id })
+            accepted.offer = { ...accepted.offer!, status: 'accepted' }
+            await messages.save(accepted)
+            expect((await messages.findOneByOrFail({ id: source.id })).offer?.status).toBe('accepted')
+
+            const deleted = await messages.findOneByOrFail({ id: target.id })
+            deleted.offer = null
+            await messages.save(deleted)
+            const [storedDeleted] = await AppDataSource.query(
+                'SELECT "offer", "offerBinding" FROM "autocare_service_messages" WHERE "id" = $1', [target.id],
+            ) as Array<{ offer: object | null; offerBinding: string | null }>
+            expect(storedDeleted).toMatchObject({ offer: null, offerBinding: null })
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING = previousStrict
+            await resetMessageOfferBindingBackfill(AppDataSource)
+            if (messageIds.length) await messages.delete(messageIds)
+            if (threadIds.length) await threads.delete(threadIds)
+            await users.delete({ id: user.id })
+        }
+    })
+
+    it('binds private chat subjects to their rows and access links', async () => {
+        const users = AppDataSource.getRepository(UserEntity)
+        const threads = AppDataSource.getRepository(AutoCareChatThreadEntity)
+        const user = await users.save(users.create({
+            name: 'Synthetic chat subject owner', email: `subject-binding-${suffix}@example.test`,
+            role: UserRole.Client, status: UserStatus.Active, passwordHash: 'synthetic-hash',
+        }))
+        const threadIds: string[] = []
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+        try {
+            const source = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Source private subject',
+            }))
+            const target = await threads.save(threads.create({
+                type: AutoCareChatThreadType.Support, requestId: null, providerId: null,
+                clientId: user.id, createdById: user.id, subject: 'Target private subject',
+            }))
+            threadIds.push(source.id, target.id)
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "subject", "subjectBinding" FROM "autocare_chat_threads" WHERE "id" = $1', [source.id],
+            ) as Array<{ subject: string; subjectBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "subject", "subjectBinding" FROM "autocare_chat_threads" WHERE "id" = $1', [target.id],
+            ) as Array<{ subject: string; subjectBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted chat subjects are missing.')
+            expect(storedSource.subject).not.toContain('Source private subject')
+            expect(storedSource.subjectBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_chat_threads" SET "subject" = $1, "subjectBinding" = $2 WHERE "id" = $3',
+                [storedSource.subject, storedSource.subjectBinding, target.id],
+            )
+            try {
+                await expect(threads.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "autocare_chat_threads" SET "subject" = $1, "subjectBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.subject, storedTarget.subjectBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "autocare_chat_threads" SET "clientId" = NULL WHERE "id" = $1', [target.id])
+            try {
+                await expect(threads.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query('UPDATE "autocare_chat_threads" SET "clientId" = $1 WHERE "id" = $2', [user.id, target.id])
+            }
+
+            await AppDataSource.query('UPDATE "autocare_chat_threads" SET "subjectBinding" = NULL WHERE "id" = $1', [source.id])
+            await resetChatSubjectBindingBackfill(AppDataSource)
+            await expect(verifyChatSubjectBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = 'true'
+            await expect(threads.findOneByOrFail({ id: source.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+            expect((await runChatSubjectBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyChatSubjectBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = 'true'
+            expect((await threads.findOneByOrFail({ id: source.id })).subject).toBe('Source private subject')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING = previousStrict
+            await resetChatSubjectBindingBackfill(AppDataSource)
             if (threadIds.length) await threads.delete(threadIds)
             await users.delete({ id: user.id })
         }

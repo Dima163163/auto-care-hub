@@ -7,6 +7,8 @@ entity "User" as User {
   --
   role / status / tokenVersion
   nameBinding / phoneBinding : HMAC?
+  avatarUrl / communityDisplayName / preferredCity : encrypted
+  secondary bindings : HMAC?
 }
 entity "UserSession" as Session {
   * id : uuid
@@ -43,6 +45,18 @@ entity "ServiceRequest" as Request {
   clientId / providerId / locationId
   definitionId / offeringId?
   status / historical snapshots
+  encrypted bookingSnapshot / binding : HMAC?
+  encrypted acceptedQuoteSnapshot / binding : HMAC?
+  encrypted estimateSnapshot / binding : HMAC?
+  encrypted contactSnapshot / binding : HMAC?
+  encrypted vehicleSnapshot / binding : HMAC?
+  encrypted note / binding : HMAC?
+}
+entity "ClientVehicle" as Vehicle {
+  * id : uuid
+  userId : owner UUID
+  encrypted VIN / plate / internal number / image URL
+  four companion bindings : HMAC?
 }
 entity "ServiceQuote" as Quote {
   * id : uuid
@@ -53,12 +67,14 @@ entity "ChatThread" as Thread {
   * id : uuid
   requestId? / providerId? / clientId?
   type / status
+  encrypted subject / subjectBinding : HMAC?
 }
 entity "ServiceMessage" as Message {
   * id : uuid
   requestId? / threadId? / senderId
   encrypted body / offer
   bodyBinding : HMAC?
+  offerBinding : HMAC?
 }
 entity "ServiceAttachment" as Attachment {
   * id : uuid
@@ -130,6 +146,53 @@ entity "MessageBodyBindingCheckpoint" as MessageCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "MessageOfferBindingCheckpoint" as OfferCheckpoint {
+  * name : autocare_service_messages
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "ChatSubjectBindingCheckpoint" as ChatCheckpoint {
+  * name : autocare_chat_threads
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "BookingSnapshotBindingCheckpoint" as BookingCheckpoint {
+  * name : autocare_service_requests
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "AcceptedQuoteBindingCheckpoint" as AcceptedQuoteCheckpoint {
+  * name : autocare_service_requests
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "EstimateSnapshotBindingCheckpoint" as EstimateCheckpoint {
+  * name : autocare_service_requests
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "ContactSnapshotBindingCheckpoint" as ContactCheckpoint {
+  * name : autocare_service_requests
+  --
+  afterId : uuid?
+  processed : bigint
+}
+entity "UserSecondaryBindingCheckpoint" as SecondaryCheckpoint {
+  * name : users
+  afterId : uuid?
+  processed : bigint
+}
+entity "ClientVehicleBindingCheckpoint" as VehicleCheckpoint {
+  * name : client_vehicles
+  afterId : uuid?
+  processed : bigint
+}
+User ||--o{ Vehicle
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -156,7 +219,15 @@ Account ||--o{ Ledger
 Outbox ..> OutboxCheckpoint : bounded keyset progress
 OAuthCheckpoint ..> User : identity owner scope
 ProfileCheckpoint ..> User : bounded name / phone backfill
+SecondaryCheckpoint ..> User : bounded secondary-field backfill
+VehicleCheckpoint ..> Vehicle : bounded four-field backfill
 MessageCheckpoint ..> Message : bounded body backfill
+OfferCheckpoint ..> Message : bounded offer backfill
+ChatCheckpoint ..> Thread : bounded subject backfill
+BookingCheckpoint ..> Request : bounded booking backfill
+AcceptedQuoteCheckpoint ..> Request : bounded accepted quote backfill
+EstimateCheckpoint ..> Request : bounded estimate backfill
+ContactCheckpoint ..> Request : bounded contact backfill
 note bottom of Ledger
   U18: positive earn/adjustment/refund entries form lots.
   Redemption consumes earliest expiry first;
@@ -200,6 +271,16 @@ note bottom of OAuthCheckpoint
   Verify subject MAC by identity/user UUID and provider.
   Real KMS/restore and strict cutover remain unverified.
 end note
+note bottom of SecondaryCheckpoint
+  U02: three nullable fields bind plaintext to user UUID.
+  Compare-write and checkpoint commit together; full verify
+  precedes opt-in strict read. Partial selects include binding.
+end note
+note bottom of VehicleCheckpoint
+  U02: HMAC binds plaintext to vehicle and owner UUID.
+  Bounded compare-write and checkpoint commit together; full verify
+  precedes opt-in strict read. Null optional fields have null binding.
+end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.
   Compare-write and checkpoint commit together; full verify precedes
@@ -210,6 +291,24 @@ note bottom of MessageCheckpoint
   request/thread and sender UUIDs and message kind.
   Compare-write and checkpoint commit together; full verify precedes
   opt-in strict read. Null body has null binding.
+end note
+note bottom of OfferCheckpoint
+  U02: non-null offer HMAC binds decrypted JSON to message,
+  request/thread and sender UUIDs and message kind.
+  Compare-write and checkpoint commit together; full verify precedes
+  opt-in strict read. Null offer has null binding.
+end note
+note bottom of ChatCheckpoint
+  U02: subject HMAC binds plaintext to thread UUID,
+  type and request/provider/client/creator UUIDs.
+  Compare-write and checkpoint commit together; full verify precedes
+  opt-in strict read. Account deletion rebinds redacted subjects.
+end note
+note bottom of BookingCheckpoint
+  U02: booking JSON HMAC binds plaintext to request UUID,
+  client/provider/location/definition UUIDs.
+  Compare-write and checkpoint commit together; full verify precedes
+  opt-in strict read. Account deletion clears snapshot and binding.
 end note
 note bottom of Evidence
   Пунктир — логическая связь, не FK.

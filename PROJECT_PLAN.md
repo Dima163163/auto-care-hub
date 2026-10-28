@@ -1,5 +1,110 @@
 # AutoCare Hub — Project Plan
 
+## U02 — вторичные поля пользователя, 2026-10-28
+
+- [x] Привязать avatar URL, community display name и preferred city к UUID
+  пользователя; включить bindings в частичные ORM выборки.
+- [x] Перевести обновление preferred city на блокировку строки и ORM save.
+- [x] Подготовить migration 178661, bounded compare-write backfill, verify и
+  opt-in strict reader.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+
+
+## U02 — привязка полей автомобиля клиента, 2026-10-28
+
+- [x] Привязать четыре зашифрованных поля к UUID автомобиля и владельца;
+  исключить служебные подписи из ответа API.
+- [x] Подготовить migration 178660, bounded compare-write backfill, полный
+  verify и opt-in strict reader.
+- [x] PR #38 прошёл PostgreSQL/browser CI и объединён в `dev` как `27953bf`.
+- [ ] Подтвердить staging KMS/restore и включить strict после полной проверки.
+  Другие зашифрованные поля U02 открыты.
+
+## U02 service request note record binding — 2026-10-27
+
+- [x] Новые примечания заявки привязаны HMAC к request UUID и UUID клиента,
+  сервиса, филиала и услуги; ORM отвергает перенос текста и смену scope.
+- [x] Подготовить migration 178659, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [x] PR #37 прошёл PostgreSQL/browser CI и объединён в `dev` как `a90a79b`.
+- [ ] Провести staging KMS/restore и включить strict на всех процессах.
+  Остальные зашифрованные поля U02 открыты.
+
+## U02 vehicle snapshot record binding — 2026-10-27
+
+- [x] Новые снимки автомобиля привязаны HMAC к request UUID, UUID клиента,
+  сервиса, филиала, услуги и nullable vehicle UUID; ORM отвергает перенос
+  ciphertext и смену owner/service/vehicle scope.
+- [x] Подготовить migration 178658, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [x] PR #36 прошёл PostgreSQL/browser CI и объединён в `dev` как `f13d72d`.
+- [ ] Провести staging KMS/restore и включить
+  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+
+## U02 contact snapshot record binding — 2026-10-27
+
+- [x] Новые контактные снимки привязаны HMAC к request UUID и UUID клиента,
+  сервиса, филиала и услуги; ORM отвергает перенос ciphertext и смену scope.
+- [x] Подготовить migration 178657, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [x] PR #35 прошёл PostgreSQL/browser CI и объединён в `dev` как `c637e6b`.
+- [ ] Провести staging KMS/restore и включить
+  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+
+## U02 estimate snapshot record binding — 2026-10-27
+
+- [x] Новые сметы привязаны HMAC к request UUID и UUID клиента, сервиса,
+  филиала и услуги; ORM отвергает перенос ciphertext и смену scope.
+- [x] Подготовить migration 178656, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [x] Частичная выборка аналитики получает binding и полный scope вместе со
+  сметой; regression test проверяет эти поля.
+- [x] PR #34 прошёл PostgreSQL/browser CI и объединён в `dev` как `7a7224e`.
+- [ ] Провести staging KMS/restore и включить
+  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+
+## U02 accepted quote record binding — 2026-10-27
+
+- [x] Новые принятые котировки привязаны HMAC к request UUID и UUID клиента,
+  сервиса, филиала и услуги; ORM отвергает перенос ciphertext и смену scope.
+- [x] Подготовить migration 178655, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [x] PR #33 прошёл PostgreSQL/browser CI и объединён в `dev` как `2edb1b6`.
+- [ ] Провести staging KMS/restore и включить
+  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+
+## U02 booking snapshot record binding — 2026-10-26
+
+- [x] Новые booking snapshots привязаны HMAC к request UUID и UUID клиента,
+  сервиса, филиала и услуги; ORM отвергает перенос ciphertext и смену scope.
+- [x] Подготовить migration 178654, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
+- [x] PR #32 прошёл PostgreSQL/browser CI и объединён в `dev` как `c4035a9`.
+- [ ] Провести staging KMS/restore и включить
+  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+
+## U02 private chat subject binding — 2026-10-26
+
+- [x] Новые темы чатов привязаны HMAC к UUID чата, типу и связям доступа
+  request/provider/client/creator; ORM отвергает перенос ciphertext и смену связей.
+- [x] Подготовить migration 178653, bounded compare-write backfill,
+  полный verify и opt-in strict reader. Анонимизация пересчитывает binding
+  каждой темы после удаления клиентских связей.
+- [x] PR #31 прошёл PostgreSQL/browser CI и объединён в `dev` как `ec6e2df`.
+- [ ] Провести staging KMS/restore и включить strict на всех процессах.
+  Остальные зашифрованные поля U02 открыты.
+
+## U02 encrypted service offer binding — 2026-10-26
+
+- [x] Новые предложения получают HMAC по JSON, UUID сообщения, заявки/чата,
+  отправителя и виду сообщения; ORM отвергает перенос ciphertext и смену связей.
+- [x] Подготовить migration 178652, ограниченный compare-write backfill,
+  полный verify и opt-in strict reader; при удалении offer binding очищается.
+- [x] PR #29 прошёл PostgreSQL/browser CI и объединён в `dev` как `6ce7be0`.
+  Promotion PR #30 открыт для защищённого `main`.
+- [ ] Провести staging KMS/restore и включить strict на всех процессах.
+  Остальные зашифрованные поля U02 открыты.
+
 ## U02 private message body binding — 2026-10-26
 
 - [x] Новые непустые message body привязаны HMAC к UUID сообщения, заявки,
@@ -7,8 +112,9 @@
   нешифрованных связей доступа.
 - [x] Подготовить migration 178651, bounded compare-write backfill,
   полный verify и opt-in strict reader; при удалении body binding очищается.
-- [ ] Подтвердить PostgreSQL и browser CI, затем staging KMS/restore и
-  включение strict на всех процессах. Offer JSON и остальные поля U02 открыты.
+- [x] PR #28 прошёл PostgreSQL/browser CI и объединён в `dev` как `f3d06a4`.
+- [ ] Провести staging KMS/restore и включить strict на всех процессах.
+  Остальные поля U02 открыты.
 
 ## U02 user name/phone binding — 2026-10-25
 

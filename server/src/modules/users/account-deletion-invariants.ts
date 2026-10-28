@@ -23,6 +23,7 @@ export type AccountDeletionInvariantResult = AccountDeletionInvariant & {
  * retention check instead of silently introducing a new PII leak.
  */
 export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] = [
+    { name: 'user secondary fields are removed', sql: 'SELECT COUNT(*)::int AS count FROM "users" WHERE "id" = $1 AND ("avatarUrl" IS NOT NULL OR "avatarUrlBinding" IS NOT NULL OR "communityDisplayName" IS NOT NULL OR "communityDisplayNameBinding" IS NOT NULL OR "preferredCity" IS NOT NULL OR "preferredCityBinding" IS NOT NULL)' },
     { name: 'owned providers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_providers" WHERE "ownerId" = $1' },
     { name: 'legacy cabinets are blocked and images removed', sql: 'SELECT COUNT(*)::int AS count FROM "cabinets" WHERE "ownerId" = $1 AND ("status" <> \'blocked\' OR cardinality("photos") > 0)' },
     { name: 'provider memberships are removed', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_memberships" WHERE "userId" = $1' },
@@ -67,7 +68,12 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
         name: 'service request private snapshots are redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "autocare_service_requests"
             WHERE "clientId" = $1
-              AND ("contactSnapshot" IS NOT NULL OR "vehicleSnapshot" IS NOT NULL OR "note" IS NOT NULL
+              AND ("contactSnapshot" IS NOT NULL OR "contactSnapshotBinding" IS NOT NULL
+                OR "vehicleSnapshot" IS NOT NULL OR "vehicleSnapshotBinding" IS NOT NULL
+                OR "note" IS NOT NULL OR "noteBinding" IS NOT NULL
+                OR "estimateSnapshot" IS NOT NULL OR "estimateSnapshotBinding" IS NOT NULL
+                OR "acceptedQuoteSnapshot" IS NOT NULL OR "acceptedQuoteSnapshotBinding" IS NOT NULL
+                OR "bookingSnapshot" IS NOT NULL OR "bookingSnapshotBinding" IS NOT NULL
                 OR "cancellationReason" IS NOT NULL OR "noShowReason" IS NOT NULL OR "completionNote" IS NOT NULL
                 OR "cancelledById" = $1 OR "noShowById" = $1 OR "completedById" = $1)`,
     },
@@ -112,7 +118,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             LEFT JOIN "autocare_service_requests" request ON request."id" = message."requestId"
             LEFT JOIN "autocare_chat_threads" thread ON thread."id" = message."threadId"
             WHERE (message."senderId" = $1 OR request."clientId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
-              AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
+              AND (message."body" IS NOT NULL OR message."bodyBinding" IS NOT NULL OR message."offer" IS NOT NULL OR message."offerBinding" IS NOT NULL)`,
     },
     { name: 'repair event payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" event JOIN "autocare_service_requests" request ON request."id" = event."requestId" WHERE request."clientId" = $1 AND (event."title" NOT LIKE \'%"redacted":true%\' OR event."notes" IS NOT NULL OR COALESCE(event."metadata" ->> \'redacted\', \'false\') <> \'true\')' },
     { name: 'repair event actor references are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" WHERE "actorId" = $1' },
@@ -190,7 +196,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_service_messages" message
             JOIN "autocare_chat_threads" thread ON thread."id" = message."threadId"
             WHERE thread."subject" LIKE '%"redacted":true%'
-              AND (message."body" IS NOT NULL OR message."offer" IS NOT NULL)`,
+              AND (message."body" IS NOT NULL OR message."bodyBinding" IS NOT NULL OR message."offer" IS NOT NULL OR message."offerBinding" IS NOT NULL)`,
         parameterMode: 'none',
     },
     {

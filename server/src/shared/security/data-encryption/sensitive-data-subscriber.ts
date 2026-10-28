@@ -7,14 +7,26 @@ import {
 } from 'typeorm'
 import { randomUUID } from 'node:crypto'
 import { UserEntity } from '../../../entities/user/user.entity.js'
+import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
-import { ServiceMessageEntity, ServiceMessageKind } from '../../../entities/automotive/service-request.entity.js'
+import { AutoCareChatThreadEntity, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
 import { createBlindIndex, decryptRecordBoundFieldValue, encryptRecordBoundFieldValue, getOutboxPayloadRecordId, isEmailBlindIndex, setOutboxPayloadRecordId, verifyEmailBlindIndex, type EncryptedRecordScope } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
-import { messageBodyRecordContext, type MessageBodyRecordScope } from './message-body-record-scope.js'
-import { requireEmailRecordBinding, requireMessageBodyRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { messageRecordContext, type MessageRecordScope } from './message-record-scope.js'
+import { serializeMessageOffer, type MessageOfferRecord } from './message-offer-value.js'
+import { chatThreadRecordContext, type ChatThreadRecordScope } from './chat-thread-record-scope.js'
+import { serviceRequestRecordContext, serviceRequestVehicleRecordContext, type ServiceRequestRecordScope, type ServiceRequestVehicleRecordScope } from './service-request-record-scope.js'
+import { serializeBookingSnapshot } from './booking-snapshot-value.js'
+import { serializeAcceptedQuote } from './accepted-quote-value.js'
+import { serializeEstimateSnapshot } from './estimate-snapshot-value.js'
+import { serializeContactSnapshot } from './contact-snapshot-value.js'
+import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
+import { serializeServiceRequestNote } from './service-request-note-value.js'
+import { sealClientVehicleFields, openClientVehicleFields } from './client-vehicle-record-binding.js'
+import { sealUserSecondaryFields, openUserSecondaryFields } from './user-secondary-record-binding.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
     id?: string
@@ -48,13 +60,238 @@ type UserProfileRecord = {
     phoneBinding?: string | null
 }
 
-type MessageBodyRecord = MessageBodyRecordScope & {
+type MessageRecord = MessageRecordScope & MessageOfferRecord & {
     id?: string
     body?: string | null
     bodyBinding?: string | null
 }
 
-function sealMessageBody(record: MessageBodyRecord) {
+type ChatThreadRecord = ChatThreadRecordScope & { id?: string; subject?: string; subjectBinding?: string | null }
+
+type BookingSnapshotRecord = ServiceRequestRecordScope & {
+    id?: string
+    bookingSnapshot?: Record<string, unknown> | null
+    bookingSnapshotBinding?: string | null
+}
+
+type AcceptedQuoteRecord = ServiceRequestRecordScope & {
+    id?: string
+    acceptedQuoteSnapshot?: Record<string, unknown> | null
+    acceptedQuoteSnapshotBinding?: string | null
+}
+
+function sealAcceptedQuote(record: AcceptedQuoteRecord) {
+    if (record.acceptedQuoteSnapshot === undefined) return
+    if (record.acceptedQuoteSnapshot === null) {
+        record.acceptedQuoteSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.acceptedQuoteSnapshot record scope is invalid.')
+    record.acceptedQuoteSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'acceptedQuoteSnapshot', serializeAcceptedQuote(record.acceptedQuoteSnapshot), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openAcceptedQuote(record: AcceptedQuoteRecord) {
+    if (record.acceptedQuoteSnapshot === undefined) return
+    if (record.acceptedQuoteSnapshot === null) {
+        if (record.acceptedQuoteSnapshotBinding !== null && record.acceptedQuoteSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.acceptedQuoteSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.acceptedQuoteSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'acceptedQuoteSnapshot', serializeAcceptedQuote(record.acceptedQuoteSnapshot), record.id,
+        record.acceptedQuoteSnapshotBinding, { allowLegacy: !requireAcceptedQuoteRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+type EstimateSnapshotRecord = ServiceRequestRecordScope & {
+    id?: string
+    estimateSnapshot?: Record<string, unknown> | null
+    estimateSnapshotBinding?: string | null
+}
+
+function sealEstimateSnapshot(record: EstimateSnapshotRecord) {
+    if (record.estimateSnapshot === undefined) return
+    if (record.estimateSnapshot === null) {
+        record.estimateSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.estimateSnapshot record scope is invalid.')
+    record.estimateSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'estimateSnapshot', serializeEstimateSnapshot(record.estimateSnapshot), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openEstimateSnapshot(record: EstimateSnapshotRecord) {
+    if (record.estimateSnapshot === undefined) return
+    if (record.estimateSnapshot === null) {
+        if (record.estimateSnapshotBinding !== null && record.estimateSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.estimateSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.estimateSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'estimateSnapshot', serializeEstimateSnapshot(record.estimateSnapshot), record.id,
+        record.estimateSnapshotBinding, { allowLegacy: !requireEstimateSnapshotRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+type ContactSnapshotRecord = ServiceRequestRecordScope & {
+    id?: string
+    contactSnapshot?: Record<string, unknown> | null
+    contactSnapshotBinding?: string | null
+}
+
+function sealContactSnapshot(record: ContactSnapshotRecord) {
+    if (record.contactSnapshot === undefined) return
+    if (record.contactSnapshot === null) {
+        record.contactSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.contactSnapshot record scope is invalid.')
+    record.contactSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'contactSnapshot', serializeContactSnapshot(record.contactSnapshot), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openContactSnapshot(record: ContactSnapshotRecord) {
+    if (record.contactSnapshot === undefined) return
+    if (record.contactSnapshot === null) {
+        if (record.contactSnapshotBinding !== null && record.contactSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.contactSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.contactSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'contactSnapshot', serializeContactSnapshot(record.contactSnapshot), record.id,
+        record.contactSnapshotBinding, { allowLegacy: !requireContactSnapshotRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+type VehicleSnapshotRecord = ServiceRequestVehicleRecordScope & {
+    id?: string
+    vehicleSnapshot?: Record<string, unknown> | null
+    vehicleSnapshotBinding?: string | null
+}
+
+function sealVehicleSnapshot(record: VehicleSnapshotRecord) {
+    if (record.vehicleSnapshot === undefined) return
+    if (record.vehicleSnapshot === null) {
+        record.vehicleSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.vehicleSnapshot record scope is invalid.')
+    record.vehicleSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'vehicleSnapshot', serializeVehicleSnapshot(record.vehicleSnapshot), record.id,
+        serviceRequestVehicleRecordContext(record),
+    )
+}
+
+function openVehicleSnapshot(record: VehicleSnapshotRecord) {
+    if (record.vehicleSnapshot === undefined) return
+    if (record.vehicleSnapshot === null) {
+        if (record.vehicleSnapshotBinding !== null && record.vehicleSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.vehicleSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.vehicleSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'vehicleSnapshot', serializeVehicleSnapshot(record.vehicleSnapshot), record.id,
+        record.vehicleSnapshotBinding, { allowLegacy: !requireVehicleSnapshotRecordBinding(), context: serviceRequestVehicleRecordContext(record) },
+    )
+}
+
+type ServiceRequestNoteRecord = ServiceRequestRecordScope & {
+    id?: string
+    note?: string | null
+    noteBinding?: string | null
+}
+
+function sealServiceRequestNote(record: ServiceRequestNoteRecord) {
+    if (record.note === undefined) return
+    if (record.note === null) {
+        record.noteBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.note record scope is invalid.')
+    record.noteBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'note', serializeServiceRequestNote(record.note), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openServiceRequestNote(record: ServiceRequestNoteRecord) {
+    if (record.note === undefined) return
+    if (record.note === null) {
+        if (record.noteBinding !== null && record.noteBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.note record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.note record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'note', serializeServiceRequestNote(record.note), record.id,
+        record.noteBinding, { allowLegacy: !requireServiceRequestNoteRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+function sealBookingSnapshot(record: BookingSnapshotRecord) {
+    if (record.bookingSnapshot === undefined) return
+    if (record.bookingSnapshot === null) {
+        record.bookingSnapshotBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.bookingSnapshot record scope is invalid.')
+    record.bookingSnapshotBinding = createPlaintextRecordBinding(
+        'autocare_service_requests', 'bookingSnapshot', serializeBookingSnapshot(record.bookingSnapshot), record.id,
+        serviceRequestRecordContext(record),
+    )
+}
+
+function openBookingSnapshot(record: BookingSnapshotRecord) {
+    if (record.bookingSnapshot === undefined) return
+    if (record.bookingSnapshot === null) {
+        if (record.bookingSnapshotBinding !== null && record.bookingSnapshotBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_requests.bookingSnapshot record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_requests.bookingSnapshot record scope is invalid.')
+    verifyPlaintextRecordBinding(
+        'autocare_service_requests', 'bookingSnapshot', serializeBookingSnapshot(record.bookingSnapshot), record.id,
+        record.bookingSnapshotBinding, { allowLegacy: !requireBookingSnapshotRecordBinding(), context: serviceRequestRecordContext(record) },
+    )
+}
+
+function sealChatSubject(record: ChatThreadRecord) {
+    if (record.subject === undefined) return
+    if (typeof record.id !== 'string' || typeof record.subject !== 'string') {
+        throw new Error('Encrypted autocare_chat_threads.subject record scope is invalid.')
+    }
+    record.subjectBinding = createPlaintextRecordBinding('autocare_chat_threads', 'subject', record.subject, record.id, chatThreadRecordContext(record))
+}
+
+function openChatSubject(record: ChatThreadRecord) {
+    if (record.subject === undefined) return
+    if (typeof record.id !== 'string' || typeof record.subject !== 'string') {
+        throw new Error('Encrypted autocare_chat_threads.subject record scope is invalid.')
+    }
+    verifyPlaintextRecordBinding('autocare_chat_threads', 'subject', record.subject, record.id, record.subjectBinding, {
+        allowLegacy: !requireChatSubjectRecordBinding(),
+        context: chatThreadRecordContext(record),
+    })
+}
+
+function sealMessageBody(record: MessageRecord) {
     if (record.body === undefined) return
     if (record.body === null) {
         record.bodyBinding = null
@@ -63,10 +300,10 @@ function sealMessageBody(record: MessageBodyRecord) {
     if (typeof record.body !== 'string' || typeof record.id !== 'string') {
         throw new Error('Encrypted autocare_service_messages.body record scope is invalid.')
     }
-    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, messageBodyRecordContext(record))
+    record.bodyBinding = createPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, messageRecordContext(record))
 }
 
-function openMessageBody(record: MessageBodyRecord) {
+function openMessageBody(record: MessageRecord) {
     if (record.body === undefined) return
     if (record.body === null) {
         if (record.bodyBinding !== null && record.bodyBinding !== undefined) {
@@ -79,7 +316,32 @@ function openMessageBody(record: MessageBodyRecord) {
     }
     verifyPlaintextRecordBinding('autocare_service_messages', 'body', record.body, record.id, record.bodyBinding, {
         allowLegacy: !requireMessageBodyRecordBinding(),
-        context: messageBodyRecordContext(record),
+        context: messageRecordContext(record),
+    })
+}
+
+function sealMessageOffer(record: MessageRecord) {
+    if (record.offer === undefined) return
+    if (record.offer === null) {
+        record.offerBinding = null
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_messages.offer record scope is invalid.')
+    record.offerBinding = createPlaintextRecordBinding('autocare_service_messages', 'offer', serializeMessageOffer(record.offer), record.id, messageRecordContext(record))
+}
+
+function openMessageOffer(record: MessageRecord) {
+    if (record.offer === undefined) return
+    if (record.offer === null) {
+        if (record.offerBinding !== null && record.offerBinding !== undefined) {
+            throw new Error('Encrypted autocare_service_messages.offer record binding is invalid.')
+        }
+        return
+    }
+    if (typeof record.id !== 'string') throw new Error('Encrypted autocare_service_messages.offer record scope is invalid.')
+    verifyPlaintextRecordBinding('autocare_service_messages', 'offer', serializeMessageOffer(record.offer), record.id, record.offerBinding, {
+        allowLegacy: !requireMessageOfferRecordBinding(),
+        context: messageRecordContext(record),
     })
 }
 
@@ -181,11 +443,14 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
-            if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
+            if (event.metadata.tableName === 'users') {
+                sealUserProfile(event.entity as UserProfileRecord)
+                sealUserSecondaryFields(event.entity as UserEntity)
+            }
         } else if (event.metadata.tableName === 'oauth_identities') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealProviderSubject(event.entity as ProviderIdentityRecord)
@@ -193,34 +458,71 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const outbox = event.entity as OutboxEventEntity
             if (!outbox.id) outbox.id = randomUUID()
             setOutboxPayloadRecordId(outbox.payload, outbox.id)
+        } else if (event.metadata.tableName === 'client_vehicles') {
+            const vehicle = event.entity as ClientVehicleEntity
+            if (!vehicle.id) vehicle.id = randomUUID()
+            sealClientVehicleFields(vehicle)
         } else if (event.metadata.tableName === 'autocare_service_messages') {
             const message = event.entity as ServiceMessageEntity
             if (!message.id) message.id = randomUUID()
             if (message.kind === undefined) message.kind = ServiceMessageKind.Text
             sealMessageBody(message)
+            sealMessageOffer(message)
+        } else if (event.metadata.tableName === 'autocare_chat_threads') {
+            const thread = event.entity as AutoCareChatThreadEntity
+            if (!thread.id) thread.id = randomUUID()
+            sealChatSubject(thread)
+        } else if (event.metadata.tableName === 'autocare_service_requests') {
+            const request = event.entity as ServiceRequestEntity
+            if (!request.id) request.id = randomUUID()
+            sealAcceptedQuote(request)
+            sealEstimateSnapshot(request)
+            sealContactSnapshot(request)
+            sealVehicleSnapshot(request)
+            sealServiceRequestNote(request)
+            sealBookingSnapshot(request)
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
-            if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
+            if (event.metadata.tableName === 'users') {
+                sealUserProfile(event.entity as UserProfileRecord)
+                sealUserSecondaryFields(event.entity as UserEntity)
+            }
         } else if (event.entity && event.metadata.tableName === 'oauth_identities') {
             sealProviderSubject(event.entity as ProviderIdentityRecord)
         } else if (event.entity && event.metadata.tableName === 'outbox_events') {
             const outbox = event.entity as OutboxEventEntity
             if (outbox.id && outbox.payload) setOutboxPayloadRecordId(outbox.payload, outbox.id)
+        } else if (event.entity && event.metadata.tableName === 'client_vehicles') {
+            sealClientVehicleFields(event.entity as ClientVehicleEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
-            sealMessageBody(event.entity as MessageBodyRecord)
+            sealMessageBody(event.entity as MessageRecord)
+            sealMessageOffer(event.entity as MessageRecord)
+        } else if (event.entity && event.metadata.tableName === 'autocare_chat_threads') {
+            sealChatSubject(event.entity as ChatThreadRecord)
+        } else if (event.entity && event.metadata.tableName === 'autocare_service_requests') {
+            sealAcceptedQuote(event.entity as AcceptedQuoteRecord)
+            sealEstimateSnapshot(event.entity as EstimateSnapshotRecord)
+            sealContactSnapshot(event.entity as ContactSnapshotRecord)
+            sealVehicleSnapshot(event.entity as VehicleSnapshotRecord)
+            sealServiceRequestNote(event.entity as ServiceRequestNoteRecord)
+            sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
 
-    afterLoad(entity: UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity, event?: LoadEvent<UserEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity>) {
+    afterLoad(entity: UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
             && (record.email !== undefined || record.emailCiphertext !== undefined)) openEmail(record, table)
-        if (table === 'users') openUserProfile(entity as UserProfileRecord)
+        if (table === 'users') {
+            openUserProfile(entity as UserProfileRecord)
+            openUserSecondaryFields(entity as UserEntity)
+        }
+        if (table === 'client_vehicles') openClientVehicleFields(entity as ClientVehicleEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)
@@ -234,6 +536,18 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
                 }
             }
         }
-        if (table === 'autocare_service_messages') openMessageBody(entity as MessageBodyRecord)
+        if (table === 'autocare_service_messages') {
+            openMessageBody(entity as MessageRecord)
+            openMessageOffer(entity as MessageRecord)
+        }
+        if (table === 'autocare_chat_threads') openChatSubject(entity as ChatThreadRecord)
+        if (table === 'autocare_service_requests') {
+            openAcceptedQuote(entity as AcceptedQuoteRecord)
+            openEstimateSnapshot(entity as EstimateSnapshotRecord)
+            openContactSnapshot(entity as ContactSnapshotRecord)
+            openVehicleSnapshot(entity as VehicleSnapshotRecord)
+            openServiceRequestNote(entity as ServiceRequestNoteRecord)
+            openBookingSnapshot(entity as BookingSnapshotRecord)
+        }
     }
 }

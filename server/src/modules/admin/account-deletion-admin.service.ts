@@ -23,6 +23,8 @@ import {
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { createEmailBlindIndex, encryptRedactedFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
+import { createPlaintextRecordBinding } from '../../shared/security/data-encryption/plaintext-record-binding.js'
+import { chatThreadRecordContext, type ChatThreadRecordScope } from '../../shared/security/data-encryption/chat-thread-record-scope.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -235,11 +237,17 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query(
         `UPDATE "autocare_service_requests"
             SET "contactSnapshot" = NULL,
+                "contactSnapshotBinding" = NULL,
                 "vehicleSnapshot" = NULL,
+                "vehicleSnapshotBinding" = NULL,
                 "note" = NULL,
+                "noteBinding" = NULL,
                 "estimateSnapshot" = NULL,
+                "estimateSnapshotBinding" = NULL,
                 "acceptedQuoteSnapshot" = NULL,
+                "acceptedQuoteSnapshotBinding" = NULL,
                 "bookingSnapshot" = NULL,
+                "bookingSnapshotBinding" = NULL,
                 "cancelledById" = NULL,
                 "noShowById" = NULL,
                 "completedById" = NULL
@@ -260,7 +268,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "noShowReason" = NULL, "completionNote" = NULL WHERE "clientId" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_service_messages"
-            SET "body" = NULL, "bodyBinding" = NULL, "offer" = NULL
+            SET "body" = NULL, "bodyBinding" = NULL, "offer" = NULL, "offerBinding" = NULL
           WHERE "senderId" = $1
              OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)
              OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)`,
@@ -268,7 +276,19 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     )
     await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL, "assignmentReason" = NULL, "extensionReason" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "assignedModeratorId" = $1 OR "assignedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
     await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
-    await manager.query('UPDATE "autocare_chat_threads" SET "subject" = $2, "clientId" = NULL, "createdById" = NULL WHERE "clientId" = $1 OR "createdById" = $1', [userId, encryptedRedactedText('autocare_chat_threads', 'subject', ANONYMIZED_REVIEW_TEXT)])
+    const threadsToRedact = await manager.query(
+        'SELECT "id", "type", "requestId", "providerId" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string } & ChatThreadRecordScope>
+    const redactedChatSubject = encryptedRedactedText('autocare_chat_threads', 'subject', ANONYMIZED_REVIEW_TEXT)
+    for (const thread of threadsToRedact) {
+        const context = chatThreadRecordContext({ ...thread, clientId: null, createdById: null })
+        const binding = createPlaintextRecordBinding('autocare_chat_threads', 'subject', ANONYMIZED_REVIEW_TEXT, thread.id, context)
+        await manager.query(
+            'UPDATE "autocare_chat_threads" SET "subject" = $2, "subjectBinding" = $3, "clientId" = NULL, "createdById" = NULL WHERE "id" = $1',
+            [thread.id, redactedChatSubject, binding],
+        )
+    }
     await manager.query(
         `UPDATE "autocare_repair_events"
             SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = $3

@@ -1,5 +1,111 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — вторичные поля пользователя, 28 октября 2026
+
+Новые `users.avatarUrl`, `communityDisplayName` и `preferredCity` получают HMAC
+по расшифрованному тексту и user UUID. Частичные выборки дополнены bindings;
+изменение preferred city выполняется под row lock. Migration 178661,
+bounded backfill, verify и opt-in strict reader подготовлены. PostgreSQL CI,
+staging KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка полей автомобиля клиента, 28 октября 2026
+
+Новые VIN, госномер, внутренний номер и URL изображения в `client_vehicles`
+получают HMAC по расшифрованному значению, UUID автомобиля и владельца.
+Migration 178660, bounded compare-write backfill, полный verify и opt-in
+`DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING` готовят strict reader.
+Ответ API не содержит служебных подписей. PR #38 прошёл PostgreSQL/browser CI
+и объединён в `dev` как `27953bf`. Staging KMS/restore и strict cutover ещё
+не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка примечания к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.note` получают HMAC по расшифрованному
+тексту, request UUID и client/provider/location/definition UUID. ORM
+отвергает перенос корректного ciphertext между заявками и изменение
+owner/service scope. Migration 178659, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены для старых примечаний.
+Анонимизация очищает binding вместе с payload. PR #37 прошёл PostgreSQL/browser
+CI и объединён в `dev` как `a90a79b`. Staging KMS/restore и strict cutover ещё
+не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка снимка автомобиля к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.vehicleSnapshot` получают HMAC по
+расшифрованному JSON, request UUID, client/provider/location/definition UUID и
+nullable vehicle UUID. ORM отвергает перенос корректного ciphertext между
+заявками и изменение owner/service/vehicle scope. Migration 178658, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены для
+старых снимков. Анонимизация очищает binding вместе с payload. PostgreSQL и
+browser CI прошли в PR #36, объединённом в `dev` как `f13d72d`. Staging
+KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка контактного снимка к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.contactSnapshot` получают HMAC по
+расшифрованному JSON, request UUID и client/provider/location/definition UUID.
+ORM отвергает перенос корректного ciphertext между заявками и изменение
+owner/service scope. Migration 178657, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены для старых контактов. Анонимизация
+очищает binding вместе с payload. PR #35 прошёл PostgreSQL/browser CI и
+объединён в `dev` как `c637e6b`. Staging KMS/restore и strict cutover ещё не
+подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка сметы к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.estimateSnapshot` получают HMAC по
+расшифрованному JSON, request UUID и client/provider/location/definition UUID.
+ORM отвергает перенос корректного ciphertext между заявками и изменение
+owner/service scope. Частичная выборка аналитики включает binding и все UUID
+контекста. Migration 178656, bounded compare-write backfill, полный verify и
+opt-in strict reader подготовлены для старых смет. Анонимизация очищает
+binding вместе с payload. PostgreSQL CI, staging KMS/restore и strict cutover
+ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка принятой котировки к заявке, 27 октября 2026
+
+Новые `autocare_service_requests.acceptedQuoteSnapshot` получают HMAC по
+расшифрованному JSON, request UUID и client/provider/location/definition UUID.
+ORM отвергает перенос корректного ciphertext между заявками и изменение
+owner/service scope. Migration 178655, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены для старых котировок. Анонимизация
+очищает binding вместе с payload. PostgreSQL CI, staging KMS/restore и strict
+cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка снимка бронирования к заявке, 26 октября 2026
+
+Новые `autocare_service_requests.bookingSnapshot` получают HMAC по
+расшифрованному JSON, request UUID и client/provider/location/definition UUID.
+ORM отвергает перенос корректного ciphertext между заявками и изменение
+нешифрованного owner/service scope. Migration 178654, bounded compare-write
+backfill, полный verify и opt-in strict reader подготовлены для старых
+снимков. Анонимизация очищает binding вместе с payload; deletion invariant
+теперь проверяет остаточные финансовые снимки. PostgreSQL CI, staging
+KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка темы приватного чата, 26 октября 2026
+
+Новые `autocare_chat_threads.subject` получают HMAC по plaintext, thread UUID,
+type и связям request/provider/client/creator. ORM отвергает перенос
+ciphertext и изменение связей доступа. Migration 178653, bounded compare-write
+backfill, полный verify и opt-in strict reader подготовлены для legacy тем.
+Raw SQL анонимизация пересчитывает binding каждой темы после обнуления client
+и creator ID. PR #31 прошёл PostgreSQL/browser CI и объединён в `dev` как
+`ec6e2df`. Staging KMS/restore и strict cutover ещё не подтверждены.
+**U02 открыт; pilot NO-GO.**
+
+## U02 — привязка зашифрованных предложений сервиса, 26 октября 2026
+
+Новые `autocare_service_messages.offer` получают HMAC по расшифрованному JSON,
+message UUID, request/thread UUID, sender UUID и kind. ORM отвергает перенос
+корректного ciphertext между сообщениями и изменение связей доступа. Миграция
+178652, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены для старых предложений. PR #29 прошёл PostgreSQL/browser CI и
+объединён в `dev` как `6ce7be0`; PR #30 продвигает его в защищённый `main`.
+Staging KMS/restore ещё не подтверждены. Остальные encrypted поля не все связаны со строкой.
+**U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка приватного текста сообщения, 26 октября 2026
 
 Новый `autocare_service_messages.body` получает отдельный HMAC по полю,
@@ -8,9 +114,9 @@ plaintext, message UUID, request/thread UUID, sender UUID и kind. ORM пров�
 отказ. Миграция 178651,
 bounded compare-write backfill с checkpoint, полный verify и opt-in strict
 reader готовят перенос старых сообщений. Удаление body очищает binding,
-включая raw SQL account deletion. PostgreSQL CI и staging KMS/restore ещё
-не подтверждены. `offer` JSON и остальные encrypted поля не связаны со
-строкой. **U02 открыт; pilot NO-GO.**
+включая raw SQL account deletion. PR #28 прошёл PostgreSQL/browser CI и
+объединён в `dev` как `f3d06a4`. Staging KMS/restore ещё не подтверждены;
+остальные encrypted поля не все связаны со строкой. **U02 открыт; pilot NO-GO.**
 
 ## U02 — привязка имени и телефона пользователя, 25 октября 2026
 

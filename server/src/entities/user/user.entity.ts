@@ -79,6 +79,9 @@ export class UserEntity {
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'avatarUrl', 'text') })
     avatarUrl!: string | null
 
+    @Column({ type: 'text', nullable: true })
+    avatarUrlBinding!: string | null
+
     /** Opaque public identifier, rotated whenever the client re-enables sharing. */
     @Column({ type: 'uuid', default: () => 'gen_random_uuid()' })
     communityProfileId!: string
@@ -88,6 +91,9 @@ export class UserEntity {
 
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'communityDisplayName', 'text') })
     communityDisplayName!: string | null
+
+    @Column({ type: 'text', nullable: true })
+    communityDisplayNameBinding!: string | null
 
     @Column({ type: 'text', nullable: true })
     locale!: SupportedLocale | null
@@ -123,6 +129,9 @@ export class UserEntity {
 
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('users', 'preferredCity', 'text') })
     preferredCity!: string | null
+
+    @Column({ type: 'text', nullable: true })
+    preferredCityBinding!: string | null
 
     @Column({ type: 'text', array: true, default: () => "'{}'" })
     preferredCategories!: string[]

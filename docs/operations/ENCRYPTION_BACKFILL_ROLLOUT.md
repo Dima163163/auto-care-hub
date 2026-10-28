@@ -192,7 +192,245 @@ command and a tested backup exists:
    select `body` must also select `bodyBinding`; current chat reads load the
    full entity. Keep old keys during the recovery window.
 
-This does not bind encrypted `offer` JSON or other U02 fields.
+## Encrypted service offer binding expansion
+
+New non-null `autocare_service_messages.offer` writes carry a companion HMAC
+in `offerBinding`. The MAC covers the decrypted JSON, column, message UUID,
+request/thread UUIDs, sender UUID and message kind. ORM reads reject ciphertext
+moved between messages or changed access-control links. A null offer has a null
+binding. Migration `1786520000000` adds the nullable binding and a durable
+checkpoint. The operator command reads UUID keysets of at most 500 messages,
+authenticates AES-GCM and existing MACs, and compare-writes missing bindings
+with checkpoint progress in one transaction. It prints counts only.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786520000000`. Run
+   `npm --prefix server run encryption:backfill-message-offer-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks the request/thread and sender links and kind.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse creating, reading, accepting and declining offers,
+   message deletion, account deletion/export and backup restore. Queries that
+   select `offer` must also select `offerBinding`. Keep old keys during the
+   recovery window.
+
+## Private chat subject binding expansion
+
+New `autocare_chat_threads.subject` writes carry a companion HMAC in
+`subjectBinding`. The MAC covers the decrypted subject, thread UUID, type,
+request/provider/client/creator UUIDs. ORM reads reject a moved ciphertext or
+changed access-control link. Migration `1786530000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 threads, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion rebinds each redacted subject after
+clearing client/creator links.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786530000000`. Run
+   `npm --prefix server run encryption:backfill-chat-subject-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks the thread type and all access links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse chat creation/list/read, messages/read receipts,
+   account deletion/export and backup restore. Queries selecting `subject`
+   must also select `subjectBinding` and all access links. Keep old keys during
+   the recovery window.
+
+## Booking snapshot binding expansion
+
+New non-null `autocare_service_requests.bookingSnapshot` writes carry a
+companion HMAC in `bookingSnapshotBinding`. The MAC covers the decrypted JSON,
+request UUID and client/provider/location/definition UUIDs. ORM reads reject a
+snapshot moved between requests or a changed owner/service link. A null
+snapshot has a null binding. Migration `1786540000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 requests, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion clears the snapshot and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786540000000`. Run
+   `npm --prefix server run encryption:backfill-booking-snapshot-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse instant/request booking, quote acceptance,
+   rescheduling, bonuses/refunds, account deletion/export and backup restore.
+   Queries selecting `bookingSnapshot` must also select its binding and all
+   owner/service links. Keep old keys during the recovery window.
+
+## Accepted quote binding expansion
+
+New non-null `autocare_service_requests.acceptedQuoteSnapshot` writes carry a
+companion HMAC in `acceptedQuoteSnapshotBinding`. The MAC covers the decrypted JSON,
+request UUID and client/provider/location/definition UUIDs. ORM reads reject a
+snapshot moved between requests or a changed owner/service link. A null
+snapshot has a null binding. Migration `1786550000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 requests, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion clears the snapshot and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786550000000`. Run
+   `npm --prefix server run encryption:backfill-accepted-quote-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse quote acceptance, booking, bonuses/refunds, account
+   deletion/export and backup restore.
+   Queries selecting `acceptedQuoteSnapshot` must also select its binding and all
+   owner/service links. Keep old keys during the recovery window.
+
+## Estimate snapshot binding expansion
+
+New non-null `autocare_service_requests.estimateSnapshot` writes carry a
+companion HMAC in `estimateSnapshotBinding`. The MAC covers the decrypted JSON,
+request UUID and client/provider/location/definition UUIDs. ORM reads reject a
+snapshot moved between requests or a changed owner/service link. A null
+snapshot has a null binding. Migration `1786560000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 requests, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion clears the snapshot and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786560000000`. Run
+   `npm --prefix server run encryption:backfill-estimate-snapshot-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse quote acceptance, booking, bonuses/refunds, account
+   deletion/export and backup restore.
+   Queries selecting `estimateSnapshot` must also select its binding and all
+   owner/service links; owner analytics has been updated for this. Keep old keys during the recovery window.
+
+## Contact snapshot binding expansion
+
+New non-null `autocare_service_requests.contactSnapshot` writes carry a
+companion HMAC in `contactSnapshotBinding`. The MAC covers the decrypted JSON,
+request UUID and client/provider/location/definition UUIDs. ORM reads reject a
+snapshot moved between requests or a changed owner/service link. A null
+snapshot has a null binding. Migration `1786570000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 requests, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion clears the snapshot and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786570000000`. Run
+   `npm --prefix server run encryption:backfill-contact-snapshot-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse request creation/read, contact export, account
+   deletion and backup restore.
+   Queries selecting `contactSnapshot` must also select its binding and all
+   owner/service links. Keep old keys during the recovery window.
+
+## Vehicle snapshot binding expansion
+
+New non-null `autocare_service_requests.vehicleSnapshot` writes carry a
+companion HMAC in `vehicleSnapshotBinding`. The MAC covers the decrypted JSON,
+request UUID, client/provider/location/definition UUIDs and nullable vehicle UUID. ORM reads reject a
+snapshot moved between requests or a changed owner/service link. A null
+snapshot has a null binding. Migration `1786580000000` adds the nullable
+binding and a durable checkpoint. The operator command reads UUID keysets of
+at most 500 requests, authenticates AES-GCM and existing MACs, then
+compare-writes missing bindings with checkpoint progress in one transaction.
+It prints counts only. Account deletion clears the snapshot and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786580000000`. Run
+   `npm --prefix server run encryption:backfill-vehicle-snapshot-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links and vehicle UUID.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse request creation/read, vehicle export, account
+   deletion and backup restore.
+   Queries selecting `vehicleSnapshot` must also select its binding and all
+   owner/service links and vehicle UUID. Keep old keys during the recovery window.
+
+## Service request note binding expansion
+
+New non-null `autocare_service_requests.note` writes carry a companion HMAC in
+`noteBinding`. The MAC covers the decrypted text, request UUID and
+client/provider/location/definition UUIDs. ORM reads reject a note moved
+between requests or a changed owner/service link. A null note has a null
+binding. Migration `1786590000000` adds the nullable binding and a durable
+checkpoint. The operator command reads UUID keysets of at most 500 requests,
+authenticates AES-GCM and existing MACs, then compare-writes missing bindings
+with checkpoint progress in one transaction. It prints counts only. Account
+deletion clears the note and its binding.
+
+After old writers have drained, the approved KMS keyring is available to the
+command and a tested backup exists:
+
+1. Apply migration `1786590000000`. Run
+   `npm --prefix server run encryption:backfill-service-request-note-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until it reports `exhausted:true`. An interrupted run resumes its checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse request creation/read, data export, account
+   deletion and backup restore. Queries selecting `note` must also select its
+   binding and all owner/service links. Keep old keys during the recovery window.
+
+This does not bind other U02 encrypted fields.
 
 ## Outbox recipient record binding expansion
 
@@ -228,3 +466,38 @@ This command and CI coverage are preparation, not permission to switch a live
 database. Verify throughput, locks, WAL lag, backup restore and old writer
 drain on staging with the real KMS keyring. Other U02 encrypted fields remain
 outside this outbox recipient cutover.
+
+## Client vehicle field binding rollout (178660)
+
+1. Deploy migration 178660 with the new writer on all API instances. Keep
+   `DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING=false` during the
+   expansion. Confirm the four binding columns and checkpoint table.
+2. On staging with the intended KMS keyring and a restored representative
+   database, run `npm --prefix server run encryption:backfill-client-vehicle-binding -- --mode apply --batch-size 500 --max-batches 100`. Repeat until `exhausted:true`. A compare-write conflict aborts the batch without advancing its checkpoint; resolve concurrent writes and retry.
+3. Run the same command with `--mode verify` and enough batches to reach
+   `exhausted:true`. Inspect reads, updates, deletion, restore and workload/lock
+   metrics. If old writers produced unbound rows, drain them, run `--mode reset`
+   and repeat apply and verify. Reset removes only checkpoint metadata.
+4. Only after full verification and a restore rehearsal, enable
+   `DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING=true` on every API
+   instance. Missing or swapped bindings then fail reads. Retain historical
+   keys; disabling the flag is a temporary compatibility rollback.
+
+This code path has not been exercised against a live staging KMS or production
+database; the current pilot gate remains NO-GO.
+
+## User secondary field binding rollout (178661)
+
+1. Deploy migration 178661 and the new writer on all API instances. Keep
+   `DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING=false` during expansion.
+2. On staging with the intended KMS keyring and a restored representative
+   database, run `npm --prefix server run encryption:backfill-user-secondary-binding -- --mode apply --batch-size 500 --max-batches 100` until `exhausted:true`. A concurrent row change aborts its batch without advancing the checkpoint.
+3. Run the same command with `--mode verify` and enough batches for
+   `exhausted:true`. Check public profile, membership list, preference update,
+   account deletion, locks, WAL and recovery. Drain old writers; if any new
+   unbound rows appeared, run `--mode reset` and repeat apply and verify.
+4. Enable `DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING=true` on
+   every API instance only after full verification and restore rehearsal.
+   Retain historical keys; disabling strict is a temporary compatibility rollback.
+
+This path has not been exercised against a live staging KMS or production data.
