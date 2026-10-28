@@ -90,6 +90,8 @@ note right of Resource
   Expert question vehicleSnapshot/symptoms/answer имеют HMAC по question/
   client UUID. Удаление клиента переподписывает symptoms и очищает
   snapshot/answer с bindings.
+  Fleet account name/notes имеют HMAC по fleet/owner UUID. Удаление
+  владельца переподписывает обезличенное имя и очищает notes/binding.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

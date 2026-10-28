@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## U02 — автопарки, 2026-10-28
+
+- [x] Привязать name и notes к fleet/owner UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178679, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление владельца переподписывает обезличенное название и очищает notes/binding; invariant проверяет название.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Поля автомобилей автопарка остаются открытыми.
+
+
 ## U02 — вопросы эксперту, 2026-10-28
 
 - [x] Привязать vehicleSnapshot, symptoms и answer к question/client UUID; не отдавать bindings в API.

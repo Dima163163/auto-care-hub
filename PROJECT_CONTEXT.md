@@ -1,5 +1,10 @@
 # AutoCare Hub Project Context
 
+## U02 — автопарки, 28 октября 2026
+
+`autocare_fleet_accounts.name` и `notes` получают HMAC по fleet/owner UUID. Migration 178679, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление владельца теперь переподписывает обезличенное название и очищает notes/binding; invariant проверяет название. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
 ## U02 — вопросы эксперту, 28 октября 2026
 
 `autocare_expert_questions.vehicleSnapshot`, `symptoms` и `answer` получают HMAC по question/client UUID. Migration 178678, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление клиента переподписывает redacted symptoms каждой строки и очищает snapshot/answer с bindings. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.

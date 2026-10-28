@@ -1,5 +1,8 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 28.10, автопарк:** name/notes получают HMAC по fleet/owner UUID. Migration 178679, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает обезличенное название и очищает notes/binding. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
+
+
 **Локальный шаг 28.10, вопросы эксперту:** vehicleSnapshot/symptoms/answer получают HMAC по question/client UUID. Migration 178678, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает symptoms каждой строки и очищает snapshot/answer с bindings. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
 

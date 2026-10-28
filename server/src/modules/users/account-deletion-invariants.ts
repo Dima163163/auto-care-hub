@@ -104,12 +104,12 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
               AND ("symptoms" NOT LIKE '%"redacted":true%' OR "vehicleSnapshot" IS NOT NULL OR "answer" IS NOT NULL OR "answeredById" = $1)`,
     },
     {
-        name: 'fleet notes and vehicles are redacted',
+        name: 'fleet names, notes and vehicles are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_fleet_accounts" fleet
             LEFT JOIN "autocare_fleet_vehicles" vehicle ON vehicle."fleetId" = fleet."id"
             WHERE fleet."ownerId" = $1
-              AND (fleet."notes" IS NOT NULL OR vehicle."label" NOT LIKE '%"redacted":true%' OR COALESCE(vehicle."vehicleSnapshot" ->> 'redacted', 'false') <> 'true' OR vehicle."approvalPolicy" IS NOT NULL)`,
+              AND (fleet."name" NOT LIKE '%"redacted":true%' OR fleet."notes" IS NOT NULL OR vehicle."label" NOT LIKE '%"redacted":true%' OR COALESCE(vehicle."vehicleSnapshot" ->> 'redacted', 'false') <> 'true' OR vehicle."approvalPolicy" IS NOT NULL)`,
     },
     {
         name: 'account-related service message bodies and offers are redacted',

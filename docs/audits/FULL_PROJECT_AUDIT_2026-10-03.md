@@ -1,5 +1,10 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка автопарков, 28 октября 2026
+
+Два зашифрованных поля `autocare_fleet_accounts` получают HMAC по fleet/owner UUID. Migration 178679, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает обезличенное название каждой строки и очищает notes/binding. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
 ## U02 — привязка вопросов эксперту, 28 октября 2026
 
 Три зашифрованных поля `autocare_expert_questions` получают HMAC по question/client UUID. Migration 178678, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает redacted symptoms каждой строки и очищает snapshot/answer с bindings. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**

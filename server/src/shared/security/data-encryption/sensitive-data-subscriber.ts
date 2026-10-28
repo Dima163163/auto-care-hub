@@ -14,7 +14,7 @@ import { BookingRescheduleRequestEntity } from '../../../entities/booking/bookin
 import { AutoCareRescheduleRequestEntity } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
 import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
 import { AutoCareChatBlockEntity, AutoCareChatReportEntity } from '../../../entities/automotive/chat-moderation.entity.js'
-import { AutoCareBroadcastOfferEntity, AutoCareBroadcastRequestEntity, AutoCareGuaranteeClaimEntity, AutoCareExpertQuestionEntity, AutoCareRepairEventEntity, AutoCareTrustEvidenceEntity } from '../../../entities/automotive/marketplace-enhancements.entity.js'
+import { AutoCareBroadcastOfferEntity, AutoCareBroadcastRequestEntity, AutoCareGuaranteeClaimEntity, AutoCareExpertQuestionEntity, AutoCareFleetAccountEntity, AutoCareRepairEventEntity, AutoCareTrustEvidenceEntity } from '../../../entities/automotive/marketplace-enhancements.entity.js'
 import { AutomotiveProviderChangeRequestEntity } from '../../../entities/automotive/provider-change-request.entity.js'
 import { AutoCareAppealEntity } from '../../../entities/automotive/appeal.entity.js'
 import { AutomotiveCatalogGapRequestEntity } from '../../../entities/automotive/catalog-gap-request.entity.js'
@@ -53,6 +53,7 @@ import { sealBroadcastRequestFields, openBroadcastRequestFields } from './broadc
 import { sealBroadcastOfferSnapshot, openBroadcastOfferSnapshot } from './broadcast-offer-record-binding.js'
 import { sealGuaranteeClaimFields, openGuaranteeClaimFields } from './guarantee-claim-record-binding.js'
 import { sealExpertQuestionFields, openExpertQuestionFields } from './expert-question-record-binding.js'
+import { sealFleetAccountFields, openFleetAccountFields } from './fleet-account-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -470,7 +471,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -541,6 +542,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const question = event.entity as AutoCareExpertQuestionEntity
             if (!question.id) question.id = randomUUID()
             sealExpertQuestionFields(question)
+        } else if (event.metadata.tableName === 'autocare_fleet_accounts') {
+            const fleet = event.entity as AutoCareFleetAccountEntity
+            if (!fleet.id) fleet.id = randomUUID()
+            sealFleetAccountFields(fleet)
         } else if (event.metadata.tableName === 'autocare_catalog_gap_requests') {
             const request = event.entity as AutomotiveCatalogGapRequestEntity
             if (!request.id) request.id = randomUUID()
@@ -576,7 +581,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') {
@@ -616,6 +621,8 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealGuaranteeClaimFields(event.entity as AutoCareGuaranteeClaimEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_expert_questions') {
             sealExpertQuestionFields(event.entity as AutoCareExpertQuestionEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_fleet_accounts') {
+            sealFleetAccountFields(event.entity as AutoCareFleetAccountEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_catalog_gap_requests') {
             sealCatalogGapFields(event.entity as AutomotiveCatalogGapRequestEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_appeals') {
@@ -638,7 +645,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
@@ -664,6 +671,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         if (table === 'autocare_broadcast_offers') openBroadcastOfferSnapshot(entity as AutoCareBroadcastOfferEntity)
         if (table === 'autocare_guarantee_claims') openGuaranteeClaimFields(entity as AutoCareGuaranteeClaimEntity)
         if (table === 'autocare_expert_questions') openExpertQuestionFields(entity as AutoCareExpertQuestionEntity)
+        if (table === 'autocare_fleet_accounts') openFleetAccountFields(entity as AutoCareFleetAccountEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)

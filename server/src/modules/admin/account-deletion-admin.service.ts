@@ -33,6 +33,7 @@ import { broadcastRequestContext } from '../../shared/security/data-encryption/b
 import { broadcastOfferContext } from '../../shared/security/data-encryption/broadcast-offer-record-binding.js'
 import { guaranteeClaimContext } from '../../shared/security/data-encryption/guarantee-claim-record-binding.js'
 import { expertQuestionContext } from '../../shared/security/data-encryption/expert-question-record-binding.js'
+import { fleetAccountContext } from '../../shared/security/data-encryption/fleet-account-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -328,7 +329,18 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
         )
     }
     await manager.query('UPDATE "autocare_expert_questions" SET "answeredById" = NULL WHERE "answeredById" = $1', [userId])
-    await manager.query('UPDATE "autocare_fleet_accounts" SET "notes" = NULL WHERE "ownerId" = $1', [userId])
+    const fleetsToRedact = await manager.query(
+        'SELECT "id", "ownerId" FROM "autocare_fleet_accounts" WHERE "ownerId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; ownerId: string }>
+    const redactedFleetName = encryptedRedactedText('autocare_fleet_accounts', 'name', identity.name)
+    for (const fleet of fleetsToRedact) {
+        await manager.query(
+            'UPDATE "autocare_fleet_accounts" SET "name" = $2, "nameBinding" = $3, "notes" = NULL, "notesBinding" = NULL WHERE "id" = $1',
+            [fleet.id, redactedFleetName,
+                createPlaintextRecordBinding('autocare_fleet_accounts', 'name', identity.name, fleet.id, fleetAccountContext(fleet))],
+        )
+    }
     await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = $2, "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $3)', [encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name), encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {}), userId])
     await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "cancellationReasonBinding" = NULL, "noShowReason" = NULL, "noShowReasonBinding" = NULL, "completionNote" = NULL, "completionNoteBinding" = NULL WHERE "clientId" = $1', [userId])
     await manager.query(

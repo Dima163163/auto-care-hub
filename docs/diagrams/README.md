@@ -1,5 +1,8 @@
 # Карта проекта AutoCare Hub
 
+**U02, fleet account 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC name/notes по fleet/owner UUID. Migration 178679, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
 **U02, expert question 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC vehicleSnapshot/symptoms/answer по question/client UUID. Migration 178678, bounded checkpoint, full verify и opt-in strict reader подготовлены.
 
 

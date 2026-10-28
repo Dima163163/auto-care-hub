@@ -164,7 +164,9 @@ export class AutoCareFleetAccountEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) ownerId!: string
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_fleet_accounts', 'name', 'text') }) name!: string
+    @Column({ type: 'text', nullable: true }) nameBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_fleet_accounts', 'notes', 'text') }) notes!: string | null
+    @Column({ type: 'text', nullable: true }) notesBinding!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }

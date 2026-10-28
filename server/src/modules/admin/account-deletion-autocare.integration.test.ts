@@ -14,6 +14,7 @@ import {
     AutoCareBroadcastOfferEntity,
     AutoCareGuaranteeClaimEntity,
     AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
@@ -95,6 +96,7 @@ describe('AutoCare account deletion retention invariants', () => {
     let broadcastOffer: AutoCareBroadcastOfferEntity
     let guaranteeClaim: AutoCareGuaranteeClaimEntity
     let expertQuestion: AutoCareExpertQuestionEntity
+    let fleetAccount: AutoCareFleetAccountEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
     let completedOutboxId: string
@@ -332,6 +334,11 @@ describe('AutoCare account deletion retention invariants', () => {
             answeredById: superAdmin.id,
             answeredAt: new Date(),
         })
+        fleetAccount = await AppDataSource.getRepository(AutoCareFleetAccountEntity).save({
+            ownerId: deletedOwner.id,
+            name: 'Private fleet name',
+            notes: 'Private fleet notes',
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -442,6 +449,7 @@ describe('AutoCare account deletion retention invariants', () => {
         await AppDataSource.getRepository(ServiceRequestEntity).delete({ id: serviceRequest?.id })
         await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).delete({ id: broadcastRequest?.id })
         await AppDataSource.getRepository(AutoCareExpertQuestionEntity).delete({ id: expertQuestion?.id })
+        await AppDataSource.getRepository(AutoCareFleetAccountEntity).delete({ id: fleetAccount?.id })
         await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider?.id })
         await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).delete({ id: definition?.id })
         await AppDataSource.getRepository(AutomotiveServiceLocationEntity).delete({ id: location?.id })
@@ -547,6 +555,11 @@ describe('AutoCare account deletion retention invariants', () => {
             answerBinding: null,
         })
         expect(redactedQuestion.symptomsBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedFleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).findOneByOrFail({ id: fleetAccount.id })
+        expect(redactedFleet.name).not.toBe('Private fleet name')
+        expect(redactedFleet.notes).toBeNull()
+        expect(redactedFleet.notesBinding).toBeNull()
+        expect(redactedFleet.nameBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)
