@@ -23,6 +23,7 @@ export type AccountDeletionInvariantResult = AccountDeletionInvariant & {
  * retention check instead of silently introducing a new PII leak.
  */
 export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] = [
+    { name: 'user secondary fields are removed', sql: 'SELECT COUNT(*)::int AS count FROM "users" WHERE "id" = $1 AND ("avatarUrl" IS NOT NULL OR "avatarUrlBinding" IS NOT NULL OR "communityDisplayName" IS NOT NULL OR "communityDisplayNameBinding" IS NOT NULL OR "preferredCity" IS NOT NULL OR "preferredCityBinding" IS NOT NULL)' },
     { name: 'owned providers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_providers" WHERE "ownerId" = $1' },
     { name: 'legacy cabinets are blocked and images removed', sql: 'SELECT COUNT(*)::int AS count FROM "cabinets" WHERE "ownerId" = $1 AND ("status" <> \'blocked\' OR cardinality("photos") > 0)' },
     { name: 'provider memberships are removed', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_memberships" WHERE "userId" = $1' },

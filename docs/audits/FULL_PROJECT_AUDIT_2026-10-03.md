@@ -1,13 +1,23 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — вторичные поля пользователя, 28 октября 2026
+
+Новые `users.avatarUrl`, `communityDisplayName` и `preferredCity` получают HMAC
+по расшифрованному тексту и user UUID. Частичные выборки дополнены bindings;
+изменение preferred city выполняется под row lock. Migration 178661,
+bounded backfill, verify и opt-in strict reader подготовлены. PostgreSQL CI,
+staging KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+
+
 ## U02 — привязка полей автомобиля клиента, 28 октября 2026
 
 Новые VIN, госномер, внутренний номер и URL изображения в `client_vehicles`
 получают HMAC по расшифрованному значению, UUID автомобиля и владельца.
 Migration 178660, bounded compare-write backfill, полный verify и opt-in
 `DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING` готовят strict reader.
-Ответ API не содержит служебных подписей. PostgreSQL CI и staging KMS/restore
-для этой порции ещё не подтверждены; strict выключен. **U02 открыт; pilot NO-GO.**
+Ответ API не содержит служебных подписей. PR #38 прошёл PostgreSQL/browser CI
+и объединён в `dev` как `27953bf`. Staging KMS/restore и strict cutover ещё
+не подтверждены. **U02 открыт; pilot NO-GO.**
 
 ## U02 — привязка примечания к заявке, 27 октября 2026
 

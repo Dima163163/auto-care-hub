@@ -42,6 +42,9 @@ note right of Resource
   провайдеру; после чтения сверяются с HMAC index.
   Bounded backfill дописывает MAC старым subjects;
   opt-in strict flag отвергает отсутствие MAC после cutover.
+  User avatar URL, community display name и preferred city имеют HMAC
+  по user UUID; частичные выборки включают binding. Preferred city
+  обновляется под row lock. Bounded backfill и opt-in strict reader.
   Client vehicle VIN/plate/internal number/image URL имеют HMAC по
   vehicle UUID и owner UUID; bounded backfill и opt-in strict reader.
   API исключает binding из ответа.

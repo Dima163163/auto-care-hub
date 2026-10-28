@@ -11,11 +11,13 @@ import { UserEntity, UserRole, UserStatus } from '../../../entities/user/user.en
 import { UserSessionEntity } from '../../../entities/user-session/user-session.entity.js'
 import { loginUser } from '../../../modules/auth/auth.service.js'
 import { createOwnerProviderInvitation } from '../../../modules/autocare/provider-membership.service.js'
+import { updateUserPreferences } from '../../../modules/users/users.service.js'
 import { createBlindIndex, createEmailBlindIndex, encryptFieldValue, getDataEncryptionKeyProvider, outboxPayloadEncryptionTransformer, setDataEncryptionKeyProviderForTests } from './field-encryption.js'
 import { resetEmailBindingBackfill, runIdentityEmailBindingBackfill, verifyIdentityEmailBindings } from './identity-email-binding-backfill.js'
 import { resetOutboxBindingBackfill, runOutboxBindingBackfill, verifyOutboxBindings } from './outbox-binding-backfill.js'
 import { resetOAuthBindingBackfill, runOAuthBindingBackfill, verifyOAuthBindings } from './oauth-binding-backfill.js'
 import { resetUserProfileBindingBackfill, runUserProfileBindingBackfill, verifyUserProfileBindings } from './user-profile-binding-backfill.js'
+import { resetUserSecondaryBindingBackfill, runUserSecondaryBindingBackfill, verifyUserSecondaryBindings } from './user-secondary-binding-backfill.js'
 import { resetMessageBodyBindingBackfill, runMessageBodyBindingBackfill, verifyMessageBodyBindings } from './message-body-binding-backfill.js'
 import { resetMessageOfferBindingBackfill, runMessageOfferBindingBackfill, verifyMessageOfferBindings } from './message-offer-binding-backfill.js'
 import { resetChatSubjectBindingBackfill, runChatSubjectBindingBackfill, verifyChatSubjectBindings } from './chat-subject-binding-backfill.js'
@@ -46,6 +48,8 @@ describe('sensitive field encryption ORM integration', () => {
             name: `Private Name ${suffix}`,
             email,
             phone: '+7 999 123-45-67',
+            avatarUrl: '/private-avatar.png',
+            communityDisplayName: 'Private Public Name',
             preferredCity: 'Казань',
             role: UserRole.Client,
             status: UserStatus.Active,
@@ -122,6 +126,57 @@ describe('sensitive field encryption ORM integration', () => {
             }
         } finally {
             await resetUserProfileBindingBackfill(AppDataSource)
+        }
+
+        const [storedSecondary] = await AppDataSource.query(
+            'SELECT "avatarUrl", "avatarUrlBinding", "communityDisplayNameBinding", "preferredCityBinding" FROM "users" WHERE "id" = $1', [user.id],
+        ) as Array<{ avatarUrl: string; avatarUrlBinding: string; communityDisplayNameBinding: string; preferredCityBinding: string }>
+        if (!storedSecondary) throw new Error('Synthetic user secondary fields are missing.')
+        expect(storedSecondary.avatarUrl).not.toContain('/private-avatar.png')
+        expect(storedSecondary.avatarUrlBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(storedSecondary.communityDisplayNameBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(storedSecondary.preferredCityBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        await AppDataSource.query('UPDATE "users" SET "avatarUrl" = $1, "avatarUrlBinding" = $2 WHERE "id" = $3',
+            [storedSecondary.avatarUrl, storedSecondary.avatarUrlBinding, secondUser.id])
+        try {
+            await expect(users.findOneByOrFail({ id: secondUser.id }))
+                .rejects.toThrow('Encrypted record binding authentication failed.')
+        } finally {
+            await AppDataSource.query('UPDATE "users" SET "avatarUrl" = NULL, "avatarUrlBinding" = NULL WHERE "id" = $1', [secondUser.id])
+        }
+        await AppDataSource.query('UPDATE "users" SET "preferredCityBinding" = NULL WHERE "id" = $1', [user.id])
+        await resetUserSecondaryBindingBackfill(AppDataSource)
+        try {
+            await expect(verifyUserSecondaryBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+            process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = 'true'
+            try {
+                await expect(users.findOneByOrFail({ id: user.id }))
+                    .rejects.toThrow('Encrypted record binding is missing.')
+            } finally {
+                if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+                else process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = previousStrict
+            }
+            expect((await runUserSecondaryBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyUserSecondaryBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = 'true'
+            try {
+                const partial = await users.findOneOrFail({
+                    where: { id: user.id }, select: { id: true, avatarUrl: true, avatarUrlBinding: true },
+                })
+                expect(partial.avatarUrl).toBe('/private-avatar.png')
+                await expect(users.findOneOrFail({ where: { id: user.id }, select: { id: true, avatarUrl: true } }))
+                    .rejects.toThrow('Encrypted record binding is missing.')
+                const current = await users.findOneByOrFail({ id: user.id })
+                expect((await updateUserPreferences(current, { preferredCity: 'Самара' })).preferredCity).toBe('Самара')
+                expect((await users.findOneByOrFail({ id: user.id })).preferredCity).toBe('Самара')
+            } finally {
+                if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+                else process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = previousStrict
+            }
+        } finally {
+            await resetUserSecondaryBindingBackfill(AppDataSource)
         }
 
         const wrongEmailCiphertext = JSON.stringify(encryptFieldValue('users', 'email', `other-${email}`))

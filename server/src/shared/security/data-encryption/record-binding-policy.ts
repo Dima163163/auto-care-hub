@@ -26,6 +26,13 @@ export function requireUserProfileRecordBinding(environment: NodeJS.ProcessEnv =
     throw new Error('DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING must be true or false.')
 }
 
+export function requireUserSecondaryRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING must be true or false.')
+}
+
 export function requireMessageBodyRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
     const configured = environment.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
     if (configured === undefined || configured === 'false') return false

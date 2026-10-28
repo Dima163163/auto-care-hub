@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
     getRepository: vi.fn(),
+    transaction: vi.fn(),
     getManagedProviderPermissionScopes: vi.fn(),
 }))
 
-vi.mock('../../database/data-source.js', () => ({ AppDataSource: { getRepository: mocks.getRepository } }))
+vi.mock('../../database/data-source.js', () => ({ AppDataSource: { getRepository: mocks.getRepository, transaction: mocks.transaction } }))
 vi.mock('../autocare/provider-access.service.js', () => ({
     getManagedProviderPermissionScopes: mocks.getManagedProviderPermissionScopes,
     isManagedProviderLocationAllowed: (scopes: Array<{ providerId: string; locationIds: string[] | null }>, providerId: string, locationId: string | null) => {
@@ -24,6 +25,7 @@ import { getOwnerClients, updateUserPreferences } from './users.service.js'
 describe('getOwnerClients branch access', () => {
     beforeEach(() => {
         mocks.getRepository.mockReset()
+        mocks.transaction.mockReset()
         mocks.getManagedProviderPermissionScopes.mockReset()
     })
 
@@ -76,6 +78,7 @@ describe('getOwnerClients branch access', () => {
 describe('updateUserPreferences security state', () => {
     beforeEach(() => {
         mocks.getRepository.mockReset()
+        mocks.transaction.mockReset()
     })
 
     it('writes only preference columns and returns the current user', async () => {
@@ -110,5 +113,38 @@ describe('updateUserPreferences security state', () => {
         await expect(updateUserPreferences(snapshot, { locale: 'de' }))
             .rejects.toMatchObject({ statusCode: 401 })
         expect(findOneBy).not.toHaveBeenCalled()
+    })
+
+    it('updates preferred city under a row lock so its binding uses the user ID', async () => {
+        const snapshot = { id: 'user-1', status: UserStatus.Active, tokenVersion: 1, preferredCity: null } as UserEntity
+        const current = { ...snapshot } as UserEntity
+        const findOne = vi.fn().mockResolvedValue(current)
+        const save = vi.fn().mockImplementation(async (record: UserEntity) => record)
+        mocks.transaction.mockImplementation((callback: (manager: unknown) => Promise<unknown>) => callback({
+            getRepository: () => ({ findOne, save }),
+        }))
+
+        const result = await updateUserPreferences(snapshot, { preferredCity: 'Самара' })
+
+        expect(findOne).toHaveBeenCalledWith({
+            where: { id: snapshot.id, status: UserStatus.Active, tokenVersion: 1 },
+            lock: { mode: 'pessimistic_write' },
+        })
+        expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: snapshot.id, preferredCity: 'Самара' }))
+        expect(result.preferredCity).toBe('Самара')
+        expect(snapshot.preferredCity).toBeNull()
+    })
+
+    it('rejects a stale preferred city update before saving', async () => {
+        const snapshot = { id: 'user-1', status: UserStatus.Active, tokenVersion: 1 } as UserEntity
+        const findOne = vi.fn().mockResolvedValue(null)
+        const save = vi.fn()
+        mocks.transaction.mockImplementation((callback: (manager: unknown) => Promise<unknown>) => callback({
+            getRepository: () => ({ findOne, save }),
+        }))
+
+        await expect(updateUserPreferences(snapshot, { preferredCity: 'Самара' }))
+            .rejects.toMatchObject({ statusCode: 401 })
+        expect(save).not.toHaveBeenCalled()
     })
 })

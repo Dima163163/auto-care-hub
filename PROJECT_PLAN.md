@@ -1,13 +1,24 @@
 # AutoCare Hub — Project Plan
 
+## U02 — вторичные поля пользователя, 2026-10-28
+
+- [x] Привязать avatar URL, community display name и preferred city к UUID
+  пользователя; включить bindings в частичные ORM выборки.
+- [x] Перевести обновление preferred city на блокировку строки и ORM save.
+- [x] Подготовить migration 178661, bounded compare-write backfill, verify и
+  opt-in strict reader.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+
+
 ## U02 — привязка полей автомобиля клиента, 2026-10-28
 
 - [x] Привязать четыре зашифрованных поля к UUID автомобиля и владельца;
   исключить служебные подписи из ответа API.
 - [x] Подготовить migration 178660, bounded compare-write backfill, полный
   verify и opt-in strict reader.
-- [ ] Подтвердить PostgreSQL/browser CI и staging KMS/restore, затем включить
-  strict после полной проверки. Другие зашифрованные поля U02 открыты.
+- [x] PR #38 прошёл PostgreSQL/browser CI и объединён в `dev` как `27953bf`.
+- [ ] Подтвердить staging KMS/restore и включить strict после полной проверки.
+  Другие зашифрованные поля U02 открыты.
 
 ## U02 service request note record binding — 2026-10-27
 

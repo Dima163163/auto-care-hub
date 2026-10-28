@@ -171,7 +171,7 @@ export async function updateMyAutoCareCommunityProfile(user: UserEntity, input: 
 export async function getPublicAutoCareCommunityProfile(profileId: string): Promise<PublicAutoCareCommunityProfile> {
     const user = await AppDataSource.getRepository(UserEntity).findOne({
         where: { communityProfileId: profileId, communityProfileEnabled: true, role: UserRole.Client, status: UserStatus.Active },
-        select: { id: true, communityProfileId: true, communityProfileEnabled: true, communityDisplayName: true, avatarUrl: true },
+        select: { id: true, communityProfileId: true, communityProfileEnabled: true, communityDisplayName: true, communityDisplayNameBinding: true, avatarUrl: true, avatarUrlBinding: true },
     })
     if (!user?.communityDisplayName) fail(404, ERROR_CODES.NotFound, 'Public client profile not found.')
     const metrics = await getMetrics(user.id)
@@ -193,7 +193,7 @@ export async function getPublicReviewCommunityData(reviews: AutomotiveReviewEnti
     const [users, voteRows] = await Promise.all([
         ids.length ? AppDataSource.getRepository(UserEntity).find({
             where: { id: In(ids), communityProfileEnabled: true, role: UserRole.Client, status: UserStatus.Active },
-            select: { id: true, communityProfileId: true, communityProfileEnabled: true, communityDisplayName: true, avatarUrl: true },
+            select: { id: true, communityProfileId: true, communityProfileEnabled: true, communityDisplayName: true, communityDisplayNameBinding: true, avatarUrl: true, avatarUrlBinding: true },
         }) : Promise.resolve([]),
         AppDataSource.getRepository(AutoCareReviewHelpfulVoteEntity)
             .createQueryBuilder('vote')
