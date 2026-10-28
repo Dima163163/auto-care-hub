@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U02 — тексты жалобы на чат, 28 октября 2026
+
+`autocare_chat_reports` получает отдельные HMAC для description,
+resolutionReason, assignmentReason и extensionReason по report/thread/reporter
+UUID. Migration 178668, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены. Удаление аккаунта очищает тексты и подписи.
+Staging KMS/restore и включение strict остаются открытыми.
+
 ## U02 — снимок сметы, 28 октября 2026
 
 `autocare_service_quotes.snapshot` получает HMAC по JSON, quote/request/provider

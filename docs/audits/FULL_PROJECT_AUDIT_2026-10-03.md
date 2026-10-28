@@ -1,5 +1,13 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка текстов жалобы на чат, 28 октября 2026
+
+Четыре зашифрованных текста в `autocare_chat_reports` получили отдельные HMAC
+по report/thread/reporter UUID. Migration 178668, bounded compare-write
+backfill, полный verify и opt-in strict reader подготовлены локально. Удаление
+аккаунта очищает тексты и подписи. Staging KMS/restore, PostgreSQL CI и strict
+cutover не подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка снимка сметы, 28 октября 2026
 
 `autocare_service_quotes.snapshot` получил HMAC по JSON, quote/request/provider

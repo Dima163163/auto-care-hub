@@ -485,6 +485,31 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## Chat report text binding expansion
+
+New non-null `autocare_chat_reports.description`, `resolutionReason`,
+`assignmentReason` and `extensionReason` writes receive separate companion
+HMACs. Each covers decrypted text, report UUID, thread UUID and reporter UUID.
+Migration `1786680000000` adds nullable bindings and a durable checkpoint.
+Account deletion clears values and bindings together. Response DTOs omit them.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786680000000`. Run
+   `npm --prefix server run encryption:backfill-chat-report-text-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks thread/
+   reporter UUIDs and all four ciphertext/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse report filing, assignment, extension,
+   resolution, account deletion and backup restore. Partial entity reads
+   selecting text must also select its binding and report/thread/reporter UUIDs.
+
 ## Service quote snapshot binding expansion
 
 New `autocare_service_quotes.snapshot` writes receive a companion HMAC over

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, chat report text 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC четырёх текстов жалобы по
+report/thread/reporter UUID. Migration 178668, bounded checkpoint и opt-in
+strict reader подготовлены. Staging KMS/restore остаётся открытым.
+
 **U02, service quote snapshot 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC сметы по quote/request/provider
 UUID и version. Анонимизация пересчитывает подпись каждой строки. Migration

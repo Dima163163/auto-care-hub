@@ -97,6 +97,13 @@ entity "ChatThread" as Thread {
   type / status
   encrypted subject / subjectBinding : HMAC?
 }
+entity "ChatReport" as ChatReport {
+  * id : uuid
+  threadId / reporterId
+  encrypted description / resolutionReason
+  encrypted assignmentReason / extensionReason
+  four companion bindings : HMAC?
+}
 entity "ServiceMessage" as Message {
   * id : uuid
   requestId? / threadId? / senderId
@@ -245,6 +252,11 @@ entity "ServiceQuoteSnapshotBindingCheckpoint" as QuoteCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "ChatReportTextBindingCheckpoint" as ChatReportCheckpoint {
+  * name : autocare_chat_reports
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -283,6 +295,8 @@ BookingTextCheckpoint ..> LegacyBooking : bounded three-field backfill
 BookingRescheduleCheckpoint ..> BookingReschedule : bounded reason backfill
 AutoCareRescheduleCheckpoint ..> AutoCareReschedule : bounded two-field backfill
 QuoteCheckpoint ..> Quote : bounded snapshot backfill
+ChatReportCheckpoint ..> ChatReport : bounded four-field backfill
+Thread ||--o{ ChatReport : threadId
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -367,6 +381,11 @@ note bottom of QuoteCheckpoint
   U02: HMAC binds snapshot to quote/request/provider UUID and version.
   Account deletion rewrites each quote with its own encrypted redaction
   and binding. Full verify precedes opt-in strict read.
+end note
+note bottom of ChatReportCheckpoint
+  U02: HMAC binds each moderation text to report/thread/reporter UUID.
+  Status and assignment can change without breaking historical text.
+  Bounded compare-write and full verify precede opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

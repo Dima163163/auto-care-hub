@@ -13,6 +13,7 @@ import { BookingEntity } from '../../../entities/booking/booking.entity.js'
 import { BookingRescheduleRequestEntity } from '../../../entities/booking/booking-reschedule-request.entity.js'
 import { AutoCareRescheduleRequestEntity } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
 import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
+import { AutoCareChatReportEntity } from '../../../entities/automotive/chat-moderation.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
@@ -37,6 +38,7 @@ import { sealBookingTextFields, openBookingTextFields } from './booking-text-rec
 import { sealBookingRescheduleReason, openBookingRescheduleReason } from './booking-reschedule-reason-record-binding.js'
 import { sealAutoCareRescheduleTextFields, openAutoCareRescheduleTextFields } from './autocare-reschedule-text-record-binding.js'
 import { sealServiceQuoteSnapshot, openServiceQuoteSnapshot } from './service-quote-snapshot-record-binding.js'
+import { sealChatReportTextFields, openChatReportTextFields } from './chat-report-text-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -454,7 +456,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -493,6 +495,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const quote = event.entity as AutoCareServiceQuoteEntity
             if (!quote.id) quote.id = randomUUID()
             sealServiceQuoteSnapshot(quote)
+        } else if (event.metadata.tableName === 'autocare_chat_reports') {
+            const report = event.entity as AutoCareChatReportEntity
+            if (!report.id) report.id = randomUUID()
+            sealChatReportTextFields(report)
         } else if (event.metadata.tableName === 'autocare_service_messages') {
             const message = event.entity as ServiceMessageEntity
             if (!message.id) message.id = randomUUID()
@@ -516,7 +522,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') {
@@ -540,6 +546,8 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealAutoCareRescheduleTextFields(event.entity as AutoCareRescheduleRequestEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_quotes') {
             sealServiceQuoteSnapshot(event.entity as AutoCareServiceQuoteEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_chat_reports') {
+            sealChatReportTextFields(event.entity as AutoCareChatReportEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
             sealMessageBody(event.entity as MessageRecord)
             sealMessageOffer(event.entity as MessageRecord)
@@ -556,7 +564,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
@@ -571,6 +579,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         if (table === 'booking_reschedule_requests') openBookingRescheduleReason(entity as BookingRescheduleRequestEntity)
         if (table === 'autocare_reschedule_requests') openAutoCareRescheduleTextFields(entity as AutoCareRescheduleRequestEntity)
         if (table === 'autocare_service_quotes') openServiceQuoteSnapshot(entity as AutoCareServiceQuoteEntity)
+        if (table === 'autocare_chat_reports') openChatReportTextFields(entity as AutoCareChatReportEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)

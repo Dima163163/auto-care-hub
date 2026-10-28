@@ -11,6 +11,7 @@ import { BookingEntity } from '../../../entities/booking/booking.entity.js'
 import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../../entities/booking/booking-reschedule-request.entity.js'
 import { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
 import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
+import { AutoCareChatReportEntity, AutoCareChatReportCategory, AutoCareChatReportStatus } from '../../../entities/automotive/chat-moderation.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1213,6 +1214,60 @@ describe('encrypted service quote snapshot record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted chat report text record binding', () => {
+    function storedReport() {
+        const report = new AutoCareChatReportEntity()
+        report.threadId = randomUUID()
+        report.reporterId = randomUUID()
+        report.category = AutoCareChatReportCategory.Other
+        report.status = AutoCareChatReportStatus.Pending
+        report.description = 'Unsafe message'
+        report.resolutionReason = null
+        report.assignmentReason = 'Review required'
+        report.extensionReason = 'More time needed'
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_chat_reports' }, entity: report } as InsertEvent<AutoCareChatReportEntity>)
+        return report
+    }
+
+    function loadReport(report: AutoCareChatReportEntity) {
+        subscriber.afterLoad(report, { metadata: { tableName: 'autocare_chat_reports' } } as LoadEvent<AutoCareChatReportEntity>)
+        return report
+    }
+
+    it('binds all private texts to report, thread and reporter', () => {
+        const source = storedReport()
+        const target = storedReport()
+        expect(source.descriptionBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.assignmentReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.extensionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        source.status = AutoCareChatReportStatus.Resolved
+        source.resolutionReason = 'Reviewed case'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_reports' }, entity: source } as UpdateEvent<AutoCareChatReportEntity>)
+        expect(source.resolutionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadReport(source).description).toBe('Unsafe message')
+        target.description = source.description
+        target.descriptionBinding = source.descriptionBinding
+        expect(() => loadReport(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('clears bindings with null and gates legacy reads', () => {
+        const report = storedReport()
+        report.assignmentReason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_reports' }, entity: report } as UpdateEvent<AutoCareChatReportEntity>)
+        expect(report.assignmentReasonBinding).toBeNull()
+        report.descriptionBinding = null
+        expect(loadReport(report).description).toBe('Unsafe message')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadReport(report)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING = previousStrict
         }
     })
 })

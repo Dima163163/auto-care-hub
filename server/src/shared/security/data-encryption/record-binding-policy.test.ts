@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -198,6 +198,16 @@ describe('service quote snapshot record binding policy', () => {
         expect(requireServiceQuoteSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireServiceQuoteSnapshotRecordBinding({ DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('chat report text record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireChatReportTextRecordBinding({})).toBe(false)
+        expect(requireChatReportTextRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireChatReportTextRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireChatReportTextRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING must be true or false.')
     })
 })
 

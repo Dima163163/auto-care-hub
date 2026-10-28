@@ -169,7 +169,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_reports" report
             LEFT JOIN "autocare_chat_threads" thread ON thread."id" = report."threadId"
             WHERE (report."reporterId" = $1 OR report."reportedUserId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
-              AND (report."description" IS NOT NULL OR report."reportedUserId" = $1 OR report."reviewedById" = $1 OR report."resolutionReason" IS NOT NULL)`,
+              AND (report."description" IS NOT NULL OR report."descriptionBinding" IS NOT NULL OR report."reportedUserId" = $1 OR report."reviewedById" = $1 OR report."resolutionReason" IS NOT NULL OR report."resolutionReasonBinding" IS NOT NULL OR report."assignmentReason" IS NOT NULL OR report."assignmentReasonBinding" IS NOT NULL OR report."extensionReason" IS NOT NULL OR report."extensionReasonBinding" IS NOT NULL)`,
     },
     { name: 'chat report reviewers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_chat_reports" WHERE "reviewedById" = $1' },
     {
@@ -205,7 +205,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_reports" report
             JOIN "autocare_chat_threads" thread ON thread."id" = report."threadId"
             WHERE thread."subject" LIKE '%"redacted":true%'
-              AND (report."description" IS NOT NULL OR report."reportedUserId" IS NOT NULL OR report."reviewedById" IS NOT NULL OR report."resolutionReason" IS NOT NULL)`,
+              AND (report."description" IS NOT NULL OR report."descriptionBinding" IS NOT NULL OR report."reportedUserId" IS NOT NULL OR report."reviewedById" IS NOT NULL OR report."resolutionReason" IS NOT NULL OR report."resolutionReasonBinding" IS NOT NULL OR report."assignmentReason" IS NOT NULL OR report."assignmentReasonBinding" IS NOT NULL OR report."extensionReason" IS NOT NULL OR report."extensionReasonBinding" IS NOT NULL)`,
         parameterMode: 'none',
     },
     {

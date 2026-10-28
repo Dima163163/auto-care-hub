@@ -62,6 +62,9 @@ note right of Resource
   Снимок сметы имеет HMAC по quote/request/provider UUID и version.
   Анонимизация создаёт шифротекст и binding для каждой строки отдельно;
   bounded backfill и opt-in strict reader подготовлены.
+  Четыре текста chat report имеют отдельные HMAC по report/thread/
+  reporter UUID. Анонимизация очищает тексты и bindings вместе;
+  bounded backfill и opt-in strict reader подготовлены.
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
   Текст нового chat message имеет companion HMAC по message UUID,

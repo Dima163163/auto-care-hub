@@ -44,9 +44,11 @@ export class AutoCareChatReportEntity {
     @Column({ type: 'uuid', nullable: true }) reportedUserId!: string | null
     @Column({ type: 'enum', enum: AutoCareChatReportCategory, enumName: 'autocare_chat_report_category' }) category!: AutoCareChatReportCategory
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_chat_reports', 'description', 'text') }) description!: string | null
+    @Column({ type: 'text', nullable: true }) descriptionBinding!: string | null
     @Column({ type: 'enum', enum: AutoCareChatReportStatus, enumName: 'autocare_chat_report_status', default: AutoCareChatReportStatus.Pending }) status!: AutoCareChatReportStatus
     @Column({ type: 'uuid', nullable: true }) reviewedById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_chat_reports', 'resolutionReason', 'text') }) resolutionReason!: string | null
+    @Column({ type: 'text', nullable: true }) resolutionReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) reviewedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) overturnedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) acknowledgedAt!: Date | null
@@ -54,10 +56,12 @@ export class AutoCareChatReportEntity {
     @Column({ type: 'uuid', nullable: true }) assignedModeratorId!: string | null
     @Column({ type: 'uuid', nullable: true }) assignedById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_chat_reports', 'assignmentReason', 'text') }) assignmentReason!: string | null
+    @Column({ type: 'text', nullable: true }) assignmentReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) assignedAt!: Date | null
     @Column({ type: 'timestamptz', nullable: true }) accessExpiresAt!: Date | null
     @Column({ type: 'boolean', default: false }) extensionUsed!: boolean
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_chat_reports', 'extensionReason', 'text') }) extensionReason!: string | null
+    @Column({ type: 'text', nullable: true }) extensionReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) extendedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
