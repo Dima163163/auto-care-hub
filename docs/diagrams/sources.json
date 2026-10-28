@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "da252690a2ef3615db46d9e73a22d329668ef3e14707e2543ef0c8e772985f8e",
+      "sha256": "b55976b0f642f09e1cb3e353d6f0d5fd47bb4b0fa76ae0c7a3ae932024d65894",
       "scopes": [
         "backend"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "3a8b295a42cf5a7dcd3473fc7c9851209a7748786ae5f91448464ceeb36e8f21",
+      "sha256": "6ae0ec11c686ba5fce2cd1393dec4c1536464c8c56f69032e78a429785b6e126",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "edf4d125ae53bb7896e202b12355591148f87081c6b1bb68bf479f217a4421f9",
+      "sha256": "8162eaf7962701cbd33b4ef7717193822fbf6ff0b8350bab6dbeb8174a4d256b",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "4767d936a8beff971cde75cd2b454916ff2238ddf4702b575f2832acbcae44e4",
+      "sha256": "688309f5ce39ad9ff9ef5d31d75197b37009a8dc8807e5fcd63279c0e12d2484",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "80cb6534a07399b3ee7c86bfb426ac0c9df54c84ea70cbbfe329e196b4b4abc8",
+      "sha256": "f4feb60c84ce77b796986e05ddcfc72889b209e576c8ac0dd0f0cee1df600945",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "68c1467c0371552930a3430745a5507f2240d2dca150f29f3f12a573a5f81252",
+      "sha256": "29e26d9595c00b137deca75faf72ba4347e74b0f1e784c137d1fa99da0f833f9",
       "scopes": [
         "security"
       ]
@@ -1278,7 +1278,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "c733923a29cf94a46a1d79ef75a4a78a4aa3188ac071263d38e323a927f5c781",
+      "sha256": "23878d9d8eac3e1b43dfa5db05db4983b8cc0c3d64ba079117b777fddc8909ce",
       "scopes": [
         "security"
       ]
@@ -1981,7 +1981,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
-      "sha256": "a123fa86de6d48b0bb9a19885db4d3141cf62f2cfa929468cc4ffc87a1cdb1f7",
+      "sha256": "ccba01f671c896b0cad78b2b480e538ae6e715d85e8fed3700ca09136376c9c1",
       "scopes": [
         "security"
       ]
@@ -2096,6 +2096,54 @@
       "sha256": "a7400fdb154896921afd67dfdd9f875b418de0e87e72addceff6b76705ddbd4c",
       "scopes": [
         "data"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786740000000-CreateRepairEventBindingBackfillCheckpoint.ts",
+      "sha256": "6ae94824f32e076a3f02557f7079c8dd8ee49fa282fe2d7eea72c2369b060436",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-repair-event-record-binding.ts",
+      "sha256": "748d9844abac5834f84468c0e75a11f385192bb4b0b37265db3eb56eb3384851",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/repair-event-record-binding.ts",
+      "sha256": "32a45d16e8f18b670e3958595a6d204bc05234592c1029f1c19fb7cba4c8bca7",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/repair-event-binding-backfill.ts",
+      "sha256": "3b1db773f700dd21fc29d8e57612e309ad7fa93a554e043a392d65272f4ba5a3",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/repair-event-record-binding.test.ts",
+      "sha256": "e00f633f728ff44c3e34e687da5bf4d64f265593e50026e9a75ce548660ebb74",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/repair-event-binding-backfill.test.ts",
+      "sha256": "f4ba419578f51cfeb677aa53874b8b3ba7d32471f03bf1f578b49eb5c963a0d9",
+      "scopes": [
+        "data",
+        "security"
       ]
     }
   ],

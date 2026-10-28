@@ -28,6 +28,7 @@ import { chatThreadRecordContext, type ChatThreadRecordScope } from '../../share
 import { providerChangeRequestContext } from '../../shared/security/data-encryption/provider-change-request-record-binding.js'
 import { appealContext } from '../../shared/security/data-encryption/appeal-record-binding.js'
 import { catalogGapContext } from '../../shared/security/data-encryption/catalog-gap-record-binding.js'
+import { repairEventContext } from '../../shared/security/data-encryption/repair-event-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -293,13 +294,27 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
             [thread.id, redactedChatSubject, binding],
         )
     }
-    await manager.query(
-        `UPDATE "autocare_repair_events"
-            SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = $3
+    const repairEventsToRedact = await manager.query(
+        `SELECT "id", "requestId", "eventType" FROM "autocare_repair_events"
           WHERE "actorId" = $1
-             OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
-        [userId, encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT), encryptedRedactedJson('autocare_repair_events', 'metadata', {})],
-    )
+             OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)
+          ORDER BY "id" FOR UPDATE`,
+        [userId],
+    ) as Array<{ id: string; requestId: string; eventType: string }>
+    const redactedRepairTitle = encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT)
+    const redactedRepairMetadata = encryptedRedactedJson('autocare_repair_events', 'metadata', {})
+    for (const repairEvent of repairEventsToRedact) {
+        const context = repairEventContext(repairEvent)
+        await manager.query(
+            `UPDATE "autocare_repair_events" SET "actorId" = NULL, "title" = $2,
+                "titleBinding" = $3, "notes" = NULL, "notesBinding" = NULL,
+                "metadata" = $4::jsonb, "metadataBinding" = $5 WHERE "id" = $1`,
+            [repairEvent.id, redactedRepairTitle,
+                createPlaintextRecordBinding('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT, repairEvent.id, context),
+                redactedRepairMetadata,
+                createPlaintextRecordBinding('autocare_repair_events', 'metadata', '{}', repairEvent.id, context)],
+        )
+    }
     await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "referenceIndex" = NULL, "referenceBinding" = NULL, "notes" = NULL, "notesBinding" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
     const providerChangesToRedact = await manager.query(
         'SELECT "id", "providerId", "requestedById", "kind" FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 ORDER BY "id" FOR UPDATE',

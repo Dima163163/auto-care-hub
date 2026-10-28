@@ -462,8 +462,11 @@ describe('AutoCare account deletion retention invariants', () => {
             actorId: null,
             title: 'Review removed after account deletion.',
             notes: null,
+            notesBinding: null,
             metadata: {},
         })
+        expect(redactedRepairEvent.titleBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(redactedRepairEvent.metadataBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)

@@ -1,5 +1,8 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 28.10, журнал работ:** title/notes/metadata получают HMAC по event/request UUID и eventType. Migration 178674, bounded compare-write, полный verify и opt-in strict reader подготовлены; анонимизация переподписывает redacted title/metadata каждой строки и очищает notes/binding. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
+
+
 The dated reports preserve what was observed then. Their original open wording is
 historical, not a current backlog. The [working registry](FULL_PROJECT_AUDIT_2026-10-03.md)
 contains current U/N evidence and pending acceptance. The 54-gate freeze remains

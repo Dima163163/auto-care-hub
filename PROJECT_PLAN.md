@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## U02 — журнал работ по заявке, 2026-10-28
+
+- [x] Привязать title, notes и metadata к event/request UUID и eventType; не отдавать bindings в API.
+- [x] Подготовить migration 178674, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление аккаунта переподписывает redacted title/metadata каждой строки и очищает notes/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
 ## U02 — заявки на расширение каталога, 2026-10-28
 
 - [x] Привязать labels, comparisonAttributes, rationale и reviewReason к

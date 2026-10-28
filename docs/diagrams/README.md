@@ -1,5 +1,8 @@
 # Карта проекта AutoCare Hub
 
+**U02, repair event 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC title/notes/metadata по event/request UUID и eventType. Migration 178674, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
 **U02, catalog gap requests 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC четырёх полей по gap/requester
 UUID, provider UUID и параметрам каталога. Migration 178673, bounded

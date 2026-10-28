@@ -75,8 +75,11 @@ export class AutoCareRepairEventEntity {
     @Column({ type: 'text' }) eventType!: string
     @Column({ type: 'uuid', nullable: true }) actorId!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_repair_events', 'title', 'text') }) title!: string
+    @Column({ type: 'text', nullable: true }) titleBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_repair_events', 'notes', 'text') }) notes!: string | null
+    @Column({ type: 'text', nullable: true }) notesBinding!: string | null
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_repair_events', 'metadata', 'jsonb') }) metadata: Record<string, unknown> = {}
+    @Column({ type: 'text', nullable: true }) metadataBinding!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 

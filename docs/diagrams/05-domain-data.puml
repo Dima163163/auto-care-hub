@@ -155,6 +155,12 @@ entity "CatalogGapRequest" as CatalogGap {
   labels / comparisonAttributes / rationale / reviewReason : encrypted
   four companion bindings : HMAC?
 }
+entity "RepairEvent" as RepairEvent {
+  * id : uuid
+  requestId / eventType / actorId?
+  title / notes / metadata : encrypted
+  titleBinding / notesBinding / metadataBinding : HMAC?
+}
 entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
@@ -308,6 +314,11 @@ entity "CatalogGapBindingCheckpoint" as CatalogGapCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "RepairEventBindingCheckpoint" as RepairEventCheckpoint {
+  * name : autocare_repair_events
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -334,6 +345,7 @@ Provider ||--o{ Evidence
 Provider ||--o{ ProviderChange
 User ||--o{ Appeal : submittedById
 User ||--o{ CatalogGap : requestedById
+Request ||--o{ RepairEvent : requestId
 Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
 Provider ||--o{ Account
@@ -355,6 +367,7 @@ EvidenceCheckpoint ..> Evidence : bounded two-field backfill
 ProviderChangeCheckpoint ..> ProviderChange : bounded two-field backfill
 AppealCheckpoint ..> Appeal : bounded two-field backfill
 CatalogGapCheckpoint ..> CatalogGap : bounded four-field backfill
+RepairEventCheckpoint ..> RepairEvent : bounded three-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -474,6 +487,12 @@ note bottom of CatalogGapCheckpoint
   nullable provider UUID and catalog slugs/price type. Account deletion
   reseals each redacted row and clears reviewReason with its binding.
   Full verify precedes opt-in strict read.
+end note
+note bottom of RepairEventCheckpoint
+  U02: three HMACs bind encrypted title, notes and metadata to event UUID,
+  request UUID and eventType. Account deletion reseals title and metadata
+  for each row and clears notes with its binding. Full verify precedes
+  opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

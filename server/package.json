@@ -58,6 +58,7 @@
     "encryption:backfill-provider-change-request-binding": "tsx src/scripts/backfill-provider-change-request-record-binding.ts",
     "encryption:backfill-appeal-binding": "tsx src/scripts/backfill-appeal-record-binding.ts",
     "encryption:backfill-catalog-gap-binding": "tsx src/scripts/backfill-catalog-gap-record-binding.ts",
+    "encryption:backfill-repair-event-binding": "tsx src/scripts/backfill-repair-event-record-binding.ts",
     "benchmark:discovery": "tsx src/scripts/benchmark-autocare-discovery.ts",
     "benchmark:discovery:synthetic": "tsx src/scripts/benchmark-discovery-synthetic.ts",
     "benchmark:discovery:geospatial": "tsx src/scripts/benchmark-discovery-geospatial.ts",

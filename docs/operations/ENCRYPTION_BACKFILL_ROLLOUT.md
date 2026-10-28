@@ -1,5 +1,17 @@
 # Encryption backfill rollout — N09
 
+## Repair event binding expansion
+
+New `autocare_repair_events.title`, non-null `notes` and `metadata` writes receive separate HMACs over plaintext, event UUID, request UUID and eventType. Migration `1786740000000` adds nullable bindings and a durable checkpoint. Account deletion reseals redacted title and metadata per row and clears notes with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786740000000`. Run `npm --prefix server run encryption:backfill-repair-event-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and all three bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_REPAIR_EVENT_RECORD_BINDING=true` to all API/worker instances. Rehearse event creation/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus event/request scope.
+
+
 ## Catalog gap request binding expansion
 
 New `autocare_catalog_gap_requests.labels`, `comparisonAttributes`,

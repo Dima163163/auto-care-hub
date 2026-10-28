@@ -76,6 +76,9 @@ note right of Resource
   Catalog gap labels/comparisonAttributes/rationale/reviewReason имеют HMAC
   по gap/requester UUID, nullable provider UUID, двум slug и priceType.
   Удаление аккаунта пересчитывает три redacted bindings для каждой строки.
+  Repair event title/notes/metadata имеют HMAC по event/request UUID и
+  eventType. Удаление аккаунта переподписывает redacted title/metadata
+  каждой строки и очищает notes/binding. Bounded backfill и opt-in strict.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.
