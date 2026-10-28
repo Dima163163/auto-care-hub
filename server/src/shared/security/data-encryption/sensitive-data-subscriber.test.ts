@@ -288,6 +288,77 @@ describe('encrypted user profile record binding', () => {
     })
 })
 
+describe('encrypted user secondary record binding', () => {
+    function storedUser() {
+        const user = new UserEntity()
+        user.email = `${randomUUID()}@example.test`
+        user.name = 'Private Name'
+        user.phone = null
+        user.avatarUrl = '/avatar.png'
+        user.communityDisplayName = 'Public Name'
+        user.preferredCity = 'Самара'
+        subscriber.beforeInsert({ metadata: { tableName: 'users' }, entity: user } as InsertEvent<UserEntity>)
+        return user
+    }
+
+    function loadUser(user: UserEntity) {
+        if (!isEmailBlindIndex(user.email)) user.email = createEmailBlindIndex(user.email)
+        subscriber.afterLoad(user, { metadata: { tableName: 'users' } } as LoadEvent<UserEntity>)
+        return user
+    }
+
+    it('binds three fields to user ID and rejects a copied value with its binding', () => {
+        const source = storedUser()
+        const target = storedUser()
+        expect(source.avatarUrlBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(source.communityDisplayNameBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(source.preferredCityBinding).toMatch(/^p1_[A-Za-z0-9_-]{43}$/)
+        expect(loadUser(source).preferredCity).toBe('Самара')
+        const targetAvatarBinding = target.avatarUrlBinding
+        target.avatarUrl = source.avatarUrl
+        target.avatarUrlBinding = source.avatarUrlBinding
+        expect(() => loadUser(target)).toThrow('Encrypted record binding authentication failed.')
+        target.avatarUrl = '/avatar.png'
+        target.avatarUrlBinding = targetAvatarBinding
+        const targetCommunityBinding = target.communityDisplayNameBinding
+        target.communityDisplayName = source.communityDisplayName
+        target.communityDisplayNameBinding = source.communityDisplayNameBinding
+        expect(() => loadUser(target)).toThrow('Encrypted record binding authentication failed.')
+        target.communityDisplayNameBinding = targetCommunityBinding
+        target.preferredCity = source.preferredCity
+        target.preferredCityBinding = source.preferredCityBinding
+        expect(() => loadUser(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds updates, accepts null and rejects a stale binding', () => {
+        const user = storedUser()
+        const previous = user.preferredCityBinding
+        user.preferredCity = 'Казань'
+        subscriber.beforeUpdate({ metadata: { tableName: 'users' }, entity: user } as UpdateEvent<UserEntity>)
+        expect(user.preferredCityBinding).not.toBe(previous)
+        expect(loadUser(user).preferredCity).toBe('Казань')
+        user.preferredCity = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'users' }, entity: user } as UpdateEvent<UserEntity>)
+        expect(user.preferredCityBinding).toBeNull()
+        user.preferredCityBinding = previous
+        expect(() => loadUser(user)).toThrow('Encrypted users.preferredCity record binding is invalid.')
+    })
+
+    it('keeps legacy values readable until strict cutover', () => {
+        const user = storedUser()
+        user.avatarUrlBinding = null
+        expect(loadUser(user).avatarUrl).toBe('/avatar.png')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadUser(user)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING = previous
+        }
+    })
+})
+
 describe('encrypted message body record binding', () => {
     function storedMessage(body: string | null) {
         const message = new ServiceMessageEntity()

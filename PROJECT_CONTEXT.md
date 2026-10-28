@@ -1,13 +1,24 @@
 # AutoCare Hub Project Context
 
+## U02 — вторичные поля пользователя, 28 октября 2026
+
+Аватар, публичное имя и предпочитаемый город в `users` получают HMAC по
+расшифрованному значению и UUID пользователя. Для частичных выборок публичного
+профиля и сотрудников добавлены companion bindings. Migration 178661, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Обновление города выполняется под блокировкой строки, чтобы подпись получала
+UUID. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты.
+
+
 ## U02 — привязка полей автомобиля клиента, 28 октября 2026
 
 Новые VIN, госномер, внутренний номер и URL изображения в `client_vehicles`
 получают HMAC по расшифрованному значению, UUID автомобиля и владельца.
 Migration 178660, bounded compare-write backfill, полный verify и opt-in
 `DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING` готовят strict reader.
-Ответ API не содержит служебных подписей. PostgreSQL CI и staging KMS/restore
-для этой порции ещё не подтверждены; strict выключен, U02 и pilot NO-GO открыты.
+Ответ API не содержит служебных подписей. PR #38 прошёл PostgreSQL/browser CI
+и объединён в `dev` как `27953bf`. Staging KMS/restore ещё не подтверждены;
+strict выключен, U02 и pilot NO-GO открыты.
 
 ## U02 service request note binding preparation — 2026-10-27
 

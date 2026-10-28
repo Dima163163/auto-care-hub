@@ -7,6 +7,8 @@ entity "User" as User {
   --
   role / status / tokenVersion
   nameBinding / phoneBinding : HMAC?
+  avatarUrl / communityDisplayName / preferredCity : encrypted
+  secondary bindings : HMAC?
 }
 entity "UserSession" as Session {
   * id : uuid
@@ -180,6 +182,11 @@ entity "ContactSnapshotBindingCheckpoint" as ContactCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "UserSecondaryBindingCheckpoint" as SecondaryCheckpoint {
+  * name : users
+  afterId : uuid?
+  processed : bigint
+}
 entity "ClientVehicleBindingCheckpoint" as VehicleCheckpoint {
   * name : client_vehicles
   afterId : uuid?
@@ -212,6 +219,7 @@ Account ||--o{ Ledger
 Outbox ..> OutboxCheckpoint : bounded keyset progress
 OAuthCheckpoint ..> User : identity owner scope
 ProfileCheckpoint ..> User : bounded name / phone backfill
+SecondaryCheckpoint ..> User : bounded secondary-field backfill
 VehicleCheckpoint ..> Vehicle : bounded four-field backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
@@ -262,6 +270,11 @@ note bottom of OAuthCheckpoint
   U02: bounded compare-write and checkpoint commit together.
   Verify subject MAC by identity/user UUID and provider.
   Real KMS/restore and strict cutover remain unverified.
+end note
+note bottom of SecondaryCheckpoint
+  U02: three nullable fields bind plaintext to user UUID.
+  Compare-write and checkpoint commit together; full verify
+  precedes opt-in strict read. Partial selects include binding.
 end note
 note bottom of VehicleCheckpoint
   U02: HMAC binds plaintext to vehicle and owner UUID.

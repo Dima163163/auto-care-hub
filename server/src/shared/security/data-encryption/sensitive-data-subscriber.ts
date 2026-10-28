@@ -25,6 +25,7 @@ import { serializeContactSnapshot } from './contact-snapshot-value.js'
 import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
 import { serializeServiceRequestNote } from './service-request-note-value.js'
 import { sealClientVehicleFields, openClientVehicleFields } from './client-vehicle-record-binding.js'
+import { sealUserSecondaryFields, openUserSecondaryFields } from './user-secondary-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -446,7 +447,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
-            if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
+            if (event.metadata.tableName === 'users') {
+                sealUserProfile(event.entity as UserProfileRecord)
+                sealUserSecondaryFields(event.entity as UserEntity)
+            }
         } else if (event.metadata.tableName === 'oauth_identities') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealProviderSubject(event.entity as ProviderIdentityRecord)
@@ -483,7 +487,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
     beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
-            if (event.metadata.tableName === 'users') sealUserProfile(event.entity as UserProfileRecord)
+            if (event.metadata.tableName === 'users') {
+                sealUserProfile(event.entity as UserProfileRecord)
+                sealUserSecondaryFields(event.entity as UserEntity)
+            }
         } else if (event.entity && event.metadata.tableName === 'oauth_identities') {
             sealProviderSubject(event.entity as ProviderIdentityRecord)
         } else if (event.entity && event.metadata.tableName === 'outbox_events') {
@@ -511,7 +518,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
             && (record.email !== undefined || record.emailCiphertext !== undefined)) openEmail(record, table)
-        if (table === 'users') openUserProfile(entity as UserProfileRecord)
+        if (table === 'users') {
+            openUserProfile(entity as UserProfileRecord)
+            openUserSecondaryFields(entity as UserEntity)
+        }
         if (table === 'client_vehicles') openClientVehicleFields(entity as ClientVehicleEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord

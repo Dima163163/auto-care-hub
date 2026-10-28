@@ -485,3 +485,19 @@ outside this outbox recipient cutover.
 
 This code path has not been exercised against a live staging KMS or production
 database; the current pilot gate remains NO-GO.
+
+## User secondary field binding rollout (178661)
+
+1. Deploy migration 178661 and the new writer on all API instances. Keep
+   `DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING=false` during expansion.
+2. On staging with the intended KMS keyring and a restored representative
+   database, run `npm --prefix server run encryption:backfill-user-secondary-binding -- --mode apply --batch-size 500 --max-batches 100` until `exhausted:true`. A concurrent row change aborts its batch without advancing the checkpoint.
+3. Run the same command with `--mode verify` and enough batches for
+   `exhausted:true`. Check public profile, membership list, preference update,
+   account deletion, locks, WAL and recovery. Drain old writers; if any new
+   unbound rows appeared, run `--mode reset` and repeat apply and verify.
+4. Enable `DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING=true` on
+   every API instance only after full verification and restore rehearsal.
+   Retain historical keys; disabling strict is a temporary compatibility rollback.
+
+This path has not been exercised against a live staging KMS or production data.
