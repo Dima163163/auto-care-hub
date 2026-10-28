@@ -25,6 +25,7 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { createEmailBlindIndex, encryptRedactedFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
 import { createPlaintextRecordBinding } from '../../shared/security/data-encryption/plaintext-record-binding.js'
 import { chatThreadRecordContext, type ChatThreadRecordScope } from '../../shared/security/data-encryption/chat-thread-record-scope.js'
+import { providerChangeRequestContext } from '../../shared/security/data-encryption/provider-change-request-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -298,8 +299,22 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
         [userId, encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT), encryptedRedactedJson('autocare_repair_events', 'metadata', {})],
     )
     await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "referenceIndex" = NULL, "referenceBinding" = NULL, "notes" = NULL, "notesBinding" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
-    await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = $1, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $2', [encryptedRedactedJson('autocare_provider_change_requests', 'payload', { redacted: true }), userId])
-    await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
+    const providerChangesToRedact = await manager.query(
+        'SELECT "id", "providerId", "requestedById", "kind" FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; providerId: string; requestedById: string; kind: string }>
+    const redactedProviderChangePayload = { redacted: true }
+    const encryptedProviderChangePayload = encryptedRedactedJson('autocare_provider_change_requests', 'payload', redactedProviderChangePayload)
+    for (const change of providerChangesToRedact) {
+        const context = providerChangeRequestContext(change)
+        const binding = createPlaintextRecordBinding('autocare_provider_change_requests', 'payload',
+            JSON.stringify(redactedProviderChangePayload), change.id, context)
+        await manager.query(
+            'UPDATE "autocare_provider_change_requests" SET "payload" = $2::jsonb, "payloadBinding" = $3, "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "id" = $1',
+            [change.id, encryptedProviderChangePayload, binding],
+        )
+    }
+    await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "reviewedById" = $1', [userId])
     await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = $1, "comparisonAttributes" = $2, "rationale" = $3, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $4', [encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {}), encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', []), encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
     await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL WHERE "submittedById" = $2', [encryptedRedactedText('autocare_appeals', 'reason', ANONYMIZED_REVIEW_TEXT), userId])

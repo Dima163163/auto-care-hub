@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "47040dfc1e36937d16f45c5a1454cc1582ac979f561b16698ebf84cd1468ba51",
+      "sha256": "5c85b93107091eaad9bba237f35a9720dcecac58caca7b08a874cacc920d14fc",
       "scopes": [
         "backend"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "1395cb129a8061758f939040f6cea2bd6b9024b352c446604fd3b11a095e6fba",
+      "sha256": "878270f54452b7f9c33159b0a50ae65e62cbd9c3c7b151653bcf636af6248a3e",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "e89746213082a0510c92d28ca36d0d1929fa090d612fdd61380cf4db6cbba810",
+      "sha256": "89c65bbc1f385aa56e90d40bd8c2a655cd392f02103a27ea54ce366e64658d4c",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "8dcb1ee6f1bda4d7077c120b8458da69c1de88cdc21f5e01061249043421e7a6",
+      "sha256": "3db49852aed8db54e147e3e09c00745c00482e79d2e34469a93d99464a7b26dd",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "00a54fddf6a71d5b837101eb25d920ddd92d3bc973b5567ec33f46e9499b9e55",
+      "sha256": "c56803d80192c0fd6eca32793d9912e554ceb7c0e956c1ecde6fe168b6c8c25f",
       "scopes": [
         "security"
       ]
@@ -1942,6 +1942,62 @@
       "sha256": "66cd0ab8143a1a7e18c5ce7fe3ea03de634d7cb58392662d8dbbc546337147ee",
       "scopes": [
         "auth"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/provider-change-request.entity.ts",
+      "sha256": "9fc8e9c5f91520d4c6339c744b396830d7b1c53710837b0ecd255d1f56d5a93e",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/provider-change-request-record-binding.ts",
+      "sha256": "aecd1de615cebefd9cf17a43f579b634d63836970c8307e4fd4b1fbf84291c15",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/provider-change-request-binding-backfill.ts",
+      "sha256": "7db6741f914c43b44c07552e7f78a052526a0c15ef04831ecfb77069b283cc2c",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/provider-change-request-record-binding.test.ts",
+      "sha256": "3a662aa32c99c99fe0359f501e20821f20d531a1a33ebee26e66fdfd4dd9f816",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/provider-change-request-binding-backfill.test.ts",
+      "sha256": "6452dfe2a57ba7f341b45954c66c201eaf8e5f27b24b955b36579d6d690bee24",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
+      "sha256": "4fc5871a957b12c4af2c5f348c8f018078acd1179881fcbd9901493ef6c18191",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-provider-change-request-record-binding.ts",
+      "sha256": "0fb7a1438385068b1b05fcd7f3091cd7348b13b9dba2a3d782f0f18f46eaee18",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786710000000-CreateProviderChangeRequestBindingBackfillCheckpoint.ts",
+      "sha256": "845fef92a41c4e9666737f0f3bc70b76005abba1e1cb75329a82857191319a7e",
+      "scopes": [
+        "data"
       ]
     }
   ],

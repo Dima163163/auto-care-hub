@@ -1,5 +1,30 @@
 # Encryption backfill rollout — N09
 
+## Provider change request binding expansion
+
+New `autocare_provider_change_requests.payload` and non-null `reviewReason`
+writes receive HMACs over plaintext, request UUID, provider UUID, requester
+UUID and kind. Migration `1786710000000` adds nullable bindings and a durable
+checkpoint. Account deletion reseals each redacted payload with its own MAC;
+review reason and binding are cleared together. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786710000000`. Run
+   `npm --prefix server run encryption:backfill-provider-change-request-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks scope
+   UUIDs, kind, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse create/decision/cancel/list, account deletion
+   and backup restore. Partial reads selecting payload or reason must include
+   the corresponding binding and full request/provider/requester/kind scope.
+
 The published `1786410000000` migration is immutable. It loads entire columns
 and identities in one transaction and is unsuitable for an unmeasured large
 legacy database. Do not rewrite its checksum, run it blindly on real data,

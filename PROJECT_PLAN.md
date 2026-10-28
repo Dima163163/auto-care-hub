@@ -1,5 +1,15 @@
 # AutoCare Hub — Project Plan
 
+## U02 — заявки на изменение профиля сервиса, 2026-10-28
+
+- [x] Привязать payload и reviewReason к request/provider/requester UUID и kind;
+  исключить bindings из API и сохранить полный ORM-контекст при решении.
+- [x] Подготовить migration 178671, bounded compare-write backfill, полный
+  verify и opt-in strict reader. При удалении аккаунта переподписывать
+  redacted payload отдельно для каждой строки и очищать reason/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+  Остальные зашифрованные поля U02 открыты.
+
 ## U03 — обязательный сеанс для привилегированных токенов, 2026-10-28
 
 - [x] Запретить access и refresh без persisted session для текущих

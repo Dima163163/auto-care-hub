@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 — заявки на изменение профиля сервиса, 28 октября 2026
+
+`autocare_provider_change_requests.payload` и `reviewReason` получают HMAC
+по request/provider/requester UUID и kind. Migration 178671, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Удаление аккаунта переподписывает redacted payload каждой строки и очищает
+reason/binding. PostgreSQL/browser CI, staging KMS/restore и включение strict
+остаются открытыми.
+
 ## U03 — привилегированный сеанс, 28 октября 2026
 
 `requireAuth` и `refreshAuth` отвергают sessionless JWT, если текущая роль

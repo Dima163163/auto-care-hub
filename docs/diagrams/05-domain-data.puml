@@ -136,6 +136,12 @@ entity "TrustEvidence" as Evidence {
   referenceBinding / notesBinding : HMAC?
   reviewRevision : integer?
 }
+entity "ProviderChangeRequest" as ProviderChange {
+  * id : uuid
+  providerId / requestedById / kind
+  payload / reviewReason : encrypted
+  payloadBinding / reviewReasonBinding : HMAC?
+}
 entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
@@ -274,6 +280,11 @@ entity "TrustEvidenceBindingCheckpoint" as EvidenceCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "ProviderChangeBindingCheckpoint" as ProviderChangeCheckpoint {
+  * name : autocare_provider_change_requests
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -297,6 +308,7 @@ Request |o--o{ Attachment
 Request |o--o{ Review
 Provider ||--o{ Review
 Provider ||--o{ Evidence
+Provider ||--o{ ProviderChange
 Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
 Provider ||--o{ Account
@@ -315,6 +327,7 @@ QuoteCheckpoint ..> Quote : bounded snapshot backfill
 ChatReportCheckpoint ..> ChatReport : bounded four-field backfill
 ChatBlockCheckpoint ..> ChatBlock : bounded reason backfill
 EvidenceCheckpoint ..> Evidence : bounded two-field backfill
+ProviderChangeCheckpoint ..> ProviderChange : bounded two-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -416,6 +429,12 @@ note bottom of EvidenceCheckpoint
   U02: HMAC binds reference/notes to evidence/provider UUID and kind.
   Read verifies reference against blind index. Backfill clears stale
   indexes after null redaction; full verify precedes opt-in strict read.
+end note
+note bottom of ProviderChangeCheckpoint
+  U02: HMAC binds encrypted payload and review reason to request UUID,
+  provider UUID, requester UUID and kind. Account deletion reseals each
+  redacted payload with its own binding and clears reason with binding.
+  Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, provider change requests 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC payload/reviewReason по
+request/provider/requester UUID и kind. Migration 178671, bounded checkpoint,
+full verify и opt-in strict reader подготовлены. Staging KMS/restore открыты.
+
 **U03, privileged session 2026-10-28:** `07-auth-session.puml` и SVG
 показывают отказ admin/super-admin при access/refresh без persisted session.
 MFA/step-up остаются открытыми.

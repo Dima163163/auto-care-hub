@@ -617,6 +617,12 @@ strict reader. PR #21 прошёл PostgreSQL/browser CI и объединён �
 согласованной пары между событиями и `recipientName` остаётся уязвимым
 для сценария DB write attacker до row/owner AAD.
 
+**Локальный шаг 28.10:** provider change request payload/reviewReason получают
+HMAC по request/provider/requester UUID и kind. Migration 178671, bounded
+compare-write, полный verify и opt-in strict reader подготовлены; удаление
+аккаунта переподписывает redacted payload по каждой строке. PostgreSQL CI,
+staging KMS/restore, strict cutover и остальные поля U02 остаются открытыми.
+
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
 **Подтверждение:** текущие auth/OAuth/session modules не содержат обязательного второго фактора и проверки свежей step-up аутентификации для admin/super-admin. Проблема остаётся в `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md:26`.

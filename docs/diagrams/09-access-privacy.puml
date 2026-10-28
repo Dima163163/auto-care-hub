@@ -67,6 +67,9 @@ note right of Resource
   Trust evidence reference/notes имеют HMAC по evidence/provider UUID и kind.
   Reference также сверяется с blind index; backfill очищает старые индексы
   после null redaction. Обновление отзыва сохраняет полный ORM-контекст.
+  Provider change payload/reviewReason имеют HMAC по request/provider/
+  requester UUID и kind. Анонимизация пересчитывает binding payload по
+  каждой строке и очищает reason/binding; bounded backfill и opt-in strict.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.
