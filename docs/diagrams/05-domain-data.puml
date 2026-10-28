@@ -148,6 +148,13 @@ entity "Appeal" as Appeal {
   reason / decisionReason : encrypted text
   reasonBinding / decisionReasonBinding : HMAC?
 }
+entity "CatalogGapRequest" as CatalogGap {
+  * id : uuid
+  requestedById / providerId?
+  proposedSlug / categorySlug / priceType
+  labels / comparisonAttributes / rationale / reviewReason : encrypted
+  four companion bindings : HMAC?
+}
 entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
@@ -296,6 +303,11 @@ entity "AppealBindingCheckpoint" as AppealCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "CatalogGapBindingCheckpoint" as CatalogGapCheckpoint {
+  * name : autocare_catalog_gap_requests
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -321,6 +333,7 @@ Provider ||--o{ Review
 Provider ||--o{ Evidence
 Provider ||--o{ ProviderChange
 User ||--o{ Appeal : submittedById
+User ||--o{ CatalogGap : requestedById
 Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
 Provider ||--o{ Account
@@ -341,6 +354,7 @@ ChatBlockCheckpoint ..> ChatBlock : bounded reason backfill
 EvidenceCheckpoint ..> Evidence : bounded two-field backfill
 ProviderChangeCheckpoint ..> ProviderChange : bounded two-field backfill
 AppealCheckpoint ..> Appeal : bounded two-field backfill
+CatalogGapCheckpoint ..> CatalogGap : bounded four-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -453,6 +467,12 @@ note bottom of AppealCheckpoint
   U02: HMAC binds reason and decisionReason to appeal UUID, subject,
   subjectId, submitter UUID and nullable provider UUID. Account deletion
   reseals each redacted reason and clears decision reason with binding.
+  Full verify precedes opt-in strict read.
+end note
+note bottom of CatalogGapCheckpoint
+  U02: four HMACs bind encrypted fields to gap UUID, requester UUID,
+  nullable provider UUID and catalog slugs/price type. Account deletion
+  reseals each redacted row and clears reviewReason with its binding.
   Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint

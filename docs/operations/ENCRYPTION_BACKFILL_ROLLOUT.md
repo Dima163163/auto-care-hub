@@ -1,5 +1,32 @@
 # Encryption backfill rollout — N09
 
+## Catalog gap request binding expansion
+
+New `autocare_catalog_gap_requests.labels`, `comparisonAttributes`,
+`rationale` and non-null `reviewReason` writes receive separate HMACs over
+plaintext, gap UUID, requester UUID, nullable provider UUID, proposed/category
+slugs and price type. Migration `1786730000000` adds nullable bindings and a
+durable checkpoint. Account deletion reseals the three required redacted
+fields per row and clears review reason with its binding. API responses omit
+bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786730000000`. Run
+   `npm --prefix server run encryption:backfill-catalog-gap-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks the full
+   scope, ciphertext and all four bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse create/decision/list, account deletion and backup
+   restore. Partial reads selecting a protected field need its binding and
+   gap/requester/provider/slugs/priceType scope.
+
 ## Appeal text binding expansion
 
 New `autocare_appeals.reason` and non-null `decisionReason` writes receive

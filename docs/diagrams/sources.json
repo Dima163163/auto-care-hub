@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "1c5b3ee8497e2415c9dcd54b8e92a76f088dcbfd2e43c6856dac3b9f6951003e",
+      "sha256": "da252690a2ef3615db46d9e73a22d329668ef3e14707e2543ef0c8e772985f8e",
       "scopes": [
         "backend"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "ae345cf578c1b1fe18585b445e907329418b8f087c2acfdb5203e9c49e52456a",
+      "sha256": "edf4d125ae53bb7896e202b12355591148f87081c6b1bb68bf479f217a4421f9",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "810b5d59b74bf2d66110e4f63ae15964c7898e1fbefdf7f2fd96ea4a637c2db6",
+      "sha256": "4767d936a8beff971cde75cd2b454916ff2238ddf4702b575f2832acbcae44e4",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "9981a162ca1dfbf4de9aa509811ffdd8542eb08f9f1207459e51d277d88360f4",
+      "sha256": "80cb6534a07399b3ee7c86bfb426ac0c9df54c84ea70cbbfe329e196b4b4abc8",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "085faa5d09b80ec2fe84c0dc54d175cc570c948afe958ac67294e5b6c84fbe77",
+      "sha256": "68c1467c0371552930a3430745a5507f2240d2dca150f29f3f12a573a5f81252",
       "scopes": [
         "security"
       ]
@@ -1981,7 +1981,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
-      "sha256": "134382f694d6eb1464763852e4916859551615d34e4fdb90423b20ea6992fd9a",
+      "sha256": "a123fa86de6d48b0bb9a19885db4d3141cf62f2cfa929468cc4ffc87a1cdb1f7",
       "scopes": [
         "security"
       ]
@@ -2045,6 +2045,55 @@
     {
       "path": "server/src/database/migrations/1786720000000-CreateAppealBindingBackfillCheckpoint.ts",
       "sha256": "25c004ac25a96c23432493f491df01eed38c246bde1d4190e1c6ecb1b7fc5d57",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/entities/automotive/catalog-gap-request.entity.ts",
+      "sha256": "be184e3549759f3a1d21807810fef6953f658c025ab2a9c74196e59a56cd5fed",
+      "scopes": [
+        "data"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/catalog-gap-record-binding.ts",
+      "sha256": "779d2d4300815e9c5ee2120fa0ac12669ae0bf2581506e3376e378828ae6388a",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/catalog-gap-binding-backfill.ts",
+      "sha256": "0bf31cbae63c38ca7b493c4b5c8796720d2ee7ea75e506949ed6fd897b4b676d",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/catalog-gap-record-binding.test.ts",
+      "sha256": "22f8e9f1c5fe47a95ae129e4a9c611a62c6dcf0b98817c8db3a746429b83522c",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/catalog-gap-binding-backfill.test.ts",
+      "sha256": "2ca27568fa4c41cf6188e039c7121ddc61c6a3aa119afcedee1e8ba8e43bbfcb",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-catalog-gap-record-binding.ts",
+      "sha256": "a6ead8d69c0ae3052c8a7a2327e3b692da83f8d92f2bcd92a732719074246d0c",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786730000000-CreateCatalogGapBindingBackfillCheckpoint.ts",
+      "sha256": "a7400fdb154896921afd67dfdd9f875b418de0e87e72addceff6b76705ddbd4c",
       "scopes": [
         "data"
       ]

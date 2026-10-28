@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 — заявки на расширение каталога, 28 октября 2026
+
+Четыре зашифрованных поля `autocare_catalog_gap_requests` получают HMAC по
+gap/requester UUID, nullable provider UUID, двум slug и priceType. Migration
+178673, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены. Удаление аккаунта переподписывает три redacted поля каждой
+строки и очищает reviewReason/binding. PostgreSQL/browser CI, staging
+KMS/restore и включение strict остаются открытыми.
+
 ## U02 — тексты апелляций, 28 октября 2026
 
 `autocare_appeals.reason` и `decisionReason` получают HMAC по appeal,

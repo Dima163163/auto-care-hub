@@ -1,5 +1,16 @@
 # AutoCare Hub — Project Plan
 
+## U02 — заявки на расширение каталога, 2026-10-28
+
+- [x] Привязать labels, comparisonAttributes, rationale и reviewReason к
+  gap/requester UUID, nullable provider UUID, двум slug и priceType; API не
+  отдаёт bindings.
+- [x] Подготовить migration 178673, bounded compare-write backfill, полный
+  verify и opt-in strict reader. Удаление аккаунта переподписывает три
+  redacted поля отдельно для каждой строки и очищает reviewReason/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+  Другие зашифрованные поля U02 остаются открытыми.
+
 ## U02 — тексты апелляций, 2026-10-28
 
 - [x] Привязать reason и decisionReason к appeal/subject/submitter UUID,

@@ -73,6 +73,9 @@ note right of Resource
   Appeal reason/decisionReason имеют HMAC по appeal/submitter/subject UUID,
   subject и nullable provider UUID. Анонимизация пересчитывает reason
   binding по каждой строке и очищает decisionReason/binding.
+  Catalog gap labels/comparisonAttributes/rationale/reviewReason имеют HMAC
+  по gap/requester UUID, nullable provider UUID, двум slug и priceType.
+  Удаление аккаунта пересчитывает три redacted bindings для каждой строки.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

@@ -629,6 +629,13 @@ appeal/subject/submitter UUID, subject и nullable provider UUID. Migration
 подготовлены; удаление аккаунта переподписывает redacted reason по каждой
 строке. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты.
 
+**Локальный шаг 28.10, каталог:** labels/comparisonAttributes/rationale/
+reviewReason получают HMAC по gap/requester UUID, nullable provider UUID,
+двум slug и priceType. Migration 178673, bounded compare-write, полный verify
+и opt-in strict reader подготовлены; удаление аккаунта переподписывает
+redacted поля по каждой строке. PostgreSQL CI, staging KMS/restore и strict
+cutover ещё открыты.
+
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
 **Подтверждение:** текущие auth/OAuth/session modules не содержат обязательного второго фактора и проверки свежей step-up аутентификации для admin/super-admin. Проблема остаётся в `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md:26`.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireChatBlockReasonRecordBinding, requireTrustEvidenceRecordBinding, requireProviderChangeRequestRecordBinding, requireAppealRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireChatBlockReasonRecordBinding, requireTrustEvidenceRecordBinding, requireProviderChangeRequestRecordBinding, requireAppealRecordBinding, requireCatalogGapRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -248,6 +248,16 @@ describe('appeal record binding policy', () => {
         expect(requireAppealRecordBinding({ DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireAppealRecordBinding({ DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('catalog gap record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireCatalogGapRecordBinding({})).toBe(false)
+        expect(requireCatalogGapRecordBinding({ DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireCatalogGapRecordBinding({ DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireCatalogGapRecordBinding({ DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING must be true or false.')
     })
 })
 

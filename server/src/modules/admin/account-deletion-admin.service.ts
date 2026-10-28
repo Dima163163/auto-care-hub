@@ -27,6 +27,7 @@ import { createPlaintextRecordBinding } from '../../shared/security/data-encrypt
 import { chatThreadRecordContext, type ChatThreadRecordScope } from '../../shared/security/data-encryption/chat-thread-record-scope.js'
 import { providerChangeRequestContext } from '../../shared/security/data-encryption/provider-change-request-record-binding.js'
 import { appealContext } from '../../shared/security/data-encryption/appeal-record-binding.js'
+import { catalogGapContext } from '../../shared/security/data-encryption/catalog-gap-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -316,8 +317,25 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
         )
     }
     await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "reviewedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = $1, "comparisonAttributes" = $2, "rationale" = $3, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $4', [encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {}), encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', []), encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT), userId])
-    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
+    const gapsToRedact = await manager.query(
+        'SELECT "id", "requestedById", "providerId", "proposedSlug", "categorySlug", "priceType" FROM "autocare_catalog_gap_requests" WHERE "requestedById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; requestedById: string; providerId: string | null; proposedSlug: string; categorySlug: string; priceType: string }>
+    const redactedLabels = encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {})
+    const redactedAttributes = encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', [])
+    const redactedRationale = encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT)
+    for (const gap of gapsToRedact) {
+        const context = catalogGapContext(gap)
+        const labelsBinding = createPlaintextRecordBinding('autocare_catalog_gap_requests', 'labels', '{}', gap.id, context)
+        const attributesBinding = createPlaintextRecordBinding('autocare_catalog_gap_requests', 'comparisonAttributes', '[]', gap.id, context)
+        const rationaleBinding = createPlaintextRecordBinding('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT, gap.id, context)
+        await manager.query(
+            'UPDATE "autocare_catalog_gap_requests" SET "labels" = $2::jsonb, "labelsBinding" = $3, "comparisonAttributes" = $4::jsonb, "comparisonAttributesBinding" = $5, "rationale" = $6, "rationaleBinding" = $7, "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "id" = $1',
+            [gap.id, redactedLabels, labelsBinding, redactedAttributes, attributesBinding,
+                redactedRationale, rationaleBinding],
+        )
+    }
+    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "reviewedById" = $1', [userId])
     const appealsToRedact = await manager.query(
         'SELECT "id", "subject", "subjectId", "submittedById", "providerId" FROM "autocare_appeals" WHERE "submittedById" = $1 ORDER BY "id" FOR UPDATE',
         [userId],
