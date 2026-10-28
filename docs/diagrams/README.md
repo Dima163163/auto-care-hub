@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, privileged session 2026-10-28:** `07-auth-session.puml` и SVG
+показывают отказ admin/super-admin при access/refresh без persisted session.
+MFA/step-up остаются открытыми.
+
 **U02, trust evidence 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC reference/notes по evidence/
 provider UUID и kind, проверку reference blind index, очистку старых index

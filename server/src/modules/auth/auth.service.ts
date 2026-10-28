@@ -58,6 +58,7 @@ import {
 import { recordSystemIncidentSafely } from '../admin/system-incidents.service.js'
 import { normalizeAuthEmail } from './email-policy.js'
 import { normalizeAuthUserName } from './user-input-policy.js'
+import { isAdminRole } from '../../shared/auth/roles.js'
 import {
     assertPasswordSecurityPolicy,
     assertPasswordVerificationInput,
@@ -466,6 +467,13 @@ export async function refreshAuth(
     request?: FastifyRequest,
 ) {
     const user = await getUserById(userId, tokenVersion)
+    if (isAdminRole(user.role) && !sessionId) {
+        throw new AppError({
+            statusCode: 401,
+            code: ERROR_CODES.Unauthorized,
+            message: 'A current session is required for privileged access.',
+        })
+    }
 
     let sessionExpiresAt: Date | undefined
     if (sessionId) {

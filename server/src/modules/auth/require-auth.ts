@@ -2,6 +2,7 @@ import type { FastifyRequest } from 'fastify'
 
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { isAdminRole } from '../../shared/auth/roles.js'
 import { verifyAccessToken } from './auth-token.js'
 import { getUserById } from './auth.service.js'
 import { parseBearerToken } from './bearer-token.js'
@@ -33,6 +34,13 @@ export async function requireAuth(request: FastifyRequest) {
         const payload = verifyAccessToken(token)
 
         const user = await getUserById(payload.userId, payload.tokenVersion)
+        if (isAdminRole(user.role) && !payload.sessionId) {
+            throw new AppError({
+                statusCode: 401,
+                code: ERROR_CODES.Unauthorized,
+                message: 'A current session is required for privileged access.',
+            })
+        }
         await assertAccessSessionActive(payload.userId, payload.sessionId)
         return user
     } catch (error) {

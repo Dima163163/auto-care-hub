@@ -1,5 +1,13 @@
 # AutoCare Hub — Project Plan
 
+## U03 — обязательный сеанс для привилегированных токенов, 2026-10-28
+
+- [x] Запретить access и refresh без persisted session для текущих
+  admin/super-admin, включая токены с устаревшей ролью client.
+- [x] Проверить положительный путь с активным сеансом и отказ для двух ролей.
+- [ ] Реализовать MFA/SSO, recovery и step-up; проверить PostgreSQL/browser
+  сценарии. Этот локальный барьер сам по себе V2-SEC-02 не закрывает.
+
 ## U02 — вторичные поля пользователя, 2026-10-28
 
 - [x] Привязать avatar URL, community display name и preferred city к UUID

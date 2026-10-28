@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — привилегированный сеанс, 28 октября 2026
+
+`requireAuth` и `refreshAuth` отвергают sessionless JWT, если текущая роль
+пользователя в БД — admin или super-admin. Обычный legacy/setup сценарий
+сохраняется. Это частичное усиление: MFA/SSO, recovery, step-up и живой
+PostgreSQL/browser replay ещё открыты; pilot NO-GO не меняется.
+
 ## U02 — материалы доверия сервиса, 28 октября 2026
 
 `autocare_trust_evidence.reference` и `notes` получают HMAC по evidence/

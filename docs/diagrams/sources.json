@@ -219,7 +219,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.service.ts",
-      "sha256": "651c5129413927dcaa4777a65e74a993298ef569a483e705bc39be339773276d",
+      "sha256": "078f2eaa95f72e8b1fdd515d0d6580752e162ad40ed45722a2ed4c35ad7270b5",
       "scopes": [
         "auth"
       ]
@@ -282,7 +282,7 @@
     },
     {
       "path": "server/src/modules/auth/require-auth.ts",
-      "sha256": "cde3915b17178484e641071d089408e6f47a94ce5cf13cf34f288c63e6e9846c",
+      "sha256": "5070d81300faf0c45b26cef908db045220459c3c4004935e891cffdfca113ca3",
       "scopes": [
         "auth",
         "security"
@@ -1929,6 +1929,20 @@
         "security"
       ],
       "sha256": "ec3a02b2f68d734f758ad6e81a0ddbc13afbb7e1de9aeafedcbc634814781caf"
+    },
+    {
+      "path": "server/src/modules/auth/require-auth.test.ts",
+      "sha256": "1c74754d055dbaa3de4e425bf11864fc84515ff0c04d28afe08e5a3239a8b672",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/privileged-refresh-session.test.ts",
+      "sha256": "66cd0ab8143a1a7e18c5ce7fe3ea03de634d7cb58392662d8dbbc546337147ee",
+      "scopes": [
+        "auth"
+      ]
     }
   ],
   "inventories": [
