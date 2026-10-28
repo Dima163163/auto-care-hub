@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U02, trust evidence 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC reference/notes по evidence/
+provider UUID и kind, проверку reference blind index, очистку старых index
+после удаления. Migration 178670, bounded checkpoint и opt-in strict reader
+подготовлены. Staging KMS/restore остаётся открытым.
+
 **U02, chat block reason 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC причины блокировки по block/
 thread/blocker/blocked UUID. Migration 178669, bounded checkpoint и opt-in

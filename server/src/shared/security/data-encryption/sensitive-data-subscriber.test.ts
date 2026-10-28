@@ -12,6 +12,7 @@ import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../.
 import { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
 import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
 import { AutoCareChatBlockEntity, AutoCareChatBlockStatus, AutoCareChatReportEntity, AutoCareChatReportCategory, AutoCareChatReportStatus } from '../../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareTrustEvidenceEntity } from '../../../entities/automotive/marketplace-enhancements.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1316,6 +1317,58 @@ describe('encrypted chat block reason record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted trust evidence record binding', () => {
+    function storedEvidence() {
+        const evidence = new AutoCareTrustEvidenceEntity()
+        evidence.providerId = randomUUID()
+        evidence.kind = 'review'
+        evidence.reference = randomUUID()
+        evidence.referenceIndex = evidence.reference
+        evidence.notes = 'Moderator note'
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_trust_evidence' }, entity: evidence } as InsertEvent<AutoCareTrustEvidenceEntity>)
+        return evidence
+    }
+
+    function loadEvidence(evidence: AutoCareTrustEvidenceEntity) {
+        subscriber.afterLoad(evidence, { metadata: { tableName: 'autocare_trust_evidence' } } as LoadEvent<AutoCareTrustEvidenceEntity>)
+        return evidence
+    }
+
+    it('binds reference and notes to evidence/provider/kind and checks blind index', () => {
+        const source = storedEvidence()
+        const target = storedEvidence()
+        expect(source.referenceBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.notesBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.referenceIndex).toMatch(/^h1_[A-Za-z0-9_-]{43}$/)
+        expect(loadEvidence(source).reference).toBe(source.reference)
+        target.reference = source.reference
+        target.referenceIndex = source.referenceIndex
+        target.referenceBinding = source.referenceBinding
+        expect(() => loadEvidence(target)).toThrow('Encrypted record binding authentication failed.')
+        source.referenceIndex = 'h1_invalid'
+        expect(() => loadEvidence(source)).toThrow('Encrypted trust evidence reference index authentication failed.')
+    })
+
+    it('clears reference index and binding on null, then gates legacy rows', () => {
+        const evidence = storedEvidence()
+        evidence.reference = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_trust_evidence' }, entity: evidence } as UpdateEvent<AutoCareTrustEvidenceEntity>)
+        expect(evidence.referenceIndex).toBeNull()
+        expect(evidence.referenceBinding).toBeNull()
+        evidence.reference = 'legacy-reference'
+        evidence.referenceIndex = createBlindIndex(evidence.reference, 'evidence-reference')
+        expect(loadEvidence(evidence).reference).toBe('legacy-reference')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadEvidence(evidence)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING = previousStrict
         }
     })
 })

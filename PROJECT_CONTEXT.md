@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 — материалы доверия сервиса, 28 октября 2026
+
+`autocare_trust_evidence.reference` и `notes` получают HMAC по evidence/
+provider UUID и kind. Reference проверяется также против blind index; bounded
+backfill очищает старые индексы после null redaction. Обновление отзыва теперь
+загружает evidence под блокировкой и сохраняет полную строку. Migration 178670,
+полный verify и opt-in strict reader подготовлены. Staging KMS/restore и
+включение strict остаются открытыми.
+
 ## U02 — причина блокировки чата, 28 октября 2026
 
 `autocare_chat_blocks.reason` получает HMAC по block/thread/blocker/blocked

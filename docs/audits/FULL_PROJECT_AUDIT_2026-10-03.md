@@ -1,5 +1,14 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка материалов доверия, 28 октября 2026
+
+`autocare_trust_evidence.reference` и `notes` получили HMAC по evidence/
+provider UUID и kind. Reference сверяется с blind index, backfill удаляет
+старые индексы после null redaction. Обновление отзыва сохраняет evidence
+после загрузки под блокировкой. Migration 178670, bounded compare-write,
+полный verify и opt-in strict reader подготовлены локально. Staging KMS/restore,
+PostgreSQL CI и strict cutover не подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка причины блокировки чата, 28 октября 2026
 
 `autocare_chat_blocks.reason` получила HMAC по block/thread/blocker/blocked

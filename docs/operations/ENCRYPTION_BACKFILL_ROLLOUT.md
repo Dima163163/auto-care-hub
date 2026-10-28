@@ -485,6 +485,33 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## Trust evidence record binding expansion
+
+New non-null `autocare_trust_evidence.reference` and `notes` writes receive
+separate HMACs over decrypted text, evidence UUID, provider UUID and kind.
+Reference is also checked against its blind index. Migration `1786700000000`
+adds nullable bindings and a durable checkpoint. Account deletion clears both
+texts, bindings and the reference index. Review revision supersession now loads
+the evidence row before updating its encrypted note.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786700000000`. Run
+   `npm --prefix server run encryption:backfill-trust-evidence-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Legacy null references with a stale index are
+   cleared in the same compare-write transaction.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks provider
+   UUID, kind, both ciphertext/binding pairs and the index.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse evidence create/review/revision/read, account deletion
+   and backup restore. Partial reads selecting text must also select its
+   binding, evidence/provider UUID and kind; reference also needs its index.
+
 ## Chat block reason binding expansion
 
 New non-null `autocare_chat_blocks.reason` writes receive a companion HMAC

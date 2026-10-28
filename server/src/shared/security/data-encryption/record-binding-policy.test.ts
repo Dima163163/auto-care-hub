@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireChatBlockReasonRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireChatBlockReasonRecordBinding, requireTrustEvidenceRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -218,6 +218,16 @@ describe('chat block reason record binding policy', () => {
         expect(requireChatBlockReasonRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireChatBlockReasonRecordBinding({ DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('trust evidence record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireTrustEvidenceRecordBinding({})).toBe(false)
+        expect(requireTrustEvidenceRecordBinding({ DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireTrustEvidenceRecordBinding({ DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireTrustEvidenceRecordBinding({ DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING must be true or false.')
     })
 })
 

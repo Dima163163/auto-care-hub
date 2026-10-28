@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "71f25ccd861dc90f171fe2f57c193e0860e9d6940b005f7ffd8f46f4c57cd747",
+      "sha256": "47040dfc1e36937d16f45c5a1454cc1582ac979f561b16698ebf84cd1468ba51",
       "scopes": [
         "backend"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "cb90b1023ab407269dcf8075063bf8e8f78d9a29d3a2500238777d4864b19fb7",
+      "sha256": "3a8b295a42cf5a7dcd3473fc7c9851209a7748786ae5f91448464ceeb36e8f21",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "7fbd4e95486fc135ea008cb862c4ff06bc8389284738e576250390a024a77199",
+      "sha256": "1395cb129a8061758f939040f6cea2bd6b9024b352c446604fd3b11a095e6fba",
       "scopes": [
         "security"
       ]
@@ -656,7 +656,7 @@
     },
     {
       "path": "server/src/modules/autocare/provider-reviews-write.service.ts",
-      "sha256": "618cefa4bb967280cda3fc50ba7717595ae6439a3783401cd5e199447fe7125b",
+      "sha256": "fa889053675b1ab3cf65b4bf3ce12103f632cf04d760d13961cacb564a47f810",
       "scopes": [
         "data"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "98b555ebe72d5741b8203d71f6a50b58fd2bb1077341c50f8c12271fd382ced2",
+      "sha256": "e89746213082a0510c92d28ca36d0d1929fa090d612fdd61380cf4db6cbba810",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "cf2427e5956364b69ef0dfee2fb1c5f348145ecef92175ade94b43793f459352",
+      "sha256": "8dcb1ee6f1bda4d7077c120b8458da69c1de88cdc21f5e01061249043421e7a6",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "eeb3b5c7d38b7709aaa2c331ff6ed35ed5c635414b9f9a4374e325c6dd486f73",
+      "sha256": "00a54fddf6a71d5b837101eb25d920ddd92d3bc973b5567ec33f46e9499b9e55",
       "scopes": [
         "security"
       ]
@@ -1897,6 +1897,38 @@
         "security"
       ],
       "sha256": "26a785e34e9c56c0062bf2a688254d79fc0772f5d55c438b2f579c22cfc6715b"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/trust-evidence-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "e0d89e430adaf3167a84979655330cb70e32928ae741c771981e04b943e56297"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/trust-evidence-binding-backfill.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "a10926521383660596e8e02ae0d85fbcbcc19e9abe4de85bf9c1dafa9ae98dd3"
+    },
+    {
+      "path": "server/src/scripts/backfill-trust-evidence-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "7f566fafec25a55cd8bc0868fa4230dc87c029ab489dd2e71f4d2a2538faac59"
+    },
+    {
+      "path": "server/src/database/migrations/1786700000000-CreateTrustEvidenceBindingBackfillCheckpoint.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "ec3a02b2f68d734f758ad6e81a0ddbc13afbb7e1de9aeafedcbc634814781caf"
     }
   ],
   "inventories": [

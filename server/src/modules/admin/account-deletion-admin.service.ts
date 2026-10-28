@@ -297,7 +297,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
         [userId, encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT), encryptedRedactedJson('autocare_repair_events', 'metadata', {})],
     )
-    await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "notes" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
+    await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "referenceIndex" = NULL, "referenceBinding" = NULL, "notes" = NULL, "notesBinding" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
     await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = $1, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $2', [encryptedRedactedJson('autocare_provider_change_requests', 'payload', { redacted: true }), userId])
     await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
     await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = $1, "comparisonAttributes" = $2, "rationale" = $3, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $4', [encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {}), encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', []), encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT), userId])

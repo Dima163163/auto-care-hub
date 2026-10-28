@@ -132,6 +132,8 @@ entity "TrustEvidence" as Evidence {
   providerId / kind / status
   reference : encrypted text
   referenceIndex : HMAC blind index
+  notes : encrypted text
+  referenceBinding / notesBinding : HMAC?
   reviewRevision : integer?
 }
 entity "GuaranteeClaim" as Claim {
@@ -267,6 +269,11 @@ entity "ChatBlockReasonBindingCheckpoint" as ChatBlockCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "TrustEvidenceBindingCheckpoint" as EvidenceCheckpoint {
+  * name : autocare_trust_evidence
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -307,6 +314,7 @@ AutoCareRescheduleCheckpoint ..> AutoCareReschedule : bounded two-field backfill
 QuoteCheckpoint ..> Quote : bounded snapshot backfill
 ChatReportCheckpoint ..> ChatReport : bounded four-field backfill
 ChatBlockCheckpoint ..> ChatBlock : bounded reason backfill
+EvidenceCheckpoint ..> Evidence : bounded two-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -403,6 +411,11 @@ note bottom of ChatBlockCheckpoint
   U02: HMAC binds reason to block/thread/blocker/blocked-user UUID.
   Status can change without breaking the binding. Bounded compare-write
   and full verify precede opt-in strict read; deletion clears both.
+end note
+note bottom of EvidenceCheckpoint
+  U02: HMAC binds reference/notes to evidence/provider UUID and kind.
+  Read verifies reference against blind index. Backfill clears stale
+  indexes after null redaction; full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.
