@@ -84,6 +84,9 @@ note right of Resource
   переподписывает issue и очищает snapshot/binding.
   Broadcast offerSnapshot имеет HMAC по offer/broadcast/provider/location
   UUID. Удаление клиента переподписывает redacted snapshot каждой строки.
+  Guarantee summary/resolution имеют HMAC по claim/request/client/provider
+  UUID и claimType. Удаление клиента переподписывает summary и очищает
+  resolution/binding каждой строки.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

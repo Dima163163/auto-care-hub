@@ -129,8 +129,10 @@ export class AutoCareGuaranteeClaimEntity {
     @Column({ type: 'text' }) claimType!: string
     @Column({ type: 'text', default: 'submitted' }) status!: string
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_guarantee_claims', 'summary', 'text') }) summary!: string
+    @Column({ type: 'text', nullable: true }) summaryBinding!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) evidenceUrls!: string[]
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_guarantee_claims', 'resolution', 'text') }) resolution!: string | null
+    @Column({ type: 'text', nullable: true }) resolutionBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) resolvedById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) resolvedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date

@@ -177,7 +177,9 @@ entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
   caseKey : unique canonical request?
-  status / resolution
+  claimType / status
+  summary / resolution : encrypted
+  summaryBinding / resolutionBinding : HMAC?
 }
 entity "BonusAccount" as Account {
   * id : uuid
@@ -341,6 +343,11 @@ entity "BroadcastOfferBindingCheckpoint" as BroadcastOfferCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "GuaranteeClaimBindingCheckpoint" as GuaranteeClaimCheckpoint {
+  * name : autocare_guarantee_claims
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -397,6 +404,7 @@ CatalogGapCheckpoint ..> CatalogGap : bounded four-field backfill
 RepairEventCheckpoint ..> RepairEvent : bounded three-field backfill
 BroadcastRequestCheckpoint ..> BroadcastRequest : bounded two-field backfill
 BroadcastOfferCheckpoint ..> BroadcastOffer : bounded snapshot backfill
+GuaranteeClaimCheckpoint ..> Claim : bounded two-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -534,6 +542,12 @@ note bottom of BroadcastOfferCheckpoint
   U02: HMAC binds encrypted offerSnapshot to offer UUID, broadcast request
   UUID, provider UUID and location UUID. Account deletion reseals the
   redacted snapshot for each offer. Full verify precedes opt-in strict read.
+end note
+note bottom of GuaranteeClaimCheckpoint
+  U02: HMAC binds summary and nullable resolution to claim UUID,
+  request/client/provider UUID and claimType. Account deletion reseals
+  redacted summary per row and clears resolution with binding.
+  Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

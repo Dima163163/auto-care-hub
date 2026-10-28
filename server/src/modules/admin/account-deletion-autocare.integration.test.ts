@@ -12,6 +12,7 @@ import {
     AutoCareRepairEventEntity,
     AutoCareBroadcastRequestEntity,
     AutoCareBroadcastOfferEntity,
+    AutoCareGuaranteeClaimEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
@@ -91,6 +92,7 @@ describe('AutoCare account deletion retention invariants', () => {
     let repairEvent: AutoCareRepairEventEntity
     let broadcastRequest: AutoCareBroadcastRequestEntity
     let broadcastOffer: AutoCareBroadcastOfferEntity
+    let guaranteeClaim: AutoCareGuaranteeClaimEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
     let completedOutboxId: string
@@ -305,6 +307,19 @@ describe('AutoCare account deletion retention invariants', () => {
             offerSnapshot: { amountMinor: 10000, currencyCode: 'RUB', note: 'Private offer note' },
             status: 'pending',
         })
+        guaranteeClaim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).save({
+            requestId: serviceRequest.id,
+            caseKey: serviceRequest.id,
+            clientId: deletedOwner.id,
+            providerId: provider.id,
+            claimType: 'quality',
+            status: 'submitted',
+            summary: 'Private guarantee issue',
+            evidenceUrls: [],
+            resolution: 'Private resolution',
+            resolvedById: superAdmin.id,
+            resolvedAt: new Date(),
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -502,6 +517,14 @@ describe('AutoCare account deletion retention invariants', () => {
         const redactedOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).findOneByOrFail({ id: broadcastOffer.id })
         expect(redactedOffer.offerSnapshot).toEqual({ redacted: true })
         expect(redactedOffer.offerSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedClaim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).findOneByOrFail({ id: guaranteeClaim.id })
+        expect(redactedClaim).toMatchObject({
+            summary: 'Review removed after account deletion.',
+            resolution: null,
+            resolutionBinding: null,
+            evidenceUrls: [],
+        })
+        expect(redactedClaim.summaryBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)

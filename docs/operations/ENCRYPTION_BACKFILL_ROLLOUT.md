@@ -1,5 +1,17 @@
 # Encryption backfill rollout — N09
 
+## Guarantee claim binding expansion
+
+New `autocare_guarantee_claims.summary` and non-null `resolution` writes receive separate HMACs over plaintext, claim UUID, request UUID, client UUID, provider UUID and claimType. Migration `1786770000000` adds nullable bindings and a durable checkpoint. Client account deletion reseals redacted summary per row and clears resolution with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786770000000`. Run `npm --prefix server run encryption:backfill-guarantee-claim-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_GUARANTEE_CLAIM_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus claim/request/client/provider/type scope.
+
+
 ## Broadcast offer binding expansion
 
 New `autocare_broadcast_offers.offerSnapshot` writes receive an HMAC over plaintext, offer UUID, broadcast request UUID, provider UUID and location UUID. Migration `1786760000000` adds a nullable binding and a durable checkpoint. Client account deletion reseals a redacted snapshot for each offer. API responses omit the binding.

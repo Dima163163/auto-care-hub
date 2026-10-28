@@ -31,6 +31,7 @@ import { catalogGapContext } from '../../shared/security/data-encryption/catalog
 import { repairEventContext } from '../../shared/security/data-encryption/repair-event-record-binding.js'
 import { broadcastRequestContext } from '../../shared/security/data-encryption/broadcast-request-record-binding.js'
 import { broadcastOfferContext } from '../../shared/security/data-encryption/broadcast-offer-record-binding.js'
+import { guaranteeClaimContext } from '../../shared/security/data-encryption/guarantee-claim-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -297,7 +298,19 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
                     JSON.stringify(redactedOfferSnapshot), offer.id, broadcastOfferContext(offer))],
         )
     }
-    await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT), userId])
+    const guaranteeClaimsToRedact = await manager.query(
+        'SELECT "id", "requestId", "clientId", "providerId", "claimType" FROM "autocare_guarantee_claims" WHERE "clientId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; requestId: string; clientId: string; providerId: string; claimType: string }>
+    const redactedGuaranteeSummary = encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT)
+    for (const claim of guaranteeClaimsToRedact) {
+        await manager.query(
+            `UPDATE "autocare_guarantee_claims" SET "summary" = $2, "summaryBinding" = $3,
+                "evidenceUrls" = '{}', "resolution" = NULL, "resolutionBinding" = NULL WHERE "id" = $1`,
+            [claim.id, redactedGuaranteeSummary,
+                createPlaintextRecordBinding('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT, claim.id, guaranteeClaimContext(claim))],
+        )
+    }
     await manager.query('UPDATE "autocare_guarantee_claims" SET "resolvedById" = NULL WHERE "resolvedById" = $1', [userId])
     await manager.query('UPDATE "autocare_expert_questions" SET "symptoms" = $1, "vehicleSnapshot" = NULL, "answer" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_expert_questions', 'symptoms', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_expert_questions" SET "answeredById" = NULL WHERE "answeredById" = $1', [userId])

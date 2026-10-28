@@ -1,5 +1,8 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 28.10, гарантийное обращение:** summary/resolution получают HMAC по claim/request/client/provider UUID и claimType. Migration 178677, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает summary каждой строки и очищает resolution/binding. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
+
+
 **Локальный шаг 28.10, предложение по рассылке:** offerSnapshot получает HMAC по offer/broadcast/provider/location UUID. Migration 178676, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает redacted snapshot каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
 

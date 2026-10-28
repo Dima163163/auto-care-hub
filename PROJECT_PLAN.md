@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## U02 — гарантийные обращения, 2026-10-28
+
+- [x] Привязать summary и resolution к claim/request/client/provider UUID и claimType; не отдавать bindings в API.
+- [x] Подготовить migration 178677, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление клиента переподписывает summary каждой строки и очищает resolution/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
 ## U02 — предложения по рассылке, 2026-10-28
 
 - [x] Привязать offerSnapshot к offer/broadcast/provider/location UUID; не отдавать binding в API.
