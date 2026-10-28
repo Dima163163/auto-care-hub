@@ -439,6 +439,8 @@ describe('AutoCare account deletion retention invariants', () => {
             contactSnapshot: null,
             contactSnapshotBinding: null,
             vehicleSnapshotBinding: null,
+            note: null,
+            noteBinding: null,
             estimateSnapshot: null,
             estimateSnapshotBinding: null,
             acceptedQuoteSnapshot: null,

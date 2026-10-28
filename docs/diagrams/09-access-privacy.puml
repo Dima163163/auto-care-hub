@@ -66,6 +66,9 @@ note right of Resource
   Bounded backfill и opt-in strict reader подготовлены.
   Vehicle snapshot имеет scoped HMAC по этим UUID и nullable vehicle UUID;
   удаление аккаунта очищает binding. Bounded backfill и opt-in strict reader.
+  Примечание заявки имеет scoped HMAC по request/client/provider/
+  location/definition UUID; удаление аккаунта очищает binding.
+  Bounded backfill и opt-in strict reader подготовлены.
   Остальные поля U02 пока не связаны со строкой.
 end note
 note bottom of Admin

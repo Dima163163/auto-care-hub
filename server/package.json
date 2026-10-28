@@ -43,6 +43,7 @@
     "encryption:backfill-estimate-snapshot-binding": "tsx src/scripts/backfill-estimate-snapshot-record-binding.ts",
     "encryption:backfill-contact-snapshot-binding": "tsx src/scripts/backfill-contact-snapshot-record-binding.ts",
     "encryption:backfill-vehicle-snapshot-binding": "tsx src/scripts/backfill-vehicle-snapshot-record-binding.ts",
+    "encryption:backfill-service-request-note-binding": "tsx src/scripts/backfill-service-request-note-record-binding.ts",
     "benchmark:discovery": "tsx src/scripts/benchmark-autocare-discovery.ts",
     "benchmark:discovery:synthetic": "tsx src/scripts/benchmark-discovery-synthetic.ts",
     "benchmark:discovery:geospatial": "tsx src/scripts/benchmark-discovery-geospatial.ts",

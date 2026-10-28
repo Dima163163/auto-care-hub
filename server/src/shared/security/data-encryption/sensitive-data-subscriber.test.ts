@@ -771,3 +771,62 @@ describe('encrypted vehicle snapshot record binding', () => {
         }
     })
 })
+
+describe('encrypted service request note record binding', () => {
+    function storedRequest(note: string) {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.note = note
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('rejects swapping note and binding together or changing ownership', () => {
+        const source = storedRequest('Private symptom')
+        const target = storedRequest('Different symptom')
+        expect(source.noteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).note).toBe('Private symptom')
+        target.note = source.note
+        target.noteBinding = source.noteBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds a legitimate update and clears a deleted note', () => {
+        const request = storedRequest('Private symptom')
+        const previous = request.noteBinding
+        request.note = 'Updated private symptom'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.noteBinding).not.toBe(previous)
+        expect(loadRequest(request).note).toBe('Updated private symptom')
+        request.note = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.noteBinding).toBeNull()
+        loadRequest(request)
+        request.noteBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.note record binding is invalid.')
+    })
+
+    it('keeps legacy notes readable until strict cutover', () => {
+        const request = storedRequest('Private symptom')
+        request.noteBinding = null
+        expect(loadRequest(request).note).toBe('Private symptom')
+        const previous = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = previous
+        }
+    })
+})
