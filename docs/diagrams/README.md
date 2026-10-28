@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U02, service request outcomes 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC причин отмены и неявки и
+заметки завершения по request/client/provider/location/definition UUID.
+Migration 178662, bounded checkpoint и opt-in strict reader подготовлены.
+Staging KMS/restore, strict cutover и другие поля U02 остаются открытыми.
+
 **U02, user secondary fields 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC аватара, публичного имени и
 города по user UUID, bounded checkpoint и opt-in strict reader. Частичные

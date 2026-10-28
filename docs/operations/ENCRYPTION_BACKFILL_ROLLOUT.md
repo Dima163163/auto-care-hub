@@ -432,6 +432,33 @@ command and a tested backup exists:
 
 This does not bind other U02 encrypted fields.
 
+## Service request outcome binding expansion
+
+New non-null `autocare_service_requests.cancellationReason`, `noShowReason`
+and `completionNote` writes receive separate companion HMACs. Each MAC covers
+the decrypted text, request UUID and client/provider/location/definition UUIDs.
+Migration `1786620000000` adds nullable bindings and a durable checkpoint.
+The bounded command authenticates existing ciphertext and MACs, compare-writes
+missing bindings with checkpoint progress in one transaction and prints counts
+only. Account deletion clears values and bindings together.
+
+After old writers have drained, the approved KMS keyring and tested backup are
+available:
+
+1. Apply migration `1786620000000`. Run
+   `npm --prefix server run encryption:backfill-service-request-outcome-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Interrupted runs resume their checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links and all three value/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse request transitions/read, data export,
+   account deletion and backup restore. Partial reads selecting an outcome field
+   must also select its binding and all four owner/service UUIDs.
+
 ## Outbox recipient record binding expansion
 
 New outbox email/toEmail and recipientName envelopes are bound to the event

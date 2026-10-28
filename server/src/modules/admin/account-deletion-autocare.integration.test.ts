@@ -449,10 +449,13 @@ describe('AutoCare account deletion retention invariants', () => {
             bookingSnapshotBinding: null,
             cancelledById: null,
             cancellationReason: null,
+            cancellationReasonBinding: null,
             noShowById: null,
             noShowReason: null,
+            noShowReasonBinding: null,
             completedById: null,
             completionNote: null,
+            completionNoteBinding: null,
         })
         const redactedRepairEvent = await AppDataSource.getRepository(AutoCareRepairEventEntity).findOneByOrFail({ id: repairEvent.id })
         expect(redactedRepairEvent).toMatchObject({

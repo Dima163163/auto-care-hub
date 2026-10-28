@@ -51,6 +51,8 @@ entity "ServiceRequest" as Request {
   encrypted contactSnapshot / binding : HMAC?
   encrypted vehicleSnapshot / binding : HMAC?
   encrypted note / binding : HMAC?
+  encrypted outcome reasons / note : HMAC?
+  outcome bindings : HMAC?
 }
 entity "ClientVehicle" as Vehicle {
   * id : uuid

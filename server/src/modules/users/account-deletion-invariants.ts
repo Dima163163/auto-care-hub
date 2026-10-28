@@ -74,7 +74,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
                 OR "estimateSnapshot" IS NOT NULL OR "estimateSnapshotBinding" IS NOT NULL
                 OR "acceptedQuoteSnapshot" IS NOT NULL OR "acceptedQuoteSnapshotBinding" IS NOT NULL
                 OR "bookingSnapshot" IS NOT NULL OR "bookingSnapshotBinding" IS NOT NULL
-                OR "cancellationReason" IS NOT NULL OR "noShowReason" IS NOT NULL OR "completionNote" IS NOT NULL
+                OR "cancellationReason" IS NOT NULL OR "cancellationReasonBinding" IS NOT NULL OR "noShowReason" IS NOT NULL OR "noShowReasonBinding" IS NOT NULL OR "completionNote" IS NOT NULL OR "completionNoteBinding" IS NOT NULL
                 OR "cancelledById" = $1 OR "noShowById" = $1 OR "completedById" = $1)`,
     },
     {

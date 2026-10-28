@@ -25,6 +25,7 @@ import { resetEstimateSnapshotBindingBackfill, runEstimateSnapshotBindingBackfil
 import { resetContactSnapshotBindingBackfill, runContactSnapshotBindingBackfill, verifyContactSnapshotBindings } from '../../shared/security/data-encryption/contact-snapshot-binding-backfill.js'
 import { resetVehicleSnapshotBindingBackfill, runVehicleSnapshotBindingBackfill, verifyVehicleSnapshotBindings } from '../../shared/security/data-encryption/vehicle-snapshot-binding-backfill.js'
 import { resetServiceRequestNoteBindingBackfill, runServiceRequestNoteBindingBackfill, verifyServiceRequestNoteBindings } from '../../shared/security/data-encryption/service-request-note-binding-backfill.js'
+import { resetServiceRequestOutcomeBindingBackfill, runServiceRequestOutcomeBindingBackfill, verifyServiceRequestOutcomeBindings } from '../../shared/security/data-encryption/service-request-outcome-binding-backfill.js'
 import {
     getMyAutoCareBonusAccounts,
     redeemAutoCareBonus,
@@ -496,6 +497,72 @@ describe('AutoCare bonus transaction invariants', () => {
             else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = previousStrict
             await resetServiceRequestNoteBindingBackfill(AppDataSource)
             await requests.delete({ id: target.id })
+        }
+    })
+
+    it('binds outcome text to request ownership and backfills legacy rows', async () => {
+        const requests = AppDataSource.getRepository(ServiceRequestEntity)
+        const source = await requests.save(requests.create({
+            clientId: client.id, providerId: provider.id, locationId: location.id, definitionId: definition.id,
+            offeringId: null, offeringSnapshot: null, vehicleSnapshot: null,
+            preferredAt: null, idempotencyKey: `bonus-outcome-source-${suffix}`,
+            note: null, estimateSnapshot: null,
+            acceptedQuoteVersion: null, acceptedQuoteSnapshot: null,
+            acceptedQuoteAt: null, bookingSnapshot: null, bookingCreatedAt: null,
+            status: ServiceRequestStatus.Accepted, clientConfirmedAt: new Date(), providerConfirmedAt: new Date(),
+            cancellationReason: 'Client changed plans', noShowReason: 'Client did not arrive', completionNote: 'Work completed',
+        }))
+        const target = await requests.save(requests.create({
+            clientId: client.id, providerId: provider.id, locationId: location.id, definitionId: definition.id,
+            offeringId: null, offeringSnapshot: null, vehicleSnapshot: null,
+            preferredAt: null, idempotencyKey: `bonus-outcome-target-${suffix}`,
+            note: null, estimateSnapshot: null,
+            acceptedQuoteVersion: null, acceptedQuoteSnapshot: null,
+            acceptedQuoteAt: null, bookingSnapshot: null, bookingCreatedAt: null,
+            status: ServiceRequestStatus.Accepted, clientConfirmedAt: new Date(), providerConfirmedAt: new Date(),
+            cancellationReason: 'Other cancellation', noShowReason: null, completionNote: null,
+        }))
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+        try {
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "cancellationReason", "cancellationReasonBinding", "noShowReasonBinding", "completionNoteBinding" FROM "autocare_service_requests" WHERE "id" = $1', [source.id],
+            ) as Array<{ cancellationReason: string; cancellationReasonBinding: string; noShowReasonBinding: string; completionNoteBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "cancellationReason", "cancellationReasonBinding" FROM "autocare_service_requests" WHERE "id" = $1', [target.id],
+            ) as Array<{ cancellationReason: string; cancellationReasonBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted service request outcome is missing.')
+            expect(storedSource.cancellationReason).not.toContain('Client changed plans')
+            expect(storedSource.cancellationReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            expect(storedSource.noShowReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            expect(storedSource.completionNoteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "cancellationReason" = $1::text, "cancellationReasonBinding" = $2 WHERE "id" = $3',
+                [storedSource.cancellationReason, storedSource.cancellationReasonBinding, target.id],
+            )
+            await expect(requests.findOneByOrFail({ id: target.id }))
+                .rejects.toThrow('Encrypted record binding authentication failed.')
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "cancellationReason" = $1::text, "cancellationReasonBinding" = $2 WHERE "id" = $3',
+                [storedTarget.cancellationReason, storedTarget.cancellationReasonBinding, target.id],
+            )
+            await AppDataSource.query(
+                'UPDATE "autocare_service_requests" SET "cancellationReasonBinding" = NULL WHERE "id" = $1', [source.id],
+            )
+            await resetServiceRequestOutcomeBindingBackfill(AppDataSource)
+            process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = 'true'
+            await expect(requests.findOneByOrFail({ id: source.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+            expect((await runServiceRequestOutcomeBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyServiceRequestOutcomeBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = 'true'
+            expect((await requests.findOneByOrFail({ id: source.id })).completionNote).toBe('Work completed')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = previousStrict
+            await resetServiceRequestOutcomeBindingBackfill(AppDataSource)
+            await requests.delete({ id: target.id })
+            await requests.delete({ id: source.id })
         }
     })
 
