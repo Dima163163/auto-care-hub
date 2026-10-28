@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, privileged OAuth 2026-10-29:** `07-auth-session.puml` и SVG
+показывают отказ в OAuth callback/link для admin/super-admin до создания
+сессии. Password MFA, recovery и step-up остаются открытыми.
+
 **U02, fleet vehicle 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC label/vehicleSnapshot по vehicle/fleet UUID. Migration 178680, bounded checkpoint, full verify и opt-in strict reader подготовлены.
 
 

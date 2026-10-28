@@ -1,5 +1,10 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 29.10, U03:** linked Google/Яндекс callback и начало
+привязки OAuth запрещены для текущих admin/super-admin; callback не создаёт
+сессию без подтверждённого второго фактора. Password login, recovery и
+step-up ещё не реализованы, поэтому U03 открыт.
+
 **Локальный шаг 28.10, автомобиль автопарка:** label/vehicleSnapshot получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
 

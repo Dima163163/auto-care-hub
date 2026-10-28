@@ -782,7 +782,21 @@
     },
     {
       "path": "server/src/modules/oauth/oauth.service.ts",
-      "sha256": "bea35d806f01b22bb812086ee797670a9303f9c63961903f7ba142eb94189781",
+      "sha256": "9296f1f1fcf64072b943b10734ab7ad23e6d95a9836c0d2dea61ead83388dfb4",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/oauth/oauth-privileged-login-policy.ts",
+      "sha256": "0eb6d089538ad8655d471cfb87cc20f715a8a9bfadbfa8194f0a28353d7ca3ff",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/oauth/oauth.routes.ts",
+      "sha256": "2cf4882ef5e7b2d6afc600421b2c231f8f6e6ba665953deacb057c823aba29fd",
       "scopes": [
         "auth"
       ]
