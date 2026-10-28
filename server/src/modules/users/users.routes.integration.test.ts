@@ -100,6 +100,8 @@ describe('private user routes integration', () => {
             horsepower: 218,
             color: 'white',
             vin: 'JTM1234567890ABCD',
+            licensePlate: 'A123BC163',
+            internalNumber: 'FLEET-7',
         }
 
         const createResponse = await request(app.server)
@@ -120,6 +122,17 @@ describe('private user routes integration', () => {
             .set('Authorization', `Bearer ${accessToken}`)
         expect(listResponse.status).toBe(200)
         expect(listResponse.body).toHaveLength(1)
+
+        const exportResponse = await request(app.server)
+            .get('/users/me/export')
+            .set('Authorization', `Bearer ${accessToken}`)
+        expect(exportResponse.status).toBe(200)
+        expect(exportResponse.body.vehicles).toEqual([expect.objectContaining({
+            id: vehicleId,
+            vin: vehicleInput.vin,
+            licensePlate: vehicleInput.licensePlate,
+            internalNumber: vehicleInput.internalNumber,
+        })])
 
         const updateResponse = await request(app.server)
             .patch(`/users/me/vehicles/${vehicleId}`)

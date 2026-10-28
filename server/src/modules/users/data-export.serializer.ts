@@ -173,6 +173,8 @@ export function serializeUserDataExport(
             horsepower: vehicle.horsepower,
             color: vehicle.color,
             vin: vehicle.vin,
+            licensePlate: vehicle.licensePlate,
+            internalNumber: vehicle.internalNumber,
             imageUrl: vehicle.imageUrl,
             isPrimary: vehicle.isPrimary,
             createdAt: serializeDate(vehicle.createdAt),
