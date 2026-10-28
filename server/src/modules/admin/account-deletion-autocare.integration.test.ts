@@ -15,6 +15,7 @@ import {
     AutoCareGuaranteeClaimEntity,
     AutoCareExpertQuestionEntity,
     AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
@@ -97,6 +98,7 @@ describe('AutoCare account deletion retention invariants', () => {
     let guaranteeClaim: AutoCareGuaranteeClaimEntity
     let expertQuestion: AutoCareExpertQuestionEntity
     let fleetAccount: AutoCareFleetAccountEntity
+    let fleetVehicle: AutoCareFleetVehicleEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
     let completedOutboxId: string
@@ -339,6 +341,12 @@ describe('AutoCare account deletion retention invariants', () => {
             name: 'Private fleet name',
             notes: 'Private fleet notes',
         })
+        fleetVehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).save({
+            fleetId: fleetAccount.id,
+            label: 'Private vehicle label',
+            vehicleSnapshot: { make: 'Private car' },
+            approvalPolicy: 'Private approval details',
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -560,6 +568,14 @@ describe('AutoCare account deletion retention invariants', () => {
         expect(redactedFleet.notes).toBeNull()
         expect(redactedFleet.notesBinding).toBeNull()
         expect(redactedFleet.nameBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedFleetVehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).findOneByOrFail({ id: fleetVehicle.id })
+        expect(redactedFleetVehicle).toMatchObject({
+            label: 'Deleted account',
+            vehicleSnapshot: {},
+            approvalPolicy: null,
+        })
+        expect(redactedFleetVehicle.labelBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(redactedFleetVehicle.vehicleSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)

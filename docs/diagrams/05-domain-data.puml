@@ -193,6 +193,12 @@ entity "FleetAccount" as FleetAccount {
   name / notes : encrypted
   nameBinding / notesBinding : HMAC?
 }
+entity "FleetVehicle" as FleetVehicle {
+  * id : uuid
+  fleetId : uuid
+  label / vehicleSnapshot : encrypted
+  labelBinding / vehicleSnapshotBinding : HMAC?
+}
 entity "BonusAccount" as Account {
   * id : uuid
   clientId / providerId
@@ -370,6 +376,11 @@ entity "FleetAccountBindingCheckpoint" as FleetAccountCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "FleetVehicleBindingCheckpoint" as FleetVehicleCheckpoint {
+  * name : autocare_fleet_vehicles
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -406,6 +417,7 @@ Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
 User ||--o{ ExpertQuestion : clientId
 User ||--o{ FleetAccount : ownerId
+FleetAccount ||--o{ FleetVehicle : fleetId
 Provider ||--o{ Account
 User ||--o{ Account
 Account ||--o{ Ledger
@@ -431,6 +443,7 @@ BroadcastOfferCheckpoint ..> BroadcastOffer : bounded snapshot backfill
 GuaranteeClaimCheckpoint ..> Claim : bounded two-field backfill
 ExpertQuestionCheckpoint ..> ExpertQuestion : bounded three-field backfill
 FleetAccountCheckpoint ..> FleetAccount : bounded two-field backfill
+FleetVehicleCheckpoint ..> FleetVehicle : bounded two-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -583,6 +596,11 @@ end note
 note bottom of FleetAccountCheckpoint
   U02: HMAC binds name and nullable notes to fleet UUID and owner UUID.
   Account deletion reseals anonymized name and clears notes with binding.
+  Full verify precedes opt-in strict read.
+end note
+note bottom of FleetVehicleCheckpoint
+  U02: HMAC binds encrypted label and vehicleSnapshot to vehicle UUID
+  and fleet UUID. Account deletion reseals both redacted values per row.
   Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint

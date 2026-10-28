@@ -1,5 +1,17 @@
 # Encryption backfill rollout — N09
 
+## Fleet vehicle binding expansion
+
+New `autocare_fleet_vehicles.label` and `vehicleSnapshot` writes receive separate HMACs over plaintext, vehicle UUID and fleet UUID. Migration `1786800000000` adds nullable bindings and a durable checkpoint. Owner account deletion reseals both anonymized values per row. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786800000000`. Run `npm --prefix server run encryption:backfill-fleet-vehicle-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_FLEET_VEHICLE_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus vehicle/fleet scope.
+
+
 ## Fleet account binding expansion
 
 New `autocare_fleet_accounts.name` and non-null `notes` writes receive separate HMACs over plaintext, fleet UUID and owner UUID. Migration `1786790000000` adds nullable bindings and a durable checkpoint. Owner account deletion reseals an anonymized name per row and clears notes with its binding. API responses omit bindings.

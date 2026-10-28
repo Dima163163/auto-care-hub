@@ -1,5 +1,8 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 28.10, автомобиль автопарка:** label/vehicleSnapshot получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
+
+
 **Локальный шаг 28.10, автопарк:** name/notes получают HMAC по fleet/owner UUID. Migration 178679, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает обезличенное название и очищает notes/binding. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
 

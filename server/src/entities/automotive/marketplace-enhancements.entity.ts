@@ -177,7 +177,9 @@ export class AutoCareFleetVehicleEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) fleetId!: string
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_fleet_vehicles', 'label', 'text') }) label!: string
+    @Column({ type: 'text', nullable: true }) labelBinding!: string | null
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_fleet_vehicles', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown>
+    @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
     @Column({ type: 'text', nullable: true }) approvalPolicy!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

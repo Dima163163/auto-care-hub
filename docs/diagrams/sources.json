@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "7c0d92378988c7d9d59c4b15716e1a2b87aa304da2af02e4a07675989739e289",
+      "sha256": "5bdb9725ed53e0d939661e4e38b2b39b14b7654c2d6d4e6b92881471294cb59b",
       "scopes": [
         "backend"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "728bf8785a4a13c85496b2d0b17094f2da85f7bb1edf914331834c76aad0ffec",
+      "sha256": "21863cee4561efff9a1d3b552a36fb3e3d7150ec971e245346dc8fbdfe6e7a11",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "1c147c5b91c568550ec2a3605e56c013c5d0df19344b510a5128483937b24ceb",
+      "sha256": "9100c19c411906b4d797d42f13fd1f86738cd33882cd7da126469a1954c679c4",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "33fef3423588f6b752be21dfce2a09b06bfadf82bfecb277fea7c548b6cd3fc5",
+      "sha256": "c3b8d1106b2d74298e2844e5b13ba0006a4eb3672bc6376dc0e595b69b191d51",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "a925b8b5bc1fbd13f5cea0ec44d27e85208f7f17b31620a211bffd05ca915753",
+      "sha256": "c3c09f5f797d5bcf4eb4b29399d10ad89663cb121700ead55dfdb15de84fc6d0",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "bd793a2e4c487ed75dd621b19c745054501ffbedfee3a607ee025569069eaeae",
+      "sha256": "f08c41698da2d773670b2724ad8885437fb6f58631988f85c9b50ea43573ec72",
       "scopes": [
         "security"
       ]
@@ -1278,7 +1278,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "3924449b1ced71ac0ac8e55f76f7f312e2eee871d6815418b9a256c05c3d4fdc",
+      "sha256": "8c20329560eea76f545bb35b2da469433835bcd423f3debd37412c60659e32e7",
       "scopes": [
         "security"
       ]
@@ -1981,7 +1981,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
-      "sha256": "4a1c588717141ee6d2dafbbaceb4166d24092ed377b4c9a3c4b20481dcbd02d4",
+      "sha256": "41d64f491315b0975312cc2ec75c57f417859487f6788d7c2a10ba9ab387e5e8",
       "scopes": [
         "security"
       ]
@@ -2381,6 +2381,54 @@
     {
       "path": "server/src/shared/security/data-encryption/fleet-account-binding-backfill.test.ts",
       "sha256": "936b2727db580bc3f2dbf138f9d645d13c22e8aa9a46a6611d99922b989f1e3e",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786800000000-CreateFleetVehicleBindingBackfillCheckpoint.ts",
+      "sha256": "90dd615a3958c1409dcdc13fd4c8108845bc0b75201ff85fefb10640aa13b781",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-fleet-vehicle-record-binding.ts",
+      "sha256": "db0a0f2ac7c0b60926f5c593ec2a3df7f97b15b3b9bd2883510cc1a27e99647d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/fleet-vehicle-record-binding.ts",
+      "sha256": "5c94375dc641692829872fe8a623a16f5646a89746fd1a2894656337057a661d",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/fleet-vehicle-binding-backfill.ts",
+      "sha256": "348945e9f01fed342b30b8f5fbffbd6c2737eb7eb662afd52419dc556dc59a49",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/fleet-vehicle-record-binding.test.ts",
+      "sha256": "0ce421f0c5b89cc3d99eafe7303c463a078b923f985a36d77622f27c40245a72",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/fleet-vehicle-binding-backfill.test.ts",
+      "sha256": "f5b904d7727ef6b89a115a9b666ecef32e8c2a9d367628200f41617be8651732",
       "scopes": [
         "data",
         "security"

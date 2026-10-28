@@ -34,6 +34,7 @@ import { broadcastOfferContext } from '../../shared/security/data-encryption/bro
 import { guaranteeClaimContext } from '../../shared/security/data-encryption/guarantee-claim-record-binding.js'
 import { expertQuestionContext } from '../../shared/security/data-encryption/expert-question-record-binding.js'
 import { fleetAccountContext } from '../../shared/security/data-encryption/fleet-account-record-binding.js'
+import { fleetVehicleContext } from '../../shared/security/data-encryption/fleet-vehicle-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -341,7 +342,26 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
                 createPlaintextRecordBinding('autocare_fleet_accounts', 'name', identity.name, fleet.id, fleetAccountContext(fleet))],
         )
     }
-    await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = $2, "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $3)', [encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name), encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {}), userId])
+    const fleetVehiclesToRedact = await manager.query(
+        `SELECT vehicle."id", vehicle."fleetId" FROM "autocare_fleet_vehicles" vehicle
+           JOIN "autocare_fleet_accounts" fleet ON fleet."id" = vehicle."fleetId"
+          WHERE fleet."ownerId" = $1 ORDER BY vehicle."id" FOR UPDATE OF vehicle`,
+        [userId],
+    ) as Array<{ id: string; fleetId: string }>
+    const redactedFleetVehicleLabel = encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name)
+    const redactedFleetVehicleSnapshot = encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {})
+    for (const vehicle of fleetVehiclesToRedact) {
+        const context = fleetVehicleContext(vehicle)
+        await manager.query(
+            `UPDATE "autocare_fleet_vehicles" SET "label" = $2, "labelBinding" = $3,
+                "vehicleSnapshot" = $4::jsonb, "vehicleSnapshotBinding" = $5,
+                "approvalPolicy" = NULL WHERE "id" = $1`,
+            [vehicle.id, redactedFleetVehicleLabel,
+                createPlaintextRecordBinding('autocare_fleet_vehicles', 'label', identity.name, vehicle.id, context),
+                redactedFleetVehicleSnapshot,
+                createPlaintextRecordBinding('autocare_fleet_vehicles', 'vehicleSnapshot', '{}', vehicle.id, context)],
+        )
+    }
     await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "cancellationReasonBinding" = NULL, "noShowReason" = NULL, "noShowReasonBinding" = NULL, "completionNote" = NULL, "completionNoteBinding" = NULL WHERE "clientId" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_service_messages"

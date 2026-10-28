@@ -92,6 +92,8 @@ note right of Resource
   snapshot/answer с bindings.
   Fleet account name/notes имеют HMAC по fleet/owner UUID. Удаление
   владельца переподписывает обезличенное имя и очищает notes/binding.
+  Fleet vehicle label/vehicleSnapshot имеют HMAC по vehicle/fleet UUID.
+  Удаление владельца переподписывает оба redacted поля каждой строки.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.
