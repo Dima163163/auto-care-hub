@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireChatBlockReasonRecordBinding, requireTrustEvidenceRecordBinding, requireProviderChangeRequestRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
+import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireServiceRequestOutcomeRecordBinding, requireClientVehicleRecordBinding, requireUserSecondaryRecordBinding, requireBookingStatusReasonRecordBinding, requireBookingTextRecordBinding, requireBookingRescheduleReasonRecordBinding, requireAutoCareRescheduleTextRecordBinding, requireServiceQuoteSnapshotRecordBinding, requireChatReportTextRecordBinding, requireChatBlockReasonRecordBinding, requireTrustEvidenceRecordBinding, requireProviderChangeRequestRecordBinding, requireAppealRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireOutboxRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 describe('email record binding cutover policy', () => {
     it('defaults to compatibility and accepts only explicit boolean values', () => {
@@ -238,6 +238,16 @@ describe('provider change request record binding policy', () => {
         expect(requireProviderChangeRequestRecordBinding({ DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING: 'true' })).toBe(true)
         expect(() => requireProviderChangeRequestRecordBinding({ DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING: '1' }))
             .toThrow('DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING must be true or false.')
+    })
+})
+
+describe('appeal record binding policy', () => {
+    it('requires an explicit boolean switch', () => {
+        expect(requireAppealRecordBinding({})).toBe(false)
+        expect(requireAppealRecordBinding({ DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING: 'false' })).toBe(false)
+        expect(requireAppealRecordBinding({ DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING: 'true' })).toBe(true)
+        expect(() => requireAppealRecordBinding({ DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING: '1' }))
+            .toThrow('DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING must be true or false.')
     })
 })
 

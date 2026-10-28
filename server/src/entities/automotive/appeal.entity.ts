@@ -28,10 +28,12 @@ export class AutoCareAppealEntity {
     @Column({ type: 'uuid' }) submittedById!: string
     @Column({ type: 'uuid', nullable: true }) providerId!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_appeals', 'reason', 'text') }) reason!: string
+    @Column({ type: 'text', nullable: true }) reasonBinding!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) evidenceIds!: string[]
     @Column({ type: 'enum', enum: AutoCareAppealStatus, enumName: 'autocare_appeal_status', default: AutoCareAppealStatus.Pending }) status!: AutoCareAppealStatus
     @Column({ type: 'uuid', nullable: true }) decidedById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_appeals', 'decisionReason', 'text') }) decisionReason!: string | null
+    @Column({ type: 'text', nullable: true }) decisionReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) decidedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

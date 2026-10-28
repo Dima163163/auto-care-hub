@@ -1,5 +1,31 @@
 # Encryption backfill rollout — N09
 
+## Appeal text binding expansion
+
+New `autocare_appeals.reason` and non-null `decisionReason` writes receive
+HMACs over plaintext, appeal UUID, subject, subject UUID, submitter UUID and
+nullable provider UUID. Migration `1786720000000` adds nullable bindings and
+a durable checkpoint. Account deletion reseals each redacted reason with its
+own MAC; decision reason and binding are cleared together. API responses omit
+bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786720000000`. Run
+   `npm --prefix server run encryption:backfill-appeal-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks subject,
+   all scope UUIDs, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse create/decision/withdraw/list, account deletion and
+   backup restore. Partial reads selecting either text need the corresponding
+   binding plus appeal/subject/submitter/provider scope.
+
 ## Provider change request binding expansion
 
 New `autocare_provider_change_requests.payload` and non-null `reviewReason`

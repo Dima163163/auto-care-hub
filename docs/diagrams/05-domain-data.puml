@@ -142,6 +142,12 @@ entity "ProviderChangeRequest" as ProviderChange {
   payload / reviewReason : encrypted
   payloadBinding / reviewReasonBinding : HMAC?
 }
+entity "Appeal" as Appeal {
+  * id : uuid
+  subject / subjectId / submittedById / providerId?
+  reason / decisionReason : encrypted text
+  reasonBinding / decisionReasonBinding : HMAC?
+}
 entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
@@ -285,6 +291,11 @@ entity "ProviderChangeBindingCheckpoint" as ProviderChangeCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "AppealBindingCheckpoint" as AppealCheckpoint {
+  * name : autocare_appeals
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -309,6 +320,7 @@ Request |o--o{ Review
 Provider ||--o{ Review
 Provider ||--o{ Evidence
 Provider ||--o{ ProviderChange
+User ||--o{ Appeal : submittedById
 Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
 Provider ||--o{ Account
@@ -328,6 +340,7 @@ ChatReportCheckpoint ..> ChatReport : bounded four-field backfill
 ChatBlockCheckpoint ..> ChatBlock : bounded reason backfill
 EvidenceCheckpoint ..> Evidence : bounded two-field backfill
 ProviderChangeCheckpoint ..> ProviderChange : bounded two-field backfill
+AppealCheckpoint ..> Appeal : bounded two-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -434,6 +447,12 @@ note bottom of ProviderChangeCheckpoint
   U02: HMAC binds encrypted payload and review reason to request UUID,
   provider UUID, requester UUID and kind. Account deletion reseals each
   redacted payload with its own binding and clears reason with binding.
+  Full verify precedes opt-in strict read.
+end note
+note bottom of AppealCheckpoint
+  U02: HMAC binds reason and decisionReason to appeal UUID, subject,
+  subjectId, submitter UUID and nullable provider UUID. Account deletion
+  reseals each redacted reason and clears decision reason with binding.
   Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint

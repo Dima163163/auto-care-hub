@@ -26,6 +26,7 @@ import { createEmailBlindIndex, encryptRedactedFieldValue } from '../../shared/s
 import { createPlaintextRecordBinding } from '../../shared/security/data-encryption/plaintext-record-binding.js'
 import { chatThreadRecordContext, type ChatThreadRecordScope } from '../../shared/security/data-encryption/chat-thread-record-scope.js'
 import { providerChangeRequestContext } from '../../shared/security/data-encryption/provider-change-request-record-binding.js'
+import { appealContext } from '../../shared/security/data-encryption/appeal-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -317,8 +318,20 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "reviewedById" = $1', [userId])
     await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = $1, "comparisonAttributes" = $2, "rationale" = $3, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $4', [encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {}), encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', []), encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL WHERE "submittedById" = $2', [encryptedRedactedText('autocare_appeals', 'reason', ANONYMIZED_REVIEW_TEXT), userId])
-    await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL WHERE "decidedById" = $1', [userId])
+    const appealsToRedact = await manager.query(
+        'SELECT "id", "subject", "subjectId", "submittedById", "providerId" FROM "autocare_appeals" WHERE "submittedById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; subject: string; subjectId: string; submittedById: string; providerId: string | null }>
+    const redactedAppealReason = encryptedRedactedText('autocare_appeals', 'reason', ANONYMIZED_REVIEW_TEXT)
+    for (const appeal of appealsToRedact) {
+        const binding = createPlaintextRecordBinding('autocare_appeals', 'reason',
+            ANONYMIZED_REVIEW_TEXT, appeal.id, appealContext(appeal))
+        await manager.query(
+            'UPDATE "autocare_appeals" SET "reason" = $2, "reasonBinding" = $3, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL, "decisionReasonBinding" = NULL WHERE "id" = $1',
+            [appeal.id, redactedAppealReason, binding],
+        )
+    }
+    await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL, "decisionReasonBinding" = NULL WHERE "decidedById" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_reschedule_requests"
             SET "reason" = NULL, "reasonBinding" = NULL, "resolvedById" = NULL, "resolutionReason" = NULL, "resolutionReasonBinding" = NULL

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U02, appeal text 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC reason/decisionReason по
+appeal/submitter/subject UUID, subject и nullable provider UUID. Migration
+178672, bounded checkpoint и opt-in strict reader подготовлены.
+
 **U02, provider change requests 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC payload/reviewReason по
 request/provider/requester UUID и kind. Migration 178671, bounded checkpoint,

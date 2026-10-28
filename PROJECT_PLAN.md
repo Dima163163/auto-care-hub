@@ -1,5 +1,15 @@
 # AutoCare Hub — Project Plan
 
+## U02 — тексты апелляций, 2026-10-28
+
+- [x] Привязать reason и decisionReason к appeal/subject/submitter UUID,
+  предмету обращения и nullable provider UUID; API не отдаёт bindings.
+- [x] Подготовить migration 178672, bounded compare-write backfill, полный
+  verify и opt-in strict reader. Удаление аккаунта переподписывает redacted
+  reason каждой строки и очищает decisionReason/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+  Другие зашифрованные поля U02 открыты.
+
 ## U02 — заявки на изменение профиля сервиса, 2026-10-28
 
 - [x] Привязать payload и reviewReason к request/provider/requester UUID и kind;

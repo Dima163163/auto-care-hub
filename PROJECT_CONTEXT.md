@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 — тексты апелляций, 28 октября 2026
+
+`autocare_appeals.reason` и `decisionReason` получают HMAC по appeal,
+subject, subjectId, submittedById и nullable providerId. Migration 178672,
+bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены. Удаление аккаунта переподписывает redacted reason каждой строки
+и очищает decisionReason/binding. PostgreSQL/browser CI и staging KMS/restore
+остаются открытыми.
+
 ## U02 — заявки на изменение профиля сервиса, 28 октября 2026
 
 `autocare_provider_change_requests.payload` и `reviewReason` получают HMAC

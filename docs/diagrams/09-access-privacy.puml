@@ -70,6 +70,9 @@ note right of Resource
   Provider change payload/reviewReason имеют HMAC по request/provider/
   requester UUID и kind. Анонимизация пересчитывает binding payload по
   каждой строке и очищает reason/binding; bounded backfill и opt-in strict.
+  Appeal reason/decisionReason имеют HMAC по appeal/submitter/subject UUID,
+  subject и nullable provider UUID. Анонимизация пересчитывает reason
+  binding по каждой строке и очищает decisionReason/binding.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

@@ -16,6 +16,7 @@ import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service
 import { AutoCareChatBlockEntity, AutoCareChatReportEntity } from '../../../entities/automotive/chat-moderation.entity.js'
 import { AutoCareTrustEvidenceEntity } from '../../../entities/automotive/marketplace-enhancements.entity.js'
 import { AutomotiveProviderChangeRequestEntity } from '../../../entities/automotive/provider-change-request.entity.js'
+import { AutoCareAppealEntity } from '../../../entities/automotive/appeal.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
@@ -44,6 +45,7 @@ import { sealChatReportTextFields, openChatReportTextFields } from './chat-repor
 import { sealChatBlockReason, openChatBlockReason } from './chat-block-reason-record-binding.js'
 import { sealTrustEvidenceFields, openTrustEvidenceFields } from './trust-evidence-record-binding.js'
 import { sealProviderChangeRequestFields, openProviderChangeRequestFields } from './provider-change-request-record-binding.js'
+import { sealAppealFields, openAppealFields } from './appeal-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -461,7 +463,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -512,6 +514,10 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const evidence = event.entity as AutoCareTrustEvidenceEntity
             if (!evidence.id) evidence.id = randomUUID()
             sealTrustEvidenceFields(evidence)
+        } else if (event.metadata.tableName === 'autocare_appeals') {
+            const appeal = event.entity as AutoCareAppealEntity
+            if (!appeal.id) appeal.id = randomUUID()
+            sealAppealFields(appeal)
         } else if (event.metadata.tableName === 'autocare_provider_change_requests') {
             const request = event.entity as AutomotiveProviderChangeRequestEntity
             if (!request.id) request.id = randomUUID()
@@ -539,7 +545,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') {
@@ -569,6 +575,8 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealChatBlockReason(event.entity as AutoCareChatBlockEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_trust_evidence') {
             sealTrustEvidenceFields(event.entity as AutoCareTrustEvidenceEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_appeals') {
+            sealAppealFields(event.entity as AutoCareAppealEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_provider_change_requests') {
             sealProviderChangeRequestFields(event.entity as AutomotiveProviderChangeRequestEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
@@ -587,7 +595,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         }
     }
 
-    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
@@ -606,6 +614,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
         if (table === 'autocare_chat_blocks') openChatBlockReason(entity as AutoCareChatBlockEntity)
         if (table === 'autocare_trust_evidence') openTrustEvidenceFields(entity as AutoCareTrustEvidenceEntity)
         if (table === 'autocare_provider_change_requests') openProviderChangeRequestFields(entity as AutomotiveProviderChangeRequestEntity)
+        if (table === 'autocare_appeals') openAppealFields(entity as AutoCareAppealEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)
