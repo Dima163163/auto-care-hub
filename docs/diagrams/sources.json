@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "1328a178045790f0d2f19a411220a6ba66b9739683dac72b5eb1c66fb8a0b477",
+      "sha256": "e489c9e98aefe1690bb281b6209e473ba6ececb121c04149a49c409c72f95387",
       "scopes": [
         "backend"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "d92b080ab308c30811ea9c2f44606c5921f298531d709a3b51cb77b00b8e8271",
+      "sha256": "213d58239c949e521c63d03d7f43407b203b9a59e4a83252a28fd1ee6b38db41",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "7763313e8d033211e7c345d51ef9c935e4508275d986427f248e128f873134c1",
+      "sha256": "1d73e5aa110e96264ee3752eb6ad6d00debe821fea32204266e94942f945ed91",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "643ec9f66f213644cf96d9408a3b466e7875f3050bd2c962310cb79cd8cdf6fb",
+      "sha256": "7f310fa2aea58eec07c0c0e9a85630f7a426e7019e1eed39a4703937d082b24d",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "e68f97e058df5328f9b5978d7819ac60124a69e9a763e6f0be95e606b134cf2d",
+      "sha256": "2a1dd6d754e2ff36f66c2bed5590ea37f829c735e6bd8e4ed8f47d92ab55e9d8",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "080c6bfe01a145d057d0e6d993851e2d3ab7837bb0c96a5c074d19ff9b51a825",
+      "sha256": "e7c198bf9659edb898d2d9173fecf444954f068b420601ea06a633ee9e9ce841",
       "scopes": [
         "security"
       ]
@@ -1745,6 +1745,46 @@
         "security"
       ],
       "sha256": "1a265827a7663d5309c8238a07a1fd7efe35f1730edca8d61bccb5d0c8acb82e"
+    },
+    {
+      "path": "server/src/entities/automotive/autocare-reschedule-request.entity.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "7579911ebf04b9c2fec215b8fc12cced55310a6c7c5211fb021c7e7547548700"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/autocare-reschedule-text-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "614dc0f9c47795f247ff838443fb6cf928152f2834698696f4e9a8fb4793491c"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/autocare-reschedule-text-binding-backfill.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "8a4195086121d75d6842422c9482a03f6deae1aa5151e3dbffef2cb70f7a3d0c"
+    },
+    {
+      "path": "server/src/scripts/backfill-autocare-reschedule-text-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "65493f9b123992cdad2aa25814cbe6ec5c72980cf2e72fa7c2a3087d80d3da8d"
+    },
+    {
+      "path": "server/src/database/migrations/1786660000000-CreateAutoCareRescheduleTextBindingBackfillCheckpoint.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "121c142e2379973d458a414acd9cf72c3b89b99e0e4ad3fe1b9c6e5b404e1d47"
     }
   ],
   "inventories": [

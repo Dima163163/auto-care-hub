@@ -78,6 +78,13 @@ entity "BookingRescheduleRequest" as BookingReschedule {
   status / resolutionReason : encrypted?
   resolutionReasonBinding : HMAC?
 }
+entity "AutoCareRescheduleRequest" as AutoCareReschedule {
+  * id : uuid
+  requestId / requestedById / resolvedById?
+  status / proposedAt
+  encrypted reason / resolutionReason
+  two companion bindings : HMAC?
+}
 entity "ServiceQuote" as Quote {
   * id : uuid
   requestId / version / status
@@ -227,10 +234,16 @@ entity "BookingRescheduleReasonBindingCheckpoint" as BookingRescheduleCheckpoint
   afterId : uuid?
   processed : bigint
 }
+entity "AutoCareRescheduleTextBindingCheckpoint" as AutoCareRescheduleCheckpoint {
+  * name : autocare_reschedule_requests
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
 LegacyBooking ||--o{ BookingReschedule : bookingId
+Request ||--o{ AutoCareReschedule : requestId
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -262,6 +275,7 @@ VehicleCheckpoint ..> Vehicle : bounded four-field backfill
 HistoryCheckpoint ..> BookingHistory : bounded reason backfill
 BookingTextCheckpoint ..> LegacyBooking : bounded three-field backfill
 BookingRescheduleCheckpoint ..> BookingReschedule : bounded reason backfill
+AutoCareRescheduleCheckpoint ..> AutoCareReschedule : bounded two-field backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -336,6 +350,11 @@ note bottom of BookingRescheduleCheckpoint
   U02: HMAC binds resolution reason to request/booking/requester/
   resolver UUID and decision status. Compare-write and full verify
   precede opt-in strict read; deletion clears reason and MAC.
+end note
+note bottom of AutoCareRescheduleCheckpoint
+  U02: proposal reason binds to reschedule/request/requester UUID;
+  decision reason also binds resolver UUID and status. Bounded
+  compare-write and full verify precede opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

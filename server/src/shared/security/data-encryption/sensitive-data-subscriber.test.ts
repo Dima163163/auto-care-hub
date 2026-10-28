@@ -9,6 +9,7 @@ import { BookingStatusHistoryEntity } from '../../../entities/booking/booking-st
 import { BookingStatus } from '../../../entities/booking/booking.entity.js'
 import { BookingEntity } from '../../../entities/booking/booking.entity.js'
 import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../../entities/booking/booking-reschedule-request.entity.js'
+import { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1117,6 +1118,57 @@ describe('encrypted booking reschedule reason record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted AutoCare reschedule text record binding', () => {
+    function storedRequest() {
+        const request = new AutoCareRescheduleRequestEntity()
+        request.requestId = randomUUID()
+        request.requestedById = randomUUID()
+        request.resolvedById = null
+        request.status = AutoCareRescheduleStatus.Pending
+        request.reason = 'Service needs a new slot'
+        request.resolutionReason = null
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_reschedule_requests' }, entity: request } as InsertEvent<AutoCareRescheduleRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: AutoCareRescheduleRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_reschedule_requests' } } as LoadEvent<AutoCareRescheduleRequestEntity>)
+        return request
+    }
+
+    it('keeps proposal binding valid after decision while binding decision reason to resolver and status', () => {
+        const request = storedRequest()
+        const proposalBinding = request.reasonBinding
+        request.status = AutoCareRescheduleStatus.Rejected
+        request.resolvedById = randomUUID()
+        request.resolutionReason = 'Client unavailable'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_reschedule_requests' }, entity: request } as UpdateEvent<AutoCareRescheduleRequestEntity>)
+        expect(request.reasonBinding).toBe(proposalBinding)
+        expect(request.resolutionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(request).reason).toBe('Service needs a new slot')
+        request.resolvedById = randomUUID()
+        expect(() => loadRequest(request)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rejects copied proposals and enforces the strict switch', () => {
+        const source = storedRequest()
+        const target = storedRequest()
+        target.reason = source.reason
+        target.reasonBinding = source.reasonBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.reasonBinding = null
+        expect(loadRequest(source).reason).toBe('Service needs a new slot')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(source)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING = previousStrict
         }
     })
 })

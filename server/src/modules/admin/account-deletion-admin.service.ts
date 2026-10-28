@@ -305,7 +305,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL WHERE "decidedById" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_reschedule_requests"
-            SET "reason" = NULL, "resolvedById" = NULL, "resolutionReason" = NULL
+            SET "reason" = NULL, "reasonBinding" = NULL, "resolvedById" = NULL, "resolutionReason" = NULL, "resolutionReasonBinding" = NULL
           WHERE "requestedById" = $1
              OR "resolvedById" = $1
              OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,

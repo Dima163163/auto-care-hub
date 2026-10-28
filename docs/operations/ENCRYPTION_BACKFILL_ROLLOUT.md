@@ -485,6 +485,31 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## AutoCare reschedule text binding expansion
+
+New non-null `autocare_reschedule_requests.reason` writes receive a companion
+HMAC over decrypted text and reschedule/request/requester UUIDs. The separate
+`resolutionReason` HMAC also covers nullable resolver UUID and decision status.
+Migration `1786660000000` adds the nullable bindings and durable checkpoint.
+Account deletion clears both value/binding pairs.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786660000000`. Run
+   `npm --prefix server run encryption:backfill-autocare-reschedule-text-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks scope,
+   status and both ciphertext/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse proposal/decision/expiry reads, account
+   deletion and backup restore. Partial reads selecting text must also select
+   its binding and required scope UUIDs.
+
 ## Booking reschedule resolution reason binding expansion
 
 New non-null `booking_reschedule_requests.resolutionReason` writes receive a

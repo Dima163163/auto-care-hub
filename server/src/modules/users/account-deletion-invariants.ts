@@ -139,7 +139,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_reschedule_requests" reschedule
             LEFT JOIN "autocare_service_requests" request ON request."id" = reschedule."requestId"
             WHERE (reschedule."requestedById" = $1 OR reschedule."resolvedById" = $1 OR request."clientId" = $1)
-              AND (reschedule."reason" IS NOT NULL OR reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL)`,
+              AND (reschedule."reason" IS NOT NULL OR reschedule."reasonBinding" IS NOT NULL OR reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL OR reschedule."resolutionReasonBinding" IS NOT NULL)`,
     },
     {
         name: 'legacy booking status references are detached',
