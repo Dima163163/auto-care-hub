@@ -145,10 +145,13 @@ export class AutoCareExpertQuestionEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) clientId!: string
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_expert_questions', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_expert_questions', 'symptoms', 'text') }) symptoms!: string
+    @Column({ type: 'text', nullable: true }) symptomsBinding!: string | null
     @Column({ type: 'text', nullable: true }) categorySlug!: string | null
     @Column({ type: 'text', default: 'open' }) status!: string
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_expert_questions', 'answer', 'text') }) answer!: string | null
+    @Column({ type: 'text', nullable: true }) answerBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) answeredById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) answeredAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date

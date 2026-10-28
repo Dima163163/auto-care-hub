@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## U02 — вопросы эксперту, 2026-10-28
+
+- [x] Привязать vehicleSnapshot, symptoms и answer к question/client UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178678, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление клиента переподписывает symptoms каждой строки и очищает snapshot/answer с bindings.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
 ## U02 — гарантийные обращения, 2026-10-28
 
 - [x] Привязать summary и resolution к claim/request/client/provider UUID и claimType; не отдавать bindings в API.

@@ -1,5 +1,8 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 28.10, вопросы эксперту:** vehicleSnapshot/symptoms/answer получают HMAC по question/client UUID. Migration 178678, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает symptoms каждой строки и очищает snapshot/answer с bindings. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
+
+
 **Локальный шаг 28.10, гарантийное обращение:** summary/resolution получают HMAC по claim/request/client/provider UUID и claimType. Migration 178677, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает summary каждой строки и очищает resolution/binding. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
 

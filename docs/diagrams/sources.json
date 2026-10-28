@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "eb20a67d1cad510ecece9800a4fecaea63fcd4b35bd429900e3972724025c48a",
+      "sha256": "abe825d6ed8342cd55d7af280ac05177b2f801f2916e37d39fc9c0198edd2b9e",
       "scopes": [
         "backend"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "9d7467c03a961259637dab1c862fa36f8ec3342c601108b91ab6b09694937949",
+      "sha256": "046c7fe335166a476549e8bf5e472372ddb91fab7d641f1722f6fa25267e2595",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "d8714a1aa8d60929a0034ddaf9be02b281b2c73fe6057cc5d2c7f0a05fffc8ba",
+      "sha256": "299fedafe518c324bab9ba8ac6aeb5750eef335d132b792a8358a5eac92f6402",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "98b9ed258a89f30a1441f120b222b80ea2ea6d7496c1cca62f0e07d348b010f9",
+      "sha256": "96196fd34ba5d2ac8c4a957ffd2fb72cb8f75a728a4b0f620bbae3fc63b625c5",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "e0af984f6c41d8f984acb7015e9ad237821a241d3e96d2150c34b67f2b37a89a",
+      "sha256": "e6a791b574847ef6f3f2d020278804bf638d484598cc2f7bfcf717c5e5191df6",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "7af1f7d13c5733b5446bfa3ae972060de27912fba9425a85af85571bc0fb6e43",
+      "sha256": "245cb489815f1432abbfa807658b3d62e152bd7ab0a2837bf1630e95cc365836",
       "scopes": [
         "security"
       ]
@@ -1278,7 +1278,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "910770190bb499cfd5100f1fcc97019ae313320d749334e8bb7e1028e22a5f7a",
+      "sha256": "bb73eaa3e26a3eb9bdf253dfc46077d093c0c23e483fabb8fceda8bfb1bd3fa5",
       "scopes": [
         "security"
       ]
@@ -1981,7 +1981,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
-      "sha256": "8ead55193556bf70fc2404255f35764fd600be69f1084885992c9ea9db815e40",
+      "sha256": "2d3b1db5a2cc17b9d7dd98c22a5519c905ec7701ceb2ed56c0b30292477a4546",
       "scopes": [
         "security"
       ]
@@ -2285,6 +2285,54 @@
     {
       "path": "server/src/shared/security/data-encryption/guarantee-claim-binding-backfill.test.ts",
       "sha256": "09803421cbe683f65da4c3c2303587d9b381f0750b37857c180ed228d2499d77",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786780000000-CreateExpertQuestionBindingBackfillCheckpoint.ts",
+      "sha256": "67a04d4f4efce9badff5b416c1901a9a8c20ad7d0d23f604d9c89deb8e845eea",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-expert-question-record-binding.ts",
+      "sha256": "f993a2cd54b0a2161eea84209e8385eb110aefcd3f1312e8cfde9bb549567716",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/expert-question-record-binding.ts",
+      "sha256": "90b1084c8f84c992ffc3e73011625f1dd3d4b1b5904548296f99114f8f6e2d59",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/expert-question-binding-backfill.ts",
+      "sha256": "12ce809e68abb6e7cc83c0b6ec45754bd91d0fbabd4efc6af1a5dfa98f259d23",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/expert-question-record-binding.test.ts",
+      "sha256": "8546970887c209c2805ec287982f5193ffd2ff986db07c6224d6a6e01b6f733e",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/expert-question-binding-backfill.test.ts",
+      "sha256": "2487a5edf5aac29f0d1b144853c3acdde01c39de619b1f10899de17f0e66b31c",
       "scopes": [
         "data",
         "security"

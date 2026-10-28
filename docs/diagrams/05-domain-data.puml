@@ -181,6 +181,12 @@ entity "GuaranteeClaim" as Claim {
   summary / resolution : encrypted
   summaryBinding / resolutionBinding : HMAC?
 }
+entity "ExpertQuestion" as ExpertQuestion {
+  * id : uuid
+  clientId / categorySlug? / status
+  vehicleSnapshot / symptoms / answer : encrypted
+  three companion bindings : HMAC?
+}
 entity "BonusAccount" as Account {
   * id : uuid
   clientId / providerId
@@ -348,6 +354,11 @@ entity "GuaranteeClaimBindingCheckpoint" as GuaranteeClaimCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "ExpertQuestionBindingCheckpoint" as ExpertQuestionCheckpoint {
+  * name : autocare_expert_questions
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -382,6 +393,7 @@ Provider ||--o{ BroadcastOffer : providerId
 Location ||--o{ BroadcastOffer : locationId
 Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
+User ||--o{ ExpertQuestion : clientId
 Provider ||--o{ Account
 User ||--o{ Account
 Account ||--o{ Ledger
@@ -405,6 +417,7 @@ RepairEventCheckpoint ..> RepairEvent : bounded three-field backfill
 BroadcastRequestCheckpoint ..> BroadcastRequest : bounded two-field backfill
 BroadcastOfferCheckpoint ..> BroadcastOffer : bounded snapshot backfill
 GuaranteeClaimCheckpoint ..> Claim : bounded two-field backfill
+ExpertQuestionCheckpoint ..> ExpertQuestion : bounded three-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -548,6 +561,11 @@ note bottom of GuaranteeClaimCheckpoint
   request/client/provider UUID and claimType. Account deletion reseals
   redacted summary per row and clears resolution with binding.
   Full verify precedes opt-in strict read.
+end note
+note bottom of ExpertQuestionCheckpoint
+  U02: HMAC binds vehicleSnapshot, symptoms and answer to question UUID
+  and client UUID. Account deletion reseals redacted symptoms and clears
+  optional fields with bindings. Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

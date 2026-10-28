@@ -62,6 +62,7 @@
     "encryption:backfill-broadcast-request-binding": "tsx src/scripts/backfill-broadcast-request-record-binding.ts",
     "encryption:backfill-broadcast-offer-binding": "tsx src/scripts/backfill-broadcast-offer-record-binding.ts",
     "encryption:backfill-guarantee-claim-binding": "tsx src/scripts/backfill-guarantee-claim-record-binding.ts",
+    "encryption:backfill-expert-question-binding": "tsx src/scripts/backfill-expert-question-record-binding.ts",
     "benchmark:discovery": "tsx src/scripts/benchmark-autocare-discovery.ts",
     "benchmark:discovery:synthetic": "tsx src/scripts/benchmark-discovery-synthetic.ts",
     "benchmark:discovery:geospatial": "tsx src/scripts/benchmark-discovery-geospatial.ts",

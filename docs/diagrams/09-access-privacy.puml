@@ -87,6 +87,9 @@ note right of Resource
   Guarantee summary/resolution имеют HMAC по claim/request/client/provider
   UUID и claimType. Удаление клиента переподписывает summary и очищает
   resolution/binding каждой строки.
+  Expert question vehicleSnapshot/symptoms/answer имеют HMAC по question/
+  client UUID. Удаление клиента переподписывает symptoms и очищает
+  snapshot/answer с bindings.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

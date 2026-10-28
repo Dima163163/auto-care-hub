@@ -1,5 +1,17 @@
 # Encryption backfill rollout — N09
 
+## Expert question binding expansion
+
+New `autocare_expert_questions.symptoms` and non-null `vehicleSnapshot`/`answer` writes receive separate HMACs over plaintext, question UUID and client UUID. Migration `1786780000000` adds nullable bindings and a durable checkpoint. Client account deletion reseals redacted symptoms per row and clears snapshot/answer with their bindings. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786780000000`. Run `npm --prefix server run encryption:backfill-expert-question-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and all three bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_EXPERT_QUESTION_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus question/client scope.
+
+
 ## Guarantee claim binding expansion
 
 New `autocare_guarantee_claims.summary` and non-null `resolution` writes receive separate HMACs over plaintext, claim UUID, request UUID, client UUID, provider UUID and claimType. Migration `1786770000000` adds nullable bindings and a durable checkpoint. Client account deletion reseals redacted summary per row and clears resolution with its binding. API responses omit bindings.
