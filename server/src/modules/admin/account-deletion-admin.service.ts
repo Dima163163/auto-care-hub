@@ -30,6 +30,7 @@ import { appealContext } from '../../shared/security/data-encryption/appeal-reco
 import { catalogGapContext } from '../../shared/security/data-encryption/catalog-gap-record-binding.js'
 import { repairEventContext } from '../../shared/security/data-encryption/repair-event-record-binding.js'
 import { broadcastRequestContext } from '../../shared/security/data-encryption/broadcast-request-record-binding.js'
+import { broadcastOfferContext } from '../../shared/security/data-encryption/broadcast-offer-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -277,6 +278,23 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
                 "vehicleSnapshotBinding" = NULL, "photoUrls" = '{}' WHERE "id" = $1`,
             [broadcast.id, redactedBroadcastIssue,
                 createPlaintextRecordBinding('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT, broadcast.id, context)],
+        )
+    }
+    const broadcastOffersToRedact = await manager.query(
+        `SELECT offer."id", offer."broadcastRequestId", offer."providerId", offer."locationId"
+           FROM "autocare_broadcast_offers" offer
+           JOIN "autocare_broadcast_requests" request ON request."id" = offer."broadcastRequestId"
+          WHERE request."clientId" = $1 ORDER BY offer."id" FOR UPDATE OF offer`,
+        [userId],
+    ) as Array<{ id: string; broadcastRequestId: string; providerId: string; locationId: string }>
+    const redactedOfferSnapshot = { redacted: true }
+    const encryptedRedactedOfferSnapshot = encryptedRedactedJson('autocare_broadcast_offers', 'offerSnapshot', redactedOfferSnapshot)
+    for (const offer of broadcastOffersToRedact) {
+        await manager.query(
+            'UPDATE "autocare_broadcast_offers" SET "offerSnapshot" = $2::jsonb, "offerSnapshotBinding" = $3 WHERE "id" = $1',
+            [offer.id, encryptedRedactedOfferSnapshot,
+                createPlaintextRecordBinding('autocare_broadcast_offers', 'offerSnapshot',
+                    JSON.stringify(redactedOfferSnapshot), offer.id, broadcastOfferContext(offer))],
         )
     }
     await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT), userId])

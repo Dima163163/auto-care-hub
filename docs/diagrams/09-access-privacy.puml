@@ -82,6 +82,8 @@ note right of Resource
   Broadcast issueDescription/vehicleSnapshot имеют HMAC по broadcast/
   client/definition UUID. Удаление аккаунта
   переподписывает issue и очищает snapshot/binding.
+  Broadcast offerSnapshot имеет HMAC по offer/broadcast/provider/location
+  UUID. Удаление клиента переподписывает redacted snapshot каждой строки.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

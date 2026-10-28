@@ -1,5 +1,17 @@
 # Encryption backfill rollout — N09
 
+## Broadcast offer binding expansion
+
+New `autocare_broadcast_offers.offerSnapshot` writes receive an HMAC over plaintext, offer UUID, broadcast request UUID, provider UUID and location UUID. Migration `1786760000000` adds a nullable binding and a durable checkpoint. Client account deletion reseals a redacted snapshot for each offer. API responses omit the binding.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786760000000`. Run `npm --prefix server run encryption:backfill-broadcast-offer-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_BROADCAST_OFFER_RECORD_BINDING=true` to all API/worker instances. Rehearse offer creation/list, account deletion and backup restore. Partial reads selecting offerSnapshot need its binding plus offer/broadcast/provider/location scope.
+
+
 ## Broadcast request binding expansion
 
 New `autocare_broadcast_requests.issueDescription` and non-null `vehicleSnapshot` writes receive separate HMACs over plaintext, broadcast UUID, client UUID and service definition UUID. `marketId` is excluded because its foreign key sets it to null when a market is deleted. Migration `1786750000000` adds nullable bindings and a durable checkpoint. Account deletion reseals redacted issue per row and clears snapshot with its binding. API responses omit bindings.

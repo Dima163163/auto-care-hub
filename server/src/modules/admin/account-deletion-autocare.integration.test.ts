@@ -11,6 +11,7 @@ import {
     AutoCareChatThreadType,
     AutoCareRepairEventEntity,
     AutoCareBroadcastRequestEntity,
+    AutoCareBroadcastOfferEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
@@ -89,6 +90,7 @@ describe('AutoCare account deletion retention invariants', () => {
     let privateThread: AutoCareChatThreadEntity
     let repairEvent: AutoCareRepairEventEntity
     let broadcastRequest: AutoCareBroadcastRequestEntity
+    let broadcastOffer: AutoCareBroadcastOfferEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
     let completedOutboxId: string
@@ -296,6 +298,13 @@ describe('AutoCare account deletion retention invariants', () => {
             maxProviders: 5,
             expiresAt: new Date(Date.now() + 86_400_000),
         })
+        broadcastOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).save({
+            broadcastRequestId: broadcastRequest.id,
+            providerId: provider.id,
+            locationId: location.id,
+            offerSnapshot: { amountMinor: 10000, currencyCode: 'RUB', note: 'Private offer note' },
+            status: 'pending',
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -490,6 +499,9 @@ describe('AutoCare account deletion retention invariants', () => {
             photoUrls: [],
         })
         expect(redactedBroadcast.issueDescriptionBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).findOneByOrFail({ id: broadcastOffer.id })
+        expect(redactedOffer.offerSnapshot).toEqual({ redacted: true })
+        expect(redactedOffer.offerSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)

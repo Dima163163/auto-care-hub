@@ -122,6 +122,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
     },
     { name: 'repair event payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" event JOIN "autocare_service_requests" request ON request."id" = event."requestId" WHERE request."clientId" = $1 AND (event."title" NOT LIKE \'%"redacted":true%\' OR event."notes" IS NOT NULL OR COALESCE(event."metadata" ->> \'redacted\', \'false\') <> \'true\')' },
     { name: 'repair event actor references are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" WHERE "actorId" = $1' },
+    { name: 'broadcast offer snapshots are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_broadcast_offers" offer JOIN "autocare_broadcast_requests" request ON request."id" = offer."broadcastRequestId" WHERE request."clientId" = $1 AND COALESCE(offer."offerSnapshot" ->> \'redacted\', \'false\') <> \'true\'' },
     { name: 'provider change reviewers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "reviewedById" = $1' },
     { name: 'provider change request payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 AND (COALESCE("payload" ->> \'redacted\', \'false\') <> \'true\' OR "reviewedById" = $1 OR "reviewReason" IS NOT NULL)' },
     {

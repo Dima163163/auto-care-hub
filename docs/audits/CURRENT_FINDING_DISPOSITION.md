@@ -1,5 +1,8 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 28.10, предложение по рассылке:** offerSnapshot получает HMAC по offer/broadcast/provider/location UUID. Migration 178676, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает redacted snapshot каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
+
+
 **Локальный шаг 28.10, рассылка заявки:** issueDescription/vehicleSnapshot получают HMAC по broadcast/client/definition UUID. Migration 178675, bounded compare-write, полный verify и opt-in strict reader подготовлены; анонимизация переподписывает issue каждой строки и очищает snapshot/binding. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
 

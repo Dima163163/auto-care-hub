@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "f92b04d916e20d7fbcfdb33cd2da03fff9927c73e8866f0bb8ada44b9a319b24",
+      "sha256": "a510ca371d86463251b88252f5209269494749ef7b1a829004db6ec2ff2ced3d",
       "scopes": [
         "backend"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "e064f50d158eebd2bce34a26f85d39c97bf56f640a813761a5e08e34c858de89",
+      "sha256": "7a22b32582e5b4bf2ccdd471bc3e679d9bcfcea368f7fc8020810501a4160895",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "5bb4bf2a8a2057563addf1c8dd49dfca5944fb69c0aba696c67bd8f91d79f561",
+      "sha256": "e457f06ed7ba736b516f1483f8fa452691543eb8bda49dfac4f2e9960bc8c30c",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "8356ff2cceee4099a3e62b2e39bb0f5fce0c280ae142acca15d6fe334d042e50",
+      "sha256": "be8f044a8d977601be73a33e7a3bb1874ac7479db05481a65ba2ae84c0340e21",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "85bc99a12b6e9caae551b08cdd2afa3d576ace757afa5ee9811a03c0526c3a66",
+      "sha256": "158231022c7727cc84f2e44033060595bc7103b582ee47007fa3b50af5b357d7",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "6edca17eb309f5bd6d99423c292fdca8407474522e5243555b8e57eca19cfe22",
+      "sha256": "a37d599c0fe8f5a4a42875d28182be5a997f84be31760049fcaf2ce12e22f1d9",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "97e1c5d3922831c53053316637203ec020139c01c40d670ea4a80569a530ead7",
+      "sha256": "eaf9b4791aebd690d3e1437c155835cf573718feb6ee1e8e6949b6a36568f01d",
       "scopes": [
         "security"
       ]
@@ -1278,7 +1278,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "3f8e7688214ffd316cfe799e6649e91607348d4a2f4300c5ed3755cba19b8968",
+      "sha256": "bb2077a7a3c0c45b3dcdb400de45a57a249a2985c09dcb1d132b296d1b426c46",
       "scopes": [
         "security"
       ]
@@ -1981,7 +1981,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
-      "sha256": "205fb42b6901a59569f524e8c1814e3a4012e3187ec8eca45b17221bbf04ff03",
+      "sha256": "875b167dca71413847ba8547ee0d3697ad88545700a9c6d9994cb12a48bb09ca",
       "scopes": [
         "security"
       ]
@@ -2189,6 +2189,54 @@
     {
       "path": "server/src/shared/security/data-encryption/broadcast-request-binding-backfill.test.ts",
       "sha256": "317a2ea5746e00ef4e5bf2bd3ba2c6adeee0b817e101a2272560ab2b0e86d2c1",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786760000000-CreateBroadcastOfferBindingBackfillCheckpoint.ts",
+      "sha256": "755d4fcaa46dd6ed30ecd79b21e81bb21f9a089be4b0d4e28f68f33cee5d4b55",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-broadcast-offer-record-binding.ts",
+      "sha256": "c5e4205154b6d12a3fe72de4070daf0ca570049bef0cb37c73bf9ec4472c0f2c",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-offer-record-binding.ts",
+      "sha256": "b600a97c96b37dfea79691187f08693b8037619aa77b11503d729a401468aa99",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-offer-binding-backfill.ts",
+      "sha256": "5a4cec915978c4b3f17edbdeda6de575fb3f268270b5ebe633bdda2ca63465d6",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-offer-record-binding.test.ts",
+      "sha256": "313ab338b71498bbbc099dca85c69b743fcb186fa47810d4da9bb16e7b416958",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-offer-binding-backfill.test.ts",
+      "sha256": "b4b88038f5fe311fc0ddd81b11bbdc55e27cacf2fb1b548eed0464cc58c66d4f",
       "scopes": [
         "data",
         "security"

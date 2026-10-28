@@ -1,5 +1,8 @@
 # Карта проекта AutoCare Hub
 
+**U02, broadcast offer 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC offerSnapshot по offer/broadcast/provider/location UUID. Migration 178676, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
 **U02, broadcast request 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC issueDescription/vehicleSnapshot по broadcast/client/definition UUID. Migration 178675, bounded checkpoint, full verify и opt-in strict reader подготовлены.
 
 

@@ -111,6 +111,7 @@ export class AutoCareBroadcastOfferEntity {
     @Column({ type: 'uuid' }) providerId!: string
     @Column({ type: 'uuid' }) locationId!: string
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_broadcast_offers', 'offerSnapshot', 'jsonb') }) offerSnapshot!: Record<string, unknown>
+    @Column({ type: 'text', nullable: true }) offerSnapshotBinding!: string | null
     @Column({ type: 'text', default: 'pending' }) status!: string
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

@@ -1,5 +1,10 @@
 # AutoCare Hub Project Context
 
+## U02 — предложения по рассылке, 28 октября 2026
+
+`autocare_broadcast_offers.offerSnapshot` получает HMAC по offer/broadcast/provider/location UUID. Migration 178676, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление клиента переподписывает redacted snapshot каждого предложения; invariant проверяет отсутствие старых снимков. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
 ## U02 — рассылка заявки сервисам, 28 октября 2026
 
 `autocare_broadcast_requests.issueDescription` и `vehicleSnapshot` получают HMAC по broadcast/client/definition UUID. Migration 178675, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление аккаунта переподписывает redacted issue каждой строки и очищает snapshot/binding. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
