@@ -16,6 +16,9 @@ import {
     ServiceRequestStatus,
 } from '../../entities/index.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
+import { ClientVehicleEntity } from '../../entities/user/client-vehicle.entity.js'
+import { listClientVehicles } from '../users/client-vehicles.service.js'
+import { resetClientVehicleBindingBackfill, runClientVehicleBindingBackfill, verifyClientVehicleBindings } from '../../shared/security/data-encryption/client-vehicle-binding-backfill.js'
 import { resetBookingSnapshotBindingBackfill, runBookingSnapshotBindingBackfill, verifyBookingSnapshotBindings } from '../../shared/security/data-encryption/booking-snapshot-binding-backfill.js'
 import { resetAcceptedQuoteBindingBackfill, runAcceptedQuoteBindingBackfill, verifyAcceptedQuoteBindings } from '../../shared/security/data-encryption/accepted-quote-binding-backfill.js'
 import { resetEstimateSnapshotBindingBackfill, runEstimateSnapshotBindingBackfill, verifyEstimateSnapshotBindings } from '../../shared/security/data-encryption/estimate-snapshot-binding-backfill.js'
@@ -165,6 +168,63 @@ describe('AutoCare bonus transaction invariants', () => {
         await AppDataSource.getRepository(AutomotiveMarketEntity).delete({ id: market?.id })
         await AppDataSource.getRepository(AutomotiveMarketCountryEntity).delete({ id: country?.id })
         await AppDataSource.getRepository(UserEntity).delete({ id: client?.id })
+    })
+
+    it('binds client vehicle fields to vehicle and owner and backfills legacy rows', async () => {
+        const vehicles = AppDataSource.getRepository(ClientVehicleEntity)
+        const createVehicle = (vin: string) => vehicles.create({
+            userId: client.id, brandId: 'toyota', model: 'Camry', year: 2021,
+            fuelType: 'petrol', engineDisplacement: null, horsepower: null,
+            color: 'Black', vin, licensePlate: 'A123AA', internalNumber: null,
+            imageUrl: '/images/autocare/vehicles/vehicle-sedan.webp', isPrimary: false,
+        })
+        const source = await vehicles.save(createVehicle('JT123456789012345'))
+        const target = await vehicles.save(createVehicle('JT987654321098765'))
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING
+        try {
+            const [storedSource] = await AppDataSource.query(
+                'SELECT "vin", "vinBinding" FROM "client_vehicles" WHERE "id" = $1', [source.id],
+            ) as Array<{ vin: string; vinBinding: string }>
+            const [storedTarget] = await AppDataSource.query(
+                'SELECT "vin", "vinBinding" FROM "client_vehicles" WHERE "id" = $1', [target.id],
+            ) as Array<{ vin: string; vinBinding: string }>
+            if (!storedSource || !storedTarget) throw new Error('Synthetic encrypted vehicles are missing.')
+            expect(storedSource.vin).not.toContain('JT123456789012345')
+            expect(storedSource.vinBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+            const response = await listClientVehicles(client)
+            expect(response.find((vehicle) => vehicle.id === source.id)).not.toHaveProperty('vinBinding')
+            await AppDataSource.query(
+                'UPDATE "client_vehicles" SET "vin" = $1, "vinBinding" = $2 WHERE "id" = $3',
+                [storedSource.vin, storedSource.vinBinding, target.id],
+            )
+            try {
+                await expect(vehicles.findOneByOrFail({ id: target.id }))
+                    .rejects.toThrow('Encrypted record binding authentication failed.')
+            } finally {
+                await AppDataSource.query(
+                    'UPDATE "client_vehicles" SET "vin" = $1, "vinBinding" = $2 WHERE "id" = $3',
+                    [storedTarget.vin, storedTarget.vinBinding, target.id],
+                )
+            }
+            await AppDataSource.query('UPDATE "client_vehicles" SET "vinBinding" = NULL WHERE "id" = $1', [source.id])
+            await resetClientVehicleBindingBackfill(AppDataSource)
+            await expect(verifyClientVehicleBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING = 'true'
+            await expect(vehicles.findOneByOrFail({ id: source.id }))
+                .rejects.toThrow('Encrypted record binding is missing.')
+            delete process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING
+            expect((await runClientVehicleBindingBackfill(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            expect((await verifyClientVehicleBindings(AppDataSource, { batchSize: 500, maxBatches: 10_000 })).exhausted).toBe(true)
+            process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING = 'true'
+            expect((await vehicles.findOneByOrFail({ id: source.id })).vin).toBe('JT123456789012345')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING = previousStrict
+            await resetClientVehicleBindingBackfill(AppDataSource)
+            await vehicles.delete({ id: source.id })
+            await vehicles.delete({ id: target.id })
+        }
     })
 
     it('binds booking snapshots to request ownership and backfills legacy rows', async () => {

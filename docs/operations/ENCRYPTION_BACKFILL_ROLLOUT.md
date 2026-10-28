@@ -466,3 +466,22 @@ This command and CI coverage are preparation, not permission to switch a live
 database. Verify throughput, locks, WAL lag, backup restore and old writer
 drain on staging with the real KMS keyring. Other U02 encrypted fields remain
 outside this outbox recipient cutover.
+
+## Client vehicle field binding rollout (178660)
+
+1. Deploy migration 178660 with the new writer on all API instances. Keep
+   `DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING=false` during the
+   expansion. Confirm the four binding columns and checkpoint table.
+2. On staging with the intended KMS keyring and a restored representative
+   database, run `npm --prefix server run encryption:backfill-client-vehicle-binding -- --mode apply --batch-size 500 --max-batches 100`. Repeat until `exhausted:true`. A compare-write conflict aborts the batch without advancing its checkpoint; resolve concurrent writes and retry.
+3. Run the same command with `--mode verify` and enough batches to reach
+   `exhausted:true`. Inspect reads, updates, deletion, restore and workload/lock
+   metrics. If old writers produced unbound rows, drain them, run `--mode reset`
+   and repeat apply and verify. Reset removes only checkpoint metadata.
+4. Only after full verification and a restore rehearsal, enable
+   `DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING=true` on every API
+   instance. Missing or swapped bindings then fail reads. Retain historical
+   keys; disabling the flag is a temporary compatibility rollback.
+
+This code path has not been exercised against a live staging KMS or production
+database; the current pilot gate remains NO-GO.

@@ -50,6 +50,12 @@ entity "ServiceRequest" as Request {
   encrypted vehicleSnapshot / binding : HMAC?
   encrypted note / binding : HMAC?
 }
+entity "ClientVehicle" as Vehicle {
+  * id : uuid
+  userId : owner UUID
+  encrypted VIN / plate / internal number / image URL
+  four companion bindings : HMAC?
+}
 entity "ServiceQuote" as Quote {
   * id : uuid
   requestId / version / status
@@ -174,6 +180,12 @@ entity "ContactSnapshotBindingCheckpoint" as ContactCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "ClientVehicleBindingCheckpoint" as VehicleCheckpoint {
+  * name : client_vehicles
+  afterId : uuid?
+  processed : bigint
+}
+User ||--o{ Vehicle
 User ||--o{ Session
 User ||--o{ Membership
 Provider ||--o{ Membership
@@ -200,6 +212,7 @@ Account ||--o{ Ledger
 Outbox ..> OutboxCheckpoint : bounded keyset progress
 OAuthCheckpoint ..> User : identity owner scope
 ProfileCheckpoint ..> User : bounded name / phone backfill
+VehicleCheckpoint ..> Vehicle : bounded four-field backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -249,6 +262,11 @@ note bottom of OAuthCheckpoint
   U02: bounded compare-write and checkpoint commit together.
   Verify subject MAC by identity/user UUID and provider.
   Real KMS/restore and strict cutover remain unverified.
+end note
+note bottom of VehicleCheckpoint
+  U02: HMAC binds plaintext to vehicle and owner UUID.
+  Bounded compare-write and checkpoint commit together; full verify
+  precedes opt-in strict read. Null optional fields have null binding.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

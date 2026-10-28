@@ -1,13 +1,23 @@
 # AutoCare Hub — Project Plan
 
+## U02 — привязка полей автомобиля клиента, 2026-10-28
+
+- [x] Привязать четыре зашифрованных поля к UUID автомобиля и владельца;
+  исключить служебные подписи из ответа API.
+- [x] Подготовить migration 178660, bounded compare-write backfill, полный
+  verify и opt-in strict reader.
+- [ ] Подтвердить PostgreSQL/browser CI и staging KMS/restore, затем включить
+  strict после полной проверки. Другие зашифрованные поля U02 открыты.
+
 ## U02 service request note record binding — 2026-10-27
 
 - [x] Новые примечания заявки привязаны HMAC к request UUID и UUID клиента,
   сервиса, филиала и услуги; ORM отвергает перенос текста и смену scope.
 - [x] Подготовить migration 178659, bounded compare-write backfill,
   полный verify и opt-in strict reader. Удаление аккаунта очищает binding.
-- [ ] Подтвердить PostgreSQL/browser CI, затем staging KMS/restore и включить
-  strict на всех процессах. Остальные зашифрованные поля U02 открыты.
+- [x] PR #37 прошёл PostgreSQL/browser CI и объединён в `dev` как `a90a79b`.
+- [ ] Провести staging KMS/restore и включить strict на всех процессах.
+  Остальные зашифрованные поля U02 открыты.
 
 ## U02 vehicle snapshot record binding — 2026-10-27
 

@@ -1,5 +1,14 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка полей автомобиля клиента, 28 октября 2026
+
+Новые VIN, госномер, внутренний номер и URL изображения в `client_vehicles`
+получают HMAC по расшифрованному значению, UUID автомобиля и владельца.
+Migration 178660, bounded compare-write backfill, полный verify и opt-in
+`DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING` готовят strict reader.
+Ответ API не содержит служебных подписей. PostgreSQL CI и staging KMS/restore
+для этой порции ещё не подтверждены; strict выключен. **U02 открыт; pilot NO-GO.**
+
 ## U02 — привязка примечания к заявке, 27 октября 2026
 
 Новые `autocare_service_requests.note` получают HMAC по расшифрованному
@@ -7,8 +16,9 @@
 отвергает перенос корректного ciphertext между заявками и изменение
 owner/service scope. Migration 178659, bounded compare-write backfill, полный
 verify и opt-in strict reader подготовлены для старых примечаний.
-Анонимизация очищает binding вместе с payload. PostgreSQL CI, staging
-KMS/restore и strict cutover ещё не подтверждены. **U02 открыт; pilot NO-GO.**
+Анонимизация очищает binding вместе с payload. PR #37 прошёл PostgreSQL/browser
+CI и объединён в `dev` как `a90a79b`. Staging KMS/restore и strict cutover ещё
+не подтверждены. **U02 открыт; pilot NO-GO.**
 
 ## U02 — привязка снимка автомобиля к заявке, 27 октября 2026
 
