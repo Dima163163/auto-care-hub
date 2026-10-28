@@ -265,7 +265,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await manager.query('UPDATE "autocare_expert_questions" SET "answeredById" = NULL WHERE "answeredById" = $1', [userId])
     await manager.query('UPDATE "autocare_fleet_accounts" SET "notes" = NULL WHERE "ownerId" = $1', [userId])
     await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = $2, "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $3)', [encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name), encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {}), userId])
-    await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "noShowReason" = NULL, "completionNote" = NULL WHERE "clientId" = $1', [userId])
+    await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "cancellationReasonBinding" = NULL, "noShowReason" = NULL, "noShowReasonBinding" = NULL, "completionNote" = NULL, "completionNoteBinding" = NULL WHERE "clientId" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_service_messages"
             SET "body" = NULL, "bodyBinding" = NULL, "offer" = NULL, "offerBinding" = NULL

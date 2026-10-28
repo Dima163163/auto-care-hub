@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U02 — привязка результатов заявки, 28 октября 2026
+
+Причины отмены и неявки, а также заметка завершения в
+`autocare_service_requests` получают отдельные HMAC по тексту, UUID заявки и
+client/provider/location/definition UUID. Migration 178662, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Удаление аккаунта очищает значения и подписи. Staging KMS/restore и включение
+strict остаются открытыми.
+
 ## U02 — вторичные поля пользователя, 28 октября 2026
 
 Аватар, публичное имя и предпочитаемый город в `users` получают HMAC по

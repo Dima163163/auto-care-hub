@@ -26,6 +26,7 @@ import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
 import { serializeServiceRequestNote } from './service-request-note-value.js'
 import { sealClientVehicleFields, openClientVehicleFields } from './client-vehicle-record-binding.js'
 import { sealUserSecondaryFields, openUserSecondaryFields } from './user-secondary-record-binding.js'
+import { sealServiceRequestOutcomeFields, openServiceRequestOutcomeFields } from './service-request-outcome-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -480,6 +481,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealContactSnapshot(request)
             sealVehicleSnapshot(request)
             sealServiceRequestNote(request)
+            sealServiceRequestOutcomeFields(request)
             sealBookingSnapshot(request)
         }
     }
@@ -509,6 +511,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealContactSnapshot(event.entity as ContactSnapshotRecord)
             sealVehicleSnapshot(event.entity as VehicleSnapshotRecord)
             sealServiceRequestNote(event.entity as ServiceRequestNoteRecord)
+            sealServiceRequestOutcomeFields(event.entity as ServiceRequestEntity)
             sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
@@ -547,6 +550,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openContactSnapshot(entity as ContactSnapshotRecord)
             openVehicleSnapshot(entity as VehicleSnapshotRecord)
             openServiceRequestNote(entity as ServiceRequestNoteRecord)
+            openServiceRequestOutcomeFields(entity as ServiceRequestEntity)
             openBookingSnapshot(entity as BookingSnapshotRecord)
         }
     }

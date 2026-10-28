@@ -903,6 +903,64 @@ describe('encrypted service request note record binding', () => {
     })
 })
 
+describe('encrypted service request outcome record binding', () => {
+    function storedRequest() {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.cancellationReason = 'Changed plans'
+        request.noShowReason = 'Did not arrive'
+        request.completionNote = 'Finished work'
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('binds all outcome fields to row and service scope', () => {
+        const source = storedRequest()
+        const target = storedRequest()
+        expect(source.cancellationReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.noShowReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.completionNoteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).completionNote).toBe('Finished work')
+        target.completionNote = source.completionNote
+        target.completionNoteBinding = source.completionNoteBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds updated text, clears null and enforces strict mode', () => {
+        const request = storedRequest()
+        const previous = request.cancellationReasonBinding
+        request.cancellationReason = 'Changed plans again'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.cancellationReasonBinding).not.toBe(previous)
+        request.noShowReason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.noShowReasonBinding).toBeNull()
+        request.noShowReasonBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.noShowReason record binding is invalid.')
+        request.noShowReasonBinding = null
+        request.completionNoteBinding = null
+        expect(loadRequest(request).completionNote).toBe('Finished work')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
 describe('encrypted client vehicle record binding', () => {
     function storedVehicle(vin: string) {
         const vehicle = new ClientVehicleEntity()
