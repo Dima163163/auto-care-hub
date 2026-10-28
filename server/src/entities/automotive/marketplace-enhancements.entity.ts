@@ -91,7 +91,9 @@ export class AutoCareBroadcastRequestEntity {
     @Column({ type: 'uuid' }) serviceDefinitionId!: string
     @Column({ type: 'uuid', nullable: true }) marketId!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_broadcast_requests', 'issueDescription', 'text') }) issueDescription!: string
+    @Column({ type: 'text', nullable: true }) issueDescriptionBinding!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_broadcast_requests', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
     @Column({ type: 'jsonb', default: () => "'[]'" }) photoUrls!: string[]
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
     @Column({ type: 'text', default: 'open' }) status!: string

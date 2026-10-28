@@ -1,5 +1,10 @@
 # AutoCare Hub Project Context
 
+## U02 — рассылка заявки сервисам, 28 октября 2026
+
+`autocare_broadcast_requests.issueDescription` и `vehicleSnapshot` получают HMAC по broadcast/client/definition UUID. Migration 178675, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление аккаунта переподписывает redacted issue каждой строки и очищает snapshot/binding. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
 ## U02 — журнал работ по заявке, 28 октября 2026
 
 `autocare_repair_events.title`, `notes` и `metadata` получают HMAC по event/request UUID и eventType. Migration 178674, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление аккаунта переподписывает redacted title/metadata каждой строки и очищает notes/binding. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.

@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## U02 — рассылка заявки сервисам, 2026-10-28
+
+- [x] Привязать issueDescription и vehicleSnapshot к broadcast/client/definition UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178675, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление аккаунта переподписывает issueDescription каждой строки и очищает vehicleSnapshot/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
 ## U02 — журнал работ по заявке, 2026-10-28
 
 - [x] Привязать title, notes и metadata к event/request UUID и eventType; не отдавать bindings в API.

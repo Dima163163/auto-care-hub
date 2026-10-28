@@ -79,6 +79,9 @@ note right of Resource
   Repair event title/notes/metadata имеют HMAC по event/request UUID и
   eventType. Удаление аккаунта переподписывает redacted title/metadata
   каждой строки и очищает notes/binding. Bounded backfill и opt-in strict.
+  Broadcast issueDescription/vehicleSnapshot имеют HMAC по broadcast/
+  client/definition UUID. Удаление аккаунта
+  переподписывает issue и очищает snapshot/binding.
   Четыре текста chat report имеют отдельные HMAC по report/thread/
   reporter UUID. Анонимизация очищает тексты и bindings вместе;
   bounded backfill и opt-in strict reader подготовлены.

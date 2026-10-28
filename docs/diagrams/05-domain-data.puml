@@ -161,6 +161,12 @@ entity "RepairEvent" as RepairEvent {
   title / notes / metadata : encrypted
   titleBinding / notesBinding / metadataBinding : HMAC?
 }
+entity "BroadcastRequest" as BroadcastRequest {
+  * id : uuid
+  clientId / serviceDefinitionId / marketId?
+  issueDescription / vehicleSnapshot : encrypted
+  issueDescriptionBinding / vehicleSnapshotBinding : HMAC?
+}
 entity "GuaranteeClaim" as Claim {
   * id : uuid
   requestId / clientId / providerId
@@ -319,6 +325,11 @@ entity "RepairEventBindingCheckpoint" as RepairEventCheckpoint {
   afterId : uuid?
   processed : bigint
 }
+entity "BroadcastRequestBindingCheckpoint" as BroadcastRequestCheckpoint {
+  * name : autocare_broadcast_requests
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -346,6 +357,8 @@ Provider ||--o{ ProviderChange
 User ||--o{ Appeal : submittedById
 User ||--o{ CatalogGap : requestedById
 Request ||--o{ RepairEvent : requestId
+User ||--o{ BroadcastRequest : clientId
+Definition ||--o{ BroadcastRequest : serviceDefinitionId
 Review ..> Evidence : logical encrypted reference
 Request ||--o{ Claim
 Provider ||--o{ Account
@@ -368,6 +381,7 @@ ProviderChangeCheckpoint ..> ProviderChange : bounded two-field backfill
 AppealCheckpoint ..> Appeal : bounded two-field backfill
 CatalogGapCheckpoint ..> CatalogGap : bounded four-field backfill
 RepairEventCheckpoint ..> RepairEvent : bounded three-field backfill
+BroadcastRequestCheckpoint ..> BroadcastRequest : bounded two-field backfill
 Thread ||--o{ ChatReport : threadId
 Thread ||--o{ ChatBlock : threadId
 MessageCheckpoint ..> Message : bounded body backfill
@@ -493,6 +507,13 @@ note bottom of RepairEventCheckpoint
   request UUID and eventType. Account deletion reseals title and metadata
   for each row and clears notes with its binding. Full verify precedes
   opt-in strict read.
+end note
+note bottom of BroadcastRequestCheckpoint
+  U02: HMAC binds issueDescription and nullable vehicleSnapshot to
+  broadcast UUID, client UUID and definition UUID.
+  marketId is excluded: the FK sets it to null on market deletion.
+  Account deletion reseals redacted issue and clears vehicle snapshot
+  with binding. Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.

@@ -29,6 +29,7 @@ import { providerChangeRequestContext } from '../../shared/security/data-encrypt
 import { appealContext } from '../../shared/security/data-encryption/appeal-record-binding.js'
 import { catalogGapContext } from '../../shared/security/data-encryption/catalog-gap-record-binding.js'
 import { repairEventContext } from '../../shared/security/data-encryption/repair-event-record-binding.js'
+import { broadcastRequestContext } from '../../shared/security/data-encryption/broadcast-request-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -263,7 +264,21 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
         [userId],
     )
     await redactServiceQuoteSnapshots(manager, userId)
-    await manager.query('UPDATE "autocare_broadcast_requests" SET "issueDescription" = $1, "vehicleSnapshot" = NULL, "photoUrls" = \'{}\' WHERE "clientId" = $2', [encryptedRedactedText('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT), userId])
+    const broadcastsToRedact = await manager.query(
+        'SELECT "id", "clientId", "serviceDefinitionId", "marketId" FROM "autocare_broadcast_requests" WHERE "clientId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; clientId: string; serviceDefinitionId: string; marketId: string | null }>
+    const redactedBroadcastIssue = encryptedRedactedText('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT)
+    for (const broadcast of broadcastsToRedact) {
+        const context = broadcastRequestContext(broadcast)
+        await manager.query(
+            `UPDATE "autocare_broadcast_requests" SET "issueDescription" = $2,
+                "issueDescriptionBinding" = $3, "vehicleSnapshot" = NULL,
+                "vehicleSnapshotBinding" = NULL, "photoUrls" = '{}' WHERE "id" = $1`,
+            [broadcast.id, redactedBroadcastIssue,
+                createPlaintextRecordBinding('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT, broadcast.id, context)],
+        )
+    }
     await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_guarantee_claims" SET "resolvedById" = NULL WHERE "resolvedById" = $1', [userId])
     await manager.query('UPDATE "autocare_expert_questions" SET "symptoms" = $1, "vehicleSnapshot" = NULL, "answer" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_expert_questions', 'symptoms', ANONYMIZED_REVIEW_TEXT), userId])

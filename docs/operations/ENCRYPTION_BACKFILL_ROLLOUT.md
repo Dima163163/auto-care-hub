@@ -1,5 +1,17 @@
 # Encryption backfill rollout — N09
 
+## Broadcast request binding expansion
+
+New `autocare_broadcast_requests.issueDescription` and non-null `vehicleSnapshot` writes receive separate HMACs over plaintext, broadcast UUID, client UUID and service definition UUID. `marketId` is excluded because its foreign key sets it to null when a market is deleted. Migration `1786750000000` adds nullable bindings and a durable checkpoint. Account deletion reseals redacted issue per row and clears snapshot with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786750000000`. Run `npm --prefix server run encryption:backfill-broadcast-request-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_BROADCAST_REQUEST_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus broadcast/client/definition scope.
+
+
 ## Repair event binding expansion
 
 New `autocare_repair_events.title`, non-null `notes` and `metadata` writes receive separate HMACs over plaintext, event UUID, request UUID and eventType. Migration `1786740000000` adds nullable bindings and a durable checkpoint. Account deletion reseals redacted title and metadata per row and clears notes with its binding. API responses omit bindings.

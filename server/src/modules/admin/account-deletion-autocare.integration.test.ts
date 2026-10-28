@@ -10,6 +10,7 @@ import {
     AutoCareChatThreadEntity,
     AutoCareChatThreadType,
     AutoCareRepairEventEntity,
+    AutoCareBroadcastRequestEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
@@ -87,6 +88,7 @@ describe('AutoCare account deletion retention invariants', () => {
     let providerMessage: ServiceMessageEntity
     let privateThread: AutoCareChatThreadEntity
     let repairEvent: AutoCareRepairEventEntity
+    let broadcastRequest: AutoCareBroadcastRequestEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
     let completedOutboxId: string
@@ -282,6 +284,18 @@ describe('AutoCare account deletion retention invariants', () => {
             notes: 'Private repair note',
             metadata: { private: true },
         })
+        broadcastRequest = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).save({
+            clientId: deletedOwner.id,
+            serviceDefinitionId: definition.id,
+            marketId: market.id,
+            issueDescription: 'Private broadcast issue',
+            vehicleSnapshot: { make: 'Private car' },
+            photoUrls: [],
+            preferredAt: null,
+            status: 'open',
+            maxProviders: 5,
+            expiresAt: new Date(Date.now() + 86_400_000),
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -390,6 +404,7 @@ describe('AutoCare account deletion retention invariants', () => {
         await AppDataSource.getRepository(CabinetEntity).delete({ id: legacyCabinet?.id })
         await AppDataSource.getRepository(AutoCareChatThreadEntity).delete({ id: privateThread?.id })
         await AppDataSource.getRepository(ServiceRequestEntity).delete({ id: serviceRequest?.id })
+        await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).delete({ id: broadcastRequest?.id })
         await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider?.id })
         await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).delete({ id: definition?.id })
         await AppDataSource.getRepository(AutomotiveServiceLocationEntity).delete({ id: location?.id })
@@ -467,6 +482,14 @@ describe('AutoCare account deletion retention invariants', () => {
         })
         expect(redactedRepairEvent.titleBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(redactedRepairEvent.metadataBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedBroadcast = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).findOneByOrFail({ id: broadcastRequest.id })
+        expect(redactedBroadcast).toMatchObject({
+            issueDescription: 'Review removed after account deletion.',
+            vehicleSnapshot: null,
+            vehicleSnapshotBinding: null,
+            photoUrls: [],
+        })
+        expect(redactedBroadcast.issueDescriptionBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)

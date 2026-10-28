@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "b55976b0f642f09e1cb3e353d6f0d5fd47bb4b0fa76ae0c7a3ae932024d65894",
+      "sha256": "f92b04d916e20d7fbcfdb33cd2da03fff9927c73e8866f0bb8ada44b9a319b24",
       "scopes": [
         "backend"
       ]
@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "6ae0ec11c686ba5fce2cd1393dec4c1536464c8c56f69032e78a429785b6e126",
+      "sha256": "e064f50d158eebd2bce34a26f85d39c97bf56f640a813761a5e08e34c858de89",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "8162eaf7962701cbd33b4ef7717193822fbf6ff0b8350bab6dbeb8174a4d256b",
+      "sha256": "5bb4bf2a8a2057563addf1c8dd49dfca5944fb69c0aba696c67bd8f91d79f561",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "688309f5ce39ad9ff9ef5d31d75197b37009a8dc8807e5fcd63279c0e12d2484",
+      "sha256": "8356ff2cceee4099a3e62b2e39bb0f5fce0c280ae142acca15d6fe334d042e50",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "f4feb60c84ce77b796986e05ddcfc72889b209e576c8ac0dd0f0cee1df600945",
+      "sha256": "85bc99a12b6e9caae551b08cdd2afa3d576ace757afa5ee9811a03c0526c3a66",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "29e26d9595c00b137deca75faf72ba4347e74b0f1e784c137d1fa99da0f833f9",
+      "sha256": "6edca17eb309f5bd6d99423c292fdca8407474522e5243555b8e57eca19cfe22",
       "scopes": [
         "security"
       ]
@@ -1278,7 +1278,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "23878d9d8eac3e1b43dfa5db05db4983b8cc0c3d64ba079117b777fddc8909ce",
+      "sha256": "3f8e7688214ffd316cfe799e6649e91607348d4a2f4300c5ed3755cba19b8968",
       "scopes": [
         "security"
       ]
@@ -1981,7 +1981,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.test.ts",
-      "sha256": "ccba01f671c896b0cad78b2b480e538ae6e715d85e8fed3700ca09136376c9c1",
+      "sha256": "205fb42b6901a59569f524e8c1814e3a4012e3187ec8eca45b17221bbf04ff03",
       "scopes": [
         "security"
       ]
@@ -2141,6 +2141,54 @@
     {
       "path": "server/src/shared/security/data-encryption/repair-event-binding-backfill.test.ts",
       "sha256": "f4ba419578f51cfeb677aa53874b8b3ba7d32471f03bf1f578b49eb5c963a0d9",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786750000000-CreateBroadcastRequestBindingBackfillCheckpoint.ts",
+      "sha256": "5a889586f18b7f5bd4168e7e1cf78a7f966060e350bde92abeafd4717af21777",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/backfill-broadcast-request-record-binding.ts",
+      "sha256": "0b691121f9de3ad53bb8f08dbfd72d584edcf872fccca2ace8c3120c08f597a6",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-request-record-binding.ts",
+      "sha256": "2d1b70ac360c6279044235eb42c67685b8e6573ee9b650fa1201b621ee3d80ac",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-request-binding-backfill.ts",
+      "sha256": "914a4479787556590cb14ea463bb12dd4d776dd130df943925c212c66a6c27dc",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-request-record-binding.test.ts",
+      "sha256": "a3ebb924321f935893b00f3a436c9740fc9ba98bbfda3edbb02be80477b6cd25",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/broadcast-request-binding-backfill.test.ts",
+      "sha256": "317a2ea5746e00ef4e5bf2bd3ba2c6adeee0b817e101a2272560ab2b0e86d2c1",
       "scopes": [
         "data",
         "security"
