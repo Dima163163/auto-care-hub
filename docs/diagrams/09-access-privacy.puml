@@ -59,6 +59,9 @@ note right of Resource
   Причина предложения AutoCare reschedule связана с reschedule/request/
   requester UUID; причина решения дополнительно с resolver UUID и status.
   Bounded backfill и opt-in strict reader; удаление очищает обе пары.
+  Снимок сметы имеет HMAC по quote/request/provider UUID и version.
+  Анонимизация создаёт шифротекст и binding для каждой строки отдельно;
+  bounded backfill и opt-in strict reader подготовлены.
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
   Текст нового chat message имеет companion HMAC по message UUID,

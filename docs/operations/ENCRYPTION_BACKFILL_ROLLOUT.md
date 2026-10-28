@@ -485,6 +485,31 @@ available:
    backup restore. Partial reads selecting `reason` must also select its
    binding, history ID, booking ID and status.
 
+## Service quote snapshot binding expansion
+
+New `autocare_service_quotes.snapshot` writes receive a companion HMAC over
+the decrypted JSON, quote UUID, request UUID, provider UUID and version.
+Migration `1786670000000` adds the nullable binding and durable checkpoint.
+Account deletion locks and redacts quotes in bounded ID pages, writing a
+separate encrypted redacted snapshot and binding for each row.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786670000000`. Run
+   `npm --prefix server run encryption:backfill-service-quote-snapshot-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks
+   request/provider UUIDs, version, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse quote create/update/read, account deletion,
+   data export and backup restore. Partial reads selecting snapshot must also
+   select its binding, quote/request/provider UUIDs and version.
+
 ## AutoCare reschedule text binding expansion
 
 New non-null `autocare_reschedule_requests.reason` writes receive a companion

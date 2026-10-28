@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U02 — снимок сметы, 28 октября 2026
+
+`autocare_service_quotes.snapshot` получает HMAC по JSON, quote/request/provider
+UUID и version. Migration 178667, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены. Удаление аккаунта создаёт отдельный
+зашифрованный redacted snapshot и подпись для каждой сметы. Staging KMS/restore
+и включение strict остаются открытыми.
+
 ## U02 — причины переноса сервисной заявки, 28 октября 2026
 
 `autocare_reschedule_requests.reason` получает HMAC по reschedule/request/

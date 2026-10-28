@@ -83,7 +83,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_service_quotes" quote
             JOIN "autocare_service_requests" request ON request."id" = quote."requestId"
             WHERE request."clientId" = $1
-              AND COALESCE(quote."snapshot" ->> 'redacted', 'false') <> 'true'`,
+              AND (COALESCE(quote."snapshot" ->> 'redacted', 'false') <> 'true' OR quote."snapshotBinding" IS NULL)`,
     },
     {
         name: 'broadcast requests are redacted',

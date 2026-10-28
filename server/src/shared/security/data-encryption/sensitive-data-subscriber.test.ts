@@ -10,6 +10,7 @@ import { BookingStatus } from '../../../entities/booking/booking.entity.js'
 import { BookingEntity } from '../../../entities/booking/booking.entity.js'
 import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../../entities/booking/booking-reschedule-request.entity.js'
 import { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
+import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -1169,6 +1170,49 @@ describe('encrypted AutoCare reschedule text record binding', () => {
         } finally {
             if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted service quote snapshot record binding', () => {
+    function storedQuote() {
+        const quote = new AutoCareServiceQuoteEntity()
+        quote.requestId = randomUUID()
+        quote.providerId = randomUUID()
+        quote.version = 1
+        quote.snapshot = { lineItems: [{ title: 'Repair', amountMinor: 1000 }] }
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_quotes' }, entity: quote } as InsertEvent<AutoCareServiceQuoteEntity>)
+        return quote
+    }
+
+    function loadQuote(quote: AutoCareServiceQuoteEntity) {
+        subscriber.afterLoad(quote, { metadata: { tableName: 'autocare_service_quotes' } } as LoadEvent<AutoCareServiceQuoteEntity>)
+        return quote
+    }
+
+    it('binds snapshot to quote, request, provider and version', () => {
+        const source = storedQuote()
+        const target = storedQuote()
+        expect(source.snapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadQuote(source).snapshot).toHaveProperty('lineItems')
+        target.snapshot = source.snapshot
+        target.snapshotBinding = source.snapshotBinding
+        expect(() => loadQuote(target)).toThrow('Encrypted record binding authentication failed.')
+        source.version = 2
+        expect(() => loadQuote(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rejects missing bindings after strict cutover', () => {
+        const quote = storedQuote()
+        quote.snapshotBinding = null
+        expect(loadQuote(quote).snapshot).toHaveProperty('lineItems')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadQuote(quote)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING = previousStrict
         }
     })
 })

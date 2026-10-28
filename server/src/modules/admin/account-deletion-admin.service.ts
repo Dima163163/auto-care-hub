@@ -44,6 +44,7 @@ import { getAutoCareProviderLogoFileName, removeAutoCareProviderLogo } from '../
 import { getAutoCareProviderMediaFileName, removeAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
 import { deleteUploadedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { assertAutoCareDeletionInvariants } from '../users/account-deletion-invariants.js'
+import { redactServiceQuoteSnapshots } from './service-quote-redaction.js'
 import {
     normalizeAccountDeletionRequestsQuery,
     normalizeAccountDeletionRequestUuid,
@@ -257,7 +258,7 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "completedById" = $1`,
         [userId],
     )
-    await manager.query('UPDATE "autocare_service_quotes" SET "snapshot" = $1 WHERE "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $2)', [encryptedRedactedJson('autocare_service_quotes', 'snapshot', { redacted: true }), userId])
+    await redactServiceQuoteSnapshots(manager, userId)
     await manager.query('UPDATE "autocare_broadcast_requests" SET "issueDescription" = $1, "vehicleSnapshot" = NULL, "photoUrls" = \'{}\' WHERE "clientId" = $2', [encryptedRedactedText('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT), userId])
     await manager.query('UPDATE "autocare_guarantee_claims" SET "resolvedById" = NULL WHERE "resolvedById" = $1', [userId])

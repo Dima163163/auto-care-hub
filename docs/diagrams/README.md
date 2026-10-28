@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U02, service quote snapshot 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC сметы по quote/request/provider
+UUID и version. Анонимизация пересчитывает подпись каждой строки. Migration
+178667, bounded checkpoint и opt-in strict reader подготовлены. Staging
+KMS/restore остаётся открытым.
+
 **U02, AutoCare reschedule text 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC причин предложения и решения.
 Migration 178666, bounded checkpoint и opt-in strict reader подготовлены.

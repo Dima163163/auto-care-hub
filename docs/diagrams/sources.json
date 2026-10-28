@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "e489c9e98aefe1690bb281b6209e473ba6ececb121c04149a49c409c72f95387",
+      "sha256": "018168d82641f3d4bea5a86994f386e11a859689082bbc06e1861eafd54422a2",
       "scopes": [
         "backend"
       ]
@@ -134,7 +134,7 @@
     },
     {
       "path": "server/src/entities/automotive/service-quote.entity.ts",
-      "sha256": "850ed727aea7548b36d01f35ec0b828a3380f9920c5476bf9ae107f12d12e108",
+      "sha256": "8e861dd2c2f9a53f142dff44897139ec4802b6c916d9870976e04007760c2653",
       "scopes": [
         "data"
       ]
@@ -470,7 +470,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/sensitive-data-subscriber.ts",
-      "sha256": "213d58239c949e521c63d03d7f43407b203b9a59e4a83252a28fd1ee6b38db41",
+      "sha256": "61d0bad309dde818fbeb6c4bc7f5f4195c3dfe4fd11be7d03452fcb522d99304",
       "scopes": [
         "security"
       ]
@@ -761,7 +761,7 @@
     },
     {
       "path": "server/.env.example",
-      "sha256": "1d73e5aa110e96264ee3752eb6ad6d00debe821fea32204266e94942f945ed91",
+      "sha256": "e290894a48b694c9b5e671e0766154087ef6df4ff0cf44b04da90f3b368b5693",
       "scopes": [
         "runtime"
       ]
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "server/src/shared/security/data-encryption/record-binding-policy.ts",
-      "sha256": "7f310fa2aea58eec07c0c0e9a85630f7a426e7019e1eed39a4703937d082b24d",
+      "sha256": "60c293715c556aa79f17d7390373d8672560a0967c4332c775651393024a7a21",
       "scopes": [
         "security"
       ]
@@ -1185,7 +1185,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "2a1dd6d754e2ff36f66c2bed5590ea37f829c735e6bd8e4ed8f47d92ab55e9d8",
+      "sha256": "9a4aa2fd41d27e61b9a192a590976d73f38fe5c74acbba55b8b4a8104df12579",
       "scopes": [
         "security"
       ]
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "e7c198bf9659edb898d2d9173fecf444954f068b420601ea06a633ee9e9ce841",
+      "sha256": "eb447e23f21c360e6a59abcc3c451030bbbaf1a231001a150bdf455b04d24dcc",
       "scopes": [
         "security"
       ]
@@ -1785,6 +1785,46 @@
         "security"
       ],
       "sha256": "121c142e2379973d458a414acd9cf72c3b89b99e0e4ad3fe1b9c6e5b404e1d47"
+    },
+    {
+      "path": "server/src/modules/admin/service-quote-redaction.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "8db4dc4af09efdba530c7df19824ccb7088cd0215cf2ba7b4ac9a8cd88a99459"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/service-quote-snapshot-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "29b6f65a6b524fe31779bf81ab9bbb5c39b90edcb983bc3ba4adb149578a32cb"
+    },
+    {
+      "path": "server/src/shared/security/data-encryption/service-quote-snapshot-binding-backfill.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "683c35468d96165d2c8b4750f3d413c5dc47a26dbefcc459b06db99575c3d346"
+    },
+    {
+      "path": "server/src/scripts/backfill-service-quote-snapshot-record-binding.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "543ccfddddc89f052ccac43abd905070b7198608c1ee06668c11188d875429e5"
+    },
+    {
+      "path": "server/src/database/migrations/1786670000000-CreateServiceQuoteSnapshotBindingBackfillCheckpoint.ts",
+      "scopes": [
+        "data",
+        "security"
+      ],
+      "sha256": "124f69fe660da9d10ba11c2745c78729d49812c33766c14a64bad89cbc790ab1"
     }
   ],
   "inventories": [

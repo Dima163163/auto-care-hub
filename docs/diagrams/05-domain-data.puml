@@ -89,6 +89,7 @@ entity "ServiceQuote" as Quote {
   * id : uuid
   requestId / version / status
   amountMinor / currencyCode
+  encrypted snapshot / snapshotBinding : HMAC?
 }
 entity "ChatThread" as Thread {
   * id : uuid
@@ -239,6 +240,11 @@ entity "AutoCareRescheduleTextBindingCheckpoint" as AutoCareRescheduleCheckpoint
   afterId : uuid?
   processed : bigint
 }
+entity "ServiceQuoteSnapshotBindingCheckpoint" as QuoteCheckpoint {
+  * name : autocare_service_quotes
+  afterId : uuid?
+  processed : bigint
+}
 User ||--o{ Vehicle
 User ||--o{ LegacyBooking : client
 LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
@@ -276,6 +282,7 @@ HistoryCheckpoint ..> BookingHistory : bounded reason backfill
 BookingTextCheckpoint ..> LegacyBooking : bounded three-field backfill
 BookingRescheduleCheckpoint ..> BookingReschedule : bounded reason backfill
 AutoCareRescheduleCheckpoint ..> AutoCareReschedule : bounded two-field backfill
+QuoteCheckpoint ..> Quote : bounded snapshot backfill
 MessageCheckpoint ..> Message : bounded body backfill
 OfferCheckpoint ..> Message : bounded offer backfill
 ChatCheckpoint ..> Thread : bounded subject backfill
@@ -355,6 +362,11 @@ note bottom of AutoCareRescheduleCheckpoint
   U02: proposal reason binds to reschedule/request/requester UUID;
   decision reason also binds resolver UUID and status. Bounded
   compare-write and full verify precede opt-in strict read.
+end note
+note bottom of QuoteCheckpoint
+  U02: HMAC binds snapshot to quote/request/provider UUID and version.
+  Account deletion rewrites each quote with its own encrypted redaction
+  and binding. Full verify precedes opt-in strict read.
 end note
 note bottom of ProfileCheckpoint
   U02: name and non-null phone HMAC bind plaintext to user UUID.
