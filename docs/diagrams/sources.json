@@ -314,7 +314,7 @@
     },
     {
       "path": "server/src/modules/autocare/chat-access.service.ts",
-      "sha256": "19e0058e54fc03f431b4d79c0bec3b96fcc573babc9ac76db64cd7eb0527a848",
+      "sha256": "0bd92ea17cee34607fabbc84198777ebe98d9d9e76db684bfbde78e023054b58",
       "scopes": [
         "security"
       ]
@@ -2780,6 +2780,34 @@
         "security"
       ],
       "sha256": "bf5062a6ff4fef5cfc7a8898beda043922954b304a959045746036d1e502e570"
+    },
+    {
+      "path": "server/src/modules/autocare/chat-moderation-policy.ts",
+      "sha256": "40df9e36438f10ba03fa517c02e4c26fc98f1d37f47253fbfbb39e6dfe6905e0",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-moderator-assignment.service.ts",
+      "sha256": "0099a7f96333a11749ab63e857dc0d5232cecd108234a31b4fb9faa873ecd593",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-report.service.ts",
+      "sha256": "8474a15d8dcae87d081984fd304e3c10d8c116c284168466789b5ae66c390cdb",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/autocare-chat.service-boundary.test.ts",
+      "sha256": "0b3d09a1fe5e37101928b44cf65cb1e3a416651f0a9898b7a38e4c93afc51b8c",
+      "scopes": [
+        "security"
+      ]
     }
   ],
   "inventories": [

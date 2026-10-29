@@ -52,6 +52,9 @@ note right of StepUp
   Catalog gap reviewer cannot decide own proposal under the request row lock.
   Provider change reviewer cannot decide a request authored before role change.
   Appeal reviewer cannot decide own appeal or revoke own chat restriction.
+  A chat report party cannot be assigned moderator, read the private thread,
+  extend access or decide the case after role change. Admin report index
+  excludes conflicted threads; critical assignment/decision recheck under lock.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider
@@ -168,5 +171,5 @@ note bottom of Object
   S3/private storage adapter и scan/quarantine поддержаны кодом.
   Production storage policy / KMS / MFA — отдельные acceptance gates.
 end note
-footer require-auth.ts / provider-access.service.ts / request-access.service.ts / catalog-gap.service.ts / provider-change-request.service.ts / appeal.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
+footer require-auth.ts / provider-access.service.ts / request-access.service.ts / catalog-gap.service.ts / provider-change-request.service.ts / appeal.service.ts / chat-access.service.ts / chat-report.service.ts / chat-moderator-assignment.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
 @enduml
