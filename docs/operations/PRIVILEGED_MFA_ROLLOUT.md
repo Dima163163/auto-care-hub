@@ -53,8 +53,12 @@ service-request detail also requires fresh proof before its private DTO.
 Private admin dashboards in `admin.routes.ts` and the platform review queue
 require fresh proof before returning their data. The market hierarchy remains
 under role authorization without step-up because it is public catalog metadata.
+All admin/super-admin moderation, provider, catalog, market, cabinet and
+platform-review mutations in those route modules require the same proof before
+validation or write. Stale requests return `MFA_STEP_UP_REQUIRED` for the
+shared frontend retry flow.
 A fresh code is consumed through `/auth/step-up`
 and the original operation is retried. Other sensitive actions and staging
-replay, other modules' sensitive reads, external identity verification
+replay, other modules' sensitive routes, external identity verification
 and break-glass acceptance remain open
 under U03.

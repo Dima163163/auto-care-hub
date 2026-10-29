@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, admin mutations 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA для модерации,
+provider/catalog/market governance, кабинетов и platform reviews.
+PostgreSQL/staging replay открыт.
+
 **U03, admin reads 2026-10-29:** `07-auth-session.puml` и
 `09-access-privacy.puml` с SVG показывают свежий MFA перед приватными
 admin dashboard/платформенными отзывами. Public market hierarchy остаётся

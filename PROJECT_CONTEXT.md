@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U03 — административные изменения, 29 октября 2026
+
+Все оставшиеся mutations в `admin.routes.ts` и platform review mutations
+требуют MFA не старше пяти минут до записи. Backend build, targeted lint и
+полный unit suite 463/1704 PASS с синтетической конфигурацией; PostgreSQL
+negative matrix на 23 маршрута добавлена, локально не запускалась. Другие
+модули/staging открыты.
+
 ## U03 — административные чтения, 29 октября 2026
 
 Приватные admin dashboard routes и очередь отзывов платформы требуют свежий

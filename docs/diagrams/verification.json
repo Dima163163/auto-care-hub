@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "f2b808e453934a190128300f50281a13733e939c73070f4c27ebe9ea498028c8",
+      "sourceSha256": "fddc335838b16c5a40c1c1ff91016c818151ceccf267e856167c4d56cf9b8c95",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "4d81b3da996919783a9dec1c87ea92885c36d41751d246fc7d0772f7e9b8083d",
+      "previewSha256": "d3bd62141ce5bd981433276d4abe3a9f1a3b76ef9740e48284cf303c36c0cc17",
       "width": "1330px",
-      "height": "2411px"
+      "height": "2426px"
     },
     {
       "scope": "outbox",
@@ -179,11 +179,11 @@
     {
       "scope": "security",
       "source": "09-access-privacy.puml",
-      "sourceSha256": "697d76086ef7192df8769752b28a2dd207a72506fc5d93129594c535dcdd7945",
+      "sourceSha256": "2d4433a0e45b952c32775fb019fdf8384e55dba20d6883e11985dfc8219146df",
       "preview": "rendered/09-access-privacy.svg",
-      "previewSha256": "45533113921db7a59a1a55006a69d1de09cf8f3ed2d8b149131f00a4139b23d6",
+      "previewSha256": "036ff3417fc07076b9a1d22d9cc9c9219a67e2ca9265b86c4876abd63b47151e",
       "width": "2023px",
-      "height": "2237px"
+      "height": "2252px"
     }
   ],
   "sharedStyleSha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf",
@@ -534,6 +534,18 @@
       "branch": "fix/pilot-remaining-local-2026-10-28",
       "scope": "auth,security,backend",
       "change": "U03 fresh MFA for private admin dashboard and platform review reads",
+      "sourceAnchorCount": 352,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 07-auth-session and 09-access-privacy"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "auth,security,backend",
+      "change": "U03 fresh MFA for remaining admin and platform review mutations",
       "sourceAnchorCount": 352,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",

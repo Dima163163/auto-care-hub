@@ -82,6 +82,11 @@
 
 ## U03 — обязательный сеанс для привилегированных токенов, 2026-10-28
 
+- [x] Требовать свежий MFA для оставшихся admin/platform-review mutations
+  (модерация, сервисы, каталог, рынки, кабинеты). Backend build, targeted
+  lint и полный unit suite 463/1704 PASS; PostgreSQL negative matrix добавлена.
+- [ ] Выполнить mutation matrix на isolated PostgreSQL и staging.
+
 - [x] Требовать свежий MFA перед чтением персональных/операционных admin
   dashboards и очереди отзывов платформы; public market hierarchy не меняется.
   Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,

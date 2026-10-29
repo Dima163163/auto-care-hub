@@ -455,6 +455,49 @@ describe('Admin and workspace authorization integration', () => {
         }
     })
 
+    it('requires fresh MFA before privileged moderation and governance mutations', async () => {
+        const token = await createTestAccessToken(superAdmin)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = '11111111-1111-4111-8111-111111111111'
+        const mutations = [
+            ['patch', `/admin/autocare-appeals/${id}/decision`],
+            ['patch', `/admin/autocare-reviews/${id}/status`],
+            ['patch', `/admin/autocare-moderation-evidence/${id}/decision`],
+            ['patch', `/admin/autocare-providers/${id}/status`],
+            ['patch', `/admin/autocare-provider-change-requests/${id}/decision`],
+            ['patch', `/admin/catalog-gap-requests/${id}/decision`],
+            ['patch', `/admin/chat-reports/${id}/decision`],
+            ['patch', `/admin/chat-reports/${id}/assignment`],
+            ['post', `/admin/chat-reports/${id}/assignment/extend`],
+            ['patch', `/super-admin/markets/${id}`],
+            ['post', '/super-admin/market-countries'],
+            ['patch', `/super-admin/market-countries/${id}`],
+            ['delete', `/super-admin/market-countries/${id}`],
+            ['post', `/super-admin/market-countries/${id}/cities`],
+            ['patch', `/super-admin/market-cities/${id}`],
+            ['delete', `/super-admin/market-cities/${id}`],
+            ['post', `/super-admin/market-cities/${id}/zones`],
+            ['patch', `/super-admin/market-zones/${id}`],
+            ['delete', `/super-admin/market-zones/${id}`],
+            ['patch', `/admin/service-definitions/${id}`],
+            ['patch', `/admin/cabinets/${id}/status`],
+            ['post', `/admin/platform-reviews/${id}/response`],
+            ['delete', `/super-admin/platform-reviews/${id}`],
+        ] as const
+        for (const [method, path] of mutations) {
+            const response = await request(app.server)[method](path)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+            expect(response.status, `${method.toUpperCase()} ${path}`).toBe(403)
+            expect(response.body.code, `${method.toUpperCase()} ${path}`).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {
         const ownerToken = await createTestAccessToken(providerOwner)
         const adminToken = await createTestAccessToken(admin)

@@ -673,6 +673,11 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, admin mutations:** модерация, provider/catalog/market
+governance, кабинеты и platform reviews требуют свежий MFA до записи.
+Backend build/lint и полный unit suite **1704 PASS**; PostgreSQL negative
+matrix добавлена, локально не запускалась. Другие модули/staging открыты.
+
 **Локальный шаг 29.10, admin reads:** admin dashboard routes с персональными
 и служебными данными, а также очередь отзывов платформы требуют свежий MFA.
 Публичная иерархия рынков остаётся под role authorization. Backend build и

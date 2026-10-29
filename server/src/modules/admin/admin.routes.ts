@@ -271,7 +271,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-appeals/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareAppealParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareAppealSchema, request.body)
         const result = await decideAdminAutoCareAppeal(user, params.id, body)
@@ -307,7 +307,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-reviews/:reviewId/status', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareReviewParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareReviewSchema, request.body)
         const result = await decideAdminAutoCareReview(user, params.reviewId, body)
@@ -327,7 +327,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareModerationEvidenceParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareModerationEvidenceSchema, request.body)
         const result = await decideAdminAutoCareModerationEvidence(user, params.id, body)
@@ -338,7 +338,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminAutoCareProvider }>(
         '/admin/autocare-providers/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminAutoCareProviderParamsSchema, request.params)
             const body = validateBody(updateAdminAutoCareProviderStatusSchema, request.body)
             const result = await updateAdminAutoCareProviderStatus(user, params.id, body.status)
@@ -369,7 +369,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-provider-change-requests/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminProviderChangeRequestParamsSchema, request.params)
         const body = validateBody(decideAdminProviderChangeRequestSchema, request.body)
         const result = await decideAdminProviderChangeRequest(user, params.id, body.status as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, body.reason)
@@ -399,7 +399,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/catalog-gap-requests/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminCatalogGapRequestParamsSchema, request.params)
         const body = validateBody(decideAdminCatalogGapRequestSchema, request.body)
         const result = await decideAdminCatalogGapRequest(user, params.id, body.status as AutomotiveCatalogGapRequestStatus.Approved | AutomotiveCatalogGapRequestStatus.Rejected, body.reason)
@@ -437,7 +437,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/chat-reports/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(decideAdminChatReportSchema, request.body)
         const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser, body.blockDurationDays)
@@ -453,14 +453,14 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/chat-reports/:id/assignment', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(assignAutoCareChatModeratorSchema, request.body)
         return assignAdminAutoCareChatModerator(user, params.id, body.moderatorId, body.reason, request)
     })
 
     app.post('/admin/chat-reports/:id/assignment/extend', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(extendAutoCareChatModeratorAccessSchema, request.body)
         return extendAdminAutoCareChatModeratorAccess(user, params.id, body.reason, request)
@@ -471,7 +471,7 @@ export async function adminRoutes(
     })
 
     app.patch('/super-admin/markets/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const body = validateBody(updateSuperAdminAutoCareMarketSchema, request.body)
         const result = await updateSuperAdminAutoCareMarket(user, params.id, body)
@@ -496,14 +496,14 @@ export async function adminRoutes(
     })
 
     app.post('/super-admin/market-countries', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await createSuperAdminMarketCountry(user, validateBody(createSuperAdminMarketCountrySchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryCreated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active }, request })
         return result
     })
 
     app.patch('/super-admin/market-countries/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
         const result = await updateSuperAdminMarketCountry(user, params.id, validateBody(updateSuperAdminMarketCountrySchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryUpdated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
@@ -511,7 +511,7 @@ export async function adminRoutes(
     })
 
     app.delete('/super-admin/market-countries/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
         const result = await deleteSuperAdminMarketCountry(user, params.id)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryDeleted, targetId: result.id, targetType: 'autocare_market_country', metadata: {}, request })
@@ -519,7 +519,7 @@ export async function adminRoutes(
     })
 
     app.post('/super-admin/market-countries/:id/cities', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
         const result = await createSuperAdminAutoCareMarket(user, params.id, validateBody(createSuperAdminAutoCareMarketSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCreated, targetId: result.id, targetType: 'autocare_market', metadata: { countryCode: result.countryCode, cityCode: result.cityCode, launchReady: result.launchReady }, request })
@@ -527,7 +527,7 @@ export async function adminRoutes(
     })
 
     app.patch('/super-admin/market-cities/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const result = await updateSuperAdminAutoCareMarketHierarchy(user, params.id, validateBody(updateSuperAdminAutoCareMarketHierarchySchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketUpdated, targetId: result.id, targetType: 'autocare_market', metadata: { cityCode: result.cityCode, launchReady: result.launchReady, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
@@ -535,7 +535,7 @@ export async function adminRoutes(
     })
 
     app.delete('/super-admin/market-cities/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const result = await deleteSuperAdminAutoCareMarket(user, params.id)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketDeleted, targetId: result.id, targetType: 'autocare_market', metadata: {}, request })
@@ -543,7 +543,7 @@ export async function adminRoutes(
     })
 
     app.post('/super-admin/market-cities/:id/zones', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const result = await createSuperAdminAutoCareMarketZone(user, params.id, validateBody(createSuperAdminAutoCareMarketZoneSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneCreated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
@@ -551,7 +551,7 @@ export async function adminRoutes(
     })
 
     app.patch('/super-admin/market-zones/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
         const result = await updateSuperAdminAutoCareMarketZone(user, params.id, validateBody(updateSuperAdminAutoCareMarketZoneSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneUpdated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
@@ -559,7 +559,7 @@ export async function adminRoutes(
     })
 
     app.delete('/super-admin/market-zones/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
         const result = await deleteSuperAdminAutoCareMarketZone(user, params.id)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneDeleted, targetId: result.id, targetType: 'autocare_location_zone', metadata: {}, request })
@@ -588,7 +588,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/service-definitions/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareServiceDefinitionParamsSchema, request.params)
         const result = await updateAdminAutoCareServiceDefinition(user, params.id, validateBody(updateAdminAutoCareServiceDefinitionSchema, request.body))
         await recordAuditLog({
@@ -708,7 +708,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminCabinetResponse }>(
         '/admin/cabinets/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminCabinetParamsSchema, request.params)
             const body = validateBody(updateCabinetStatusSchema, request.body)
 

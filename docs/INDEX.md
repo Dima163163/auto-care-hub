@@ -1,5 +1,9 @@
 # Индекс документации AutoCare Hub
 
+U03 local step-up от 29 октября расширен на оставшиеся административные
+изменения; PostgreSQL/staging приёмка открыта. См.
+[реестр](audits/CURRENT_FINDING_DISPOSITION.md).
+
 U03 local step-up от 29 октября расширен на приватные административные
 экраны; PostgreSQL/staging приёмка открыта. См.
 [реестр](audits/CURRENT_FINDING_DISPOSITION.md) и

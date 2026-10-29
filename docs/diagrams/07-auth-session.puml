@@ -87,7 +87,8 @@ note over Auth, PG
   старые сессии без mfaVerifiedAt отвергаются, refresh переносит отметку.
   Enrollment требует private terminal/DB operator. Step-up действует для
   user/role/create/deletion, trust-policy, security-center, outbox
-  mutations, audit/security CSV export, private admin dashboards
+  admin/moderation/governance mutations, audit/security CSV export,
+  private admin dashboards
   и exceptional chat/request reads;
   другие sensitive reads, внешний identity check,
   break-glass и полная staging-проверка открыты.

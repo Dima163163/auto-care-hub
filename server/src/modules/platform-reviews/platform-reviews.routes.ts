@@ -29,14 +29,14 @@ export async function platformReviewsRoutes(app: FastifyInstance) {
         return result
     })
     app.post('/admin/platform-reviews/:reviewId/response', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(platformReviewParamsSchema, request.params)
         const result = await respondToPlatformReview(user, params.reviewId, validateBody(respondPlatformReviewSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.ReviewModerated, targetId: params.reviewId, targetType: 'platform_review', metadata: { responseAdded: true }, request })
         return result
     })
     app.delete('/super-admin/platform-reviews/:reviewId', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(platformReviewParamsSchema, request.params)
         const result = await deletePlatformReview(user, params.reviewId)
         await recordAuditLog({ actorId: user.id, action: AuditAction.ReviewDeleted, targetId: params.reviewId, targetType: 'platform_review', metadata: { reason: 'moderation' }, request })
