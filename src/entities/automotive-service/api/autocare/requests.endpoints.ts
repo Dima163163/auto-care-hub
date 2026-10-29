@@ -1,3 +1,4 @@
+import { readAttachmentOrApiError } from './attachment-response'
 import { updatedCountSchema } from './common.schemas'
 import { autoCareAvailabilitySchema, autoCareRepairEventsSchema, autoCareRescheduleSchema, autoCareServiceAttachmentSchema, autoCareServiceConversationSchema, autoCareServiceMessageSchema, autoCareServiceRequestSchema, autoCareServiceRequestPageSchema, autoCareServiceRequestsSchema } from './requests.schemas'
 import type { AutoCareAvailability, AutoCareQuoteDecisionInput, AutoCareRepairEvent, AutoCareReschedule, AutoCareServiceAttachment, AutoCareServiceConversation, AutoCareServiceMessage, AutoCareServiceRequest, AutoCareServiceRequestPage, CompleteAutoCareServiceRequestInput, CreateAutoCareServiceAttachmentInput, CreateAutoCareServiceMessageInput, CreateAutoCareServiceOfferInput, CreateAutoCareServiceQuoteInput, CreateAutoCareServiceRequestInput, DecideAutoCareServiceOfferInput, GetAutoCareAttachmentObjectUrlInput, GetAutoCareServiceConversationInput } from './requests.types'
@@ -89,7 +90,7 @@ getAutoCareAttachmentObjectUrl: build.query<string, GetAutoCareAttachmentObjectU
                 // The endpoint authorizes with the in-memory bearer token and may redirect to a signed object URL.
                 // Omit cookies so the cross-origin storage response only needs ordinary origin-scoped CORS.
                 credentials: 'omit',
-                responseHandler: (response) => response.blob(),
+                responseHandler: readAttachmentOrApiError,
                 }
             },
             transformResponse: (blob: Blob) => URL.createObjectURL(blob),

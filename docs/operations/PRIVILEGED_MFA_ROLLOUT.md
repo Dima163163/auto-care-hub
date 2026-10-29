@@ -45,8 +45,13 @@ closed. A separate break-glass governance process still needs approval and
 staging rehearsal; do not use a manual database edit as an undocumented reset.
 Step-up now protects user, trust-policy, security-center, outbox and
 account-deletion mutations plus audit/security CSV exports after five minutes.
+Admin and super-admin chat reports, private chat history, attachment reads and chat WebSocket
+access require the same fresh proof. Live WebSocket authorization rechecks it
+before each delivery and every 30 seconds; an expired proof closes the socket
+at the next check. Super-admin
+service-request detail also requires fresh proof before its private DTO.
 A fresh code is consumed through `/auth/step-up`
 and the original operation is retried. Other sensitive actions and staging
-replay, exceptional reads, external identity verification
+replay, other sensitive reads, external identity verification
 and break-glass acceptance remain open
 under U03.

@@ -1,5 +1,12 @@
 # Карта проекта AutoCare Hub
 
+**U03, exceptional reads 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед приватным чтением
+жалоб, чата и вложений admin/super-admin, chat WebSocket с live перепроверкой и
+super-admin просмотром заявки. `03-frontend.puml` показывает JSON отказ
+вместо Blob для MFA step-up на приватном изображении. Другие sensitive reads
+и staging replay открыты.
+
 **U03, operator MFA recovery 2026-10-29:** `05-domain-data.puml` и
 `07-auth-session.puml` с SVG показывают замену фактора после двух проверок
 MFA независимых super-admin, отзыв сессий, tokenVersion и аудит. Внешняя

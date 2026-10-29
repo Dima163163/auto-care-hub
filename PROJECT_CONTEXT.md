@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U03 — исключительное чтение, 29 октября 2026
+
+Свежий MFA требуется перед admin/super-admin чтением жалоб, истории и вложения чата,
+chat WebSocket с повторной live проверкой и super-admin просмотром заявки.
+Unit, backend build и targeted lint PASS; PostgreSQL negative case добавлен,
+но не запускался. Blob attachment transport передаёт JSON отказ на MFA
+step-up; frontend unit и Next build PASS. Browser/staging replay и другие
+чувствительные чтения открыты. U03 и pilot NO-GO сохраняются.
+
 ## U02 — автомобили автопарка, 28 октября 2026
 
 `autocare_fleet_vehicles.label` и `vehicleSnapshot` получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.

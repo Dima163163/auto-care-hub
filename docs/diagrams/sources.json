@@ -305,9 +305,11 @@
     },
     {
       "path": "server/src/modules/autocare/autocare.routes.ts",
-      "sha256": "7079f8d43023e233e1fbbddef791fc4e044925245e4024f9f11f3bb70407012f",
+      "sha256": "ef370ce04b31af42bd4f7606b47c3513011a9a40c03a46f6cc37aa4a68ff81b7",
       "scopes": [
-        "backend"
+        "auth",
+        "backend",
+        "security"
       ]
     },
     {
@@ -918,7 +920,7 @@
     },
     {
       "path": "src/entities/automotive-service/api/autocare/requests.endpoints.ts",
-      "sha256": "758d51f33439ad0621c6085e49062b7db0b46e36e92688d10149ea33f025803f",
+      "sha256": "d21f269bee3e99f8d6dc1176209908452da1fbebdbe7be33f25bf89f2cd86bee",
       "scopes": [
         "frontend",
         "requests"
@@ -2673,10 +2675,32 @@
     },
     {
       "path": "server/src/modules/admin/admin.routes.ts",
-      "sha256": "654c6bcdf0a31f1abe24c7887509aa1c15200bfabe9c3c7d203a8965e42667dd",
+      "sha256": "4c92bd148a9c292de1d32bcfc5e5cb02ce4171e5af492b255a232df767b5defa",
       "scopes": [
         "backend",
         "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/exceptional-read-step-up.ts",
+      "sha256": "1a0342d4a72a85cd91ef0905043ee03db11f2af950b17b265a5524e1e8274f0f",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/admin-authorization.integration.test.ts",
+      "sha256": "aa8fe480ed4de06b7415be8fae26e9f38afec4909e951f6c0fd29ed124a28d84",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "src/entities/automotive-service/api/autocare/attachment-response.ts",
+      "sha256": "74b843d7cede49ce787b07880f31d7c823a1c2e9de7a5da9c5310a8e703a507b",
+      "scopes": [
+        "frontend"
       ]
     }
   ],
@@ -2736,6 +2760,7 @@
       "path": "src/entities/automotive-service/api/autocare",
       "kind": "sources",
       "entries": [
+        "attachment-response.ts",
         "bonuses.endpoints.ts",
         "bonuses.schemas.ts",
         "bonuses.types.ts",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "verifiedOn": "2026-10-15",
+  "verifiedOn": "2026-10-29",
   "baseline": "8840ae830a641626bcd1d1735d3324bb6f923a77",
   "branch": "docs/plantuml-project-map-2026-10-15",
   "renderer": {
@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "17c54408d860b210785b34748492c6537cce2006b5eab67ac107b58b4214f450",
+      "sourceSha256": "0f3419ad9dc0d7af65948f7c984620ac24a23a3e719fa18a49b4aa9c07ff30ea",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "bdf792e79356d347b36b92bff57b5e604e5063bde453c08f51b0253885852669",
-      "width": "1917px",
-      "height": "1222px"
+      "previewSha256": "f886e7ea9a6ad75828f734feb7c82e1bb6d4673b3f0aaba11f13ab1ab9394ff6",
+      "width": "2098px",
+      "height": "1282px"
     },
     {
       "scope": "backend",
@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "8c2dd024001c24f65f535fb62dbad14f780483bc37c09c112b0167bbf5eb77db",
+      "sourceSha256": "f3830f97aced25524be66cc89e03bd79fde4da716993a1d167cee2020913f25e",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "c1e65d766ea558dcc2565e79b04a9bc96ce43b2e89454ad5a3b69aef493fbef8",
-      "width": "1122px",
-      "height": "1301px"
+      "previewSha256": "1b5521b233e49caef9befffb0c420d835b0a6d8b9f8ad8aa6eef7468bf663a64",
+      "width": "1319px",
+      "height": "2396px"
     },
     {
       "scope": "outbox",
@@ -179,11 +179,11 @@
     {
       "scope": "security",
       "source": "09-access-privacy.puml",
-      "sourceSha256": "3833ffe6107a1b6cd36033059de0dd780f62ccdf81f69eae34098360b47e2e98",
+      "sourceSha256": "46caf766ea755a49aacfe51f1f75a78e0852f06d8d1d8837a37a2fbbbc28e76d",
       "preview": "rendered/09-access-privacy.svg",
-      "previewSha256": "f267a225742b2469e1eeba5e19729e07eb923adb1cc7841964d7f3929ddb96d0",
-      "width": "1632px",
-      "height": "777px"
+      "previewSha256": "a4d3c6a1e144723cf5a2c6fcea4b88346f71fbc3c14f55a2764ecf9141da09fa",
+      "width": "2111px",
+      "height": "2222px"
     }
   ],
   "sharedStyleSha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf",
@@ -516,6 +516,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "auth,security,backend,frontend",
+      "change": "U03 fresh MFA for exceptional reads, chat WebSocket rechecks, and JSON attachment step-up transport",
+      "sourceAnchorCount": 351,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 03-frontend, 07-auth-session and 09-access-privacy"
     }
   ],
   "limitations": [

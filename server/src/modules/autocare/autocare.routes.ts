@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 
 import { env } from '../../config/env.js'
 import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
+import { requireRecentPrivilegedMfa } from '../auth/privileged-step-up.service.js'
 import { checkRateLimit, checkRateLimitRedis, createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
 import { isRedisEnabled } from '../../shared/redis/redis.js'
 import { getOptionalIdempotencyKey } from '../../shared/http/idempotency-key.js'
@@ -29,6 +30,7 @@ import { createAutoCareAppeal, getMyAutoCareAppeals, withdrawAutoCareAppeal } fr
 import { listOwnerAutoCareEvidence } from './moderation-evidence.service.js'
 import { getOwnerWorkspaceAccess } from './provider-access.service.js'
 import { autoCareCommunityRoutes } from './autocare-community.routes.js'
+import { requireExceptionalChatReadStepUp } from './exceptional-read-step-up.js'
 
 const serviceRequestRateLimit = createRateLimitPreHandler({ maxRequests: 10, scope: 'autocare:request', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
 const serviceRequestTransitionRateLimit = createRateLimitPreHandler({ maxRequests: 30, scope: 'autocare:request-transition', windowMs: 60 * 1000, keyResolvers: [getAuthenticatedUserRateLimitIdentifier] })
@@ -432,6 +434,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const emergencyQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
         if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
             const accessContext = await getAutoCareChatAccessContext(user, params.chatId, emergencyQuery.emergencyReason)
+            await requireExceptionalChatReadStepUp(request, user)
             await recordAuditLog({
                 actorId: user.id,
                 action: AuditAction.AutoCareEvidenceViewed,
@@ -480,6 +483,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
             const emergencyQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
             const accessContext = await getAutoCareChatAccessContext(user, chatId, emergencyQuery.emergencyReason)
             if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+                await requireExceptionalChatReadStepUp(authRequest, user)
                 await recordAuditLog({
                     actorId: user.id,
                     action: AuditAction.AutoCareEvidenceViewed,
@@ -492,6 +496,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
             let unsubscribe: (() => void) | null = null
             const assertLiveAccess = async () => {
                 const currentUser = await requireAuth(authRequest)
+                await requireExceptionalChatReadStepUp(authRequest, currentUser)
                 await assertAutoCareChatRealtimeAccess(currentUser, chatId)
                 return currentUser
             }
@@ -564,6 +569,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const user = await requireAuth(request)
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
         const accessQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
+        if (user.role === UserRole.SuperAdmin) await requireRecentPrivilegedMfa(request)
         const result = await getAutoCareServiceRequest(user, requestId, accessQuery.emergencyReason)
         await recordAuditLog({
             actorId: user.id,
@@ -588,6 +594,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const query = validateQuery(autoCareChatConversationQuerySchema.extend({ emergencyReason: autoCareChatEmergencyAccessQuerySchema.shape.emergencyReason }), request.query)
         if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
             const accessContext = await getAutoCareChatAccessContext(user, chatId, query.emergencyReason)
+            await requireExceptionalChatReadStepUp(request, user)
             await recordAuditLog({
                 actorId: user.id,
                 action: AuditAction.AutoCareEvidenceViewed,

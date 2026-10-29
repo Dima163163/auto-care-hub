@@ -24,7 +24,9 @@ import {
     SystemIncidentType,
 } from '../../entities/system-incident/system-incident.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
+import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { createTestAccessToken } from '../../test-support/auth-session.js'
+import { verifyAccessToken } from '../auth/auth-token.js'
 
 describe('Admin and workspace authorization integration', () => {
     const suffix = `${Date.now()}`
@@ -394,6 +396,23 @@ describe('Admin and workspace authorization integration', () => {
             expect(audit?.metadata).not.toHaveProperty('phone')
             expect(audit?.metadata).not.toHaveProperty('photoUrls')
         }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before returning chat reports to %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const response = await request(app.server)
+            .get('/admin/chat-reports')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(403)
+        expect(response.body.code).toBe('MFA_STEP_UP_REQUIRED')
+        expect(response.body).not.toHaveProperty('items')
     })
 
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {

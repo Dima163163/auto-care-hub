@@ -1,5 +1,10 @@
 # Индекс документации AutoCare Hub
 
+U03 local step-up от 29 октября: жалобы и приватные чтения чата admin/super-admin и
+super-admin просмотр заявки теперь требуют свежий MFA; staging-приёмка и
+другие чувствительные чтения открыты. См. [порядок включения](operations/PRIVILEGED_MFA_ROLLOUT.md)
+и [схему доступа](diagrams/09-access-privacy.puml).
+
 U02 partial fix от 24 октября: ORM и outbox чтение email сверяют HMAC blind index;
 перенос согласованной пары и остальных полей ещё открыт. См.
 [реестр](audits/FULL_PROJECT_AUDIT_2026-10-03.md),
@@ -205,6 +210,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/operations/CONCURRENCY_MATRIX.md](operations/CONCURRENCY_MATRIX.md) — Booking concurrency matrix | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/DISCOVERY_BENCHMARK.md](operations/DISCOVERY_BENCHMARK.md) — Discovery benchmark | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/ENCRYPTION_BACKFILL_ROLLOUT.md](operations/ENCRYPTION_BACKFILL_ROLLOUT.md) — Encryption backfill rollout — N09/U01/U02 | текущий runbook и граница внешней приёмки | частично сверено 2026-10-28 | Команды и этапы переноса client vehicle/user secondary/service request outcomes/booking status reason сверены с кодом; настоящий KMS, staging restore и strict cutover не проверены. |
+| [docs/operations/PRIVILEGED_MFA_ROLLOUT.md](operations/PRIVILEGED_MFA_ROLLOUT.md) — privileged MFA rollout | текущий runbook / U03 | шаг exceptional reads сверён 2026-10-29; staging не проверен | `auth/privileged-step-up.service.ts`, `autocare/autocare.routes.ts`; внешняя проверка личности и break-glass открыты. |
 | [docs/operations/FINAL_PROJECT_AUDIT_2026-09-05.md](operations/FINAL_PROJECT_AUDIT_2026-09-05.md) — Финальная ревизия AutoCare Hub — 05.09.2026 | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/GEO_SEARCH_STRATEGY.md](operations/GEO_SEARCH_STRATEGY.md) — Production geo-search strategy | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/operations/GITHUB_ACTION_PINS.md](operations/GITHUB_ACTION_PINS.md) — GitHub Actions: immutable references | runbook / template / историческая приёмка; статус не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |

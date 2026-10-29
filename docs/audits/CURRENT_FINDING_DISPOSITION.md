@@ -1,5 +1,15 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 29.10, U03 exceptional reads:** admin/super-admin чтение
+жалоб на чат, приватного чата, вложения и подключение к chat WebSocket требуют MFA не старше
+пяти минут до выдачи содержимого; live WebSocket authorization повторяет
+проверку. Просмотр заявки super-admin тоже требует свежий фактор. Unit,
+backend build и targeted lint PASS; негативный PostgreSQL integration case
+добавлен, но локально не запускался. Blob attachment transport теперь сохраняет
+JSON код отказа для общего step-up; frontend unit и Next build PASS.
+Browser/staging replay не выполнялся.
+Другие чувствительные чтения остаются открытыми; U03 и pilot NO-GO не закрыты.
+
 **Локальный шаг 29.10, U03 integration fixtures:** устаревшие тестовые
 admin/super-admin JWT без persisted session заменены явной фикстурой с
 `mfaVerifiedAt`. Тесты реального login/MFA по-прежнему используют настоящий
@@ -70,7 +80,7 @@ canonical; neither source presence nor local PASS changes external pilot readine
 | Security 26 Sep, fields “not encrypted” | Versioned AES-GCM field envelopes/HMAC indexes are implemented. U05 stable index-key KEK rotation, U06 invitation transformer and U09 log redaction are published. U01 AWS KMS startup path is merged; user/invitation email read now checks the HMAC index. Local U02 provider change request, appeal and catalog gap bindings with bounded migrations 178671–178673 are prepared | U01 live KMS/IAM and restore acceptance; U02 remaining row/parent scope integrity, including paired index+ciphertext swaps; N09 production migration/retirement |
 | Security 26 Sep, CBC backup/stream restore | Published U04 authenticates ACHBKP01 AES-GCM and stages complete gzip/SQL before consumer; negative tooling and CI PASS | External backup/key separation, live restore/RPO/RTO and historical archive decision |
 | Security 26 Sep, private cache coverage | Published U10 applies path-normalized sensitive `private, no-store` barrier; CI HTTP assertions PASS | Production proxy/cache and client identity storage acceptance |
-| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. A five-minute step-up protects user/trust/security/outbox/deletion mutations and audit/security CSV exports. A two-super-admin reset command revokes sessions and audits the replacement. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery/step-up replay, external identity check and break-glass acceptance, exceptional reads, operational rollout; U03 remains open |
+| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. A five-minute step-up protects user/trust/security/outbox/deletion mutations, audit/security CSV exports, chat reports/private chat reads and super-admin request detail. A two-super-admin reset command revokes sessions and audits the replacement. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery/step-up replay, external identity check and break-glass acceptance, other sensitive reads, operational rollout; U03 remains open |
 | Next PWA | N03 removes unsupported production claim; Vite PWA is compatibility-only | Separate Next install/offline/update/cache implementation and browser acceptance |
 
 No report here claims there is no encryption or that server-side encryption hides

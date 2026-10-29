@@ -415,7 +415,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/chat-reports', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminChatReportsQuerySchema, request.query)
         const result = await listAdminAutoCareChatReports(user, query)
         await recordAuditLog({

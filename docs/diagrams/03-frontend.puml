@@ -57,6 +57,8 @@ note bottom of Factories
   Фабрики — первый адрес поиска endpoint implementation.
   N27: CI находит 10 зарегистрированных factories через AST
   и проверяет transformResponse у каждого domain endpoint.
+  Private attachment response keeps JSON MFA errors for baseApi step-up;
+  successful image response remains a Blob / object URL.
 end note
 note right of Entities
   N23: client/owner request screens read cursor pages.

@@ -82,6 +82,15 @@
 
 ## U03 — обязательный сеанс для привилегированных токенов, 2026-10-28
 
+- [x] Добавить свежий MFA перед admin/super-admin чтением жалоб и приватного чата,
+  вложений, chat WebSocket и super-admin просмотром заявки; live WebSocket
+  перепроверяет свежесть. Unit, backend build и targeted lint PASS 29.10;
+  PostgreSQL negative case добавлен, локально не запускался.
+- [x] Сохранить JSON код отказа вместо Blob для приватного attachment GET,
+  чтобы общий frontend step-up повторил запрос; frontend unit и Next build PASS.
+- [ ] Проверить этот путь на PostgreSQL/browser/staging и закрыть остальные
+  чувствительные чтения до приёмки U03.
+
 - [x] Запретить access и refresh без persisted session для текущих
   admin/super-admin, включая токены с устаревшей ролью client.
 - [x] Проверить положительный путь с активным сеансом и отказ для двух ролей.

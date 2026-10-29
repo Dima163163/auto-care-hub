@@ -673,6 +673,13 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, exceptional reads:** admin/super-admin чтение жалоб,
+приватного чата и вложений, подключение и live authorization chat WebSocket, а также
+super-admin просмотр заявки требуют MFA не старше пяти минут до выдачи
+содержимого. Unit, backend build и targeted lint PASS; PostgreSQL negative case
+добавлен, но не запускался. Browser/staging replay и
+другие sensitive reads ещё открыты. U03 и pilot NO-GO сохраняются.
+
 **Подтверждение:** текущие auth/OAuth/session modules не содержат обязательного второго фактора и проверки свежей step-up аутентификации для admin/super-admin. Проблема остаётся в `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md:26`.
 
 **Последствия:** привилегированный доступ защищён паролем/обычной сессией; компрометация открывает административные действия и чувствительные материалы.
