@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — независимое решение по профилю сервиса, 29 октября 2026
+
+Автор provider change request после смены роли owner → admin/super-admin
+больше не может сам одобрить или отклонить ранее созданную заявку. Проверка
+стоит под row lock до изменений provider и уведомления. Boundary unit 6
+PASS; PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
 ## U03 — независимое решение по каталогу, 29 октября 2026
 
 Catalog-gap заявка больше не может быть одобрена или отклонена своим

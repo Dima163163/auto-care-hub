@@ -673,6 +673,12 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, provider change self-review:** после перехода owner →
+admin/super-admin автор мог сам решить ранее созданную заявку на изменение
+сервиса. Теперь проверка автора выполняется под row lock до изменения provider
+и уведомления. Boundary unit 6 PASS; PostgreSQL/staging replay открыт.
+U03/pilot NO-GO.
+
 **Локальный шаг 29.10, catalog-gap self-review:** admin мог подать заявку
 на новую услугу и сам принять решение, включая создание service definition.
 Теперь решение автора запрещено под row lock до любых изменений; другой

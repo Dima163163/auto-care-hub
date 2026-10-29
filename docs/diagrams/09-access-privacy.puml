@@ -50,6 +50,7 @@ note right of StepUp
   Provider workspace mutations also require it before validation or write.
   Service/broadcast request transitions require it for privileged actors.
   Catalog gap reviewer cannot decide own proposal under the request row lock.
+  Provider change reviewer cannot decide a request authored before role change.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider
@@ -166,5 +167,5 @@ note bottom of Object
   S3/private storage adapter и scan/quarantine поддержаны кодом.
   Production storage policy / KMS / MFA — отдельные acceptance gates.
 end note
-footer require-auth.ts / provider-access.service.ts / request-access.service.ts / catalog-gap.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
+footer require-auth.ts / provider-access.service.ts / request-access.service.ts / catalog-gap.service.ts / provider-change-request.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
 @enduml

@@ -2,6 +2,9 @@
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Запретить решение собственной provider change request после смены
+  owner → admin/super-admin; проверка под row lock до изменения provider и
+  outbox. Boundary suite 6 PASS; PostgreSQL replay открыт.
 - [x] Запретить admin/super-admin решать собственную catalog-gap заявку
   под row lock до создания определения или смены статуса; независимый
   reviewer может отклонить заявку. Boundary suite 7 PASS.

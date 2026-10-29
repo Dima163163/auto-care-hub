@@ -2750,6 +2750,21 @@
         "security"
       ],
       "sha256": "9bfc3c73a4d75ed5fb5dd5c1e74e287361b7d385b4774f28445d558ded45d1ec"
+    },
+    {
+      "path": "server/src/modules/autocare/provider-change-request.service.ts",
+      "scopes": [
+        "backend",
+        "security"
+      ],
+      "sha256": "80c03f364183444fa421ae891f5c5d6646a77693e2a8c3f154c810da19f2e9f7"
+    },
+    {
+      "path": "server/src/modules/autocare/provider-change-request.service-boundary.test.ts",
+      "scopes": [
+        "security"
+      ],
+      "sha256": "f1475379bf48eaa0887fe457fd652cd8d66bade907b3efe452ce490b7d297acd"
     }
   ],
   "inventories": [

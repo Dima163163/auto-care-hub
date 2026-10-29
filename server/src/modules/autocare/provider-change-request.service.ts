@@ -108,6 +108,9 @@ export async function decideAdminProviderChangeRequest(admin: UserEntity, reques
             .getOne()
         if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Provider change request not found.' })
         if (request.status !== AutomotiveProviderChangeRequestStatus.Pending) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Provider change request has already been decided.' })
+        if (request.requestedById === admin.id) {
+            throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'An administrator cannot review their own provider change request.' })
+        }
         const providerRepository = manager.getRepository(AutomotiveProviderEntity)
         const provider = await providerRepository.findOneBy({ id: request.providerId })
         if (!provider) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Automotive service provider not found.' })
