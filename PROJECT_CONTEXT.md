@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — переходы заявок, 29 октября 2026
+
+Четырнадцать service/broadcast request mutations теперь требуют fresh MFA
+для admin/super-admin до валидации или записи. Негативная PostgreSQL матрица
+охватывает обе роли и все маршруты; локальный DB/Redis replay и staging
+acceptance открыты. U03 и pilot NO-GO сохраняются.
+
 ## U03 — изменения кабинета сервиса, 29 октября 2026
 
 Шестнадцать provider workspace mutations теперь требуют свежий MFA для

@@ -618,7 +618,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return result
     })
     app.get('/v1/service-requests/:requestId/conversation', async (request) => getAutoCareServiceRequestConversation(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateQuery(autoCareServiceConversationQuerySchema, request.query)))
-    app.post('/v1/service-requests/:requestId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceMessage(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, { ...validateBody(createAutoCareServiceMessageSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
+    app.post('/v1/service-requests/:requestId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceMessage(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, { ...validateBody(createAutoCareServiceMessageSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
     app.get('/v1/chats/:chatId', async (request) => {
         const user = await requireAuth(request)
         const chatId = validateParams(autoCareChatParamsSchema, request.params).chatId
@@ -640,9 +640,9 @@ export async function autoCareRoutes(app: FastifyInstance) {
     })
     app.post('/v1/chats/:chatId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareChatMessage(await requireChatActionUser(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceMessageSchema, request.body), getOptionalIdempotencyKey(request.headers)))
     app.post('/v1/service-requests/:requestId/read', async (request) => markAutoCareServiceConversationRead(await requireChatActionUser(request, false), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
-    app.post('/owner/service-requests/:requestId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceOffer(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceOfferSchema, request.body)))
+    app.post('/owner/service-requests/:requestId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceOffer(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceOfferSchema, request.body)))
     app.post('/v1/service-requests/:requestId/offers/:messageId/decision', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requireFreshMfaForPrivilegedUser(request, true)
         const params = validateParams(autoCareServiceMessageParamsSchema, request.params)
         return decideAutoCareServiceOffer(user, params.requestId, params.messageId, validateBody(serviceMessageOfferDecisionSchema, request.body).decision)
     })
@@ -762,21 +762,21 @@ export async function autoCareRoutes(app: FastifyInstance) {
             .type(attachment.contentType)
             .send(attachment.content)
     })
-    app.post('/v1/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
-    app.post('/v1/service-requests/:requestId/cancel', { preHandler: serviceRequestTransitionRateLimit }, async (request) => cancelAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(cancelAutoCareServiceRequestSchema, request.body).reason))
+    app.post('/v1/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmAutoCareServiceRequest(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
+    app.post('/v1/service-requests/:requestId/cancel', { preHandler: serviceRequestTransitionRateLimit }, async (request) => cancelAutoCareServiceRequest(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(cancelAutoCareServiceRequestSchema, request.body).reason))
     app.post('/v1/service-requests/:requestId/reschedule/decision', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requireFreshMfaForPrivilegedUser(request, true)
         const params = validateParams(autoCareServiceRequestParamsSchema, request.params)
         const body = validateBody(decideAutoCareRescheduleSchema, request.body)
         return decideAutoCareServiceReschedule(user, params.requestId, body.rescheduleId, body.decision, body.reason)
     })
     app.post('/v1/service-requests/:requestId/quote/accept', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requireFreshMfaForPrivilegedUser(request, true)
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
         return acceptAutoCareServiceQuote(user, requestId, validateBody(autoCareQuoteDecisionSchema, request.body))
     })
     app.post('/v1/service-requests/:requestId/quote/decline', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requireFreshMfaForPrivilegedUser(request, true)
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
         return declineAutoCareServiceQuote(user, requestId, validateBody(autoCareQuoteDecisionSchema, request.body))
     })
@@ -791,10 +791,10 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return page.items
     })
     app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requireFreshMfaForPrivilegedUser(request)))
-    app.post('/owner/broadcast-requests/:broadcastId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareBroadcastOffer(await requireVerifiedEmail(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId, validateBody(createAutoCareBroadcastOfferSchema, request.body)))
-    app.post('/owner/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmOwnerAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
-    app.post('/owner/service-requests/:requestId/quote', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceQuote(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceQuoteSchema, request.body)))
-    app.post('/owner/service-requests/:requestId/reschedule', { preHandler: serviceRequestTransitionRateLimit }, async (request) => requestAutoCareServiceReschedule(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareRescheduleSchema, request.body)))
-    app.post('/owner/service-requests/:requestId/no-show', { preHandler: serviceRequestTransitionRateLimit }, async (request) => markAutoCareServiceRequestNoShow(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(markAutoCareNoShowSchema, request.body).reason))
-    app.post('/owner/service-requests/:requestId/complete', { preHandler: serviceRequestTransitionRateLimit }, async (request) => completeAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(completeAutoCareServiceRequestSchema, request.body).note))
+    app.post('/owner/broadcast-requests/:broadcastId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareBroadcastOffer(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId, validateBody(createAutoCareBroadcastOfferSchema, request.body)))
+    app.post('/owner/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmOwnerAutoCareServiceRequest(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
+    app.post('/owner/service-requests/:requestId/quote', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceQuote(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceQuoteSchema, request.body)))
+    app.post('/owner/service-requests/:requestId/reschedule', { preHandler: serviceRequestTransitionRateLimit }, async (request) => requestAutoCareServiceReschedule(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareRescheduleSchema, request.body)))
+    app.post('/owner/service-requests/:requestId/no-show', { preHandler: serviceRequestTransitionRateLimit }, async (request) => markAutoCareServiceRequestNoShow(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(markAutoCareNoShowSchema, request.body).reason))
+    app.post('/owner/service-requests/:requestId/complete', { preHandler: serviceRequestTransitionRateLimit }, async (request) => completeAutoCareServiceRequest(await requireFreshMfaForPrivilegedUser(request, true), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(completeAutoCareServiceRequestSchema, request.body).note))
 }

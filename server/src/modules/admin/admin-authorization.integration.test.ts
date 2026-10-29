@@ -587,6 +587,41 @@ describe('Admin and workspace authorization integration', () => {
         }
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before service request transitions by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = provider.id
+        const paths = [
+            `/v1/service-requests/${id}/messages`,
+            `/owner/service-requests/${id}/offers`,
+            `/v1/service-requests/${id}/offers/${id}/decision`,
+            `/v1/service-requests/${id}/confirm`,
+            `/v1/service-requests/${id}/cancel`,
+            `/v1/service-requests/${id}/reschedule/decision`,
+            `/v1/service-requests/${id}/quote/accept`,
+            `/v1/service-requests/${id}/quote/decline`,
+            `/owner/broadcast-requests/${id}/offers`,
+            `/owner/service-requests/${id}/confirm`,
+            `/owner/service-requests/${id}/quote`,
+            `/owner/service-requests/${id}/reschedule`,
+            `/owner/service-requests/${id}/no-show`,
+            `/owner/service-requests/${id}/complete`,
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).post(path)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('requires fresh MFA before every private administrative read', async () => {
         const token = await createTestAccessToken(superAdmin)
         const sessionId = verifyAccessToken(token).sessionId

@@ -62,6 +62,8 @@ Twelve provider workspace GET routes also require fresh proof for privileged
 roles while retaining the verified-email requirement.
 Sixteen provider workspace mutations require the same proof before payload
 validation or write for privileged roles.
+Fourteen service and broadcast request transitions also require it for
+privileged roles before validation or write.
 Admin access to a private request chat requires an active assigned moderation
 report even if the admin also has provider membership. The request-to-chat
 shortcut rejects admin and super-admin; exceptional review uses the audited

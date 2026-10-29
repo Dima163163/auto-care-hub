@@ -48,6 +48,7 @@ note right of StepUp
   Broadcast detail and provider inbox require it for both privileged roles.
   Internal provider workspace GET routes also require fresh MFA for both roles.
   Provider workspace mutations also require it before validation or write.
+  Service/broadcast request transitions require it for privileged actors.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider
