@@ -54,8 +54,9 @@ authorization rechecks it before each delivery and every 30 seconds; an
 expired proof closes the socket at the next check. The super-admin index lists
 only support/escalation chats; private request chats use per-thread audited
 access with a reason. The admin index includes assigned moderation cases,
-without provider membership widening. Super-admin service-request detail also
-requires fresh proof before its private DTO.
+without provider membership widening. Admin and super-admin service-request
+detail, repair timeline and owner request list also require fresh proof before
+returning private data.
 Admin access to a private request chat requires an active assigned moderation
 report even if the admin also has provider membership. The request-to-chat
 shortcut rejects admin and super-admin; exceptional review uses the audited

@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — приватные чтения заявок, 29 октября 2026
+
+Detail и timeline заявки, а также owner список заявок требуют свежий MFA
+для admin/super-admin перед выдачей данных. Негативная PostgreSQL матрица
+охватывает обе роли и три маршрута; локальный PostgreSQL/Redis стенд
+недоступен, поэтому replay и staging acceptance открыты. U03 и pilot NO-GO.
+
 ## U03 — старый маршрут чата заявки, 29 октября 2026
 
 Legacy request conversation, attachment и WebSocket теперь отказывают

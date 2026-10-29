@@ -43,7 +43,8 @@ note right of StepUp
   rejects admin and super-admin before returning the subject.
   Legacy request conversation, attachment and WebSocket also reject both
   privileged roles; they use the audited chat route for private review.
-  Super-admin service-request detail also requires fresh MFA.
+  Admin and super-admin service-request detail, repair timeline and owner
+  request list require fresh MFA before private data.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider

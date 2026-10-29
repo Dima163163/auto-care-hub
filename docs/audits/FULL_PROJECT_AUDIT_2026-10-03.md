@@ -673,6 +673,11 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, приватные чтения заявок:** admin/super-admin теперь
+проходят fresh MFA перед detail, timeline и owner списком service requests.
+Добавлена негативная PostgreSQL матрица на обе роли и три маршрута;
+локальный DB/Redis replay и staging acceptance открыты. U03 и pilot NO-GO.
+
 **Локальный шаг 29.10, legacy request chat:** admin с provider membership
 мог обойти модерационный chat route через legacy conversation/attachment и
 WebSocket заявки. Теперь оба privileged role получают отказ до выдачи

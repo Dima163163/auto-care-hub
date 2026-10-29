@@ -2,6 +2,9 @@
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Потребовать fresh MFA у admin/super-admin перед чтением detail и
+  timeline заявки, а также owner списка заявок; PostgreSQL negative matrix
+  добавлена для обеих ролей. Локальный replay без БД остаётся открытым.
 - [x] Закрыть доступ admin к приватному чату через provider membership при
   отсутствии действующего назначенного moderation report; быстрый маршрут
   request → chat-thread отказывает admin/super-admin до чтения БД.

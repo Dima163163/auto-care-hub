@@ -624,6 +624,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 09-access-privacy"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "backend,auth,security",
+      "change": "U03 require fresh MFA before privileged service request detail, timeline and owner list reads",
+      "sourceAnchorCount": 355,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 09-access-privacy"
     }
   ],
   "limitations": [

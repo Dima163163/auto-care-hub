@@ -106,6 +106,14 @@ async function requireChatActionUser(request: FastifyRequest, verifiedEmail = tr
     return user
 }
 
+async function requirePrivilegedRequestReadUser(request: FastifyRequest) {
+    const user = await requireAuth(request)
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+        await requireRecentPrivilegedMfa(request)
+    }
+    return user
+}
+
 export async function autoCareRoutes(app: FastifyInstance) {
     app.addHook('onClose', async () => closeServiceChatGateway())
     await app.register(vehicleCatalogRoutes)
@@ -395,7 +403,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         reply.header('X-Next-Cursor', page.nextCursor ?? '')
         return page.items
     })
-    app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
+    app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requirePrivilegedRequestReadUser(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/broadcast-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareBroadcastRequest(await requireVerifiedEmail(request), validateBody(createAutoCareBroadcastRequestSchema, request.body)))
     app.get('/v1/broadcast-requests/my', async (request) => getMyAutoCareBroadcastRequests(await requireAuth(request)))
     app.get('/v1/broadcast-requests/:broadcastId', async (request) => getAutoCareBroadcastRequest(await requireAuth(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId))
@@ -590,10 +598,9 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return updateClientAutoCareReview(user, params.reviewId, validateBody(updateAutoCareReviewSchema, request.body))
     })
     app.get('/v1/service-requests/:requestId', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requirePrivilegedRequestReadUser(request)
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
         const accessQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
-        if (user.role === UserRole.SuperAdmin) await requireRecentPrivilegedMfa(request)
         const result = await getAutoCareServiceRequest(user, requestId, accessQuery.emergencyReason)
         await recordAuditLog({
             actorId: user.id,
@@ -774,7 +781,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return declineAutoCareServiceQuote(user, requestId, validateBody(autoCareQuoteDecisionSchema, request.body))
     })
     app.get('/owner/service-requests', async (request, reply) => {
-        const user = await requireAuth(request)
+        const user = await requirePrivilegedRequestReadUser(request)
         const query = validateQuery(autoCareServiceRequestListQuerySchema, request.query)
         const paged = query.cursor !== undefined || query.limit !== undefined
         const page = await getOwnerAutoCareServiceRequestPage(user, paged ? query : { limit: 100 })
