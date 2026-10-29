@@ -406,7 +406,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
     app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requirePrivilegedRequestReadUser(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/broadcast-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareBroadcastRequest(await requireVerifiedEmail(request), validateBody(createAutoCareBroadcastRequestSchema, request.body)))
     app.get('/v1/broadcast-requests/my', async (request) => getMyAutoCareBroadcastRequests(await requireAuth(request)))
-    app.get('/v1/broadcast-requests/:broadcastId', async (request) => getAutoCareBroadcastRequest(await requireAuth(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId))
+    app.get('/v1/broadcast-requests/:broadcastId', async (request) => getAutoCareBroadcastRequest(await requirePrivilegedRequestReadUser(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId))
     app.post('/v1/guarantee-claims', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareGuaranteeClaim(await requireVerifiedEmail(request), validateBody(createAutoCareGuaranteeClaimSchema, request.body)))
     app.get('/v1/guarantee-claims/my', async (request) => getMyAutoCareGuaranteeClaims(await requireAuth(request)))
     app.post('/v1/expert-questions', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareExpertQuestion(await requireVerifiedEmail(request), validateBody(createAutoCareExpertQuestionSchema, request.body)))
@@ -790,7 +790,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         reply.header('X-Next-Cursor', page.nextCursor ?? '')
         return page.items
     })
-    app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requireAuth(request)))
+    app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requirePrivilegedRequestReadUser(request)))
     app.post('/owner/broadcast-requests/:broadcastId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareBroadcastOffer(await requireVerifiedEmail(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId, validateBody(createAutoCareBroadcastOfferSchema, request.body)))
     app.post('/owner/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmOwnerAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/owner/service-requests/:requestId/quote', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceQuote(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceQuoteSchema, request.body)))

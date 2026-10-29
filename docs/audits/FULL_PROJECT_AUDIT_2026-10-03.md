@@ -673,6 +673,11 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, broadcast reads:** admin/super-admin с provider
+membership теперь проходят fresh MFA перед broadcast detail и owner inbox.
+Добавлена негативная PostgreSQL матрица на две роли и два маршрута;
+локальный DB/Redis replay и staging acceptance открыты. U03/pilot NO-GO.
+
 **Локальный шаг 29.10, приватные чтения заявок:** admin/super-admin теперь
 проходят fresh MFA перед detail, timeline и owner списком service requests.
 Добавлена негативная PostgreSQL матрица на обе роли и три маршрута;

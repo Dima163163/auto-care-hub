@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, broadcast reads 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает fresh MFA для admin/super-admin перед broadcast detail и owner
+inbox. PostgreSQL/staging replay открыт.
+
 **U03, service request reads 2026-10-29:** `09-access-privacy.puml` с SVG
 показывает fresh MFA для admin/super-admin перед detail, timeline и owner
 списком заявок. PostgreSQL/staging replay открыт.

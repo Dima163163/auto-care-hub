@@ -56,7 +56,8 @@ only support/escalation chats; private request chats use per-thread audited
 access with a reason. The admin index includes assigned moderation cases,
 without provider membership widening. Admin and super-admin service-request
 detail, repair timeline and owner request list also require fresh proof before
-returning private data.
+returning private data. Broadcast request detail and the provider inbox use
+the same proof for admin and super-admin.
 Admin access to a private request chat requires an active assigned moderation
 report even if the admin also has provider membership. The request-to-chat
 shortcut rejects admin and super-admin; exceptional review uses the audited
