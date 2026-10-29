@@ -91,10 +91,24 @@ describe('privileged access sessions', () => {
     it('accepts privileged access only with an active persisted session', async () => {
         authMocks.getUserById.mockResolvedValue({ id: accessTokenPayload.userId, role: 'admin' })
         authMocks.verifyAccessToken.mockReturnValue({ ...accessTokenPayload, sessionId: 'session-id' })
-        sessionMocks.findUserSession.mockResolvedValue({ expiresAt: new Date(Date.now() + 60_000) })
+        sessionMocks.findUserSession.mockResolvedValue({
+            expiresAt: new Date(Date.now() + 60_000),
+            mfaVerifiedAt: new Date(),
+        })
 
         await expect(requireAuth(requestWithToken)).resolves.toMatchObject({ role: 'admin' })
         expect(sessionMocks.findUserSession).toHaveBeenCalledWith('session-id', accessTokenPayload.userId)
+    })
+
+    it('rejects a privileged session created before the second factor was verified', async () => {
+        authMocks.getUserById.mockResolvedValue({ id: accessTokenPayload.userId, role: 'admin' })
+        authMocks.verifyAccessToken.mockReturnValue({ ...accessTokenPayload, sessionId: 'session-id' })
+        sessionMocks.findUserSession.mockResolvedValue({
+            expiresAt: new Date(Date.now() + 60_000),
+            mfaVerifiedAt: null,
+        })
+
+        await expect(requireAuth(requestWithToken)).rejects.toMatchObject({ statusCode: 401 })
     })
 })
 

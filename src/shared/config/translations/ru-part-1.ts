@@ -138,6 +138,7 @@ auth: {
         email: 'Email',
         emailPlaceholder: 'name@example.com',
         password: 'Пароль',
+        mfaCodeLabel: 'Код из приложения или резервный код (для администраторов)',
         passwordPlaceholder: 'Любое значение для mock-входа',
         signingIn: 'Вход...',
         failedToSignIn: 'Не удалось войти.',

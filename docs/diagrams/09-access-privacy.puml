@@ -32,6 +32,8 @@ note right of Provider
   один frontend guard не является backend authorization.
 end note
 note right of Resource
+  Privileged TOTP secret stored as row-bound AES-GCM by user UUID;
+  recovery code hashes are one-use. Account deletion removes both tables.
   Новые user/invitation email envelopes содержат MAC
   с row ID, а invitation также с provider ID.
   afterLoad сверяет MAC и email с HMAC blind index.

@@ -13,7 +13,7 @@ function getBearerToken(request: FastifyRequest) {
     return parseBearerToken(request.headers.authorization)
 }
 
-export async function assertAccessSessionActive(userId: string, sessionId: string | undefined) {
+export async function assertAccessSessionActive(userId: string, sessionId: string | undefined, requireMfa = false) {
     // Legacy/setup access tokens may intentionally have no persisted session.
     // Once a token is bound to a session, however, revoking that session must
     // immediately invalidate the access token as well as its refresh token.
@@ -24,6 +24,13 @@ export async function assertAccessSessionActive(userId: string, sessionId: strin
             statusCode: 401,
             code: ERROR_CODES.Unauthorized,
             message: 'Session is no longer active.',
+        })
+    }
+    if (requireMfa && !session.mfaVerifiedAt) {
+        throw new AppError({
+            statusCode: 401,
+            code: ERROR_CODES.Unauthorized,
+            message: 'A verified second factor is required for privileged access.',
         })
     }
 }
@@ -41,7 +48,7 @@ export async function requireAuth(request: FastifyRequest) {
                 message: 'A current session is required for privileged access.',
             })
         }
-        await assertAccessSessionActive(payload.userId, payload.sessionId)
+        await assertAccessSessionActive(payload.userId, payload.sessionId, isAdminRole(user.role))
         return user
     } catch (error) {
         if (error instanceof AppError) {

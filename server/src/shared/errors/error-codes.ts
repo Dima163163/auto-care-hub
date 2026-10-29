@@ -6,6 +6,7 @@ export const ERROR_CODES = {
     BadRequest: 'BAD_REQUEST',
     Unauthorized: 'UNAUTHORIZED',
     Forbidden: 'FORBIDDEN',
+    MfaEnrollmentRequired: 'MFA_ENROLLMENT_REQUIRED',
     Conflict: 'CONFLICT',
     ChatMessagePreserved: 'CHAT_MESSAGE_PRESERVED',
     ChatReportConflict: 'CHAT_REPORT_CONFLICT',

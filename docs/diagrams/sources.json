@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "baseline": "0b6a548c2787ff9c3a3f9e5a8985021714a74fe7",
-  "verifiedOn": "2026-10-28",
+  "verifiedOn": "2026-10-29",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "5bdb9725ed53e0d939661e4e38b2b39b14b7654c2d6d4e6b92881471294cb59b",
+      "sha256": "90ce2395e0ad9fa270bf7c5557036feccfde8a3d71481b8a9791eca9e52881a7",
       "scopes": [
         "backend"
       ]
@@ -155,7 +155,7 @@
     },
     {
       "path": "server/src/entities/user-session/user-session.entity.ts",
-      "sha256": "6f0c04e627a4042ba32dc8cebc2e9425a1f008f934fff4146ee29bb6c5cd9269",
+      "sha256": "9c89dd193fa2ffc38ee3fc7fe5e778f51cd09101a22393fc8d603301b5e05b9c",
       "scopes": [
         "data"
       ]
@@ -205,7 +205,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.schemas.ts",
-      "sha256": "e2dbaf19cd116f3d9db7e92879ad54da0ed9922b3447509fdca2f57e6385e731",
+      "sha256": "96f14905b39be5bead05f8846cd4e6c24273b87237e469f88192034e1ba16c74",
       "scopes": [
         "auth"
       ]
@@ -219,7 +219,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.service.ts",
-      "sha256": "078f2eaa95f72e8b1fdd515d0d6580752e162ad40ed45722a2ed4c35ad7270b5",
+      "sha256": "a8b6b96dd88a6c4da683364036b6e82f63b12e23c6f2fe16a82ec3c533fe742e",
       "scopes": [
         "auth"
       ]
@@ -282,7 +282,7 @@
     },
     {
       "path": "server/src/modules/auth/require-auth.ts",
-      "sha256": "5070d81300faf0c45b26cef908db045220459c3c4004935e891cffdfca113ca3",
+      "sha256": "d521361a175381928af173b436a7163668074c9e098c2c607b870a2e504ce317",
       "scopes": [
         "auth",
         "security"
@@ -290,7 +290,7 @@
     },
     {
       "path": "server/src/modules/auth/session.service.ts",
-      "sha256": "103bea7ac351bc9a1418efa091ca91d060880f989a9294882d313ec83cab779a",
+      "sha256": "71c50c2aaf7c7bb861216661d7e89dc0b0eab739d144644babaece1ebf82d941",
       "scopes": [
         "auth"
       ]
@@ -698,7 +698,7 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "ca4139bec910c4c53f81661161b85b4b874dd07f0bb18a122bda766a213d6687",
+      "sha256": "38bd06d907dd4366d66ad0e7b80b500ca811193d20f17fe1a96154b8c739feae",
       "scopes": [
         "frontend"
       ]
@@ -1199,7 +1199,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-admin.service.ts",
-      "sha256": "f08c41698da2d773670b2724ad8885437fb6f58631988f85c9b50ea43573ec72",
+      "sha256": "243a3d459b1cde711b05a8924156fedf118cf1a30c86b7da12e699e3e566c454",
       "scopes": [
         "security"
       ]
@@ -1253,7 +1253,7 @@
     },
     {
       "path": "server/src/modules/users/account-deletion-invariants.ts",
-      "sha256": "e45466fe27cdcce33f028f00cfd666ed6ce8eefc1e9cc589c3d97514da147174",
+      "sha256": "9f9c38ebbf5d00c002c770cfa77d16c6b0dda6b2d75474d1fd3931084ed0afd8",
       "scopes": [
         "security"
       ]
@@ -1292,7 +1292,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "8c20329560eea76f545bb35b2da469433835bcd423f3debd37412c60659e32e7",
+      "sha256": "2eec6f2c9a28cb11da009d915272b40b5ac23a5e76d91e406057f865d26f31e6",
       "scopes": [
         "security"
       ]
@@ -1946,14 +1946,14 @@
     },
     {
       "path": "server/src/modules/auth/require-auth.test.ts",
-      "sha256": "1c74754d055dbaa3de4e425bf11864fc84515ff0c04d28afe08e5a3239a8b672",
+      "sha256": "16243e5cf5bed23c526392a37bd528865a4e8e7f0ee9641a4239742f35691a03",
       "scopes": [
         "auth"
       ]
     },
     {
       "path": "server/src/modules/auth/privileged-refresh-session.test.ts",
-      "sha256": "66cd0ab8143a1a7e18c5ce7fe3ea03de634d7cb58392662d8dbbc546337147ee",
+      "sha256": "60236b61e5f3ad4768051ccfa40739263fe6f93458ca1131ac0ee91d9bb7487b",
       "scopes": [
         "auth"
       ]
@@ -2446,6 +2446,145 @@
       "scopes": [
         "data",
         "security"
+      ]
+    },
+    {
+      "path": "server/src/entities/index.ts",
+      "sha256": "fcf72754c29a589e33955414aa91984aba7abd596657de3ceb7033f13d61b006",
+      "scopes": [
+        "data",
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/entities/user-mfa/user-mfa-factor.entity.ts",
+      "sha256": "91e0b1fc21933e9ac920c5a8845a4fd5eab2b8ed94a1bece1aacea767389a5b6",
+      "scopes": [
+        "data",
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/entities/user-mfa/user-mfa-recovery-code.entity.ts",
+      "sha256": "580b596b5053ec73db29f94615ebfe5dcda9b7d0eccc33f714511c1c6d08524f",
+      "scopes": [
+        "data",
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786810000000-CreatePrivilegedMfaFactors.ts",
+      "sha256": "09485aef7347eea9bffce5589198669340707f279e814866ced97fcef6e55d12",
+      "scopes": [
+        "data",
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/totp.ts",
+      "sha256": "96d8ac07778f83bfb3bc300a4ede28e1e1be44fc9e656b365c5857637e3ec682",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/privileged-mfa.service.ts",
+      "sha256": "b5598c46389f99b11c0343d5c4f9ca2ae077c341459b6f94c2312dcf4f394307",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/privileged-mfa.integration.test.ts",
+      "sha256": "9a17f34b74afdcfed90668a960ec2f78a078dd3a102bf46ac38ecd1a1752f5ef",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/auth.routes.ts",
+      "sha256": "431d67d4541551481ceb9fb5427ee7d345f1cb68717667985dcbf2573c0340bd",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/scripts/provision-privileged-mfa.ts",
+      "sha256": "0f1acfb14978fb300471ecd6c133c1c0476919af5571a00ab27b4dd9a5e6009d",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "src/features/auth/api/authApi.ts",
+      "sha256": "7e7f1d2c71a279562945c39e44ce003d0dd897b3a90c0a61b1348f6cd83b7e82",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "src/pages/login/lib/useLogin.ts",
+      "sha256": "2f9597efc663b8b421ff7f0fdcfe6895ac5a4b60965e2933f0785e1a35c97969",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "src/pages/login/ui/LoginPage.tsx",
+      "sha256": "6374b07acca3f28235d42e2bcddbf1fd1b2dc6738a202dcb748f4cfe01a387f5",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/shared/errors/error-codes.ts",
+      "sha256": "9d2985636f9e8062a31fb8b1bea9cbd43c4629aaaa6891e532190e194ea5f29e",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "src/pages/password-setup/lib/passwordSetupSchema.ts",
+      "sha256": "26cad7980b88651bf417f7e82bc09b542afd366cbf188357e16d20d88836c24c",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "src/pages/password-setup/lib/usePasswordSetup.ts",
+      "sha256": "bacdef8011143fc2bbd9697a7b85caa9a3314bc69a11dd6d2662879b84640fde",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "src/pages/password-setup/ui/PasswordSetupPage.tsx",
+      "sha256": "830df4b6b66cf6e40a9e221bd1c59c3612b28db7ea0166098156b23d4434965c",
+      "scopes": [
+        "frontend",
+        "auth"
+      ]
+    },
+    {
+      "path": "src/shared/config/translations/ru-part-1.ts",
+      "sha256": "6c61db3539c2e436b217b062bc0a7988c7eaf7b7d2d80cc0b451507e7b8ba376",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/translations/ru-part-4.ts",
+      "sha256": "7a0a0f38fd678f3a9127aa6546381e2f5dc2e586f0b7b7aa94ce65dacee40bde",
+      "scopes": [
+        "frontend"
       ]
     }
   ],

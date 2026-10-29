@@ -1,8 +1,15 @@
 # Карта проекта AutoCare Hub
 
+**U03, privileged password login 2026-10-29:** `05-domain-data.puml`,
+`07-auth-session.puml` и `09-access-privacy.puml` с SVG показывают TOTP/одноразовый recovery code,
+row-bound секрет фактора и `mfaVerifiedAt` сессии. Старые privileged sessions
+отклоняются, удаление аккаунта очищает фактор. [Порядок включения](../operations/PRIVILEGED_MFA_ROLLOUT.md).
+Reset/step-up и staging replay остаются открытыми.
+
 **U03, privileged OAuth 2026-10-29:** `07-auth-session.puml` и SVG
 показывают отказ в OAuth callback/link для admin/super-admin до создания
-сессии. Password MFA, recovery и step-up остаются открытыми.
+сессии. Password MFA и одноразовые recovery codes подготовлены локально;
+сброс фактора и step-up открыты.
 
 **U02, fleet vehicle 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC label/vehicleSnapshot по vehicle/fleet UUID. Migration 178680, bounded checkpoint, full verify и opt-in strict reader подготовлены.
 
@@ -42,7 +49,7 @@ full verify и opt-in strict reader подготовлены. Staging KMS/restor
 
 **U03, privileged session 2026-10-28:** `07-auth-session.puml` и SVG
 показывают отказ admin/super-admin при access/refresh без persisted session.
-MFA/step-up остаются открытыми.
+Текущий password MFA указан выше; step-up и staging acceptance открыты.
 
 **U02, trust evidence 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC reference/notes по evidence/

@@ -281,6 +281,7 @@ export async function authRoutes(
                 ...body,
                 userAgent: request.headers['user-agent'],
                 ipAddress: request.ip,
+                request,
             })
 
             setRefreshTokenCookie(reply, result.refreshToken)

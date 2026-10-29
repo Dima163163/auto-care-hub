@@ -13,6 +13,16 @@ entity "User" as User {
 entity "UserSession" as Session {
   * id : uuid
   userId / expiresAt
+  mfaVerifiedAt : timestamptz?
+}
+entity "UserMfaFactor" as MfaFactor {
+  * userId : uuid
+  secretCiphertext : row-bound AES-GCM
+  lastAcceptedCounter : int
+}
+entity "UserMfaRecoveryCode" as RecoveryCode {
+  * id : uuid
+  userId / codeHash / consumedAt
 }
 entity "Provider" as Provider {
   * id : uuid
@@ -387,6 +397,8 @@ LegacyBooking ..> BookingHistory : bookingId (logical, no FK)
 LegacyBooking ||--o{ BookingReschedule : bookingId
 Request ||--o{ AutoCareReschedule : requestId
 User ||--o{ Session
+User ||--o| MfaFactor
+User ||--o{ RecoveryCode
 User ||--o{ Membership
 Provider ||--o{ Membership
 Location |o--o{ Membership : optional scope

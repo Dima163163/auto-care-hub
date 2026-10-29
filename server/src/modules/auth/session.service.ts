@@ -16,6 +16,7 @@ type CreateSessionInput = {
     userAgent?: string | null
     ipAddress?: string | null
     expiresAt: Date
+    mfaVerifiedAt?: Date | null
 }
 
 export async function createUserSession(input: CreateSessionInput) {
@@ -28,6 +29,7 @@ export async function createUserSession(input: CreateSessionInput) {
         ipAddress: metadata.ipAddress,
         lastActiveAt: new Date(),
         expiresAt: input.expiresAt,
+        mfaVerifiedAt: input.mfaVerifiedAt ?? null,
     })
 
     return sessionRepository.save(session)
@@ -90,6 +92,7 @@ export async function rotateUserSession(sessionId: string, userId: string) {
             ipAddress: session.ipAddress,
             lastActiveAt: new Date(),
             expiresAt: session.expiresAt,
+            mfaVerifiedAt: session.mfaVerifiedAt,
             revokedAt: null,
             revocationReason: null,
         })

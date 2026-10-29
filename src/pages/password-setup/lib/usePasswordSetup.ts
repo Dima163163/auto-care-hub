@@ -46,6 +46,7 @@ export function usePasswordSetup() {
         defaultValues: {
             password: '',
             confirmPassword: '',
+            mfaCode: '',
         },
     })
 
@@ -84,6 +85,7 @@ export function usePasswordSetup() {
             const user = await completeSetup({
                 token,
                 password: values.password,
+                mfaCode: values.mfaCode?.trim() || undefined,
             }).unwrap()
 
             toast.success(t('auth.passwordSetupSuccess'))

@@ -6,6 +6,8 @@ import {
 } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { UserEntity, UserStatus } from '../../entities/user/user.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { UserMfaFactorEntity } from '../../entities/user-mfa/user-mfa-factor.entity.js'
+import { UserMfaRecoveryCodeEntity } from '../../entities/user-mfa/user-mfa-recovery-code.entity.js'
 import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
 import { OAuthIdentityEntity } from '../../entities/oauth-identity/oauth-identity.entity.js'
 import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
@@ -198,6 +200,8 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await userRepository.save(user)
 
     await manager.getRepository(UserSessionEntity).delete({ userId })
+    await manager.getRepository(UserMfaRecoveryCodeEntity).delete({ userId })
+    await manager.getRepository(UserMfaFactorEntity).delete({ userId })
     await manager.getRepository(SecurityTokenEntity).delete({ userId })
     await manager.getRepository(OAuthLinkRequestEntity).delete({ userId })
     await manager.getRepository(OAuthIdentityEntity).delete({ userId })

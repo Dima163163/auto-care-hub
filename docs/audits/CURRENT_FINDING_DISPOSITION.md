@@ -1,9 +1,18 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 29.10, U03 password MFA:** admin/super-admin password login
+требует TOTP либо одноразовый recovery code. Секрет зашифрован и привязан к
+user UUID, TOTP step и recovery code погашаются транзакционно; удаление
+аккаунта очищает оба хранилища. Новые сессии
+имеют `mfaVerifiedAt`, старые отвергаются. Подготовлены private terminal
+provisioning и интеграционный replay test. Step-up, recovery/reset policy и
+staging-проверка ещё открыты.
+
 **Локальный шаг 29.10, U03:** linked Google/Яндекс callback и начало
 привязки OAuth запрещены для текущих admin/super-admin; callback не создаёт
-сессию без подтверждённого второго фактора. Password login, recovery и
-step-up ещё не реализованы, поэтому U03 открыт.
+сессию без подтверждённого второго фактора. Password login и одноразовые
+recovery codes реализованы следующим локальным шагом; reset, step-up и
+staging-проверка ещё открыты, поэтому U03 остаётся открытым.
 
 **Локальный шаг 28.10, автомобиль автопарка:** label/vehicleSnapshot получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
@@ -43,7 +52,7 @@ canonical; neither source presence nor local PASS changes external pilot readine
 | Security 26 Sep, fields “not encrypted” | Versioned AES-GCM field envelopes/HMAC indexes are implemented. U05 stable index-key KEK rotation, U06 invitation transformer and U09 log redaction are published. U01 AWS KMS startup path is merged; user/invitation email read now checks the HMAC index. Local U02 provider change request, appeal and catalog gap bindings with bounded migrations 178671–178673 are prepared | U01 live KMS/IAM and restore acceptance; U02 remaining row/parent scope integrity, including paired index+ciphertext swaps; N09 production migration/retirement |
 | Security 26 Sep, CBC backup/stream restore | Published U04 authenticates ACHBKP01 AES-GCM and stages complete gzip/SQL before consumer; negative tooling and CI PASS | External backup/key separation, live restore/RPO/RTO and historical archive decision |
 | Security 26 Sep, private cache coverage | Published U10 applies path-normalized sensitive `private, no-store` barrier; CI HTTP assertions PASS | Production proxy/cache and client identity storage acceptance |
-| Privileged MFA/step-up | U03 remains open; emergencyReason/audit is not MFA | Owner IdP/MFA/recovery choice, actual privileged-login and step-up replay |
+| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery replay, reviewed reset procedure, sensitive-action step-up and operational rollout; U03 remains open |
 | Next PWA | N03 removes unsupported production claim; Vite PWA is compatibility-only | Separate Next install/offline/update/cache implementation and browser acceptance |
 
 No report here claims there is no encryption or that server-side encryption hides

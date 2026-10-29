@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { IS_MOCK_API } from '@/shared/config/api'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { usePasswordSetup } from '../lib/usePasswordSetup'
 import { PasswordSetupInvalid, PasswordSetupVerifying } from './PasswordSetupStates'
@@ -53,6 +54,27 @@ export function PasswordSetupPage() {
                 )}
 
                 <div className="space-y-5">
+                    {!IS_MOCK_API && (
+                        <div>
+                            <label htmlFor="mfaCode" className="text-sm font-medium">
+                                {t('auth.mfaCodeLabel')}
+                            </label>
+                            <input
+                                id="mfaCode"
+                                type="text"
+                                autoComplete="one-time-code"
+                                aria-invalid={Boolean(errors.mfaCode)}
+                                aria-describedby={errors.mfaCode ? 'setup-mfa-error' : undefined}
+                                className="mt-2 w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-foreground"
+                                {...register('mfaCode')}
+                            />
+                            {errors.mfaCode && (
+                                <p id="setup-mfa-error" role="alert" className="mt-2 text-sm text-destructive">
+                                    {errors.mfaCode.message}
+                                </p>
+                            )}
+                        </div>
+                    )}
                     <div>
                         <label htmlFor="password" className="text-sm font-medium">
                             {t('auth.newPassword')}

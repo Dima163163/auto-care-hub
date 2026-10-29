@@ -7,9 +7,14 @@ participant "Fastify\nauth routes + guards" as API
 participant "Auth/session services" as Auth
 database "PostgreSQL\nUser / UserSession" as PG
 User -> Front : sign in
-Front -> API : CSRF bootstrap / auth/login\ncredentials + browser mutation guards
+Front -> API : CSRF bootstrap / auth/login\npassword + optional TOTP/recovery code
 API -> Auth : validate input / password / account status
-Auth -> PG : load user / persist refresh session
+alt current admin/super-admin
+  Auth -> PG : lock MFA factor / consume TOTP step or recovery code
+  Auth -> PG : persist session with mfaVerifiedAt
+else ordinary role
+  Auth -> PG : persist refresh session
+end
 Auth --> API : access token + refresh token\nJWT exp = persisted session expiry
 API --> Front : access DTO + HttpOnly refresh cookie
 Front -> Front : access token в памяти\nRTK auth/cache state
@@ -60,7 +65,13 @@ note over Auth, PG
   Текущая роль admin/super-admin требует persisted session при access
   и refresh. Linked OAuth callback и link/start отказывают этим ролям:
   IdP не предоставляет приложению подтверждённый второй фактор.
-  Password login всё ещё не MFA или step-up.
+  Password login для admin/super-admin требует TOTP либо одноразовый
+  recovery code. Секрет хранится в row-bound envelope по user UUID;
+  password setup для новой привилегированной учётной записи также
+  требует код и создаёт сессию только после его проверки.
+  старые сессии без mfaVerifiedAt отвергаются, refresh переносит отметку.
+  Enrollment требует private terminal/DB operator. Step-up и политика
+  recovery/reset для sensitive actions ещё открыты.
   Preferences обновляют только свои поля с проверкой status/tokenVersion.
   Login reset counters использует условный UPDATE;
   смена пароля блокирует User row и отзывает сессии в той же transaction.

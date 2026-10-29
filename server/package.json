@@ -31,6 +31,7 @@
     "demo:seed": "tsx src/scripts/seed-demo-data.ts",
     "autocare:seed": "tsx src/scripts/seed-autocare-mock-data.ts",
     "encryption:provision-keyring": "tsx src/scripts/provision-production-keyring.ts",
+    "mfa:provision": "tsx src/scripts/provision-privileged-mfa.ts",
     "encryption:backfill-email-binding": "tsx src/scripts/backfill-email-record-binding.ts",
     "encryption:backfill-outbox-binding": "tsx src/scripts/backfill-outbox-record-binding.ts",
     "encryption:backfill-oauth-binding": "tsx src/scripts/backfill-oauth-record-binding.ts",

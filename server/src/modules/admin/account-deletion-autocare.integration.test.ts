@@ -42,6 +42,9 @@ import {
     AccountDeletionRequestStatus,
 } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
+import { UserMfaFactorEntity } from '../../entities/user-mfa/user-mfa-factor.entity.js'
+import { UserMfaRecoveryCodeEntity } from '../../entities/user-mfa/user-mfa-recovery-code.entity.js'
+import { encryptRecordBoundFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
 import {
     createAutoCareAttachmentObjectKey,
     readAutoCareAttachmentObject,
@@ -116,6 +119,21 @@ describe('AutoCare account deletion retention invariants', () => {
             users.create({ name: 'Deletion Provider Owner', email: `deletion-owner-${suffix}@example.com`, role: UserRole.Owner, status: UserStatus.Active, passwordHash: 'hash', emailVerifiedAt: new Date() }),
         ])
         deletedOwnerEmail = deletedOwner.email
+        // A former admin may retain a factor after demotion. Deletion must
+        // remove its encrypted secret and all unused recovery hashes.
+        await AppDataSource.getRepository(UserMfaFactorEntity).save({
+            userId: deletedOwner.id,
+            secretCiphertext: JSON.stringify(encryptRecordBoundFieldValue(
+                'user_mfa_factors', 'secret', 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+                { rowId: deletedOwner.id, ownerId: deletedOwner.id },
+            )),
+            lastAcceptedCounter: -1,
+        })
+        await AppDataSource.getRepository(UserMfaRecoveryCodeEntity).save({
+            userId: deletedOwner.id,
+            codeHash: 'a'.repeat(64),
+            consumedAt: null,
+        })
         const countries = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
         country = await countries.save(countries.create({
             code: `RETENTION-${suffix}`,
@@ -579,6 +597,8 @@ describe('AutoCare account deletion retention invariants', () => {
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)
+        expect(await AppDataSource.getRepository(UserMfaFactorEntity).countBy({ userId: deletedOwner.id })).toBe(0)
+        expect(await AppDataSource.getRepository(UserMfaRecoveryCodeEntity).countBy({ userId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).countBy({ invitedById: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).countBy({ email: deletedOwnerEmail })).toBe(0)
 
