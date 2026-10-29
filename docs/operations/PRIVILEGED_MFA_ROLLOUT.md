@@ -47,7 +47,9 @@ Step-up now protects user, trust-policy, security-center, outbox and
 account-deletion mutations plus audit/security CSV exports after five minutes.
 Admin and super-admin chat reports, private chat history, attachment reads and chat WebSocket
 access require the same fresh proof. Their `/v1/chats` subject index also
-requires it before listing threads. Live WebSocket authorization rechecks it
+requires it before listing threads. Creating support/escalation chats, reporting,
+sending or deleting messages, uploading attachments, overriding blocks and
+marking reads also require fresh proof for admin/super-admin. Live WebSocket authorization rechecks it
 before each delivery and every 30 seconds; an expired proof closes the socket
 at the next check. Super-admin
 service-request detail also requires fresh proof before its private DTO.

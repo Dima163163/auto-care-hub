@@ -305,7 +305,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare.routes.ts",
-      "sha256": "c71a43b423709d3796d7fd61b76f7af36cda1bf4c2c34202e2ed00cd6f6e85ed",
+      "sha256": "4d49512eaa1fc8ece6cf375065069ffe35341842212cd5caabe2280df7cbf120",
       "scopes": [
         "auth",
         "backend",
@@ -2692,7 +2692,7 @@
     },
     {
       "path": "server/src/modules/admin/admin-authorization.integration.test.ts",
-      "sha256": "4febc197789b94683f04dfa5488f79160fdaf233f0018913af1178683a79c774",
+      "sha256": "69063bc6d9dee2156cdc33c5e38d840bf40f05d995be0d9b935ed02845108e0a",
       "scopes": [
         "security"
       ]

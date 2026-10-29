@@ -29,7 +29,8 @@ ChatWrite --> Result : messages / attachments
 Result --> Object : attachment access rechecked
 Admin --> Audit : exceptional read / moderation
 note right of StepUp
-  Private admin dashboards, chat reports and privileged mutations
+  Private admin dashboards, chat reports and privileged chat actions
+  plus other privileged mutations
   require fresh MFA.
   Chat subject index, history, attachment and WebSocket access for admin/super-admin
   require fresh MFA before content; WebSocket rechecks before delivery

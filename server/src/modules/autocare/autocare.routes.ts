@@ -98,6 +98,14 @@ function createWebSocketEventGuard() {
     }
 }
 
+async function requireChatActionUser(request: FastifyRequest, verifiedEmail = true) {
+    const user = verifiedEmail ? await requireVerifiedEmail(request) : await requireAuth(request)
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+        await requireRecentPrivilegedMfa(request)
+    }
+    return user
+}
+
 export async function autoCareRoutes(app: FastifyInstance) {
     app.addHook('onClose', async () => closeServiceChatGateway())
     await app.register(vehicleCatalogRoutes)
@@ -405,10 +413,10 @@ export async function autoCareRoutes(app: FastifyInstance) {
         }
         return getMyAutoCareChats(user, validateQuery(autoCareChatThreadListQuerySchema, request.query))
     })
-    app.post('/v1/chats', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareChat(await requireVerifiedEmail(request), validateBody(createAutoCareChatSchema, request.body)))
+    app.post('/v1/chats', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareChat(await requireChatActionUser(request), validateBody(createAutoCareChatSchema, request.body)))
     app.get('/v1/service-requests/:requestId/chat-thread', async (request) => getAutoCareChatThreadForRequest(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/chats/:chatId/reports', { preHandler: autoCareMutationRateLimit }, async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requireChatActionUser(request)
         const body = validateBody(createAutoCareChatReportSchema, request.body)
         return createAutoCareChatReport(user, validateParams(autoCareChatParamsSchema, request.params).chatId, { ...body, category: body.category as AutoCareChatReportCategory })
     })
@@ -417,7 +425,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return listMyAutoCareChatReports(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId, query)
     })
     app.delete('/v1/chats/:chatId/messages/:messageId', { preHandler: autoCareMutationRateLimit }, async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requireChatActionUser(request)
         const params = validateParams(autoCareChatParamsSchema.extend({ messageId: autoCareChatParamsSchema.shape.chatId }), request.params)
         return deleteAutoCareChatMessage(user, params.chatId, params.messageId)
     })
@@ -428,12 +436,12 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return createAutoCareChatBlock(user, params.chatId, body.blockedUserId, body.reason)
     })
     app.delete('/v1/chats/:chatId/blocks/:blockId', { preHandler: autoCareMutationRateLimit }, async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireChatActionUser(request, false)
         const params = validateParams(autoCareChatBlockParamsSchema, request.params)
         return revokeAutoCareChatBlock(user, params.chatId, params.blockId)
     })
-    app.post('/v1/chats/:chatId/read', async (request) => markAutoCareChatRead(await requireAuth(request), validateParams(autoCareChatParamsSchema, request.params).chatId))
-    app.post('/v1/chats/:chatId/attachments', { preHandler: serviceRequestTransitionRateLimit, bodyLimit: 14 * 1024 * 1024 }, async (request) => createAutoCareChatAttachment(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceAttachmentSchema, request.body)))
+    app.post('/v1/chats/:chatId/read', async (request) => markAutoCareChatRead(await requireChatActionUser(request, false), validateParams(autoCareChatParamsSchema, request.params).chatId))
+    app.post('/v1/chats/:chatId/attachments', { preHandler: serviceRequestTransitionRateLimit, bodyLimit: 14 * 1024 * 1024 }, async (request) => createAutoCareChatAttachment(await requireChatActionUser(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceAttachmentSchema, request.body)))
     app.get('/v1/chats/:chatId/attachments/:attachmentId', async (request, reply) => {
         const user = await requireAuth(request)
         const params = validateParams(autoCareChatParamsSchema.extend({ attachmentId: autoCareServiceAttachmentParamsSchema.shape.attachmentId }), request.params)
@@ -613,8 +621,8 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const pagination = { cursor: query.cursor, beforeCursor: query.beforeCursor, limit: query.limit }
         return getAutoCareChat(user, chatId, pagination)
     })
-    app.post('/v1/chats/:chatId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareChatMessage(await requireVerifiedEmail(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceMessageSchema, request.body), getOptionalIdempotencyKey(request.headers)))
-    app.post('/v1/service-requests/:requestId/read', async (request) => markAutoCareServiceConversationRead(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
+    app.post('/v1/chats/:chatId/messages', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareChatMessage(await requireChatActionUser(request), validateParams(autoCareChatParamsSchema, request.params).chatId, validateBody(createAutoCareServiceMessageSchema, request.body), getOptionalIdempotencyKey(request.headers)))
+    app.post('/v1/service-requests/:requestId/read', async (request) => markAutoCareServiceConversationRead(await requireChatActionUser(request, false), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/owner/service-requests/:requestId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceOffer(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceOfferSchema, request.body)))
     app.post('/v1/service-requests/:requestId/offers/:messageId/decision', { preHandler: serviceRequestTransitionRateLimit }, async (request) => {
         const user = await requireVerifiedEmail(request)
@@ -710,7 +718,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
             socket.close(4401, 'Unauthorized')
         }
     })
-    app.post('/v1/service-requests/:requestId/attachments', { preHandler: serviceRequestTransitionRateLimit, bodyLimit: 14 * 1024 * 1024 }, async (request) => createAutoCareServiceAttachment(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceAttachmentSchema, request.body)))
+    app.post('/v1/service-requests/:requestId/attachments', { preHandler: serviceRequestTransitionRateLimit, bodyLimit: 14 * 1024 * 1024 }, async (request) => createAutoCareServiceAttachment(await requireChatActionUser(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceAttachmentSchema, request.body)))
     app.get('/v1/service-requests/:requestId/attachments/:attachmentId', async (request, reply) => {
         const user = await requireAuth(request)
         const params = validateParams(autoCareServiceAttachmentParamsSchema, request.params)

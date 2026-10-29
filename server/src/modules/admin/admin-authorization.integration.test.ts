@@ -432,6 +432,35 @@ describe('Admin and workspace authorization integration', () => {
         expect(response.body).not.toHaveProperty('items')
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before privileged chat actions by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = '11111111-1111-4111-8111-111111111111'
+        const actions = [
+            ['post', '/v1/chats'],
+            ['post', `/v1/chats/${id}/reports`],
+            ['delete', `/v1/chats/${id}/messages/${id}`],
+            ['delete', `/v1/chats/${id}/blocks/${id}`],
+            ['post', `/v1/chats/${id}/read`],
+            ['post', `/v1/chats/${id}/attachments`],
+            ['post', `/v1/chats/${id}/messages`],
+            ['post', `/v1/service-requests/${id}/read`],
+            ['post', `/v1/service-requests/${id}/attachments`],
+        ] as const
+        for (const [method, path] of actions) {
+            const response = await request(app.server)[method](path)
+                .set('Authorization', `Bearer ${token}`)
+            expect(response.status, `${method.toUpperCase()} ${path}`).toBe(403)
+            expect(response.body.code, `${method.toUpperCase()} ${path}`).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('requires fresh MFA before every private administrative read', async () => {
         const token = await createTestAccessToken(superAdmin)
         const sessionId = verifyAccessToken(token).sessionId
