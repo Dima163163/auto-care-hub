@@ -1,21 +1,32 @@
 # AutoCare Hub Project Context
 
+## U03 — chat report conflict на PostgreSQL, 29 октября 2026
+
+Отдельный isolated PostgreSQL integration 1 файл / 3 теста PASS: admin
+список исключает жалобы конфликтной переписки, super-admin не может
+решить соседнее pending дело, собственное описание скрыто в списке.
+Для назначения, чтения и продления нужен отдельный DB replay; staging
+acceptance остаётся открытым.
+
 ## Broadcast photoUrls schema parity, 29 октября 2026
 
 Миграция создала `autocare_broadcast_requests.photoUrls` как `text[]`, но
 TypeORM entity объявляла `jsonb`. Реальный insert массива падал с
 `malformed array literal: "[]"`. Модель приведена к `text[]`; integration
 на isolated PostgreSQL с непустым массивом и account deletion 1/1 PASS.
-Полный повторный integration прогон ещё нужен.
+После обязательных demo/AutoCare seeds полный integration прогон
+29 файлов / 138 PASS / 1 skip. Staging acceptance остаётся открытым.
 
 ## Интеграционный прогон и MFA fixture, 29 октября 2026
 
 Backend unit 463 файла / 1722 теста PASS. На отдельном локальном
 PostgreSQL/Redis full integration сначала дал 26/29 файлов PASS:
 MFA teardown удалял append-only security events без разрешённого флага,
-account deletion fixture имеет malformed array/empty cleanup, а каталог
-ожидает seed. MFA teardown исправлен в двух suite; targeted integration
-2 файла / 5 тестов PASS. Полный повторный прогон и другие дефекты открыты.
+account deletion fixture упирался в реальный mismatch `photoUrls` entity,
+а каталог ожидал обязательный seed. MFA teardown исправлен в двух suite,
+entity согласована с миграцией. После seeds полный повторный integration
+прогон: 29 файлов / 138 PASS / 1 skip. Часть новых конфликтных сценариев
+чатов проверена дополнительно на DB, остальные и staging acceptance открыты.
 
 ## U03 — конфликт соседних жалоб, 29 октября 2026
 

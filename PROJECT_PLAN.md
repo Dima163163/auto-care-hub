@@ -5,15 +5,23 @@
 - [x] Согласовать `AutoCareBroadcastRequest.photoUrls` с миграцией
   PostgreSQL (`text[]` вместо ошибочного `jsonb`): реальный insert с
   непустым массивом и удаление аккаунта теперь проходят на isolated DB.
-  Account deletion integration 1/1 PASS.
+  Account deletion integration 1/1 PASS; полный seeded backend integration
+  29 файлов / 138 PASS / 1 skip.
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Повторить на isolated PostgreSQL новые chat conflict проверки:
+  admin список исключает конфликтную переписку, super-admin не решает
+  соседнюю жалобу, приватное описание собственной жалобы скрыто.
+  Integration 1 файл / 3 теста PASS. Назначение, доступ и продление
+  требуют отдельного DB replay.
 - [x] Прогнать полный backend unit на 463 файлах / 1722 сценариях и
   isolated PostgreSQL/Redis integration: исправить cleanup MFA fixture,
   который пытался удалить append-only security events без разрешённого
   transaction flag. Targeted MFA integration 2 файла / 5 тестов PASS.
-  Остальные найденные integration failures разбираются отдельно.
+  После исправления `photoUrls` и обязательных seeds полный integration
+  29 файлов / 138 PASS / 1 skip. Частичный DB replay новых chat conflict
+  сценариев выполнен отдельно; staging acceptance остаётся открытым.
 - [x] Повторно проверить под lock весь набор pending жалоб той же
   переписки перед решением: super-admin, бывший участник другого дела,
   не может решить соседнее. Boundary 38 PASS; PostgreSQL replay открыт.

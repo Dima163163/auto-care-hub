@@ -2808,6 +2808,13 @@
       "scopes": [
         "security"
       ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-report-conflict.integration.test.ts",
+      "sha256": "1347cb352785598da9c29b3bd989f15f575fa94a56c8368f06b3b2c33a4a29cc",
+      "scopes": [
+        "security"
+      ]
     }
   ],
   "inventories": [

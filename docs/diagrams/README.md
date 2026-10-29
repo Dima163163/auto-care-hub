@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, chat conflict DB replay 2026-10-29:** схема
+`09-access-privacy.puml` дополнена integration anchor:
+`chat-report-conflict.integration.test.ts`. PostgreSQL 3/3 PASS для
+списка и решения; assignment/read/extension replay открыт.
+
 **Broadcast photoUrls schema parity 2026-10-29:** `05-domain-data.puml` с SVG
 показывает PostgreSQL `text[]` для массива ссылок, согласованный с entity
 и миграцией. Isolated account deletion integration 1/1 PASS.
