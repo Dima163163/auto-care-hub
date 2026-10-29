@@ -5,6 +5,10 @@ import { AppDataSource } from '../../database/data-source.js'
 import { UserMfaFactorEntity } from '../../entities/user-mfa/user-mfa-factor.entity.js'
 import { UserMfaRecoveryCodeEntity } from '../../entities/user-mfa/user-mfa-recovery-code.entity.js'
 import { UserEntity, UserStatus } from '../../entities/user/user.entity.js'
+import { UserRole } from '../../entities/user/user.entity.js'
+import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
+import { recordAuditLog } from '../admin/audit-log.service.js'
 import { isAdminRole } from '../../shared/auth/roles.js'
 import { decryptRecordBoundFieldValue, encryptRecordBoundFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
 import { generateTotpSecret, matchTotpCode } from './totp.js'
@@ -57,6 +61,86 @@ export async function provisionPrivilegedMfa(userId: string) {
             codeHash: recoveryCodeHash(userId, code),
             consumedAt: null,
         })))
+    })
+    return { secret, recoveryCodes }
+}
+
+type MfaResetApproval = {
+    userId: string
+    code: string
+}
+
+/** Operator recovery requires two distinct, active super-admin MFA proofs. */
+export async function resetPrivilegedMfa(input: {
+    targetUserId: string
+    approvals: readonly [MfaResetApproval, MfaResetApproval]
+    ticketId: string
+}) {
+    const ticketId = input.ticketId.trim()
+    const [first, second] = input.approvals
+    if (!/^[A-Za-z0-9][A-Za-z0-9-]{5,79}$/.test(ticketId)) {
+        throw new Error('A bounded recovery ticket ID is required.')
+    }
+    if (!first.userId || !second.userId || first.userId === second.userId
+        || first.userId === input.targetUserId || second.userId === input.targetUserId) {
+        throw new Error('Two distinct super-admin approvers other than the target are required.')
+    }
+
+    const secret = generateTotpSecret()
+    const recoveryCodes = generateMfaRecoveryCodes()
+    await AppDataSource.transaction(async (manager) => {
+        const users = manager.getRepository(UserEntity)
+        const identities = [...new Set([input.targetUserId, first.userId, second.userId])].sort()
+        const locked = new Map<string, UserEntity>()
+        for (const userId of identities) {
+            const user = await users.createQueryBuilder('user')
+                .where('user.id = :userId', { userId })
+                .setLock('pessimistic_write')
+                .getOne()
+            if (!user) throw new Error('A recovery account was not found.')
+            locked.set(userId, user)
+        }
+        const target = locked.get(input.targetUserId)
+        if (!target || !isAdminRole(target.role) || target.status !== UserStatus.Active) {
+            throw new Error('An active privileged target account is required.')
+        }
+        for (const approval of input.approvals) {
+            const approver = locked.get(approval.userId)
+            if (!approver || approver.role !== UserRole.SuperAdmin || approver.status !== UserStatus.Active) {
+                throw new Error('Two active super-admin approvers are required.')
+            }
+            if (!await verifyPrivilegedMfa(approval.userId, approval.code, Date.now(), manager)) {
+                throw new Error('An approver MFA proof was not accepted.')
+            }
+        }
+
+        await manager.getRepository(UserSessionEntity).delete({ userId: target.id })
+        await users.increment({ id: target.id }, 'tokenVersion', 1)
+        await manager.getRepository(UserMfaRecoveryCodeEntity).delete({ userId: target.id })
+        await manager.getRepository(UserMfaFactorEntity).delete({ userId: target.id })
+
+        const factors = manager.getRepository(UserMfaFactorEntity)
+        await factors.save(factors.create({
+            userId: target.id,
+            secretCiphertext: JSON.stringify(encryptRecordBoundFieldValue(
+                'user_mfa_factors', 'secret', secret, { rowId: target.id, ownerId: target.id },
+            )),
+            lastAcceptedCounter: -1,
+        }))
+        const codes = manager.getRepository(UserMfaRecoveryCodeEntity)
+        await codes.save(recoveryCodes.map((code) => codes.create({
+            userId: target.id,
+            codeHash: recoveryCodeHash(target.id, code),
+            consumedAt: null,
+        })))
+        await recordAuditLog({
+            actorId: first.userId,
+            action: AuditAction.MfaFactorReset,
+            targetId: target.id,
+            targetType: 'user',
+            metadata: { secondApproverId: second.userId, ticketId },
+            manager,
+        })
     })
     return { secret, recoveryCodes }
 }

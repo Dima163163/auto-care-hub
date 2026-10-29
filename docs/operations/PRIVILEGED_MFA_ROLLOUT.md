@@ -25,10 +25,26 @@ by access and refresh checks after this code is deployed.
 5. Repeat the controlled provisioning and verification for production before
    opening privileged access to operators.
 
-The recovery codes are one-use. If all are lost, there is currently no
-application reset flow: a reviewed operator procedure to verify identity,
-replace the factor, revoke sessions and record an audit trail is still needed.
+The recovery codes are one-use. For a lost factor and exhausted recovery codes:
+
+1. Verify the target holder's identity through the organization's separate
+   recovery process and record the case ID. This CLI does not verify that
+   external identity check or approve the case.
+2. Obtain two distinct, active super-admin approvers other than the target.
+   Each must enter their own MFA code directly into the private terminal.
+   Run `npm --prefix server run mfa:reset -- target@example.com approver1@example.com approver2@example.com TICKET-123`.
+   Codes are hidden during entry and never passed as command arguments.
+3. The transaction checks both approvers' roles and factors, removes the old
+   factor and recovery codes, deletes the target's sessions, increments its
+   token version, provisions a replacement and records the ticket and both
+   approvers in the audit log. Deliver the new URI and codes privately to the
+   target. Verify a new login and rejection of old tokens on staging.
+
+If two independent super-admin factors are unavailable, this procedure fails
+closed. A separate break-glass governance process still needs approval and
+staging rehearsal; do not use a manual database edit as an undocumented reset.
 Step-up now protects role changes, administrator creation and account-deletion
 decisions after five minutes. A fresh code is consumed through `/auth/step-up`
 and the original operation is retried. Other sensitive actions and staging
-replay remain open under U03.
+replay, external identity verification and break-glass acceptance remain open
+under U03.

@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "90ce2395e0ad9fa270bf7c5557036feccfde8a3d71481b8a9791eca9e52881a7",
+      "sha256": "d692babdba458419868b0de176c0ab5075ceaf3f145c9ddb7510384cd75fe275",
       "scopes": [
         "backend"
       ]
@@ -2490,7 +2490,7 @@
     },
     {
       "path": "server/src/modules/auth/privileged-mfa.service.ts",
-      "sha256": "b5598c46389f99b11c0343d5c4f9ca2ae077c341459b6f94c2312dcf4f394307",
+      "sha256": "ffce369d4780674e076f8d14b2dbf1f43e773e4328f825f6085c080e09755130",
       "scopes": [
         "auth",
         "security"
@@ -2616,6 +2616,21 @@
       "sha256": "5f1a370e1a8f772f74d8c6111b4201cb080076197c5f0460d82b177fbccbbb2f",
       "scopes": [
         "frontend"
+      ]
+    },
+    {
+      "path": "server/src/scripts/reset-privileged-mfa.ts",
+      "sha256": "950005b67ad756b5d674fb0006de9351f852c86059ef39cdd7e1a410eb98f8e1",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/privileged-mfa-reset.integration.test.ts",
+      "sha256": "e7dd90954011ff47320e0d4247cf1fc3aa9a507e407049034f21b35dc0cadfb5",
+      "scopes": [
+        "auth"
       ]
     }
   ],

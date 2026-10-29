@@ -24,6 +24,11 @@ entity "UserMfaRecoveryCode" as RecoveryCode {
   * id : uuid
   userId / codeHash / consumedAt
 }
+note bottom of MfaFactor
+  Two other super-admin MFA proofs authorize operator reset.
+  Reset replaces factor + recovery hashes, deletes target sessions,
+  increments tokenVersion and records the ticket in audit_logs.
+end note
 entity "Provider" as Provider {
   * id : uuid
   ownerId : legacy compatibility

@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U03, operator MFA recovery 2026-10-29:** `05-domain-data.puml` и
+`07-auth-session.puml` с SVG показывают замену фактора после двух проверок
+MFA независимых super-admin, отзыв сессий, tokenVersion и аудит. Внешняя
+проверка личности и break-glass при нехватке подтверждающих лиц остаются
+операционными условиями.
+
 **U03, sensitive action step-up 2026-10-29:** `07-auth-session.puml` и
 `09-access-privacy.puml` с SVG показывают повторную проверку кода после
 пятиминутного окна для изменения ролей, создания администратора и решения

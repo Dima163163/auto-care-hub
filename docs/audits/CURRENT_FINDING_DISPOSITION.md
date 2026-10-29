@@ -1,5 +1,11 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 29.10, U03 recovery:** приватная команда сброса MFA требует
+коды двух разных действующих super-admin, не совпадающих с владельцем фактора,
+и ID обращения. В одной транзакции заменяет фактор и резервные коды, удаляет
+сессии, повышает tokenVersion и пишет аудит. Внешняя проверка личности,
+break-glass при отсутствии двух подтверждающих лиц и staging rehearsal открыты.
+
 **Локальный шаг 29.10, U03 step-up:** проверка свежести MFA (5 минут) добавлена
 для изменения роли, создания администратора и решения об удалении аккаунта.
 Диалог получает новый код, `auth/step-up` обновляет только текущую сессию и
@@ -11,14 +17,14 @@ event. Остальные sensitive actions, reset policy и staging acceptance 
 user UUID, TOTP step и recovery code погашаются транзакционно; удаление
 аккаунта очищает оба хранилища. Новые сессии
 имеют `mfaVerifiedAt`, старые отвергаются. Подготовлены private terminal
-provisioning и интеграционный replay test. Step-up, recovery/reset policy и
-staging-проверка ещё открыты.
+provisioning и интеграционный replay test. Частичный step-up и recovery
+описаны выше; staging-проверка ещё открыта.
 
 **Локальный шаг 29.10, U03:** linked Google/Яндекс callback и начало
 привязки OAuth запрещены для текущих admin/super-admin; callback не создаёт
 сессию без подтверждённого второго фактора. Password login и одноразовые
-recovery codes реализованы следующим локальным шагом; reset, step-up и
-staging-проверка ещё открыты, поэтому U03 остаётся открытым.
+recovery codes реализованы следующим локальным шагом; частичный reset и
+step-up описаны выше. Staging-проверка ещё открыта, поэтому U03 остаётся открытым.
 
 **Локальный шаг 28.10, автомобиль автопарка:** label/vehicleSnapshot получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover остаются открытыми.
 
@@ -58,7 +64,7 @@ canonical; neither source presence nor local PASS changes external pilot readine
 | Security 26 Sep, fields “not encrypted” | Versioned AES-GCM field envelopes/HMAC indexes are implemented. U05 stable index-key KEK rotation, U06 invitation transformer and U09 log redaction are published. U01 AWS KMS startup path is merged; user/invitation email read now checks the HMAC index. Local U02 provider change request, appeal and catalog gap bindings with bounded migrations 178671–178673 are prepared | U01 live KMS/IAM and restore acceptance; U02 remaining row/parent scope integrity, including paired index+ciphertext swaps; N09 production migration/retirement |
 | Security 26 Sep, CBC backup/stream restore | Published U04 authenticates ACHBKP01 AES-GCM and stages complete gzip/SQL before consumer; negative tooling and CI PASS | External backup/key separation, live restore/RPO/RTO and historical archive decision |
 | Security 26 Sep, private cache coverage | Published U10 applies path-normalized sensitive `private, no-store` barrier; CI HTTP assertions PASS | Production proxy/cache and client identity storage acceptance |
-| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. A five-minute step-up protects role changes, admin creation and deletion decisions. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery/step-up replay, reviewed reset procedure, remaining sensitive actions and operational rollout; U03 remains open |
+| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. A five-minute step-up protects role changes, admin creation and deletion decisions. A two-super-admin reset command revokes sessions and audits the replacement. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery/step-up replay, external identity check and break-glass acceptance, remaining sensitive actions and operational rollout; U03 remains open |
 | Next PWA | N03 removes unsupported production claim; Vite PWA is compatibility-only | Separate Next install/offline/update/cache implementation and browser acceptance |
 
 No report here claims there is no encryption or that server-side encryption hides

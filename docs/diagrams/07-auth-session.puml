@@ -28,6 +28,11 @@ group sensitive admin operation after five minutes
   API --> Front : success / audited verification
   Front -> API : retry original mutation once
 end
+group controlled operator MFA reset
+  Auth -> PG : lock target + two other super-admins
+  Auth -> PG : consume both MFA proofs / replace target factor
+  Auth -> PG : delete target sessions / increment tokenVersion / audit ticket
+end
 group linked Google/Yandex callback
   Front -> API : /auth/oauth/:provider/callback
   API -> Auth : resolve linked identity and current user role
@@ -82,7 +87,7 @@ note over Auth, PG
   старые сессии без mfaVerifiedAt отвергаются, refresh переносит отметку.
   Enrollment требует private terminal/DB operator. Step-up действует для
   role/create/deletion mutations; остальные sensitive actions и политика
-  recovery/reset ещё открыты.
+  внешний identity check / break-glass и полная staging-проверка открыты.
   Preferences обновляют только свои поля с проверкой status/tokenVersion.
   Login reset counters использует условный UPDATE;
   смена пароля блокирует User row и отзывает сессии в той же transaction.
