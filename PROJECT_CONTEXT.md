@@ -2,11 +2,12 @@
 
 ## U03 — chat report conflict на PostgreSQL, 29 октября 2026
 
-Отдельный isolated PostgreSQL integration 1 файл / 3 теста PASS: admin
-список исключает жалобы конфликтной переписки, super-admin не может
-решить соседнее pending дело, собственное описание скрыто в списке.
-Для назначения, чтения и продления нужен отдельный DB replay; staging
-acceptance остаётся открытым.
+Отдельный isolated PostgreSQL integration 1 файл / 6 тестов PASS: admin
+список исключает жалобы конфликтной переписки, super-admin не решает
+соседнее pending дело, собственное описание скрыто. Сторона жалобы не
+получает чтение, назначение и продление; независимый модератор с назначением
+сохраняет доступ. Полный integration 30 файлов / 144 PASS / 1 skip.
+Staging acceptance остаётся открытым.
 
 ## Broadcast photoUrls schema parity, 29 октября 2026
 
@@ -15,7 +16,7 @@ TypeORM entity объявляла `jsonb`. Реальный insert массив�
 `malformed array literal: "[]"`. Модель приведена к `text[]`; integration
 на isolated PostgreSQL с непустым массивом и account deletion 1/1 PASS.
 После обязательных demo/AutoCare seeds полный integration прогон
-29 файлов / 138 PASS / 1 skip. Staging acceptance остаётся открытым.
+30 файлов / 144 PASS / 1 skip. Staging acceptance остаётся открытым.
 
 ## Интеграционный прогон и MFA fixture, 29 октября 2026
 
@@ -25,8 +26,8 @@ MFA teardown удалял append-only security events без разрешённ�
 account deletion fixture упирался в реальный mismatch `photoUrls` entity,
 а каталог ожидал обязательный seed. MFA teardown исправлен в двух suite,
 entity согласована с миграцией. После seeds полный повторный integration
-прогон: 29 файлов / 138 PASS / 1 skip. Часть новых конфликтных сценариев
-чатов проверена дополнительно на DB, остальные и staging acceptance открыты.
+прогон: 30 файлов / 144 PASS / 1 skip. Новые конфликтные сценарии чатов
+дополнительно проверены на DB; staging acceptance остаётся открытым.
 
 ## U03 — конфликт соседних жалоб, 29 октября 2026
 

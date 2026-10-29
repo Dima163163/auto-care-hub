@@ -678,15 +678,15 @@ cutover ещё открыты.
 указывала `jsonb`; сохранение даже пустого массива падало на PostgreSQL.
 Entity приведена к `text[]`, fixture содержит непустой массив и проверяет
 очистку при удалении аккаунта. Isolated integration 1/1 PASS, полный
-seeded PostgreSQL/Redis прогон 29 файлов / 138 PASS / 1 skip; staging открыт.
+seeded PostgreSQL/Redis прогон 30 файлов / 144 PASS / 1 skip; staging открыт.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
 **Локальный шаг 29.10, chat conflict PostgreSQL:** отдельный integration
-1 файл / 3 теста PASS на isolated DB: admin список исключает конфликтный
-чат, super-admin не решает соседнюю жалобу и видит собственное описание
-только в скрытом виде. Assignment/read/extension DB replay и staging
-остаются открытыми.
+1 файл / 6 тестов PASS на isolated DB: admin список исключает конфликтный
+чат, super-admin не решает соседнюю жалобу и не получает описание своего
+дела. Сторона жалобы не получает назначение, чтение и продление, а
+независимый назначенный admin сохраняет доступ. Staging остаётся открытым.
 
 **Локальный шаг 29.10, MFA integration cleanup:** полный backend unit
 463/1722 PASS; отдельный PostgreSQL/Redis integration выявил teardown,
@@ -694,8 +694,8 @@ seeded PostgreSQL/Redis прогон 29 файлов / 138 PASS / 1 skip; stagin
 Оба MFA fixture теперь удаляют только свои события с ограниченным
 `app.security_event_retention_cleanup` внутри транзакции. Targeted
 integration 2 файла / 5 тестов PASS. После исправления `photoUrls` и
-обязательных seeds полный прогон 29 файлов / 138 PASS / 1 skip; часть
-chat conflict сценариев проверена отдельно на DB, pilot NO-GO.
+обязательных seeds полный прогон 30 файлов / 144 PASS / 1 skip;
+chat conflict сценарии проверены отдельно на DB, pilot NO-GO.
 
 **Локальный шаг 29.10, соседние chat reports:** super-admin мог решить
 другую pending жалобу в той же переписке, где сам является стороной дела.
