@@ -2735,6 +2735,21 @@
         "backend",
         "security"
       ]
+    },
+    {
+      "path": "server/src/modules/autocare/catalog-gap.service.ts",
+      "scopes": [
+        "backend",
+        "security"
+      ],
+      "sha256": "28b395fef7d78111c98dfbd27dd7d09d45f1436549117c5e298135d3dcb3a36b"
+    },
+    {
+      "path": "server/src/modules/autocare/catalog-gap.service-boundary.test.ts",
+      "scopes": [
+        "security"
+      ],
+      "sha256": "9bfc3c73a4d75ed5fb5dd5c1e74e287361b7d385b4774f28445d558ded45d1ec"
     }
   ],
   "inventories": [

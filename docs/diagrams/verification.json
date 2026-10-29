@@ -684,6 +684,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 09-access-privacy"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "backend,security",
+      "change": "U03 block catalog gap self-review under row lock before status or definition mutation",
+      "sourceAnchorCount": 357,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 09-access-privacy"
     }
   ],
   "limitations": [

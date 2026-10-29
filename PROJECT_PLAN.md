@@ -2,6 +2,9 @@
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Запретить admin/super-admin решать собственную catalog-gap заявку
+  под row lock до создания определения или смены статуса; независимый
+  reviewer может отклонить заявку. Boundary suite 7 PASS.
 - [x] Потребовать fresh MFA у admin/super-admin перед 14 маршрутами
   переходов service/broadcast request: сообщения, офферы, смета, перенос,
   подтверждение, отмена и завершение. PostgreSQL negative matrix добавлена.

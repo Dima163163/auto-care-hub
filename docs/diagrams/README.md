@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, catalog-gap review 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет решения собственной заявки на изменение каталога под
+row lock. PostgreSQL/staging replay открыт.
+
 **U03, request transitions 2026-10-29:** `09-access-privacy.puml` с SVG
 показывает fresh MFA для admin/super-admin перед 14 переходами service и
 broadcast request. PostgreSQL/staging replay открыт.

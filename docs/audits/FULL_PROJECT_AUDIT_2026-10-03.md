@@ -673,6 +673,12 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, catalog-gap self-review:** admin мог подать заявку
+на новую услугу и сам принять решение, включая создание service definition.
+Теперь решение автора запрещено под row lock до любых изменений; другой
+admin сохраняет право решения. Boundary unit 7 PASS; PostgreSQL/staging
+replay открыт. U03/pilot NO-GO.
+
 **Локальный шаг 29.10, request transitions:** четырнадцать маршрутов
 изменения service/broadcast requests теперь требуют fresh MFA для
 admin/super-admin до валидации и записи. Негативная PostgreSQL матрица

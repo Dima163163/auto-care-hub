@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — независимое решение по каталогу, 29 октября 2026
+
+Catalog-gap заявка больше не может быть одобрена или отклонена своим
+автором, даже если он admin/super-admin. Проверка стоит после row lock и
+до создания service definition/смены статуса. Boundary unit 7 PASS;
+PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
 ## U03 — переходы заявок, 29 октября 2026
 
 Четырнадцать service/broadcast request mutations теперь требуют fresh MFA
