@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — список тем чатов, 29 октября 2026
+
+`GET /v1/chats` требует свежий MFA для admin/super-admin до чтения тем;
+client/provider путь остаётся под прежними ресурсными правами. Добавлены
+негативные PostgreSQL сценарии для обеих ролей; локальная БД недоступна,
+поэтому их replay и staging acceptance открыты. U03 и pilot NO-GO сохраняются.
+
 ## U03 — административные изменения, 29 октября 2026
 
 Все оставшиеся mutations в `admin.routes.ts` и platform review mutations

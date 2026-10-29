@@ -415,6 +415,23 @@ describe('Admin and workspace authorization integration', () => {
         expect(response.body).not.toHaveProperty('items')
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before listing chat subjects to %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const response = await request(app.server)
+            .get('/v1/chats')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(403)
+        expect(response.body.code).toBe('MFA_STEP_UP_REQUIRED')
+        expect(response.body).not.toHaveProperty('items')
+    })
+
     it('requires fresh MFA before every private administrative read', async () => {
         const token = await createTestAccessToken(superAdmin)
         const sessionId = verifyAccessToken(token).sessionId

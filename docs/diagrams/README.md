@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, chat index 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед выдачей списка
+тем чатов admin/super-admin. PostgreSQL/staging replay остаются открытыми.
+
 **U03, admin mutations 2026-10-29:** `07-auth-session.puml` и
 `09-access-privacy.puml` с SVG показывают свежий MFA для модерации,
 provider/catalog/market governance, кабинетов и platform reviews.

@@ -552,6 +552,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 07-auth-session and 09-access-privacy"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "auth,security,backend",
+      "change": "U03 fresh MFA before privileged chat subject index",
+      "sourceAnchorCount": 352,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 07-auth-session and 09-access-privacy"
     }
   ],
   "limitations": [

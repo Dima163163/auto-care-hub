@@ -673,6 +673,11 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, список чатов:** `GET /v1/chats` раскрывал admin/super-admin
+темы приватных чатов без свежего MFA. Теперь перед чтением списка обе роли
+проходят step-up; client/provider остаются под ресурсными правами. Добавлены
+негативные PostgreSQL сценарии, локально без БД не запускались. U03 открыт.
+
 **Локальный шаг 29.10, admin mutations:** модерация, provider/catalog/market
 governance, кабинеты и platform reviews требуют свежий MFA до записи.
 Backend build/lint и полный unit suite **1704 PASS**; PostgreSQL negative
