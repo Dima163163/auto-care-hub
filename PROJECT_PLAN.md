@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## PostgreSQL schema parity — broadcast photoUrls, 2026-10-29
+
+- [x] Согласовать `AutoCareBroadcastRequest.photoUrls` с миграцией
+  PostgreSQL (`text[]` вместо ошибочного `jsonb`): реальный insert с
+  непустым массивом и удаление аккаунта теперь проходят на isolated DB.
+  Account deletion integration 1/1 PASS.
+
 ## U03 — границы привилегированных чатов, 2026-10-29
 
 - [x] Прогнать полный backend unit на 463 файлах / 1722 сценариях и

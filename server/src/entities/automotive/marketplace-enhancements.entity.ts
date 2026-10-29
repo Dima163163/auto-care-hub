@@ -94,7 +94,7 @@ export class AutoCareBroadcastRequestEntity {
     @Column({ type: 'text', nullable: true }) issueDescriptionBinding!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_broadcast_requests', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
     @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
-    @Column({ type: 'jsonb', default: () => "'[]'" }) photoUrls!: string[]
+    @Column('text', { array: true, default: () => "'{}'" }) photoUrls!: string[]
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
     @Column({ type: 'text', default: 'open' }) status!: string
     @Column({ type: 'integer', default: 5 }) maxProviders!: number

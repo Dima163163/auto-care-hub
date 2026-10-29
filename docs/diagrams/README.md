@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**Broadcast photoUrls schema parity 2026-10-29:** `05-domain-data.puml` с SVG
+показывает PostgreSQL `text[]` для массива ссылок, согласованный с entity
+и миграцией. Isolated account deletion integration 1/1 PASS.
+
 **U03, neighboring chat reports 2026-10-29:** `09-access-privacy.puml` с SVG
 показывает запрет super-admin решения соседней pending жалобы, когда он
 сторона дела той же переписки; проверка под thread row lock.

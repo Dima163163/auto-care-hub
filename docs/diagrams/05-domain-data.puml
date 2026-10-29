@@ -181,6 +181,7 @@ entity "BroadcastRequest" as BroadcastRequest {
   clientId / serviceDefinitionId / marketId?
   issueDescription / vehicleSnapshot : encrypted
   issueDescriptionBinding / vehicleSnapshotBinding : HMAC?
+  photoUrls : text[]
 }
 entity "BroadcastOffer" as BroadcastOffer {
   * id : uuid

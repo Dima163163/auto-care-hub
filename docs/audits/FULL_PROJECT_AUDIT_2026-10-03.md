@@ -671,6 +671,15 @@ reviewReason получают HMAC по gap/requester UUID, nullable provider UU
 redacted поля по каждой строке. PostgreSQL CI, staging KMS/restore и strict
 cutover ещё открыты.
 
+### Интеграционная проверка schema parity
+
+**Локальный шаг 29.10, broadcast photoUrls schema:** миграция определяла
+`autocare_broadcast_requests.photoUrls` как `text[]`, entity ошибочно
+указывала `jsonb`; сохранение даже пустого массива падало на PostgreSQL.
+Entity приведена к `text[]`, fixture содержит непустой массив и проверяет
+очистку при удалении аккаунта. Isolated integration 1/1 PASS; полный
+повторный прогон и staging открыты.
+
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
 **Локальный шаг 29.10, MFA integration cleanup:** полный backend unit

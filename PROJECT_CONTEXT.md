@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## Broadcast photoUrls schema parity, 29 октября 2026
+
+Миграция создала `autocare_broadcast_requests.photoUrls` как `text[]`, но
+TypeORM entity объявляла `jsonb`. Реальный insert массива падал с
+`malformed array literal: "[]"`. Модель приведена к `text[]`; integration
+на isolated PostgreSQL с непустым массивом и account deletion 1/1 PASS.
+Полный повторный integration прогон ещё нужен.
+
 ## Интеграционный прогон и MFA fixture, 29 октября 2026
 
 Backend unit 463 файла / 1722 теста PASS. На отдельном локальном

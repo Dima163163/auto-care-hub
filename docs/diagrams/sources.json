@@ -120,7 +120,7 @@
     },
     {
       "path": "server/src/entities/automotive/marketplace-enhancements.entity.ts",
-      "sha256": "21863cee4561efff9a1d3b552a36fb3e3d7150ec971e245346dc8fbdfe6e7a11",
+      "sha256": "9f7c4ac2b8c2c92fb6c3a2fb69fe55dc9daa5188fdace1ff1ec36590fa8156a3",
       "scopes": [
         "data"
       ]
@@ -1294,7 +1294,7 @@
     },
     {
       "path": "server/src/modules/admin/account-deletion-autocare.integration.test.ts",
-      "sha256": "2eec6f2c9a28cb11da009d915272b40b5ac23a5e76d91e406057f865d26f31e6",
+      "sha256": "58b82bdce4609f0e794df6a2af856aaa569aec794331a4ef19c2e8254914fb2c",
       "scopes": [
         "security"
       ]

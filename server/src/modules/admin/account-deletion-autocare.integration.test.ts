@@ -318,7 +318,7 @@ describe('AutoCare account deletion retention invariants', () => {
             marketId: market.id,
             issueDescription: 'Private broadcast issue',
             vehicleSnapshot: { make: 'Private car' },
-            photoUrls: [],
+            photoUrls: ['private://autocare/broadcasts/deletion-fixture-photo'],
             preferredAt: null,
             status: 'open',
             maxProviders: 5,
