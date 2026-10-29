@@ -12,7 +12,7 @@ function chain() {
     return query
 }
 describe('bounded chat list summaries', () => {
-    beforeEach(() => { mocks.getRepository.mockReset(); mocks.scopes.mockResolvedValue([]) })
+    beforeEach(() => { mocks.getRepository.mockReset(); mocks.scopes.mockReset().mockResolvedValue([]) })
     function setup(role = UserRole.Client) {
         const user = Object.assign(new UserEntity(), { id: 'synthetic-user', role })
         const threadQuery = chain(), messageQuery = chain(), blockQuery = chain()
@@ -52,5 +52,15 @@ describe('bounded chat list summaries', () => {
         await getMyAutoCareChats(user, { limit: 2 })
         expect(threadQuery.where).toHaveBeenCalledWith(expect.stringContaining('request.locationId IN (:...locations0)'), expect.objectContaining({ provider0: 'provider-1', locations0: ['branch-1'] }))
         await expect(getMyAutoCareChats(user, { beforeCursor: 'invalid' })).rejects.toMatchObject({ statusCode: 422 })
+    })
+    it.each([UserRole.Admin, UserRole.SuperAdmin])('does not widen %s chat index through provider memberships', async (role) => {
+        const { user, threadQuery } = setup(role)
+        mocks.scopes.mockResolvedValue([{ providerId: 'provider-1', locationIds: null }])
+        await getMyAutoCareChats(user, { limit: 2 })
+        expect(mocks.scopes).not.toHaveBeenCalled()
+        const where = String(threadQuery.where.mock.calls[0]?.[0])
+        expect(where).toContain("thread.type IN ('support', 'admin_escalation')")
+        expect(where).not.toContain('thread.providerId =')
+        if (role === UserRole.SuperAdmin) expect(where).not.toContain('service_request')
     })
 })

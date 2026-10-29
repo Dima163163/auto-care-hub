@@ -35,6 +35,8 @@ note right of StepUp
   Chat subject index, history, attachment and WebSocket access for admin/super-admin
   require fresh MFA before content; WebSocket rechecks before delivery
   and every 30 seconds during live access.
+  Super-admin index lists support/escalation only; private request chats
+  require per-thread audited access with an emergency reason.
   Super-admin service-request detail also requires fresh MFA.
   Other modules' sensitive reads and staging replay remain open.
 end note

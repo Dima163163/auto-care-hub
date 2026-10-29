@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, privileged chat index scope 2026-10-29:** `09-access-privacy.puml`
+с SVG показывает, что super-admin индекс содержит только support/escalation;
+приватные request-чаты открываются отдельно с причиной и аудитом. Mock
+список повторяет это правило. PostgreSQL/staging replay открыты.
+
 **U03, chat actions 2026-10-29:** `07-auth-session.puml` и
 `09-access-privacy.puml` с SVG показывают свежий MFA перед admin/super-admin
 действиями с чатами и вложениями. PostgreSQL/staging replay открыты.

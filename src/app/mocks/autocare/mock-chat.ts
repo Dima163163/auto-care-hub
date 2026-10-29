@@ -16,9 +16,9 @@ export function getMockAutoCareChatThreads(user: User) {
         .filter((report) => report.messageId !== null && report.status === 'pending' && report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now())
         .map((report) => report.threadId))
     const requestThreads = mockAutoCareServiceRequests
-        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && activeModeratedThreadIds.has(`chat-request-${request.id}`)))
+        .filter((request) => ((user.role !== 'admin' && user.role !== 'super_admin') && request.clientId === user.id) || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && activeModeratedThreadIds.has(`chat-request-${request.id}`)))
         .map(mockChatThreadFromRequest)
-    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || activeModeratedThreadIds.has(thread.id))) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
+    const genericThreads = mockAutoCareChatThreads.filter((thread) => (user.role === 'super_admin' && ['support', 'admin_escalation'].includes(thread.type)) || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || activeModeratedThreadIds.has(thread.id))) || (user.role !== 'super_admin' && user.role !== 'admin' && (thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))))
     return [...requestThreads, ...genericThreads].sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
 }
 

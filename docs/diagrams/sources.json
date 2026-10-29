@@ -2711,6 +2711,22 @@
         "security"
       ],
       "sha256": "1748d4a21e54b0a3795ecc9f85a527eca652609e62e7ba8edf213ac10e3a6561"
+    },
+    {
+      "path": "server/src/modules/autocare/chat-read.service.ts",
+      "sha256": "44f75fbdc14576cfcf142ee71f9766b65a2e86ab574d492b362d1c9919601599",
+      "scopes": [
+        "backend",
+        "security"
+      ]
+    },
+    {
+      "path": "src/app/mocks/autocare/mock-chat.ts",
+      "sha256": "be706b8a5c80867117c01af47f686216b6a56e17aa5a4ce82ed0a0f71a2aa609",
+      "scopes": [
+        "frontend",
+        "security"
+      ]
     }
   ],
   "inventories": [
