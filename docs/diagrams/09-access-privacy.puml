@@ -47,6 +47,7 @@ note right of StepUp
   request list require fresh MFA before private data.
   Broadcast detail and provider inbox require it for both privileged roles.
   Internal provider workspace GET routes also require fresh MFA for both roles.
+  Provider workspace mutations also require it before validation or write.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider

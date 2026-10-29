@@ -2,6 +2,9 @@
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Потребовать fresh MFA у admin/super-admin перед 16 provider workspace
+  mutations: ресурсы, доступ, catalog/change request, бонусы, отзывы,
+  медиа и создание сервиса. PostgreSQL negative matrix добавлена.
 - [x] Потребовать fresh MFA у admin/super-admin перед 12 приватными GET
   маршрутами provider workspace, сохранив email verification; негативная
   PostgreSQL матрица добавлена для обеих ролей.

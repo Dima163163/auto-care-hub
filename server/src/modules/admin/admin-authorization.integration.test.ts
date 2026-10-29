@@ -550,6 +550,43 @@ describe('Admin and workspace authorization integration', () => {
         }
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before provider workspace mutations by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = provider.id
+        const mutations = [
+            ['post', `/owner/autocare-providers/${id}/resources`],
+            ['patch', `/owner/autocare-providers/${id}/resources/${id}`],
+            ['patch', `/owner/autocare-providers/${id}/communication-settings`],
+            ['post', `/owner/autocare-providers/${id}/members/invitations`],
+            ['delete', `/owner/autocare-providers/${id}/members/invitations/${id}`],
+            ['delete', `/owner/autocare-providers/${id}/members/${id}`],
+            ['post', '/owner/autocare-provider-invitations/accept'],
+            ['post', `/owner/autocare-providers/${id}/change-requests`],
+            ['delete', `/owner/autocare-providers/${id}/change-requests/${id}`],
+            ['put', `/owner/autocare-providers/${id}/bonus-program`],
+            ['post', `/owner/autocare-providers/${id}/bonus-accounts/${id}/grants`],
+            ['patch', `/owner/autocare-providers/${id}/offers/${id}`],
+            ['post', `/owner/autocare-providers/${id}/reviews/${id}/promos`],
+            ['post', '/owner/autocare-providers/logo'],
+            ['post', '/owner/autocare-providers/media'],
+            ['post', '/owner/autocare-providers'],
+        ] as const
+        for (const [method, path] of mutations) {
+            const response = await request(app.server)[method](path)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+            expect(response.status, `${method.toUpperCase()} ${path}`).toBe(403)
+            expect(response.body.code, `${method.toUpperCase()} ${path}`).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('requires fresh MFA before every private administrative read', async () => {
         const token = await createTestAccessToken(superAdmin)
         const sessionId = verifyAccessToken(token).sessionId
