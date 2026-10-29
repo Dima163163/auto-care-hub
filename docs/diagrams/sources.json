@@ -2500,7 +2500,7 @@
     },
     {
       "path": "server/src/modules/auth/privileged-mfa.integration.test.ts",
-      "sha256": "b04d0c04669cd91b997f7d2e2b30f9bdd877b592e422a82f59d10c421eb16f9f",
+      "sha256": "95d0b84cfe7db784c814949142eb11c8e342e3ff9e78a5e744829403b40a2592",
       "scopes": [
         "auth"
       ]
@@ -2630,7 +2630,7 @@
     },
     {
       "path": "server/src/modules/auth/privileged-mfa-reset.integration.test.ts",
-      "sha256": "e7dd90954011ff47320e0d4247cf1fc3aa9a507e407049034f21b35dc0cadfb5",
+      "sha256": "0f84c84fec12df94e6111d7a59a109c302e301185f1a3179f1f74c4d40b186e4",
       "scopes": [
         "auth"
       ]

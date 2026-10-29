@@ -2,6 +2,11 @@
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Прогнать полный backend unit на 463 файлах / 1722 сценариях и
+  isolated PostgreSQL/Redis integration: исправить cleanup MFA fixture,
+  который пытался удалить append-only security events без разрешённого
+  transaction flag. Targeted MFA integration 2 файла / 5 тестов PASS.
+  Остальные найденные integration failures разбираются отдельно.
 - [x] Повторно проверить под lock весь набор pending жалоб той же
   переписки перед решением: super-admin, бывший участник другого дела,
   не может решить соседнее. Boundary 38 PASS; PostgreSQL replay открыт.

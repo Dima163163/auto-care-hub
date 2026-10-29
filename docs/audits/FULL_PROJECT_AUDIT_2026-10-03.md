@@ -673,6 +673,14 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, MFA integration cleanup:** полный backend unit
+463/1722 PASS; отдельный PostgreSQL/Redis integration выявил teardown,
+который пытался удалять append-only security events вне transaction flag.
+Оба MFA fixture теперь удаляют только свои события с ограниченным
+`app.security_event_retention_cleanup` внутри транзакции. Targeted
+integration 2 файла / 5 тестов PASS; остальные найденные failures
+разбираются отдельно, pilot NO-GO.
+
 **Локальный шаг 29.10, соседние chat reports:** super-admin мог решить
 другую pending жалобу в той же переписке, где сам является стороной дела.
 Под thread row lock решение теперь проверяет все pending жалобы чата до

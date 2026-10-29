@@ -55,10 +55,11 @@ describe('privileged MFA operator recovery integration', () => {
         if (!AppDataSource.isInitialized) return
         await AppDataSource.transaction(async (manager) => {
             await manager.query("SELECT set_config('app.audit_retention_cleanup', 'on', true)")
+            await manager.query("SELECT set_config('app.security_event_retention_cleanup', 'on', true)")
             for (const id of ids) await manager.getRepository(AuditLogEntity).delete({ actorId: id })
+            for (const id of ids) await manager.getRepository(SecurityEventEntity).delete({ userId: id })
         })
         for (const id of ids) {
-            await AppDataSource.getRepository(SecurityEventEntity).delete({ userId: id })
             await AppDataSource.getRepository(UserSessionEntity).delete({ userId: id })
             await AppDataSource.getRepository(UserMfaRecoveryCodeEntity).delete({ userId: id })
             await AppDataSource.getRepository(UserMfaFactorEntity).delete({ userId: id })

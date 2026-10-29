@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## Интеграционный прогон и MFA fixture, 29 октября 2026
+
+Backend unit 463 файла / 1722 теста PASS. На отдельном локальном
+PostgreSQL/Redis full integration сначала дал 26/29 файлов PASS:
+MFA teardown удалял append-only security events без разрешённого флага,
+account deletion fixture имеет malformed array/empty cleanup, а каталог
+ожидает seed. MFA teardown исправлен в двух suite; targeted integration
+2 файла / 5 тестов PASS. Полный повторный прогон и другие дефекты открыты.
+
 ## U03 — конфликт соседних жалоб, 29 октября 2026
 
 Решение по pending chat report под thread row lock дополнительно проверяет

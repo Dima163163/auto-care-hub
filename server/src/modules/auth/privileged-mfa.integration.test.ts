@@ -49,9 +49,10 @@ describe('privileged MFA login integration', () => {
         if (!userId || !AppDataSource.isInitialized) return
         await AppDataSource.transaction(async (manager) => {
             await manager.query("SELECT set_config('app.audit_retention_cleanup', 'on', true)")
+            await manager.query("SELECT set_config('app.security_event_retention_cleanup', 'on', true)")
             await manager.getRepository(AuditLogEntity).delete({ actorId: userId })
+            await manager.getRepository(SecurityEventEntity).delete({ userId })
         })
-        await AppDataSource.getRepository(SecurityEventEntity).delete({ userId })
         await AppDataSource.getRepository(UserSessionEntity).delete({ userId })
         await AppDataSource.getRepository(UserMfaRecoveryCodeEntity).delete({ userId })
         await AppDataSource.getRepository(UserMfaFactorEntity).delete({ userId })
