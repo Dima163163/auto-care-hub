@@ -519,6 +519,37 @@ describe('Admin and workspace authorization integration', () => {
         }
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before provider workspace reads by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = provider.id
+        const paths = [
+            '/owner/autocare-providers',
+            `/owner/autocare-providers/${id}/resources`,
+            `/owner/autocare-providers/${id}/resource-reservations`,
+            `/owner/autocare-providers/${id}/evidence`,
+            '/owner/workspace-access',
+            `/owner/autocare-providers/${id}/members`,
+            `/owner/autocare-providers/${id}/change-requests`,
+            `/owner/autocare-providers/${id}/analytics`,
+            `/owner/autocare-providers/${id}/bonus-program`,
+            `/owner/autocare-providers/${id}/bonus-liability`,
+            `/owner/autocare-providers/${id}/reviews`,
+            '/owner/autocare-reviews',
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).get(path).set('Authorization', `Bearer ${token}`)
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('requires fresh MFA before every private administrative read', async () => {
         const token = await createTestAccessToken(superAdmin)
         const sessionId = verifyAccessToken(token).sessionId

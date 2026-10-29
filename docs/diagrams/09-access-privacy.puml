@@ -46,6 +46,7 @@ note right of StepUp
   Admin and super-admin service-request detail, repair timeline and owner
   request list require fresh MFA before private data.
   Broadcast detail and provider inbox require it for both privileged roles.
+  Internal provider workspace GET routes also require fresh MFA for both roles.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider

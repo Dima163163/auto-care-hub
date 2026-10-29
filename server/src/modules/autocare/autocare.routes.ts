@@ -106,8 +106,8 @@ async function requireChatActionUser(request: FastifyRequest, verifiedEmail = tr
     return user
 }
 
-async function requirePrivilegedRequestReadUser(request: FastifyRequest) {
-    const user = await requireAuth(request)
+async function requirePrivilegedPrivateReadUser(request: FastifyRequest, verifiedEmail = false) {
+    const user = verifiedEmail ? await requireVerifiedEmail(request) : await requireAuth(request)
     if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
         await requireRecentPrivilegedMfa(request)
     }
@@ -181,21 +181,21 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const user = await requireVerifiedEmail(request)
         return redeemAutoCareBonus(user, validateBody(redeemAutoCareBonusSchema, request.body), getOptionalIdempotencyKey(request.headers) ?? null)
     })
-    app.get('/owner/autocare-providers', async (request) => getOwnerAutoCareProviders(await requireVerifiedEmail(request)))
+    app.get('/owner/autocare-providers', async (request) => getOwnerAutoCareProviders(await requirePrivilegedPrivateReadUser(request, true)))
     app.get('/owner/autocare-providers/:providerId/resources', async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requirePrivilegedPrivateReadUser(request, true)
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const query = validateQuery(autoCareCapacityResourceQuerySchema, request.query)
         return getOwnerAutoCareCapacityResources(user, params.providerId, query.locationId)
     })
     app.get('/owner/autocare-providers/:providerId/resource-reservations', async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requirePrivilegedPrivateReadUser(request, true)
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const query = validateQuery(autoCareCapacityReservationQuerySchema, request.query)
         return getOwnerAutoCareCapacityReservations(user, params.providerId, query)
     })
     app.get('/owner/autocare-providers/:providerId/evidence', async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requirePrivilegedPrivateReadUser(request, true)
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         const result = await listOwnerAutoCareEvidence(user, params.providerId)
         await recordAuditLog({
@@ -241,9 +241,9 @@ export async function autoCareRoutes(app: FastifyInstance) {
         })
         return result
     })
-    app.get('/owner/workspace-access', async (request) => getOwnerWorkspaceAccess((await requireVerifiedEmail(request)).id))
+    app.get('/owner/workspace-access', async (request) => getOwnerWorkspaceAccess((await requirePrivilegedPrivateReadUser(request, true)).id))
     app.get('/owner/autocare-providers/:providerId/members', async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requirePrivilegedPrivateReadUser(request, true)
         const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
         const result = await listOwnerProviderMemberships(user, providerId)
         await recordAuditLog({
@@ -292,7 +292,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return result
     })
     app.get('/owner/autocare-providers/:providerId/change-requests', async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requirePrivilegedPrivateReadUser(request, true)
         const providerId = validateParams(ownerAutoCareProviderChangeRequestParamsSchema, request.params).providerId
         return listOwnerProviderChangeRequests(user, providerId)
     })
@@ -306,9 +306,9 @@ export async function autoCareRoutes(app: FastifyInstance) {
         const params = validateParams(ownerAutoCareProviderChangeRequestParamsSchema.extend({ requestId: autoCareProviderParamsSchema.shape.providerId }), request.params)
         return cancelOwnerProviderChangeRequest(user, params.providerId, params.requestId)
     })
-    app.get('/owner/autocare-providers/:providerId/analytics', async (request) => getOwnerAutoCareProviderAnalytics(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
-    app.get('/owner/autocare-providers/:providerId/bonus-program', async (request) => getOwnerAutoCareBonusProgram(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
-    app.get('/owner/autocare-providers/:providerId/bonus-liability', async (request) => getOwnerAutoCareBonusLiability(await requireVerifiedEmail(request), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/owner/autocare-providers/:providerId/analytics', async (request) => getOwnerAutoCareProviderAnalytics(await requirePrivilegedPrivateReadUser(request, true), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/owner/autocare-providers/:providerId/bonus-program', async (request) => getOwnerAutoCareBonusProgram(await requirePrivilegedPrivateReadUser(request, true), validateParams(autoCareProviderParamsSchema, request.params).providerId))
+    app.get('/owner/autocare-providers/:providerId/bonus-liability', async (request) => getOwnerAutoCareBonusLiability(await requirePrivilegedPrivateReadUser(request, true), validateParams(autoCareProviderParamsSchema, request.params).providerId))
     app.put('/owner/autocare-providers/:providerId/bonus-program', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const user = await requireVerifiedEmail(request)
         const providerId = validateParams(autoCareProviderParamsSchema, request.params).providerId
@@ -343,11 +343,11 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return result
     })
     app.get('/owner/autocare-providers/:providerId/reviews', async (request) => {
-        const user = await requireVerifiedEmail(request)
+        const user = await requirePrivilegedPrivateReadUser(request, true)
         const params = validateParams(autoCareProviderParamsSchema, request.params)
         return getOwnerAutoCareProviderReviews(user, params.providerId)
     })
-    app.get('/owner/autocare-reviews', async (request) => getOwnerAutoCareReviews(await requireVerifiedEmail(request), validateQuery(ownerAutoCareReviewsQuerySchema, request.query).providerId))
+    app.get('/owner/autocare-reviews', async (request) => getOwnerAutoCareReviews(await requirePrivilegedPrivateReadUser(request, true), validateQuery(ownerAutoCareReviewsQuerySchema, request.query).providerId))
     app.post('/owner/autocare-providers/:providerId/reviews/:reviewId/promos', { preHandler: autoCareMutationRateLimit }, async (request) => {
         const user = await requireVerifiedEmail(request)
         const params = validateParams(autoCareReviewParamsSchema, request.params)
@@ -403,10 +403,10 @@ export async function autoCareRoutes(app: FastifyInstance) {
         reply.header('X-Next-Cursor', page.nextCursor ?? '')
         return page.items
     })
-    app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requirePrivilegedRequestReadUser(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
+    app.get('/v1/service-requests/:requestId/timeline', async (request) => getAutoCareRepairTimeline(await requirePrivilegedPrivateReadUser(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/v1/broadcast-requests', { preHandler: serviceRequestRateLimit }, async (request) => createAutoCareBroadcastRequest(await requireVerifiedEmail(request), validateBody(createAutoCareBroadcastRequestSchema, request.body)))
     app.get('/v1/broadcast-requests/my', async (request) => getMyAutoCareBroadcastRequests(await requireAuth(request)))
-    app.get('/v1/broadcast-requests/:broadcastId', async (request) => getAutoCareBroadcastRequest(await requirePrivilegedRequestReadUser(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId))
+    app.get('/v1/broadcast-requests/:broadcastId', async (request) => getAutoCareBroadcastRequest(await requirePrivilegedPrivateReadUser(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId))
     app.post('/v1/guarantee-claims', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareGuaranteeClaim(await requireVerifiedEmail(request), validateBody(createAutoCareGuaranteeClaimSchema, request.body)))
     app.get('/v1/guarantee-claims/my', async (request) => getMyAutoCareGuaranteeClaims(await requireAuth(request)))
     app.post('/v1/expert-questions', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareExpertQuestion(await requireVerifiedEmail(request), validateBody(createAutoCareExpertQuestionSchema, request.body)))
@@ -598,7 +598,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return updateClientAutoCareReview(user, params.reviewId, validateBody(updateAutoCareReviewSchema, request.body))
     })
     app.get('/v1/service-requests/:requestId', async (request) => {
-        const user = await requirePrivilegedRequestReadUser(request)
+        const user = await requirePrivilegedPrivateReadUser(request)
         const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
         const accessQuery = validateQuery(autoCareChatEmergencyAccessQuerySchema, request.query)
         const result = await getAutoCareServiceRequest(user, requestId, accessQuery.emergencyReason)
@@ -781,7 +781,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         return declineAutoCareServiceQuote(user, requestId, validateBody(autoCareQuoteDecisionSchema, request.body))
     })
     app.get('/owner/service-requests', async (request, reply) => {
-        const user = await requirePrivilegedRequestReadUser(request)
+        const user = await requirePrivilegedPrivateReadUser(request)
         const query = validateQuery(autoCareServiceRequestListQuerySchema, request.query)
         const paged = query.cursor !== undefined || query.limit !== undefined
         const page = await getOwnerAutoCareServiceRequestPage(user, paged ? query : { limit: 100 })
@@ -790,7 +790,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
         reply.header('X-Next-Cursor', page.nextCursor ?? '')
         return page.items
     })
-    app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requirePrivilegedRequestReadUser(request)))
+    app.get('/owner/broadcast-requests', async (request) => getOwnerAutoCareBroadcastRequests(await requirePrivilegedPrivateReadUser(request)))
     app.post('/owner/broadcast-requests/:broadcastId/offers', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareBroadcastOffer(await requireVerifiedEmail(request), validateParams(autoCareBroadcastParamsSchema, request.params).broadcastId, validateBody(createAutoCareBroadcastOfferSchema, request.body)))
     app.post('/owner/service-requests/:requestId/confirm', { preHandler: serviceRequestTransitionRateLimit }, async (request) => confirmOwnerAutoCareServiceRequest(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))
     app.post('/owner/service-requests/:requestId/quote', { preHandler: serviceRequestTransitionRateLimit }, async (request) => createAutoCareServiceQuote(await requireVerifiedEmail(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId, validateBody(createAutoCareServiceQuoteSchema, request.body)))

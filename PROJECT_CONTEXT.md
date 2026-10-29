@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U03 — чтения кабинета сервиса, 29 октября 2026
+
+Двенадцать GET маршрутов provider workspace требуют свежий MFA для
+admin/super-admin до выдачи внутренних ресурсов, броней, evidence,
+сотрудников, заявок на изменение, аналитики, бонусов и отзывов. Проверка
+подтверждённой почты сохранена. Негативная PostgreSQL матрица охватывает
+обе роли; локальный DB/Redis replay и staging acceptance открыты.
+U03 и pilot NO-GO сохраняются.
+
 ## U03 — приватные чтения рассылки заявок, 29 октября 2026
 
 Broadcast detail и owner inbox требуют свежий MFA для admin/super-admin
