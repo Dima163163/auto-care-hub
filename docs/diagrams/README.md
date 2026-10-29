@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, neighboring chat reports 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет super-admin решения соседней pending жалобы, когда он
+сторона дела той же переписки; проверка под thread row lock.
+PostgreSQL/staging replay открыт.
+
 **U03, chat report conflict 2026-10-29:** `09-access-privacy.puml` с SVG
 показывает запрет назначения, чтения, продления и решения для стороны
 жалобы после смены роли; проверка решения и назначения под row lock.

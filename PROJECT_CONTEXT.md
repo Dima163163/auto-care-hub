@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — конфликт соседних жалоб, 29 октября 2026
+
+Решение по pending chat report под thread row lock дополнительно проверяет
+все pending жалобы переписки. Super-admin, являющийся стороной другого
+pending дела в этом чате, больше не может решить соседнюю жалобу.
+Boundary unit 38 PASS, build/lint PASS; PostgreSQL replay открыт.
+
 ## U03 — независимая модерация жалоб на чат, 29 октября 2026
 
 После смены роли reporter/reported user не может быть назначен модератором

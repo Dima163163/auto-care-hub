@@ -55,6 +55,8 @@ note right of StepUp
   A chat report party cannot be assigned moderator, read the private thread,
   extend access or decide the case after role change. Admin report index
   excludes conflicted threads; critical assignment/decision recheck under lock.
+  The decision scans all pending reports under the thread lock, including
+  neighboring cases involving the super-admin reviewer.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider

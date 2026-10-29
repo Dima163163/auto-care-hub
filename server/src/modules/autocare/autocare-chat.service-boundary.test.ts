@@ -445,6 +445,27 @@ describe('AutoCare chat service boundaries', () => {
         expect(save).not.toHaveBeenCalled()
     })
 
+    it('blocks a super administrator from deciding another pending report in their own thread', async () => {
+        const reportId = '99999999-9999-4999-8999-999999999999'
+        const thread = makeThread({ type: AutoCareChatThreadType.ServiceRequest })
+        const report = { id: reportId, threadId: chatId, status: AutoCareChatReportStatus.Pending, reporterId: client.id, reportedUserId: owner.id }
+        const otherReport = { ...report, id: '88888888-8888-4888-8888-888888888888', reporterId: superAdmin.id }
+        const save = vi.fn()
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutoCareChatReportEntity
+            ? { findOneBy: vi.fn().mockResolvedValue(report) }
+            : entity === AutoCareChatThreadEntity ? { findOneBy: vi.fn().mockResolvedValue(thread) } : {})
+        mocks.transaction.mockImplementation(async (operation: (manager: unknown) => Promise<unknown>) => operation({
+            getRepository(entity: unknown) {
+                if (entity === AutoCareChatThreadEntity) return { findOne: vi.fn().mockResolvedValue(thread) }
+                if (entity === AutoCareChatReportEntity) return { findOne: vi.fn().mockResolvedValue(report), find: vi.fn().mockResolvedValue([report, otherReport]), save }
+                return {}
+            },
+        }))
+
+        await expect(decideAdminAutoCareChatReport(superAdmin, reportId, AutoCareChatReportStatus.Dismissed, 'Independent review required')).rejects.toMatchObject({ statusCode: 403 })
+        expect(save).not.toHaveBeenCalled()
+    })
+
     it.each(['reporterId', 'reportedUserId'] as const)('refuses assignment when the candidate moderator is the %s of a pending report', async (partyField) => {
         const reportId = '99999999-9999-4999-8999-999999999999'
         const thread = makeThread({ type: AutoCareChatThreadType.ServiceRequest, requestId: '66666666-6666-4666-8666-666666666666' })

@@ -227,6 +227,8 @@ export async function decideAdminAutoCareChatReport(user: UserEntity, reportId: 
         if (!lockedReport) fail(404, 'Chat report not found.')
         if (isAutoCareChatReportParty(lockedReport, user.id)) fail(403, 'A chat report party cannot decide the case.')
         if (lockedReport.status !== AutoCareChatReportStatus.Pending) return lockedReport
+        const pendingThreadReports = await lockedReports.find({ where: { threadId: lockedThread.id, status: AutoCareChatReportStatus.Pending } })
+        if (pendingThreadReports.some((item) => isAutoCareChatReportParty(item, user.id))) fail(403, 'A chat report party cannot moderate another case in the same thread.')
         if ((!lockedReport.reportedMessageId || !lockedReport.acknowledgedAt || !lockedReport.policyVersion) && user.role === UserRole.SuperAdmin && (normalizedInput.reason?.length ?? 0) < 10) {
             fail(400, 'A reason of at least 10 characters is required to close a legacy report without consent metadata.')
         }
