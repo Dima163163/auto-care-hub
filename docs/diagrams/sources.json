@@ -2675,8 +2675,9 @@
     },
     {
       "path": "server/src/modules/admin/admin.routes.ts",
-      "sha256": "4c92bd148a9c292de1d32bcfc5e5cb02ce4171e5af492b255a232df767b5defa",
+      "sha256": "200960c217580fe5c18096f8253237592a5d10aad951f3a47b67b73f73f3348e",
       "scopes": [
+        "auth",
         "backend",
         "security"
       ]
@@ -2691,7 +2692,7 @@
     },
     {
       "path": "server/src/modules/admin/admin-authorization.integration.test.ts",
-      "sha256": "aa8fe480ed4de06b7415be8fae26e9f38afec4909e951f6c0fd29ed124a28d84",
+      "sha256": "294949f2ded094c795f46023f9644a772a64314d957750bc13072037b31b1553",
       "scopes": [
         "security"
       ]
@@ -2702,6 +2703,14 @@
       "scopes": [
         "frontend"
       ]
+    },
+    {
+      "path": "server/src/modules/platform-reviews/platform-reviews.routes.ts",
+      "scopes": [
+        "auth",
+        "security"
+      ],
+      "sha256": "08dfb00e723274bd4eb69447f4ffea0d128e8e384d8ef7856a3c28c8b04dceff"
     }
   ],
   "inventories": [

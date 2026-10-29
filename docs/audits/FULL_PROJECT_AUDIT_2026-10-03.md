@@ -673,6 +673,12 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, admin reads:** admin dashboard routes с персональными
+и служебными данными, а также очередь отзывов платформы требуют свежий MFA.
+Публичная иерархия рынков остаётся под role authorization. Backend build и
+targeted lint PASS; negative PostgreSQL matrix добавлена, но не запускалась.
+Другие модули/staging остаются открытыми; U03/pilot NO-GO не меняются.
+
 **Локальный шаг 29.10, exceptional reads:** admin/super-admin чтение жалоб,
 приватного чата и вложений, подключение и live authorization chat WebSocket, а также
 super-admin просмотр заявки требуют MFA не старше пяти минут до выдачи

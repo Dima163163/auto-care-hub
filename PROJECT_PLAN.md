@@ -82,6 +82,12 @@
 
 ## U03 — обязательный сеанс для привилегированных токенов, 2026-10-28
 
+- [x] Требовать свежий MFA перед чтением персональных/операционных admin
+  dashboards и очереди отзывов платформы; public market hierarchy не меняется.
+  Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,
+  локально не запускалась.
+- [ ] Проверить admin read matrix на isolated PostgreSQL и staging.
+
 - [x] Добавить свежий MFA перед admin/super-admin чтением жалоб и приватного чата,
   вложений, chat WebSocket и super-admin просмотром заявки; live WebSocket
   перепроверяет свежесть. Unit, backend build и targeted lint PASS 29.10;

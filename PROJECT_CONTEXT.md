@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — административные чтения, 29 октября 2026
+
+Приватные admin dashboard routes и очередь отзывов платформы требуют свежий
+MFA до ответа; публичная иерархия рынков остаётся под role authorization.
+Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,
+локально не запускалась. Другие модули и staging replay открыты.
+
 ## U03 — исключительное чтение, 29 октября 2026
 
 Свежий MFA требуется перед admin/super-admin чтением жалоб, истории и вложения чата,

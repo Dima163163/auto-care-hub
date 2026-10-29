@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "f3830f97aced25524be66cc89e03bd79fde4da716993a1d167cee2020913f25e",
+      "sourceSha256": "f2b808e453934a190128300f50281a13733e939c73070f4c27ebe9ea498028c8",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "1b5521b233e49caef9befffb0c420d835b0a6d8b9f8ad8aa6eef7468bf663a64",
-      "width": "1319px",
-      "height": "2396px"
+      "previewSha256": "4d81b3da996919783a9dec1c87ea92885c36d41751d246fc7d0772f7e9b8083d",
+      "width": "1330px",
+      "height": "2411px"
     },
     {
       "scope": "outbox",
@@ -179,11 +179,11 @@
     {
       "scope": "security",
       "source": "09-access-privacy.puml",
-      "sourceSha256": "46caf766ea755a49aacfe51f1f75a78e0852f06d8d1d8837a37a2fbbbc28e76d",
+      "sourceSha256": "697d76086ef7192df8769752b28a2dd207a72506fc5d93129594c535dcdd7945",
       "preview": "rendered/09-access-privacy.svg",
-      "previewSha256": "a4d3c6a1e144723cf5a2c6fcea4b88346f71fbc3c14f55a2764ecf9141da09fa",
-      "width": "2111px",
-      "height": "2222px"
+      "previewSha256": "45533113921db7a59a1a55006a69d1de09cf8f3ed2d8b149131f00a4139b23d6",
+      "width": "2023px",
+      "height": "2237px"
     }
   ],
   "sharedStyleSha256": "ab00f7125e904e52942a084683f72fed50dfe737367164a993e203456f6fe3bf",
@@ -528,6 +528,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 03-frontend, 07-auth-session and 09-access-privacy"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "auth,security,backend",
+      "change": "U03 fresh MFA for private admin dashboard and platform review reads",
+      "sourceAnchorCount": 352,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 07-auth-session and 09-access-privacy"
     }
   ],
   "limitations": [

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 
 import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
+import { requireRecentPrivilegedMfa } from '../auth/privileged-step-up.service.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
 import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
@@ -16,7 +17,7 @@ export async function platformReviewsRoutes(app: FastifyInstance) {
     app.post('/v1/platform-reviews', { preHandler: createPlatformReviewRateLimit }, async (request) => createPlatformReview(await requireVerifiedEmail(request), { ...validateBody(createPlatformReviewSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
     app.get('/v1/platform-reviews/my', async (request) => getMyPlatformReviews(await requireAuth(request)))
     app.get('/admin/platform-reviews', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await getAdminPlatformReviews(user)
         await recordAuditLog({
             actorId: user.id,

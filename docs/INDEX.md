@@ -1,5 +1,10 @@
 # Индекс документации AutoCare Hub
 
+U03 local step-up от 29 октября расширен на приватные административные
+экраны; PostgreSQL/staging приёмка открыта. См.
+[реестр](audits/CURRENT_FINDING_DISPOSITION.md) и
+[схему доступа](diagrams/09-access-privacy.puml).
+
 U03 local step-up от 29 октября: жалобы и приватные чтения чата admin/super-admin и
 super-admin просмотр заявки теперь требуют свежий MFA; staging-приёмка и
 другие чувствительные чтения открыты. См. [порядок включения](operations/PRIVILEGED_MFA_ROLLOUT.md)

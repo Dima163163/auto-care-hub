@@ -50,8 +50,11 @@ access require the same fresh proof. Live WebSocket authorization rechecks it
 before each delivery and every 30 seconds; an expired proof closes the socket
 at the next check. Super-admin
 service-request detail also requires fresh proof before its private DTO.
+Private admin dashboards in `admin.routes.ts` and the platform review queue
+require fresh proof before returning their data. The market hierarchy remains
+under role authorization without step-up because it is public catalog metadata.
 A fresh code is consumed through `/auth/step-up`
 and the original operation is retried. Other sensitive actions and staging
-replay, other sensitive reads, external identity verification
+replay, other modules' sensitive reads, external identity verification
 and break-glass acceptance remain open
 under U03.

@@ -415,6 +415,46 @@ describe('Admin and workspace authorization integration', () => {
         expect(response.body).not.toHaveProperty('items')
     })
 
+    it('requires fresh MFA before every private administrative read', async () => {
+        const token = await createTestAccessToken(superAdmin)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const paths = [
+            '/admin/autocare-providers',
+            '/admin/autocare-quality-monitoring',
+            '/admin/autocare-appeals',
+            '/admin/autocare-moderation-evidence',
+            '/admin/autocare-reviews',
+            '/admin/autocare-provider-change-requests',
+            '/admin/catalog-gap-requests',
+            '/admin/chat-reports',
+            '/super-admin/platform-overview',
+            '/super-admin/trust-policy',
+            '/admin/users',
+            '/admin/account-deletion-requests',
+            '/admin/cabinets',
+            '/admin/audit-logs',
+            '/admin/system-incidents',
+            '/admin/operations/overview',
+            '/admin/security-events',
+            '/admin/security-center/summary',
+            '/admin/security-center/events',
+            '/admin/security-center/events/11111111-1111-4111-8111-111111111111',
+            '/admin/security-center/mitigations',
+            '/admin/outbox/health',
+            '/admin/platform-reviews',
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).get(path).set('Authorization', `Bearer ${token}`)
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {
         const ownerToken = await createTestAccessToken(providerOwner)
         const adminToken = await createTestAccessToken(admin)

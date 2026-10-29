@@ -249,15 +249,15 @@ export async function adminRoutes(
     app: FastifyInstance
 ) {
     app.get<{ Reply: AdminAutoCareProvider[] }>('/admin/autocare-providers', async (request) => {
-        return getAdminAutoCareProviders(await requireAuth(request))
+        return getAdminAutoCareProviders(await requireRecentPrivilegedMfa(request))
     })
 
     app.get<{ Reply: AutoCareQualityMonitoringResponse }>('/admin/autocare-quality-monitoring', async (request) => {
-        return getAutoCareQualityMonitoring(await requireAuth(request))
+        return getAutoCareQualityMonitoring(await requireRecentPrivilegedMfa(request))
     })
 
     app.get('/admin/autocare-appeals', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
         const result = await listAdminAutoCareAppeals(user, query)
         await recordAuditLog({
@@ -280,7 +280,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/autocare-moderation-evidence', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
         const result = await listAdminAutoCareModerationEvidence(user, query.status)
         await recordAuditLog({
@@ -294,7 +294,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/autocare-reviews', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await listAdminAutoCareReviews(user)
         await recordAuditLog({
             actorId: user.id,
@@ -355,7 +355,7 @@ export async function adminRoutes(
     )
 
     app.get('/admin/autocare-provider-change-requests', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
         const result = await listAdminProviderChangeRequests(user, query.status, query.kind)
         await recordAuditLog({
@@ -385,7 +385,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/catalog-gap-requests', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
         const result = await listAdminCatalogGapRequests(user, query.status)
         await recordAuditLog({
@@ -467,7 +467,7 @@ export async function adminRoutes(
     })
 
     app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {
-        return getSuperAdminPlatformOverview(await requireAuth(request))
+        return getSuperAdminPlatformOverview(await requireRecentPrivilegedMfa(request))
     })
 
     app.patch('/super-admin/markets/:id', async (request) => {
@@ -566,7 +566,7 @@ export async function adminRoutes(
         return result
     })
 
-    app.get('/super-admin/trust-policy', async (request) => getSuperAdminTrustPolicy(await requireAuth(request)))
+    app.get('/super-admin/trust-policy', async (request) => getSuperAdminTrustPolicy(await requireRecentPrivilegedMfa(request)))
 
     app.patch('/super-admin/trust-policy', async (request) => {
         const user = await requireRecentPrivilegedMfa(request)
@@ -605,7 +605,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: AdminUsersListResponse }>(
         '/admin/users',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminUsersQuerySchema, request.query)
 
             return getAdminUsers(user, query)
@@ -615,7 +615,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: AdminDeletionRequestsListResponse }>(
         '/admin/account-deletion-requests',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminDeletionRequestsQuerySchema, request.query)
 
             return getAdminDeletionRequests(user, query)
@@ -699,7 +699,7 @@ export async function adminRoutes(
     app.get<{ Reply: AdminCabinetsListResponse }>(
         '/admin/cabinets',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
 
             return getAdminCabinets(user)
         }
@@ -762,7 +762,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: AuditLogsListResponse }>(
         '/admin/audit-logs',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminAuditLogsQuerySchema, request.query)
             const logs = await getAuditLogs(user, query)
 
@@ -806,7 +806,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SystemIncidentsListResponse }>(
         '/admin/system-incidents',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(systemIncidentsQuerySchema, request.query)
             const incidents = await getSystemIncidents(user, query)
 
@@ -817,7 +817,7 @@ export async function adminRoutes(
     app.get<{ Reply: AdminOperationsOverview }>(
         '/admin/operations/overview',
         async (request, reply) => {
-            const overview = await getAdminOperationsOverview(await requireAuth(request))
+            const overview = await getAdminOperationsOverview(await requireRecentPrivilegedMfa(request))
             reply.header('cache-control', 'no-store')
             return overview
         },
@@ -826,7 +826,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityEventsListResponse }>(
         '/admin/security-events',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminSecurityEventsQuerySchema, request.query)
             const events = await getSecurityEvents(user, query)
 
@@ -850,7 +850,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityCenterSummaryResponse }>(
         '/admin/security-center/summary',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(securityCenterSummaryQuerySchema, request.query)
             const summary = await getSecurityCenterSummary(user, query)
 
@@ -870,7 +870,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityCenterEventsListResponse }>(
         '/admin/security-center/events',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(securityCenterEventsQuerySchema, request.query)
             const events = await getSecurityCenterEvents(user, query)
 
@@ -912,7 +912,7 @@ export async function adminRoutes(
     app.get<{ Params: unknown; Reply: SecurityCenterEventResponse }>(
         '/admin/security-center/events/:id',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityCenterEventParamsSchema, request.params)
             const event = await getSecurityCenterEvent(user, params.id)
 
@@ -990,7 +990,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityMitigationResponse[] | CursorResponse<SecurityMitigationResponse> }>(
         '/admin/security-center/mitigations',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(securityMitigationsQuerySchema, request.query)
             const mitigations = await getSecurityMitigations(user, query)
             reply.header('cache-control', 'no-store')
@@ -1074,7 +1074,7 @@ export async function adminRoutes(
     app.get<{ Reply: OutboxHealthResponse }>(
         '/admin/outbox/health',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const health = await getOutboxHealth(user)
 
             return {

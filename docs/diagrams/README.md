@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, admin reads 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед приватными
+admin dashboard/платформенными отзывами. Public market hierarchy остаётся
+под role authorization; PostgreSQL/staging replay открыты.
+
 **U03, exceptional reads 2026-10-29:** `07-auth-session.puml` и
 `09-access-privacy.puml` с SVG показывают свежий MFA перед приватным чтением
 жалоб, чата и вложений admin/super-admin, chat WebSocket с live перепроверкой и
