@@ -569,7 +569,7 @@ export async function adminRoutes(
     app.get('/super-admin/trust-policy', async (request) => getSuperAdminTrustPolicy(await requireAuth(request)))
 
     app.patch('/super-admin/trust-policy', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await updateSuperAdminTrustPolicy(user, validateBody(updateSuperAdminTrustPolicySchema, request.body))
         await recordAuditLog({
             actorId: user.id,
@@ -649,7 +649,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminUserResponse }>(
         '/admin/users/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminUserParamsSchema, request.params)
             const body = validateBody(updateUserStatusSchema, request.body)
 
@@ -929,7 +929,7 @@ export async function adminRoutes(
     }>(
         '/admin/security-center/events/:id/status',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityCenterEventParamsSchema, request.params)
             const body = validateBody(updateSecurityCenterEventStatusSchema, request.body)
             const event = await updateSecurityCenterEventStatus(
@@ -961,7 +961,7 @@ export async function adminRoutes(
     app.post<{ Params: unknown; Reply: SecurityCenterSessionRevocationResponse }>(
         '/admin/security-center/users/:id/revoke-sessions',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminUserParamsSchema, request.params)
             const result = await revokeSecurityCenterUserSessions(user, params.id)
 
@@ -1000,7 +1000,7 @@ export async function adminRoutes(
     app.post<{ Body: unknown; Reply: SecurityMitigationResponse }>(
         '/admin/security-center/mitigations',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const body = validateBody(createSecurityMitigationSchema, request.body)
             const mitigation = await createSecurityMitigation(user, body)
             reply.header('cache-control', 'no-store')
@@ -1023,7 +1023,7 @@ export async function adminRoutes(
     app.delete<{ Params: unknown; Reply: SecurityMitigationResponse }>(
         '/admin/security-center/mitigations/:id',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityMitigationParamsSchema, request.params)
             const mitigation = await revokeSecurityMitigation(user, params.id)
             reply.header('cache-control', 'no-store')
@@ -1042,7 +1042,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: SecurityMitigationResponse }>(
         '/admin/security-center/mitigations/:id',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityMitigationParamsSchema, request.params)
             const body = validateBody(extendSecurityMitigationSchema, request.body)
             const mitigation = await extendSecurityMitigation(user, params.id, body.extensionMinutes)
@@ -1092,7 +1092,7 @@ export async function adminRoutes(
     app.post<{ Params: unknown; Reply: { success: true; eventId: string; status: string } }>(
         '/admin/outbox/:id/dead-letter',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(outboxEventParamsSchema, request.params)
             const event = await deadLetterOutboxEvent(user, params.id)
 
@@ -1119,7 +1119,7 @@ export async function adminRoutes(
     app.post<{ Params: unknown; Reply: { success: true; eventId: string; status: string } }>(
         '/admin/outbox/:id/retry',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(outboxEventParamsSchema, request.params)
             const event = await retryOutboxEvent(user, params.id)
 
@@ -1150,7 +1150,7 @@ export async function adminRoutes(
     }>(
         '/admin/system-incidents/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(systemIncidentParamsSchema, request.params)
             const body = validateBody(updateSystemIncidentStatusSchema, request.body)
             const incident = await updateSystemIncidentStatus(user, params.id, body.status)

@@ -43,8 +43,9 @@ The recovery codes are one-use. For a lost factor and exhausted recovery codes:
 If two independent super-admin factors are unavailable, this procedure fails
 closed. A separate break-glass governance process still needs approval and
 staging rehearsal; do not use a manual database edit as an undocumented reset.
-Step-up now protects role changes, administrator creation and account-deletion
-decisions after five minutes. A fresh code is consumed through `/auth/step-up`
+Step-up now protects user, trust-policy, security-center, outbox and
+account-deletion mutations after five minutes. A fresh code is consumed through `/auth/step-up`
 and the original operation is retried. Other sensitive actions and staging
-replay, external identity verification and break-glass acceptance remain open
+replay, sensitive exports, exceptional reads, external identity verification
+and break-glass acceptance remain open
 under U03.
