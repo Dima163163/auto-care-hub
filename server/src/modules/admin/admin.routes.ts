@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 
 import { requireAuth } from '../auth/require-auth.js'
+import { requireRecentPrivilegedMfa } from '../auth/privileged-step-up.service.js'
 import {
     validateBody,
     validateParams,
@@ -624,7 +625,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminDeletionRequest }>(
         '/admin/account-deletion-requests/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminDeletionRequestParamsSchema, request.params)
             const body = validateBody(updateAdminDeletionRequestStatusSchema, request.body)
 
@@ -673,7 +674,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminUserResponse }>(
         '/admin/users/:id/role',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminUserParamsSchema, request.params)
             const body = validateBody(updateUserRoleSchema, request.body)
 
@@ -732,7 +733,7 @@ export async function adminRoutes(
     app.post<{ Body: unknown; Reply: CreateAdminResponse }>(
         '/admin/admins',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const body = validateBody(createAdminSchema, request.body)
 
             const result = await createAdmin(

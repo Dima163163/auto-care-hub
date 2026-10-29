@@ -18,6 +18,16 @@ end
 Auth --> API : access token + refresh token\nJWT exp = persisted session expiry
 API --> Front : access DTO + HttpOnly refresh cookie
 Front -> Front : access token в памяти\nRTK auth/cache state
+group sensitive admin operation after five minutes
+  Front -> API : admin role/create/deletion mutation
+  API -> Auth : requireRecentPrivilegedMfa / current session timestamp
+  Auth -> PG : read mfaVerifiedAt
+  API --> Front : MFA_STEP_UP_REQUIRED if stale
+  Front -> API : /auth/step-up\nnew TOTP or unused recovery code + CSRF
+  Auth -> PG : lock session and factor / consume code / update mfaVerifiedAt
+  API --> Front : success / audited verification
+  Front -> API : retry original mutation once
+end
 group linked Google/Yandex callback
   Front -> API : /auth/oauth/:provider/callback
   API -> Auth : resolve linked identity and current user role
@@ -70,8 +80,9 @@ note over Auth, PG
   password setup для новой привилегированной учётной записи также
   требует код и создаёт сессию только после его проверки.
   старые сессии без mfaVerifiedAt отвергаются, refresh переносит отметку.
-  Enrollment требует private terminal/DB operator. Step-up и политика
-  recovery/reset для sensitive actions ещё открыты.
+  Enrollment требует private terminal/DB operator. Step-up действует для
+  role/create/deletion mutations; остальные sensitive actions и политика
+  recovery/reset ещё открыты.
   Preferences обновляют только свои поля с проверкой status/tokenVersion.
   Login reset counters использует условный UPDATE;
   смена пароля блокирует User row и отзывает сессии в той же transaction.

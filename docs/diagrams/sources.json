@@ -205,7 +205,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.schemas.ts",
-      "sha256": "96f14905b39be5bead05f8846cd4e6c24273b87237e469f88192034e1ba16c74",
+      "sha256": "1cc2c4e3031abcf0f1cf71b69af6ccb6ca3f0025cea33c914f4244d63ce8efe2",
       "scopes": [
         "auth"
       ]
@@ -491,7 +491,7 @@
     },
     {
       "path": "src/app/next/NextApp.tsx",
-      "sha256": "1112d5ee9e5bd4902f06b5a75242b074691980d8727a57a12d5d255a592d2f2d",
+      "sha256": "06b8e77e9c323103bce9c24607b9615332712706dcef75e19f31ab8feb63b152",
       "scopes": [
         "frontend"
       ]
@@ -598,7 +598,7 @@
     },
     {
       "path": "src/shared/api/baseApi.ts",
-      "sha256": "5486720eac1fef55c7c7b1f84be35fe66185ab14012d9ea79e0c34db2b542d67",
+      "sha256": "8ef01b24521b625f29bf277bc8fcf6eb9e9643d07162516f8d0a6e59bfecdc25",
       "scopes": [
         "frontend",
         "auth"
@@ -698,7 +698,7 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "38bd06d907dd4366d66ad0e7b80b500ca811193d20f17fe1a96154b8c739feae",
+      "sha256": "09b5463b4a092362c23902320cbca340a7d36ff876be29cda26984df3b7f7f40",
       "scopes": [
         "frontend"
       ]
@@ -2498,14 +2498,14 @@
     },
     {
       "path": "server/src/modules/auth/privileged-mfa.integration.test.ts",
-      "sha256": "9a17f34b74afdcfed90668a960ec2f78a078dd3a102bf46ac38ecd1a1752f5ef",
+      "sha256": "b04d0c04669cd91b997f7d2e2b30f9bdd877b592e422a82f59d10c421eb16f9f",
       "scopes": [
         "auth"
       ]
     },
     {
       "path": "server/src/modules/auth/auth.routes.ts",
-      "sha256": "431d67d4541551481ceb9fb5427ee7d345f1cb68717667985dcbf2573c0340bd",
+      "sha256": "c7294238ba48250d81ceeea7f26715de7f18b21b49bf311aee8d4bc1b0d2d171",
       "scopes": [
         "auth"
       ]
@@ -2543,7 +2543,7 @@
     },
     {
       "path": "server/src/shared/errors/error-codes.ts",
-      "sha256": "9d2985636f9e8062a31fb8b1bea9cbd43c4629aaaa6891e532190e194ea5f29e",
+      "sha256": "a5ebcc27669c88e1c0134cb08041cfc9c119c5d6ddd40a0fb2068097a3b5b8e8",
       "scopes": [
         "auth",
         "security"
@@ -2575,14 +2575,45 @@
     },
     {
       "path": "src/shared/config/translations/ru-part-1.ts",
-      "sha256": "6c61db3539c2e436b217b062bc0a7988c7eaf7b7d2d80cc0b451507e7b8ba376",
+      "sha256": "34b42cc1b82a678c3c09609d7420cb2875d69f0e9335e2b2c2f3844e8601e3ba",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/shared/config/translations/ru-part-4.ts",
-      "sha256": "7a0a0f38fd678f3a9127aa6546381e2f5dc2e586f0b7b7aa94ce65dacee40bde",
+      "sha256": "003705b935f103ec1f55b16c975591308710f4f769e73dc4b8849ffbfd4a366a",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/src/modules/auth/privileged-step-up.service.ts",
+      "sha256": "2f48a6744b68d326a4f7e6a3fdf282b3a0df599b5e8e7d1be4e37cbebc6fff19",
+      "scopes": [
+        "auth",
+        "security"
+      ]
+    },
+    {
+      "path": "src/shared/lib/privileged-step-up.ts",
+      "sha256": "f425d593efbf908c65a97db0c1ca339df7f8d52246145dec4579ec2a9b684662",
+      "scopes": [
+        "auth",
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/ui/privileged-step-up/PrivilegedStepUpDialog.tsx",
+      "sha256": "b9f182631d0b6522fa2d51483404735e96f61d85ac8a4abd019f327981a84a80",
+      "scopes": [
+        "auth",
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/app/App.tsx",
+      "sha256": "5f1a370e1a8f772f74d8c6111b4201cb080076197c5f0460d82b177fbccbbb2f",
       "scopes": [
         "frontend"
       ]

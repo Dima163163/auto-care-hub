@@ -19,6 +19,10 @@ export const loginSchema = z.object({
     mfaCode: z.string().trim().min(6).max(64).optional(),
 })
 
+export const privilegedStepUpSchema = z.object({
+    mfaCode: z.string().trim().min(6).max(64),
+})
+
 export const passwordSetupTokenSchema = z.object({
     token: z.string().min(32, 'Password setup token is required.').max(512),
 })

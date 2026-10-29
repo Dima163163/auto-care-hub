@@ -1,5 +1,12 @@
 # Карта проекта AutoCare Hub
 
+**U03, sensitive action step-up 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают повторную проверку кода после
+пятиминутного окна для изменения ролей, создания администратора и решения
+по удалению аккаунта. `auth/step-up` обновляет отметку текущей сессии,
+интерфейс повторяет исходное действие после подтверждения. Экспорт, остальные
+административные действия и staging replay ещё требуют отдельной проверки.
+
 **U03, privileged password login 2026-10-29:** `05-domain-data.puml`,
 `07-auth-session.puml` и `09-access-privacy.puml` с SVG показывают TOTP/одноразовый recovery code,
 row-bound секрет фактора и `mfaVerifiedAt` сессии. Старые privileged sessions

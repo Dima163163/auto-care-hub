@@ -8,10 +8,12 @@ import { UserMfaFactorEntity } from '../../entities/user-mfa/user-mfa-factor.ent
 import { UserMfaRecoveryCodeEntity } from '../../entities/user-mfa/user-mfa-recovery-code.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { verifyRefreshToken } from './auth-token.js'
+import { verifyAccessToken, verifyRefreshToken } from './auth-token.js'
 import { completePasswordSetup, createPasswordSetupTokenForUser, loginUser, refreshAuth } from './auth.service.js'
 import { provisionPrivilegedMfa } from './privileged-mfa.service.js'
 import { generateTotpCode } from './totp.js'
+import { requireRecentPrivilegedMfa, stepUpPrivilegedSession } from './privileged-step-up.service.js'
+import type { FastifyRequest } from 'fastify'
 
 describe('privileged MFA login integration', () => {
     let userId: string
@@ -19,6 +21,8 @@ describe('privileged MFA login integration', () => {
     let secret: string
     let recoveryCode: string
     let setupRecoveryCode: string
+    let stepUpRecoveryCode: string
+    let provisionedStepUpLoginCode: string
     const password = 'MfaIntegration-Password-2026!'
 
     beforeAll(async () => {
@@ -37,6 +41,8 @@ describe('privileged MFA login integration', () => {
         secret = provisioned.secret
         recoveryCode = provisioned.recoveryCodes[0] ?? ''
         setupRecoveryCode = provisioned.recoveryCodes[1] ?? ''
+        stepUpRecoveryCode = provisioned.recoveryCodes[2] ?? ''
+        provisionedStepUpLoginCode = provisioned.recoveryCodes[3] ?? ''
     })
 
     afterAll(async () => {
@@ -91,5 +97,21 @@ describe('privileged MFA login integration', () => {
         const payload = verifyRefreshToken(completed.refreshToken)
         const session = await AppDataSource.getRepository(UserSessionEntity).findOneByOrFail({ id: payload.sessionId })
         expect(session.mfaVerifiedAt).toBeInstanceOf(Date)
+    })
+
+    it('requires a fresh proof for sensitive actions and consumes a step-up recovery code once', async () => {
+        const login = await loginUser({ email, password, mfaCode: provisionedStepUpLoginCode })
+        const sessionId = verifyAccessToken(login.accessToken).sessionId
+        if (!sessionId) throw new Error('Expected a persisted privileged session.')
+        await AppDataSource.getRepository(UserSessionEntity).update(
+            { id: sessionId },
+            { mfaVerifiedAt: new Date(Date.now() - 10 * 60_000) },
+        )
+        const request = { headers: { authorization: `Bearer ${login.accessToken}` } } as FastifyRequest
+        await expect(requireRecentPrivilegedMfa(request)).rejects.toMatchObject({ code: 'MFA_STEP_UP_REQUIRED' })
+        await stepUpPrivilegedSession(request, stepUpRecoveryCode)
+        await expect(requireRecentPrivilegedMfa(request)).resolves.toMatchObject({ id: userId })
+        await expect(stepUpPrivilegedSession(request, stepUpRecoveryCode))
+            .rejects.toMatchObject({ code: 'MFA_STEP_UP_REQUIRED' })
     })
 })

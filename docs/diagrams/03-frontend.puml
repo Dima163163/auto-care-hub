@@ -22,7 +22,8 @@ package "Данные" {
   component "Redux store\nRTK Query cache" as Store
   component "autocareApi.ts\nединая injectEndpoints registration" as AutoAPI
   component "api/autocare/*.endpoints.ts\ntypes / schemas / transforms\n10 доменных factories" as Factories
-  component "shared/api/baseApi.ts\nauth / refresh / CSRF / errors" as Transport
+  component "shared/api/baseApi.ts\nauth / refresh / CSRF / MFA step-up / errors" as Transport
+  component "PrivilegedStepUpDialog\none-time code prompt" as StepUpDialog
 }
 component "Backend через /api rewrite" as Backend
 component "MSW browser + handlers\nтолько mock runtime" as Mock
@@ -46,6 +47,8 @@ Entities --> AutoAPI
 AutoAPI --> Factories
 AutoAPI --> Transport
 Transport --> Backend : real mode
+Transport --> StepUpDialog : MFA_STEP_UP_REQUIRED
+StepUpDialog --> Transport : fresh code / retry after verification
 Transport ..> Mock : mock mode interception
 Store --> AutoAPI : middleware / reducer cache
 note bottom of Factories

@@ -28,4 +28,7 @@ by access and refresh checks after this code is deployed.
 The recovery codes are one-use. If all are lost, there is currently no
 application reset flow: a reviewed operator procedure to verify identity,
 replace the factor, revoke sessions and record an audit trail is still needed.
-Step-up for sensitive actions and staging replay are also open under U03.
+Step-up now protects role changes, administrator creation and account-deletion
+decisions after five minutes. A fresh code is consumed through `/auth/step-up`
+and the original operation is retried. Other sensitive actions and staging
+replay remain open under U03.

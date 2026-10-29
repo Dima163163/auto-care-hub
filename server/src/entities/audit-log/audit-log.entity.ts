@@ -52,6 +52,7 @@ export enum AuditAction {
     LoginFailed = 'login_failed',
     AccountLocked = 'account_locked',
     RefreshTokenReuse = 'refresh_token_reuse',
+    MfaStepUpSucceeded = 'mfa_step_up_succeeded',
     OutboxRetried = 'outbox_retried',
     OutboxDeadLettered = 'outbox_dead_lettered',
     SystemIncidentStatusUpdated = 'system_incident_status_updated',

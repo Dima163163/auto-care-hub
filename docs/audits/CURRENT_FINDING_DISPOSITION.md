@@ -1,5 +1,11 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 29.10, U03 step-up:** проверка свежести MFA (5 минут) добавлена
+для изменения роли, создания администратора и решения об удалении аккаунта.
+Диалог получает новый код, `auth/step-up` обновляет только текущую сессию и
+фиксирует успешное подтверждение в аудите; отказ фиксируется как security
+event. Остальные sensitive actions, reset policy и staging acceptance открыты.
+
 **Локальный шаг 29.10, U03 password MFA:** admin/super-admin password login
 требует TOTP либо одноразовый recovery code. Секрет зашифрован и привязан к
 user UUID, TOTP step и recovery code погашаются транзакционно; удаление
@@ -52,7 +58,7 @@ canonical; neither source presence nor local PASS changes external pilot readine
 | Security 26 Sep, fields “not encrypted” | Versioned AES-GCM field envelopes/HMAC indexes are implemented. U05 stable index-key KEK rotation, U06 invitation transformer and U09 log redaction are published. U01 AWS KMS startup path is merged; user/invitation email read now checks the HMAC index. Local U02 provider change request, appeal and catalog gap bindings with bounded migrations 178671–178673 are prepared | U01 live KMS/IAM and restore acceptance; U02 remaining row/parent scope integrity, including paired index+ciphertext swaps; N09 production migration/retirement |
 | Security 26 Sep, CBC backup/stream restore | Published U04 authenticates ACHBKP01 AES-GCM and stages complete gzip/SQL before consumer; negative tooling and CI PASS | External backup/key separation, live restore/RPO/RTO and historical archive decision |
 | Security 26 Sep, private cache coverage | Published U10 applies path-normalized sensitive `private, no-store` barrier; CI HTTP assertions PASS | Production proxy/cache and client identity storage acceptance |
-| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery replay, reviewed reset procedure, sensitive-action step-up and operational rollout; U03 remains open |
+| Privileged MFA/step-up | Local TOTP or one-use recovery code is required for admin/super-admin password login; old sessions and linked OAuth are denied. A five-minute step-up protects role changes, admin creation and deletion decisions. Migration 178681 and private-terminal provisioning are prepared | Staging privileged-login/recovery/step-up replay, reviewed reset procedure, remaining sensitive actions and operational rollout; U03 remains open |
 | Next PWA | N03 removes unsupported production claim; Vite PWA is compatibility-only | Separate Next install/offline/update/cache implementation and browser acceptance |
 
 No report here claims there is no encryption or that server-side encryption hides

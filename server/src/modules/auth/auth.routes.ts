@@ -20,6 +20,7 @@ import {
     completePasswordResetSchema,
     completePasswordSetupSchema,
     loginSchema,
+    privilegedStepUpSchema,
     passwordResetTokenSchema,
     passwordSetupTokenSchema,
     registerSchema,
@@ -56,6 +57,9 @@ import {
 import { toPublicSession, type PublicSession } from './session-response.js'
 import { toPublicUser, type PublicUser } from './public-user.js'
 import { requireAuth } from './require-auth.js'
+import { stepUpPrivilegedSession } from './privileged-step-up.service.js'
+import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
+import { recordAuditLog } from '../admin/audit-log.service.js'
 import { enqueuePasswordResetEmailSafely } from '../outbox/email-outbox.service.js'
 import { enqueueEmailVerificationSafely } from '../outbox/email-verification-outbox.service.js'
 import { getEmailLocale } from '../../shared/i18n/request-locale.js'
@@ -132,6 +136,13 @@ const refreshRateLimit = createRateLimitPreHandler({
     maxRequests: 30,
     scope: 'auth:refresh',
     windowMs: ONE_MINUTE_MS,
+})
+
+const privilegedStepUpRateLimit = createRateLimitPreHandler({
+    maxRequests: 5,
+    scope: 'auth:privileged-step-up',
+    windowMs: 5 * ONE_MINUTE_MS,
+    keyResolvers: [getAuthenticatedUserRateLimitIdentifier],
 })
 
 const passwordSetupRateLimit = createRateLimitPreHandler({
@@ -225,6 +236,46 @@ export async function authRoutes(
             csrfToken,
         }
     })
+
+    app.post<{ Body: unknown; Reply: SuccessResponse }>(
+        '/auth/step-up',
+        { preHandler: [privilegedStepUpRateLimit, assertProtectedAuthRequest] },
+        async (request, reply) => {
+            const { mfaCode } = validateBody(privilegedStepUpSchema, request.body)
+            let user
+            try {
+                user = await stepUpPrivilegedSession(request, mfaCode)
+            } catch (error) {
+                if (error instanceof AppError && error.code === ERROR_CODES.MfaStepUpRequired) {
+                    let userId: string | null = null
+                    try {
+                        const token = request.headers.authorization?.match(/^Bearer\s+(\S+)$/i)?.[1]
+                        if (token) userId = verifyAccessToken(token).userId
+                    } catch {
+                        // Keep a denied attempt observable without trusting a malformed token.
+                    }
+                    void recordSecurityActivitySafely({
+                        userId,
+                        type: SecurityEventType.PrivilegeDenied,
+                        severity: SecurityEventSeverity.Warning,
+                        statusCode: 403,
+                        request,
+                        reasonCode: 'mfa_step_up_failed',
+                    })
+                }
+                throw error
+            }
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.MfaStepUpSucceeded,
+                targetId: user.id,
+                targetType: 'user',
+                request,
+            })
+            reply.header('cache-control', 'no-store')
+            return { success: true }
+        },
+    )
 
     app.post<{ Body: unknown; Reply: AuthResponse }>(
         '/auth/register',
