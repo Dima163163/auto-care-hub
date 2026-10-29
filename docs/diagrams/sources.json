@@ -2765,6 +2765,21 @@
         "security"
       ],
       "sha256": "f1475379bf48eaa0887fe457fd652cd8d66bade907b3efe452ce490b7d297acd"
+    },
+    {
+      "path": "server/src/modules/autocare/appeal.service.ts",
+      "scopes": [
+        "backend",
+        "security"
+      ],
+      "sha256": "2bf61f3a929d55783dde302426a6be228d1d9c022834f97b6482b499276ca399"
+    },
+    {
+      "path": "server/src/modules/autocare/appeal.service-boundary.test.ts",
+      "scopes": [
+        "security"
+      ],
+      "sha256": "bf5062a6ff4fef5cfc7a8898beda043922954b304a959045746036d1e502e570"
     }
   ],
   "inventories": [

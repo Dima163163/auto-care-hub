@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — независимое решение по апелляции, 29 октября 2026
+
+Admin/super-admin не может принять или отклонить собственную appeal,
+включая апелляцию на chat restriction. Проверка автора выполняется под
+row lock до смены статуса, отзыва блока и уведомления. Boundary unit 6
+PASS; PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
 ## U03 — независимое решение по профилю сервиса, 29 октября 2026
 
 Автор provider change request после смены роли owner → admin/super-admin

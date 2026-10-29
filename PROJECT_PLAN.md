@@ -2,6 +2,9 @@
 
 ## U03 — границы привилегированных чатов, 2026-10-29
 
+- [x] Запретить admin/super-admin решение собственной appeal, включая
+  chat restriction, под row lock до смены статуса и отзыва блока.
+  Boundary suite 6 PASS; PostgreSQL replay открыт.
 - [x] Запретить решение собственной provider change request после смены
   owner → admin/super-admin; проверка под row lock до изменения provider и
   outbox. Boundary suite 6 PASS; PostgreSQL replay открыт.

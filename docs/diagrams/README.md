@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, appeal review 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет решения собственной апелляции под row lock, включая
+отмену chat restriction. PostgreSQL/staging replay открыт.
+
 **U03, provider change review 2026-10-29:** `09-access-privacy.puml` с SVG
 показывает запрет решения собственной ранее созданной заявки после смены
 owner → admin/super-admin. PostgreSQL/staging replay открыт.
