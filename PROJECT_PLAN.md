@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## Local gate replay — 2026-10-29
+
+- [x] Backend unit 463 файла / 1722 PASS, isolated seeded integration
+  30 файлов / 144 PASS / 1 skip, static security 7/7 и migration filenames
+  179/179 PASS. Тестовые контейнеры и файлы убраны.
+- [ ] Получить реальные pilot evidence, CI/staging, KMS/restore и browser
+  acceptance; `docs/operations/pilot-evidence.json` ещё отсутствует.
+  Локальный replay не меняет pilot NO-GO.
+
 ## Integration setup — disposable DB, 2026-10-29
 
 - [x] Дописать в README миграции и оба seed шага перед full integration;

@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## Local gate replay, 29 октября 2026
+
+Полный backend unit 463/1722 PASS, isolated seeded integration
+30 файлов / 144 PASS / 1 skip, static security 7/7 и migration filename
+179/179 PASS. `docs/operations/pilot-evidence.json` отсутствует: реальные
+pilot gates нельзя объявить закрытыми по локальным тестам. CI/staging,
+KMS/restore и browser acceptance остаются открытыми; pilot NO-GO.
+
 ## Integration setup documentation, 29 октября 2026
 
 README и backend test profile теперь явно требуют миграции, `demo:seed`

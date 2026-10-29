@@ -1,11 +1,20 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный replay 29.10:** полный backend unit **463 файла / 1722 теста PASS**,
+seeded isolated PostgreSQL/Redis integration **30 файлов / 144 PASS / 1 skip**,
+build, targeted lint, семь static security checks и 179 migration filenames
+PASS. Новая PostgreSQL матрица конфликтов chat report (6/6) проверяет
+решение, список, назначение, чтение, продление и независимого модератора.
+`AutoCareBroadcastRequest.photoUrls` согласован с миграцией `text[]`; тест
+удаления аккаунта проходит с непустым массивом. CI/staging, KMS/restore,
+browser acceptance и файл реальных pilot evidence остаются открытыми.
+
 **Локальный шаг 29.10, U03 admin mutations:** оставшиеся изменения в
 `admin.routes.ts` и `platform-reviews.routes.ts` (модерация, сервисы, каталог,
 рынки, кабинеты, ответ/удаление отзыва) требуют MFA не старше пяти минут до
 валидации и записи. Backend build, targeted lint, полный unit suite
-**463 files / 1704 tests PASS** на синтетической конфигурации; PostgreSQL
-negative matrix на 23 маршрута добавлена, но локально не запускалась.
+**463 files / 1722 tests PASS** на синтетической конфигурации; PostgreSQL
+negative matrix на 23 маршрута прошла в seeded integration suite.
 Другие модули/staging открыты; U03/pilot NO-GO не закрыты.
 
 **Локальный шаг 29.10, U03 admin reads:** личные данные и служебные очереди
@@ -13,7 +22,7 @@ negative matrix на 23 маршрута добавлена, но локальн
 security center, outbox и обзоры), а также очередь отзывов платформы требуют
 MFA не старше пяти минут до чтения. Публичная иерархия рынков сохраняет
 role authorization без step-up. Backend build/targeted lint PASS; добавлена
-negative PostgreSQL route matrix на 23 read paths, локально не запущена.
+negative PostgreSQL route matrix на 23 read paths прошла локально.
 Другие модули и staging replay открыты; U03/pilot NO-GO не закрыты.
 
 **Локальный шаг 29.10, U03 exceptional reads:** admin/super-admin чтение
@@ -21,7 +30,7 @@ negative PostgreSQL route matrix на 23 read paths, локально не за�
 пяти минут до выдачи содержимого; live WebSocket authorization повторяет
 проверку. Просмотр заявки super-admin тоже требует свежий фактор. Unit,
 backend build и targeted lint PASS; негативный PostgreSQL integration case
-добавлен, но локально не запускался. Blob attachment transport теперь сохраняет
+прошёл локально. Blob attachment transport теперь сохраняет
 JSON код отказа для общего step-up; frontend unit и Next build PASS.
 Browser/staging replay не выполнялся.
 Другие чувствительные чтения остаются открытыми; U03 и pilot NO-GO не закрыты.
@@ -29,7 +38,8 @@ Browser/staging replay не выполнялся.
 **Локальный шаг 29.10, U03 integration fixtures:** устаревшие тестовые
 admin/super-admin JWT без persisted session заменены явной фикстурой с
 `mfaVerifiedAt`. Тесты реального login/MFA по-прежнему используют настоящий
-путь входа. PostgreSQL integration suite локально не запускался.
+путь входа. Seeded PostgreSQL/Redis integration suite прошёл локально:
+30 файлов / 144 PASS / 1 skip.
 
 **Локальный шаг 29.10, U03 recovery:** приватная команда сброса MFA требует
 коды двух разных действующих super-admin, не совпадающих с владельцем фактора,
