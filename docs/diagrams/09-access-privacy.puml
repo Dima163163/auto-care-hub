@@ -41,6 +41,8 @@ note right of StepUp
   Admin private request chat requires an active assigned moderation report;
   provider membership cannot replace it. The request chat-thread shortcut
   rejects admin and super-admin before returning the subject.
+  Legacy request conversation, attachment and WebSocket also reject both
+  privileged roles; they use the audited chat route for private review.
   Super-admin service-request detail also requires fresh MFA.
   Other modules' sensitive reads and staging replay remain open.
 end note

@@ -70,7 +70,7 @@ export async function getAutoCareServiceAttachment(user: UserEntity, requestId: 
     requestId = requireAutoCareRequestUuid(requestId)
     const normalizedAttachmentId = normalizeAutoCareRequestUuid(attachmentId)
     if (!normalizedAttachmentId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service attachment id must be a valid UUID.' })
-    if (user.role === UserRole.SuperAdmin) forbidden('SuperAdmin chat review must use the audited chat attachment route.')
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) forbidden('Administrators must use the audited chat attachment route.')
     await getParticipantRequest(user, requestId)
     const attachment = await AppDataSource.getRepository(ServiceAttachmentEntity).findOne({ where: { id: normalizedAttachmentId, requestId, status: ServiceAttachmentStatus.Ready }, select: { id: true, objectKey: true, contentType: true, bytes: true, checksum: true } })
     if (!attachment) notFound('Service attachment not found.')

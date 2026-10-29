@@ -7,6 +7,9 @@
   request → chat-thread отказывает admin/super-admin до чтения БД.
 - [x] Проверить отрицательные пути и положительный путь назначенной жалобы:
   chat service boundary 30 PASS, backend build и targeted lint PASS.
+- [x] Закрыть legacy request conversation, attachment и WebSocket для
+  admin/super-admin; read receipt не меняет состояние. Request boundary
+  12 PASS, backend build и targeted lint PASS.
 - [x] Защитить `/v1/chats` свежим MFA, ограничить super-admin список
   support/escalation, исключить расширение через provider membership и
   записывать привилегированные чтения в аудит без тем сообщений.

@@ -673,6 +673,12 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, legacy request chat:** admin с provider membership
+мог обойти модерационный chat route через legacy conversation/attachment и
+WebSocket заявки. Теперь оба privileged role получают отказ до выдачи
+содержимого; read receipt не меняет состояние. Request boundary unit 12 PASS,
+backend build/lint PASS; PostgreSQL/browser/staging replay ещё открыт.
+
 **Локальный шаг 29.10, обход через provider membership:** admin после отказа
 по назначенной жалобе мог продолжить проверку доступа к private request-чату
 как участник сервиса. Теперь этот путь закрыт, а быстрый

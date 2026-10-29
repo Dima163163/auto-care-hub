@@ -305,7 +305,7 @@
     },
     {
       "path": "server/src/modules/autocare/autocare.routes.ts",
-      "sha256": "b1e0b4cca1efdc22016d2140632f81fe8f1aa8363051b61bbd76b121329b1055",
+      "sha256": "402ce04857772271c4fbac9a1c6dd1c8b535f55d943954dce220d5baa373984b",
       "scopes": [
         "auth",
         "backend",
@@ -336,14 +336,14 @@
     },
     {
       "path": "server/src/modules/autocare/request-access.service.ts",
-      "sha256": "3944281a816d0ed409927a72977656f37266447ea548a15c8cd0ce3dd07abff8",
+      "sha256": "bf7510d87cfb3589a6fa198ea53475bb98ee5b8a6b3e4b08d8a063aea2635a08",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/src/modules/autocare/request-attachment.service.ts",
-      "sha256": "f39b6378d5605bfc5a00a4c820e01d39d4b2cd5d64c78797dd1be5515ba126b0",
+      "sha256": "651c26aa63f604be8f40fcbd1d5795057ef77fbb67af3fb38dc49e1cc9589249",
       "scopes": [
         "security"
       ]
@@ -364,7 +364,7 @@
     },
     {
       "path": "server/src/modules/autocare/request-conversation.service.ts",
-      "sha256": "e2967485b1a465f75b0d9a1d4b764dae51cb0c88b626733cf6a6b09be4633d32",
+      "sha256": "a3acf1df4c104a090450194c4a82c0f78ef9712be971eb5e026f74b0a3c4972b",
       "scopes": [
         "security"
       ]

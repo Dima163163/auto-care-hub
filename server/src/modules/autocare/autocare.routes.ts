@@ -660,7 +660,7 @@ export async function autoCareRoutes(app: FastifyInstance) {
                 return
             }
             const requestId = validateParams(autoCareServiceRequestParamsSchema, request.params).requestId
-            if (user.role === UserRole.SuperAdmin) {
+            if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
                 socket.close(1008, 'Use the audited chat review connection.')
                 return
             }

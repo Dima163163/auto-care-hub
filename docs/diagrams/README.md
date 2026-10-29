@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, legacy request chat 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает отказ admin/super-admin на старых conversation/attachment/WebSocket
+маршрутах заявки; приватная модерация идёт через audited chat route.
+PostgreSQL/browser/staging replay открыт.
+
 **U03, provider membership bypass 2026-10-29:** `09-access-privacy.puml`
 с SVG показывает, что admin доступ к приватному request-чату требует
 назначенной жалобы; provider membership его не заменяет. Быстрый маршрут

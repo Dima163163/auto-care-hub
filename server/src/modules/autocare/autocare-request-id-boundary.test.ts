@@ -63,12 +63,12 @@ describe('service request identifier boundary', () => {
         expect(mocks.transaction).not.toHaveBeenCalled()
     })
 
-    it('keeps SuperAdmin chat reads on the audited route and never marks legacy chat messages read', async () => {
+    it.each([['admin', admin], ['super_admin', superAdmin]] as const)('keeps %s chat reads on the audited route and never marks legacy messages read', async (_role, actor) => {
         const requestId = '11111111-1111-4111-8111-111111111111'
-        await expect(assertAutoCareServiceRequestRealtimeAccess(superAdmin, requestId)).rejects.toMatchObject({ statusCode: 403 })
-        await expect(getAutoCareServiceRequestConversation(superAdmin, requestId)).rejects.toMatchObject({ statusCode: 403 })
-        await expect(getAutoCareServiceAttachment(superAdmin, requestId, '22222222-2222-4222-8222-222222222222')).rejects.toMatchObject({ statusCode: 403 })
-        await expect(markAutoCareServiceConversationRead(superAdmin, requestId)).resolves.toEqual({ updated: 0 })
+        await expect(assertAutoCareServiceRequestRealtimeAccess(actor, requestId)).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getAutoCareServiceRequestConversation(actor, requestId)).rejects.toMatchObject({ statusCode: 403 })
+        await expect(getAutoCareServiceAttachment(actor, requestId, '22222222-2222-4222-8222-222222222222')).rejects.toMatchObject({ statusCode: 403 })
+        await expect(markAutoCareServiceConversationRead(actor, requestId)).resolves.toEqual({ updated: 0 })
         expect(mocks.getRepository).not.toHaveBeenCalled()
     })
 

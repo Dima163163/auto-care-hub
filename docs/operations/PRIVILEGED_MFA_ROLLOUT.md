@@ -60,6 +60,9 @@ Admin access to a private request chat requires an active assigned moderation
 report even if the admin also has provider membership. The request-to-chat
 shortcut rejects admin and super-admin; exceptional review uses the audited
 chat route.
+Legacy request conversation, attachment and WebSocket endpoints reject both
+privileged roles before private content; moderation uses the audited chat
+route instead.
 Each privileged chat index read records actor, role and item count without
 copying chat subjects into the audit log.
 Private admin dashboards in `admin.routes.ts` and the platform review queue

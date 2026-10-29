@@ -33,7 +33,7 @@ export async function getAutoCareServiceRequestConversation(user: UserEntity, re
     requestId = requireAutoCareRequestUuid(requestId)
     const normalizedInput = normalizeCursorPaginationInput(input)
     if (!normalizedInput) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service conversation pagination query is invalid.' })
-    if (user.role === UserRole.SuperAdmin) forbidden('SuperAdmin chat review must use the audited chat access route.')
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) forbidden('Administrators must use the audited chat access route.')
     const request = await getParticipantRequest(user, requestId)
     const chatThread = await ensureAutoCareRequestChatThread(request)
     const limit = getCursorLimit(normalizedInput.limit)
@@ -260,7 +260,7 @@ export async function decideAutoCareServiceOffer(user: UserEntity, requestId: st
 
 export async function markAutoCareServiceConversationRead(user: UserEntity, requestId: string) {
     requestId = requireAutoCareRequestUuid(requestId)
-    if (user.role === UserRole.SuperAdmin) return { updated: 0 }
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) return { updated: 0 }
     await getParticipantRequest(user, requestId)
     const repository = AppDataSource.getRepository(ServiceMessageEntity)
     const messages = await repository.find({ where: { requestId } })

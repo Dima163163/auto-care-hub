@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U03 — старый маршрут чата заявки, 29 октября 2026
+
+Legacy request conversation, attachment и WebSocket теперь отказывают
+admin/super-admin до чтения приватного содержимого; отметка прочтения
+остаётся no-op без обращения к БД. Модерация использует chat route с MFA,
+назначением/причиной и аудитом. Request boundary 12 PASS, backend build и
+targeted lint PASS; PostgreSQL/browser/staging replay открыт. Pilot NO-GO.
+
 ## U03 — обход через членство в сервисе, 29 октября 2026
 
 `assertThreadAccess` теперь отказывает admin в приватном request-чате без
