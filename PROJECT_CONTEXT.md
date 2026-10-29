@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — аудит списка чатов, 29 октября 2026
+
+Каждое admin/super-admin чтение `GET /v1/chats` после fresh MFA сохраняет
+actor/role/itemCount в audit log, без тем и сообщений. Негативный и позитивный
+PostgreSQL сценарии добавлены; локальный DB/Redis стенд недоступен.
+U03 и pilot NO-GO сохраняются.
+
 ## U03 — граница списка чатов, 29 октября 2026
 
 Super-admin индекс чатов теперь отдаёт только support/admin escalation;

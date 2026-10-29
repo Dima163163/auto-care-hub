@@ -56,6 +56,8 @@ only support/escalation chats; private request chats use per-thread audited
 access with a reason. The admin index includes assigned moderation cases,
 without provider membership widening. Super-admin service-request detail also
 requires fresh proof before its private DTO.
+Each privileged chat index read records actor, role and item count without
+copying chat subjects into the audit log.
 Private admin dashboards in `admin.routes.ts` and the platform review queue
 require fresh proof before returning their data. The market hierarchy remains
 under role authorization without step-up because it is public catalog metadata.

@@ -588,6 +588,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 09-access-privacy"
+    },
+    {
+      "date": "2026-10-29",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "backend,auth,security",
+      "change": "U03 audit privileged chat index reads without private subjects",
+      "sourceAnchorCount": 354,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 09-access-privacy"
     }
   ],
   "limitations": [

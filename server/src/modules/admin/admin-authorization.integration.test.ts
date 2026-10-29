@@ -432,6 +432,22 @@ describe('Admin and workspace authorization integration', () => {
         expect(response.body).not.toHaveProperty('items')
     })
 
+    it.each(['admin', 'super_admin'] as const)('audits privileged chat index reads by %s without copying subjects', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const response = await request(app.server)
+            .get('/v1/chats')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(200)
+        const audit = await AppDataSource.getRepository(AuditLogEntity).findOne({
+            where: { actorId: actor.id, action: AuditAction.AutoCareChatIndexViewed, targetType: 'autocare_chat_threads' },
+            order: { createdAt: 'DESC' },
+        })
+        expect(audit?.metadata).toEqual({ accessorRole: role, itemCount: response.body.length })
+        expect(audit?.metadata).not.toHaveProperty('subject')
+        expect(audit?.metadata).not.toHaveProperty('body')
+    })
+
     it.each(['admin', 'super_admin'] as const)('rejects stale MFA before privileged chat actions by %s', async (role) => {
         const actor = role === 'admin' ? admin : superAdmin
         const token = await createTestAccessToken(actor)

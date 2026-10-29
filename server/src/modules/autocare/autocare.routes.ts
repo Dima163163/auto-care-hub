@@ -411,7 +411,17 @@ export async function autoCareRoutes(app: FastifyInstance) {
         if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
             await requireRecentPrivilegedMfa(request)
         }
-        return getMyAutoCareChats(user, validateQuery(autoCareChatThreadListQuerySchema, request.query))
+        const result = await getMyAutoCareChats(user, validateQuery(autoCareChatThreadListQuerySchema, request.query))
+        if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+            await recordAuditLog({
+                actorId: user.id,
+                action: AuditAction.AutoCareChatIndexViewed,
+                targetType: 'autocare_chat_threads',
+                metadata: { accessorRole: user.role, itemCount: Array.isArray(result) ? result.length : result.items.length },
+                request,
+            })
+        }
+        return result
     })
     app.post('/v1/chats', { preHandler: autoCareMutationRateLimit }, async (request) => createAutoCareChat(await requireChatActionUser(request), validateBody(createAutoCareChatSchema, request.body)))
     app.get('/v1/service-requests/:requestId/chat-thread', async (request) => getAutoCareChatThreadForRequest(await requireAuth(request), validateParams(autoCareServiceRequestParamsSchema, request.params).requestId))

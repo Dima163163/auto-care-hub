@@ -43,6 +43,7 @@ export enum AuditAction {
     AutoCareProviderChangesViewed = 'autocare_provider_changes_viewed',
     AutoCareCatalogGapsViewed = 'autocare_catalog_gaps_viewed',
     AutoCareChatReportsViewed = 'autocare_chat_reports_viewed',
+    AutoCareChatIndexViewed = 'autocare_chat_index_viewed',
     PlatformReviewsViewed = 'platform_reviews_viewed',
     AutoCareAppealDecided = 'autocare_appeal_decided',
     AutoCareModerationEvidenceDecided = 'autocare_moderation_evidence_decided',

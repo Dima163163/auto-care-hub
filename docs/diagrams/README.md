@@ -1,5 +1,9 @@
 # Карта проекта AutoCare Hub
 
+**U03, chat index audit 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запись actor/role/itemCount при admin/super-admin чтении списка
+чатов без копирования тем в аудит. PostgreSQL replay открыт.
+
 **U03, privileged chat index scope 2026-10-29:** `09-access-privacy.puml`
 с SVG показывает, что super-admin индекс содержит только support/escalation;
 приватные request-чаты открываются отдельно с причиной и аудитом. Mock
