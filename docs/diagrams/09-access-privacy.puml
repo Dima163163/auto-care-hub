@@ -8,7 +8,7 @@ component "Resource resolved from DB\nrequest / thread / provider / attachment" 
 component "Client access\nresource.clientId == user.id" as Client
 component "Provider access\nactive membership + permission\nlocation scope / legacy owner fallback" as Provider
 component "Privileged access\nrole + exceptional reason / assignment\nзависит от конкретного entrypoint" as Admin
-component "MFA step-up\nfresh session proof <= 5 min\nuser/trust/security/outbox/deletion mutations" as StepUp
+component "MFA step-up\nfresh session proof <= 5 min\nprivileged mutations + audit/security CSV" as StepUp
 component "Shared chat write policy\nprivate request: client / provider only\nsupport / escalation: admin allowed" as ChatWrite
 component "Use-case mutation / private DTO" as Result
 component "Authorized object delivery\nprivate object key / short-lived access" as Object

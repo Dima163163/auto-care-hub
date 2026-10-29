@@ -784,10 +784,18 @@ export async function adminRoutes(
     )
 
     app.get('/admin/audit-logs/export', async (request, reply) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(auditLogsExportQuerySchema, request.query)
         const logs = await getAuditLogsForExport(user, query)
         const date = new Date().toISOString().slice(0, 10)
+
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AuditLogsExported,
+            targetType: 'audit_logs',
+            metadata: { rowCount: logs.length, filtered: Boolean(query.search || query.action || query.targetType || query.actorId) },
+            request,
+        })
 
         return reply
             .headers(getAuditLogExportHeaders(date))
@@ -880,7 +888,7 @@ export async function adminRoutes(
     )
 
     app.get('/admin/security-center/events/export', async (request, reply) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         assertSecurityCenterExportAccess(user)
         const query = validateQuery(securityCenterExportQuerySchema, request.query)
         const result = await getSecurityCenterEvents(user, { ...query, limit: Math.min(query.limit, 100) })

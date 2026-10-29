@@ -698,7 +698,7 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "09b5463b4a092362c23902320cbca340a7d36ff876be29cda26984df3b7f7f40",
+      "sha256": "4f7ba57c418d45bb619e4ae430f21d783c894124a43952680f62e1e819320ba1",
       "scopes": [
         "frontend"
       ]
@@ -957,7 +957,7 @@
     },
     {
       "path": "server/src/routes/openapi.route.ts",
-      "sha256": "656bc169914394207c30a29346ac553e00bd224f69bb8879826cbbe553ed7a73",
+      "sha256": "1ef39cb47fd9209861f8391739d35c48bd2705357c4234a55bd8cd7fe6c75347",
       "scopes": [
         "backend"
       ]
@@ -2638,6 +2638,45 @@
       "sha256": "c66794a59932a54e56116a02773600d775ea1156ddf46a05f532c707836e9466",
       "scopes": [
         "auth"
+      ]
+    },
+    {
+      "path": "src/features/admin/api/adminApi.ts",
+      "sha256": "fd3c2cfad10dbf4bd9ae1f183bda068028613fe3fc14236a52eca0e0377ae2bc",
+      "scopes": [
+        "frontend",
+        "security"
+      ]
+    },
+    {
+      "path": "src/features/admin/lib/csv-response.ts",
+      "sha256": "c3fc2ffa67b4e3088d33d45a35ae615afe0fe7dac9278ba70b6926bc17bbf721",
+      "scopes": [
+        "frontend",
+        "security"
+      ]
+    },
+    {
+      "path": "src/features/admin/lib/admin-labels.ts",
+      "sha256": "96176d581faa0bdc3242deae58a3da4bc46399c2432cbcf17d7e9ec3ba8aae6a",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "server/src/entities/audit-log/audit-log.entity.ts",
+      "sha256": "324fa007186c20719cfe78c257003c05e90f5be01b59d56151ea0fb03b04d9dd",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/admin.routes.ts",
+      "sha256": "654c6bcdf0a31f1abe24c7887509aa1c15200bfabe9c3c7d203a8965e42667dd",
+      "scopes": [
+        "backend",
+        "security"
       ]
     }
   ],

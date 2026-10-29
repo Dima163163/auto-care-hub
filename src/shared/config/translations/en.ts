@@ -811,6 +811,7 @@ export const enTranslations = {
         loadMore: 'Load more',
         loadingMore: 'Loading more...',
         targetTypes: {
+            audit_logs: 'Audit logs',
             account_deletion_request: 'Account deletion request',
             cabinet: 'Cabinet',
             autocare_appeal: 'AutoCare appeal',
@@ -860,6 +861,9 @@ export const enTranslations = {
             login_failed: 'Failed login attempt',
             account_locked: 'Account locked',
             refresh_token_reuse: 'Refresh token reuse detected',
+            mfa_step_up_succeeded: 'Administrator identity reconfirmed',
+            mfa_factor_reset: 'Administrator authenticator reset',
+            audit_logs_exported: 'Audit logs exported',
             outbox_retried: 'Outbox event retried',
             outbox_dead_lettered: 'Outbox event moved to dead letter',
             oauth_identity_linked: 'OAuth identity linked',

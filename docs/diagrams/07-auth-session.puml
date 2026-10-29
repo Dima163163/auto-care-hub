@@ -19,7 +19,7 @@ Auth --> API : access token + refresh token\nJWT exp = persisted session expiry
 API --> Front : access DTO + HttpOnly refresh cookie
 Front -> Front : access token в памяти\nRTK auth/cache state
 group sensitive admin operation after five minutes
-  Front -> API : privileged user / trust / security / outbox / deletion mutation
+  Front -> API : privileged mutation or audit/security CSV export
   API -> Auth : requireRecentPrivilegedMfa / current session timestamp
   Auth -> PG : read mfaVerifiedAt
   API --> Front : MFA_STEP_UP_REQUIRED if stale
@@ -86,8 +86,8 @@ note over Auth, PG
   требует код и создаёт сессию только после его проверки.
   старые сессии без mfaVerifiedAt отвергаются, refresh переносит отметку.
   Enrollment требует private terminal/DB operator. Step-up действует для
-  user/role/create/deletion, trust-policy, security-center и outbox
-  mutations; sensitive exports/exceptional reads, внешний identity check,
+  user/role/create/deletion, trust-policy, security-center, outbox
+  mutations и audit/security CSV export; exceptional reads, внешний identity check,
   break-glass и полная staging-проверка открыты.
   Preferences обновляют только свои поля с проверкой status/tokenVersion.
   Login reset counters использует условный UPDATE;

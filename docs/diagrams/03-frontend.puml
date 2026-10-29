@@ -74,6 +74,8 @@ note right of Seo
   provider-specific metadata сохраняется после hydration.
 end note
 note right of Shared
+  Admin CSV transport keeps 403 JSON error codes intact
+  for the shared MFA step-up dialog; 200 remains a Blob.
   N33: parsing/timeout/5xx и SyntaxError не выводят
   raw response в UI. Локализованное сообщение и retry
   сохраняют понятный сценарий при сбое API.
