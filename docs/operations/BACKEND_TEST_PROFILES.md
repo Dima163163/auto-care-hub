@@ -9,6 +9,10 @@ are explicitly classified with reasons in `server/src/test/test-profile-policy.t
 `test:integration` discovers both sets and loads the fail-closed disposable target
 policy. Always supply explicit `TEST_DATABASE_URL` / `TEST_REDIS_URL`; ordinary
 local `.env` database settings do not authorize destructive fixtures.
+Apply migrations and run `demo:seed` followed by `autocare:seed` against the
+same disposable PostgreSQL target before the full integration suite. Public
+discovery assertions require the seeded providers and catalog; the empty-table
+catalog fallback has separate unit coverage.
 
 The admin concurrency fixture mutates only the explicitly guarded disposable CI
 database. It creates its own admins and restores temporarily blocked synthetic

@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## Integration setup documentation, 29 октября 2026
+
+README и backend test profile теперь явно требуют миграции, `demo:seed`
+и `autocare:seed` на том же disposable PostgreSQL перед full integration.
+Route test назван по фактическому seeded контракту; empty-table fallback
+имеет отдельный unit test. Последний полный integration 30/144 PASS,
+1 skip.
+
 ## U03 — chat report conflict на PostgreSQL, 29 октября 2026
 
 Отдельный isolated PostgreSQL integration 1 файл / 6 тестов PASS: admin

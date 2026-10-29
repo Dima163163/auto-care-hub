@@ -1,5 +1,12 @@
 # AutoCare Hub — Project Plan
 
+## Integration setup — disposable DB, 2026-10-29
+
+- [x] Дописать в README миграции и оба seed шага перед full integration;
+  назвать route test по фактической seeded зависимости. Empty-table fallback
+  отдельно покрыт unit. Последний full integration 30 файлов / 144 PASS /
+  1 skip.
+
 ## PostgreSQL schema parity — broadcast photoUrls, 2026-10-29
 
 - [x] Согласовать `AutoCareBroadcastRequest.photoUrls` с миграцией

@@ -673,6 +673,13 @@ cutover ещё открыты.
 
 ### Интеграционная проверка schema parity
 
+**Локальный шаг 29.10, integration setup:** README ранее пропускал
+обязательные seeds при запуске full integration на новой disposable DB,
+а название route test неверно обещало данные до seed. Пример теперь включает
+миграции и оба seeds; test profile объясняет зависимость и unit coverage
+empty-table fallback. Последний seeded integration 30 файлов / 144 PASS /
+1 skip.
+
 **Локальный шаг 29.10, broadcast photoUrls schema:** миграция определяла
 `autocare_broadcast_requests.photoUrls` как `text[]`, entity ошибочно
 указывала `jsonb`; сохранение даже пустого массива падало на PostgreSQL.
