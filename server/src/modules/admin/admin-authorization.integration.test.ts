@@ -24,7 +24,7 @@ import {
     SystemIncidentType,
 } from '../../entities/system-incident/system-incident.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { createAuthTokens } from '../auth/auth.service.js'
+import { createTestAccessToken } from '../../test-support/auth-session.js'
 
 describe('Admin and workspace authorization integration', () => {
     const suffix = `${Date.now()}`
@@ -207,8 +207,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('enforces provider membership and schedule ownership at route boundaries', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const otherOwnerToken = createAuthTokens(otherOwner).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const otherOwnerToken = await createTestAccessToken(otherOwner)
 
         const forbiddenMemberships = await request(app.server)
             .get(`/owner/autocare-providers/${provider.id}/members`)
@@ -259,8 +259,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('keeps platform overview super-admin scoped', async () => {
-        const adminToken = createAuthTokens(admin).accessToken
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
+        const adminToken = await createTestAccessToken(admin)
+        const superAdminToken = await createTestAccessToken(superAdmin)
 
         const forbidden = await request(app.server)
             .get('/super-admin/platform-overview')
@@ -275,9 +275,9 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('keeps market hierarchy and audit access separated by role', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
+        const superAdminToken = await createTestAccessToken(superAdmin)
 
         const ownerHierarchy = await request(app.server)
             .get('/super-admin/market-hierarchy')
@@ -309,8 +309,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('provides an admin-only evidence decision with the related provider context', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
 
         const forbidden = await request(app.server)
             .get('/admin/autocare-moderation-evidence')
@@ -369,7 +369,7 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('audits sensitive moderation queue reads without copying private payloads', async () => {
-        const adminToken = createAuthTokens(admin).accessToken
+        const adminToken = await createTestAccessToken(admin)
         const requests = [
             ['/admin/autocare-appeals', AuditAction.AutoCareAppealsViewed, 'autocare_appeals'],
             ['/admin/autocare-moderation-evidence', AuditAction.AutoCareModerationQueueViewed, 'autocare_moderation_evidence'],
@@ -397,8 +397,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
         const reason = 'The provider profile is complete and the suspension should be reviewed again.'
 
         const created = await request(app.server)
@@ -450,8 +450,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('keeps aggregate data-quality queues restricted to administrators', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
 
         const forbidden = await request(app.server)
             .get('/admin/autocare-quality-monitoring')
@@ -469,8 +469,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('allows only super-admins to update incidents and records an immutable audit trail', async () => {
-        const adminToken = createAuthTokens(admin).accessToken
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
+        const adminToken = await createTestAccessToken(admin)
+        const superAdminToken = await createTestAccessToken(superAdmin)
 
         const forbidden = await request(app.server)
             .patch(`/admin/system-incidents/${incident.id}/status`)

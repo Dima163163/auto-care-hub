@@ -2632,6 +2632,13 @@
       "scopes": [
         "auth"
       ]
+    },
+    {
+      "path": "server/src/test-support/auth-session.ts",
+      "sha256": "c66794a59932a54e56116a02773600d775ea1156ddf46a05f532c707836e9466",
+      "scopes": [
+        "auth"
+      ]
     }
   ],
   "inventories": [
