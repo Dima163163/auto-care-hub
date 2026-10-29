@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U03 — обход через членство в сервисе, 29 октября 2026
+
+`assertThreadAccess` теперь отказывает admin в приватном request-чате без
+действующей назначенной жалобы, даже если есть provider membership.
+`GET /v1/service-requests/:id/chat-thread` больше не выдаёт admin/super-admin
+тему через альтернативный маршрут. Проверены 30 unit-сценариев chat boundary,
+backend build и targeted lint; PostgreSQL/staging replay открыт.
+U03 и pilot NO-GO сохраняются.
+
 ## U03 — аудит списка чатов, 29 октября 2026
 
 Каждое admin/super-admin чтение `GET /v1/chats` после fresh MFA сохраняет

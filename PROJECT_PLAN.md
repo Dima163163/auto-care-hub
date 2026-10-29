@@ -1,5 +1,21 @@
 # AutoCare Hub — Project Plan
 
+## U03 — границы привилегированных чатов, 2026-10-29
+
+- [x] Закрыть доступ admin к приватному чату через provider membership при
+  отсутствии действующего назначенного moderation report; быстрый маршрут
+  request → chat-thread отказывает admin/super-admin до чтения БД.
+- [x] Проверить отрицательные пути и положительный путь назначенной жалобы:
+  chat service boundary 30 PASS, backend build и targeted lint PASS.
+- [x] Защитить `/v1/chats` свежим MFA, ограничить super-admin список
+  support/escalation, исключить расширение через provider membership и
+  записывать привилегированные чтения в аудит без тем сообщений.
+- [x] Защитить admin/super-admin действия с чатами и вложениями свежим MFA;
+  mock-список синхронизирован. Unit backend 5 PASS, frontend mock 1 PASS;
+  TypeScript, targeted lint и backend build PASS.
+- [ ] Выполнить добавленные PostgreSQL/browser сценарии и staging replay;
+  U03 и pilot NO-GO сохраняются.
+
 ## U02 — автомобили автопарка, 2026-10-28
 
 - [x] Привязать label и vehicleSnapshot к vehicle/fleet UUID; не отдавать bindings в API.

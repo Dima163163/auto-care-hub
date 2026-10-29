@@ -46,6 +46,7 @@ export async function assertThreadAccess(user: UserEntity, thread: AutoCareChatT
             where: { threadId: thread.id, status: AutoCareChatReportStatus.Pending, assignedModeratorId: user.id },
         })
         if (reports.some((report) => report.reportedMessageId && report.acknowledgedAt && report.policyVersion && report.accessExpiresAt && report.accessExpiresAt.getTime() > Date.now())) return 'pending_report_moderation'
+        fail(403, 'Moderation access is limited to an assigned service-request case.')
     }
     if (thread.clientId === user.id) return 'client_or_creator'
     if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return 'client_or_creator'

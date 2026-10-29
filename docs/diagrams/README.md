@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, provider membership bypass 2026-10-29:** `09-access-privacy.puml`
+с SVG показывает, что admin доступ к приватному request-чату требует
+назначенной жалобы; provider membership его не заменяет. Быстрый маршрут
+request → chat-thread закрыт для admin/super-admin. PostgreSQL replay открыт.
+
 **U03, chat index audit 2026-10-29:** `09-access-privacy.puml` с SVG
 показывает запись actor/role/itemCount при admin/super-admin чтении списка
 чатов без копирования тем в аудит. PostgreSQL replay открыт.

@@ -38,6 +38,9 @@ note right of StepUp
   Super-admin index lists support/escalation only; private request chats
   require per-thread audited access with an emergency reason.
   Privileged index reads audit actor role and item count, not subjects.
+  Admin private request chat requires an active assigned moderation report;
+  provider membership cannot replace it. The request chat-thread shortcut
+  rejects admin and super-admin before returning the subject.
   Super-admin service-request detail also requires fresh MFA.
   Other modules' sensitive reads and staging replay remain open.
 end note

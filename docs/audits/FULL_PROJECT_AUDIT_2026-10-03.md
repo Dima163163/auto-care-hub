@@ -673,6 +673,13 @@ cutover ещё открыты.
 
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
 
+**Локальный шаг 29.10, обход через provider membership:** admin после отказа
+по назначенной жалобе мог продолжить проверку доступа к private request-чату
+как участник сервиса. Теперь этот путь закрыт, а быстрый
+`GET /v1/service-requests/:id/chat-thread` отказывает admin/super-admin до
+чтения темы. Unit boundary suite 30 PASS, backend build/lint PASS;
+PostgreSQL/staging replay остаётся открытым. U03 открыт.
+
 **Локальный шаг 29.10, аудит списка чатов:** admin/super-admin чтение
 `GET /v1/chats` теперь записывает actor/role/itemCount после MFA и до ответа,
 не копируя темы или сообщения. Добавлен PostgreSQL позитивный сценарий;

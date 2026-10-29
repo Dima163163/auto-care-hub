@@ -418,6 +418,26 @@ describe('AutoCare chat service boundaries', () => {
         await expect(getAutoCareChatAccessContext(superAdmin, chatId, 'Urgent review of a safety complaint')).resolves.toMatchObject({ accessScope: 'super_admin', emergencyReason: 'Urgent review of a safety complaint' })
     })
 
+    it('does not let an admin provider membership bypass the assigned-report gate', async () => {
+        setupReadAccess({
+            thread: makeThread({
+                type: AutoCareChatThreadType.ServiceRequest,
+                requestId: '66666666-6666-4666-8666-666666666666',
+                providerId: '77777777-7777-4777-8777-777777777777',
+            }),
+            provider: { id: '77777777-7777-4777-8777-777777777777' },
+        })
+        mocks.hasProviderWorkspacePermission.mockResolvedValue(true)
+
+        await expect(getAutoCareChatAccessContext(admin, chatId)).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.hasProviderWorkspacePermission).not.toHaveBeenCalled()
+    })
+
+    it.each([admin, superAdmin])('keeps privileged roles out of the request chat-thread shortcut for %s', async (moderator) => {
+        await expect(getAutoCareChatThreadForRequest(moderator, chatId)).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.getRepository).not.toHaveBeenCalled()
+    })
+
     it('does not let a provider from another workspace open the chat', async () => {
         setupReadAccess({
             thread: makeThread({ providerId: '66666666-6666-4666-8666-666666666666', clientId: '77777777-7777-4777-8777-777777777777' }),
