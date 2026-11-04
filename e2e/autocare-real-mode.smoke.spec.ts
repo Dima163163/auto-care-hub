@@ -1,12 +1,26 @@
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync, writeFileSync } from 'node:fs'
 
 const apiBaseUrl = process.env.REAL_API_BASE_URL ?? 'http://127.0.0.1:4000'
 const demoPassword = '123456'
+
+function takeRealE2eMfaCode(email: string) {
+    if (email !== 'admin.demo@autocarehub.test' && email !== 'superadmin.demo@autocarehub.test') return null
+    const file = process.env.REAL_E2E_MFA_CODES_FILE
+    if (!file) throw new Error('Privileged real E2E login requires the prepared MFA code file.')
+    const codes = JSON.parse(readFileSync(file, 'utf8')) as Record<string, string[]>
+    const code = codes[email]?.shift()
+    if (!code) throw new Error(`No unused real E2E MFA recovery code remains for ${email}.`)
+    writeFileSync(file, JSON.stringify(codes), { mode: 0o600 })
+    return code
+}
 
 async function signIn(page: Page, email: string) {
     await page.goto('/login')
     await page.locator('#email').fill(email)
     await page.locator('#password').fill(demoPassword)
+    const mfaCode = takeRealE2eMfaCode(email)
+    if (mfaCode) await page.locator('#mfaCode').fill(mfaCode)
 
     const loginButton = page.getByRole('button', { name: /sign in|войти/i })
     const sessionHydrated = page.waitForResponse((response) =>

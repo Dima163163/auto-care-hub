@@ -6,10 +6,16 @@
   обязательный AutoCare integrity manifest; миграция и PlantUML уже отражают её.
 - [x] Ограничить два ложных срабатывания Gitleaks публичного RFC 6238 TOTP
   вектора точными историческими fingerprint; другие секреты не исключать.
+- [x] Исправить три frontend regression tests, которые смешивали Blob/Response
+  из разных окружений Node 22 и jsdom; CI первый запуск дал 3/671 failure.
+- [x] Подготовить admin/super-admin MFA для disposable real E2E БД и
+  одноразовые recovery codes для browser sign-in вместо входа без MFA.
 - [x] Повторить локальный release integrity gate: 179 миграций,
   44 таблицы в manifest, 30 pending constraints validated на disposable PostgreSQL.
-- [ ] Получить зелёный exact-SHA Quality CI PR #43; затем merge в dev,
-  дождаться dev push Quality и провести
+- [x] Зафиксировать, что PR #43 уже squash-merged в dev как `78ba6a0`
+  до завершения Quality; dev push Quality упал, main не продвинут.
+- [ ] Провести отдельный PR с оставшимся CI fix в dev после зелёного
+  exact-SHA Quality; затем дождаться dev push Quality и провести
   защищённый dev → main PR по обязательным проверкам и review.
 
 ## Exact-candidate local quality replay — 2026-11-04
