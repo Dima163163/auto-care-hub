@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — область обычной блокировки в mock, 4 ноября 2026
+
+Admin/super-admin не создают обычную participant block через mock POST.
+Целевой ID должен быть другим участником переписки; сторонний ID отвергается.
+Mock regression 7/7 PASS, TypeScript noEmit/targeted lint PASS.
+Staging acceptance открыта; pilot NO-GO.
+
 ## U03 — изоляция санкции в mock, 4 ноября 2026
 
 Participant block в mock переиспользует только активную обычную запись.

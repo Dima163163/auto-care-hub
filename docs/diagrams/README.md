@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, mock participant block scope 2026-11-04:** `03-frontend.puml` и SVG
+показывают запрет обычной блокировки для admin/super-admin и чужого
+пользователя вне участников переписки. Mock regression 7/7 PASS,
+staging acceptance открыта.
+
 **U03, mock sanction isolation 2026-11-04:** `03-frontend.puml` и SVG
 показывают, что повторное создание participant block в mock не меняет
 `sourceReportId` санкции по жалобе: обычная активная блокировка переиспользуется,

@@ -58,6 +58,7 @@ note right of Mock
   The request-to-chat shortcut rejects privileged roles.
   Participant block creation reuses only an active ordinary block;
   a report sanction keeps its case link and appeal-only removal.
+  Privileged actors and nonparticipants cannot create ordinary blocks.
   Mock behavior is a UI contract, not security evidence.
 end note
 note bottom of Factories

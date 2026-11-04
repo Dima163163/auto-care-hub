@@ -1,5 +1,10 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 04.11, U03 mock participant block scope:** admin/super-admin
+не создают обычную блокировку, чужой ID вне участников не принимается.
+Mock regression 7/7 PASS, TypeScript noEmit/targeted lint PASS.
+Staging/pilot evidence открыты; pilot NO-GO.
+
 **Локальный шаг 04.11, U03 mock sanction isolation:** повторный POST обычной
 блокировки больше не перезаписывает санкцию по жалобе. `sourceReportId`
 остаётся связанным с делом; DELETE санкции отвергается, обычная блокировка

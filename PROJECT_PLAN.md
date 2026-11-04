@@ -1,5 +1,13 @@
 # AutoCare Hub — Project Plan
 
+## U03 — область обычной блокировки в mock, 2026-11-04
+
+- [x] Запретить admin/super-admin создавать participant block через обычный
+  POST; блокировка допускает только другого участника переписки. Mock
+  regression 7/7 PASS, TypeScript noEmit и targeted lint PASS.
+- [ ] Проверить в опубликованном browser/staging окружении;
+  U03 и pilot NO-GO сохраняются.
+
 ## U03 — изоляция санкции от обычной блокировки в mock, 2026-11-04
 
 - [x] Повторное создание participant block выбирает только собственную

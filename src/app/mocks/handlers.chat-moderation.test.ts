@@ -15,6 +15,39 @@ async function fetchJson(path: string, init?: RequestInit) {
 }
 
 describe('mock chat report moderation contract', () => {
+    it('limits ordinary blocks to chat participants and rejects privileged creation', async () => {
+        const chatId = 'chat-request-owner-request-2'
+        let blockId: string | null = null
+        try {
+            setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
+            expect((await fetchJson('/api/v1/chats/chat-support-owner/blocks', {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'user-owner-1' }),
+            })).status).toBe(403)
+
+            setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
+            expect((await fetchJson(`/api/v1/chats/${chatId}/blocks`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'foreign-user-id' }),
+            })).status).toBe(400)
+            expect(mockAutoCareChatBlocks.some((block) => block.threadId === chatId && block.blockedUserId === 'foreign-user-id')).toBe(false)
+
+            const valid = await fetchJson(`/api/v1/chats/${chatId}/blocks`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'user-client-1' }),
+            })
+            expect(valid.status).toBe(201)
+            const block = await valid.json() as { id: string; blockedUserId: string }
+            blockId = block.id
+            expect(block.blockedUserId).toBe('user-client-1')
+        } finally {
+            if (blockId) {
+                const index = mockAutoCareChatBlocks.findIndex((block) => block.id === blockId)
+                if (index >= 0) mockAutoCareChatBlocks.splice(index, 1)
+            }
+        }
+    })
+
     it('keeps a report restriction separate from an ordinary participant block', async () => {
         const chatId = 'chat-request-owner-request-2'
         const restriction = {

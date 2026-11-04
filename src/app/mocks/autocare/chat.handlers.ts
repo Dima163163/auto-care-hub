@@ -3,7 +3,7 @@ import { emitMockAutoCareChatEvent, type ServiceChatMessage } from "@/entities/a
 import { mockScenarioResponse } from ".././mock-scenario"
 import { currentMockUser } from './mock-access'
 import { decodeMockChatCursor, encodeMockChatCursor, getMockAutoCareChatThreads, getMockChatReportAccess, getMockDirectChatThread, isMockChatMessagingBlocked, isMockChatReportCategory, mockChatAttachments, mockChatMessages, mockChatThreadFromRequest } from './mock-chat'
-import { autoCareProviders, mockAutoCareChatAttachments, mockAutoCareChatBlocks, mockAutoCareChatMessages, mockAutoCareChatReports, mockAutoCareChatThreads, mockAutoCareServiceRequests, ownerAutoCareProviders } from './mock-fixtures'
+import { autoCareProviders, mockAutoCareChatAttachments, mockAutoCareChatBlocks, mockAutoCareChatMessages, mockAutoCareChatReports, mockAutoCareChatThreads, mockAutoCareProviderMemberships, mockAutoCareServiceRequests, ownerAutoCareProviders } from './mock-fixtures'
 import type { MockAutoCareChatBlock, MockAutoCareChatReport, MockAutoCareChatThread } from './mock-fixtures'
 import { getMockModerationRestriction, parseMockOffset } from './mock-validation'
 
@@ -111,12 +111,15 @@ export const chatHandlers = [
     }) },
 { order: 105, handler: http.post('/api/v1/chats/:chatId/blocks', async ({ params, request }) => {
         const user = currentMockUser()
+        if (user?.role === 'admin' || user?.role === 'super_admin') return HttpResponse.json({ message: 'Administrators must apply chat blocks through a moderation decision.' }, { status: 403 })
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
         const body = await request.json() as { blockedUserId?: string; reason?: string | null }
-        const blockedUserId = body.blockedUserId ?? (thread.clientId === user.id ? 'user-owner-1' : thread.clientId)
-        if (!blockedUserId || blockedUserId === user.id) return HttpResponse.json({ message: 'Another participant is required.' }, { status: 400 })
+        const ownerIds = thread.providerId ? (mockAutoCareProviderMemberships.get(thread.providerId) ?? []).filter((membership) => membership.role === 'owner' && membership.status === 'active').map((membership) => membership.userId) : []
+        const participantIds = new Set([thread.clientId, thread.createdById, ...ownerIds].filter((id): id is string => Boolean(id)))
+        const blockedUserId = body.blockedUserId ?? [...participantIds].find((id) => id !== user.id)
+        if (!blockedUserId || blockedUserId === user.id || !participantIds.has(blockedUserId)) return HttpResponse.json({ message: 'The blocked user must be another chat participant.' }, { status: 400 })
         const now = new Date().toISOString()
         const existing = mockAutoCareChatBlocks.find((block) => block.threadId === thread.id && block.blockerId === user.id && block.blockedUserId === blockedUserId && block.status === 'active' && block.sourceReportId === null)
         const block: MockAutoCareChatBlock = existing
