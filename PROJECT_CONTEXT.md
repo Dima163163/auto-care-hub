@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## PR #30 promotion scan, 4 ноября 2026
+
+PR #44 вошёл в dev как `045d2c5`; PR #30 проверяет этот head. Gitleaks
+нашёл два публичных RFC 6238 TOTP test vector fingerprint в squash commit
+`78ba6a0` (PR #43), которых не было в исходном commit `aabffbc`.
+Добавлены только два точных исторических исключения. Новый dev push Quality,
+PR Quality и обязательное независимое review ещё ожидаются; main не менялся.
+
 ## PR #43 CI follow-up, 4 ноября 2026
 
 Первый PR Quality выявил пропуск существующей
