@@ -1,5 +1,11 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 04.11, U03 mock sanction isolation:** повторный POST обычной
+блокировки больше не перезаписывает санкцию по жалобе. `sourceReportId`
+остаётся связанным с делом; DELETE санкции отвергается, обычная блокировка
+удаляется отдельно. Mock regression 6/6 PASS, TypeScript noEmit/targeted
+lint PASS. Staging/pilot evidence открыты; pilot NO-GO.
+
 **Локальный шаг 04.11, U03 mock parity:** independent super-admin direct
 emergency read доступен по ID и причине, private request chat не появляется
 в индексе; сторона жалобы исключена из чтения, списка и решения после

@@ -1,5 +1,15 @@
 # AutoCare Hub — Project Plan
 
+## U03 — изоляция санкции от обычной блокировки в mock, 2026-11-04
+
+- [x] Повторное создание participant block выбирает только собственную
+  действующую обычную блокировку. Запись санкции с `sourceReportId` больше
+  не перезаписывается, остаётся активной после удаления обычной блокировки
+  и требует апелляции. Mock regression 6/6 PASS, TypeScript noEmit и
+  targeted lint PASS.
+- [ ] Проверить тот же сценарий в опубликованном browser/staging окружении;
+  U03 и pilot NO-GO сохраняются.
+
 ## U03 — mock parity приватной модерации, 2026-11-04
 
 - [x] Согласовать mock с backend: super-admin список не содержит private

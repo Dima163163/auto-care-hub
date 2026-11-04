@@ -2825,7 +2825,7 @@
     },
     {
       "path": "src/app/mocks/autocare/chat.handlers.ts",
-      "sha256": "ab88c41d8a74f4bbf327bd1f662b512df7ef2650b5bea4ad13d7bfa6b478a516",
+      "sha256": "adf5445e97b9019733064574862518fbebae2c80ee8d3bdab33555afbbb53f8d",
       "scopes": [
         "frontend",
         "security"
@@ -2833,7 +2833,7 @@
     },
     {
       "path": "src/app/mocks/handlers.chat-moderation.test.ts",
-      "sha256": "fca176bc0093339315fcaebf5ce14e5b1fdf178bb236ccd5f98795dfe10355cc",
+      "sha256": "ed6454d89c2e777260c26e699245aab2ab1ff4ed6ab10f03d275343a78463813",
       "scopes": [
         "frontend",
         "security"

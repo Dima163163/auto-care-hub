@@ -56,6 +56,8 @@ note right of Mock
   Direct emergency read resolves the thread by ID with a reason;
   report parties are denied even after case closure.
   The request-to-chat shortcut rejects privileged roles.
+  Participant block creation reuses only an active ordinary block;
+  a report sanction keeps its case link and appeal-only removal.
   Mock behavior is a UI contract, not security evidence.
 end note
 note bottom of Factories

@@ -118,10 +118,9 @@ export const chatHandlers = [
         const blockedUserId = body.blockedUserId ?? (thread.clientId === user.id ? 'user-owner-1' : thread.clientId)
         if (!blockedUserId || blockedUserId === user.id) return HttpResponse.json({ message: 'Another participant is required.' }, { status: 400 })
         const now = new Date().toISOString()
-        const existing = mockAutoCareChatBlocks.find((block) => block.threadId === thread.id && block.blockerId === user.id && block.blockedUserId === blockedUserId)
+        const existing = mockAutoCareChatBlocks.find((block) => block.threadId === thread.id && block.blockerId === user.id && block.blockedUserId === blockedUserId && block.status === 'active' && block.sourceReportId === null)
         const block: MockAutoCareChatBlock = existing
-            ? Object.assign(existing, { status: 'active' as const, reason: body.reason?.trim() || existing.reason, revokedAt: null, sourceReportId: null, expiresAt: null })
-            : { id: `chat-block-${Date.now()}`, threadId: thread.id, blockerId: user.id, blockedUserId, status: 'active', reason: body.reason?.trim() || null, sourceReportId: null, expiresAt: null, createdAt: now, revokedAt: null }
+            ?? { id: `chat-block-${Date.now()}`, threadId: thread.id, blockerId: user.id, blockedUserId, status: 'active', reason: body.reason?.trim() || null, sourceReportId: null, expiresAt: null, createdAt: now, revokedAt: null }
         if (!existing) mockAutoCareChatBlocks.unshift(block)
         return HttpResponse.json(block, { status: 201 })
     }) },

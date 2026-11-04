@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — изоляция санкции в mock, 4 ноября 2026
+
+Participant block в mock переиспользует только активную обычную запись.
+Санкция по жалобе сохраняет `sourceReportId`, и её нельзя превратить в
+удаляемую блокировку повторным POST. Mock regression 6/6 PASS, TypeScript
+noEmit/targeted lint PASS. Staging acceptance открыта; pilot NO-GO.
+
 ## U03 — mock parity приватных чатов, 4 ноября 2026
 
 Mock super-admin список сохраняет только support/escalation; независимый

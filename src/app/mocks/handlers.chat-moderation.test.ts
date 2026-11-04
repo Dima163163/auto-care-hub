@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node'
 
 import { handlers } from './handlers'
 import { clearMockSession, setMockSession } from './session'
-import { mockAutoCareChatReports } from './autocare/mock-fixtures'
+import { mockAutoCareChatBlocks, mockAutoCareChatReports } from './autocare/mock-fixtures'
 
 const server = setupServer(...handlers)
 server.listen({ onUnhandledRequest: 'error' })
@@ -15,6 +15,40 @@ async function fetchJson(path: string, init?: RequestInit) {
 }
 
 describe('mock chat report moderation contract', () => {
+    it('keeps a report restriction separate from an ordinary participant block', async () => {
+        const chatId = 'chat-request-owner-request-2'
+        const restriction = {
+            id: 'synthetic-report-restriction', threadId: chatId, blockerId: 'user-owner-1',
+            blockedUserId: 'user-client-1', status: 'active' as const, reason: 'Reviewed report',
+            sourceReportId: 'chat-report-demo-1', expiresAt: null,
+            createdAt: new Date().toISOString(), revokedAt: null,
+        }
+        let participantId: string | null = null
+        mockAutoCareChatBlocks.unshift(restriction)
+        try {
+            setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
+            const create = await fetchJson(`/api/v1/chats/${chatId}/blocks`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'user-client-1', reason: 'Participant preference' }),
+            })
+            expect(create.status).toBe(201)
+            const participant = await create.json() as { id: string; sourceReportId: string | null }
+            participantId = participant.id
+            expect(participant.id).not.toBe(restriction.id)
+            expect(participant.sourceReportId).toBeNull()
+            expect(restriction).toMatchObject({ status: 'active', sourceReportId: 'chat-report-demo-1' })
+            expect((await fetchJson(`/api/v1/chats/${chatId}/blocks/${restriction.id}`, { method: 'DELETE' })).status).toBe(403)
+            expect((await fetchJson(`/api/v1/chats/${chatId}/blocks/${participant.id}`, { method: 'DELETE' })).status).toBe(200)
+            expect(restriction.status).toBe('active')
+        } finally {
+            for (const id of [restriction.id, participantId]) {
+                if (!id) continue
+                const index = mockAutoCareChatBlocks.findIndex((block) => block.id === id)
+                if (index >= 0) mockAutoCareChatBlocks.splice(index, 1)
+            }
+        }
+    })
+
     it('allows independent super-admin emergency read without listing private chats or exposing a party case', async () => {
         const chatId = 'chat-request-owner-request-1'
         const reason = encodeURIComponent('Independent urgent review of a private report')

@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U03, mock sanction isolation 2026-11-04:** `03-frontend.puml` и SVG
+показывают, что повторное создание participant block в mock не меняет
+`sourceReportId` санкции по жалобе: обычная активная блокировка переиспользуется,
+а санкция снимается только через апелляцию. Mock regression 6/6 PASS;
+staging acceptance открыта.
+
 **U03, mock emergency chat parity 2026-11-04:**
 `03-frontend.puml` и SVG показывают, что mock скрывает приватные request
 переписки из super-admin списка, но разрешает независимый direct read по ID
