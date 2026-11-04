@@ -1,5 +1,10 @@
 # Current finding disposition — 2026-10-04
 
+**PR #30 promotion scan, 04.11:** после squash PR #43 два публичных RFC
+6238 TOTP test vector получили новые fingerprints в `78ba6a0`.
+Добавлены только эти точные исторические исключения. Новый dev push/PR
+Quality и code-owner review остаются открыты; main не продвинут.
+
 **PR #43 CI follow-up, 04.11:** release integrity manifest дополнен уже
 существующей reschedule checkpoint таблицей; миграция и схема были актуальны.
 Gitleaks исключает два точных исторических fingerprint публичного RFC 6238

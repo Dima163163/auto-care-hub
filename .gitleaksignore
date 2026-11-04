@@ -5,3 +5,7 @@
 # Each exception is scoped to the exact commit/path/rule/line.
 aabffbcea61445906b5fd15e01d5756f8ff717d0:server/src/modules/admin/account-deletion-autocare.integration.test.ts:generic-api-key:127
 aabffbcea61445906b5fd15e01d5756f8ff717d0:server/src/modules/auth/totp.test.ts:generic-api-key:5
+# PR #43 entered dev as a squash commit; the same public vector acquired
+# these two new, exact historical fingerprints in the dev-to-main diff.
+78ba6a07e6f6d9247584b901a4b5720913b9006c:server/src/modules/admin/account-deletion-autocare.integration.test.ts:generic-api-key:127
+78ba6a07e6f6d9247584b901a4b5720913b9006c:server/src/modules/auth/totp.test.ts:generic-api-key:5

@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## PR #30 promotion scan follow-up — 2026-11-04
+
+- [x] Определить два Gitleaks finding релизного PR #30: публичный RFC 6238
+  TOTP vector получил новые fingerprints после squash PR #43 в `78ba6a0`.
+- [x] Добавить только эти два fingerprint в `.gitleaksignore`; исторический
+  commit/path/rule/line указан полностью, другие секреты не игнорируются.
+- [ ] Получить Quality на новом dev commit и обоих событиях push/PR для
+  dev → main; защищённый main требует отдельного code-owner review.
+
 ## PR #43 CI follow-up — 2026-11-04
 
 - [x] Добавить существующую таблицу reschedule text-binding checkpoint в
