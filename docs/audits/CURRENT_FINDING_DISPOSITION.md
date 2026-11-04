@@ -7,6 +7,9 @@ TOTP test vector. Новый exact-SHA Quality и merge dev → main ожида�
 pilot NO-GO не меняется.
 Локальный `release:migrate` PASS на disposable PostgreSQL 17:
 179 миграций, 44 таблицы, 30 constraints validated; контейнер удалён.
+Дополнительный CI follow-up: 3 frontend Blob/jsdom assertions приведены к
+контракту содержимого, а real E2E admin/super-admin получают MFA в
+disposable CI базе; browser login потребляет одноразовые recovery codes.
 
 **Локальный replay 04.11, candidate quality:** root route-auth и
 threat-surface contracts приведены к текущему MFA guard с отрицательными

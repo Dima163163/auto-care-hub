@@ -465,6 +465,13 @@ jobs:
         env:
           DEMO_RESET_CONFIRM_DATABASE: autocarehub_real_e2e
 
+      - name: Prepare real E2E privileged MFA
+        run: npm run mfa:prepare-real-e2e
+        working-directory: server
+        env:
+          DEMO_RESET_CONFIRM_DATABASE: autocarehub_real_e2e
+          REAL_E2E_MFA_CODES_FILE: ${{ runner.temp }}/autocare-real-e2e-mfa.json
+
       - name: Install Chromium
         # Keep the real-mode smoke independent from transient apt metadata
         # issues in the external Google Chrome repository.
@@ -477,6 +484,7 @@ jobs:
         run: npx playwright test -c playwright.real.config.ts
         env:
           REAL_E2E_NEXT_PRODUCTION: true
+          REAL_E2E_MFA_CODES_FILE: ${{ runner.temp }}/autocare-real-e2e-mfa.json
 
       - name: Publish full-stack diagnostics
         if: always()
