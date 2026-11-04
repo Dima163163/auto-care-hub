@@ -14,6 +14,9 @@ CI и продвижение dev → main ещё ожидаются.
 в Node 22/jsdom и real E2E admin login без MFA. Тесты теперь проверяют
 содержимое Blob без привязки к realm, а disposable real E2E БД получает
 privileged MFA с одноразовыми кодами в приватном runner temp файле.
+PR #43 был squash-merged в dev как `78ba6a0` до завершения Quality;
+dev push Quality упал. Оставшийся fix вынесен в чистую ветку от dev,
+поэтому защищённое продвижение в main ждёт нового PR и зелёного CI.
 
 ## Exact-candidate local quality replay, 4 ноября 2026
 

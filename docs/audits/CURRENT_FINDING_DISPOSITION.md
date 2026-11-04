@@ -10,6 +10,8 @@ pilot NO-GO не меняется.
 Дополнительный CI follow-up: 3 frontend Blob/jsdom assertions приведены к
 контракту содержимого, а real E2E admin/super-admin получают MFA в
 disposable CI базе; browser login потребляет одноразовые recovery codes.
+PR #43 squash-merged в dev как `78ba6a0` до завершения Quality; dev push
+Quality упал. Остаточный fix в отдельной ветке, main не продвинут.
 
 **Локальный replay 04.11, candidate quality:** root route-auth и
 threat-surface contracts приведены к текущему MFA guard с отрицательными
