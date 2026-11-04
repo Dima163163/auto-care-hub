@@ -54,7 +54,8 @@ admin/super-admin. Live WebSocket
 authorization rechecks it before each delivery and every 30 seconds; an
 expired proof closes the socket at the next check. The super-admin index lists
 only support/escalation chats; private request chats use per-thread audited
-access with a reason. The admin index includes assigned moderation cases,
+access with a reason. A super-admin who was a party to a report in that thread
+cannot use this emergency route. The admin index includes assigned moderation cases,
 without provider membership widening. Admin and super-admin service-request
 detail, repair timeline and owner request list also require fresh proof before
 returning private data. Broadcast request detail and the provider inbox use

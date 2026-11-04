@@ -1,5 +1,12 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 04.11, U03 direct emergency read:** super-admin сторона
+жалобы не может открыть приватную переписку по ID даже с аварийной причиной;
+общая проверка защищает историю, вложения и live WebSocket. Независимый
+super-admin сохраняет audited доступ. Boundary 39 PASS, isolated PostgreSQL
+11/11 PASS, backend build и targeted lint PASS. Staging/pilot evidence
+открыты; pilot NO-GO.
+
 **Локальный шаг 04.11, U03 block revocation:** обычный DELETE может снять
 только собственную participant block. Ограничение по жалобе с
 `sourceReportId` требует принятой независимой апелляции; super-admin не

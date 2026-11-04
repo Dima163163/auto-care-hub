@@ -124,6 +124,12 @@ describe('chat report conflict on PostgreSQL', () => {
         await expect(getAutoCareChatAccessContext(admin, thread.id)).rejects.toMatchObject({ statusCode: 403 })
     })
 
+    it('denies a super-admin report party direct emergency access to that thread', async () => {
+        await expect(getAutoCareChatAccessContext(superAdmin, thread.id, 'Emergency review of a private report'))
+            .rejects.toMatchObject({ statusCode: 403 })
+        await expect(assertThreadAccess(independentSuperAdmin, thread)).resolves.toBe('super_admin')
+    })
+
     it('denies assignment and access extension to the report party', async () => {
         await expect(assignAdminAutoCareChatModerator(superAdmin, targetReport.id, admin.id, 'Review the report independently'))
             .rejects.toMatchObject({ statusCode: 403 })

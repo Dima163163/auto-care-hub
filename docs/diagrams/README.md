@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U03, direct emergency chat access 2026-11-04:**
+`09-access-privacy.puml` и SVG показывают, что сторона жалобы после смены
+роли на super-admin не открывает приватную переписку по ID даже с аварийной
+причиной. Независимый super-admin сохраняет audited доступ. Boundary
+39 PASS, isolated PostgreSQL 11/11 PASS; staging открыт.
+
 **U03, chat restriction revocation 2026-11-04:** `09-access-privacy.puml`
 и SVG показывают, что DELETE блокировки доступен только автору обычного
 participant block. Модерационное ограничение с `sourceReportId` снимается

@@ -1,5 +1,18 @@
 # AutoCare Hub — Project Plan
 
+## U03 — прямой аварийный доступ к собственному делу, 2026-11-04
+
+- [x] Запретить super-admin стороне жалобы прямое открытие приватного чата,
+  вложений и live WebSocket через общий `assertThreadAccess`, включая
+  закрытую жалобу. Независимый super-admin сохраняет доступ с причиной и
+  аудитом. Boundary 39 PASS, isolated seeded PostgreSQL 11/11 PASS;
+  backend build и targeted lint PASS.
+- [ ] Проверить staging с реальной ролью, MFA, причиной и аудитом; U03
+  остаётся открытым, pilot NO-GO.
+- [ ] Согласовать mock прямого emergency доступа super-admin с реальным
+  backend: сейчас mock возвращает 404 на приватную request-переписку даже
+  независимому super-admin, хотя backend разрешает её с причиной и аудитом.
+
 ## U03 — снятие блокировки через обычный маршрут, 2026-11-04
 
 - [x] Убрать обход апелляции: `DELETE /v1/chats/:chatId/blocks/:blockId`

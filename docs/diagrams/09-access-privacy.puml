@@ -55,8 +55,9 @@ note right of StepUp
   Participant block DELETE is limited to its blocker; a moderation
   restriction can only be revoked by an accepted independent appeal.
   A party of any historical chat report cannot be assigned moderator, read
-  the private thread as admin, extend access or decide another case after
+  the private thread as admin or super-admin, extend access or decide another case after
   role change. Admin and super-admin report indexes exclude conflicted threads.
+  A super-admin party cannot use direct emergency read to bypass that scope.
   Assignment and decision scan all thread reports under the thread lock;
   only pending reports can grant time-limited moderator access.
   Other modules' sensitive reads and staging replay remain open.

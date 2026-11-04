@@ -314,7 +314,7 @@
     },
     {
       "path": "server/src/modules/autocare/chat-access.service.ts",
-      "sha256": "cec825af7e624f525c14f3ba1b021b0924f8e2ca05e983fc5ba276379ca7b7cc",
+      "sha256": "397855c457941dd37172a398b05c4cdd3f30d1516bff14cdf56ea64ac40b927c",
       "scopes": [
         "security"
       ]
@@ -2804,14 +2804,14 @@
     },
     {
       "path": "server/src/modules/autocare/autocare-chat.service-boundary.test.ts",
-      "sha256": "5acd6eb68b1f90a0e132fb5693e9e56d6b1aed7658c32cdd1cfa46d6a8950614",
+      "sha256": "d305a6fe4f7c31cfce960bffb990d496be7f157721dda56f2c8cbbe5a246a87d",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/src/modules/autocare/chat-report-conflict.integration.test.ts",
-      "sha256": "067c42d88aaa407fe63a42cc9d3860040ae8cd70c047a916ade5897420ea3380",
+      "sha256": "dc337691943332a0bcd7ff47b1762a1e1fce27a7daa6974b008edfd667e9c055",
       "scopes": [
         "security"
       ]

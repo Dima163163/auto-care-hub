@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U03 — аварийный доступ к собственному делу, 4 ноября 2026
+
+После смены роли сторона любой жалобы переписки не может открыть её
+напрямую как super-admin даже с аварийной причиной. Общий доступ закрывает
+историю, вложения и WebSocket; независимый super-admin остаётся в audited
+пути. Boundary 39 PASS, isolated seeded PostgreSQL 11/11 PASS,
+backend build и targeted lint PASS.
+Staging acceptance и pilot evidence открыты; pilot NO-GO.
+
 ## U03 — снятие блокировки только через апелляцию, 4 ноября 2026
 
 Обычный DELETE блокировки теперь снимает только participant block,

@@ -413,6 +413,15 @@ describe('AutoCare chat service boundaries', () => {
         await expect(getAutoCareChatAccessContext(admin, chatId)).rejects.toMatchObject({ statusCode: 403 })
     })
 
+    it('denies a super-admin report party direct private thread access even with an emergency reason', async () => {
+        setupReadAccess({
+            thread: makeThread({ type: AutoCareChatThreadType.ServiceRequest }),
+            report: { status: AutoCareChatReportStatus.Dismissed, reporterId: superAdmin.id },
+        })
+        await expect(getAutoCareChatAccessContext(superAdmin, chatId, 'Emergency review of this case'))
+            .rejects.toMatchObject({ statusCode: 403 })
+    })
+
     it.each(['reporterId', 'reportedUserId'] as const)('does not let the %s decide a chat report after role change', async (partyField) => {
         const reportId = '99999999-9999-4999-8999-999999999999'
         const report = { id: reportId, threadId: chatId, status: AutoCareChatReportStatus.Pending, [partyField]: admin.id }
