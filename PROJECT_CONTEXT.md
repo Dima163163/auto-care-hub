@@ -10,6 +10,10 @@
 CI и продвижение dev → main ещё ожидаются.
 Локальный `release:migrate` на disposable PostgreSQL 17 PASS: 179 миграций,
 44 критические таблицы, 30 constraints validated; контейнер удалён.
+Первый CI также показал 3 frontend test failures из-за разных `Blob` realm
+в Node 22/jsdom и real E2E admin login без MFA. Тесты теперь проверяют
+содержимое Blob без привязки к realm, а disposable real E2E БД получает
+privileged MFA с одноразовыми кодами в приватном runner temp файле.
 
 ## Exact-candidate local quality replay, 4 ноября 2026
 

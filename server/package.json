@@ -32,6 +32,7 @@
     "autocare:seed": "tsx src/scripts/seed-autocare-mock-data.ts",
     "encryption:provision-keyring": "tsx src/scripts/provision-production-keyring.ts",
     "mfa:provision": "tsx src/scripts/provision-privileged-mfa.ts",
+    "mfa:prepare-real-e2e": "tsx src/scripts/prepare-real-e2e-mfa.ts",
     "mfa:reset": "tsx src/scripts/reset-privileged-mfa.ts",
     "encryption:backfill-email-binding": "tsx src/scripts/backfill-email-record-binding.ts",
     "encryption:backfill-outbox-binding": "tsx src/scripts/backfill-outbox-record-binding.ts",

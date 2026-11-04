@@ -95,7 +95,7 @@ describe('privileged step-up transport', () => {
         })
 
         const csv = await store.dispatch(testApi.endpoints.sensitiveCsvStepUpTest.initiate()).unwrap()
-        expect(csv).toBeInstanceOf(Blob)
+        expect(csv).toMatchObject({ size: 16, type: 'text/csv' })
         expect(await csv.text()).toContain('id,action')
         expect(paths).toEqual(['/api/admin/export-test', '/api/auth/step-up', '/api/admin/export-test'])
     })

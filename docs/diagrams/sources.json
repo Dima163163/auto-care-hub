@@ -75,7 +75,7 @@
     },
     {
       "path": "server/package.json",
-      "sha256": "d692babdba458419868b0de176c0ab5075ceaf3f145c9ddb7510384cd75fe275",
+      "sha256": "d37d8739c2399f0b702ad126f67b880967a63553ebfc0e31f8124a60054f4aa1",
       "scopes": [
         "backend"
       ]
@@ -714,7 +714,7 @@
     },
     {
       "path": ".github/workflows/quality.yml",
-      "sha256": "99c01823456a4fdcffcca770dddf9441ead93376b8b5a393cafa18a27b70468d",
+      "sha256": "7fb8dc4deb7a5393c6dc761b3dd364c031cd4e345a016aeab9a1064ce72e2c54",
       "scopes": [
         "frontend"
       ]
